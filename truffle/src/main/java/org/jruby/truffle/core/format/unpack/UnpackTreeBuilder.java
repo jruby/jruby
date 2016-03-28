@@ -187,45 +187,48 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitUtf8Character(PackParser.Utf8CharacterContext ctx) {
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteValueNodeGen.create(context,
-                ReadUTF8CharacterNodeGen.create(context,
-                        new SourceNode()))));
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(),
+                WriteValueNodeGen.create(context,
+                        ReadUTF8CharacterNodeGen.create(context,
+                                new SourceNode()))));
     }
 
     @Override
     public void exitBerInteger(PackParser.BerIntegerContext ctx) {
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteValueNodeGen.create(context,
-                ReadBERNodeGen.create(context, new SourceNode()))));
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(),
+                WriteValueNodeGen.create(context,
+                        ReadBERNodeGen.create(context,
+                                new SourceNode()))));
     }
 
     @Override
     public void exitF64Native(PackParser.F64NativeContext ctx) {
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat64NodeGen.create(context, readBytesAsInteger(64, ByteOrder.nativeOrder(), consumePartial(ctx.count()), true)))));
+        appendFloatNode(64, ByteOrder.nativeOrder(), ctx.count());
     }
 
     @Override
     public void exitF32Native(PackParser.F32NativeContext ctx) {
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat32NodeGen.create(context, readBytesAsInteger(32, ByteOrder.nativeOrder(), consumePartial(ctx.count()), true)))));
+        appendFloatNode(32, ByteOrder.nativeOrder(), ctx.count());
     }
 
     @Override
     public void exitF64Little(PackParser.F64LittleContext ctx) {
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat64NodeGen.create(context, readBytesAsInteger(64, ByteOrder.LITTLE_ENDIAN, consumePartial(ctx.count()), true)))));
+        appendFloatNode(64, ByteOrder.LITTLE_ENDIAN, ctx.count());
     }
 
     @Override
     public void exitF32Little(PackParser.F32LittleContext ctx) {
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat32NodeGen.create(context, readBytesAsInteger(32, ByteOrder.LITTLE_ENDIAN, consumePartial(ctx.count()), true)))));
+        appendFloatNode(32, ByteOrder.LITTLE_ENDIAN, ctx.count());
     }
 
     @Override
     public void exitF64Big(PackParser.F64BigContext ctx) {
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat64NodeGen.create(context, readBytesAsInteger(64, ByteOrder.BIG_ENDIAN, consumePartial(ctx.count()), true)))));
+        appendFloatNode(64, ByteOrder.BIG_ENDIAN, ctx.count());
     }
 
     @Override
     public void exitF32Big(PackParser.F32BigContext ctx) {
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteValueNodeGen.create(context, DecodeFloat32NodeGen.create(context, readBytesAsInteger(32, ByteOrder.BIG_ENDIAN, consumePartial(ctx.count()), true)))));
+        appendFloatNode(32, ByteOrder.BIG_ENDIAN, ctx.count());
     }
 
     @Override
@@ -360,7 +363,8 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitErrorDisallowedNative(PackParser.ErrorDisallowedNativeContext ctx) {
-        throw new RaiseException(context.getCoreLibrary().argumentError("'" + ctx.NATIVE().getText() + "' allowed only after types sSiIlLqQ", currentNode));
+        throw new RaiseException(context.getCoreLibrary().argumentError(
+                "'" + ctx.NATIVE().getText() + "' allowed only after types sSiIlLqQ", currentNode));
     }
 
     public FormatNode getNode() {
@@ -381,8 +385,27 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
     private void appendIntegerNode(int size, ByteOrder byteOrder, PackParser.CountContext count, boolean signed) {
         final FormatNode readNode = ReadBytesNodeGen.create(context, size / 8, consumePartial(count), new SourceNode());
-        final FormatNode convert = createIntegerDecodeNode(size, byteOrder, signed, readNode);
-        appendNode(sharedTreeBuilder.applyCount(count, WriteValueNodeGen.create(context, convert)));
+        final FormatNode convertNode = createIntegerDecodeNode(size, byteOrder, signed, readNode);
+        appendNode(sharedTreeBuilder.applyCount(count, WriteValueNodeGen.create(context, convertNode)));
+    }
+
+    private void appendFloatNode(int size, ByteOrder byteOrder, PackParser.CountContext count) {
+        final FormatNode readNode = readBytesAsInteger(size, byteOrder, consumePartial(count), true);
+        final FormatNode decodeNode;
+
+        switch (size) {
+            case 32:
+                decodeNode = DecodeFloat32NodeGen.create(context, readNode);
+                break;
+            case 64:
+                decodeNode = DecodeFloat64NodeGen.create(context, readNode);
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+
+        final FormatNode writeNode = WriteValueNodeGen.create(context, decodeNode);
+        appendNode(sharedTreeBuilder.applyCount(count, writeNode));
     }
 
     private FormatNode readBytesAsInteger(int size, ByteOrder byteOrder, boolean consumePartial, boolean signed) {
@@ -430,14 +453,16 @@ public class UnpackTreeBuilder extends PackBaseListener {
         final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx);
 
         appendNode(WriteValueNodeGen.create(context,
-                ReadBitStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(), new SourceNode())));
+                ReadBitStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(),
+                        new SourceNode())));
     }
 
     private void hexString(ByteOrder byteOrder, PackParser.CountContext ctx) {
         final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx);
 
         appendNode(WriteValueNodeGen.create(context,
-                ReadHexStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(), new SourceNode())));
+                ReadHexStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(),
+                        new SourceNode())));
 
     }
 
