@@ -13,14 +13,14 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.SharedTreeBuilder;
-import org.jruby.truffle.core.format.SourceNode;
+import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.control.AtNode;
 import org.jruby.truffle.core.format.control.BackNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
-import org.jruby.truffle.core.format.read.ReadDoubleNodeGen;
-import org.jruby.truffle.core.format.read.ReadLongOrBigIntegerNodeGen;
-import org.jruby.truffle.core.format.read.ReadStringNodeGen;
-import org.jruby.truffle.core.format.read.ReadValueNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadDoubleNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadLongOrBigIntegerNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadStringNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadValueNodeGen;
 import org.jruby.truffle.core.format.type.AsSinglePrecisionNodeGen;
 import org.jruby.truffle.core.format.type.ReinterpretLongNodeGen;
 import org.jruby.truffle.core.format.type.ToLongNodeGen;
@@ -49,9 +49,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-
-import org.jruby.truffle.core.format.pack.PackBaseListener;
-import org.jruby.truffle.core.format.pack.PackParser;
 
 public class PackTreeBuilder extends PackBaseListener {
 

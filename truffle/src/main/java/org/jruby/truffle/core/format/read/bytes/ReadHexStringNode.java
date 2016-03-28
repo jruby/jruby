@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.read;
+package org.jruby.truffle.core.format.read.bytes;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -17,9 +17,10 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.format.SourceNode;
+import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
+import org.jruby.util.Pack;
 import org.jruby.util.StringSupport;
 
 import java.nio.ByteBuffer;
@@ -28,13 +29,13 @@ import java.nio.ByteOrder;
 @NodeChildren({
         @NodeChild(value = "value", type = SourceNode.class),
 })
-public abstract class ReadBitStringNode extends FormatNode {
+public abstract class ReadHexStringNode extends FormatNode {
 
     private final ByteOrder byteOrder;
     private final boolean star;
     private final int length;
 
-    public ReadBitStringNode(RubyContext context, ByteOrder byteOrder, boolean star, int length) {
+    public ReadHexStringNode(RubyContext context, ByteOrder byteOrder, boolean star, int length) {
         super(context);
         this.byteOrder = byteOrder;
         this.star = star;
@@ -51,32 +52,32 @@ public abstract class ReadBitStringNode extends FormatNode {
         byte[] lElem;
 
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
-            if (star || occurrences > encode.remaining() * 8) {
-                occurrences = encode.remaining() * 8;
+            if (star || occurrences > encode.remaining() * 2) {
+                occurrences = encode.remaining() * 2;
             }
             int bits = 0;
             lElem = new byte[occurrences];
             for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                if ((lCurByte & 7) != 0) {
-                    bits <<= 1;
+                if ((lCurByte & 1) != 0) {
+                    bits <<= 4;
                 } else {
                     bits = encode.get();
                 }
-                lElem[lCurByte] = (bits & 128) != 0 ? (byte)'1' : (byte)'0';
+                lElem[lCurByte] = Pack.sHexDigits[(bits >>> 4) & 15];
             }
         } else {
-            if (star || occurrences > encode.remaining() * 8) {
-                occurrences = encode.remaining() * 8;
+            if (star || occurrences > encode.remaining() * 2) {
+                occurrences = encode.remaining() * 2;
             }
             int bits = 0;
             lElem = new byte[occurrences];
             for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                if ((lCurByte & 7) != 0) {
-                    bits >>>= 1;
+                if ((lCurByte & 1) != 0) {
+                    bits >>>= 4;
                 } else {
                     bits = encode.get();
                 }
-                lElem[lCurByte] = (bits & 1) != 0 ? (byte)'1' : (byte)'0';
+                lElem[lCurByte] = Pack.sHexDigits[bits & 15];
             }
         }
 

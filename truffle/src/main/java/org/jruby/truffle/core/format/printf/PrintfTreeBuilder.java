@@ -13,16 +13,16 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.antlr.v4.runtime.Token;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.format.SourceNode;
+import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.format.FormatFloatNodeGen;
 import org.jruby.truffle.core.format.format.FormatIntegerNodeGen;
 import org.jruby.truffle.core.format.LiteralBytesNode;
 import org.jruby.truffle.core.format.LiteralIntegerNode;
-import org.jruby.truffle.core.format.read.ReadHashValueNodeGen;
-import org.jruby.truffle.core.format.read.ReadIntegerNodeGen;
-import org.jruby.truffle.core.format.read.ReadStringNodeGen;
-import org.jruby.truffle.core.format.read.ReadValueNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadHashValueNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadIntegerNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadStringNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadValueNodeGen;
 import org.jruby.truffle.core.format.type.ToDoubleWithCoercionNodeGen;
 import org.jruby.truffle.core.format.type.ToIntegerNodeGen;
 import org.jruby.truffle.core.format.type.ToStringNodeGen;
@@ -33,9 +33,6 @@ import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.jruby.truffle.core.format.printf.PrintfParser;
-import org.jruby.truffle.core.format.printf.PrintfParserBaseListener;
 
 public class PrintfTreeBuilder extends PrintfParserBaseListener {
 

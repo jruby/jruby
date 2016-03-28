@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.read;
+package org.jruby.truffle.core.format.read.array;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -16,23 +16,15 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.format.SourceNode;
-import org.jruby.truffle.core.format.MissingValue;
-
-import java.util.Arrays;
+import org.jruby.truffle.core.format.read.SourceNode;
 
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
-public abstract class ReadBytesNode extends FormatNode {
+public abstract class ReadValueNode extends FormatNode {
 
-    private final int count;
-    private final boolean consumePartial;
-
-    public ReadBytesNode(RubyContext context, int count, boolean consumePartial) {
+    public ReadValueNode(RubyContext context) {
         super(context);
-        this.count = count;
-        this.consumePartial = consumePartial;
     }
 
     @Specialization(guards = "isNull(source)")
@@ -40,24 +32,29 @@ public abstract class ReadBytesNode extends FormatNode {
         CompilerDirectives.transferToInterpreter();
 
         // Advance will handle the error
-        advanceSourcePosition(frame, count);
+        advanceSourcePosition(frame);
 
         throw new IllegalStateException();
     }
 
     @Specialization
-    public Object read(VirtualFrame frame, byte[] source) {
-        int index = advanceSourcePositionNoThrow(frame, count, consumePartial);
+    public long read(VirtualFrame frame, int[] source) {
+        return source[advanceSourcePosition(frame)];
+    }
 
-        if (index == -1) {
-            if (consumePartial) {
-                return MissingValue.INSTANCE;
-            } else {
-                return getContext().getCoreLibrary().getNilObject();
-            }
-        }
+    @Specialization
+    public long read(VirtualFrame frame, long[] source) {
+        return source[advanceSourcePosition(frame)];
+    }
 
-        return Arrays.copyOfRange(source, index, index + count);
+    @Specialization
+    public long read(VirtualFrame frame, double[] source) {
+        return (long) source[advanceSourcePosition(frame)];
+    }
+
+    @Specialization
+    public Object read(VirtualFrame frame, Object[] source) {
+        return source[advanceSourcePosition(frame)];
     }
 
 }

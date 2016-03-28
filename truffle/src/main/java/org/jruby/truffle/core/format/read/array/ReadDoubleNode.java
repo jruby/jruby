@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.read;
+package org.jruby.truffle.core.format.read.array;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -16,21 +16,21 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.format.SourceNode;
-import org.jruby.truffle.core.format.type.ToIntegerNode;
-import org.jruby.truffle.core.format.type.ToIntegerNodeGen;
+import org.jruby.truffle.core.format.read.SourceNode;
+import org.jruby.truffle.core.format.type.ToDoubleNode;
+import org.jruby.truffle.core.format.type.ToDoubleNodeGen;
 
 /**
- * Read a {@code int} value from the source.
+ * Read a {@code double} value from the source.
  */
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
-public abstract class ReadIntegerNode extends FormatNode {
+public abstract class ReadDoubleNode extends FormatNode {
 
-    @Child private ToIntegerNode toIntegerNode;
+    @Child private ToDoubleNode toDoubleNode;
 
-    public ReadIntegerNode(RubyContext context) {
+    public ReadDoubleNode(RubyContext context) {
         super(context);
     }
 
@@ -45,33 +45,28 @@ public abstract class ReadIntegerNode extends FormatNode {
     }
 
     @Specialization
-    public int read(VirtualFrame frame, int[] source) {
+    public double read(VirtualFrame frame, int[] source) {
         return source[advanceSourcePosition(frame)];
     }
 
     @Specialization
-    public int read(VirtualFrame frame, long[] source) {
-        return (int) source[advanceSourcePosition(frame)];
+    public double read(VirtualFrame frame, long[] source) {
+        return source[advanceSourcePosition(frame)];
     }
 
     @Specialization
-    public int read(VirtualFrame frame, double[] source) {
-        return (int) source[advanceSourcePosition(frame)];
+    public double read(VirtualFrame frame, double[] source) {
+        return source[advanceSourcePosition(frame)];
     }
 
     @Specialization
-    public int read(VirtualFrame frame, Object[] source) {
-        if (toIntegerNode == null) {
+    public double read(VirtualFrame frame, Object[] source) {
+        if (toDoubleNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toIntegerNode = insert(ToIntegerNodeGen.create(getContext(), null));
+            toDoubleNode = insert(ToDoubleNodeGen.create(getContext(), null));
         }
 
-        final Object value = toIntegerNode.executeToInteger(frame, source[advanceSourcePosition(frame)]);
-        if (value instanceof Long) {
-            return (int) (long) value;
-        } else {
-            return (int) value;
-        }
+        return toDoubleNode.executeToDouble(frame, source[advanceSourcePosition(frame)]);
     }
 
 }

@@ -7,19 +7,22 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.format.read;
+package org.jruby.truffle.core.format.read.bytes;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.format.SourceNode;
-import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
+import org.jruby.truffle.core.format.read.SourceNode;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 /**
@@ -29,20 +32,17 @@ import java.nio.ByteBuffer;
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
-public abstract class ReadBERNode extends FormatNode {
+public abstract class ReadUUStringNode extends FormatNode {
 
-    @Child private FixnumOrBignumNode fixnumOrBignumNode;
-
-    public ReadBERNode(RubyContext context) {
+    public ReadUUStringNode(RubyContext context) {
         super(context);
-        fixnumOrBignumNode = FixnumOrBignumNode.create(context, null);
     }
 
     @Specialization
     protected Object encode(VirtualFrame frame, byte[] source) {
         CompilerDirectives.transferToInterpreter();
 
-        // TODO CS 28-Dec-15 should write our own optimizable version of BER
+        // TODO CS 28-Dec-15 should write our own optimizable version of UU
 
         /*
          * Copied from JRuby's Pack class.
@@ -85,37 +85,84 @@ public abstract class ReadBERNode extends FormatNode {
 
         final ByteBuffer encode = ByteBuffer.wrap(source, getSourcePosition(frame), getSourceLength(frame) - getSourcePosition(frame));
 
-        long ul = 0;
-        long ulmask = (0xfe << 56) & 0xffffffff;
-        BigInteger big128 = BigInteger.valueOf(128);
-        int pos = encode.position();
+        int length = encode.remaining() * 3 / 4;
+        byte[] lElem = new byte[length];
+        int index = 0;
+        int s = 0;
+        int total = 0;
+        if (length > 0) s = encode.get();
+        while (encode.hasRemaining() && s > ' ' && s < 'a') {
+            int a, b, c, d;
+            byte[] hunk = new byte[3];
 
-        ul <<= 7;
-        ul |= encode.get(pos) & 0x7f;
-        if((encode.get(pos++) & 0x80) == 0) {
-            setSourcePosition(frame, getSourcePosition(frame) + pos);
-            return ul;
-        } else if((ul & ulmask) == 0) {
-            BigInteger big = BigInteger.valueOf(ul);
-            while(pos < encode.limit()) {
-                BigInteger mulResult = big.multiply(big128);
-                BigInteger v = mulResult.add(BigInteger.valueOf(encode.get(pos) & 0x7f));
-                big = v;
-                if((encode.get(pos++) & 0x80) == 0) {
-                    setSourcePosition(frame, getSourcePosition(frame) + pos);
-                    return fixnumOrBignumNode.fixnumOrBignum(big);
+            int len = (s - ' ') & 077;
+            s = safeGet(encode);
+            total += len;
+            if (total > length) {
+                len -= total - length;
+                total = length;
+            }
+
+            while (len > 0) {
+                int mlen = len > 3 ? 3 : len;
+
+                if (encode.hasRemaining() && s >= ' ') {
+                    a = (s - ' ') & 077;
+                    s = safeGet(encode);
+                } else
+                    a = 0;
+                if (encode.hasRemaining() && s >= ' ') {
+                    b = (s - ' ') & 077;
+                    s = safeGet(encode);
+                } else
+                    b = 0;
+                if (encode.hasRemaining() && s >= ' ') {
+                    c = (s - ' ') & 077;
+                    s = safeGet(encode);
+                } else
+                    c = 0;
+                if (encode.hasRemaining() && s >= ' ') {
+                    d = (s - ' ') & 077;
+                    s = safeGet(encode);
+                } else
+                    d = 0;
+                hunk[0] = (byte)((a << 2 | b >> 4) & 255);
+                hunk[1] = (byte)((b << 4 | c >> 2) & 255);
+                hunk[2] = (byte)((c << 6 | d) & 255);
+
+                for (int i = 0; i < mlen; i++) lElem[index++] = hunk[i];
+                len -= mlen;
+            }
+            if (s == '\r') {
+                s = safeGet(encode);
+            }
+            if (s == '\n') {
+                s = safeGet(encode);
+            }
+            else if (encode.hasRemaining()) {
+                if (safeGet(encode) == '\n') {
+                    safeGet(encode); // Possible Checksum Byte
+                } else if (encode.hasRemaining()) {
+                    encode.position(encode.position() - 1);
                 }
             }
         }
 
-        try {
-            encode.position(pos);
-        } catch (IllegalArgumentException e) {
-            //throw runtime.newArgumentError("in `unpack': poorly encoded input");
-            throw new UnsupportedOperationException();
+        final ByteList result = new ByteList(lElem, 0, index, ASCIIEncoding.INSTANCE, false);
+
+        setSourcePosition(frame, encode.position());
+
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
+    }
+
+    private static int safeGet(ByteBuffer encode) {
+        while (encode.hasRemaining()) {
+            int got = encode.get() & 0xff;
+
+            if (got != 0) return got;
         }
 
-        throw new UnsupportedOperationException();
+        return 0;
     }
 
 }
