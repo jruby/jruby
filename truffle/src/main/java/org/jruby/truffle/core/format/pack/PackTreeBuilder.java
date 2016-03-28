@@ -12,12 +12,12 @@ package org.jruby.truffle.core.format.pack;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
+import org.jruby.truffle.core.format.SharedTreeBuilder;
 import org.jruby.truffle.core.format.SourceNode;
 import org.jruby.truffle.core.format.control.AtNode;
 import org.jruby.truffle.core.format.control.BackNode;
 import org.jruby.truffle.core.format.control.NNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
-import org.jruby.truffle.core.format.control.StarNode;
 import org.jruby.truffle.core.format.read.ReadDoubleNodeGen;
 import org.jruby.truffle.core.format.read.ReadLongOrBigIntegerNodeGen;
 import org.jruby.truffle.core.format.read.ReadStringNodeGen;
@@ -59,12 +59,15 @@ public class PackTreeBuilder extends PackBaseListener {
     private final RubyContext context;
     private final Node currentNode;
 
+    private final SharedTreeBuilder sharedTreeBuilder;
+
     private FormatEncoding encoding = FormatEncoding.DEFAULT;
     private final Deque<List<FormatNode>> sequenceStack = new ArrayDeque<>();
 
     public PackTreeBuilder(RubyContext context, Node currentNode) {
         this.context = context;
         this.currentNode = currentNode;
+        sharedTreeBuilder = new SharedTreeBuilder(context);
         pushSequence();
     }
 
@@ -180,74 +183,67 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     public void integer(int size, ByteOrder byteOrder, PackParser.CountContext count) {
-        appendNode(applyCount(count, writeInteger(size, byteOrder)));
+        appendNode(sharedTreeBuilder.applyCount(count, writeInteger(size, byteOrder)));
     }
 
     @Override
     public void exitUtf8Character(PackParser.Utf8CharacterContext ctx) {
         unify(FormatEncoding.UTF_8);
 
-        appendNode(applyCount(ctx.count(), WriteUTF8CharacterNodeGen.create(context,
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteUTF8CharacterNodeGen.create(context,
                 ToLongNodeGen.create(context,
                         ReadValueNodeGen.create(context, new SourceNode())))));
     }
 
     @Override
     public void exitBerInteger(PackParser.BerIntegerContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                WriteBERNodeGen.create(context, ReadLongOrBigIntegerNodeGen.create(context, new SourceNode()))));
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(), WriteBERNodeGen.create(context, ReadLongOrBigIntegerNodeGen.create(context, new SourceNode()))));
 
     }
 
     @Override
     public void exitF64Native(PackParser.F64NativeContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(64, ByteOrder.nativeOrder(),
-                        ReinterpretLongNodeGen.create(context,
-                                ReadDoubleNodeGen.create(context, new SourceNode())))));
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(), writeInteger(64, ByteOrder.nativeOrder(),
+                ReinterpretLongNodeGen.create(context,
+                        ReadDoubleNodeGen.create(context, new SourceNode())))));
     }
 
     @Override
     public void exitF32Native(PackParser.F32NativeContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(32, ByteOrder.nativeOrder(),
-                        ReinterpretLongNodeGen.create(context,
-                                AsSinglePrecisionNodeGen.create(context,
-                                        ReadDoubleNodeGen.create(context, new SourceNode()))))));
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(), writeInteger(32, ByteOrder.nativeOrder(),
+                ReinterpretLongNodeGen.create(context,
+                        AsSinglePrecisionNodeGen.create(context,
+                                ReadDoubleNodeGen.create(context, new SourceNode()))))));
     }
 
     @Override
     public void exitF64Little(PackParser.F64LittleContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(64, ByteOrder.LITTLE_ENDIAN,
-                        ReinterpretLongNodeGen.create(context,
-                                ReadDoubleNodeGen.create(context, new SourceNode())))));
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(), writeInteger(64, ByteOrder.LITTLE_ENDIAN,
+                ReinterpretLongNodeGen.create(context,
+                        ReadDoubleNodeGen.create(context, new SourceNode())))));
     }
 
     @Override
     public void exitF32Little(PackParser.F32LittleContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(32, ByteOrder.LITTLE_ENDIAN,
-                        ReinterpretLongNodeGen.create(context,
-                                AsSinglePrecisionNodeGen.create(context,
-                                    ReadDoubleNodeGen.create(context, new SourceNode()))))));
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(), writeInteger(32, ByteOrder.LITTLE_ENDIAN,
+                ReinterpretLongNodeGen.create(context,
+                        AsSinglePrecisionNodeGen.create(context,
+                                ReadDoubleNodeGen.create(context, new SourceNode()))))));
     }
 
     @Override
     public void exitF64Big(PackParser.F64BigContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(64, ByteOrder.BIG_ENDIAN,
-                        ReinterpretLongNodeGen.create(context,
-                                ReadDoubleNodeGen.create(context, new SourceNode())))));
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(), writeInteger(64, ByteOrder.BIG_ENDIAN,
+                ReinterpretLongNodeGen.create(context,
+                        ReadDoubleNodeGen.create(context, new SourceNode())))));
     }
 
     @Override
     public void exitF32Big(PackParser.F32BigContext ctx) {
-        appendNode(applyCount(ctx.count(),
-                writeInteger(32, ByteOrder.BIG_ENDIAN,
-                        ReinterpretLongNodeGen.create(context,
-                                AsSinglePrecisionNodeGen.create(context,
-                                    ReadDoubleNodeGen.create(context, new SourceNode()))))));
+        appendNode(sharedTreeBuilder.applyCount(ctx.count(), writeInteger(32, ByteOrder.BIG_ENDIAN,
+                ReinterpretLongNodeGen.create(context,
+                        AsSinglePrecisionNodeGen.create(context,
+                                ReadDoubleNodeGen.create(context, new SourceNode()))))));
     }
 
     @Override
@@ -378,13 +374,13 @@ public class PackTreeBuilder extends PackBaseListener {
     @Override
     public void exitBack(PackParser.BackContext ctx) {
         if (ctx.count() == null || ctx.count().INT() != null) {
-            appendNode(applyCount(ctx.count(), new BackNode(context)));
+            appendNode(sharedTreeBuilder.applyCount(ctx.count(), new BackNode(context)));
         }
     }
 
     @Override
     public void exitNullByte(PackParser.NullByteContext ctx) {
-        appendNode((applyCount(ctx.count(), new WriteByteNode(context, (byte) 0))));
+        appendNode((sharedTreeBuilder.applyCount(ctx.count(), new WriteByteNode(context, (byte) 0))));
     }
 
     @Override
@@ -533,16 +529,6 @@ public class PackTreeBuilder extends PackBaseListener {
 
     }
 
-    private FormatNode applyCount(PackParser.CountContext count, FormatNode node) {
-        if (count == null) {
-            return node;
-        } else if (count.INT() != null) {
-            return new NNode(context, Integer.parseInt(count.INT().getText()), node);
-        } else {
-            return new StarNode(context, node);
-        }
-    }
-    
     private void unify(FormatEncoding other) {
         encoding = encoding.unifyWith(other);
     }
