@@ -5,6 +5,7 @@ import com.oracle.truffle.api.Truffle;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.format.DescriptionTruncater;
 import org.jruby.truffle.core.format.FormatRootNode;
 import org.jruby.truffle.core.format.FormatErrorListener;
 import org.jruby.truffle.core.format.LoopRecovery;
@@ -46,22 +47,7 @@ public class PackCompiler {
         parser.sequence();
 
         return Truffle.getRuntime().createCallTarget(
-                new FormatRootNode(describe(format), builder.getEncoding(), builder.getNode()));
+                new FormatRootNode(DescriptionTruncater.trunate(format), builder.getEncoding(), builder.getNode()));
     }
-
-    /**
-     * Provide a simple string describing the format expression that is short
-     * enough to be used in Truffle and Graal diagnostics.
-     */
-    public static String describe(String format) {
-        format = format.replace("\\s+", "");
-
-        if (format.length() > 10) {
-            format = format.substring(0, 10) + "…";
-        }
-
-        return format;
-    }
-
 
 }
