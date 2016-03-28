@@ -57,10 +57,11 @@ public class PrintfCompiler {
         parser.sequence();
 
         return Truffle.getRuntime().createCallTarget(
-                new FormatRootNode(DescriptionTruncater.trunate(format.toString()), FormatEncoding.DEFAULT, builder.getNode()));
+                new FormatRootNode(DescriptionTruncater.trunate(format.toString()),
+                        FormatEncoding.DEFAULT, builder.getNode()));
     }
 
-    public static char[] bytesToChars(byte[] bytes) {
+    private static char[] bytesToChars(byte[] bytes) {
         final char[] chars = new char[bytes.length];
 
         for (int n = 0; n < bytes.length; n++) {
