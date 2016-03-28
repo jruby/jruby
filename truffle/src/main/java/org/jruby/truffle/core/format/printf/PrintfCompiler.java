@@ -19,7 +19,6 @@ import org.jruby.truffle.core.format.FormatRootNode;
 import org.jruby.truffle.core.format.FormatErrorListener;
 import org.jruby.truffle.core.format.FormatEncoding;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.util.ByteList;
 
 import org.jruby.truffle.core.format.printf.PrintfLexer;
 import org.jruby.truffle.core.format.printf.PrintfParser;
@@ -34,10 +33,10 @@ public class PrintfCompiler {
         this.currentNode = currentNode;
     }
 
-    public CallTarget compile(ByteList format) {
+    public CallTarget compile(String formatString, byte[] format) {
         final FormatErrorListener errorListener = new FormatErrorListener(context, currentNode);
 
-        final ANTLRInputStream input = new ANTLRInputStream(bytesToChars(format.bytes()), format.realSize());
+        final ANTLRInputStream input = new ANTLRInputStream(bytesToChars(format), format.length);
 
         final PrintfLexer lexer = new PrintfLexer(input);
         lexer.removeErrorListeners();
@@ -56,7 +55,7 @@ public class PrintfCompiler {
         parser.sequence();
 
         return Truffle.getRuntime().createCallTarget(
-                new FormatRootNode(DescriptionTruncater.trunate(format.toString()),
+                new FormatRootNode(DescriptionTruncater.trunate(formatString),
                         FormatEncoding.DEFAULT, builder.getNode()));
     }
 

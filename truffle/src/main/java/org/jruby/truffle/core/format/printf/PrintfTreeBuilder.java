@@ -44,11 +44,11 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
     public static final int DEFAULT = -1;
 
     private final RubyContext context;
-    private final ByteList source;
+    private final byte[] source;
 
     private final List<FormatNode> sequence = new ArrayList<>();
 
-    public PrintfTreeBuilder(RubyContext context, ByteList source) {
+    public PrintfTreeBuilder(RubyContext context, byte[] source) {
         this.context = context;
         this.source = source;
     }

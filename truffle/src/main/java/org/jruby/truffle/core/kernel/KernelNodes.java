@@ -2045,7 +2045,7 @@ public abstract class KernelNodes {
             assert RubyGuards.isRubyString(format);
 
             try {
-                return new PrintfCompiler(getContext(), this).compile(StringOperations.getByteListReadOnly(format));
+                return new PrintfCompiler(getContext(), this).compile(format.toString(), Layouts.STRING.getRope(format).getBytes());
             } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
