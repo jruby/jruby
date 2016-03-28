@@ -13,10 +13,11 @@ $ jt bench compare BENCH
 
 Then choose a THRESHOLD (between the number from the compare and 100%) and
 $ git bisect start BADCOMMIT GOODCOMMIT
-$ git bisect run ruby tool/truffle-bisect.rb BENCH THRESHOLD
+$ git bisect run ruby tool/truffle/bisect.rb BENCH THRESHOLD
 =end
 
 def jt(cmd)
+  puts "jt #{cmd}"
   cmd = "ruby tool/jt.rb #{cmd}"
   output = `#{cmd}`
   raise "#{cmd} failed: #{$?}" unless $?.success?
@@ -31,18 +32,14 @@ end
 bench = String(ARGV[0])
 threshold = Integer(ARGV[1])
 
-jt 'build' rescue nil
-unless $?.success?
-  puts "Normal build failed, doing a rebuild"
+begin
   jt 'rebuild'
+rescue
+  puts "rebuild failed, skipping revision"
+  exit 125
 end
 
-output = (jt("bench compare #{bench}") rescue nil)
-unless $?.success?
-  puts "Benchmark failed, trying a rebuild"
-  jt 'rebuild'
-  output = jt("bench compare #{bench}")
-end
+output = jt("bench compare #{bench}")
 
 /^#{Regexp.escape bench} (\d+)\./ =~ output
 raise "Unexpected output:\n#{output}" unless $1
@@ -50,7 +47,9 @@ percents = Integer($1)
 puts percents
 
 if percents < threshold
+  puts "bad"
   exit 1
 else
+  puts "good"
   exit 0
 end

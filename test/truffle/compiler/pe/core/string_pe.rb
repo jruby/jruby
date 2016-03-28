@@ -23,6 +23,14 @@ example "x = 'abc'; x == x", true
 example "x = 'abc'; x == x.dup", true
 example "x = 'abc'; 'abc' == x.dup", true
 
+example "'A' == String.from_codepoint(65, Encoding::US_ASCII)", true
+example "'A' == 65.chr", true
+example "'A'.ord == 65", true
+
+example "'aba'[0] == 'aca'[-1]", true
+
+example "x = 'abc'; x == x.b", true
+
 example "'abc'.ascii_only?", true
 example "'こにちわ'.ascii_only?", false
 
@@ -35,3 +43,9 @@ example "'こにちわ'.valid_encoding?", true
 example "''.empty?", true
 example "'abc'.empty?", false
 example "'こにちわ'.empty?", false
+
+example "x = 'abc'; y = 'xyz'; x.replace(y) == y", true
+
+example "'abc'.getbyte(0) == 97", true
+example "'abc'.getbyte(-1) == 99", true
+example "'abc'.getbyte(10_000) == nil", true

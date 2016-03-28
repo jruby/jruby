@@ -165,9 +165,9 @@ public abstract class StringOperations {
         return encoding;
     }
 
-    public static void forceEncoding(DynamicObject string, Encoding encoding) {
+    public static void forceEncodingVerySlow(DynamicObject string, Encoding encoding) {
         final Rope oldRope = Layouts.STRING.getRope(string);
-        StringOperations.setRope(string, RopeOperations.withEncoding(oldRope, encoding, CodeRange.CR_UNKNOWN));
+        StringOperations.setRope(string, RopeOperations.withEncodingVerySlow(oldRope, encoding, CodeRange.CR_UNKNOWN));
     }
 
     public static int normalizeIndex(int length, int index) {

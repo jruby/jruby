@@ -17,7 +17,6 @@ package org.jruby.truffle.core.rope;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -29,7 +28,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -76,7 +75,7 @@ public abstract class RopeNodes {
                 return RopeConstants.EMPTY_ASCII_8BIT_ROPE;
             }
 
-            return RopeOperations.withEncoding(RopeConstants.EMPTY_UTF8_ROPE, base.getEncoding());
+            return RopeOperations.withEncodingVerySlow(RopeConstants.EMPTY_UTF8_ROPE, base.getEncoding());
         }
 
         @Specialization(guards = "byteLength == 1")
@@ -98,7 +97,7 @@ public abstract class RopeNodes {
                 return RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[index];
             }
 
-            return RopeOperations.withEncoding(RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[index], base.getEncoding());
+            return RopeOperations.withEncodingVerySlow(RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[index], base.getEncoding());
         }
 
         @Specialization(guards = { "byteLength > 1", "sameAsBase(base, offset, byteLength)" })
@@ -297,6 +296,10 @@ public abstract class RopeNodes {
             @NodeChild(type = RubyNode.class, value = "characterLength")
     })
     public abstract static class MakeLeafRopeNode extends RubyNode {
+
+        public static MakeLeafRopeNode create(RubyContext context, SourceSection sourceSection) {
+            return RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null, null);
+        }
 
         public MakeLeafRopeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -560,6 +563,67 @@ public abstract class RopeNodes {
                     System.err.print("|  ");
                 }
             }
+        }
+
+    }
+
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "rope"),
+            @NodeChild(type = RubyNode.class, value = "encoding"),
+            @NodeChild(type = RubyNode.class, value = "codeRange")
+    })
+    public abstract static class WithEncodingNode extends RubyNode {
+
+        public WithEncodingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract Rope executeWithEncoding(Rope rope, Encoding encoding, CodeRange codeRange);
+
+        @Specialization(guards = "rope.getEncoding() == encoding")
+        public Rope withEncodingSameEncoding(Rope rope, Encoding encoding, CodeRange codeRange) {
+            return rope;
+        }
+
+        @Specialization(guards = {
+                "rope.getEncoding() != encoding",
+                "rope.getCodeRange() == codeRange"
+        })
+        public Rope withEncodingSameCodeRange(Rope rope, Encoding encoding, CodeRange codeRange) {
+            return rope.withEncoding(encoding, codeRange);
+        }
+
+        @Specialization(guards = {
+                "rope.getEncoding() != encoding",
+                "rope.getCodeRange() != codeRange",
+                "isAsciiCompatbileChange(rope, encoding)",
+                "rope.getClass() == cachedRopeClass"
+        }, limit = "getCacheLimit()")
+        public Rope withEncodingCr7Bit(Rope rope, Encoding encoding, CodeRange codeRange,
+                                       @Cached("rope.getClass()") Class<? extends Rope> cachedRopeClass) {
+            return cachedRopeClass.cast(rope).withEncoding(encoding, CodeRange.CR_7BIT);
+        }
+
+        @Specialization(guards = {
+                "rope.getEncoding() != encoding",
+                "rope.getCodeRange() != codeRange",
+                "!isAsciiCompatbileChange(rope, encoding)"
+        })
+        public Rope withEncoding(Rope rope, Encoding encoding, CodeRange codeRange,
+                                 @Cached("create(getContext(), getSourceSection())") MakeLeafRopeNode makeLeafRopeNode) {
+            return makeLeafRopeNode.executeMake(rope.getBytes(), encoding, codeRange, NotProvided.INSTANCE);
+        }
+
+        protected static boolean isAsciiCompatbileChange(Rope rope, Encoding encoding) {
+            return rope.getCodeRange() == CR_7BIT && encoding.isAsciiCompatible();
+        }
+
+        protected static boolean is7Bit(Rope rope) {
+            return rope.getCodeRange() == CR_7BIT;
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().ROPE_CLASS_CACHE;
         }
 
     }

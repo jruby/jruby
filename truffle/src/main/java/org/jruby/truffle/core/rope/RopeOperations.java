@@ -85,7 +85,7 @@ public class RopeOperations {
         }
     }
 
-    public static Rope withEncoding(Rope originalRope, Encoding newEncoding, CodeRange newCodeRange) {
+    public static Rope withEncodingVerySlow(Rope originalRope, Encoding newEncoding, CodeRange newCodeRange) {
         if ((originalRope.getEncoding() == newEncoding) && (originalRope.getCodeRange() == newCodeRange)) {
             return originalRope;
         }
@@ -101,8 +101,8 @@ public class RopeOperations {
         return create(originalRope.getBytes(), newEncoding, newCodeRange);
     }
 
-    public static Rope withEncoding(Rope originalRope, Encoding newEncoding) {
-        return withEncoding(originalRope, newEncoding, originalRope.getCodeRange());
+    public static Rope withEncodingVerySlow(Rope originalRope, Encoding newEncoding) {
+        return withEncodingVerySlow(originalRope, newEncoding, originalRope.getCodeRange());
     }
 
     @TruffleBoundary

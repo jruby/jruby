@@ -55,6 +55,13 @@ public class RopeTable {
             lock.readLock().unlock();
         }
 
+        // The only time we should have a null encoding is if we want to find a rope with the same logical byte[] as
+        // the one supplied to this method. If we've made it this far, no such rope exists, so return null immediately
+        // to back out of the recursive call.
+        if (encoding == null) {
+            return null;
+        }
+
         lock.writeLock().lock();
 
         try {
@@ -68,7 +75,19 @@ public class RopeTable {
                 }
             }
 
-            final Rope rope = RopeOperations.create(bytes, encoding, codeRange);
+            // At this point, we were unable to find a rope with the same bytes and encoding (i.e., a direct match).
+            // However, there may still be a rope with the same byte[] and sharing a direct byte[] can still allow some
+            // reference equality optimizations. So, do another search but with a marker encoding. The only guarantee
+            // we can make about the resulting rope is that it would have the same logical byte[], but that's good enough
+            // for our purposes.
+            final Rope ropeWithSameBytesButDifferentEncoding = getRope(bytes, null ,codeRange);
+
+            final Rope rope;
+            if (ropeWithSameBytesButDifferentEncoding != null) {
+                rope = RopeOperations.create(ropeWithSameBytesButDifferentEncoding.getBytes(), encoding, codeRange);
+            } else {
+                rope = RopeOperations.create(bytes, encoding, codeRange);
+            }
 
             ropesTable.put(key, new WeakReference<>(rope));
 
@@ -100,7 +119,7 @@ public class RopeTable {
             if (o instanceof Key) {
                 final Key other = (Key) o;
 
-                return encoding == other.encoding && Arrays.equals(bytes, other.bytes);
+                return ((encoding == other.encoding) || (encoding == null)) && Arrays.equals(bytes, other.bytes);
             }
 
             return false;

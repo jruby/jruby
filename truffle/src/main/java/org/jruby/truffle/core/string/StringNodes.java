@@ -546,7 +546,7 @@ public abstract class StringNodes {
                 if (begin == stringLength) {
                     final ByteList byteList = new ByteList();
                     byteList.setEncoding(encoding(string));
-                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.withEncoding(RopeConstants.EMPTY_ASCII_8BIT_ROPE, encoding(string)), null);
+                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.withEncodingVerySlow(RopeConstants.EMPTY_ASCII_8BIT_ROPE, encoding(string)), null);
                 }
 
                 end = StringOperations.normalizeIndex(stringLength, end);
@@ -667,13 +667,18 @@ public abstract class StringNodes {
     @CoreMethod(names = "b", taintFromSelf = true)
     public abstract static class BNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.WithEncodingNode withEncodingNode;
+
         public BNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            withEncodingNode = RopeNodesFactory.WithEncodingNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @Specialization
         public DynamicObject b(DynamicObject string) {
-            return createString(RopeOperations.withEncoding(rope(string), ASCIIEncoding.INSTANCE));
+            final Rope newRope = withEncodingNode.executeWithEncoding(rope(string), ASCIIEncoding.INSTANCE, CodeRange.CR_UNKNOWN);
+
+            return createString(newRope);
         }
 
     }
@@ -851,7 +856,7 @@ public abstract class StringNodes {
                 tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getJRubyRuntime(), table, tables, false, enc);
             }
 
-            return StringSupport.countCommon19(StringOperations.getByteListReadOnly(string), getContext().getJRubyRuntime(), table, tables, enc);
+            return StringSupport.strCount(StringOperations.getByteListReadOnly(string), getContext().getJRubyRuntime(), table, tables, enc);
         }
     }
 
@@ -1202,10 +1207,12 @@ public abstract class StringNodes {
     @CoreMethod(names = "force_encoding", required = 1, raiseIfFrozenSelf = true)
     public abstract static class ForceEncodingNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.WithEncodingNode withEncodingNode;
         @Child private ToStrNode toStrNode;
 
         public ForceEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            withEncodingNode = RopeNodesFactory.WithEncodingNodeGen.create(context, sourceSection, null, null, null);
         }
 
         @TruffleBoundary
@@ -1228,7 +1235,8 @@ public abstract class StringNodes {
                 if (mutableRopeProfile.profile(rope instanceof MutableRope)) {
                     ((MutableRope) rope).getByteList().setEncoding(encoding);
                 } else {
-                    StringOperations.forceEncoding(string, encoding);
+                    final Rope newRope = withEncodingNode.executeWithEncoding(rope, encoding, CodeRange.CR_UNKNOWN);
+                    StringOperations.setRope(string, newRope);
                 }
             }
 
@@ -2670,7 +2678,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject clear(DynamicObject string) {
-            StringOperations.setRope(string, RopeOperations.withEncoding(EMPTY_UTF8_ROPE, encoding(string)));
+            StringOperations.setRope(string, RopeOperations.withEncodingVerySlow(EMPTY_UTF8_ROPE, encoding(string)));
 
             return string;
         }

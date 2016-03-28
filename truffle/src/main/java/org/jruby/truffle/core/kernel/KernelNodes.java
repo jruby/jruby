@@ -1590,13 +1590,13 @@ public abstract class KernelNodes {
             final String feature = featureString.toString();
 
             // Pysch loads either the jar or the so - we need to intercept
-            if (feature.equals("psych.so") && callerIs("psych.rb")) {
+            if (feature.equals("psych.so") && callerIs("stdlib/psych.rb")) {
                 getContext().getFeatureLoader().require(frame, "truffle/psych.rb", callNode);
                 return true;
             }
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
-            if (feature.equals("strscan") && callerIs("erb.rb")) {
+            if (feature.equals("strscan") && callerIs("stdlib/erb.rb")) {
                 throw new RaiseException(coreLibrary().loadErrorCannotLoad(feature, this));
             }
 
@@ -1604,8 +1604,16 @@ public abstract class KernelNodes {
         }
 
         private boolean callerIs(String caller) {
-            return getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode()
-                    .getEncapsulatingSourceSection().getSource().getName().endsWith(caller);
+            for (Activation activation : getContext().getCallStack().getBacktrace(this).getActivations()) {
+
+                final Source source = activation.getCallNode().getEncapsulatingSourceSection().getSource();
+
+                if (source != null && source.getName().endsWith(caller)) {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 
@@ -2003,17 +2011,17 @@ public abstract class KernelNodes {
             final DynamicObject string = createString(new ByteList((byte[]) result.getOutput(), 0, result.getOutputLength()));
 
             if (formatLength == 0) {
-                StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
+                StringOperations.forceEncodingVerySlow(string, USASCIIEncoding.INSTANCE);
             } else {
                 switch (result.getEncoding()) {
                     case DEFAULT:
                     case ASCII_8BIT:
                         break;
                     case US_ASCII:
-                        StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
+                        StringOperations.forceEncodingVerySlow(string, USASCIIEncoding.INSTANCE);
                         break;
                     case UTF_8:
-                        StringOperations.forceEncoding(string, UTF8Encoding.INSTANCE);
+                        StringOperations.forceEncodingVerySlow(string, UTF8Encoding.INSTANCE);
                         break;
                     default:
                         throw new UnsupportedOperationException();

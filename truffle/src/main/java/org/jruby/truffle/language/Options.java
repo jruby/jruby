@@ -44,6 +44,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_PACK_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_RECOVER_LOOP_MIN;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_UNROLL_LIMIT;
 import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_USE_JAVA;
+import static org.jruby.util.cli.Options.TRUFFLE_ROPE_CLASS_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_ROPE_LAZY_SUBSTRINGS;
 import static org.jruby.util.cli.Options.TRUFFLE_SYMBOL_TO_PROC_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_THREAD_CACHE;
@@ -91,6 +92,7 @@ public class Options {
     public final int CLASS_CACHE = TRUFFLE_CLASS_CACHE.load();
     public final int ENCODING_COMPATIBILE_QUERY_CACHE = TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE.load();
     public final int THREAD_CACHE = TRUFFLE_THREAD_CACHE.load();
+    public final int ROPE_CLASS_CACHE = TRUFFLE_ROPE_CLASS_CACHE.load();
 
     // Cloning and inlining
 
