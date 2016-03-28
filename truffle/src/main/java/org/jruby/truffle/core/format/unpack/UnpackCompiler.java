@@ -16,7 +16,6 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.DescriptionTruncater;
 import org.jruby.truffle.core.format.LoopRecovery;
-import org.jruby.truffle.core.format.pack.PackCompiler;
 import org.jruby.truffle.core.format.FormatErrorListener;
 import org.jruby.truffle.core.format.pack.PackLexer;
 import org.jruby.truffle.core.format.pack.PackParser;
