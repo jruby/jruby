@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
@@ -25,48 +24,50 @@ import java.math.BigInteger;
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
-public abstract class AsUnsignedNode extends FormatNode {
+public abstract class ReinterpretAsUnsignedNode extends FormatNode {
 
     @Child private FixnumOrBignumNode fixnumOrBignumNode;
 
-    public AsUnsignedNode(RubyContext context) {
+    public ReinterpretAsUnsignedNode(RubyContext context) {
         super(context);
     }
 
     @Specialization
-    public MissingValue asUnsigned(VirtualFrame frame, MissingValue missingValue) {
+    public MissingValue asUnsigned(MissingValue missingValue) {
         return missingValue;
     }
 
     @Specialization(guards = "isNil(nil)")
-    public DynamicObject asUnsigned(VirtualFrame frame, DynamicObject nil) {
+    public DynamicObject asUnsigned(DynamicObject nil) {
         return nil;
     }
 
     @Specialization
-    public int asUnsigned(VirtualFrame frame, short value) {
+    public int asUnsigned(short value) {
         return value & 0xffff;
     }
 
     @Specialization
-    public long asUnsigned(VirtualFrame frame, int value) {
+    public long asUnsigned(int value) {
         return value & 0xffffffffL;
     }
 
     @Specialization
-    public Object asUnsigned(VirtualFrame frame, long value) {
+    public Object asUnsigned(long value) {
         if (fixnumOrBignumNode == null) {
             CompilerDirectives.transferToInterpreter();
             fixnumOrBignumNode = insert(FixnumOrBignumNode.create(getContext(), getSourceSection()));
         }
 
-        return fixnumOrBignumNode.fixnumOrBignum(asUnsigned(value));
+        return fixnumOrBignumNode.fixnumOrBignum(asUnsignedBigInteger(value));
     }
 
     private static final long UNSIGNED_LONG_MASK = 0x7fffffffffffffffL;
 
     @CompilerDirectives.TruffleBoundary
-    private BigInteger asUnsigned(long value) {
+    private BigInteger asUnsignedBigInteger(long value) {
+        // TODO CS 28-Mar-16 can't we work out if it would fit into a long, and not create a BigInteger?
+
         BigInteger bigIntegerValue = BigInteger.valueOf(value & UNSIGNED_LONG_MASK);
 
         if (value < 0) {
@@ -75,6 +76,5 @@ public abstract class AsUnsignedNode extends FormatNode {
 
         return bigIntegerValue;
     }
-
 
 }

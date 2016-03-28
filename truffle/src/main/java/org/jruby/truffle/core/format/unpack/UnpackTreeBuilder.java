@@ -13,6 +13,7 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.SharedTreeBuilder;
+import org.jruby.truffle.core.format.convert.ReinterpretAsUnsignedNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.control.AtUnpackNode;
 import org.jruby.truffle.core.format.control.BackUnpackNode;
@@ -37,7 +38,6 @@ import org.jruby.truffle.core.format.read.bytes.ReadHexStringNodeGen;
 import org.jruby.truffle.core.format.read.bytes.ReadMIMEStringNodeGen;
 import org.jruby.truffle.core.format.read.bytes.ReadUTF8CharacterNodeGen;
 import org.jruby.truffle.core.format.read.bytes.ReadUUStringNodeGen;
-import org.jruby.truffle.core.format.convert.AsUnsignedNodeGen;
 import org.jruby.truffle.core.format.pack.PackBaseListener;
 import org.jruby.truffle.core.format.pack.PackParser;
 import org.jruby.truffle.core.format.write.array.WriteValueNodeGen;
@@ -446,7 +446,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
         }
 
         if (!signed) {
-            decodeNode = AsUnsignedNodeGen.create(context, decodeNode);
+            decodeNode = ReinterpretAsUnsignedNodeGen.create(context, decodeNode);
         }
 
         return decodeNode;
