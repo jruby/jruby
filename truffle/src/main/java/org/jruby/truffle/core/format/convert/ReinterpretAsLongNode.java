@@ -26,7 +26,7 @@ public abstract class ReinterpretAsLongNode extends FormatNode {
 
     @Specialization
     public long asLong(float object) {
-        return (long) Float.floatToIntBits(object);
+        return Float.floatToIntBits(object);
     }
 
     @Specialization
