@@ -15,15 +15,12 @@ import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 
-/**
- * Convert a {@code double} value to a {@code float}.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
-public abstract class AsSinglePrecisionNode extends FormatNode {
+public abstract class NarrowFloatPrecisionNode extends FormatNode {
 
-    public AsSinglePrecisionNode(RubyContext context) {
+    public NarrowFloatPrecisionNode(RubyContext context) {
         super(context);
     }
 

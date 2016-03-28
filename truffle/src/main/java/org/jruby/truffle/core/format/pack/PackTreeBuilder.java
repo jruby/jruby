@@ -13,6 +13,7 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.SharedTreeBuilder;
+import org.jruby.truffle.core.format.convert.NarrowFloatPrecisionNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.control.AtNode;
 import org.jruby.truffle.core.format.control.BackNode;
@@ -21,7 +22,6 @@ import org.jruby.truffle.core.format.read.array.ReadDoubleNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadLongOrBigIntegerNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadStringNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadValueNodeGen;
-import org.jruby.truffle.core.format.convert.AsSinglePrecisionNodeGen;
 import org.jruby.truffle.core.format.convert.ReinterpretLongNodeGen;
 import org.jruby.truffle.core.format.convert.ToLongNodeGen;
 import org.jruby.truffle.core.format.read.array.PNode;
@@ -49,9 +49,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-
-import org.jruby.truffle.core.format.pack.PackBaseListener;
-import org.jruby.truffle.core.format.pack.PackParser;
 
 public class PackTreeBuilder extends PackBaseListener {
 
@@ -388,7 +385,7 @@ public class PackTreeBuilder extends PackBaseListener {
 
         switch (size) {
             case 32:
-                typeNode = AsSinglePrecisionNodeGen.create(context, readNode);
+                typeNode = NarrowFloatPrecisionNodeGen.create(context, readNode);
                 break;
             case 64:
                 typeNode = readNode;
