@@ -425,7 +425,7 @@ public class PackTreeBuilder extends PackBaseListener {
                     return Write64BigNodeGen.create(context, readNode);
                 }
             default:
-                throw new UnsupportedOperationException();
+                throw new IllegalArgumentException();
         }
     }
 

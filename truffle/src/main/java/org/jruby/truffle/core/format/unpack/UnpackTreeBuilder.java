@@ -442,7 +442,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
                 }
                 break;
             default:
-                throw new UnsupportedOperationException();
+                throw new IllegalArgumentException();
         }
 
         if (!signed) {
