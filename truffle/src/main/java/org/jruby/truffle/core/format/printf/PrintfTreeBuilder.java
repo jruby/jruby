@@ -65,8 +65,9 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
         sequence.add(
                 WriteBytesNodeGen.create(context,
-                    ToStringNodeGen.create(context, true, "to_s", false, new ByteList(),
-                        ReadHashValueNodeGen.create(context, key, new SourceNode()))));
+                        ToStringNodeGen.create(context, true, "to_s", false, new ByteList(),
+                                ReadHashValueNodeGen.create(context, key,
+                                        new SourceNode()))));
     }
 
     @Override
@@ -139,10 +140,12 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                 if (ctx.ANGLE_KEY() == null) {
                     if (spacePadding == DEFAULT) {
                         node = WriteBytesNodeGen.create(context, ReadStringNodeGen.create(
-                                context, true, "to_s", false, new ByteList(), new SourceNode()));
+                                context, true, "to_s", false, new ByteList(),
+                                        new SourceNode()));
                     } else {
                         node = WritePaddedBytesNodeGen.create(context, spacePadding, leftJustified,
-                                ReadStringNodeGen.create(context, true, "to_s", false, new ByteList(), new SourceNode()));
+                                ReadStringNodeGen.create(context, true, "to_s", false, new ByteList(),
+                                        new SourceNode()));
                     }
                 } else {
                     if (spacePadding == DEFAULT) {
@@ -169,11 +172,11 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
                 final FormatNode zeroPaddingNode;
 
-                        /*
-                         * Precision and zero padding both set zero padding -
-                         * but precision has priority and explicit zero padding
-                         * is actually ignored if it's set.
-                         */
+                /*
+                 * Precision and zero padding both set zero padding -
+                 * but precision has priority and explicit zero padding
+                 * is actually ignored if it's set.
+                 */
 
                 if (zeroPadding == PADDING_FROM_ARGUMENT) {
                     zeroPaddingNode = ReadIntegerNodeGen.create(context, new SourceNode());
