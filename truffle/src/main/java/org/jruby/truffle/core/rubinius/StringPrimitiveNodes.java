@@ -1302,8 +1302,11 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_rindex", lowerFixnumParameters = 1)
     public static abstract class StringRindexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
+        @Child private RopeNodes.GetByteNode getByteNode;
+
         public StringRindexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            getByteNode = RopeNodes.GetByteNode.create(context, sourceSection);
         }
 
         @Specialization(guards = "isRubyString(pattern)")
@@ -1332,7 +1335,7 @@ public abstract class StringPrimitiveNodes {
                 }
 
                 case 1: {
-                    final int matcher = patternRope.get(0);
+                    final int matcher = getByteNode.executeGetByte(patternRope, 0);
 
                     while (pos >= 0) {
                         if (stringRope.get(pos) == matcher) {
