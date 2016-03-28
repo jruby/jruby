@@ -493,21 +493,9 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     private void bitString(ByteOrder byteOrder, PackParser.CountContext ctx) {
-        final boolean star;
-        final int length;
+        final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx);
 
-        if (ctx == null) {
-            star = false;
-            length = 1;
-        } else if (ctx.INT() == null) {
-            star = true;
-            length = 0;
-        } else {
-            star = false;
-            length = Integer.parseInt(ctx.INT().getText());
-        }
-
-        appendNode(WriteBitStringNodeGen.create(context, byteOrder, star, length,
+        appendNode(WriteBitStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(),
                 ReadStringNodeGen.create(context, true, "to_str",
                         false, context.getCoreLibrary().getNilObject(), new SourceNode())));
     }

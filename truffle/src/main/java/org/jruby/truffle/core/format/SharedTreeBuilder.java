@@ -32,4 +32,41 @@ public class SharedTreeBuilder {
         }
     }
 
+    public StarLength parseCountContext(PackParser.CountContext ctx) {
+        final boolean star;
+        final int length;
+
+        if (ctx == null) {
+            star = false;
+            length = 1;
+        } else if (ctx.INT() == null) {
+            star = true;
+            length = 0;
+        } else {
+            star = false;
+            length = Integer.parseInt(ctx.INT().getText());
+        }
+
+        return new StarLength(star, length);
+    }
+
+    public static class StarLength {
+
+        private final boolean star;
+        private final int length;
+
+        public StarLength(boolean star, int length) {
+            this.star = star;
+            this.length = length;
+        }
+
+        public boolean isStar() {
+            return star;
+        }
+
+        public int getLength() {
+            return length;
+        }
+    }
+
 }

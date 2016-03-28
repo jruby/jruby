@@ -427,41 +427,17 @@ public class UnpackTreeBuilder extends PackBaseListener {
     }
 
     private void bitString(ByteOrder byteOrder, PackParser.CountContext ctx) {
-        final boolean star;
-        final int length;
-
-        if (ctx == null) {
-            star = false;
-            length = 1;
-        } else if (ctx.INT() == null) {
-            star = true;
-            length = 0;
-        } else {
-            star = false;
-            length = Integer.parseInt(ctx.INT().getText());
-        }
+        final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx);
 
         appendNode(WriteValueNodeGen.create(context,
-                ReadBitStringNodeGen.create(context, byteOrder, star, length, new SourceNode())));
+                ReadBitStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(), new SourceNode())));
     }
 
     private void hexString(ByteOrder byteOrder, PackParser.CountContext ctx) {
-        final boolean star;
-        final int length;
-
-        if (ctx == null) {
-            star = false;
-            length = 1;
-        } else if (ctx.INT() == null) {
-            star = true;
-            length = 0;
-        } else {
-            star = false;
-            length = Integer.parseInt(ctx.INT().getText());
-        }
+        final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx);
 
         appendNode(WriteValueNodeGen.create(context,
-                ReadHexStringNodeGen.create(context, byteOrder, star, length, new SourceNode())));
+                ReadHexStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(), new SourceNode())));
 
     }
 
