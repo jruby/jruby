@@ -47,4 +47,8 @@ public class FormatGuards {
         return RubyGuards.isRubyArray(object);
     }
 
+    public static boolean isMissingValue(Object object) {
+        return object == MissingValue.INSTANCE;
+    }
+
 }

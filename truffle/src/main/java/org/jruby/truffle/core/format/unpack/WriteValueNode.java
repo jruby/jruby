@@ -59,8 +59,4 @@ public abstract class WriteValueNode extends FormatNode {
         return newOutput;
     }
 
-    protected boolean isMissingValue(Object object) {
-        return object instanceof MissingValue;
-    }
-
 }
