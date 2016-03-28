@@ -310,11 +310,6 @@ public class UnpackTreeBuilder extends PackBaseListener {
     }
 
     @Override
-    public void exitPointer(PackParser.PointerContext ctx) {
-        // Just do nothing
-    }
-
-    @Override
     public void exitAt(PackParser.AtContext ctx) {
         final int position;
 
