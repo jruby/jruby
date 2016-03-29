@@ -42,9 +42,12 @@ public abstract class DecodeInteger32BigNode extends FormatNode {
 
     @Specialization
     public int decode(byte[] bytes) {
-        final ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        return buffer.getInt();
+        int value = 0;
+        value |= (bytes[0] & 0xff) << 24;
+        value |= (bytes[1] & 0xff) << 16;
+        value |= (bytes[2] & 0xff) << 8;
+        value |=  bytes[3] & 0xff;
+        return value;
     }
 
 }

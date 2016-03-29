@@ -42,9 +42,10 @@ public abstract class DecodeInteger16BigNode extends FormatNode {
 
     @Specialization
     public short decode(byte[] bytes) {
-        final ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        return buffer.getShort();
+        short value = 0;
+        value |= (bytes[0] & 0xff) << 8;
+        value |=  bytes[1] & 0xff;
+        return value;
     }
 
 }
