@@ -50,7 +50,7 @@ public abstract class DecodeInteger64LittleNode extends FormatNode {
         value |= (long) (bytes[3] & 0xff) << 24;
         value |= (long) (bytes[2] & 0xff) << 16;
         value |= (long) (bytes[1] & 0xff) << 8;
-        value |=  bytes[0] & 0xff;
+        value |=         bytes[0] & 0xff;
         return value;
     }
 
