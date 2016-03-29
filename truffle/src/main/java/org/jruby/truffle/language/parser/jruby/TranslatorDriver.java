@@ -205,7 +205,7 @@ public class TranslatorDriver implements Parser {
                             truffleNode)));
 
             if (node.hasEndPosition()) {
-                truffleNode = translator.sequence(context, sourceSection, Arrays.asList(
+                truffleNode = Translator.sequence(context, sourceSection, Arrays.asList(
                         new DataNode(context, sourceSection, node.getEndPosition()),
                         truffleNode));
             }
