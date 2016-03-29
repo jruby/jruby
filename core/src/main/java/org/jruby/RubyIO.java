@@ -4639,7 +4639,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyInteger length = null;
         RubyInteger offset = null;
 
+        boolean io1FromIO = false;
         RubyIO io1 = null;
+        boolean io2FromIO = false;
         RubyIO io2 = null;
 
         RubyString read = null;
@@ -4655,6 +4657,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (arg1 instanceof RubyString) {
                 io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg1}, Block.NULL_BLOCK);
             } else if (arg1 instanceof RubyIO) {
+                io1FromIO = true;
                 io1 = (RubyIO) arg1;
             } else if (arg1.respondsTo("to_path")) {
                 RubyString path = (RubyString) TypeConverter.convertToType19(arg1, runtime.getString(), "to_path");
@@ -4672,6 +4675,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (arg2 instanceof RubyString) {
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg2, runtime.newString("w")}, Block.NULL_BLOCK);
             } else if (arg2 instanceof RubyIO) {
+                io2FromIO = true;
                 io2 = (RubyIO) arg2;
             } else if (arg2.respondsTo("to_path")) {
                 RubyString path = (RubyString) TypeConverter.convertToType19(arg2, runtime.getString(), "to_path");
@@ -4732,6 +4736,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
+        } finally {
+            if (!io1FromIO && io1 != null && !io1.isClosed()) io1.ioClose(runtime);
+            if (!io2FromIO && io2 != null && !io2.isClosed()) io2.ioClose(runtime);
         }
     }
 
