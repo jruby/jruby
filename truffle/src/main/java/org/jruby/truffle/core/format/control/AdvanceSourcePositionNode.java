@@ -17,7 +17,7 @@ import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
 
 public class AdvanceSourcePositionNode extends FormatNode {
 
-    private boolean toEnd;
+    private final boolean toEnd;
 
     private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
 
