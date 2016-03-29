@@ -14,14 +14,14 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.SharedTreeBuilder;
 import org.jruby.truffle.core.format.convert.ReinterpretAsUnsignedNodeGen;
+import org.jruby.truffle.core.format.convert.ReinterpretByteAsIntegerNodeGen;
+import org.jruby.truffle.core.format.convert.ReinterpretLongAsDoubleNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.control.AtUnpackNode;
 import org.jruby.truffle.core.format.control.BackUnpackNode;
 import org.jruby.truffle.core.format.control.ForwardUnpackNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
-import org.jruby.truffle.core.format.convert.DecodeByteNodeGen;
-import org.jruby.truffle.core.format.convert.DecodeFloat32NodeGen;
-import org.jruby.truffle.core.format.convert.DecodeFloat64NodeGen;
+import org.jruby.truffle.core.format.convert.ReinterpretIntegerAsFloatNodeGen;
 import org.jruby.truffle.core.format.convert.DecodeInteger16BigNodeGen;
 import org.jruby.truffle.core.format.convert.DecodeInteger16LittleNodeGen;
 import org.jruby.truffle.core.format.convert.DecodeInteger32BigNodeGen;
@@ -80,7 +80,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
     public void exitInt8(PackParser.Int8Context ctx) {
         appendNode(sharedTreeBuilder.applyCount(ctx.count(),
                 WriteValueNodeGen.create(context,
-                        DecodeByteNodeGen.create(context, true,
+                        ReinterpretByteAsIntegerNodeGen.create(context, true,
                                 ReadByteNodeGen.create(context,
                                         new SourceNode())))));
     }
@@ -89,7 +89,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
     public void exitUint8(PackParser.Uint8Context ctx) {
         appendNode(sharedTreeBuilder.applyCount(ctx.count(),
                 WriteValueNodeGen.create(context,
-                        DecodeByteNodeGen.create(context, false,
+                        ReinterpretByteAsIntegerNodeGen.create(context, false,
                                 ReadByteNodeGen.create(context,
                                         new SourceNode())))));
     }
@@ -398,10 +398,10 @@ public class UnpackTreeBuilder extends PackBaseListener {
 
         switch (size) {
             case 32:
-                decodeNode = DecodeFloat32NodeGen.create(context, readNode);
+                decodeNode = ReinterpretIntegerAsFloatNodeGen.create(context, readNode);
                 break;
             case 64:
-                decodeNode = DecodeFloat64NodeGen.create(context, readNode);
+                decodeNode = ReinterpretLongAsDoubleNodeGen.create(context, readNode);
                 break;
             default:
                 throw new IllegalArgumentException();

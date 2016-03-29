@@ -20,11 +20,11 @@ import org.jruby.truffle.core.format.FormatNode;
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
-public abstract class DecodeByteNode extends FormatNode {
+public abstract class ReinterpretByteAsIntegerNode extends FormatNode {
 
     public boolean signed;
 
-    public DecodeByteNode(RubyContext context, boolean signed) {
+    public ReinterpretByteAsIntegerNode(RubyContext context, boolean signed) {
         super(context);
         this.signed = signed;
     }

@@ -21,9 +21,9 @@ import org.jruby.truffle.core.format.MissingValue;
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
-public abstract class DecodeFloat32Node extends FormatNode {
+public abstract class ReinterpretIntegerAsFloatNode extends FormatNode {
 
-    public DecodeFloat32Node(RubyContext context) {
+    public ReinterpretIntegerAsFloatNode(RubyContext context) {
         super(context);
     }
 
