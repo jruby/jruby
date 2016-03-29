@@ -14,10 +14,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.core.format.FormatFrameDescriptor;
 
-/**
- * Reads the source array from the frame - written as a node so that we can
- * write DSL specializations based on the type of that array.
- */
 public class SourceNode extends Node {
 
     public Object execute(VirtualFrame frame) {
