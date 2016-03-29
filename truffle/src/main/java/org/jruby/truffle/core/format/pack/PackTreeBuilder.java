@@ -17,7 +17,7 @@ import org.jruby.truffle.core.format.convert.ReinterpretAsLongNodeGen;
 import org.jruby.truffle.core.format.convert.ToFloatNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.control.SetOutputPositionNode;
-import org.jruby.truffle.core.format.control.BackNode;
+import org.jruby.truffle.core.format.control.ReverseOutputPositionNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.read.array.ReadDoubleNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadLongOrBigIntegerNodeGen;
@@ -336,7 +336,7 @@ public class PackTreeBuilder extends PackBaseListener {
     @Override
     public void exitBack(PackParser.BackContext ctx) {
         if (ctx.count() == null || ctx.count().INT() != null) {
-            appendNode(sharedTreeBuilder.applyCount(ctx.count(), new BackNode(context)));
+            appendNode(sharedTreeBuilder.applyCount(ctx.count(), new ReverseOutputPositionNode(context)));
         }
     }
 

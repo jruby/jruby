@@ -15,16 +15,9 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
 
-/**
- * Moves the output position to the previous byte - similar to seek
- * absolute -1 in a file stream.
- * <pre>
- * [0xabcd, 0x1234].pack('NN') # => "\x00\x00\xAB\xCD\x00\x00\x124"
- * [0xabcd, 0x1234].pack('NXN') # => "\x00\x00\xAB\x00\x00\x124"
- */
-public class BackNode extends FormatNode {
+public class ReverseOutputPositionNode extends FormatNode {
 
-    public BackNode(RubyContext context) {
+    public ReverseOutputPositionNode(RubyContext context) {
         super(context);
     }
 
@@ -33,12 +26,10 @@ public class BackNode extends FormatNode {
         final int position = getOutputPosition(frame);
 
         if (position == 0) {
-            CompilerDirectives.transferToInterpreter();
             throw new OutsideOfStringException();
         }
 
         setOutputPosition(frame, position - 1);
-
         return null;
     }
 
