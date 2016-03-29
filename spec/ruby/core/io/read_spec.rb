@@ -289,8 +289,8 @@ platform_is :windows do
     end
 
     after :each do
-      rm_r @fname
       @io.close if @io and !@io.closed?
+      rm_r @fname
     end
 
     it "normalizes line endings in text mode" do

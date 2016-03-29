@@ -167,8 +167,8 @@ ruby_version_is "1.9" do
     end
 
     after :each do
-      rm_r @name
       @io.close
+      rm_r @name
     end
 
     it "calls #to_int to convert a single object argument to an Integer limit" do
