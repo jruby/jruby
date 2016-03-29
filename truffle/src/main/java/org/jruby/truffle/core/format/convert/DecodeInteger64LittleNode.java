@@ -31,17 +31,17 @@ public abstract class DecodeInteger64LittleNode extends FormatNode {
     }
 
     @Specialization
-    public MissingValue decode(VirtualFrame frame, MissingValue missingValue) {
+    public MissingValue decode(MissingValue missingValue) {
         return missingValue;
     }
 
     @Specialization(guards = "isNil(nil)")
-    public DynamicObject decode(VirtualFrame frame, DynamicObject nil) {
+    public DynamicObject decode(DynamicObject nil) {
         return nil;
     }
 
     @Specialization
-    public long decode(VirtualFrame frame, byte[] bytes) {
+    public long decode(byte[] bytes) {
         final ByteBuffer buffer = ByteBuffer.wrap(bytes);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         return buffer.getLong();

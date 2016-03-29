@@ -31,17 +31,17 @@ public abstract class DecodeInteger16BigNode extends FormatNode {
     }
 
     @Specialization
-    public MissingValue decode(VirtualFrame frame, MissingValue missingValue) {
+    public MissingValue decode(MissingValue missingValue) {
         return missingValue;
     }
 
     @Specialization(guards = "isNil(nil)")
-    public DynamicObject decode(VirtualFrame frame, DynamicObject nil) {
+    public DynamicObject decode(DynamicObject nil) {
         return nil;
     }
 
     @Specialization
-    public short decode(VirtualFrame frame, byte[] bytes) {
+    public short decode(byte[] bytes) {
         final ByteBuffer buffer = ByteBuffer.wrap(bytes);
         buffer.order(ByteOrder.BIG_ENDIAN);
         return buffer.getShort();
