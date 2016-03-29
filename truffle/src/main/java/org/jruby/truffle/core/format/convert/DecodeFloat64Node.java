@@ -28,17 +28,17 @@ public abstract class DecodeFloat64Node extends FormatNode {
     }
 
     @Specialization
-    public MissingValue decode(VirtualFrame frame, MissingValue missingValue) {
+    public MissingValue decode(MissingValue missingValue) {
         return missingValue;
     }
 
     @Specialization(guards = "isNil(nil)")
-    public DynamicObject decode(VirtualFrame frame, DynamicObject nil) {
+    public DynamicObject decode(DynamicObject nil) {
         return nil;
     }
 
     @Specialization
-    public double decode(VirtualFrame frame, long value) {
+    public double decode(long value) {
         return Double.longBitsToDouble(value);
     }
 
