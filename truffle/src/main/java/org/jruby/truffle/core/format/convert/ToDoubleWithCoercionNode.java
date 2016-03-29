@@ -7,7 +7,6 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-
 package org.jruby.truffle.core.format.convert;
 
 import com.oracle.truffle.api.CompilerDirectives;
@@ -20,9 +19,6 @@ import org.jruby.truffle.core.coerce.ToFNode;
 import org.jruby.truffle.core.coerce.ToFNodeGen;
 import org.jruby.truffle.core.format.FormatNode;
 
-/**
- * Convert a value to a {@code double} with type coercion if necessary.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
