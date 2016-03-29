@@ -30,12 +30,12 @@ public abstract class DecodeByteNode extends FormatNode {
     }
 
     @Specialization(guards = "isNil(nil)")
-    public DynamicObject decode(VirtualFrame frame, DynamicObject nil) {
+    public DynamicObject decode(DynamicObject nil) {
         return nil;
     }
 
     @Specialization
-    public int decode(VirtualFrame frame, byte value) {
+    public int decode(byte value) {
         if (signed) {
             return value;
         } else {
