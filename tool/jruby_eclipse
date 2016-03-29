@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 # A JRuby launcher, in Ruby, and using the class files from Eclipse
 # Currently needs the core and stdlib jar, so build them again when they change.
 
