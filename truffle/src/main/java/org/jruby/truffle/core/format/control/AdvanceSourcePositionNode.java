@@ -14,11 +14,11 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
 
-public class ForwardUnpackNode extends FormatNode {
+public class AdvanceSourcePositionNode extends FormatNode {
 
     private boolean toEnd;
 
-    public ForwardUnpackNode(RubyContext context, boolean toEnd) {
+    public AdvanceSourcePositionNode(RubyContext context, boolean toEnd) {
         super(context);
         this.toEnd = toEnd;
     }
