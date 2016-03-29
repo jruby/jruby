@@ -15,16 +15,11 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 
-/**
- * Run a sequence of child nodes.
- * <pre>
- * [1, 2, 3].pack('CCC') # =>  "\x01\x02\x03"
- */
 public class SequenceNode extends FormatNode {
 
     @Children private final FormatNode[] children;
 
-    public SequenceNode(RubyContext context, FormatNode... children) {
+    public SequenceNode(RubyContext context, FormatNode[] children) {
         super(context);
         this.children = children;
     }
