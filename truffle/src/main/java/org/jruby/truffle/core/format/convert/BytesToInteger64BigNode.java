@@ -24,9 +24,9 @@ import java.nio.ByteOrder;
 @NodeChildren({
         @NodeChild(value = "bytes", type = FormatNode.class),
 })
-public abstract class DecodeInteger64BigNode extends FormatNode {
+public abstract class BytesToInteger64BigNode extends FormatNode {
 
-    public DecodeInteger64BigNode(RubyContext context) {
+    public BytesToInteger64BigNode(RubyContext context) {
         super(context);
     }
 

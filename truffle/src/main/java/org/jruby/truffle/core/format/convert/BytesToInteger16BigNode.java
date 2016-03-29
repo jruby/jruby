@@ -24,9 +24,9 @@ import java.nio.ByteOrder;
 @NodeChildren({
         @NodeChild(value = "bytes", type = FormatNode.class),
 })
-public abstract class DecodeInteger32LittleNode extends FormatNode {
+public abstract class BytesToInteger16BigNode extends FormatNode {
 
-    public DecodeInteger32LittleNode(RubyContext context) {
+    public BytesToInteger16BigNode(RubyContext context) {
         super(context);
     }
 
@@ -41,12 +41,10 @@ public abstract class DecodeInteger32LittleNode extends FormatNode {
     }
 
     @Specialization
-    public int decode(byte[] bytes) {
-        int value = 0;
-        value |= (bytes[3] & 0xff) << 24;
-        value |= (bytes[2] & 0xff) << 16;
-        value |= (bytes[1] & 0xff) << 8;
-        value |=  bytes[0] & 0xff;
+    public short decode(byte[] bytes) {
+        short value = 0;
+        value |= (bytes[0] & 0xff) << 8;
+        value |=  bytes[1] & 0xff;
         return value;
     }
 

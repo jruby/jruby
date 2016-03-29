@@ -13,6 +13,10 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.SharedTreeBuilder;
+import org.jruby.truffle.core.format.convert.BytesToInteger16BigNodeGen;
+import org.jruby.truffle.core.format.convert.BytesToInteger16LittleNodeGen;
+import org.jruby.truffle.core.format.convert.BytesToInteger32BigNodeGen;
+import org.jruby.truffle.core.format.convert.BytesToInteger64LittleNodeGen;
 import org.jruby.truffle.core.format.convert.ReinterpretAsUnsignedNodeGen;
 import org.jruby.truffle.core.format.convert.ReinterpretByteAsIntegerNodeGen;
 import org.jruby.truffle.core.format.convert.ReinterpretLongAsDoubleNodeGen;
@@ -22,12 +26,8 @@ import org.jruby.truffle.core.format.control.BackUnpackNode;
 import org.jruby.truffle.core.format.control.ForwardUnpackNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.convert.ReinterpretIntegerAsFloatNodeGen;
-import org.jruby.truffle.core.format.convert.DecodeInteger16BigNodeGen;
-import org.jruby.truffle.core.format.convert.DecodeInteger16LittleNodeGen;
-import org.jruby.truffle.core.format.convert.DecodeInteger32BigNodeGen;
-import org.jruby.truffle.core.format.convert.DecodeInteger32LittleNodeGen;
-import org.jruby.truffle.core.format.convert.DecodeInteger64BigNodeGen;
-import org.jruby.truffle.core.format.convert.DecodeInteger64LittleNodeGen;
+import org.jruby.truffle.core.format.convert.BytesToInteger32LittleNodeGen;
+import org.jruby.truffle.core.format.convert.BytesToInteger64BigNodeGen;
 import org.jruby.truffle.core.format.read.bytes.ReadBERNodeGen;
 import org.jruby.truffle.core.format.read.bytes.ReadBase64StringNodeGen;
 import org.jruby.truffle.core.format.read.bytes.ReadBinaryStringNodeGen;
@@ -422,23 +422,23 @@ public class UnpackTreeBuilder extends PackBaseListener {
         switch (size) {
             case 16:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    decodeNode = DecodeInteger16LittleNodeGen.create(context, readNode);
+                    decodeNode = BytesToInteger16LittleNodeGen.create(context, readNode);
                 } else {
-                    decodeNode = DecodeInteger16BigNodeGen.create(context, readNode);
+                    decodeNode = BytesToInteger16BigNodeGen.create(context, readNode);
                 }
                 break;
             case 32:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    decodeNode = DecodeInteger32LittleNodeGen.create(context, readNode);
+                    decodeNode = BytesToInteger32LittleNodeGen.create(context, readNode);
                 } else {
-                    decodeNode = DecodeInteger32BigNodeGen.create(context, readNode);
+                    decodeNode = BytesToInteger32BigNodeGen.create(context, readNode);
                 }
                 break;
             case 64:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    decodeNode = DecodeInteger64LittleNodeGen.create(context, readNode);
+                    decodeNode = BytesToInteger64LittleNodeGen.create(context, readNode);
                 } else {
-                    decodeNode = DecodeInteger64BigNodeGen.create(context, readNode);
+                    decodeNode = BytesToInteger64BigNodeGen.create(context, readNode);
                 }
                 break;
             default:
