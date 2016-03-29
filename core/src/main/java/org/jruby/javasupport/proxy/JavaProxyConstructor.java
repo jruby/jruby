@@ -144,8 +144,8 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         str.append("#<");
         str.append( getDeclaringClass().nameOnInspection() );
         inspectParameterTypes(str, this);
-        str.append(">");
-        return getRuntime().newString( str.toString() );
+        str.append('>');
+        return RubyString.newString(getRuntime(), str);
     }
 
     @Override

@@ -367,8 +367,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             str.append("#<");
             str.append( getDeclaringClass().nameOnInspection() ).append('/').append( getName() );
             inspectParameterTypes(str, this);
-            str.append(">");
-            return getRuntime().newString( str.toString() );
+            str.append('>');
+            return RubyString.newString(getRuntime(), str);
         }
 
         @JRubyMethod(name = "invoke", rest = true)

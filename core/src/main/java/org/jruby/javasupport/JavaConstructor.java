@@ -140,8 +140,8 @@ public class JavaConstructor extends JavaCallable {
         str.append("#<");
         str.append( getType().toString() );
         inspectParameterTypes(str, this);
-        str.append(">");
-        return getRuntime().newString( str.toString() );
+        str.append('>');
+        return RubyString.newString(getRuntime(), str);
     }
 
     //@Override

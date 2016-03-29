@@ -567,8 +567,8 @@ public class JavaMethod extends JavaCallable {
         str.append("#<");
         str.append( getType().toString() ).append('/').append(method.getName());
         inspectParameterTypes(str, this);
-        str.append(">");
-        return getRuntime().newString( str.toString() );
+        str.append('>');
+        return RubyString.newString(getRuntime(), str);
     }
 
     @JRubyMethod(name = "static?")
