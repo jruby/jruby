@@ -10,7 +10,6 @@
 package org.jruby.truffle.core.format.convert;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -18,65 +17,68 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.format.FormatGuards;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.CantConvertException;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.dispatch.DispatchNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 
-/**
- * Convert a value to a {@code long}.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
 public abstract class ToLongNode extends FormatNode {
 
+    private final boolean errorIfNeedsConversion;
+
     @Child private CallDispatchHeadNode toIntNode;
+    @Child private ToLongNode redoNode;
 
-    @CompilationFinal private boolean seenInt;
-    @CompilationFinal private boolean seenLong;
-    @CompilationFinal private boolean seenBignum;
-
-    public ToLongNode(RubyContext context) {
+    public ToLongNode(RubyContext context, boolean errorIfNeedsConversion) {
         super(context);
+        this.errorIfNeedsConversion = errorIfNeedsConversion;
     }
 
     public abstract long executeToLong(VirtualFrame frame, Object object);
 
     @Specialization
-    public long toLong(VirtualFrame frame, boolean object) {
-        CompilerDirectives.transferToInterpreter();
+    public long toLong(boolean object) {
         throw new NoImplicitConversionException(object, "Integer");
     }
 
     @Specialization
-    public long toLong(VirtualFrame frame, int object) {
+    public long toLong(int object) {
         return object;
     }
 
     @Specialization
-    public long toLong(VirtualFrame frame, long object) {
+    public long toLong(long object) {
         return object;
     }
 
     @Specialization(guards = "isRubyBignum(object)")
-    public long toLong(VirtualFrame frame, DynamicObject object) {
+    public long toLong(DynamicObject object) {
         // A truncated value is exactly what we want
         return Layouts.BIGNUM.getValue(object).longValue();
     }
 
     @Specialization(guards = "isNil(nil)")
-    public long toLongNil(VirtualFrame frame, Object nil) {
-        CompilerDirectives.transferToInterpreter();
+    public long toLongNil(Object nil) {
         throw new NoImplicitConversionException(nil, "Integer");
     }
 
-    @Specialization(guards = {"!isBoolean(object)", "!isInteger(object)", "!isLong(object)", "!isBigInteger(object)", "!isRubyBignum(object)", "!isNil(object)"})
+    @Specialization(guards = {
+            "!isBoolean(object)",
+            "!isInteger(object)",
+            "!isLong(object)",
+            "!isBigInteger(object)",
+            "!isRubyBignum(object)",
+            "!isNil(object)"})
     public long toLong(VirtualFrame frame, Object object) {
+        if (errorIfNeedsConversion) {
+            throw new CantConvertException("can't convert Object to Integer");
+        }
+
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreter();
             toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
@@ -84,42 +86,12 @@ public abstract class ToLongNode extends FormatNode {
 
         final Object value = toIntNode.call(frame, object, "to_int", null);
 
-        if (seenInt && value instanceof Integer) {
-            return toLong(frame, (int) value);
+        if (redoNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            redoNode = insert(ToLongNodeGen.create(getContext(), true, null));
         }
 
-        if (seenLong && value instanceof Long) {
-            return toLong(frame, (long) value);
-        }
-
-        if (seenBignum && FormatGuards.isRubyBignum(value)) {
-            return toLong(frame, (DynamicObject) value);
-        }
-
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-
-        if (value == DispatchNode.MISSING) {
-            throw new NoImplicitConversionException(object, "Integer");
-        }
-
-        if (value instanceof Integer) {
-            seenInt = true;
-            return toLong(frame, (int) value);
-        }
-
-        if (value instanceof Long) {
-            seenLong = true;
-            return toLong(frame, (long) value);
-        }
-
-        if (FormatGuards.isRubyBignum(value)) {
-            seenBignum = true;
-            return toLong(frame, (DynamicObject) value);
-        }
-
-        // TODO CS 5-April-15 missing the (Object#to_int gives String) part
-
-        throw new CantConvertException("can't convert Object to Integer");
+        return redoNode.executeToLong(frame, value);
     }
 
 }

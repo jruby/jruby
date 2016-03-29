@@ -187,7 +187,7 @@ public class PackTreeBuilder extends PackBaseListener {
 
         appendNode(sharedTreeBuilder.applyCount(ctx.count(),
                 WriteUTF8CharacterNodeGen.create(context,
-                        ToLongNodeGen.create(context,
+                        ToLongNodeGen.create(context, false,
                                 ReadValueNodeGen.create(context, new SourceNode())))));
     }
 
@@ -404,7 +404,7 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     private FormatNode writeInteger(int size, ByteOrder byteOrder) {
-        final FormatNode readNode = ToLongNodeGen.create(context,
+        final FormatNode readNode = ToLongNodeGen.create(context, false,
                 ReadValueNodeGen.create(context, new SourceNode()));
 
         return writeInteger(size, byteOrder, readNode);
