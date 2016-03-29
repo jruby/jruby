@@ -446,7 +446,13 @@ class TestHigherJavasupport < Test::Unit::TestCase
       Java::void[1].new
       fail "expected to raise"
     rescue ArgumentError => e
-      assert_equal "Java package `void' does not have a method `[]'", e.message
+      assert_equal "Java package 'void' does not have a method `[]' with 1 argument", e.message
+    end
+    assert Java::Void == Java::void
+    assert Java::void.equal? Java::Void
+    quiet do
+      p Java
+      p Java::void
     end
   end
 
@@ -844,8 +850,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_that_subpackages_havent_leaked_into_other_packages
-    assert_equal(false, Java::java.respond_to?(:zip))
-    assert_equal(false, Java::com.respond_to?(:util))
+    assert ! Java::java.respond_to?(:zip)
+    assert ! Java::com.respond_to?(:util)
+
+    assert Java::java.respond_to_missing?(:zip)
+    assert Java::comx.respond_to_missing?(:foo)
   end
 
   def test_that_sub_packages_called_java_javax_com_org_arent_short_circuited
@@ -869,6 +878,52 @@ class TestHigherJavasupport < Test::Unit::TestCase
     # Java::OrgJrubyJavasupportTestApp::UpperClass
     # Java::OrgJrubyJavasupportTestApp::lowerClass
   end if ALLOW_UPPERCASE_PACKAGE_NAMES
+
+  def test_package_class
+    assert org.jruby.class.is_a?(Class)
+    assert_equal org.jruby.class, Java::JavaPackage
+    assert_equal Java::OrgJrubyJavasupport.class, Java::JavaPackage
+
+    assert org.jruby.singleton_class.is_a?(Class)
+    assert_not_equal org.jruby.singleton_class, org.jruby.class
+    assert_not_equal org.jruby.singleton_class, org.jruby.javasupport.singleton_class
+  end
+
+  def test_package_name_colliding_with_name_method
+    assert_equal 'Java::OrgJrubyJavasupport', org.jruby.javasupport.name
+    assert_equal true, org.jruby.javasupport.respond_to?(:name)
+    assert org.jruby.javasupport.test.is_a?(Java::JavaPackage)
+
+    assert_equal 'Java::OrgJrubyJavasupportTest', org.jruby.javasupport.test.name
+    # we can use :: to access the name package :
+    assert Java::OrgJrubyJavasupportTestName.is_a?(Java::JavaPackage)
+    assert Java::OrgJrubyJavasupportTestName::Sample
+  end
+
+  def test_package_object_id
+    assert org.jruby.object_id.is_a?(Fixnum)
+    assert Java::java::lang.object_id.is_a?(Fixnum)
+  end
+
+  def test_package_singleton_method_hooks
+    assert org.respond_to?(:singleton_method_added, true)
+    assert java.lang.respond_to?(:singleton_method_removed, true)
+
+    assert_nil org.__send__(:singleton_method_added, :sym)
+    assert_nil java.lang.__send__(:singleton_method_removed, :sym)
+  end
+
+  def test_package_does_not_respond_to_hidden_methods
+    assert Kernel.respond_to?(:test)
+    assert ! org.respond_to?(:test)
+    assert ! java.lang.respond_to?(:test, true)
+  end
+
+  def test_package_does_respond_to_missing
+    assert org.respond_to_missing?(:test)
+    assert java.lang.respond_to_missing?(:test)
+    assert java.lang.respond_to_missing?(:test, true)
+  end
 
   @@include_proc = Proc.new do
     Thread.stop
@@ -1197,16 +1252,21 @@ CLASSDEF
 
   # JRUBY-781
   def test_that_classes_beginning_with_small_letter_can_be_referenced
-    assert_equal Module, org.jruby.test.smallLetterClazz.class
+    assert_equal Java::JavaPackage, org.jruby.test.smallLetterClazz.class
+    assert org.jruby.test.smallLetterClazz.is_a?(Module)
+    assert ! org.jruby.test.smallLetterClazz.is_a?(Class)
+    
     assert_equal Class, org.jruby.test.smallLetterClass.class
+    assert ! org.jruby.test.smallLetterClass.is_a?(Java::JavaPackage)
   end
 
   # JRUBY-1076
   def test_package_module_aliased_methods
     assert java.lang.respond_to?(:__constants__)
-    assert java.lang.respond_to?(:__methods__)
+    assert java.lang.respond_to?(:__methods__, true)
 
-    java.lang.String # ensure java.lang.String has been loaded
+    java.lang.String # ensure java.lang.
+    # String has been loaded
     assert java.lang.__constants__.include?(:String)
   end
 
