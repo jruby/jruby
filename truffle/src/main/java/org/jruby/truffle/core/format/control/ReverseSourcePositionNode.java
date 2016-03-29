@@ -15,11 +15,11 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
 
-public class BackUnpackNode extends FormatNode {
+public class ReverseSourcePositionNode extends FormatNode {
 
     private boolean star;
 
-    public BackUnpackNode(RubyContext context, boolean star) {
+    public ReverseSourcePositionNode(RubyContext context, boolean star) {
         super(context);
         this.star = star;
     }
@@ -34,20 +34,17 @@ public class BackUnpackNode extends FormatNode {
             final int target = position - remaining;
 
             if (target < 0) {
-                CompilerDirectives.transferToInterpreter();
                 throw new OutsideOfStringException();
             }
 
             setSourcePosition(frame, target);
         } else {
             if (position == 0) {
-                CompilerDirectives.transferToInterpreter();
                 throw new OutsideOfStringException();
             }
 
             setSourcePosition(frame, position - 1);
         }
-
 
         return null;
     }

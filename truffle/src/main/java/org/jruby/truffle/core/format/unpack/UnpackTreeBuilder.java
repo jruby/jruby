@@ -22,7 +22,7 @@ import org.jruby.truffle.core.format.convert.ReinterpretByteAsIntegerNodeGen;
 import org.jruby.truffle.core.format.convert.ReinterpretLongAsDoubleNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.control.SetSourcePositionNode;
-import org.jruby.truffle.core.format.control.BackUnpackNode;
+import org.jruby.truffle.core.format.control.ReverseSourcePositionNode;
 import org.jruby.truffle.core.format.control.ForwardUnpackNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.convert.ReinterpretIntegerAsFloatNodeGen;
@@ -339,9 +339,9 @@ public class UnpackTreeBuilder extends PackBaseListener {
     @Override
     public void exitBack(PackParser.BackContext ctx) {
         if (ctx.count() != null && ctx.count().INT() == null) {
-            appendNode(new BackUnpackNode(context, true));
+            appendNode(new ReverseSourcePositionNode(context, true));
         } else if (ctx.count() == null || ctx.count().INT() != null) {
-            appendNode(sharedTreeBuilder.applyCount(ctx.count(), new BackUnpackNode(context, false)));
+            appendNode(sharedTreeBuilder.applyCount(ctx.count(), new ReverseSourcePositionNode(context, false)));
         }
     }
 
