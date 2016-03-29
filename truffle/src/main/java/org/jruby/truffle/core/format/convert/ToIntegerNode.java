@@ -34,26 +34,29 @@ public abstract class ToIntegerNode extends FormatNode {
     public abstract Object executeToInteger(VirtualFrame frame, Object object);
 
     @Specialization
-    public int toInteger(VirtualFrame frame, int value) {
+    public int toInteger(int value) {
         return value;
     }
 
     @Specialization
-    public long toInteger(VirtualFrame frame, long value) {
+    public long toInteger(long value) {
         return value;
     }
 
     @Specialization(guards = "isRubyBignum(value)")
-    public DynamicObject toInteger(VirtualFrame frame, DynamicObject value) {
+    public DynamicObject toInteger(DynamicObject value) {
         return value;
     }
 
     @Specialization
-    public long toInteger(VirtualFrame frame, double value) {
+    public long toInteger(double value) {
         return (long) value;
     }
 
-    @Specialization(guards = {"!isInteger(value)", "!isLong(value)", "!isRubyBignum(value)"})
+    @Specialization(guards = {
+            "!isInteger(value)",
+            "!isLong(value)",
+            "!isRubyBignum(value)"})
     public Object toInteger(VirtualFrame frame, Object value) {
         if (integerNode == null) {
             CompilerDirectives.transferToInterpreter();
