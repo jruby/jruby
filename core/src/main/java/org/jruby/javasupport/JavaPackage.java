@@ -116,6 +116,13 @@ public class JavaPackage extends RubyModule {
         return getRuntime().newString(getName()); // super.to_s()
     }
 
+    @Override
+    @JRubyMethod(name = "===")
+    public RubyBoolean op_eqq(ThreadContext context, IRubyObject obj) {
+        // maybe we could handle java.lang === java.lang.reflect as well ?
+        return context.runtime.newBoolean(obj == this || isInstance(obj));
+    }
+
     @JRubyMethod(name = "const_missing", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject const_missing(final ThreadContext context, final IRubyObject name) {
         return relativeJavaClassOrPackage(context, name, false);

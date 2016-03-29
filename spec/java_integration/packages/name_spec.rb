@@ -32,7 +32,9 @@ describe "java package (and class)" do
     expect( org.xml == org.xml.sax ).to be false
     expect( org.xml.eql? Java::org::xml ).to be true
     expect( Java::OrgXmlSax.equal?org.xml.sax ).to be true
-    #expect( Java::OrgXmlSax === org.xml.sax ).to be true
+    expect( Java::OrgXmlSax === org.xml.sax ).to be true
+    expect( Java::OrgXml === org.xml.sax ).to be false
+    expect( Java::OrgXml === org ).to be false
   end
 
   it 'have package name' do
