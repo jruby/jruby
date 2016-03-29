@@ -28,17 +28,17 @@ public abstract class DecodeFloat32Node extends FormatNode {
     }
 
     @Specialization
-    public MissingValue decode(VirtualFrame frame, MissingValue missingValue) {
+    public MissingValue decode(MissingValue missingValue) {
         return missingValue;
     }
 
     @Specialization(guards = "isNil(nil)")
-    public DynamicObject decode(VirtualFrame frame, DynamicObject nil) {
+    public DynamicObject decode(DynamicObject nil) {
         return nil;
     }
 
     @Specialization
-    public float decode(VirtualFrame frame, int value) {
+    public float decode(int value) {
         return Float.intBitsToFloat(value);
     }
 
