@@ -266,9 +266,26 @@ public class JavaPackage extends RubyModule {
         final String method, final int argsLength) {
         String packageName = ((JavaPackage) pkg).packageName;
         return runtime.newArgumentError(
-                "Java package '"+ packageName +"' does not have a method `"+
-                method +"' with "+ argsLength + (argsLength == 1 ? " argument" : " arguments")
+                "Java package '" + packageName + "' does not have a method `" +
+                        method + "' with " + argsLength + (argsLength == 1 ? " argument" : " arguments")
         );
+    }
+
+    public final boolean isAvailable() {
+        // may be null if no package information is available from the archive or codebase
+        return Package.getPackage(packageName) != null;
+    }
+
+    @JRubyMethod(name = "available?")
+    public IRubyObject available_p(ThreadContext context) {
+        return context.runtime.newBoolean(isAvailable());
+    }
+
+    @JRubyMethod(name = "sealed?")
+    public IRubyObject sealed_p(ThreadContext context) {
+        final Package pkg = Package.getPackage(packageName);
+        if ( pkg == null ) return context.nil;
+        return context.runtime.newBoolean(pkg.isSealed());
     }
 
     @Override
