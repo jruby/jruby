@@ -100,9 +100,20 @@ public class JavaPackage extends RubyModule {
         this.packageName = packageName.toString();
     }
 
-    @JRubyMethod
+    // NOTE: name is Ruby name not pkg.name ~ maybe it should be just like with JavaClass?
+
+    @JRubyMethod(name = "package_name", alias = "to_s")
     public RubyString package_name() {
         return getRuntime().newString(packageName);
+    }
+
+    @Override
+    public RubyString to_s() { return package_name(); }
+
+    @Override
+    @JRubyMethod
+    public IRubyObject inspect() {
+        return getRuntime().newString(getName()); // super.to_s()
     }
 
     @JRubyMethod(name = "const_missing", required = 1, visibility = Visibility.PRIVATE)

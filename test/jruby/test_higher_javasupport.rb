@@ -925,6 +925,15 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert java.lang.respond_to_missing?(:test, true)
   end
 
+  def test_package_to_s_returns_name
+    assert_equal 'org.jruby', org.jruby.to_s
+    assert_equal 'java.lang.reflect', Java::JavaLangReflect.to_s
+  end
+
+  def test_package_inspect
+    assert_equal 'Java::JavaLangReflect', java.lang.reflect.inspect
+  end
+
   @@include_proc = Proc.new do
     Thread.stop
     java_import "java.lang.System"
