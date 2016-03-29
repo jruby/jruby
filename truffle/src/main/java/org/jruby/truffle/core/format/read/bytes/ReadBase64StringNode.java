@@ -18,7 +18,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
-import org.jruby.truffle.core.format.exceptions.FormatException;
+import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
@@ -51,7 +51,7 @@ public abstract class ReadBase64StringNode extends FormatNode {
 
         if (occurrences == 0){
             if (encode.remaining()%4 != 0) {
-                throw new FormatException("invalid base64");
+                throw new InvalidFormatException("invalid base64");
             }
             while (encode.hasRemaining() && s != '=') {
                 a = b = c = -1;
@@ -60,27 +60,27 @@ public abstract class ReadBase64StringNode extends FormatNode {
                 // obtain a
                 s = Pack.safeGet(encode);
                 a = Pack.b64_xtable[s];
-                if (a == -1) throw new FormatException("invalid base64");
+                if (a == -1) throw new InvalidFormatException("invalid base64");
 
                 // obtain b
                 s = Pack.safeGet(encode);
                 b = Pack.b64_xtable[s];
-                if (b == -1) throw new FormatException("invalid base64");
+                if (b == -1) throw new InvalidFormatException("invalid base64");
 
                 // obtain c
                 s = Pack.safeGet(encode);
                 c = Pack.b64_xtable[s];
                 if (s == '=') {
-                    if (Pack.safeGet(encode) != '=') throw new FormatException("invalid base64");
+                    if (Pack.safeGet(encode) != '=') throw new InvalidFormatException("invalid base64");
                     break;
                 }
-                if (c == -1) throw new FormatException("invalid base64");
+                if (c == -1) throw new InvalidFormatException("invalid base64");
 
                 // obtain d
                 s = Pack.safeGet(encode);
                 d = Pack.b64_xtable[s];
                 if (s == '=') break;
-                if (d == -1) throw new FormatException("invalid base64");
+                if (d == -1) throw new InvalidFormatException("invalid base64");
 
                 // calculate based on a, b, c and d
                 lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
@@ -88,14 +88,14 @@ public abstract class ReadBase64StringNode extends FormatNode {
                 lElem[index++] = (byte)((c << 6 | d) & 255);
             }
 
-            if (encode.hasRemaining()) throw new FormatException("invalid base64");
+            if (encode.hasRemaining()) throw new InvalidFormatException("invalid base64");
 
             if (a != -1 && b != -1) {
                 if (c == -1 && s == '=') {
-                    if ((b & 15) != 0) throw new FormatException("invalid base64");
+                    if ((b & 15) != 0) throw new InvalidFormatException("invalid base64");
                     lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                 } else if(c != -1 && s == '=') {
-                    if ((c & 3) != 0) throw new FormatException("invalid base64");
+                    if ((c & 3) != 0) throw new InvalidFormatException("invalid base64");
                     lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                     lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
                 }

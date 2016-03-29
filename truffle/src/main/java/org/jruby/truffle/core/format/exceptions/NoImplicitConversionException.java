@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.core.format.exceptions;
 
-public class NoImplicitConversionException extends PackException {
+public class NoImplicitConversionException extends FormatException {
 
     private final Object object;
     private final String target;

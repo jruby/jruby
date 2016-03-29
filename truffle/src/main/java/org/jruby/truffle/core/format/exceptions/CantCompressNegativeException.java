@@ -9,6 +9,6 @@
  */
 package org.jruby.truffle.core.format.exceptions;
 
-public class CantCompressNegativeException extends PackException {
+public class CantCompressNegativeException extends FormatException {
 
 }

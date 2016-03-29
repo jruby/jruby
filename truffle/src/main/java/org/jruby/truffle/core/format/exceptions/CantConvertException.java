@@ -9,9 +9,10 @@
  */
 package org.jruby.truffle.core.format.exceptions;
 
-public class CantConvertException extends PackException {
+public class CantConvertException extends FormatException {
 
     public CantConvertException(String message) {
         super(message);
     }
+
 }

@@ -9,12 +9,10 @@
  */
 package org.jruby.truffle.core.format.exceptions;
 
-public class PackException extends RuntimeException {
+public class InvalidFormatException extends FormatException {
 
-    public PackException() {
-    }
-
-    public PackException(String message) {
+    public InvalidFormatException(String message) {
         super(message);
     }
+
 }

@@ -9,9 +9,10 @@
  */
 package org.jruby.truffle.core.format.exceptions;
 
-public class RangeException extends PackException {
+public class RangeException extends FormatException {
 
     public RangeException(String message) {
         super(message);
     }
+
 }

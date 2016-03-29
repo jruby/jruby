@@ -63,13 +63,12 @@ import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.format.unpack.ArrayResult;
 import org.jruby.truffle.core.format.unpack.UnpackCompiler;
-import org.jruby.truffle.core.format.BytesResult;
 import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
 import org.jruby.truffle.core.format.exceptions.CantConvertException;
-import org.jruby.truffle.core.format.exceptions.FormatException;
+import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
-import org.jruby.truffle.core.format.exceptions.PackException;
+import org.jruby.truffle.core.format.exceptions.FormatException;
 import org.jruby.truffle.core.format.exceptions.RangeException;
 import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.kernel.KernelNodes;
@@ -2357,7 +2356,7 @@ public abstract class StringNodes {
             try {
                 // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
                 result = (ArrayResult) callUnpackNode.call(frame, new Object[]{rope.getBytes(), rope.byteLength()});
-            } catch (PackException e) {
+            } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
             }
@@ -2378,7 +2377,7 @@ public abstract class StringNodes {
             try {
                 // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
                 result = (ArrayResult) callUnpackNode.call(frame, compileFormat(format), new Object[]{rope.getBytes(), rope.byteLength()});
-            } catch (PackException e) {
+            } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
             }
@@ -2386,10 +2385,10 @@ public abstract class StringNodes {
             return finishUnpack(result);
         }
 
-        private RuntimeException handleException(PackException exception) {
+        private RuntimeException handleException(FormatException exception) {
             try {
                 throw exception;
-            } catch (FormatException e) {
+            } catch (InvalidFormatException e) {
                 return new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             } catch (TooFewArgumentsException e) {
                 return new RaiseException(coreLibrary().argumentError("too few arguments", this));

@@ -9,5 +9,6 @@
  */
 package org.jruby.truffle.core.format.exceptions;
 
-public class TooFewArgumentsException extends PackException {
+public class TooFewArgumentsException extends FormatException {
+
 }

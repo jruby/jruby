@@ -65,10 +65,10 @@ import org.jruby.truffle.core.format.printf.PrintfCompiler;
 import org.jruby.truffle.core.format.BytesResult;
 import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
 import org.jruby.truffle.core.format.exceptions.CantConvertException;
-import org.jruby.truffle.core.format.exceptions.FormatException;
+import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
-import org.jruby.truffle.core.format.exceptions.PackException;
+import org.jruby.truffle.core.format.exceptions.FormatException;
 import org.jruby.truffle.core.format.exceptions.RangeException;
 import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.hash.HashOperations;
@@ -1963,7 +1963,7 @@ public abstract class KernelNodes {
 
             try {
                 result = (BytesResult) callPackNode.call(frame, new Object[]{ arguments, arguments.length });
-            } catch (PackException e) {
+            } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
             }
@@ -1981,7 +1981,7 @@ public abstract class KernelNodes {
 
             try {
                 result = (BytesResult) callPackNode.call(frame, compileFormat(format), new Object[]{ arguments, arguments.length });
-            } catch (PackException e) {
+            } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
             }
@@ -1989,7 +1989,7 @@ public abstract class KernelNodes {
             return finishFormat(Layouts.STRING.getRope(format).byteLength(), result);
         }
 
-        private RuntimeException handleException(PackException exception) {
+        private RuntimeException handleException(FormatException exception) {
             try {
                 throw exception;
             } catch (TooFewArgumentsException e) {
@@ -2046,7 +2046,7 @@ public abstract class KernelNodes {
 
             try {
                 return new PrintfCompiler(getContext(), this).compile(format.toString(), Layouts.STRING.getRope(format).getBytes());
-            } catch (FormatException e) {
+            } catch (InvalidFormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             }

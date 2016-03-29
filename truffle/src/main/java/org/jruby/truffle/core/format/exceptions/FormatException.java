@@ -9,9 +9,23 @@
  */
 package org.jruby.truffle.core.format.exceptions;
 
-public class FormatException extends PackException {
+import com.oracle.truffle.api.nodes.ControlFlowException;
+
+public class FormatException extends ControlFlowException {
+
+    private final String message;
+
+    public FormatException() {
+        message = null;
+    }
 
     public FormatException(String message) {
-        super(message);
+        this.message = message;
     }
+
+    @Override
+    public String getMessage() {
+        return message;
+    }
+
 }

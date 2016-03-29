@@ -51,7 +51,7 @@ import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
 import org.jruby.truffle.core.format.exceptions.CantConvertException;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
-import org.jruby.truffle.core.format.exceptions.PackException;
+import org.jruby.truffle.core.format.exceptions.FormatException;
 import org.jruby.truffle.core.format.exceptions.RangeException;
 import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.kernel.KernelNodes;
@@ -2406,7 +2406,7 @@ public abstract class ArrayNodes {
 
             try {
                 result = (BytesResult) callPackNode.call(frame, new Object[] { getStore(array), getSize(array) });
-            } catch (PackException e) {
+            } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
             }
@@ -2424,7 +2424,7 @@ public abstract class ArrayNodes {
 
             try {
                 result = (BytesResult) callPackNode.call(frame, compileFormat(format), new Object[] { getStore(array), getSize(array) });
-            } catch (PackException e) {
+            } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
             }
@@ -2432,7 +2432,7 @@ public abstract class ArrayNodes {
             return finishPack(Layouts.STRING.getRope(format).byteLength(), result);
         }
 
-        private RuntimeException handleException(PackException exception) {
+        private RuntimeException handleException(FormatException exception) {
             try {
                 throw exception;
             } catch (TooFewArgumentsException e) {

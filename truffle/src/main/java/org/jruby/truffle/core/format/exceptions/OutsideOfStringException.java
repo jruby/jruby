@@ -9,5 +9,6 @@
  */
 package org.jruby.truffle.core.format.exceptions;
 
-public class OutsideOfStringException extends PackException {
+public class OutsideOfStringException extends FormatException {
+
 }
