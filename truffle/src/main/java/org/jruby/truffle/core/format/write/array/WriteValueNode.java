@@ -14,15 +14,16 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.MissingValue;
-
-import java.util.Arrays;
+import org.jruby.truffle.core.format.write.OutputNode;
 
 @NodeChildren({
-        @NodeChild(value = "value", type = FormatNode.class),
+        @NodeChild(value = "output", type = OutputNode.class),
+        @NodeChild(value = "value", type = Node.class)
 })
 public abstract class WriteValueNode extends FormatNode {
 
@@ -31,21 +32,20 @@ public abstract class WriteValueNode extends FormatNode {
     }
 
     @Specialization
-    public Object doWrite(MissingValue value) {
+    public Object doWrite(Object output, MissingValue value) {
         return null;
     }
 
     @Specialization(guards = "!isMissingValue(value)")
-    public Object doWrite(VirtualFrame frame, Object value) {
-        final Object[] output = ensureCapacity(frame, 1);
+    public Object doWrite(VirtualFrame frame, Object[] output, Object value) {
+        final Object[] outputWithEnoughSize = ensureCapacity(frame, output, 1);
         final int outputPosition = getOutputPosition(frame);
-        output[outputPosition] = value;
+        outputWithEnoughSize[outputPosition] = value;
         setOutputPosition(frame, outputPosition + 1);
         return null;
     }
 
-    private Object[] ensureCapacity(VirtualFrame frame, int length) {
-        final Object[] output = (Object[]) getOutput(frame);
+    private Object[] ensureCapacity(VirtualFrame frame, Object[] output, int length) {
         final int outputPosition = getOutputPosition(frame);
         final int neededLength = outputPosition + length;
 
@@ -53,9 +53,12 @@ public abstract class WriteValueNode extends FormatNode {
             return output;
         }
 
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-        final Object[] newOutput = Arrays.copyOf(output, ArrayUtils.capacity(getContext(), output.length, neededLength));
+        CompilerDirectives.transferToInterpreter();
+
+        final Object[] newOutput = new Object[ArrayUtils.capacity(getContext(), output.length, neededLength)];
+        System.arraycopy(output, 0, newOutput, 0, outputPosition);
         setOutput(frame, newOutput);
+
         return newOutput;
     }
 

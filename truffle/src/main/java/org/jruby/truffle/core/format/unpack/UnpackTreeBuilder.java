@@ -40,6 +40,7 @@ import org.jruby.truffle.core.format.read.bytes.ReadUTF8CharacterNodeGen;
 import org.jruby.truffle.core.format.read.bytes.ReadUUStringNodeGen;
 import org.jruby.truffle.core.format.pack.PackBaseListener;
 import org.jruby.truffle.core.format.pack.PackParser;
+import org.jruby.truffle.core.format.write.OutputNode;
 import org.jruby.truffle.core.format.write.array.WriteValueNodeGen;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -79,7 +80,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
     @Override
     public void exitInt8(PackParser.Int8Context ctx) {
         appendNode(sharedTreeBuilder.applyCount(ctx.count(),
-                WriteValueNodeGen.create(context,
+                WriteValueNodeGen.create(context, new OutputNode(),
                         ReinterpretByteAsIntegerNodeGen.create(context, true,
                                 ReadByteNodeGen.create(context,
                                         new SourceNode())))));
@@ -88,7 +89,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
     @Override
     public void exitUint8(PackParser.Uint8Context ctx) {
         appendNode(sharedTreeBuilder.applyCount(ctx.count(),
-                WriteValueNodeGen.create(context,
+                WriteValueNodeGen.create(context, new OutputNode(),
                         ReinterpretByteAsIntegerNodeGen.create(context, false,
                                 ReadByteNodeGen.create(context,
                                         new SourceNode())))));
@@ -187,7 +188,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
     @Override
     public void exitUtf8Character(PackParser.Utf8CharacterContext ctx) {
         appendNode(sharedTreeBuilder.applyCount(ctx.count(),
-                WriteValueNodeGen.create(context,
+                WriteValueNodeGen.create(context, new OutputNode(),
                         ReadUTF8CharacterNodeGen.create(context,
                                 new SourceNode()))));
     }
@@ -195,7 +196,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
     @Override
     public void exitBerInteger(PackParser.BerIntegerContext ctx) {
         appendNode(sharedTreeBuilder.applyCount(ctx.count(),
-                WriteValueNodeGen.create(context,
+                WriteValueNodeGen.create(context, new OutputNode(),
                         ReadBERNodeGen.create(context,
                                 new SourceNode()))));
     }
@@ -244,7 +245,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
             readNode = ReadBinaryStringNodeGen.create(context, false, false, count, true, true, false, source);
         }
 
-        appendNode(WriteValueNodeGen.create(context, readNode));
+        appendNode(WriteValueNodeGen.create(context, new OutputNode(), readNode));
     }
 
     @Override
@@ -261,7 +262,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
             readNode = ReadBinaryStringNodeGen.create(context, false, false, count, false, false, false, source);
         }
 
-        appendNode(WriteValueNodeGen.create(context, readNode));
+        appendNode(WriteValueNodeGen.create(context, new OutputNode(), readNode));
     }
 
     @Override
@@ -278,7 +279,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
             readNode = ReadBinaryStringNodeGen.create(context, false, false, count, false, true, true, source);
         }
 
-        appendNode(WriteValueNodeGen.create(context, readNode));
+        appendNode(WriteValueNodeGen.create(context, new OutputNode(), readNode));
     }
 
     @Override
@@ -304,20 +305,20 @@ public class UnpackTreeBuilder extends PackBaseListener {
     @Override
     public void exitUuString(PackParser.UuStringContext ctx) {
         appendNode(
-                WriteValueNodeGen.create(context,
+                WriteValueNodeGen.create(context, new OutputNode(),
                         ReadUUStringNodeGen.create(context,
                                 new SourceNode())));
     }
 
     @Override
     public void exitMimeString(PackParser.MimeStringContext ctx) {
-        appendNode(WriteValueNodeGen.create(context,
+        appendNode(WriteValueNodeGen.create(context, new OutputNode(),
                 ReadMIMEStringNodeGen.create(context, new SourceNode())));
     }
 
     @Override
     public void exitBase64String(PackParser.Base64StringContext ctx) {
-        appendNode(WriteValueNodeGen.create(context,
+        appendNode(WriteValueNodeGen.create(context, new OutputNode(),
                 ReadBase64StringNodeGen.create(context, new SourceNode())));
     }
 
@@ -389,7 +390,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
     private void appendIntegerNode(int size, ByteOrder byteOrder, PackParser.CountContext count, boolean signed) {
         final FormatNode readNode = ReadBytesNodeGen.create(context, size / 8, consumePartial(count), new SourceNode());
         final FormatNode convertNode = createIntegerDecodeNode(size, byteOrder, signed, readNode);
-        appendNode(sharedTreeBuilder.applyCount(count, WriteValueNodeGen.create(context, convertNode)));
+        appendNode(sharedTreeBuilder.applyCount(count, WriteValueNodeGen.create(context, new OutputNode(), convertNode)));
     }
 
     private void appendFloatNode(int size, ByteOrder byteOrder, PackParser.CountContext count) {
@@ -407,7 +408,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
                 throw new IllegalArgumentException();
         }
 
-        final FormatNode writeNode = WriteValueNodeGen.create(context, decodeNode);
+        final FormatNode writeNode = WriteValueNodeGen.create(context, new OutputNode(), decodeNode);
         appendNode(sharedTreeBuilder.applyCount(count, writeNode));
     }
 
@@ -455,7 +456,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
     private void bitString(ByteOrder byteOrder, PackParser.CountContext ctx) {
         final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx);
 
-        appendNode(WriteValueNodeGen.create(context,
+        appendNode(WriteValueNodeGen.create(context, new OutputNode(),
                 ReadBitStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(),
                         new SourceNode())));
     }
@@ -463,7 +464,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
     private void hexString(ByteOrder byteOrder, PackParser.CountContext ctx) {
         final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx);
 
-        appendNode(WriteValueNodeGen.create(context,
+        appendNode(WriteValueNodeGen.create(context, new OutputNode(),
                 ReadHexStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(),
                         new SourceNode())));
 
