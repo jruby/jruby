@@ -948,7 +948,7 @@ module Net   #:nodoc:
           if @ssl_context.verify_mode != OpenSSL::SSL::VERIFY_NONE
             s.post_connection_check(@address)
           end
-          # Commented out until JRuby implements OpenSSL::SSL::Session
+          # OpenSSL::SSL::Session somehow works but SSLSocket#session= does nothing with JRuby-OpenSSL
           #@ssl_session = s.session
         rescue => exception
           D "Conn close because of connect error #{exception}"
