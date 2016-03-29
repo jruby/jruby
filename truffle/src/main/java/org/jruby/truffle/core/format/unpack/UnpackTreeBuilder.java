@@ -21,7 +21,7 @@ import org.jruby.truffle.core.format.convert.ReinterpretAsUnsignedNodeGen;
 import org.jruby.truffle.core.format.convert.ReinterpretByteAsIntegerNodeGen;
 import org.jruby.truffle.core.format.convert.ReinterpretLongAsDoubleNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
-import org.jruby.truffle.core.format.control.AtUnpackNode;
+import org.jruby.truffle.core.format.control.SetSourcePositionNode;
 import org.jruby.truffle.core.format.control.BackUnpackNode;
 import org.jruby.truffle.core.format.control.ForwardUnpackNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
@@ -333,7 +333,7 @@ public class UnpackTreeBuilder extends PackBaseListener {
             position = Integer.parseInt(ctx.count().INT().getText());
         }
 
-        appendNode(new AtUnpackNode(context, position));
+        appendNode(new SetSourcePositionNode(context, position));
     }
 
     @Override

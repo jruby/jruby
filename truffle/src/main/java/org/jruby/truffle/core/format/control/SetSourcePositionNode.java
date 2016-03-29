@@ -14,11 +14,11 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
 
-public class AtUnpackNode extends FormatNode {
+public class SetSourcePositionNode extends FormatNode {
 
     private final int position;
 
-    public AtUnpackNode(RubyContext context, int position) {
+    public SetSourcePositionNode(RubyContext context, int position) {
         super(context);
         this.position = position;
     }
@@ -30,7 +30,6 @@ public class AtUnpackNode extends FormatNode {
         }
 
         setSourcePosition(frame, position);
-
         return null;
     }
 
