@@ -11,6 +11,7 @@ package org.jruby.truffle.core.format.control;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
@@ -18,6 +19,8 @@ import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
 public class ReverseSourcePositionNode extends FormatNode {
 
     private boolean star;
+
+    private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
 
     public ReverseSourcePositionNode(RubyContext context, boolean star) {
         super(context);
@@ -33,13 +36,13 @@ public class ReverseSourcePositionNode extends FormatNode {
 
             final int target = position - remaining;
 
-            if (target < 0) {
+            if (rangeProfile.profile(target < 0)) {
                 throw new OutsideOfStringException();
             }
 
             setSourcePosition(frame, target);
         } else {
-            if (position == 0) {
+            if (rangeProfile.profile(position == 0)) {
                 throw new OutsideOfStringException();
             }
 
