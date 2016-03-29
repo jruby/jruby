@@ -992,6 +992,4 @@ public class JavaClass extends JavaObject {
         catch (SecurityException e) { return new Field[0]; }
     }
 
-    @Deprecated
-    public static final boolean CAN_SET_ACCESSIBLE = JavaUtil.CAN_SET_ACCESSIBLE;
 }
