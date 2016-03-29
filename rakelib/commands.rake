@@ -100,6 +100,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
 
     arg :line => "#{MSPEC_BIN} ci"
     arg :line => "-T -J-ea"
+    arg :line => "-T -J-Dfile.encoding=UTF-8" if RbConfig::CONFIG['host_os'] =~ /mswin|mingw/
     arg :line => "-T -J-Djruby.launch.inproc=false"
     arg :line => "-T -J-Djruby.compile.mode=#{ms[:compile_mode]}"
     arg :line => "-T -J-Djruby.jit.threshold=#{ms[:jit_threshold]}"
