@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.format.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
@@ -17,6 +18,8 @@ import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
 public class AdvanceSourcePositionNode extends FormatNode {
 
     private boolean toEnd;
+
+    private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
 
     public AdvanceSourcePositionNode(RubyContext context, boolean toEnd) {
         super(context);
@@ -30,7 +33,7 @@ public class AdvanceSourcePositionNode extends FormatNode {
         } else {
             final int position = getSourcePosition(frame);
 
-            if (position + 1 > getSourceLength(frame)) {
+            if (rangeProfile.profile(position + 1 > getSourceLength(frame))) {
                 throw new OutsideOfStringException();
             }
 
