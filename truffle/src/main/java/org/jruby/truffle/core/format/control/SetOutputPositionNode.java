@@ -13,18 +13,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 
-/**
- * Moves the output position to a particular location - similar to seek
- * absolute in a file stream.
- * <pre>
- * [0xabcd].pack('N') # => "\x00\x00\xAB\xCD"
- * [0xabcd].pack('@2N') # => "\x00\x00\x00\x00\xAB\xCD"
- */
-public class AtNode extends FormatNode {
+public class SetOutputPositionNode extends FormatNode {
 
     private final int position;
 
-    public AtNode(RubyContext context, int position) {
+    public SetOutputPositionNode(RubyContext context, int position) {
         super(context);
         this.position = position;
     }
