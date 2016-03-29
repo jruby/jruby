@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core.format.control;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
@@ -29,6 +30,10 @@ public class RepeatLoopNode extends FormatNode {
     public Object execute(VirtualFrame frame) {
         for (int i = 0; i < count; i++) {
             child.execute(frame);
+        }
+
+        if (CompilerDirectives.inInterpreter()) {
+            getRootNode().reportLoopCount(count);
         }
 
         return null;
