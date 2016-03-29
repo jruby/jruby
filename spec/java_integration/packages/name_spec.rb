@@ -22,11 +22,11 @@ describe "java package (and class)" do
 
   it 'handles Kernel methods' do
     expect( Java::JavaLang::Integer.to_s ).to eql 'Java::JavaLang::Integer'
-    expect( Java::JavaLang.to_s ).to eql 'Java::JavaLang'
+    expect( Java::JavaLang.to_s ).to eql 'java.lang'
     expect( Java::Java.inspect ).to eql 'Java::Java'
-    expect( Java::Javax.to_s ).to eql 'Java::Javax'
+    expect( Java::Javax.inspect ).to eql 'Java::Javax'
     expect( Java.inspect ).to eql 'Java'
-    expect( Java::java.util.to_s ).to eql 'Java::JavaUtil'
+    expect( Java::java.util.inspect ).to eql 'Java::JavaUtil'
     expect( org.xml.object_id ).to be_a Fixnum
     expect( org.xml.sax.singleton_class ).to be_a Class
     expect( org.xml == org.xml.sax ).to be false
@@ -60,8 +60,10 @@ describe "java package (and class)" do
     expect( org.xml.sax.respond_to?(:name) ).to be true
     expect( Java::Default.respond_to?(:name) ).to be true
 
-    if Object.const_defined?(:JavaPackageModuleTemplate) # should go-away in 9K
-      expect( JavaPackageModuleTemplate.respond_to?(:name) ).to be true
+    quiet do
+      if Object.const_defined?(:JavaPackageModuleTemplate) # should go-away in 9K
+        expect( JavaPackageModuleTemplate.respond_to?(:name) ).to be true
+      end
     end
   end
 
