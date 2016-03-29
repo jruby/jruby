@@ -31,6 +31,7 @@ import org.jruby.truffle.core.exception.ExceptionNodes;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.core.rubinius.ThreadPrimitiveNodes.ThreadRaisePrimitiveNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -39,7 +40,6 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
-
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -60,7 +60,7 @@ public abstract class ThreadNodes {
                 null,
                 null,
                 new CountDownLatch(1),
-                false,
+                getGlobalAbortOnException(context),
                 null,
                 null,
                 null,
@@ -68,6 +68,11 @@ public abstract class ThreadNodes {
                 0);
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object)); // Because it is cyclic
         return object;
+    }
+
+    public static boolean getGlobalAbortOnException(RubyContext context) {
+        final DynamicObject threadClass = context.getCoreLibrary().getThreadClass();
+        return (boolean) threadClass.get("@abort_on_exception");
     }
 
     private static DynamicObject createThreadLocals(RubyContext context) {
@@ -108,21 +113,32 @@ public abstract class ThreadNodes {
         final String name = "Ruby Thread@" + info;
         Layouts.THREAD.setNameUnsafe(thread, name);
         Thread.currentThread().setName(name);
+        DynamicObject fiber = Layouts.THREAD.getFiberManager(thread).getRootFiber();
 
         start(context, thread);
+        FiberNodes.start(context, fiber);
         try {
-            DynamicObject fiber = Layouts.THREAD.getFiberManager(thread).getRootFiber();
-            FiberNodes.run(context, fiber, currentNode, task);
+            task.run();
         } catch (ThreadExitException e) {
             Layouts.THREAD.setValue(thread, context.getCoreLibrary().getNilObject());
             return;
         } catch (RaiseException e) {
-            Layouts.THREAD.setException(thread, e.getException());
+            setException(context, thread, e.getException(), currentNode);
         } catch (ReturnException e) {
-            Layouts.THREAD.setException(thread, context.getCoreLibrary().unexpectedReturn(currentNode));
+            setException(context, thread, context.getCoreLibrary().unexpectedReturn(currentNode), currentNode);
         } finally {
+            FiberNodes.cleanup(context, fiber);
             cleanup(context, thread);
         }
+    }
+
+    private static void setException(RubyContext context, DynamicObject thread, DynamicObject exception, Node currentNode) {
+        final DynamicObject mainThread = context.getThreadManager().getRootThread();
+        final boolean isSystemExit = Layouts.BASIC_OBJECT.getLogicalClass(exception) == context.getCoreLibrary().getSystemExitClass();
+        if (thread != mainThread && (isSystemExit || Layouts.THREAD.getAbortOnException(thread))) {
+            ThreadRaisePrimitiveNode.raiseInThread(context, mainThread, exception, currentNode);
+        }
+        Layouts.THREAD.setException(thread, exception);
     }
 
     public static void start(RubyContext context, DynamicObject thread) {

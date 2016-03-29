@@ -41,12 +41,14 @@ class Thread
     Thread.new(*args, &block)
   end
 
+  @abort_on_exception = false
+
   def self.abort_on_exception
-    current.abort_on_exception
+    @abort_on_exception
   end
 
   def self.abort_on_exception=(value)
-    current.abort_on_exception = value
+    @abort_on_exception = value
   end
 
   def self.handle_interrupt(config, &block)

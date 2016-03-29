@@ -118,24 +118,17 @@ public abstract class FiberNodes {
         });
     }
 
-    public static void run(RubyContext context, DynamicObject fiber, Node currentNode, final Runnable task) {
+    private static void run(RubyContext context, DynamicObject fiber, Node currentNode, final Runnable task) {
         assert RubyGuards.isRubyFiber(fiber);
 
         start(context, fiber);
         try {
             task.run();
-        } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == context.getCoreLibrary().getSystemExitClass()) {
-                // SystemExit: send it to the main thread if it reached here
-                ThreadRaisePrimitiveNode.raiseInThread(context, context.getThreadManager().getRootThread(), e.getException(), currentNode);
-            }
-            throw e;
         } finally {
             cleanup(context, fiber);
         }
     }
 
-    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public static void start(RubyContext context, DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         Layouts.FIBER.setThread(fiber, Thread.currentThread());
@@ -146,7 +139,6 @@ public abstract class FiberNodes {
         Layouts.FIBER.getInitializedLatch(fiber).countDown();
     }
 
-    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public static void cleanup(RubyContext context, DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         Layouts.FIBER.setAlive(fiber, false);
