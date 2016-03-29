@@ -9,42 +9,49 @@
  */
 package org.jruby.truffle.core.format.control;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.LoopNode;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RepeatingNode;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 
-/**
- * Keep applying a child node as long as there is still source to read.
- * <pre>
- * [1, 2, 3].pack('C*') # =>  "\x01\x02\x03"
- */
 public class StarNode extends FormatNode {
 
-    @Child private FormatNode child;
+    @Child private LoopNode loopNode;
 
     public StarNode(RubyContext context, FormatNode child) {
         super(context);
-        this.child = child;
+        loopNode = Truffle.getRuntime().createLoopNode(new StarRepeatingNode(child));
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        int loops = 0;
-
-        while (getSourcePosition(frame) < getSourceLength(frame)) {
-            child.execute(frame);
-
-            if (CompilerDirectives.inInterpreter()) {
-                loops++;
-            }
-        }
-
-        if (CompilerDirectives.inInterpreter()) {
-            getRootNode().reportLoopCount(loops);
-        }
-
+        loopNode.executeLoop(frame);
         return null;
+    }
+
+    private class StarRepeatingNode extends Node implements RepeatingNode {
+
+        @Child private FormatNode child;
+
+        private final ConditionProfile conditionProfile = ConditionProfile.createBinaryProfile();
+
+        public StarRepeatingNode(FormatNode child) {
+            this.child = child;
+        }
+
+        @Override
+        public boolean executeRepeating(VirtualFrame frame) {
+            if (conditionProfile.profile(getSourcePosition(frame) >= getSourceLength(frame))) {
+                return false;
+            }
+
+            child.execute(frame);
+            return true;
+        }
     }
 
 }
