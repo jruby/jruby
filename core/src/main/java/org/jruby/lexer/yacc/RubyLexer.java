@@ -1079,6 +1079,7 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_BEG);
             return Tokens.tOP_ASGN;
         case '.':
+            setState(EXPR_DOT);
             yaccValue = "&.";
             return Tokens.tANDDOT;
         }
@@ -1630,7 +1631,12 @@ public class RubyLexer extends LexingCommon {
             if (tok != 0) return tok;
         }
 
-        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
+        if (isAfterOperator()) {
+            setState(EXPR_ARG);
+        } else {
+            if (isLexState(lex_state, EXPR_CLASS)) commandStart = true;
+            setState(EXPR_BEG);
+        }
 
         switch (c) {
         case '=':
