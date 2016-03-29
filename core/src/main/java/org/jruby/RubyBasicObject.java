@@ -776,8 +776,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public IRubyObject anyToString() {
         String cname = getMetaClass().getRealClass().getName();
+        String hex = Integer.toHexString(System.identityHashCode(this));
         /* 6:tags 16:addr 1:eos */
-        RubyString str = getRuntime().newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + '>');
+        RubyString str = RubyString.newString(getRuntime(),
+            new StringBuilder(2 + cname.length() + 3 + hex.length() + 1).
+            append("#<").append(cname).append(":0x").append(hex).append('>')
+        );
         str.setTaint(isTaint());
         return str;
     }
@@ -1072,20 +1076,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     public IRubyObject hashyInspect() {
-        Ruby runtime = getRuntime();
-        StringBuilder part = new StringBuilder();
+        final Ruby runtime = getRuntime();
         String cname = getMetaClass().getRealClass().getName();
+        StringBuilder part = new StringBuilder(2 + cname.length() + 3 + 8 + 1); // #<Object:0x5a1c0542>
         part.append("#<").append(cname).append(":0x");
         part.append(Integer.toHexString(inspectHashCode()));
 
         if (runtime.isInspecting(this)) {
             /* 6:tags 16:addr 1:eos */
             part.append(" ...>");
-            return runtime.newString(part.toString());
+            return RubyString.newString(runtime, part);
         }
         try {
             runtime.registerInspecting(this);
-            return runtime.newString(inspectObj(part).toString());
+            return RubyString.newString(runtime, inspectObj(runtime, part));
         } finally {
             runtime.unregisterInspecting(this);
         }
@@ -1125,8 +1129,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * The internal helper method that takes care of the part of the
      * inspection that inspects instance variables.
      */
-    private StringBuilder inspectObj(StringBuilder part) {
-        ThreadContext context = getRuntime().getCurrentContext();
+    private StringBuilder inspectObj(final Ruby runtime, StringBuilder part) {
+        final ThreadContext context = runtime.getCurrentContext();
         String sep = "";
 
         for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
