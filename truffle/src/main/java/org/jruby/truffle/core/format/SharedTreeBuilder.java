@@ -10,7 +10,8 @@
 package org.jruby.truffle.core.format;
 
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.format.control.NNode;
+import org.jruby.truffle.core.format.control.RepeatExplodedNode;
+import org.jruby.truffle.core.format.control.RepeatLoopNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.control.StarNode;
 import org.jruby.truffle.core.format.pack.PackParser;
@@ -33,7 +34,7 @@ public class SharedTreeBuilder {
         if (ctx.INT() == null) {
             return sequenceNode;
         } else {
-            return new NNode(context, Integer.parseInt(ctx.INT().getText()), sequenceNode);
+            return createRepeatNode(Integer.parseInt(ctx.INT().getText()), sequenceNode);
         }
     }
 
@@ -41,9 +42,17 @@ public class SharedTreeBuilder {
         if (count == null) {
             return node;
         } else if (count.INT() != null) {
-            return new NNode(context, Integer.parseInt(count.INT().getText()), node);
+            return createRepeatNode(Integer.parseInt(count.INT().getText()), node);
         } else {
             return new StarNode(context, node);
+        }
+    }
+
+    private FormatNode createRepeatNode(int count, FormatNode node) {
+        if (count > context.getOptions().PACK_UNROLL_LIMIT) {
+            return new RepeatLoopNode(context, count, node);
+        } else {
+            return new RepeatExplodedNode(context, count, node);
         }
     }
 
