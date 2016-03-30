@@ -80,45 +80,47 @@ public abstract class ReadHexStringNode extends FormatNode {
 
     @Specialization
     public Object read(VirtualFrame frame, byte[] source) {
-        final ByteBuffer encode = ByteBuffer.wrap(source, getSourcePosition(frame), getSourceLength(frame) - getSourcePosition(frame));
+        final int position = getSourcePosition(frame);
+
+        final ByteBuffer encode = ByteBuffer.wrap(source, position, getSourceLength(frame) - position);
 
         int occurrences = length;
-        byte[] lElem;
+
+        if (star || occurrences > encode.remaining() * 2) {
+            occurrences = encode.remaining() * 2;
+        }
+
+        int bits = 0;
+
+        byte[] lElem = new byte[occurrences];
+
+        final int shift;
 
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
-            if (star || occurrences > encode.remaining() * 2) {
-                occurrences = encode.remaining() * 2;
-            }
-            int bits = 0;
-            lElem = new byte[occurrences];
-            for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                if ((lCurByte & 1) != 0) {
+            shift = 4;
+        } else {
+            shift = 0;
+        }
+
+        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
+            if ((lCurByte & 1) != 0) {
+                if (byteOrder == ByteOrder.BIG_ENDIAN) {
                     bits <<= 4;
                 } else {
-                    bits = encode.get();
-                }
-                lElem[lCurByte] = Pack.sHexDigits[(bits >>> 4) & 15];
-            }
-        } else {
-            if (star || occurrences > encode.remaining() * 2) {
-                occurrences = encode.remaining() * 2;
-            }
-            int bits = 0;
-            lElem = new byte[occurrences];
-            for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                if ((lCurByte & 1) != 0) {
                     bits >>>= 4;
-                } else {
-                    bits = encode.get();
                 }
-                lElem[lCurByte] = Pack.sHexDigits[bits & 15];
+            } else {
+                bits = encode.get();
             }
+
+            lElem[lCurByte] = Pack.sHexDigits[(bits >>> shift) & 15];
         }
 
         final ByteList result = new ByteList(lElem, ASCIIEncoding.INSTANCE, false);
         setSourcePosition(frame, encode.position());
 
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
     }
 
 }
