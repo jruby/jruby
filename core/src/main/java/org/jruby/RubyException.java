@@ -152,15 +152,16 @@ public class RubyException extends RubyObject {
      *@return A RubyString containing the debug information.
      */
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect(ThreadContext context) {
+    public RubyString inspect(ThreadContext context) {
         // rb_class_name skips intermediate classes (JRUBY-6786)
-        RubyModule rubyClass = getMetaClass().getRealClass();
+        String rubyClass = getMetaClass().getRealClass().getName();
         RubyString exception = RubyString.objAsString(context, this);
 
-        if (exception.isEmpty()) return getRuntime().newString(rubyClass.getName());
-        StringBuilder sb = new StringBuilder("#<");
-        sb.append(rubyClass.getName()).append(": ").append(exception.getByteList()).append('>');
-        return getRuntime().newString(sb.toString());
+        if (exception.isEmpty()) return context.runtime.newString(rubyClass);
+
+        return RubyString.newString(context.runtime, new StringBuilder(2 + rubyClass.length() + 2 + exception.size() + 1).
+                append("#<").append(rubyClass).append(": ").append(exception.getByteList()).append('>')
+        );
     }
 
     @Override
