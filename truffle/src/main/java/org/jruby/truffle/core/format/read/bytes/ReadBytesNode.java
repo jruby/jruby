@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
@@ -29,6 +30,8 @@ public abstract class ReadBytesNode extends FormatNode {
     private final int count;
     private final boolean consumePartial;
 
+    private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
+
     public ReadBytesNode(RubyContext context, int count, boolean consumePartial) {
         super(context);
         this.count = count;
@@ -37,11 +40,7 @@ public abstract class ReadBytesNode extends FormatNode {
 
     @Specialization(guards = "isNull(source)")
     public void read(VirtualFrame frame, Object source) {
-        CompilerDirectives.transferToInterpreter();
-
-        // Advance will handle the error
         advanceSourcePosition(frame, count);
-
         throw new IllegalStateException();
     }
 
@@ -49,7 +48,7 @@ public abstract class ReadBytesNode extends FormatNode {
     public Object read(VirtualFrame frame, byte[] source) {
         int index = advanceSourcePositionNoThrow(frame, count, consumePartial);
 
-        if (index == -1) {
+        if (rangeProfile.profile(index == -1)) {
             if (consumePartial) {
                 return MissingValue.INSTANCE;
             } else {
