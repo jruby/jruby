@@ -45,13 +45,13 @@
  */
 package org.jruby.truffle.core.format.write.bytes;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatGuards;
@@ -61,15 +61,14 @@ import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
 
-/**
- * Write a BER-compressed integer.
- * <p>
- * BER is 'basic encoding rules', which is part of ASN.1.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
 public abstract class WriteBERNode extends FormatNode {
+
+    private final ConditionProfile cantCompressProfile = ConditionProfile.createBinaryProfile();
+
+    private final BigInteger BIG_128 = BigInteger.valueOf(128);
 
     public WriteBERNode(RubyContext context) {
         super(context);
@@ -77,37 +76,31 @@ public abstract class WriteBERNode extends FormatNode {
 
     @Specialization
     public Object doWrite(VirtualFrame frame, int value) {
-        if (value < 0) {
-            CompilerDirectives.transferToInterpreter();
+        if (cantCompressProfile.profile(value < 0)) {
             throw new CantCompressNegativeException();
         }
 
         writeBytes(frame, encode(value));
-
         return null;
     }
 
     @Specialization
     public Object doWrite(VirtualFrame frame, long value) {
-        if (value < 0) {
-            CompilerDirectives.transferToInterpreter();
+        if (cantCompressProfile.profile(value < 0)) {
             throw new CantCompressNegativeException();
         }
 
         writeBytes(frame, encode(value));
-
         return null;
     }
 
     @Specialization(guards = "isRubyBignum(value)")
     public Object doWrite(VirtualFrame frame, DynamicObject value) {
-        if (Layouts.BIGNUM.getValue(value).signum() < 0) {
-            CompilerDirectives.transferToInterpreter();
+        if (cantCompressProfile.profile(Layouts.BIGNUM.getValue(value).signum() < 0)) {
             throw new CantCompressNegativeException();
         }
 
         writeBytes(frame, encode(value));
-
         return null;
     }
 
@@ -115,16 +108,15 @@ public abstract class WriteBERNode extends FormatNode {
     private ByteList encode(Object from) {
         // TODO CS 30-Mar-15 should write our own optimizable version of BER
 
-        ByteList buf = new ByteList();
+        final ByteList buf = new ByteList();
 
         long l;
 
         if (FormatGuards.isRubyBignum(from)) {
-            BigInteger big128 = BigInteger.valueOf(128);
             from = Layouts.BIGNUM.getValue((DynamicObject) from);
             while (true) {
                 BigInteger bignum = (BigInteger)from;
-                BigInteger[] ary = bignum.divideAndRemainder(big128);
+                BigInteger[] ary = bignum.divideAndRemainder(BIG_128);
                 buf.append((byte)(ary[1].longValue() | 0x80) & 0xff);
 
                 if (ary[0].compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
@@ -156,7 +148,7 @@ public abstract class WriteBERNode extends FormatNode {
         }
 
         while (left < right) {
-            byte tmp = buf.getUnsafeBytes()[left];
+            final byte tmp = buf.getUnsafeBytes()[left];
             buf.getUnsafeBytes()[left] = buf.getUnsafeBytes()[right];
             buf.getUnsafeBytes()[right] = tmp;
 
