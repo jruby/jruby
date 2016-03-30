@@ -57,6 +57,7 @@ import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
+import org.jruby.util.Pack;
 import org.jruby.util.StringSupport;
 
 import java.nio.ByteBuffer;
@@ -76,24 +77,26 @@ public abstract class ReadUUStringNode extends FormatNode {
 
     @Specialization
     protected Object encode(VirtualFrame frame, byte[] source) {
-        CompilerDirectives.transferToInterpreter();
+        final int position = getSourcePosition(frame);
 
-        // TODO CS 28-Dec-15 should write our own optimizable version of UU
-        
-        final ByteBuffer encode = ByteBuffer.wrap(source, getSourcePosition(frame), getSourceLength(frame) - getSourcePosition(frame));
+        final ByteBuffer encode = ByteBuffer.wrap(source, position, getSourceLength(frame) - position);
 
         int length = encode.remaining() * 3 / 4;
         byte[] lElem = new byte[length];
         int index = 0;
         int s = 0;
         int total = 0;
-        if (length > 0) s = encode.get();
+
+        if (length > 0) {
+            s = encode.get();
+        }
+
         while (encode.hasRemaining() && s > ' ' && s < 'a') {
             int a, b, c, d;
             byte[] hunk = new byte[3];
 
-            int len = (s - ' ') & 077;
-            s = safeGet(encode);
+            int len = (s - ' ') & 0x3F;
+            s = Pack.safeGet(encode);
             total += len;
             if (total > length) {
                 len -= total - length;
@@ -104,41 +107,51 @@ public abstract class ReadUUStringNode extends FormatNode {
                 int mlen = len > 3 ? 3 : len;
 
                 if (encode.hasRemaining() && s >= ' ') {
-                    a = (s - ' ') & 077;
-                    s = safeGet(encode);
-                } else
+                    a = (s - ' ') & 0x3F;
+                    s = Pack.safeGet(encode);
+                } else {
                     a = 0;
-                if (encode.hasRemaining() && s >= ' ') {
-                    b = (s - ' ') & 077;
-                    s = safeGet(encode);
-                } else
-                    b = 0;
-                if (encode.hasRemaining() && s >= ' ') {
-                    c = (s - ' ') & 077;
-                    s = safeGet(encode);
-                } else
-                    c = 0;
-                if (encode.hasRemaining() && s >= ' ') {
-                    d = (s - ' ') & 077;
-                    s = safeGet(encode);
-                } else
-                    d = 0;
-                hunk[0] = (byte)((a << 2 | b >> 4) & 255);
-                hunk[1] = (byte)((b << 4 | c >> 2) & 255);
-                hunk[2] = (byte)((c << 6 | d) & 255);
+                }
 
-                for (int i = 0; i < mlen; i++) lElem[index++] = hunk[i];
+                if (encode.hasRemaining() && s >= ' ') {
+                    b = (s - ' ') & 0x3F;
+                    s = Pack.safeGet(encode);
+                } else {
+                    b = 0;
+                }
+
+                if (encode.hasRemaining() && s >= ' ') {
+                    c = (s - ' ') & 0x3F;
+                    s = Pack.safeGet(encode);
+                } else {
+                    c = 0;
+                }
+
+                if (encode.hasRemaining() && s >= ' ') {
+                    d = (s - ' ') & 0x3F;
+                    s = Pack.safeGet(encode);
+                } else {
+                    d = 0;
+                }
+
+                hunk[0] = (byte) ((a << 2 | b >> 4) & 255);
+                hunk[1] = (byte) ((b << 4 | c >> 2) & 255);
+                hunk[2] = (byte) ((c << 6 | d) & 255);
+
+                for (int i = 0; i < mlen; i++) {
+                    lElem[index++] = hunk[i];
+                }
+
                 len -= mlen;
             }
+
             if (s == '\r') {
-                s = safeGet(encode);
-            }
-            if (s == '\n') {
-                s = safeGet(encode);
-            }
-            else if (encode.hasRemaining()) {
-                if (safeGet(encode) == '\n') {
-                    safeGet(encode); // Possible Checksum Byte
+                s = Pack.safeGet(encode);
+            } else if (s == '\n') {
+                s = Pack.safeGet(encode);
+            } else if (encode.hasRemaining()) {
+                if (Pack.safeGet(encode) == '\n') {
+                    Pack.safeGet(encode);
                 } else if (encode.hasRemaining()) {
                     encode.position(encode.position() - 1);
                 }
@@ -149,17 +162,8 @@ public abstract class ReadUUStringNode extends FormatNode {
 
         setSourcePosition(frame, encode.position());
 
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
-    }
-
-    private static int safeGet(ByteBuffer encode) {
-        while (encode.hasRemaining()) {
-            int got = encode.get() & 0xff;
-
-            if (got != 0) return got;
-        }
-
-        return 0;
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
     }
 
 }
