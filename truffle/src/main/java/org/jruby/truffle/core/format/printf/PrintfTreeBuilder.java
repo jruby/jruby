@@ -25,7 +25,7 @@ import org.jruby.truffle.core.format.read.array.ReadValueNodeGen;
 import org.jruby.truffle.core.format.convert.ToDoubleWithCoercionNodeGen;
 import org.jruby.truffle.core.format.convert.ToIntegerNodeGen;
 import org.jruby.truffle.core.format.convert.ToStringNodeGen;
-import org.jruby.truffle.core.format.write.bytes.WriteByteNode;
+import org.jruby.truffle.core.format.write.bytes.Write8NodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBytesNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WritePaddedBytesNodeGen;
 import org.jruby.util.ByteList;
@@ -54,7 +54,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
     @Override
     public void exitEscaped(PrintfParser.EscapedContext ctx) {
-        sequence.add(new WriteByteNode(context, (byte) '%'));
+        sequence.add(Write8NodeGen.create(context, new LiteralFormatNode(context, (byte) '%')));
     }
 
     @Override
@@ -236,7 +236,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
         final FormatNode node;
 
         if (text.length() == 1) {
-            node = new WriteByteNode(context, (byte) text.get(0));
+            node = Write8NodeGen.create(context, new LiteralFormatNode(context, (byte) text.get(0)));
         } else {
             node = WriteBytesNodeGen.create(context, new LiteralFormatNode(context, text));
         }

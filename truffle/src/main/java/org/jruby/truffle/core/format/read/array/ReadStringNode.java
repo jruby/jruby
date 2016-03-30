@@ -16,9 +16,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
+import org.jruby.truffle.core.format.LiteralFormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.convert.ToStringNode;
 import org.jruby.truffle.core.format.convert.ToStringNodeGen;
+import org.jruby.truffle.core.format.write.bytes.Write8NodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteByteNode;
 
 @NodeChildren({
@@ -77,7 +79,7 @@ public abstract class ReadStringNode extends FormatNode {
                     conversionMethod,
                     inspectOnConversionFailure,
                     valueOnNil,
-                    new WriteByteNode(getContext(), (byte) 0)));
+                    Write8NodeGen.create(getContext(), new LiteralFormatNode(getContext(), (byte) 0))));
         }
 
         return toStringNode.executeToString(frame, value);
