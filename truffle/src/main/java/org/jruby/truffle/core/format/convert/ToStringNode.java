@@ -27,7 +27,6 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.dispatch.DispatchNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
@@ -35,9 +34,6 @@ import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * Convert a value to a string.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
@@ -63,17 +59,15 @@ public abstract class ToStringNode extends FormatNode {
         this.conversionMethod = conversionMethod;
         this.inspectOnConversionFailure = inspectOnConversionFailure;
         this.valueOnNil = valueOnNil;
-        isTaintedNode = IsTaintedNodeGen.create(context, getEncapsulatingSourceSection(), null);
+        isTaintedNode = IsTaintedNodeGen.create(context, null, null);
     }
 
     public abstract Object executeToString(VirtualFrame frame, Object object);
 
     @Specialization(guards = "isNil(nil)")
-    public Object toStringNil(VirtualFrame frame, Object nil) {
+    public Object toStringNil(Object nil) {
         return valueOnNil;
     }
-
-    // TODO CS 31-Mar-15 these boundaries and slow versions are not ideal
 
     @TruffleBoundary
     @Specialization(guards = "convertNumbersToStrings")
@@ -106,7 +100,8 @@ public abstract class ToStringNode extends FormatNode {
     public ByteList toString(VirtualFrame frame, DynamicObject array) {
         if (toSNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
+            toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
+                    MissingBehavior.RETURN_MISSING));
         }
 
         final Object value = toSNode.call(frame, array, "to_s", null);
@@ -117,22 +112,17 @@ public abstract class ToStringNode extends FormatNode {
             }
 
             return StringOperations.getByteListReadOnly((DynamicObject) value);
-        }
-
-        CompilerDirectives.transferToInterpreter();
-
-        if (value == DispatchNode.MISSING) {
+        } else {
             throw new NoImplicitConversionException(array, "String");
         }
-
-        throw new NoImplicitConversionException(array, "String");
     }
 
     @Specialization(guards = {"!isRubyString(object)", "!isRubyArray(object)"})
     public ByteList toString(VirtualFrame frame, Object object) {
         if (toStrNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
+            toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
+                    MissingBehavior.RETURN_MISSING));
         }
 
         final Object value = toStrNode.call(frame, object, conversionMethod, null);
@@ -153,15 +143,9 @@ public abstract class ToStringNode extends FormatNode {
             }
 
             return StringOperations.getByteListReadOnly(inspectNode.toS(frame, object));
-        }
-
-        CompilerDirectives.transferToInterpreter();
-
-        if (value == DispatchNode.MISSING) {
+        } else {
             throw new NoImplicitConversionException(object, "String");
         }
-
-        throw new NoImplicitConversionException(object, "String");
     }
 
 }
