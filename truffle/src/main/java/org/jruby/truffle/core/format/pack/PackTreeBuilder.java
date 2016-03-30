@@ -12,7 +12,9 @@ package org.jruby.truffle.core.format.pack;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
+import org.jruby.truffle.core.format.LiteralFormatNode;
 import org.jruby.truffle.core.format.SharedTreeBuilder;
+import org.jruby.truffle.core.format.control.AdvanceSourcePositionNode;
 import org.jruby.truffle.core.format.convert.ReinterpretAsLongNodeGen;
 import org.jruby.truffle.core.format.convert.ToFloatNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
@@ -313,8 +315,17 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitPointer(PackParser.PointerContext ctx) {
-        appendNode(writeInteger(64, ByteOrder.nativeOrder(),
-                new PNode(context)));
+        /*
+         * P and p print the address of a string. Obviously that doesn't work
+         * well in Java. We'll print 0x0000000000000000 with the hope that at
+         * least it should page fault if anyone tries to read it.
+         */
+
+        appendNode(new SequenceNode(context, new FormatNode[]{
+                new AdvanceSourcePositionNode(context, false),
+                writeInteger(64, ByteOrder.nativeOrder(),
+                    new LiteralFormatNode(context, (long) 0))
+        }));
 
     }
 
