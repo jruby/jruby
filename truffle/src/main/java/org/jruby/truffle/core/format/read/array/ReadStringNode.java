@@ -20,8 +20,7 @@ import org.jruby.truffle.core.format.LiteralFormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.convert.ToStringNode;
 import org.jruby.truffle.core.format.convert.ToStringNodeGen;
-import org.jruby.truffle.core.format.write.bytes.Write8NodeGen;
-import org.jruby.truffle.core.format.write.bytes.WriteByteNode;
+import org.jruby.truffle.core.format.write.bytes.WriteByteNodeGen;
 
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
@@ -79,7 +78,7 @@ public abstract class ReadStringNode extends FormatNode {
                     conversionMethod,
                     inspectOnConversionFailure,
                     valueOnNil,
-                    Write8NodeGen.create(getContext(), new LiteralFormatNode(getContext(), (byte) 0))));
+                    WriteByteNodeGen.create(getContext(), new LiteralFormatNode(getContext(), (byte) 0))));
         }
 
         return toStringNode.executeToString(frame, value);

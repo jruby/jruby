@@ -32,12 +32,11 @@ import org.jruby.truffle.core.format.write.bytes.Write32BigNodeGen;
 import org.jruby.truffle.core.format.write.bytes.Write32LittleNodeGen;
 import org.jruby.truffle.core.format.write.bytes.Write64BigNodeGen;
 import org.jruby.truffle.core.format.write.bytes.Write64LittleNodeGen;
-import org.jruby.truffle.core.format.write.bytes.Write8NodeGen;
+import org.jruby.truffle.core.format.write.bytes.WriteByteNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBERNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBase64StringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBinaryStringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBitStringNodeGen;
-import org.jruby.truffle.core.format.write.bytes.WriteByteNode;
 import org.jruby.truffle.core.format.write.bytes.WriteHexStringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteMIMEStringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteUTF8CharacterNodeGen;
@@ -352,7 +351,7 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitNullByte(PackParser.NullByteContext ctx) {
-        appendNode((sharedTreeBuilder.applyCount(ctx.count(), Write8NodeGen.create(context, new LiteralFormatNode(context, (byte) 0)))));
+        appendNode((sharedTreeBuilder.applyCount(ctx.count(), WriteByteNodeGen.create(context, new LiteralFormatNode(context, (byte) 0)))));
     }
 
     @Override
@@ -423,7 +422,7 @@ public class PackTreeBuilder extends PackBaseListener {
     private FormatNode writeInteger(int size, ByteOrder byteOrder, FormatNode readNode) {
         switch (size) {
             case 8:
-                return Write8NodeGen.create(context, readNode);
+                return WriteByteNodeGen.create(context, readNode);
             case 16:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
                     return Write16LittleNodeGen.create(context, readNode);

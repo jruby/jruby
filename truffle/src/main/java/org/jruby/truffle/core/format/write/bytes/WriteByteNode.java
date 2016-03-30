@@ -19,9 +19,9 @@ import org.jruby.truffle.core.format.FormatNode;
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
-public abstract class Write8Node extends FormatNode {
+public abstract class WriteByteNode extends FormatNode {
 
-    public Write8Node(RubyContext context) {
+    public WriteByteNode(RubyContext context) {
         super(context);
     }
 
