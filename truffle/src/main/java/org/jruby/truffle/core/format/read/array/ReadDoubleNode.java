@@ -20,9 +20,6 @@ import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.convert.ToDoubleNode;
 import org.jruby.truffle.core.format.convert.ToDoubleNodeGen;
 
-/**
- * Read a {@code double} value from the source.
- */
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
@@ -36,11 +33,7 @@ public abstract class ReadDoubleNode extends FormatNode {
 
     @Specialization(guards = "isNull(source)")
     public double read(VirtualFrame frame, Object source) {
-        CompilerDirectives.transferToInterpreter();
-
-        // Advance will handle the error
         advanceSourcePosition(frame);
-
         throw new IllegalStateException();
     }
 

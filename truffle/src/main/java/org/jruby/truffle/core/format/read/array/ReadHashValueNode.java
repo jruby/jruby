@@ -9,10 +9,11 @@
  */
 package org.jruby.truffle.core.format.read.array;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
@@ -26,16 +27,18 @@ public abstract class ReadHashValueNode extends FormatNode {
 
     private final Object key;
 
+    private final ConditionProfile oneHashProfile = ConditionProfile.createBinaryProfile();
+
     public ReadHashValueNode(RubyContext context, Object key) {
         super(context);
         this.key = key;
     }
 
     @Specialization
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public Object read(Object[] source) {
-        if (source.length != 1 || !RubyGuards.isRubyHash(source[0])) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("one hash required", this));
+        if (oneHashProfile.profile(source.length != 1 || !RubyGuards.isRubyHash(source[0]))) {
+            throw new RaiseException(getContext().getCoreLibrary().argumentErrorOneHashRequired(this));
         }
 
         // We're not in a Ruby frame here, so we can't run arbitrary Ruby nodes like Hash#[]. Instead use a slow send.

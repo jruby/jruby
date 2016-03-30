@@ -14,15 +14,13 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.convert.ToIntegerNode;
 import org.jruby.truffle.core.format.convert.ToIntegerNodeGen;
 
-/**
- * Read a {@code int} value from the source.
- */
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
@@ -30,17 +28,15 @@ public abstract class ReadIntegerNode extends FormatNode {
 
     @Child private ToIntegerNode toIntegerNode;
 
+    private final ConditionProfile convertedTypeProfile = ConditionProfile.createBinaryProfile();
+
     public ReadIntegerNode(RubyContext context) {
         super(context);
     }
 
     @Specialization(guards = "isNull(source)")
     public double read(VirtualFrame frame, Object source) {
-        CompilerDirectives.transferToInterpreter();
-
-        // Advance will handle the error
         advanceSourcePosition(frame);
-
         throw new IllegalStateException();
     }
 
@@ -67,7 +63,8 @@ public abstract class ReadIntegerNode extends FormatNode {
         }
 
         final Object value = toIntegerNode.executeToInteger(frame, source[advanceSourcePosition(frame)]);
-        if (value instanceof Long) {
+
+        if (convertedTypeProfile.profile(value instanceof Long)) {
             return (int) (long) value;
         } else {
             return (int) value;

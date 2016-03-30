@@ -24,11 +24,6 @@ import org.jruby.truffle.core.format.convert.ToLongNodeGen;
 
 import java.math.BigInteger;
 
-/**
- * Read a {@code long} value from the source, or a {@link BigInteger} if the
- * value is that large. This is only used with BER - in all other cases
- * we would truncate a {@code Bignum}.
- */
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
@@ -44,11 +39,7 @@ public abstract class ReadLongOrBigIntegerNode extends FormatNode {
 
     @Specialization(guards = "isNull(source)")
     public void read(VirtualFrame frame, Object source) {
-        CompilerDirectives.transferToInterpreter();
-
-        // Advance will handle the error
         advanceSourcePosition(frame);
-
         throw new IllegalStateException();
     }
 

@@ -947,6 +947,11 @@ public class CoreLibrary {
         return runtimeError(String.format("can't modify frozen %s", className), currentNode);
     }
 
+    @TruffleBoundary
+    public DynamicObject argumentErrorOneHashRequired(Node currentNode) {
+        return argumentError("one hash required", currentNode, null);
+    }
+
     public DynamicObject argumentError(String message, Node currentNode) {
         return argumentError(message, currentNode, null);
     }

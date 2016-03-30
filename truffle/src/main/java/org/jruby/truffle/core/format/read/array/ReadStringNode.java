@@ -21,9 +21,6 @@ import org.jruby.truffle.core.format.convert.ToStringNode;
 import org.jruby.truffle.core.format.convert.ToStringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteByteNode;
 
-/**
- * Read a string from the source, converting if needed.
- */
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
@@ -48,11 +45,7 @@ public abstract class ReadStringNode extends FormatNode {
 
     @Specialization(guards = "isNull(source)")
     public Object read(VirtualFrame frame, Object source) {
-        CompilerDirectives.transferToInterpreter();
-
-        // Advance will handle the error
         advanceSourcePosition(frame);
-
         throw new IllegalStateException();
     }
 
@@ -79,8 +72,12 @@ public abstract class ReadStringNode extends FormatNode {
     private Object readAndConvert(VirtualFrame frame, Object value) {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toStringNode = insert(ToStringNodeGen.create(getContext(), convertNumbersToStrings,
-                    conversionMethod, inspectOnConversionFailure, valueOnNil, new WriteByteNode(getContext(), (byte) 0)));
+            toStringNode = insert(ToStringNodeGen.create(getContext(),
+                    convertNumbersToStrings,
+                    conversionMethod,
+                    inspectOnConversionFailure,
+                    valueOnNil,
+                    new WriteByteNode(getContext(), (byte) 0)));
         }
 
         return toStringNode.executeToString(frame, value);
