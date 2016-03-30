@@ -76,7 +76,10 @@ public abstract class ReadUTF8CharacterNode extends FormatNode {
         }
 
         if (index + length > sourceLength) {
-            throw new InvalidFormatException(String.format("malformed UTF-8 character (expected %d bytes, given %d bytes)", length, sourceLength - index));
+            CompilerDirectives.transferToInterpreter();
+            throw new InvalidFormatException(
+                    String.format("malformed UTF-8 character (expected %d bytes, given %d bytes)",
+                            length, sourceLength - index));
         }
 
         for (int n = 1; n < length; n++) {
