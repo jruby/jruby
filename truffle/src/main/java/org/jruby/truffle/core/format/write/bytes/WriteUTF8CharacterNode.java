@@ -45,20 +45,18 @@
  */
 package org.jruby.truffle.core.format.write.bytes;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.RangeException;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.StringOperations;
 
-/**
- * Write a Unicode character out as UTF-8 bytes.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
@@ -69,11 +67,11 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
     }
 
     @Specialization(guards = {"value >= 0", "value <= 0x7f"})
-    public Object writeSingleByte(VirtualFrame frame, long value) {
-        writeByte(frame,
-                (byte) value);
+    public Object writeSingleByte(VirtualFrame frame, long value,
+                                  @Cached("createBinaryProfile()") ConditionProfile rangeProfile) {
+        writeByte(frame, (byte) value);
 
-        if (StringOperations.isUTF8ValidOneByte((byte) value)) {
+        if (rangeProfile.profile(StringOperations.isUTF8ValidOneByte((byte) value))) {
             setStringCodeRange(frame, CodeRange.CR_7BIT);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
@@ -83,16 +81,17 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
     }
 
     @Specialization(guards = {"value > 0x7f", "value <= 0x7ff"})
-    public Object writeTwoBytes(VirtualFrame frame, long value) {
+    public Object writeTwoBytes(VirtualFrame frame, long value,
+                                @Cached("createBinaryProfile()") ConditionProfile rangeProfile) {
         final byte[] bytes = {
-                (byte)(((value >>> 6) & 0xff) | 0xc0),
-                (byte)((value & 0x3f) | 0x80)
+                (byte) (((value >>> 6) & 0xff) | 0xc0),
+                (byte) ((value & 0x3f) | 0x80)
         };
 
         writeBytes(frame, bytes);
         increaseStringLength(frame, -2 + 1);
 
-        if (StringOperations.isUTF8ValidTwoBytes(bytes)) {
+        if (rangeProfile.profile(StringOperations.isUTF8ValidTwoBytes(bytes))) {
             setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
@@ -102,17 +101,18 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
     }
 
     @Specialization(guards = {"value > 0x7ff", "value <= 0xffff"})
-    public Object writeThreeBytes(VirtualFrame frame, long value) {
+    public Object writeThreeBytes(VirtualFrame frame, long value,
+                                  @Cached("createBinaryProfile()") ConditionProfile rangeProfile) {
         final byte[] bytes = {
-                (byte)(((value >>> 12) & 0xff) | 0xe0),
-                (byte)(((value >>> 6) & 0x3f) | 0x80),
-                (byte)((value & 0x3f) | 0x80)
+                (byte) (((value >>> 12) & 0xff) | 0xe0),
+                (byte) (((value >>> 6) & 0x3f) | 0x80),
+                (byte) ((value & 0x3f) | 0x80)
         };
 
         writeBytes(frame, bytes);
         increaseStringLength(frame, -3 + 1);
 
-        if (StringOperations.isUTF8ValidThreeBytes(bytes)) {
+        if (rangeProfile.profile(StringOperations.isUTF8ValidThreeBytes(bytes))) {
             setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
@@ -122,18 +122,19 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
     }
 
     @Specialization(guards = {"value > 0xffff", "value <= 0x1fffff"})
-    public Object writeFourBytes(VirtualFrame frame, long value) {
+    public Object writeFourBytes(VirtualFrame frame, long value,
+                                 @Cached("createBinaryProfile()") ConditionProfile rangeProfile) {
         final byte[] bytes = {
-                (byte)(((value >>> 18) & 0xff) | 0xf0),
-                (byte)(((value >>> 12) & 0x3f) | 0x80),
-                (byte)(((value >>> 6) & 0x3f) | 0x80),
-                (byte)((value & 0x3f) | 0x80)
+                (byte) (((value >>> 18) & 0xff) | 0xf0),
+                (byte) (((value >>> 12) & 0x3f) | 0x80),
+                (byte) (((value >>> 6) & 0x3f) | 0x80),
+                (byte) ((value & 0x3f) | 0x80)
         };
 
         writeBytes(frame, bytes);
         increaseStringLength(frame, -4 + 1);
 
-        if (StringOperations.isUTF8ValidFourBytes(bytes)) {
+        if (rangeProfile.profile(StringOperations.isUTF8ValidFourBytes(bytes))) {
             setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
@@ -143,19 +144,20 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
     }
 
     @Specialization(guards = {"value > 0x1fffff", "value <= 0x3ffffff"})
-    public Object writeFiveBytes(VirtualFrame frame, long value) {
+    public Object writeFiveBytes(VirtualFrame frame, long value,
+                                 @Cached("createBinaryProfile()") ConditionProfile rangeProfile) {
         final byte[] bytes = {
-                (byte)(((value >>> 24) & 0xff) | 0xf8),
-                (byte)(((value >>> 18) & 0x3f) | 0x80),
-                (byte)(((value >>> 12) & 0x3f) | 0x80),
-                (byte)(((value >>> 6) & 0x3f) | 0x80),
-                (byte)((value & 0x3f) | 0x80)
+                (byte) (((value >>> 24) & 0xff) | 0xf8),
+                (byte) (((value >>> 18) & 0x3f) | 0x80),
+                (byte) (((value >>> 12) & 0x3f) | 0x80),
+                (byte) (((value >>> 6) & 0x3f) | 0x80),
+                (byte) ((value & 0x3f) | 0x80)
         };
 
         writeBytes(frame, bytes);
         increaseStringLength(frame, -5 + 1);
 
-        if (StringOperations.isUTF8ValidFiveBytes(bytes)) {
+        if (rangeProfile.profile(StringOperations.isUTF8ValidFiveBytes(bytes))) {
             setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
@@ -165,20 +167,21 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
     }
 
     @Specialization(guards = {"value > 0x3ffffff", "value <= 0x7fffffff"})
-    public Object writeSixBytes(VirtualFrame frame, long value) {
+    public Object writeSixBytes(VirtualFrame frame, long value,
+                                @Cached("createBinaryProfile()") ConditionProfile rangeProfile) {
         final byte[] bytes = {
-                (byte)(((value >>> 30) & 0xff) | 0xfc),
-                (byte)(((value >>> 24) & 0x3f) | 0x80),
-                (byte)(((value >>> 18) & 0x3f) | 0x80),
-                (byte)(((value >>> 12) & 0x3f) | 0x80),
-                (byte)(((value >>> 6) & 0x3f) | 0x80),
-                (byte)((value & 0x3f) | 0x80)
+                (byte) (((value >>> 30) & 0xff) | 0xfc),
+                (byte) (((value >>> 24) & 0x3f) | 0x80),
+                (byte) (((value >>> 18) & 0x3f) | 0x80),
+                (byte) (((value >>> 12) & 0x3f) | 0x80),
+                (byte) (((value >>> 6) & 0x3f) | 0x80),
+                (byte) ((value & 0x3f) | 0x80)
         };
 
         writeBytes(frame, bytes);
         increaseStringLength(frame, -6 + 1);
 
-        if (StringOperations.isUTF8ValidSixBytes(bytes)) {
+        if (rangeProfile.profile(StringOperations.isUTF8ValidSixBytes(bytes))) {
             setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
@@ -188,14 +191,12 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
     }
 
     @Specialization(guards = "value < 0")
-    public Object writeNegative(VirtualFrame frame, long value) {
-        CompilerDirectives.transferToInterpreter();
+    public Object writeNegative(long value) {
         throw new RangeException("pack(U): value out of range");
     }
 
     @Specialization(guards = "value > 0x7fffffff")
-    public Object writeOutOfRange(VirtualFrame frame, long value) {
-        CompilerDirectives.transferToInterpreter();
+    public Object writeOutOfRange(long value) {
         throw new RangeException("pack(U): value out of range");
     }
 
