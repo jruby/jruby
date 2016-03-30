@@ -184,6 +184,13 @@ public class RubyContext extends ExecutionContext {
     }
 
     public void shutdown() {
+        if (getOptions().ROPE_PRINT_INTERN_STATS) {
+            System.out.println("Ropes re-used: " + getRopeTable().getRopesReusedCount());
+            System.out.println("Rope byte arrays re-used: " + getRopeTable().getByteArrayReusedCount());
+            System.out.println("Rope bytes saved: " + getRopeTable().getRopeBytesSaved());
+            System.out.println("Total ropes interned: " + getRopeTable().totalRopes());
+        }
+
         atExitManager.runSystemExitHooks();
 
         if (instrumentationServerManager != null) {

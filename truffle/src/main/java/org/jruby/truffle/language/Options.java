@@ -48,6 +48,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_PACK_UNROLL_LIMIT;
 import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_USE_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_ROPE_CLASS_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_ROPE_LAZY_SUBSTRINGS;
+import static org.jruby.util.cli.Options.TRUFFLE_ROPE_PRINT_INTERN_STATS;
 import static org.jruby.util.cli.Options.TRUFFLE_SYMBOL_TO_PROC_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_THREAD_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_UNPACK_CACHE;
@@ -75,6 +76,7 @@ public class Options {
     public final int HASH_PACKED_ARRAY_MAX = TRUFFLE_HASH_PACKED_ARRAY_MAX.load();
 
     public final boolean ROPE_LAZY_SUBSTRINGS = TRUFFLE_ROPE_LAZY_SUBSTRINGS.load();
+    public final boolean ROPE_PRINT_INTERN_STATS = TRUFFLE_ROPE_PRINT_INTERN_STATS.load();
 
     // Caches
 

@@ -15,6 +15,8 @@ import org.jcodings.Encoding;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -23,6 +25,11 @@ public class RopeTable {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final WeakHashMap<Key, WeakReference<Rope>> ropesTable = new WeakHashMap<>();
+    private final Set<Key> keys = new HashSet<>();
+
+    private int byteArrayReusedCount;
+    private int ropesReusedCount;
+    private int ropeBytesSaved;
 
     @TruffleBoundary
     public Rope getRope(byte[] bytes, Encoding encoding, CodeRange codeRange) {
@@ -37,6 +44,9 @@ public class RopeTable {
                 final Rope rope = ropeReference.get();
 
                 if (rope != null) {
+                    ++ropesReusedCount;
+                    ropeBytesSaved += rope.byteLength();
+
                     return rope;
                 }
             }
@@ -74,16 +84,38 @@ public class RopeTable {
             final Rope rope;
             if (ropeWithSameBytesButDifferentEncoding != null) {
                 rope = RopeOperations.create(ropeWithSameBytesButDifferentEncoding.getBytes(), encoding, codeRange);
+
+                ++byteArrayReusedCount;
+                ropeBytesSaved += rope.byteLength();
             } else {
                 rope = RopeOperations.create(bytes, encoding, codeRange);
             }
 
             ropesTable.put(key, new WeakReference<>(rope));
 
+            // TODO (nirvdrum 30-Mar-16): Revisit this. The purpose is to keep all keys live so the weak rope table never expunges results. We don't want that -- we want something that naturally ties to lifetime. Unfortunately, the old approach expunged live values because the key is synthetic.
+            keys.add(key);
+
             return rope;
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    public int getByteArrayReusedCount() {
+        return byteArrayReusedCount;
+    }
+
+    public int getRopesReusedCount() {
+        return ropesReusedCount;
+    }
+
+    public int getRopeBytesSaved() {
+        return ropeBytesSaved;
+    }
+
+    public int totalRopes() {
+        return ropesTable.size();
     }
 
     public static class Key {
