@@ -30,6 +30,7 @@ import org.jruby.Main;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayNodes;
@@ -53,6 +54,7 @@ import org.jruby.truffle.core.method.MethodNodesFactory;
 import org.jruby.truffle.core.method.UnboundMethodNodesFactory;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.mutex.MutexNodesFactory;
 import org.jruby.truffle.core.numeric.BignumNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
@@ -1261,10 +1263,11 @@ public class CoreLibrary {
         final DynamicObject logicalClass = getLogicalClass(receiver);
         final String moduleName = Layouts.MODULE.getFields(logicalClass).getName();
 
-        // Do not call to_s on BasicObject
-        final Object to_s = getContext().getCodeLoader().inline(currentNode, "o.to_s if c.instance_methods.include?(:to_s)", "o", receiver, "c", logicalClass);
+        // e.g. BasicObject does not have to_s
+        final boolean hasToS = ModuleOperations.lookupMethod(logicalClass, "to_s", Visibility.PUBLIC) != null;
+        final Object stringRepresentation = hasToS ? getContext().send(receiver, "to_s", null) : getNilObject();
 
-        return noMethodError(String.format("undefined method `%s' for %s:%s", name, to_s, moduleName), name, currentNode);
+        return noMethodError(String.format("undefined method `%s' for %s:%s", name, stringRepresentation, moduleName), name, currentNode);
     }
 
     public DynamicObject privateMethodError(String name, Object self, Node currentNode) {
