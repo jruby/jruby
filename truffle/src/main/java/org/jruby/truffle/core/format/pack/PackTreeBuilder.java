@@ -15,6 +15,10 @@ import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.LiteralFormatNode;
 import org.jruby.truffle.core.format.SharedTreeBuilder;
 import org.jruby.truffle.core.format.control.AdvanceSourcePositionNode;
+import org.jruby.truffle.core.format.convert.Integer16BigToBytesNodeGen;
+import org.jruby.truffle.core.format.convert.Integer16LittleToBytesNodeGen;
+import org.jruby.truffle.core.format.convert.Integer32BigToBytesNodeGen;
+import org.jruby.truffle.core.format.convert.Integer32LittleToBytesNodeGen;
 import org.jruby.truffle.core.format.convert.Integer64BigToBytesNodeGen;
 import org.jruby.truffle.core.format.convert.Integer64LittleToBytesNodeGen;
 import org.jruby.truffle.core.format.convert.ReinterpretAsLongNodeGen;
@@ -28,10 +32,6 @@ import org.jruby.truffle.core.format.read.array.ReadLongOrBigIntegerNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadStringNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadValueNodeGen;
 import org.jruby.truffle.core.format.convert.ToLongNodeGen;
-import org.jruby.truffle.core.format.write.bytes.Write16BigNodeGen;
-import org.jruby.truffle.core.format.write.bytes.Write16LittleNodeGen;
-import org.jruby.truffle.core.format.write.bytes.Write32BigNodeGen;
-import org.jruby.truffle.core.format.write.bytes.Write32LittleNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteByteNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBERNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBase64StringNodeGen;
@@ -423,32 +423,37 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     private FormatNode writeInteger(int size, ByteOrder byteOrder, FormatNode readNode) {
+        final FormatNode convertNode;
+
         switch (size) {
             case 8:
                 return WriteByteNodeGen.create(context, readNode);
             case 16:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    return Write16LittleNodeGen.create(context, readNode);
+                    convertNode = Integer16LittleToBytesNodeGen.create(context, readNode);
                 } else {
-                    return Write16BigNodeGen.create(context, readNode);
+                    convertNode = Integer16BigToBytesNodeGen.create(context, readNode);
                 }
+                break;
             case 32:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    return Write32LittleNodeGen.create(context, readNode);
+                    convertNode = Integer32LittleToBytesNodeGen.create(context, readNode);
                 } else {
-                    return Write32BigNodeGen.create(context, readNode);
+                    convertNode = Integer32BigToBytesNodeGen.create(context, readNode);
                 }
+                break;
             case 64:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    return WriteBytesNodeGen.create(context,
-                            Integer64LittleToBytesNodeGen.create(context, readNode));
+                    convertNode = Integer64LittleToBytesNodeGen.create(context, readNode);
                 } else {
-                    return WriteBytesNodeGen.create(context,
-                            Integer64BigToBytesNodeGen.create(context, readNode));
+                    convertNode = Integer64BigToBytesNodeGen.create(context, readNode);
                 }
+                break;
             default:
                 throw new IllegalArgumentException();
         }
+
+        return WriteBytesNodeGen.create(context, convertNode);
     }
 
     private void binaryString(byte padding, boolean padOnNull, boolean appendNull, PackParser.CountContext count) {
