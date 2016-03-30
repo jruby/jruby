@@ -87,7 +87,7 @@ public abstract class ReadBase64StringNode extends FormatNode {
             if (encode.remaining()%4 != 0) {
                 throw new InvalidFormatException("invalid base64");
             }
-            while (encode.hasRemaining() && s != '=') {
+            while (encode.hasRemaining()) {
                 a = b = c = -1;
                 d = -2;
 
@@ -124,11 +124,11 @@ public abstract class ReadBase64StringNode extends FormatNode {
 
             if (encode.hasRemaining()) throw new InvalidFormatException("invalid base64");
 
-            if (a != -1 && b != -1) {
-                if (c == -1 && s == '=') {
+            if (a != -1) {
+                if (c == -1) {
                     if ((b & 15) != 0) throw new InvalidFormatException("invalid base64");
                     lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                } else if(c != -1 && s == '=') {
+                } else if(s == '=') {
                     if ((c & 3) != 0) throw new InvalidFormatException("invalid base64");
                     lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                     lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
