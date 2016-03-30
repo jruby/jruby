@@ -13,9 +13,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 
-/**
- * Simply write a single bytes.
- */
 public class WriteByteNode extends FormatNode {
 
     private final byte value;
