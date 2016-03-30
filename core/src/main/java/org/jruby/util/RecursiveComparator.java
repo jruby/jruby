@@ -15,17 +15,16 @@ import java.util.HashSet;
 public class RecursiveComparator
 {
     public static IRubyObject compare(ThreadContext context, final MethodNames method, IRubyObject a, IRubyObject b) {
-        Ruby runtime = context.runtime;
 
         if (a == b) {
-            return runtime.getTrue();
+            return context.runtime.getTrue();
         }
         
         boolean clear = false; // whether to clear thread-local set (at top comparison)
 
         try {
-            Set<Pair> seen = null;
-            
+            Set<Pair> seen;
+
             if (a instanceof RubyHash && b instanceof RubyHash ||
                 a instanceof RubyArray && b instanceof RubyArray) {
 
@@ -36,7 +35,7 @@ public class RecursiveComparator
                     clear = true;
                 }
                 else if (seen.contains(pair)) { // are we recursing?
-                    return runtime.getTrue();
+                    return context.runtime.getTrue();
                 }
 
                 seen.add(pair);
