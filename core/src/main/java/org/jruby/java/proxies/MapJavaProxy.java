@@ -43,6 +43,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.invokedynamic.MethodNames;
 
 import java.util.Map;
 import java.util.Set;
@@ -109,6 +110,8 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             this.receiver = receiver;
         }
 
+        private void syncSize() { this.size = mapDelegate().size(); }
+
         private void setSize(int size) { this.size = size; }
 
         // the underlying Map object operations should be delegated to
@@ -126,13 +129,13 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public IRubyObject inspect(ThreadContext context) {
-            setSize( mapDelegate().size() );
+            syncSize();
             return super.inspect(context);
         }
 
         @Override
         public RubyArray to_a() {
-            setSize( mapDelegate().size() );
+            syncSize();
             return super.to_a();
         }
 
@@ -143,13 +146,13 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public RubyArray keys() {
-            setSize( mapDelegate().size() );
+            syncSize();
             return super.keys();
         }
 
         @Override
         public RubyArray rb_values() {
-            setSize( mapDelegate().size() );
+            syncSize();
             return super.rb_values();
         }
 
@@ -256,6 +259,15 @@ public class MapJavaProxy extends ConcreteJavaProxy {
                 IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
                 visitor.visit(key, value);
             }
+        }
+
+        @Override
+        public RubyBoolean compare(final ThreadContext context, final MethodNames method, IRubyObject other) {
+            setSize( mapDelegate().size() );
+            if ( other instanceof RubyHashMap ) {
+                ((RubyHashMap) other).syncSize();
+            }
+            return super.compare(context, method, other);
         }
 
         @Override
