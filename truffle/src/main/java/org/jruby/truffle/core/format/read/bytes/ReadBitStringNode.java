@@ -79,45 +79,50 @@ public abstract class ReadBitStringNode extends FormatNode {
 
     @Specialization
     public Object read(VirtualFrame frame, byte[] source) {
-        final ByteBuffer encode = ByteBuffer.wrap(source, getSourcePosition(frame), getSourceLength(frame) - getSourcePosition(frame));
+        final int position = getSourcePosition(frame);
 
-        int occurrences = length;
-        byte[] lElem;
+        final ByteBuffer encode = ByteBuffer.wrap(source, position, getSourceLength(frame) - position);
+
+        final int occurrences;
+
+        if (star || length > encode.remaining() * 8) {
+            occurrences = encode.remaining() * 8;
+        } else {
+            occurrences = length;
+        }
+
+        final byte[] lElem = new byte[occurrences];
+
+        final int bitsMask;
 
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
-            if (star || occurrences > encode.remaining() * 8) {
-                occurrences = encode.remaining() * 8;
-            }
-            int bits = 0;
-            lElem = new byte[occurrences];
-            for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                if ((lCurByte & 7) != 0) {
+            bitsMask = 128;
+        } else {
+            bitsMask = 1;
+        }
+
+        int bits = 0;
+
+        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
+            if ((lCurByte & 7) != 0) {
+                if (byteOrder == ByteOrder.BIG_ENDIAN) {
                     bits <<= 1;
                 } else {
-                    bits = encode.get();
-                }
-                lElem[lCurByte] = (bits & 128) != 0 ? (byte)'1' : (byte)'0';
-            }
-        } else {
-            if (star || occurrences > encode.remaining() * 8) {
-                occurrences = encode.remaining() * 8;
-            }
-            int bits = 0;
-            lElem = new byte[occurrences];
-            for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                if ((lCurByte & 7) != 0) {
                     bits >>>= 1;
-                } else {
-                    bits = encode.get();
                 }
-                lElem[lCurByte] = (bits & 1) != 0 ? (byte)'1' : (byte)'0';
+            } else {
+                bits = encode.get();
             }
+
+            lElem[lCurByte] = (bits & bitsMask) != 0 ? (byte) '1' : (byte) '0';
         }
 
         final ByteList result = new ByteList(lElem, ASCIIEncoding.INSTANCE, false);
+
         setSourcePosition(frame, encode.position());
 
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
     }
 
 }
