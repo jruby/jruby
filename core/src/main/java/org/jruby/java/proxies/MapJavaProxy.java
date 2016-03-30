@@ -125,9 +125,9 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public IRubyObject inspect19(ThreadContext context) {
+        public IRubyObject inspect(ThreadContext context) {
             setSize( mapDelegate().size() );
-            return super.inspect19(context);
+            return super.inspect(context);
         }
 
         @Override
@@ -335,7 +335,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        return getOrCreateRubyHashMap().inspect19(context);
+        return getOrCreateRubyHashMap().inspect(context);
     }
 
     /** rb_hash_size
@@ -367,7 +367,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return getOrCreateRubyHashMap().to_s19(context);
+        return getOrCreateRubyHashMap().to_s(context);
     }
 
     /** rb_hash_rehash
@@ -402,12 +402,12 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().op_equal(context, other);
     }
 
-    /** rb_hash_eql19
+    /** rb_hash_eql
      *
      */
     @JRubyMethod(name = "eql?")
-    public IRubyObject op_eql19(final ThreadContext context, IRubyObject other) {
-        return getOrCreateRubyHashMap().op_eql19(context, other);
+    public IRubyObject op_eql(final ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().op_eql(context, other);
     }
 
     /** rb_hash_aref
@@ -458,18 +458,9 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_each
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name = {"each", "each_pair"})
     public IRubyObject each(final ThreadContext context, final Block block) {
-        return getOrCreateRubyHashMap().each19(context, block);
-    }
-
-
-    /** rb_hash_each_pair
-     *
-     */
-    @JRubyMethod(name = "each_pair")
-    public IRubyObject each_pair(final ThreadContext context, final Block block) {
-        return getOrCreateRubyHashMap().each_pair(context, block);
+        return getOrCreateRubyHashMap().each(context, block);
     }
 
     /** rb_hash_each_value
@@ -517,7 +508,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "index")
     public IRubyObject index(ThreadContext context, IRubyObject expected) {
-        return getOrCreateRubyHashMap().index19(context, expected);
+        return getOrCreateRubyHashMap().index(context, expected);
     }
 
     /** rb_hash_key
@@ -565,7 +556,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "select")
     public IRubyObject select(final ThreadContext context, final Block block) {
-        return getOrCreateRubyHashMap().select19(context, block);
+        return getOrCreateRubyHashMap().select(context, block);
     }
 
     /** rb_hash_delete_if
@@ -613,7 +604,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = {"merge!", "update"}, required = 1)
     public RubyHash merge_bang(final ThreadContext context, final IRubyObject other, final Block block) {
-        return getOrCreateRubyHashMap().merge_bang19(context, other, block);
+        return getOrCreateRubyHashMap().merge_bang(context, other, block);
     }
 
     /** rb_hash_merge
@@ -629,7 +620,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public RubyHash initialize_copy(ThreadContext context, IRubyObject other) {
-        return getOrCreateRubyHashMap().initialize_copy19(context, other);
+        return getOrCreateRubyHashMap().initialize_copy(context, other);
     }
 
     /** rb_hash_replace
@@ -637,7 +628,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "replace", required = 1)
     public RubyHash replace(final ThreadContext context, IRubyObject other) {
-        return getOrCreateRubyHashMap().replace19(context, other);
+        return getOrCreateRubyHashMap().replace(context, other);
     }
 
     /** rb_hash_values_at
