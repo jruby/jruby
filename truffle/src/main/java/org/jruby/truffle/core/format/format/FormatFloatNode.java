@@ -9,14 +9,13 @@
  */
 package org.jruby.truffle.core.format.format;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.printf.PrintfTreeBuilder;
-import org.jruby.truffle.core.string.StringOperations;
 
 import java.nio.charset.StandardCharsets;
 
@@ -39,75 +38,55 @@ public abstract class FormatFloatNode extends FormatNode {
     }
 
     @Specialization
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public byte[] format(double value) {
         // TODO CS 3-May-15 write this without building a string and formatting
 
-        if (format == 'G' || format == 'g') {
-            /**
-             * General approach taken from StackOverflow: http://stackoverflow.com/questions/703396/how-to-nicely-format-floating-numbers-to-string-without-unnecessary-decimal-0
-             * Answers provided by JasonD (http://stackoverflow.com/users/1288598/jasond) and Darthenius (http://stackoverflow.com/users/974531/darthenius)
-             * Licensed by cc-wiki license: http://creativecommons.org/licenses/by-sa/3.0/
-             */
+        final StringBuilder builder = new StringBuilder();
 
-            // TODO (nirvdrum 09-Mar-15) Make this adhere to the MRI invariant: "single-precision, network (big-endian) byte order"
+        builder.append("%");
 
-            // TODO CS 4-May-15 G/g? Space padding? Zero padding? Precision?
+        if (Double.isInfinite(value)) {
 
-            // If the value is a long value stuffed in a double, cast it so we don't print a trailing ".0".
-            if ((value - Math.rint(value)) == 0) {
-                return String.valueOf((long) value).getBytes(StandardCharsets.US_ASCII);
-            } else {
-                return String.valueOf(value).getBytes(StandardCharsets.US_ASCII);
+            if (spacePadding != PrintfTreeBuilder.DEFAULT) {
+                builder.append(" ");
+                builder.append(spacePadding + 5);
             }
+
+            if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
+                builder.append("0");
+                builder.append(zeroPadding + 5);
+            }
+
+            builder.append(format);
+
+            final String infinityString = String.format(builder.toString(), value);
+            final String shortenInfinityString = infinityString.substring(0, infinityString.length() - 5);
+            return shortenInfinityString.getBytes(StandardCharsets.US_ASCII);
+
         } else {
-            final StringBuilder builder = new StringBuilder();
 
-            builder.append("%");
+            if (spacePadding != PrintfTreeBuilder.DEFAULT) {
+                builder.append(" ");
+                builder.append(spacePadding);
 
-            if (Double.isInfinite(value)) {
-
-                if (spacePadding != PrintfTreeBuilder.DEFAULT) {
-                    builder.append(" ");
-                    builder.append(spacePadding + 5);
-                }
-
-                if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
-                    builder.append("0");
-                    builder.append(zeroPadding + 5);
-                }
-
-                builder.append(format);
-
-                final String infinityString = String.format(builder.toString(), value);
-                final String shortenInfinityString = infinityString.substring(0, infinityString.length() - 5);
-                return shortenInfinityString.getBytes(StandardCharsets.US_ASCII);
-
-            } else {
-
-                if (spacePadding != PrintfTreeBuilder.DEFAULT) {
-                    builder.append(" ");
-                    builder.append(spacePadding);
-
-                    if (zeroPadding != PrintfTreeBuilder.DEFAULT) {
-                        builder.append(".");
-                        builder.append(zeroPadding);
-                    }
-                } else if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
-                    builder.append("0");
+                if (zeroPadding != PrintfTreeBuilder.DEFAULT) {
+                    builder.append(".");
                     builder.append(zeroPadding);
                 }
-
-                if (precision != PrintfTreeBuilder.DEFAULT) {
-                    builder.append(".");
-                    builder.append(precision);
-                }
-
-                builder.append(format);
-
-                return String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII);
+            } else if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
+                builder.append("0");
+                builder.append(zeroPadding);
             }
 
+            if (precision != PrintfTreeBuilder.DEFAULT) {
+                builder.append(".");
+                builder.append(precision);
+            }
+
+            builder.append(format);
+
+            return String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII);
         }
     }
 

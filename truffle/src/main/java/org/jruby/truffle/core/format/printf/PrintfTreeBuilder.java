@@ -13,6 +13,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.antlr.v4.runtime.Token;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
+import org.jruby.truffle.core.format.format.FormatFloatHumanReadableNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.format.FormatFloatNodeGen;
@@ -213,14 +214,19 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                                 ToIntegerNodeGen.create(context, valueNode)));
                 break;
             case 'f':
-            case 'g':
-            case 'G':
             case 'e':
             case 'E':
                 node = WriteBytesNodeGen.create(context,
                         FormatFloatNodeGen.create(context, spacePadding,
                                 zeroPadding, precision,
                                 type,
+                                ToDoubleWithCoercionNodeGen.create(context,
+                                        valueNode)));
+                break;
+            case 'g':
+            case 'G':
+                node = WriteBytesNodeGen.create(context,
+                        FormatFloatHumanReadableNodeGen.create(context,
                                 ToDoubleWithCoercionNodeGen.create(context,
                                         valueNode)));
                 break;
