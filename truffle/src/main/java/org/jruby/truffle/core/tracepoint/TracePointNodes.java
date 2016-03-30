@@ -60,7 +60,7 @@ public abstract class TracePointNodes {
 
         @Specialization(guards = "isTracePoint(tracePoint)")
         public DynamicObject initialize(DynamicObject tracePoint, Object[] args, DynamicObject block) {
-            Layouts.TRACE_POINT.setTags(tracePoint, new String[]{TraceManager.LINE_TAG});
+            Layouts.TRACE_POINT.setTags(tracePoint, new Class<?>[]{TraceManager.LineTag.class});
             Layouts.TRACE_POINT.setProc(tracePoint, block);
             return tracePoint;
         }

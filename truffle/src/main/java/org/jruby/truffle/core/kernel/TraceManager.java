@@ -36,11 +36,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class TraceManager {
-
-    public static final String LINE_TAG = "org.jruby.truffle.trace.line";
-    public static final String CLASS_TAG = "org.jruby.truffle.trace.class";
-    public static final String CALL_TAG = "org.jruby.truffle.trace.call";
-
+    public static @interface LineTag {
+    }
+    public static @interface CallTag {
+    }
+    public static @interface ClassTag {
+    }
+    
     private final RubyContext context;
     private final Instrumenter instrumenter;
 
@@ -68,21 +70,21 @@ public class TraceManager {
 
         instruments = new ArrayList<>();
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LINE_TAG).build(), new ExecutionEventNodeFactory() {
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
                 return new BaseEventEventNode(context, traceFunc, context.getCoreStrings().LINE.createInstance());
             }
         }));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CALL_TAG).build(), new ExecutionEventNodeFactory() {
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CallTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
                 return new CallEventEventNode(context, traceFunc, context.getCoreStrings().CALL.createInstance());
             }
         }));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CLASS_TAG).build(), new ExecutionEventNodeFactory() {
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(ClassTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
                 return new BaseEventEventNode(context, traceFunc, context.getCoreStrings().CLASS.createInstance());

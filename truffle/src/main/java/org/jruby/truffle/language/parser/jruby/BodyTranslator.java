@@ -3150,7 +3150,7 @@ public class BodyTranslator extends Translator {
             if (context.getCoverageManager() != null) {
                 context.getCoverageManager().setLineHasCode(current.getLineLocation());
             }
-            node.unsafeSetSourceSection(current.withTags(AttachmentsManager.LINE_TAG, TraceManager.LINE_TAG, CoverageManager.LINE_TAG));
+            node.unsafeSetIsNewLine();
         }
 
         return node;

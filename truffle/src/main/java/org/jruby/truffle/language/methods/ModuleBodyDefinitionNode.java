@@ -17,8 +17,10 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.kernel.TraceManager;
+import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.stdlib.CoverageManager;
 
 /**
  * Define a method from a module body (module/class/class << self ... end).
@@ -33,7 +35,7 @@ public class ModuleBodyDefinitionNode extends RubyNode {
 
     public ModuleBodyDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
             CallTarget callTarget, boolean captureBlock) {
-        super(context, sourceSection.withTags(TraceManager.CLASS_TAG));
+        super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
@@ -62,6 +64,15 @@ public class ModuleBodyDefinitionNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         return executeMethod(frame);
+    }
+
+    @Override
+    protected boolean isTaggedWith(Class<?> tag) {
+        if (tag == TraceManager.ClassTag.class) {
+            return true;
+        }
+
+        return super.isTaggedWith(tag);
     }
 
 }

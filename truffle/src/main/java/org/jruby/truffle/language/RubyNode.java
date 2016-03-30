@@ -19,26 +19,38 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
+import java.lang.annotation.Annotation;
 import jnr.ffi.provider.MemoryManager;
 import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
+import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
 @Instrumentable(factory = RubyNodeWrapper.class)
+@TraceManager.CallTag
+@AttachmentsManager.LineTag
+@TraceManager.LineTag
+@CoverageManager.LineTag
 public abstract class RubyNode extends Node {
+
+    private static final int FLAG_NEWLINE = 0;
+    private static final int FLAG_CALL = 1;
 
     private final RubyContext context;
     @CompilationFinal private SourceSection sourceSection;
+    @CompilationFinal private int flags;
 
     public RubyNode(RubyContext context, SourceSection sourceSection) {
         this.context = context;
@@ -208,13 +220,43 @@ public abstract class RubyNode extends Node {
     }
 
     // Source section
-    
-    public void unsafeSetSourceSection(SourceSection sourceSection) {
-        this.sourceSection = sourceSection;
-    }
 
     @Override
     public SourceSection getSourceSection() {
         return sourceSection;
     }
+
+    // Tags
+
+    public void unsafeSetIsNewLine() {
+        flags |= 1 << FLAG_NEWLINE;
+    }
+
+    public void unsafeSetIsCall() {
+        flags |= 1 << FLAG_CALL;
+    }
+
+    private boolean isNewLine() {
+        return ((flags >> FLAG_NEWLINE) & 1) == 1;
+    }
+
+    private boolean isCall() {
+        return ((flags >> FLAG_CALL) & 1) == 1;
+    }
+
+    @Override
+    protected boolean isTaggedWith(Class<?> tag) {
+        if (tag == TraceManager.CallTag.class) {
+            return isCall();
+        }
+
+        if (tag == AttachmentsManager.LineTag.class
+                || tag == TraceManager.LineTag.class
+                || tag == CoverageManager.LineTag.class) {
+            return isNewLine();
+        }
+        
+        return false;
+    }
+
 }

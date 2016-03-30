@@ -24,7 +24,7 @@ public interface TracePointLayout extends BasicObjectLayout {
 
     DynamicObject createTracePoint(
             DynamicObjectFactory factory,
-            @Nullable String[] tags,
+            @Nullable Class[] tags,
             @Nullable DynamicObject event,
             @Nullable DynamicObject path,
             int line,
@@ -35,8 +35,8 @@ public interface TracePointLayout extends BasicObjectLayout {
 
     boolean isTracePoint(DynamicObject object);
 
-    String[] getTags(DynamicObject object);
-    void setTags(DynamicObject object, String[] value);
+    Class[] getTags(DynamicObject object);
+    void setTags(DynamicObject object, Class[] value);
 
     DynamicObject getEvent(DynamicObject object);
     void setEvent(DynamicObject object, DynamicObject value);
