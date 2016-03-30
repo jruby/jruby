@@ -21,6 +21,26 @@ describe "a java.util.Map instance" do
     test_equal("z not found", h.delete("z") { |el| "#{el} not found" })
     test_equal({"c"=>300}, h.delete_if { |key, value| key <= "b" })
 
+    h = java.util.concurrent.ConcurrentHashMap.new(10)
+    h.put(:b, 200); h.put(:c, 300); h.put(:a, 100)
+    test_equal(h.delete_if { |key, value| key <= :b }, {:"c"=>300})
+    expect( {:c => 300}.eql? h ).to be true
+    h.put(:b, 200)
+    expect( {'c'.to_sym => 300}.eql? h ).to be false
+    h.remove(:b)
+    expect( h.eql?({:c => 300}) ).to be true
+
+    h.clear; h['a'] = 100; h['c'] = 300; h.put('b', 200)
+
+    h2 = java.util.TreeMap.new
+    h2.put('b', 200); h2.put('c', 300); h2.put('a', 100)
+    test_equal( h2, h )
+    expect( h2.eql? h ).to be true
+    expect( h2.equal? h ).to be false
+
+    h.remove('c')
+    test_equal( h2.delete_if { |key, value| key >= 'c' }, h )
+
     h = java.util.LinkedHashMap.new
     h.put("a", 100); h.put("b", 200); h.put("c", 300)
     a1=[]; a2=[]
