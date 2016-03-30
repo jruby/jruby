@@ -72,34 +72,55 @@ public abstract class ReadMIMEStringNode extends FormatNode {
 
     @Specialization
     public Object read(VirtualFrame frame, byte[] source) {
-        final ByteBuffer encode = ByteBuffer.wrap(source, getSourcePosition(frame), getSourceLength(frame) - getSourcePosition(frame));
+        final int position = getSourcePosition(frame);
+        final int length = getSourceLength(frame);
 
-        byte[] lElem = new byte[Math.max(encode.remaining(),0)];
+        final ByteBuffer encode = ByteBuffer.wrap(source, position, length - position);
+
+        final byte[] lElem = new byte[Math.max(encode.remaining(), 0)];
+
         int index = 0;
-        for(;;) {
-            if (!encode.hasRemaining()) break;
+
+        while (encode.hasRemaining()) {
             int c = Pack.safeGet(encode);
+
             if (c != '=') {
                 lElem[index++] = (byte)c;
             } else {
-                if (!encode.hasRemaining()) break;
+                if (!encode.hasRemaining()) {
+                    break;
+                }
+
                 encode.mark();
-                int c1 = Pack.safeGet(encode);
-                if (c1 == '\n' || (c1 == '\r' && (c1 = Pack.safeGet(encode)) == '\n')) continue;
-                int d1 = Character.digit(c1, 16);
+
+                final int c1 = Pack.safeGet(encode);
+
+                if (c1 == '\n' || c1 == '\r') {
+                    continue;
+                }
+
+                final int d1 = Character.digit(c1, 16);
+
                 if (d1 == -1) {
                     encode.reset();
                     break;
                 }
+
                 encode.mark();
-                if (!encode.hasRemaining()) break;
-                int c2 = Pack.safeGet(encode);
-                int d2 = Character.digit(c2, 16);
+
+                if (!encode.hasRemaining()) {
+                    break;
+                }
+
+                final int c2 = Pack.safeGet(encode);
+                final int d2 = Character.digit(c2, 16);
+
                 if (d2 == -1) {
                     encode.reset();
                     break;
                 }
-                byte value = (byte)(d1 << 4 | d2);
+
+                byte value = (byte) (d1 << 4 | d2);
                 lElem[index++] = value;
             }
         }
@@ -107,7 +128,8 @@ public abstract class ReadMIMEStringNode extends FormatNode {
         final ByteList result = new ByteList(lElem, 0, index, ASCIIEncoding.INSTANCE, false);
         setSourcePosition(frame, encode.position());
 
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
     }
 
 }
