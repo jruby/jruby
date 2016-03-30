@@ -165,6 +165,13 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
+        public RubyHash delete_ifInternal(final ThreadContext context, final Block block) {
+            RubyHash self = super.delete_ifInternal(context, block);
+            setSize( mapDelegate().size() );
+            return self;
+        }
+
+        @Override
         public void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
             internalPutSmall(key, value, checkForExisting);
         }
