@@ -16,14 +16,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.util.ByteList;
 
 import java.util.Arrays;
 
@@ -104,20 +101,28 @@ public abstract class ReadBinaryStringNode extends FormatNode {
             usedLength--;
         }
 
-        final ByteList result = new ByteList(source, start, usedLength, true);
-
         if (trimToFirstNull) {
-            final int firstNull = result.indexOf(0);
+            final int firstNull = indexOfFirstNull(source, start, usedLength);
 
             if (firstNull != -1 && trimTrailingNulls) {
-                result.realSize(firstNull);
+                usedLength = firstNull;
             }
         }
 
         setSourcePosition(frame, start + length);
 
         return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                new AsciiOnlyLeafRope(result.bytes(), ASCIIEncoding.INSTANCE));
+                new AsciiOnlyLeafRope(Arrays.copyOfRange(source, start, start + usedLength), ASCIIEncoding.INSTANCE));
+    }
+
+    private int indexOfFirstNull(byte[] bytes, int start, int length) {
+        for (int n = 0; n < length; n++) {
+            if (bytes[start + n] == 0) {
+                return n;
+            }
+        }
+
+        return -1;
     }
 
 }
