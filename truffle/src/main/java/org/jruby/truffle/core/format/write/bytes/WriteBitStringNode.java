@@ -55,12 +55,6 @@ import org.jruby.util.ByteList;
 
 import java.nio.ByteOrder;
 
-/**
- * Read a string that contains a binary string (literally a string of binary
- * digits written using 1 and 0 characters) and write as actual binary data.
- * <pre>
- * ["01101111", "01101011"].pack('B8B8') => "ok"
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
