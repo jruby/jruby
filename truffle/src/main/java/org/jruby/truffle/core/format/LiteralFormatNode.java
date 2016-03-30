@@ -14,18 +14,18 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.util.ByteList;
 
-public class LiteralBytesNode extends FormatNode {
+public class LiteralFormatNode extends FormatNode {
 
-    private final ByteList bytes;
+    private final Object value;
 
-    public LiteralBytesNode(RubyContext context, ByteList bytes) {
+    public LiteralFormatNode(RubyContext context, Object value) {
         super(context);
-        this.bytes = bytes;
+        this.value = value;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return bytes;
+        return value;
     }
 
 }

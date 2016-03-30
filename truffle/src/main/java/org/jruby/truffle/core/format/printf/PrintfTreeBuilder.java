@@ -17,8 +17,7 @@ import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.format.FormatFloatNodeGen;
 import org.jruby.truffle.core.format.format.FormatIntegerNodeGen;
-import org.jruby.truffle.core.format.LiteralBytesNode;
-import org.jruby.truffle.core.format.LiteralIntegerNode;
+import org.jruby.truffle.core.format.LiteralFormatNode;
 import org.jruby.truffle.core.format.read.array.ReadHashValueNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadIntegerNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadStringNodeGen;
@@ -167,7 +166,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                 if (spacePadding == PADDING_FROM_ARGUMENT) {
                     spacePaddingNode = ReadIntegerNodeGen.create(context, new SourceNode());
                 } else {
-                    spacePaddingNode = new LiteralIntegerNode(context, spacePadding);
+                    spacePaddingNode = new LiteralFormatNode(context, spacePadding);
                 }
 
                 final FormatNode zeroPaddingNode;
@@ -181,9 +180,9 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                 if (zeroPadding == PADDING_FROM_ARGUMENT) {
                     zeroPaddingNode = ReadIntegerNodeGen.create(context, new SourceNode());
                 } else if (ctx.precision != null) {
-                    zeroPaddingNode = new LiteralIntegerNode(context, Integer.parseInt(ctx.precision.getText()));
+                    zeroPaddingNode = new LiteralFormatNode(context, Integer.parseInt(ctx.precision.getText()));
                 } else {
-                    zeroPaddingNode = new LiteralIntegerNode(context, zeroPadding);
+                    zeroPaddingNode = new LiteralFormatNode(context, zeroPadding);
                 }
 
                 final char format;
@@ -239,7 +238,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
         if (text.length() == 1) {
             node = new WriteByteNode(context, (byte) text.get(0));
         } else {
-            node = WriteBytesNodeGen.create(context, new LiteralBytesNode(context, text));
+            node = WriteBytesNodeGen.create(context, new LiteralFormatNode(context, text));
         }
 
         sequence.add(node);
