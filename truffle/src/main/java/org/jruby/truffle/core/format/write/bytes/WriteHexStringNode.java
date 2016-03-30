@@ -55,11 +55,6 @@ import org.jruby.util.ByteList;
 
 import java.nio.ByteOrder;
 
-/**
- * Read a string that contains a hex string and write as actual binary data.
- * <pre>
- * ["6F", "6B"].pack('H2H2') => "ok"
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
