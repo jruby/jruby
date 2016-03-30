@@ -163,10 +163,19 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
       FormatMessageA = Win32API.new('kernel32.dll', 'FormatMessageA', 'LPLLPLP', 'L')
       def initialize(code)
         @code = code
-        msg = "\0".force_encoding(Encoding::ASCII_8BIT) * 1024
-        len = FormatMessageA.call(0x1200, 0, code, 0, msg, 1024, 0)
-        msg = msg[0, len].force_encoding(Encoding.find(Encoding.locale_charmap))
-        super msg.tr("\r", '').chomp
+        lang = 0
+        begin
+          msg = "\0".force_encoding(Encoding::ASCII_8BIT) * 1024
+          len = FormatMessageA.call(0x1200, 0, code, lang, msg, 1024, 0)
+          len = msg.length
+          msg = msg[0, len].force_encoding(Encoding.find(Encoding.locale_charmap))
+          msg = msg.tr("\r", '').chomp
+        rescue ArgumentError, EncodingError => e
+          raise unless lang == 0
+          lang = 0x0409 # en_US
+          retry
+        end
+        super(msg)
       end
       attr_reader :code
     end
