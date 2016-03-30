@@ -9,16 +9,20 @@
  */
 package org.jruby.truffle.core.format.read.array;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
@@ -26,6 +30,8 @@ import org.jruby.truffle.language.control.RaiseException;
 public abstract class ReadHashValueNode extends FormatNode {
 
     private final Object key;
+
+    @Child private CallDispatchHeadNode fetchNode;
 
     private final ConditionProfile oneHashProfile = ConditionProfile.createBinaryProfile();
 
@@ -35,15 +41,19 @@ public abstract class ReadHashValueNode extends FormatNode {
     }
 
     @Specialization
-    @TruffleBoundary
-    public Object read(Object[] source) {
+    public Object read(VirtualFrame frame, Object[] source) {
         if (oneHashProfile.profile(source.length != 1 || !RubyGuards.isRubyHash(source[0]))) {
             throw new RaiseException(getContext().getCoreLibrary().argumentErrorOneHashRequired(this));
         }
 
-        // We're not in a Ruby frame here, so we can't run arbitrary Ruby nodes like Hash#[]. Instead use a slow send.
+        final DynamicObject hash = (DynamicObject) source[0];
 
-        return getContext().send(source[0], "fetch", null, key);
+        if (fetchNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            fetchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+        }
+
+        return fetchNode.call(frame, hash, "fetch", null, key);
     }
 
 }
