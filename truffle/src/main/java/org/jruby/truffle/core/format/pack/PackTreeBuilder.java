@@ -351,7 +351,9 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitNullByte(PackParser.NullByteContext ctx) {
-        appendNode((sharedTreeBuilder.applyCount(ctx.count(), WriteByteNodeGen.create(context, new LiteralFormatNode(context, (byte) 0)))));
+        appendNode((sharedTreeBuilder.applyCount(ctx.count(),
+                WriteByteNodeGen.create(context,
+                        new LiteralFormatNode(context, (byte) 0)))));
     }
 
     @Override
