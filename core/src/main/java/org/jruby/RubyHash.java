@@ -1133,9 +1133,8 @@ public class RubyHash extends RubyObject implements Map {
         if (!(other instanceof RubyHash)) {
             if (!other.respondsTo("to_hash")) {
                 return runtime.getFalse();
-            } else {
-                return Helpers.rbEqual(context, other, this);
             }
+            return Helpers.rbEqual(context, other, this);
         }
 
         final RubyHash otherHash = (RubyHash) other;
@@ -1172,8 +1171,8 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_equal
      *
      */
-    @JRubyMethod(name = "==")
     @Override
+    @JRubyMethod(name = "==")
     public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
         return RecursiveComparator.compare(context, MethodNames.OP_EQUAL, this, other);
     }
@@ -1733,7 +1732,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyHash delete_ifInternal(final ThreadContext context, final Block block) {
         modify();
 
-        final Ruby runtime = getRuntime();
+        final Ruby runtime = context.runtime;
         final RubyHash self = this;
         iteratorVisitAll(new Visitor() {
             @Override
