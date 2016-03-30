@@ -20,10 +20,6 @@ import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
-/**
- * Read a string that contains base64-encoded data and write as actual binary
- * data.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })

@@ -19,10 +19,6 @@ import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.util.ByteList;
 import org.jruby.util.PackUtils;
 
-/**
- * Read a string that contains MIME encoded data and write as actual binary
- * data.
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
@@ -49,6 +45,7 @@ public abstract class WriteMIMEStringNode extends FormatNode {
     @TruffleBoundary
     private ByteList encode(ByteList bytes) {
         // TODO CS 30-Mar-15 should write our own optimizable version of MIME
+
         final ByteList output = new ByteList();
         PackUtils.qpencode(output, bytes, length);
         return output;
