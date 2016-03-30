@@ -308,16 +308,16 @@ public class RubyException extends RubyObject {
     }
 
     private void printStackTraceLine(PrintStream errorStream, IRubyObject stackTraceLine) {
-            errorStream.print("\tfrom " + stackTraceLine + '\n');
+        errorStream.print("\tfrom " + stackTraceLine + '\n');
     }
 
     private boolean isArrayOfStrings(IRubyObject backtrace) {
         if (!(backtrace instanceof RubyArray)) return false;
 
-        IRubyObject[] elements = ((RubyArray) backtrace).toJavaArray();
+        final RubyArray rTrace = ((RubyArray) backtrace);
 
-        for (int i = 0 ; i < elements.length ; i++) {
-            if (!(elements[i] instanceof RubyString)) return false;
+        for (int i = 0 ; i < rTrace.getLength() ; i++) {
+            if (!(rTrace.eltInternal(i) instanceof RubyString)) return false;
         }
 
         return true;
