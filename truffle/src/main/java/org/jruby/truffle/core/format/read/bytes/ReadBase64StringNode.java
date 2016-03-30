@@ -45,6 +45,7 @@
  */
 package org.jruby.truffle.core.format.read.bytes;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -73,8 +74,21 @@ public abstract class ReadBase64StringNode extends FormatNode {
 
     @Specialization
     public Object read(VirtualFrame frame, byte[] source) {
-        final ByteBuffer encode = ByteBuffer.wrap(source, getSourcePosition(frame), getSourceLength(frame) - getSourcePosition(frame));
+        final int position = getSourcePosition(frame);
+        final int length = getSourceLength(frame);
 
+        final ByteBuffer encode = ByteBuffer.wrap(source, position, length - position);
+
+        final ByteList result = read(encode);
+
+        setSourcePosition(frame, encode.position());
+
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
+    }
+
+    @TruffleBoundary
+    private ByteList read(ByteBuffer encode) {
         int occurrences = encode.remaining();
 
         int length = encode.remaining()*3/4;
@@ -196,10 +210,7 @@ public abstract class ReadBase64StringNode extends FormatNode {
             }
         }
 
-        final ByteList result = new ByteList(lElem, 0, index, ASCIIEncoding.INSTANCE, false);
-        setSourcePosition(frame, encode.position());
-
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
+        return new ByteList(lElem, 0, index, ASCIIEncoding.INSTANCE, false);
     }
 
 }
