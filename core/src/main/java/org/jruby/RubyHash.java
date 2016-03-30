@@ -1241,54 +1241,33 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_hash
      *
      */
-    // FIXME:
     @Override
+    @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         final Ruby runtime = getRuntime();
+        if (size == 0) return RubyFixnum.zero(runtime);
         final ThreadContext context = runtime.getCurrentContext();
-        if (size == 0 || runtime.isInspecting(this)) return RubyFixnum.zero(runtime);
-        final long hash[] = new long[]{size};
-        try {
-            runtime.registerInspecting(this);
-            visitAll(new Visitor() {
-                public void visit(IRubyObject key, IRubyObject value) {
-                    hash[0] ^= invokedynamic(context, key, HASH).convertToInteger().getLongValue();
-                    hash[0] ^= invokedynamic(context, value, HASH).convertToInteger().getLongValue();
+        return (RubyFixnum) runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
+            @Override
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                if (recur) {
+                    return invokedynamic(context, runtime.getHash(), HASH).convertToInteger();
                 }
-            });
-        } finally {
-            runtime.unregisterInspecting(this);
-        }
-        return RubyFixnum.newFixnum(runtime, hash[0]);
+                final long[] h = new long[]{1};
+                visitAll(new Visitor() {
+                    @Override
+                    public void visit(IRubyObject key, IRubyObject value) {
+                        h[0] += invokedynamic(context, key, HASH).convertToInteger().getLongValue() ^ invokedynamic(context, value, HASH).convertToInteger().getLongValue();
+                    }
+                });
+                return runtime.newFixnum(h[0]);
+            }
+        }, this);
     }
 
-    /** rb_hash_hash
-     *
-     */
-    @JRubyMethod(name = "hash")
+    @Deprecated
     public RubyFixnum hash19() {
-        final Ruby runtime = getRuntime();
-        final ThreadContext context = runtime.getCurrentContext();
-        return (RubyFixnum)getRuntime().execRecursiveOuter(new Ruby.RecursiveFunction() {
-                @Override
-                public IRubyObject call(IRubyObject obj, boolean recur) {
-                    if(size == 0) {
-                        return RubyFixnum.zero(runtime);
-                    }
-                    final long[] h = new long[]{1};
-                    if(recur) {
-                        h[0] ^= RubyNumeric.num2long(invokedynamic(context, runtime.getHash(), HASH));
-                    } else {
-                        visitAll(new Visitor() {
-                                @Override
-                                public void visit(IRubyObject key, IRubyObject value) {
-                                    h[0] += invokedynamic(context, key, HASH).convertToInteger().getLongValue() ^ invokedynamic(context, value, HASH).convertToInteger().getLongValue();
-                                }
-                            });
-                    }
-                    return runtime.newFixnum(h[0]);
-                }
-            }, this);
+        return hash();
     }
 
     /** rb_hash_fetch
