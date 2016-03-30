@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.LexicalScope;
@@ -293,6 +294,11 @@ public abstract class ModuleOperations {
 
         // Nothing found
         return null;
+    }
+
+    public static InternalMethod lookupMethod(DynamicObject module, String name, Visibility visibility) {
+        InternalMethod method = lookupMethod(module, name);
+        return (method != null && method.getVisibility() == visibility) ? method : null;
     }
 
     public static InternalMethod lookupSuperMethod(InternalMethod currentMethod, DynamicObject objectMetaClass) {
