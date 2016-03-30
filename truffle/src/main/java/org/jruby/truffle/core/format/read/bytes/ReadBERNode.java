@@ -45,11 +45,12 @@
  */
 package org.jruby.truffle.core.format.read.bytes;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
@@ -58,16 +59,17 @@ import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
-/**
- * Read a string that contains UU-encoded data and write as actual binary
- * data.
- */
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
 public abstract class ReadBERNode extends FormatNode {
 
     @Child private FixnumOrBignumNode fixnumOrBignumNode;
+
+    private static final long UL_MASK = 0xFE000000;
+    private static final BigInteger BIG_128 = BigInteger.valueOf(128);
+
+    private final ConditionProfile simpleProfile = ConditionProfile.createBinaryProfile();
 
     public ReadBERNode(RubyContext context) {
         super(context);
@@ -76,41 +78,58 @@ public abstract class ReadBERNode extends FormatNode {
 
     @Specialization
     protected Object encode(VirtualFrame frame, byte[] source) {
-        CompilerDirectives.transferToInterpreter();
+        final int position = getSourcePosition(frame);
+        final int length = getSourceLength(frame);
 
-        final ByteBuffer encode = ByteBuffer.wrap(source, getSourcePosition(frame), getSourceLength(frame) - getSourcePosition(frame));
-
-        long ul = 0;
-        long ulmask = (0xfe << 56) & 0xffffffff;
-        BigInteger big128 = BigInteger.valueOf(128);
+        final ByteBuffer encode = ByteBuffer.wrap(source, position, length - position);
         int pos = encode.position();
 
-        ul <<= 7;
-        ul |= encode.get(pos) & 0x7f;
-        if((encode.get(pos++) & 0x80) == 0) {
-            setSourcePosition(frame, getSourcePosition(frame) + pos);
+        final long ul = encode.get(pos) & 0x7f;
+
+        if (simpleProfile.profile((encode.get(pos++) & 0x80) == 0)) {
+            setSourcePosition(frame, position + pos);
             return ul;
-        } else if((ul & ulmask) == 0) {
-            BigInteger big = BigInteger.valueOf(ul);
-            while(pos < encode.limit()) {
-                BigInteger mulResult = big.multiply(big128);
-                BigInteger v = mulResult.add(BigInteger.valueOf(encode.get(pos) & 0x7f));
-                big = v;
-                if((encode.get(pos++) & 0x80) == 0) {
-                    setSourcePosition(frame, getSourcePosition(frame) + pos);
-                    return fixnumOrBignumNode.fixnumOrBignum(big);
-                }
-            }
         }
 
-        try {
-            encode.position(pos);
-        } catch (IllegalArgumentException e) {
-            //throw runtime.newArgumentError("in `unpack': poorly encoded input");
-            throw new UnsupportedOperationException();
+        assert (ul & UL_MASK) == 0;
+
+        final BigIntegerAndPos bigIntegerAndPos = runLoop(encode, ul, pos);
+
+        setSourcePosition(frame, position + bigIntegerAndPos.getPos());
+        return fixnumOrBignumNode.fixnumOrBignum(bigIntegerAndPos.getBigInteger());
+    }
+
+    @TruffleBoundary
+    private BigIntegerAndPos runLoop(ByteBuffer encode, long ul, int pos) {
+        BigInteger big = BigInteger.valueOf(ul);
+
+        do {
+            assert pos < encode.limit();
+            big = big.multiply(BIG_128);
+            big = big.add(BigInteger.valueOf(encode.get(pos) & 0x7f));
+        } while ((encode.get(pos++) & 0x80) != 0);
+
+        return new BigIntegerAndPos(big, pos);
+    }
+
+    private static class BigIntegerAndPos {
+
+        private final BigInteger bigInteger;
+        private final int pos;
+
+        public BigIntegerAndPos(BigInteger bigInteger, int pos) {
+            this.bigInteger = bigInteger;
+            this.pos = pos;
         }
 
-        throw new UnsupportedOperationException();
+        public BigInteger getBigInteger() {
+            return bigInteger;
+        }
+
+        public int getPos() {
+            return pos;
+        }
+        
     }
 
 }
