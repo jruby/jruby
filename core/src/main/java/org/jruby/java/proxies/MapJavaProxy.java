@@ -140,7 +140,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyFixnum hash19() {
+        public RubyFixnum hash() {
             return getRuntime().newFixnum( mapDelegate().hashCode() );
         }
 
@@ -448,7 +448,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
-        return getOrCreateRubyHashMap().hash19();
+        return getOrCreateRubyHashMap().hash();
     }
 
     /** rb_hash_fetch
