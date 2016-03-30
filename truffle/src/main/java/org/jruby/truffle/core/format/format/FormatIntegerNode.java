@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.format.format;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -37,14 +38,29 @@ public abstract class FormatIntegerNode extends FormatNode {
         this.format = format;
     }
 
-    @Specialization
-    public byte[] format(int spacePadding, int zeroPadding, int value) {
-        return doFormat(value, spacePadding, zeroPadding);
+    @Specialization(
+            guards = {
+                    "!isRubyBignum(value)",
+                    "spacePadding == cachedSpacePadding",
+                    "zeroPadding == cachedZeroPadding"
+            },
+            limit = "getLimit()"
+    )
+    public byte[] formatCached(int spacePadding,
+                               int zeroPadding,
+                               Object value,
+                               @Cached("spacePadding") int cachedSpacePadding,
+                               @Cached("zeroPadding") int cachedZeroPadding,
+                               @Cached("makeFormatString(spacePadding, zeroPadding)") String cachedFormatString) {
+        return doFormat(value, cachedFormatString);
     }
 
-    @Specialization
-    public byte[] format(int spacePadding, int zeroPadding, long value) {
-        return doFormat(value, spacePadding, zeroPadding);
+    @TruffleBoundary
+    @Specialization(guards = "!isRubyBignum(value)", contains = "formatCached")
+    public byte[] formatUncached(int spacePadding,
+                                 int zeroPadding,
+                                 Object value) {
+        return doFormat(value, makeFormatString(spacePadding, zeroPadding));
     }
 
     @TruffleBoundary
@@ -89,9 +105,11 @@ public abstract class FormatIntegerNode extends FormatNode {
     }
 
     @TruffleBoundary
-    protected byte[] doFormat(Object value, int spacePadding, int zeroPadding) {
-        // TODO CS 3-May-15 write this without building a string and formatting
+    protected byte[] doFormat(Object value, String formatString) {
+        return String.format(formatString, value).getBytes(StandardCharsets.US_ASCII);
+    }
 
+    protected String makeFormatString(int spacePadding, int zeroPadding) {
         final StringBuilder builder = new StringBuilder();
 
         builder.append("%");
@@ -111,7 +129,11 @@ public abstract class FormatIntegerNode extends FormatNode {
 
         builder.append(format);
 
-        return String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII);
+        return builder.toString();
+    }
+
+    protected int getLimit() {
+        return getContext().getOptions().PACK_CACHE;
     }
 
 }
