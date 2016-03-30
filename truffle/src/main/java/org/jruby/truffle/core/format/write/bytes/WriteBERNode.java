@@ -105,7 +105,7 @@ public abstract class WriteBERNode extends FormatNode {
     }
 
     @TruffleBoundary
-    private ByteList encode(Object from) {
+    private byte[] encode(Object from) {
         // TODO CS 30-Mar-15 should write our own optimizable version of BER
 
         final ByteList buf = new ByteList();
@@ -156,7 +156,7 @@ public abstract class WriteBERNode extends FormatNode {
             right--;
         }
 
-        return buf;
+        return buf.bytes();
     }
 
 }

@@ -51,7 +51,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.util.ByteList;
 
 import java.nio.ByteOrder;
 
@@ -70,13 +69,13 @@ public abstract class WriteHexStringNode extends FormatNode {
     }
 
     @Specialization
-    public Object write(VirtualFrame frame, ByteList bytes) {
+    public Object write(VirtualFrame frame, byte[] bytes) {
         int currentByte = 0;
 
         final int lengthToUse;
 
         if (length == -1) {
-            lengthToUse = bytes.length();
+            lengthToUse = bytes.length;
         } else {
             lengthToUse = length;
         }
@@ -84,8 +83,8 @@ public abstract class WriteHexStringNode extends FormatNode {
         for (int n = 0; n < lengthToUse; n++) {
             byte currentChar;
 
-            if (n < bytes.length()) {
-                currentChar = (byte) bytes.get(n);
+            if (n < bytes.length) {
+                currentChar = bytes[n];
             } else {
                 currentChar = 0;
             }

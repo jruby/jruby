@@ -51,7 +51,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.util.ByteList;
 
 import java.nio.ByteOrder;
 
@@ -72,13 +71,11 @@ public abstract class WriteBitStringNode extends FormatNode {
     }
 
     @Specialization
-    public Object write(VirtualFrame frame, ByteList bytes) {
-        final ByteList lCurElemString = bytes;
-
+    public Object write(VirtualFrame frame, byte[] bytes) {
         int occurrences;
 
         if (star) {
-            occurrences = lCurElemString.length();
+            occurrences = bytes.length;
         } else {
             occurrences = length;
         }
@@ -86,14 +83,14 @@ public abstract class WriteBitStringNode extends FormatNode {
         int currentByte = 0;
         int padLength = 0;
 
-        if (occurrences > lCurElemString.length()) {
-            padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
-            occurrences = lCurElemString.length();
+        if (occurrences > bytes.length) {
+            padLength = (occurrences - bytes.length) / 2 + (occurrences + bytes.length) % 2;
+            occurrences = bytes.length;
         }
 
         if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
             for (int i = 0; i < occurrences;) {
-                if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
+                if ((bytes[i++] & 1) != 0) {//if the low bit is set
                     currentByte |= 128; //set the high bit of the result
                 }
 
@@ -113,7 +110,7 @@ public abstract class WriteBitStringNode extends FormatNode {
             }
         } else {
             for (int i = 0; i < occurrences;) {
-                currentByte |= lCurElemString.charAt(i++) & 1;
+                currentByte |= bytes[i++] & 1;
 
                 // we filled up current byte; append it and create next one
                 if ((i & 7) == 0) {

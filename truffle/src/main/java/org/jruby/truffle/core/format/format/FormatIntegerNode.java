@@ -18,7 +18,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.printf.PrintfTreeBuilder;
-import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -39,18 +38,18 @@ public abstract class FormatIntegerNode extends FormatNode {
     }
 
     @Specialization
-    public ByteList format(int spacePadding, int zeroPadding, int value) {
+    public byte[] format(int spacePadding, int zeroPadding, int value) {
         return doFormat(value, spacePadding, zeroPadding);
     }
 
     @Specialization
-    public ByteList format(int spacePadding, int zeroPadding, long value) {
+    public byte[] format(int spacePadding, int zeroPadding, long value) {
         return doFormat(value, spacePadding, zeroPadding);
     }
 
     @TruffleBoundary
     @Specialization(guards = "isRubyBignum(value)")
-    public ByteList format(int spacePadding, int zeroPadding, DynamicObject value) {
+    public byte[] format(int spacePadding, int zeroPadding, DynamicObject value) {
         final BigInteger bigInteger = Layouts.BIGNUM.getValue(value);
 
         String formatted;
@@ -86,11 +85,11 @@ public abstract class FormatIntegerNode extends FormatNode {
             formatted = "0" + formatted;
         }
 
-        return new ByteList(formatted.getBytes(StandardCharsets.US_ASCII));
+        return formatted.getBytes(StandardCharsets.US_ASCII);
     }
 
     @TruffleBoundary
-    protected ByteList doFormat(Object value, int spacePadding, int zeroPadding) {
+    protected byte[] doFormat(Object value, int spacePadding, int zeroPadding) {
         // TODO CS 3-May-15 write this without building a string and formatting
 
         final StringBuilder builder = new StringBuilder();
@@ -112,7 +111,7 @@ public abstract class FormatIntegerNode extends FormatNode {
 
         builder.append(format);
 
-        return new ByteList(String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII));
+        return String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII);
     }
 
 }

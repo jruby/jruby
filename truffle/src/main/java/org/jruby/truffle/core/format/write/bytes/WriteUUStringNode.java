@@ -44,27 +44,27 @@ public abstract class WriteUUStringNode extends FormatNode {
     }
 
     @Specialization(guards = "isEmpty(bytes)")
-    public Object writeEmpty(VirtualFrame frame, ByteList bytes) {
+    public Object writeEmpty(VirtualFrame frame, byte[] bytes) {
         return null;
     }
 
     @Specialization(guards = "!isEmpty(bytes)")
-    public Object write(VirtualFrame frame, ByteList bytes) {
+    public Object write(VirtualFrame frame, byte[] bytes) {
         writeBytes(frame, encode(bytes));
         return null;
     }
 
     @TruffleBoundary
-    private byte[] encode(ByteList bytes) {
+    private byte[] encode(byte[] bytes) {
         // TODO CS 30-Mar-15 should write our own optimizable version of UU
 
         final ByteList output = new ByteList();
-        Pack.encodeUM(null, bytes, length, ignoreStar, 'u', output);
+        Pack.encodeUM(null, new ByteList(bytes, false), length, ignoreStar, 'u', output);
         return output.bytes();
     }
 
-    protected boolean isEmpty(ByteList bytes) {
-        return bytes.length() == 0;
+    protected boolean isEmpty(byte[] bytes) {
+        return bytes.length == 0;
     }
 
 }

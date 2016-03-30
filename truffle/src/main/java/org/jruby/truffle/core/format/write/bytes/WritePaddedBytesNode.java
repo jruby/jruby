@@ -16,7 +16,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.util.ByteList;
 
 /**
  * Simply write bytes.
@@ -37,7 +36,7 @@ public abstract class WritePaddedBytesNode extends FormatNode {
     }
 
     @Specialization
-    public Object write(VirtualFrame frame, ByteList bytes) {
+    public Object write(VirtualFrame frame, byte[] bytes) {
         if (leftJustifiedProfile.profile(leftJustified)) {
             return writeLeftJustified(frame, bytes);
         } else {
@@ -45,18 +44,18 @@ public abstract class WritePaddedBytesNode extends FormatNode {
         }
     }
 
-    private Object writeLeftJustified(VirtualFrame frame, ByteList bytes) {
+    private Object writeLeftJustified(VirtualFrame frame, byte[] bytes) {
         writeBytes(frame, bytes);
 
-        for (int n = 0; n < padding - bytes.length(); n++) {
+        for (int n = 0; n < padding - bytes.length; n++) {
             writeByte(frame, (byte) ' ');
         }
 
         return null;
     }
 
-    private Object writeRightJustified(VirtualFrame frame, ByteList bytes) {
-        for (int n = 0; n < padding - bytes.length(); n++) {
+    private Object writeRightJustified(VirtualFrame frame, byte[] bytes) {
+        for (int n = 0; n < padding - bytes.length; n++) {
             writeByte(frame, (byte) ' ');
         }
 

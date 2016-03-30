@@ -37,18 +37,18 @@ public abstract class WriteMIMEStringNode extends FormatNode {
     }
 
     @Specialization
-    public Object write(VirtualFrame frame, ByteList bytes) {
+    public Object write(VirtualFrame frame, byte[] bytes) {
         writeBytes(frame, encode(bytes));
         return null;
     }
 
     @TruffleBoundary
-    private ByteList encode(ByteList bytes) {
+    private byte[] encode(byte[] bytes) {
         // TODO CS 30-Mar-15 should write our own optimizable version of MIME
 
         final ByteList output = new ByteList();
-        PackUtils.qpencode(output, bytes, length);
-        return output;
+        PackUtils.qpencode(output, new ByteList(bytes, false), length);
+        return output.bytes();
     }
 
 }

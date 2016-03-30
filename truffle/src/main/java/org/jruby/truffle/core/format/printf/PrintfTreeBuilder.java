@@ -28,13 +28,14 @@ import org.jruby.truffle.core.format.convert.ToStringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteByteNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBytesNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WritePaddedBytesNodeGen;
-import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.jruby.truffle.core.format.printf.PrintfParserBaseListener;
 import org.jruby.truffle.core.format.printf.PrintfParser;
+import org.jruby.util.ByteList;
 
 public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
@@ -46,6 +47,8 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
     private final byte[] source;
 
     private final List<FormatNode> sequence = new ArrayList<>();
+
+    private static final byte[] EMPTY_BYTES = new byte[]{};
 
     public PrintfTreeBuilder(RubyContext context, byte[] source) {
         this.context = context;
@@ -59,12 +62,12 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
     @Override
     public void exitString(PrintfParser.StringContext ctx) {
-        final ByteList keyBytes = tokenAsBytes(ctx.CURLY_KEY().getSymbol(), 1);
+        final byte[] keyBytes = tokenAsBytes(ctx.CURLY_KEY().getSymbol(), 1);
         final DynamicObject key = context.getSymbolTable().getSymbol(keyBytes);
 
         sequence.add(
                 WriteBytesNodeGen.create(context,
-                        ToStringNodeGen.create(context, true, "to_s", false, new ByteList(),
+                        ToStringNodeGen.create(context, true, "to_s", false, EMPTY_BYTES,
                                 ReadHashValueNodeGen.create(context, key,
                                         new SourceNode()))));
     }
@@ -119,7 +122,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
         if (ctx.ANGLE_KEY() == null) {
             valueNode = ReadValueNodeGen.create(context, new SourceNode());
         } else {
-            final ByteList keyBytes = tokenAsBytes(ctx.ANGLE_KEY().getSymbol(), 1);
+            final byte[] keyBytes = tokenAsBytes(ctx.ANGLE_KEY().getSymbol(), 1);
             final DynamicObject key = context.getSymbolTable().getSymbol(keyBytes);
             valueNode = ReadHashValueNodeGen.create(context, key, new SourceNode());
         }
@@ -139,20 +142,20 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                 if (ctx.ANGLE_KEY() == null) {
                     if (spacePadding == DEFAULT) {
                         node = WriteBytesNodeGen.create(context, ReadStringNodeGen.create(
-                                context, true, "to_s", false, new ByteList(),
+                                context, true, "to_s", false, EMPTY_BYTES,
                                         new SourceNode()));
                     } else {
                         node = WritePaddedBytesNodeGen.create(context, spacePadding, leftJustified,
-                                ReadStringNodeGen.create(context, true, "to_s", false, new ByteList(),
+                                ReadStringNodeGen.create(context, true, "to_s", false, EMPTY_BYTES,
                                         new SourceNode()));
                     }
                 } else {
                     if (spacePadding == DEFAULT) {
                         node = WriteBytesNodeGen.create(context, ToStringNodeGen.create(
-                                context, true, "to_s", false, new ByteList(), valueNode));
+                                context, true, "to_s", false, EMPTY_BYTES, valueNode));
                     } else {
                         node = WritePaddedBytesNodeGen.create(context, spacePadding, leftJustified,
-                                ToStringNodeGen.create(context, true, "to_s", false, new ByteList(), valueNode));
+                                ToStringNodeGen.create(context, true, "to_s", false, EMPTY_BYTES, valueNode));
                     }
                 }
                 break;
@@ -231,12 +234,12 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
     @Override
     public void exitLiteral(PrintfParser.LiteralContext ctx) {
-        final ByteList text = tokenAsBytes(ctx.LITERAL().getSymbol());
+        final byte[] text = tokenAsBytes(ctx.LITERAL().getSymbol());
 
         final FormatNode node;
 
-        if (text.length() == 1) {
-            node = WriteByteNodeGen.create(context, new LiteralFormatNode(context, (byte) text.get(0)));
+        if (text.length == 1) {
+            node = WriteByteNodeGen.create(context, new LiteralFormatNode(context, text[0]));
         } else {
             node = WriteBytesNodeGen.create(context, new LiteralFormatNode(context, text));
         }
@@ -248,12 +251,12 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
         return new SequenceNode(context, sequence.toArray(new FormatNode[sequence.size()]));
     }
 
-    private ByteList tokenAsBytes(Token token) {
+    private byte[] tokenAsBytes(Token token) {
         return tokenAsBytes(token, 0);
     }
 
-    private ByteList tokenAsBytes(Token token, int trim) {
-        return new ByteList(source, token.getStartIndex() + trim, token.getStopIndex() - token.getStartIndex() + 1 - 2 * trim);
+    private byte[] tokenAsBytes(Token token, int trim) {
+        return new ByteList(source, token.getStartIndex() + trim, token.getStopIndex() - token.getStartIndex() + 1 - 2 * trim).bytes();
     }
 
 }

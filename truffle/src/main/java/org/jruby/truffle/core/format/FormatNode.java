@@ -20,7 +20,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.util.ByteList;
 
 import java.util.Arrays;
 
@@ -206,13 +205,6 @@ public abstract class FormatNode extends Node {
      */
     protected void writeBytes(VirtualFrame frame, byte... values) {
         writeBytes(frame, values, 0, values.length);
-    }
-
-    /**
-     * Write a {@link ByteList} to the output.
-     */
-    protected void writeBytes(VirtualFrame frame, ByteList values) {
-        writeBytes(frame, values.getUnsafeBytes(), values.begin(), values.length());
     }
 
     /**

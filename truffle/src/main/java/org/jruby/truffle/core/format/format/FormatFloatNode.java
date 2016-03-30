@@ -17,7 +17,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.printf.PrintfTreeBuilder;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
 
@@ -41,7 +40,7 @@ public abstract class FormatFloatNode extends FormatNode {
 
     @Specialization
     @CompilerDirectives.TruffleBoundary
-    public ByteList format(double value) {
+    public byte[] format(double value) {
         // TODO CS 3-May-15 write this without building a string and formatting
 
         if (format == 'G' || format == 'g') {
@@ -57,9 +56,9 @@ public abstract class FormatFloatNode extends FormatNode {
 
             // If the value is a long value stuffed in a double, cast it so we don't print a trailing ".0".
             if ((value - Math.rint(value)) == 0) {
-                return StringOperations.createByteList(String.valueOf((long) value));
+                return String.valueOf((long) value).getBytes(StandardCharsets.US_ASCII);
             } else {
-                return StringOperations.createByteList(String.valueOf(value));
+                return String.valueOf(value).getBytes(StandardCharsets.US_ASCII);
             }
         } else {
             final StringBuilder builder = new StringBuilder();
@@ -82,7 +81,7 @@ public abstract class FormatFloatNode extends FormatNode {
 
                 final String infinityString = String.format(builder.toString(), value);
                 final String shortenInfinityString = infinityString.substring(0, infinityString.length() - 5);
-                return new ByteList(shortenInfinityString.getBytes(StandardCharsets.US_ASCII));
+                return shortenInfinityString.getBytes(StandardCharsets.US_ASCII);
 
             } else {
 
@@ -106,7 +105,7 @@ public abstract class FormatFloatNode extends FormatNode {
 
                 builder.append(format);
 
-                return new ByteList(String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII));
+                return String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII);
             }
 
         }

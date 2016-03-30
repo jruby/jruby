@@ -51,17 +51,17 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
-import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
 import org.jruby.util.Pack;
-import org.jruby.util.StringSupport;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 @NodeChildren({
         @NodeChild(value = "value", type = SourceNode.class),
@@ -79,16 +79,16 @@ public abstract class ReadBase64StringNode extends FormatNode {
 
         final ByteBuffer encode = ByteBuffer.wrap(source, position, length - position);
 
-        final ByteList result = read(encode);
+        final byte[] result = read(encode);
 
         setSourcePosition(frame, encode.position());
 
         return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
+                new AsciiOnlyLeafRope(result, ASCIIEncoding.INSTANCE));
     }
 
     @TruffleBoundary
-    private ByteList read(ByteBuffer encode) {
+    private byte[] read(ByteBuffer encode) {
         int occurrences = encode.remaining();
 
         int length = encode.remaining()*3/4;
@@ -210,7 +210,7 @@ public abstract class ReadBase64StringNode extends FormatNode {
             }
         }
 
-        return new ByteList(lElem, 0, index, ASCIIEncoding.INSTANCE, false);
+        return Arrays.copyOfRange(lElem, 0, index);
     }
 
 }

@@ -14,13 +14,18 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
+import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
+
+import java.util.Arrays;
 
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
@@ -56,11 +61,10 @@ public abstract class ReadBinaryStringNode extends FormatNode {
     }
 
     @Specialization
-    public Object read(VirtualFrame frame, byte[] source) {
+    public DynamicObject read(VirtualFrame frame, byte[] source) {
         final int start = getSourcePosition(frame);
 
         int length;
-        ByteList result;
 
         if (readToEnd) {
             length = 0;
@@ -100,7 +104,7 @@ public abstract class ReadBinaryStringNode extends FormatNode {
             usedLength--;
         }
 
-        result = new ByteList(source, start, usedLength, true);
+        final ByteList result = new ByteList(source, start, usedLength, true);
 
         if (trimToFirstNull) {
             final int firstNull = result.indexOf(0);
@@ -113,7 +117,7 @@ public abstract class ReadBinaryStringNode extends FormatNode {
         setSourcePosition(frame, start + length);
 
         return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
+                new AsciiOnlyLeafRope(result.bytes(), ASCIIEncoding.INSTANCE));
     }
 
 }

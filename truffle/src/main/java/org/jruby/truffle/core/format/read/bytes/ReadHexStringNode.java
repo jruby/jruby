@@ -50,14 +50,14 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
+import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
-import org.jruby.util.StringSupport;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -116,11 +116,10 @@ public abstract class ReadHexStringNode extends FormatNode {
             lElem[lCurByte] = Pack.sHexDigits[(bits >>> shift) & 15];
         }
 
-        final ByteList result = new ByteList(lElem, ASCIIEncoding.INSTANCE, false);
         setSourcePosition(frame, encode.position());
 
         return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                StringOperations.ropeFromByteList(result, StringSupport.CR_UNKNOWN));
+                new AsciiOnlyLeafRope(lElem, USASCIIEncoding.INSTANCE));
     }
 
 }

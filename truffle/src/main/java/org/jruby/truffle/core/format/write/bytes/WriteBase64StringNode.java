@@ -40,17 +40,17 @@ public abstract class WriteBase64StringNode extends FormatNode {
     }
 
     @Specialization
-    public Object write(VirtualFrame frame, ByteList bytes) {
+    public Object write(VirtualFrame frame, byte[] bytes) {
         writeBytes(frame, encode(bytes));
         return null;
     }
 
     @TruffleBoundary
-    private byte[] encode(ByteList bytes) {
+    private byte[] encode(byte[] bytes) {
         // TODO CS 30-Mar-15 should write our own optimisable version of Base64
 
         final ByteList output = new ByteList();
-        Pack.encodeUM(null, bytes, length, ignoreStar, 'm', output);
+        Pack.encodeUM(null, new ByteList(bytes, false), length, ignoreStar, 'm', output);
         return output.bytes();
     }
 

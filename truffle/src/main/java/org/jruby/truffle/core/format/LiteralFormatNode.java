@@ -12,7 +12,6 @@ package org.jruby.truffle.core.format;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.util.ByteList;
 
 public class LiteralFormatNode extends FormatNode {
 

@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.core.kernel.KernelNodes;
@@ -30,7 +31,6 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
-import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
 
@@ -71,33 +71,33 @@ public abstract class ToStringNode extends FormatNode {
 
     @TruffleBoundary
     @Specialization(guards = "convertNumbersToStrings")
-    public ByteList toString(int value) {
-        return new ByteList(Integer.toString(value).getBytes(StandardCharsets.US_ASCII));
+    public byte[] toString(int value) {
+        return Integer.toString(value).getBytes(StandardCharsets.US_ASCII);
     }
 
     @TruffleBoundary
     @Specialization(guards = "convertNumbersToStrings")
-    public ByteList toString(long value) {
-        return new ByteList(Long.toString(value).getBytes(StandardCharsets.US_ASCII));
+    public byte[] toString(long value) {
+        return Long.toString(value).getBytes(StandardCharsets.US_ASCII);
     }
 
     @TruffleBoundary
     @Specialization(guards = "convertNumbersToStrings")
-    public ByteList toString(double value) {
-        return new ByteList(Double.toString(value).getBytes(StandardCharsets.US_ASCII));
+    public byte[] toString(double value) {
+        return Double.toString(value).getBytes(StandardCharsets.US_ASCII);
     }
 
     @Specialization(guards = "isRubyString(string)")
-    public ByteList toStringString(VirtualFrame frame, DynamicObject string) {
+    public byte[] toStringString(VirtualFrame frame, DynamicObject string) {
         if (taintedProfile.profile(isTaintedNode.executeIsTainted(string))) {
             setTainted(frame);
         }
 
-        return StringOperations.getByteListReadOnly(string);
+        return Layouts.STRING.getRope(string).getBytes();
     }
 
     @Specialization(guards = "isRubyArray(array)")
-    public ByteList toString(VirtualFrame frame, DynamicObject array) {
+    public byte[] toString(VirtualFrame frame, DynamicObject array) {
         if (toSNode == null) {
             CompilerDirectives.transferToInterpreter();
             toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
@@ -111,14 +111,14 @@ public abstract class ToStringNode extends FormatNode {
                 setTainted(frame);
             }
 
-            return StringOperations.getByteListReadOnly((DynamicObject) value);
+            return Layouts.STRING.getRope((DynamicObject) value).getBytes();
         } else {
             throw new NoImplicitConversionException(array, "String");
         }
     }
 
     @Specialization(guards = {"!isRubyString(object)", "!isRubyArray(object)"})
-    public ByteList toString(VirtualFrame frame, Object object) {
+    public byte[] toString(VirtualFrame frame, Object object) {
         if (toStrNode == null) {
             CompilerDirectives.transferToInterpreter();
             toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
@@ -132,7 +132,7 @@ public abstract class ToStringNode extends FormatNode {
                 setTainted(frame);
             }
 
-            return StringOperations.getByteListReadOnly((DynamicObject) value);
+            return Layouts.STRING.getRope((DynamicObject) value).getBytes();
         }
 
         if (inspectOnConversionFailure) {
@@ -142,7 +142,7 @@ public abstract class ToStringNode extends FormatNode {
                         getEncapsulatingSourceSection(), new RubyNode[]{null}));
             }
 
-            return StringOperations.getByteListReadOnly(inspectNode.toS(frame, object));
+            return Layouts.STRING.getRope(inspectNode.toS(frame, object)).getBytes();
         } else {
             throw new NoImplicitConversionException(object, "String");
         }

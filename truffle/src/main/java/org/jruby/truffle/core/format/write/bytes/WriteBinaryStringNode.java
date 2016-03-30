@@ -15,7 +15,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.util.ByteList;
 
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
@@ -54,25 +53,25 @@ public abstract class WriteBinaryStringNode extends FormatNode {
     }
 
     @Specialization
-    public Object write(VirtualFrame frame, ByteList bytes) {
+    public Object write(VirtualFrame frame, byte[] bytes) {
         final int lengthFromBytes;
 
         if (takeAll) {
-            lengthFromBytes = bytes.length();
+            lengthFromBytes = bytes.length;
         } else {
-            lengthFromBytes = Math.min(width, bytes.length());
+            lengthFromBytes = Math.min(width, bytes.length);
         }
 
         if (pad) {
             final int lengthFromPadding = width - lengthFromBytes;
 
-            writeBytes(frame, bytes.getUnsafeBytes(), bytes.begin(), lengthFromBytes);
+            writeBytes(frame, bytes, 0, lengthFromBytes);
 
             for (int n = 0; n < lengthFromPadding; n++) {
                 writeByte(frame, padding);
             }
         } else {
-            writeBytes(frame, bytes.getUnsafeBytes(), bytes.begin(), lengthFromBytes);
+            writeBytes(frame, bytes, 0, lengthFromBytes);
         }
 
         if (appendNull) {
