@@ -383,6 +383,21 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         }
     }
 
+    /**
+     * Increases the capacity of this <tt>Array</tt>, if necessary.
+     * @param minCapacity the desired minimum capacity of the internal array
+     */
+    public void ensureCapacity(int minCapacity) {
+        if ( isShared || (values.length - begin) < minCapacity ) {
+            final int len = this.realLength;
+            int newCapacity = minCapacity > len ? minCapacity : len;
+            IRubyObject[] values = new IRubyObject[newCapacity];
+            System.arraycopy(this.values, begin, values, 0, len);
+            this.values = values;
+            this.begin = 0;
+        }
+    }
+
     private static final void checkLength(Ruby runtime, long length) {
         if (length < 0) {
             throw runtime.newArgumentError("negative array size (or size too big)");
