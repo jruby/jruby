@@ -17,12 +17,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.util.ByteList;
 
-/**
- * Read and write a binary string - so except for padding this is basically a copy
- * operation.
- * <pre>
- * ["\xABCDEF"].pack('A3') => "\xABCD"
- */
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
 })
