@@ -24,17 +24,53 @@ import java.nio.charset.StandardCharsets;
 })
 public abstract class FormatFloatNode extends FormatNode {
 
-    private final int spacePadding;
-    private final int zeroPadding;
-    private final int precision;
-    private final char format;
+    private final String infiniteFormatString;
+    private final String finiteFormatString;
 
     public FormatFloatNode(RubyContext context, int spacePadding, int zeroPadding, int precision, char format) {
         super(context);
-        this.spacePadding = spacePadding;
-        this.zeroPadding = zeroPadding;
-        this.precision = precision;
-        this.format = format;
+
+        final StringBuilder inifiniteFormatBuilder = new StringBuilder();
+        inifiniteFormatBuilder.append("%");
+
+        if (spacePadding != PrintfTreeBuilder.DEFAULT) {
+            inifiniteFormatBuilder.append(" ");
+            inifiniteFormatBuilder.append(spacePadding + 5);
+        }
+
+        if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
+            inifiniteFormatBuilder.append("0");
+            inifiniteFormatBuilder.append(zeroPadding + 5);
+        }
+
+        inifiniteFormatBuilder.append(format);
+
+        infiniteFormatString = inifiniteFormatBuilder.toString();
+
+        final StringBuilder finiteFormatBuilder = new StringBuilder();
+        finiteFormatBuilder.append("%");
+
+        if (spacePadding != PrintfTreeBuilder.DEFAULT) {
+            finiteFormatBuilder.append(" ");
+            finiteFormatBuilder.append(spacePadding);
+
+            if (zeroPadding != PrintfTreeBuilder.DEFAULT) {
+                finiteFormatBuilder.append(".");
+                finiteFormatBuilder.append(zeroPadding);
+            }
+        } else if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
+            finiteFormatBuilder.append("0");
+            finiteFormatBuilder.append(zeroPadding);
+        }
+
+        if (precision != PrintfTreeBuilder.DEFAULT) {
+            finiteFormatBuilder.append(".");
+            finiteFormatBuilder.append(precision);
+        }
+
+        finiteFormatBuilder.append(format);
+
+        finiteFormatString = finiteFormatBuilder.toString();
     }
 
     @Specialization
@@ -42,51 +78,12 @@ public abstract class FormatFloatNode extends FormatNode {
     public byte[] format(double value) {
         // TODO CS 3-May-15 write this without building a string and formatting
 
-        final StringBuilder builder = new StringBuilder();
-
-        builder.append("%");
-
         if (Double.isInfinite(value)) {
-
-            if (spacePadding != PrintfTreeBuilder.DEFAULT) {
-                builder.append(" ");
-                builder.append(spacePadding + 5);
-            }
-
-            if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
-                builder.append("0");
-                builder.append(zeroPadding + 5);
-            }
-
-            builder.append(format);
-
-            final String infinityString = String.format(builder.toString(), value);
+            final String infinityString = String.format(infiniteFormatString, value);
             final String shortenInfinityString = infinityString.substring(0, infinityString.length() - 5);
             return shortenInfinityString.getBytes(StandardCharsets.US_ASCII);
-
         } else {
-
-            if (spacePadding != PrintfTreeBuilder.DEFAULT) {
-                builder.append(" ");
-                builder.append(spacePadding);
-
-                if (zeroPadding != PrintfTreeBuilder.DEFAULT) {
-                    builder.append(".");
-                    builder.append(zeroPadding);
-                }
-            } else if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
-                builder.append("0");
-                builder.append(zeroPadding);
-            }
-
-            if (precision != PrintfTreeBuilder.DEFAULT) {
-                builder.append(".");
-                builder.append(precision);
-            }
-
-            builder.append(format);
-
-            return String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII);
+            return String.format(finiteFormatString, value).getBytes(StandardCharsets.US_ASCII);
         }
     }
 
