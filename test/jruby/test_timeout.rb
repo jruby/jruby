@@ -3,8 +3,11 @@ require 'timeout'
 require 'socket'
 require 'net/http'
 
-class TestTimeout < Test::Unit::TestCase
+require 'test/jruby/test_helper'
 
+class TestTimeout < Test::Unit::TestCase
+  include TestHelper
+  
   def test_timeout_for_loop
     n = 10000000
     assert_raises(Timeout::Error) do
@@ -81,7 +84,9 @@ class TestTimeout < Test::Unit::TestCase
 
   def test_timeout_raises_anon_class_to_unroll
     begin
-      timeout(0.1) { foo }
+      quiet do
+        timeout(0.1) { foo }
+      end
     rescue Timeout::Error
       ok = true
     end
