@@ -102,9 +102,6 @@ public abstract class ReadBase64StringNode extends FormatNode {
                 throw new InvalidFormatException("invalid base64");
             }
             while (encode.hasRemaining()) {
-                a = b = c = -1;
-                d = -2;
-
                 // obtain a
                 s = Pack.safeGet(encode);
                 a = Pack.b64_xtable[s];
@@ -152,7 +149,7 @@ public abstract class ReadBase64StringNode extends FormatNode {
         else {
 
             while (encode.hasRemaining()) {
-                a = b = c = d = -1;
+                b = c = -1;
 
                 // obtain a
                 s = Pack.safeGet(encode);
