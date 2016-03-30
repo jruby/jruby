@@ -26,7 +26,6 @@ import org.jruby.truffle.core.format.read.array.ReadLongOrBigIntegerNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadStringNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadValueNodeGen;
 import org.jruby.truffle.core.format.convert.ToLongNodeGen;
-import org.jruby.truffle.core.format.read.array.PNode;
 import org.jruby.truffle.core.format.write.bytes.Write16BigNodeGen;
 import org.jruby.truffle.core.format.write.bytes.Write16LittleNodeGen;
 import org.jruby.truffle.core.format.write.bytes.Write32BigNodeGen;
