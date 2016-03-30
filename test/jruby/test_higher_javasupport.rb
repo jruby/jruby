@@ -973,27 +973,13 @@ class TestHigherJavasupport < Test::Unit::TestCase
     end
   end
 
-  if javax.xml.namespace.NamespaceContext.instance_of?(Module)
-
-    class NSCT
-      include javax.xml.namespace.NamespaceContext
-      # JRUBY-66: No super here...make sure we still work.
-      def initialize(arg); end
-      def getNamespaceURI(prefix)
-        'ape:sex'
-      end
+  class NSCT
+    include javax.xml.namespace.NamespaceContext
+    # JRUBY-66: No super here...make sure we still work.
+    def initialize(arg); end
+    def getNamespaceURI(prefix)
+      'ape:sex'
     end
-
-  else
-
-    class NSCT < javax.xml.namespace.NamespaceContext
-      # JRUBY-66: No super here...make sure we still work.
-      def initialize(arg); end
-      def getNamespaceURI(prefix)
-        'ape:sex'
-      end
-    end
-
   end
 
   def test_no_need_to_call_super_in_initialize_when_implementing_java_interfaces
@@ -1014,23 +1000,13 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert(java.lang.System.respond_to?("current_time_millis"))
   end
 
-  if Java::java.lang.Runnable.instance_of?(Module)
-    class TestInitBlock
-      include Java::java.lang.Runnable
-      def initialize(&block)
-        raise if !block
-        @bar = block.call
-      end
-      def bar; @bar; end
+  class TestInitBlock
+    include Java::java.lang.Runnable
+    def initialize(&block)
+      raise if !block
+      @bar = block.call
     end
-  else
-    class TestInitBlock < Java::java.lang.Runnable
-      def initialize(&block)
-        raise if !block
-        @bar = block.call
-      end
-      def bar; @bar; end
-    end
+    def bar; @bar; end
   end
 
   def test_that_blocks_are_passed_through_to_the_constructor_for_an_interface_impl
