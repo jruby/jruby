@@ -35,7 +35,6 @@ import java.util.List;
 
 import org.jruby.truffle.core.format.printf.PrintfParserBaseListener;
 import org.jruby.truffle.core.format.printf.PrintfParser;
-import org.jruby.util.ByteList;
 
 public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
@@ -256,7 +255,9 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
     }
 
     private byte[] tokenAsBytes(Token token, int trim) {
-        return new ByteList(source, token.getStartIndex() + trim, token.getStopIndex() - token.getStartIndex() + 1 - 2 * trim).bytes();
+        final int from = token.getStartIndex() + trim;
+        final int to = from + token.getStopIndex() - token.getStartIndex() + 1 - 2 * trim;
+        return Arrays.copyOfRange(source, from, to);
     }
 
 }
