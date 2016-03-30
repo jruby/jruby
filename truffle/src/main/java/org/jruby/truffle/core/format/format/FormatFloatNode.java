@@ -73,18 +73,22 @@ public abstract class FormatFloatNode extends FormatNode {
         finiteFormatString = finiteFormatBuilder.toString();
     }
 
-    @Specialization
     @TruffleBoundary
-    public byte[] format(double value) {
-        // TODO CS 3-May-15 write this without building a string and formatting
+    @Specialization(guards = "isInfinite(value)")
+    public byte[] formatInfinite(double value) {
+        final String infinityString = String.format(infiniteFormatString, value);
+        final String shortenInfinityString = infinityString.substring(0, infinityString.length() - 5);
+        return shortenInfinityString.getBytes(StandardCharsets.US_ASCII);
+    }
 
-        if (Double.isInfinite(value)) {
-            final String infinityString = String.format(infiniteFormatString, value);
-            final String shortenInfinityString = infinityString.substring(0, infinityString.length() - 5);
-            return shortenInfinityString.getBytes(StandardCharsets.US_ASCII);
-        } else {
-            return String.format(finiteFormatString, value).getBytes(StandardCharsets.US_ASCII);
-        }
+    @TruffleBoundary
+    @Specialization(guards = "!isInfinite(value)")
+    public byte[] formatFinite(double value) {
+        return String.format(finiteFormatString, value).getBytes(StandardCharsets.US_ASCII);
+    }
+
+    protected boolean isInfinite(double value) {
+        return Double.isInfinite(value);
     }
 
 }

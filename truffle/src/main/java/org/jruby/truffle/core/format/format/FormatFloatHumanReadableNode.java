@@ -13,10 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.format.printf.PrintfTreeBuilder;
 
 import java.nio.charset.StandardCharsets;
 
@@ -25,14 +23,23 @@ import java.nio.charset.StandardCharsets;
 })
 public abstract class FormatFloatHumanReadableNode extends FormatNode {
 
-    private final ConditionProfile integerProfile = ConditionProfile.createBinaryProfile();
-
     public FormatFloatHumanReadableNode(RubyContext context) {
         super(context);
     }
 
-    @Specialization
+    @TruffleBoundary
+    @Specialization(guards = "isInteger(value)")
+    public byte[] formatInteger(double value) {
+        return String.valueOf((long) value).getBytes(StandardCharsets.US_ASCII);
+    }
+
+    @TruffleBoundary
+    @Specialization(guards = "!isInteger(value)")
     public byte[] format(double value) {
+        return String.valueOf(value).getBytes(StandardCharsets.US_ASCII);
+    }
+
+    protected boolean isInteger(double value) {
         /**
          * General approach taken from StackOverflow: http://stackoverflow.com/questions/703396/how-to-nicely-format-floating-numbers-to-string-without-unnecessary-decimal-0
          * Answers provided by JasonD (http://stackoverflow.com/users/1288598/jasond) and Darthenius (http://stackoverflow.com/users/974531/darthenius)
@@ -41,24 +48,7 @@ public abstract class FormatFloatHumanReadableNode extends FormatNode {
 
         // TODO (nirvdrum 09-Mar-15) Make this adhere to the MRI invariant: "single-precision, network (big-endian) byte order"
 
-        // TODO CS 4-May-15 G/g? Space padding? Zero padding? Precision?
-
-        // If the value is a long value stuffed in a double, cast it so we don't print a trailing ".0".
-        if (integerProfile.profile(value - Math.rint(value) == 0)) {
-            return toString((long) value);
-        } else {
-            return toString(value);
-        }
-    }
-
-    @TruffleBoundary
-    private byte[] toString(long value) {
-        return String.valueOf(value).getBytes(StandardCharsets.US_ASCII);
-    }
-
-    @TruffleBoundary
-    private byte[] toString(double value) {
-        return String.valueOf(value).getBytes(StandardCharsets.US_ASCII);
+        return value - Math.rint(value) == 0;
     }
 
 }
