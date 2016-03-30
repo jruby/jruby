@@ -9,13 +9,8 @@
  */
 package org.jruby.truffle.core.format;
 
-/**
- * The encoding to be used for the string resulting from pack.
- * <p>
- * We use this enum as the range of encodings possible are very limited and
- * we want to abstracted between JRuby's pack and Truffle's pack.
- */
 public enum FormatEncoding {
+
     DEFAULT,
     ASCII_8BIT,
     US_ASCII,
@@ -35,20 +30,12 @@ public enum FormatEncoding {
             return this;
         }
 
-        switch (this) {
+        switch (other) {
             case ASCII_8BIT:
             case US_ASCII:
-                switch (other) {
-                    case ASCII_8BIT:
-                    case US_ASCII:
-                        return ASCII_8BIT;
-                    case UTF_8:
-                        return ASCII_8BIT;
-                    default:
-                        throw new UnsupportedOperationException();
-                }
+                return ASCII_8BIT;
             case UTF_8:
-                switch (other) {
+                switch (this) {
                     case ASCII_8BIT:
                     case US_ASCII:
                         return ASCII_8BIT;
@@ -61,4 +48,5 @@ public enum FormatEncoding {
                 throw new UnsupportedOperationException();
         }
     }
+    
 }
