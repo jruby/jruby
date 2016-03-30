@@ -26,9 +26,14 @@ public abstract class WriteByteNode extends FormatNode {
     }
 
     @Specialization
-    public Object doWrite(VirtualFrame frame, long value) {
-        writeByte(frame, (byte) value);
+    public Object doWrite(VirtualFrame frame, byte value) {
+        writeByte(frame, value);
         return null;
+    }
+
+    @Specialization
+    public Object doWrite(VirtualFrame frame, long value) {
+        return doWrite(frame, (byte) value);
     }
 
 }

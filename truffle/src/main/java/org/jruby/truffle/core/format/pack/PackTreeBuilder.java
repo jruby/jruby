@@ -15,6 +15,8 @@ import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.LiteralFormatNode;
 import org.jruby.truffle.core.format.SharedTreeBuilder;
 import org.jruby.truffle.core.format.control.AdvanceSourcePositionNode;
+import org.jruby.truffle.core.format.convert.Integer64BigToBytesNodeGen;
+import org.jruby.truffle.core.format.convert.Integer64LittleToBytesNodeGen;
 import org.jruby.truffle.core.format.convert.ReinterpretAsLongNodeGen;
 import org.jruby.truffle.core.format.convert.ToFloatNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
@@ -30,13 +32,12 @@ import org.jruby.truffle.core.format.write.bytes.Write16BigNodeGen;
 import org.jruby.truffle.core.format.write.bytes.Write16LittleNodeGen;
 import org.jruby.truffle.core.format.write.bytes.Write32BigNodeGen;
 import org.jruby.truffle.core.format.write.bytes.Write32LittleNodeGen;
-import org.jruby.truffle.core.format.write.bytes.Write64BigNodeGen;
-import org.jruby.truffle.core.format.write.bytes.Write64LittleNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteByteNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBERNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBase64StringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBinaryStringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBitStringNodeGen;
+import org.jruby.truffle.core.format.write.bytes.WriteBytesNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteHexStringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteMIMEStringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteUTF8CharacterNodeGen;
@@ -439,9 +440,11 @@ public class PackTreeBuilder extends PackBaseListener {
                 }
             case 64:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    return Write64LittleNodeGen.create(context, readNode);
+                    return WriteBytesNodeGen.create(context,
+                            Integer64LittleToBytesNodeGen.create(context, readNode));
                 } else {
-                    return Write64BigNodeGen.create(context, readNode);
+                    return WriteBytesNodeGen.create(context,
+                            Integer64BigToBytesNodeGen.create(context, readNode));
                 }
             default:
                 throw new IllegalArgumentException();
