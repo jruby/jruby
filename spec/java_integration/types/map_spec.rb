@@ -2,6 +2,13 @@ require File.dirname(__FILE__) + "/../spec_helper"
 
 describe "a java.util.Map instance" do
 
+  it "return compared_by_identity for IdentityHashMap" do
+    h = java.util.HashMap.new
+    expect( h.compare_by_identity? ).to be false
+    h = java.util.IdentityHashMap.new
+    expect( h.compare_by_identity? ).to be true
+  end
+
   it "supports Hash-like operations" do
     h = java.util.HashMap.new
     test_ok(h.kind_of? java.util.Map)
