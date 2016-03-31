@@ -1998,9 +1998,9 @@ public class RubyHash extends RubyObject implements Map {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
                 IRubyObject newAssoc = RubyArray.newArray(context.runtime, entry.key, entry.value);
                 if (block.yield(context, newAssoc).isTrue())
-                    return context.getRuntime().getTrue();
+                    return context.runtime.getTrue();
             }
-            return context.getRuntime().getFalse();
+            return context.runtime.getFalse();
         } finally {
             iteratorExit();
         }
@@ -2011,9 +2011,9 @@ public class RubyHash extends RubyObject implements Map {
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
                 if (block.yieldArray(context, context.runtime.newArray(entry.key, entry.value), null).isTrue())
-                    return context.getRuntime().getTrue();
+                    return context.runtime.getTrue();
             }
-            return context.getRuntime().getFalse();
+            return context.runtime.getFalse();
         } finally {
             iteratorExit();
         }
