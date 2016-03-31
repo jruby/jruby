@@ -195,25 +195,25 @@ public class ArrayJavaProxy extends JavaProxy {
             switch (componentClass.getName().charAt(0)) {
                 case 'b':
                     if (componentClass == byte.class) buffer.append(Arrays.toString((byte[])getObject()));
-                    if (componentClass == boolean.class) buffer.append(Arrays.toString((boolean[])getObject()));
+                    else /* if (componentClass == boolean.class) */ buffer.append(Arrays.toString((boolean[])getObject()));
                     break;
                 case 's':
-                    if (componentClass == short.class) buffer.append(Arrays.toString((short[])getObject()));
+                    /* if (componentClass == short.class) */ buffer.append(Arrays.toString((short[])getObject()));
                     break;
                 case 'c':
-                    if (componentClass == char.class) buffer.append(Arrays.toString((char[])getObject()));
+                    /* if (componentClass == char.class) */ buffer.append(Arrays.toString((char[])getObject()));
                     break;
                 case 'i':
-                    if (componentClass == int.class) buffer.append(Arrays.toString((int[])getObject()));
+                    /* if (componentClass == int.class) */ buffer.append(Arrays.toString((int[])getObject()));
                     break;
                 case 'l':
-                    if (componentClass == long.class) buffer.append(Arrays.toString((long[])getObject()));
+                    /* if (componentClass == long.class) */ buffer.append(Arrays.toString((long[])getObject()));
                     break;
                 case 'f':
-                    if (componentClass == float.class) buffer.append(Arrays.toString((float[])getObject()));
+                    /* if (componentClass == float.class) */ buffer.append(Arrays.toString((float[])getObject()));
                     break;
                 case 'd':
-                    if (componentClass == double.class) buffer.append(Arrays.toString((double[])getObject()));
+                    /* if (componentClass == double.class) */ buffer.append(Arrays.toString((double[])getObject()));
                     break;
             }
         } else {
@@ -262,19 +262,19 @@ public class ArrayJavaProxy extends JavaProxy {
             switch ( componentType.getName().charAt(0) ) {
                 case 'b':
                     if (componentType == byte.class) return Arrays.equals((byte[]) thisArray, (byte[]) thatArray);
-                    if (componentType == boolean.class) return Arrays.equals((boolean[]) thisArray, (boolean[]) thatArray);
+                    else /* if (componentType == boolean.class) */ return Arrays.equals((boolean[]) thisArray, (boolean[]) thatArray);
                 case 's':
-                    if (componentType == short.class) return Arrays.equals((short[]) thisArray, (short[]) thatArray);
+                    /* if (componentType == short.class) */ return Arrays.equals((short[]) thisArray, (short[]) thatArray);
                 case 'c':
-                    if (componentType == char.class) return Arrays.equals((char[]) thisArray, (char[]) thatArray);
+                    /* if (componentType == char.class) */ return Arrays.equals((char[]) thisArray, (char[]) thatArray);
                 case 'i':
-                    if (componentType == int.class) return Arrays.equals((int[]) thisArray, (int[]) thatArray);
+                    /* if (componentType == int.class) */ return Arrays.equals((int[]) thisArray, (int[]) thatArray);
                 case 'l':
-                    if (componentType == long.class) return Arrays.equals((long[]) thisArray, (long[]) thatArray);
+                    /* if (componentType == long.class) */ return Arrays.equals((long[]) thisArray, (long[]) thatArray);
                 case 'f':
-                    if (componentType == float.class) return Arrays.equals((float[]) thisArray, (float[]) thatArray);
+                    /* if (componentType == float.class) */ return Arrays.equals((float[]) thisArray, (float[]) thatArray);
                 case 'd':
-                    if (componentType == double.class) return Arrays.equals((double[]) thisArray, (double[]) thatArray);
+                    /* if (componentType == double.class) */ return Arrays.equals((double[]) thisArray, (double[]) thatArray);
             }
         }
         return Arrays.equals((Object[]) thisArray, (Object[]) thatArray);
@@ -294,19 +294,19 @@ public class ArrayJavaProxy extends JavaProxy {
             switch ( componentType.getName().charAt(0) ) {
                 case 'b':
                     if (componentType == byte.class) return 11 * Arrays.hashCode((byte[]) array);
-                    if (componentType == boolean.class) return 11 * Arrays.hashCode((boolean[]) array);
+                    else /* if (componentType == boolean.class) */ return 11 * Arrays.hashCode((boolean[]) array);
                 case 's':
-                    if (componentType == short.class) return 11 * Arrays.hashCode((short[]) array);
+                    /* if (componentType == short.class) */ return 11 * Arrays.hashCode((short[]) array);
                 case 'c':
-                    if (componentType == char.class) return 11 * Arrays.hashCode((char[]) array);
+                    /* if (componentType == char.class) */ return 11 * Arrays.hashCode((char[]) array);
                 case 'i':
-                    if (componentType == int.class) return 11 * Arrays.hashCode((int[]) array);
+                    /* if (componentType == int.class) */ return 11 * Arrays.hashCode((int[]) array);
                 case 'l':
-                    if (componentType == long.class) return 11 * Arrays.hashCode((long[]) array);
+                    /* if (componentType == long.class) */ return 11 * Arrays.hashCode((long[]) array);
                 case 'f':
-                    if (componentType == float.class) return 11 * Arrays.hashCode((float[]) array);
+                    /* if (componentType == float.class) */ return 11 * Arrays.hashCode((float[]) array);
                 case 'd':
-                    if (componentType == double.class) return 11 * Arrays.hashCode((double[]) array);
+                    /* if (componentType == double.class) */ return 11 * Arrays.hashCode((double[]) array);
             }
         }
         return 11 * Arrays.hashCode((Object[]) array);
