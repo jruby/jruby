@@ -41,10 +41,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  * An RubyArray that maintains an O(1) Set for fast include? operations.
  */
 public class StringArraySet extends RubyArray {
-    private final Set<String> set = new HashSet<String>();
+
+    private final Set<String> set;
 
     public StringArraySet(Ruby runtime) {
-        super(runtime, 4);
+        super(runtime, 16);
+        this.set = new HashSet<>(20); // 0.75
     }
 
     @Override
