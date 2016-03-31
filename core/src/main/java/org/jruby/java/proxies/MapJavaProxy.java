@@ -34,6 +34,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
+import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -49,10 +50,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * A proxy for wrapping <code>java.util.Map</code> instances.
  *
  * @author Yoko Harada
  */
-
 public class MapJavaProxy extends ConcreteJavaProxy {
 
     private RubyHashMap wrappedMap;
@@ -387,6 +388,11 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().to_a();
     }
 
+    @JRubyMethod(name = "to_proc")
+    public RubyProc to_proc(ThreadContext context) {
+        return getOrCreateRubyHashMap().to_proc(context);
+    }
+
     /** rb_hash_to_s
      *
      */
@@ -441,6 +447,26 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         return getOrCreateRubyHashMap().op_aref(context, key);
+    }
+
+    @JRubyMethod(name = "<", required = 1)
+    public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().op_lt(context, other);
+    }
+
+    @JRubyMethod(name = "<=", required = 1)
+    public IRubyObject op_le(ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().op_le(context, other);
+    }
+
+    @JRubyMethod(name = ">", required = 1)
+    public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().op_gt(context, other);
+    }
+
+    @JRubyMethod(name = ">=", required = 1)
+    public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().op_ge(context, other);
     }
 
     /** rb_hash_hash
@@ -664,6 +690,11 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().values_at(context, args);
     }
 
+    @JRubyMethod(name = "fetch_values", rest = true)
+    public RubyArray fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
+        return getOrCreateRubyHashMap().fetch_values(context, args, block);
+    }
+
     @JRubyMethod(name = "assoc")
     public IRubyObject assoc(final ThreadContext context, final IRubyObject obj) {
         return getOrCreateRubyHashMap().assoc(context, obj);
@@ -684,6 +715,11 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().flatten(context, level);
     }
 
+    @JRubyMethod(name = "compare_by_identity")
+    public IRubyObject getCompareByIdentity(ThreadContext context) {
+        return this; // has no effect - mostly for compatibility
+    }
+
     @JRubyMethod(name = "compare_by_identity?")
     public IRubyObject getCompareByIdentity_p(ThreadContext context) {
         return getOrCreateRubyHashMap().getCompareByIdentity_p(context);
@@ -697,6 +733,16 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     @Override
     public IRubyObject rbClone() {
         return dupImpl("clone");
+    }
+
+    @JRubyMethod(name = "any?")
+    public IRubyObject any_p(ThreadContext context, Block block) {
+        return getOrCreateRubyHashMap().any_p(context, block);
+    }
+
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        return getOrCreateRubyHashMap().dig(context, args);
     }
 
     @SuppressWarnings("unchecked")

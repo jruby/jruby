@@ -2,12 +2,43 @@ require File.dirname(__FILE__) + "/../spec_helper"
 
 describe "a java.util.Map instance" do
 
-  it "return compared_by_identity for IdentityHashMap" do
+  it 'return compared_by_identity for IdentityHashMap' do
     h = java.util.HashMap.new
+    expect( h.compare_by_identity? ).to be false
+    h.compare_by_identity # has no effect
     expect( h.compare_by_identity? ).to be false
     h = java.util.IdentityHashMap.new
     expect( h.compare_by_identity? ).to be true
   end
+
+  it 'digs like a Hash' do
+    m3 = java.util.TreeMap.new; m3.put('3'.to_java, obj = java.lang.Object.new)
+    m1 = java.util.HashMap.new; m1['1'] = { 2 => m3 }
+    expect( m1.dig(1) ).to be nil
+    expect( m1.dig('1', 2) ).to be m3
+    expect( m1.dig('1', 2, '3') ).to be obj
+  end
+
+  it 'fetch-es values' do
+    m = java.util.HashMap.new({ '1' => 1, '2' => 2, 3 => '3' })
+    expect( m.fetch_values(3) ).to eql [ '3' ]
+    expect( m.fetch_values('2', '1') ).to eql [ 2, 1 ]
+    expect { m.fetch_values(1) }.to raise_error(KeyError)
+  end
+
+  it 'converts to a proc' do
+    m = java.util.TreeMap.new({ '1' => 1, '2' => 2 })
+    expect( m.to_proc.call('3') ).to be nil
+    expect( m.to_proc.call('1') ).to be 1
+  end
+
+  # it 'handles any?' do
+  #   h = java.util.Hashtable.new; h[1] = 10; h['2'] = 20
+  #   expect( h.any? ).to be true
+  #   expect( h.any? { |e, v| v > 10 } ).to be true
+  #   expect( h.any? { |e, v| v > 20 } ).to be false
+  #   expect( h.any? { |e| e[1] > 10 } ).to be true
+  # end
 
   it "supports Hash-like operations" do
     h = java.util.HashMap.new
