@@ -19,6 +19,19 @@ describe "a java.util.Map instance" do
     expect( m1.dig('1', 2, '3') ).to be obj
   end
 
+  it 'compares like a Hash' do
+    m1 = java.util.HashMap.new; m1['a'] = 1; m1['b'] = 2
+    m2 = java.util.LinkedHashMap.new; m2['b'] = 2; m2['a'] = 1; m2['c'] = 3
+    m3 = java.util.Hashtable.new; m3['b'] = 3; m3['a'] = 2
+    expect( m1 > m2 ).to be false
+    expect( m1 >= m2 ).to be false
+    expect( m2 > m1 ).to be true
+    expect( m1 <= m2 ).to be true
+    expect( m1 > m1 ).to be false
+    expect( m3 < m1 ).to be false
+    expect( m3 > m1 ).to be false
+  end
+
   it 'fetch-es values' do
     m = java.util.HashMap.new({ '1' => 1, '2' => 2, 3 => '3' })
     expect( m.fetch_values(3) ).to eql [ '3' ]

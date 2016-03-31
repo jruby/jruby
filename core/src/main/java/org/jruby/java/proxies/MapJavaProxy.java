@@ -46,6 +46,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,7 +55,7 @@ import java.util.Set;
  *
  * @author Yoko Harada
  */
-public class MapJavaProxy extends ConcreteJavaProxy {
+public final class MapJavaProxy extends ConcreteJavaProxy {
 
     private RubyHashMap wrappedMap;
 
@@ -264,7 +265,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public RubyBoolean compare(final ThreadContext context, final MethodNames method, IRubyObject other) {
-            setSize( mapDelegate().size() );
+            syncSize();
             if ( other instanceof RubyHashMap ) {
                 ((RubyHashMap) other).syncSize();
             }
@@ -320,6 +321,25 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             }
             return hash;
         }
+
+        @Override
+        public final Set keySet() { return mapDelegate().keySet(); }
+
+        @Override
+        public final Set directKeySet() { return keySet(); }
+
+        @Override
+        public final Collection values() { return mapDelegate().values(); }
+
+        @Override
+        public final Collection directValues() { return values(); }
+
+        @Override
+        public final Set entrySet() { return mapDelegate().entrySet(); }
+
+        @Override
+        public final Set directEntrySet() { return entrySet(); }
+
     }
 
     @JRubyMethod(name = "default")
@@ -771,8 +791,14 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return (Map) getObject();
     }
 
+    @Override
+    public final RubyHash convertToHash() {
+        return getOrCreateRubyHashMap();
+    }
+
     @Deprecated
     public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
         return getOrCreateRubyHashMap().op_aset19(context, key, value);
     }
+
 }
