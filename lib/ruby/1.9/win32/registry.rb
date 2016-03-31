@@ -63,6 +63,10 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
 
 =end rdoc
 
+  WCHAR = Encoding::UTF_16LE
+  WCHAR_SPACE = "\0".encode(WCHAR).freeze
+  LOCALE = Encoding.find(Encoding.locale_charmap)
+
   class Registry
 
     #
@@ -160,12 +164,12 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
     # Error
     #
     class Error < ::StandardError
-      FormatMessageA = Win32API.new('kernel32.dll', 'FormatMessageA', 'LPLLPLP', 'L')
+      FormatMessageW = Win32API.new('kernel32.dll', 'FormatMessageW', 'LPLLPLP', 'L')
       def initialize(code)
         @code = code
-        msg = "\0".force_encoding(Encoding::ASCII_8BIT) * 1024
-        len = FormatMessageA.call(0x1200, 0, code, 0, msg, 1024, 0)
-        msg = msg[0, len].force_encoding(Encoding.find(Encoding.locale_charmap))
+        msg = WCHAR_SPACE * 1024
+        len = FormatMessageW.call(0x1200, 0, code, 0, msg, 1024, 0)
+        msg = msg[0, len].encode(Encoding.locale_charmap)
         super msg.tr("\r", '').chomp
       end
       attr_reader :code
