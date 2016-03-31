@@ -1208,10 +1208,8 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "<", required = 1)
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
-        final RubyHash otherHash = other.convertToHash();
-        if (size() >= otherHash.size()) {
-            return RubyBoolean.newBoolean(context.runtime, false);
-        }
+        final RubyHash otherHash = ((RubyBasicObject) other).convertToHash();
+        if (size() >= otherHash.size()) return context.runtime.getFalse();
 
         return RubyBoolean.newBoolean(context.runtime, hash_le(otherHash));
     }
@@ -1219,9 +1217,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "<=", required = 1)
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         final RubyHash otherHash = other.convertToHash();
-        if (size() > otherHash.size()) {
-            return RubyBoolean.newBoolean(context.runtime, false);
-        }
+        if (size() > otherHash.size()) return context.runtime.getFalse();
 
         return RubyBoolean.newBoolean(context.runtime, hash_le(otherHash));
     }
@@ -1986,9 +1982,9 @@ public class RubyHash extends RubyObject implements Map {
 
         if (!block.isGiven()) return context.runtime.getTrue();
 
-        if (block.getSignature().arityValue() > 1)
+        if (block.getSignature().arityValue() > 1) {
             return any_p_i_fast(context, block);
-
+        }
         return any_p_i(context, block);
     }
 
