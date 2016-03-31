@@ -75,7 +75,7 @@ public class StringArraySet extends RubyArray {
     }
 
     @Override
-    public synchronized RubyBoolean include_p(ThreadContext context, IRubyObject item) {
+    public final RubyBoolean include_p(ThreadContext context, IRubyObject item) {
         return context.runtime.newBoolean(containsString(convertToString(item)));
     }
 
@@ -285,8 +285,8 @@ public class StringArraySet extends RubyArray {
         return result;
     }
 
-    public synchronized boolean containsString(String element) {
-        return set.contains(element);
+    public final boolean containsString(String element) {
+        synchronized (this) { return set.contains(element); }
     }
 
     private static String convertToString(IRubyObject item) {
