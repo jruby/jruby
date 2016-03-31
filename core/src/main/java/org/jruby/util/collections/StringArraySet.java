@@ -33,6 +33,7 @@ import java.util.Set;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
+import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -49,10 +50,18 @@ public class StringArraySet extends RubyArray {
         this.set = new HashSet<>(20); // 0.75
     }
 
+    public final void appendString(Ruby runtime, String element) {
+        final RubyString item = runtime.newString(element);
+        synchronized (this) {
+            super.append(item);
+            set.add(element);
+        }
+    }
+
     @Override
     public synchronized RubyArray append(IRubyObject item) {
         RubyArray result = super.append(item);
-        add(item);
+        set.add(convertToString(item));
         return result;
     }
 
@@ -60,6 +69,14 @@ public class StringArraySet extends RubyArray {
     public synchronized void clear() {
         super.clear();
         set.clear();
+    }
+
+    public final void deleteString(ThreadContext context, String element) {
+        final RubyString item = context.runtime.newString(element);
+        synchronized (this) {
+            super.delete(context, item, Block.NULL_BLOCK);
+            set.remove(element); // assuming no array duplicities
+        }
     }
 
     @Override
