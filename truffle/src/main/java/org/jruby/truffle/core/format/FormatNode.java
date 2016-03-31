@@ -23,18 +23,15 @@ import org.jruby.truffle.core.rope.CodeRange;
 
 import java.util.Arrays;
 
-/**
- * The root of the pack nodes.
- * <p>
- * Contains methods to change the state of the parser which is stored in the
- * frame.
- */
 @ImportStatic(FormatGuards.class)
 public abstract class FormatNode extends Node {
 
     private final RubyContext context;
 
     private final ConditionProfile writeMoreThanZeroBytes = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile tooFewArgumentsProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile sourceRangeProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile codeRangeIncreasedProfile = ConditionProfile.createBinaryProfile();
 
     public FormatNode(RubyContext context) {
         this.context = context;
@@ -42,9 +39,6 @@ public abstract class FormatNode extends Node {
 
     public abstract Object execute(VirtualFrame frame);
 
-    /**
-     * Get the length of the source array.
-     */
     public int getSourceLength(VirtualFrame frame) {
         try {
             return frame.getInt(FormatFrameDescriptor.SOURCE_LENGTH_SLOT);
@@ -53,9 +47,6 @@ public abstract class FormatNode extends Node {
         }
     }
 
-    /**
-     * Get the current position we are reading from in the source array.
-     */
     protected int getSourcePosition(VirtualFrame frame) {
         try {
             return frame.getInt(FormatFrameDescriptor.SOURCE_POSITION_SLOT);
@@ -64,17 +55,10 @@ public abstract class FormatNode extends Node {
         }
     }
 
-    /**
-     * Set the current position we will read from next in the source array.
-     */
     protected void setSourcePosition(VirtualFrame frame, int position) {
         frame.setInt(FormatFrameDescriptor.SOURCE_POSITION_SLOT, position);
     }
 
-    /**
-     * Advanced the position we are reading from in the source array by one
-     * element.
-     */
     protected int advanceSourcePosition(VirtualFrame frame) {
         return advanceSourcePosition(frame, 1);
     }
@@ -82,8 +66,7 @@ public abstract class FormatNode extends Node {
     protected int advanceSourcePosition(VirtualFrame frame, int count) {
         final int sourcePosition = getSourcePosition(frame);
 
-        if (sourcePosition + count > getSourceLength(frame)) {
-            CompilerDirectives.transferToInterpreter();
+        if (tooFewArgumentsProfile.profile(sourcePosition + count > getSourceLength(frame))) {
             throw new TooFewArgumentsException();
         }
 
@@ -101,7 +84,7 @@ public abstract class FormatNode extends Node {
 
         final int sourceLength = getSourceLength(frame);
 
-        if (sourcePosition + count > sourceLength) {
+        if (sourceRangeProfile.profile(sourcePosition + count > sourceLength)) {
             if (consumePartial) {
                 setSourcePosition(frame, sourceLength);
             }
@@ -114,9 +97,6 @@ public abstract class FormatNode extends Node {
         return sourcePosition;
     }
 
-    /**
-     * Get the output array we are writing to.
-     */
     protected Object getOutput(VirtualFrame frame) {
         try {
             return frame.getObject(FormatFrameDescriptor.OUTPUT_SLOT);
@@ -125,19 +105,11 @@ public abstract class FormatNode extends Node {
         }
     }
 
-    /**
-     * Set the output array we are writing to. This should never be used in the
-     * compiled code - having to change the output array to resize is is a
-     * deoptimizing action.
-     */
     protected void setOutput(VirtualFrame frame, Object output) {
         CompilerAsserts.neverPartOfCompilation();
         frame.setObject(FormatFrameDescriptor.OUTPUT_SLOT, output);
     }
 
-    /**
-     * Get the current position we are writing to the in the output array.
-     */
     protected int getOutputPosition(VirtualFrame frame) {
         try {
             return frame.getInt(FormatFrameDescriptor.OUTPUT_POSITION_SLOT);
@@ -146,9 +118,6 @@ public abstract class FormatNode extends Node {
         }
     }
 
-    /**
-     * Set the current position we are writing to in the output array.
-     */
     protected void setOutputPosition(VirtualFrame frame, int position) {
         frame.setInt(FormatFrameDescriptor.OUTPUT_POSITION_SLOT, position);
     }
@@ -173,7 +142,7 @@ public abstract class FormatNode extends Node {
         try {
             final int existingCodeRange = frame.getInt(FormatFrameDescriptor.STRING_CODE_RANGE_SLOT);
 
-            if (codeRange.toInt() > existingCodeRange) {
+            if (codeRangeIncreasedProfile.profile(codeRange.toInt() > existingCodeRange)) {
                 frame.setInt(FormatFrameDescriptor.STRING_CODE_RANGE_SLOT, codeRange.toInt());
             }
         } catch (FrameSlotTypeException e) {
@@ -181,18 +150,12 @@ public abstract class FormatNode extends Node {
         }
     }
 
-    /**
-     * Set the output to be tainted.
-     */
     protected void setTainted(VirtualFrame frame) {
         frame.setBoolean(FormatFrameDescriptor.TAINT_SLOT, true);
     }
 
-    /**
-     * Write a single byte.
-     */
     protected void writeByte(VirtualFrame frame, byte value) {
-        byte[] output = ensureCapacity(frame, 1);
+        final byte[] output = ensureCapacity(frame, 1);
         final int outputPosition = getOutputPosition(frame);
         output[outputPosition] = value;
         setOutputPosition(frame, outputPosition + 1);
@@ -200,27 +163,18 @@ public abstract class FormatNode extends Node {
         increaseStringLength(frame, 1);
     }
 
-    /**
-     * Write an array of bytes to the output.
-     */
     protected void writeBytes(VirtualFrame frame, byte... values) {
-        writeBytes(frame, values, 0, values.length);
+        writeBytes(frame, values, values.length);
     }
 
-    /**
-     * Write a range of an array of bytes to the output.
-     */
-    protected void writeBytes(VirtualFrame frame, byte[] values, int valuesStart, int valuesLength) {
+    protected void writeBytes(VirtualFrame frame, byte[] values, int valuesLength) {
         byte[] output = ensureCapacity(frame, valuesLength);
         final int outputPosition = getOutputPosition(frame);
-        System.arraycopy(values, valuesStart, output, outputPosition, valuesLength);
+        System.arraycopy(values, 0, output, outputPosition, valuesLength);
         setOutputPosition(frame, outputPosition + valuesLength);
         increaseStringLength(frame, valuesLength);
     }
 
-    /**
-     * Write null bytes to the output.
-     */
     protected void writeNullBytes(VirtualFrame frame, int length) {
         if (writeMoreThanZeroBytes.profile(length > 0)) {
             ensureCapacity(frame, length);

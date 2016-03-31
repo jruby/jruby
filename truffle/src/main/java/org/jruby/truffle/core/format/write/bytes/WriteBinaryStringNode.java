@@ -65,13 +65,13 @@ public abstract class WriteBinaryStringNode extends FormatNode {
         if (pad) {
             final int lengthFromPadding = width - lengthFromBytes;
 
-            writeBytes(frame, bytes, 0, lengthFromBytes);
+            writeBytes(frame, bytes, lengthFromBytes);
 
             for (int n = 0; n < lengthFromPadding; n++) {
                 writeByte(frame, padding);
             }
         } else {
-            writeBytes(frame, bytes, 0, lengthFromBytes);
+            writeBytes(frame, bytes, lengthFromBytes);
         }
 
         if (appendNull) {
