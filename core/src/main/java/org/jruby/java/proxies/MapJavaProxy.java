@@ -296,6 +296,42 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             return context.runtime.newBoolean( mapDelegate() instanceof java.util.IdentityHashMap );
         }
 
+        @Override // re-invent @JRubyMethod(name = "any?")
+        public IRubyObject any_p(ThreadContext context, Block block) {
+            if (isEmpty()) return context.runtime.getFalse();
+
+            if (!block.isGiven()) return context.runtime.getTrue();
+
+            if (block.getSignature().arityValue() > 1) {
+                return any_p_i_fast(context, block);
+            }
+            return any_p_i(context, block);
+        }
+
+        private RubyBoolean any_p_i(ThreadContext context, Block block) {
+            final Ruby runtime = context.runtime;
+            for ( Map.Entry entry : entrySet() ) {
+                final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
+                final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
+                if ( block.yield(context, RubyArray.newArray(runtime, key, val)).isTrue() ) {
+                    return runtime.getTrue();
+                }
+            }
+            return runtime.getFalse();
+        }
+
+        private RubyBoolean any_p_i_fast(ThreadContext context, Block block) {
+            final Ruby runtime = context.runtime;
+            for ( Map.Entry entry : entrySet() ) {
+                final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
+                final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
+                if ( block.yieldArray(context, runtime.newArray(key, val), null).isTrue() ) {
+                    return runtime.getTrue();
+                }
+            }
+            return runtime.getFalse();
+        }
+
         @Override
         public RubyHash rb_clear() {
             mapDelegate().clear();
@@ -335,7 +371,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         public final Collection directValues() { return values(); }
 
         @Override
-        public final Set entrySet() { return mapDelegate().entrySet(); }
+        public final Set<Map.Entry> entrySet() { return mapDelegate().entrySet(); }
 
         @Override
         public final Set directEntrySet() { return entrySet(); }

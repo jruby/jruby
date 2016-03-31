@@ -32,6 +32,23 @@ describe "a java.util.Map instance" do
     expect( m3 > m1 ).to be false
   end
 
+  it 'compares with a Hash' do
+    m1 = Hash.new; m1['a'] = 1; m1['b'] = 2
+    m2 = java.util.LinkedHashMap.new; m2['b'] = 2; m2['a'] = 1; m2['c'] = 3
+    m3 = java.util.Hashtable.new; m3['b'] = 3; m3['a'] = 2
+    expect( m1 > m2 ).to be false
+    expect( m1 >= m2 ).to be false
+
+    pending 'TODO need more handling to compare Map-s with Hash-es (as expected)'
+
+    expect( m2 > m1 ).to be true
+    expect( m1 <= m2 ).to be true
+    expect( m1 > m1 ).to be false
+    expect( m3 < m1 ).to be false
+    expect( m3 > m1 ).to be false
+    expect( m2 >= { 'a' => 1, 'b' => 2 } ).to be true
+  end
+
   it 'fetch-es values' do
     m = java.util.HashMap.new({ '1' => 1, '2' => 2, 3 => '3' })
     expect( m.fetch_values(3) ).to eql [ '3' ]
@@ -45,13 +62,13 @@ describe "a java.util.Map instance" do
     expect( m.to_proc.call('1') ).to be 1
   end
 
-  # it 'handles any?' do
-  #   h = java.util.Hashtable.new; h[1] = 10; h['2'] = 20
-  #   expect( h.any? ).to be true
-  #   expect( h.any? { |e, v| v > 10 } ).to be true
-  #   expect( h.any? { |e, v| v > 20 } ).to be false
-  #   expect( h.any? { |e| e[1] > 10 } ).to be true
-  # end
+  it 'handles any?' do
+    h = java.util.Hashtable.new; h[1] = 10; h['2'] = 20
+    expect( h.any? ).to be true
+    expect( h.any? { |e, v| v > 10 } ).to be true
+    expect( h.any? { |e, v| v > 20 } ).to be false
+    expect( h.any? { |e| e[1] > 10 } ).to be true
+  end
 
   it "supports Hash-like operations" do
     h = java.util.HashMap.new
