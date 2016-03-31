@@ -769,22 +769,16 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     private MapJavaProxy dupImpl(final String method) {
         final Map map = getMapObject();
         try {
-            Map newMap = (Map) map.getClass().newInstance();
+            Map newMap = map.getClass().newInstance();
             newMap.putAll(map);
             MapJavaProxy proxy = new MapJavaProxy(getRuntime(), metaClass);
             proxy.setObject(newMap);
             return proxy;
         }
-        catch (InstantiationException ex) {
-            throw initCause( getRuntime().newNotImplementedError("can't "+ method +" Map of type " + getObject().getClass().getName()), ex);
+        catch (InstantiationException|IllegalAccessException ex) {
+            final RaiseException e = getRuntime().newNotImplementedError("can't "+ method +" Map of type " + getObject().getClass().getName());
+            e.initCause(ex); throw e;
         }
-        catch (IllegalAccessException ex) {
-            throw initCause( getRuntime().newNotImplementedError("can't "+ method +" Map of type " + getObject().getClass().getName()), ex);
-        }
-    }
-
-    private static RaiseException initCause(final RaiseException re, final Exception e) {
-        re.initCause(e); return re;
     }
 
     final Map getMapObject() {
