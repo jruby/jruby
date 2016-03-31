@@ -49,9 +49,8 @@ public class StringArraySet extends RubyArray {
 
     @Override
     public synchronized RubyArray append(IRubyObject item) {
-        String string = getStringFromItem(item);
         RubyArray result = super.append(item);
-        set.add(string);
+        add(item);
         return result;
     }
 
@@ -63,43 +62,27 @@ public class StringArraySet extends RubyArray {
 
     @Override
     public synchronized IRubyObject delete(ThreadContext context, IRubyObject item, Block block) {
-        String string = getStringFromItem(item);
         IRubyObject result = super.delete(context, item, block);
-        set.remove(string);
+        if ( ! includes(context, item) ) set.remove(convertToString(item)); // in case there's a duplicity
         return result;
     }
 
     @Override
     public synchronized IRubyObject delete_if(ThreadContext context, Block block) {
         IRubyObject result = super.delete_if(context, block);
-        rehash();
+        // rehash(); // NOTE: handled by rejectBang override
         return result;
     }
 
     @Override
     public synchronized RubyBoolean include_p(ThreadContext context, IRubyObject item) {
-        return context.runtime.newBoolean(set.contains(getStringFromItem(item)));
+        return context.runtime.newBoolean(containsString(convertToString(item)));
     }
 
     @Override
     public synchronized IRubyObject replace(IRubyObject orig) {
         IRubyObject result = super.replace(orig);
         rehash();
-        return result;
-    }
-
-    @Override
-    public synchronized IRubyObject unshift(IRubyObject item) {
-        String string = getStringFromItem(item);
-        IRubyObject result = super.unshift(item);
-        set.add(string);
-        return result;
-    }
-
-    @Override
-    public synchronized IRubyObject unshift(IRubyObject[] items) {
-        IRubyObject result = super.unshift(items);
-        putAll(toJavaArrayUnsafe());
         return result;
     }
 
@@ -118,29 +101,31 @@ public class StringArraySet extends RubyArray {
     }
 
     @Override
-    public synchronized IRubyObject aset19(IRubyObject arg0, IRubyObject arg1) {
-        IRubyObject result = super.aset19(arg0, arg1);
-        rehash();
-        return result;
-    }
-
-    @Override
     public synchronized RubyArray collectBang(ThreadContext context, Block block) {
         RubyArray result = super.collectBang(context, block);
         rehash();
         return result;
     }
 
-    @Override
-    public synchronized IRubyObject collect_bang(ThreadContext context, Block block) {
-        IRubyObject result = super.collect_bang(context, block);
-        rehash();
-        return result;
-    }
+    // NOTE @Override collectBang is enough
+    //@Override
+    //public synchronized IRubyObject collect_bang(ThreadContext context, Block block) {
+    //    IRubyObject result = super.collect_bang(context, block);
+    //    rehash();
+    //    return result;
+    //}
+
+    // NOTE @Override collectBang is enough
+    //@Override
+    //public synchronized IRubyObject map_bang(ThreadContext context, Block block) {
+    //    IRubyObject result = super.map_bang(context, block);
+    //    rehash();
+    //    return result;
+    //}
 
     @Override
-    public synchronized IRubyObject compact() {
-        IRubyObject result = super.compact();
+    public synchronized IRubyObject compact_bang() {
+        IRubyObject result = super.compact_bang();
         rehash();
         return result;
     }
@@ -174,20 +159,6 @@ public class StringArraySet extends RubyArray {
     }
 
     @Override
-    public synchronized IRubyObject flatten_bang19(ThreadContext context) {
-        IRubyObject result = super.flatten_bang19(context);
-        rehash();
-        return result;
-    }
-
-    @Override
-    public synchronized IRubyObject flatten_bang19(ThreadContext context, IRubyObject arg) {
-        IRubyObject result = super.flatten_bang19(context, arg);
-        rehash();
-        return result;
-    }
-
-    @Override
     public synchronized IRubyObject insert() {
         IRubyObject result = super.insert();
         rehash();
@@ -216,34 +187,6 @@ public class StringArraySet extends RubyArray {
     }
 
     @Override
-    public synchronized IRubyObject insert19(IRubyObject arg) {
-        IRubyObject result = super.insert19(arg);
-        rehash();
-        return result;
-    }
-
-    @Override
-    public synchronized IRubyObject insert19(IRubyObject arg1, IRubyObject arg2) {
-        IRubyObject result = super.insert19(arg1, arg2);
-        rehash();
-        return result;
-    }
-
-    @Override
-    public synchronized IRubyObject insert19(IRubyObject[] args) {
-        IRubyObject result = super.insert19(args);
-        rehash();
-        return result;
-    }
-
-    @Override
-    public synchronized IRubyObject map_bang(ThreadContext context, Block block) {
-        IRubyObject result = super.map_bang(context, block);
-        rehash();
-        return result;
-    }
-
-    @Override
     public synchronized IRubyObject pop(ThreadContext context) {
         IRubyObject result = super.pop(context);
         rehash();
@@ -258,16 +201,16 @@ public class StringArraySet extends RubyArray {
     }
 
     @Override
-    public synchronized RubyArray push_m(IRubyObject[] items) {
-        RubyArray result = super.push_m(items);
-        rehash();
+    public synchronized RubyArray push(IRubyObject item) {
+        RubyArray result = super.push(item);
+        add(item);
         return result;
     }
 
     @Override
-    public synchronized RubyArray push_m19(IRubyObject[] items) {
-        RubyArray result = super.push_m19(items);
-        rehash();
+    public synchronized RubyArray push(IRubyObject[] items) {
+        RubyArray result = super.push(items);
+        addAll(items);
         return result;
     }
 
@@ -278,12 +221,13 @@ public class StringArraySet extends RubyArray {
         return result;
     }
 
-    @Override
-    public synchronized IRubyObject reject_bang(ThreadContext context, Block block) {
-        IRubyObject result = super.reject_bang(context, block);
-        rehash();
-        return result;
-    }
+    // NOTE: @Override rejectBang does it
+    //@Override
+    //public synchronized IRubyObject reject_bang(ThreadContext context, Block block) {
+    //    IRubyObject result = super.reject_bang(context, block);
+    //    rehash();
+    //    return result;
+    //}
 
     @Override
     public synchronized IRubyObject select_bang(ThreadContext context, Block block) {
@@ -295,13 +239,13 @@ public class StringArraySet extends RubyArray {
     @Override
     public synchronized IRubyObject shift(ThreadContext context) {
         IRubyObject result = super.shift(context);
-        rehash();
+        if ( result != context.nil ) rehash();
         return result;
     }
 
     @Override
-    public synchronized IRubyObject shift(ThreadContext context, IRubyObject num) {
-        IRubyObject result = super.shift(context, num);
+    public synchronized RubyArray shift(ThreadContext context, IRubyObject num) {
+        RubyArray result = super.shift(context, num);
         rehash();
         return result;
     }
@@ -323,21 +267,21 @@ public class StringArraySet extends RubyArray {
     @Override
     public synchronized IRubyObject unshift() {
         IRubyObject result = super.unshift();
-        rehash();
+        // rehash();
         return result;
     }
 
     @Override
-    public synchronized IRubyObject unshift19() {
-        IRubyObject result = super.unshift19();
-        rehash();
+    public synchronized IRubyObject unshift(IRubyObject item) {
+        IRubyObject result = super.unshift(item);
+        add(item);
         return result;
     }
 
     @Override
-    public synchronized IRubyObject unshift19(IRubyObject item) {
-        IRubyObject result = super.unshift19(item);
-        rehash();
+    public synchronized IRubyObject unshift(IRubyObject[] items) {
+        IRubyObject result = super.unshift(items);
+        addAll(items);
         return result;
     }
 
@@ -345,19 +289,22 @@ public class StringArraySet extends RubyArray {
         return set.contains(element);
     }
 
-    private String getStringFromItem(IRubyObject item) {
+    private static String convertToString(IRubyObject item) {
         return item.convertToString().asJavaString();
     }
 
     private void rehash() {
         set.clear();
-        putAll(toJavaArray());
+        addAll(toJavaArrayMaybeUnsafe());
     }
 
-    private void putAll(IRubyObject[] items) {
+    private void add(IRubyObject item) {
+        set.add(convertToString(item));
+    }
+
+    private void addAll(IRubyObject[] items) {
         for (IRubyObject item : items) {
-            String string = getStringFromItem(item);
-            set.add(string);
+            set.add(convertToString(item));
         }
     }
 
