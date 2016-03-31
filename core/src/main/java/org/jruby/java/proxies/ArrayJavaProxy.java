@@ -2,13 +2,14 @@ package org.jruby.java.proxies;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyRange;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -92,6 +93,14 @@ public class ArrayJavaProxy extends JavaProxy {
         return ArrayUtils.arefDirect(context.runtime, getObject(), converter, i);
     }
 
+    public Object get(final int index) {
+        return Array.get(getObject(), index);
+    }
+
+    public void set(final int index, final Object value) {
+        Array.set(getObject(), index, value);
+    }
+
     @JRubyMethod(name = "[]", required = 1, rest = true)
     public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         if ( args.length == 1 ) return op_aref(context, args[0]);
@@ -105,13 +114,10 @@ public class ArrayJavaProxy extends JavaProxy {
     }
 
     private static int convertArrayIndex(final IRubyObject index) {
-        if ( index instanceof RubyInteger ) {
-            return (int) ((RubyInteger) index).getLongValue();
-        }
         if ( index instanceof JavaProxy ) {
             return (Integer) index.toJava(Integer.class);
         }
-        return (int) index.convertToInteger().getLongValue();
+        return RubyNumeric.num2int(index);
     }
 
     @JRubyMethod
@@ -171,7 +177,16 @@ public class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
-        final StringBuilder buffer = new StringBuilder();
+        return RubyString.newString(context.runtime, arrayToString());
+    }
+
+    @Override
+    public String toString() {
+        return arrayToString().toString();
+    }
+
+    private StringBuilder arrayToString() {
+        final StringBuilder buffer = new StringBuilder(24);
         Class<?> componentClass = getObject().getClass().getComponentType();
 
         buffer.append(componentClass.getName());
@@ -204,12 +219,12 @@ public class ArrayJavaProxy extends JavaProxy {
         } else {
             buffer.append(Arrays.toString((Object[]) getObject()));
         }
-        buffer.append('@').append(Integer.toHexString(inspectHashCode()));
-        return RubyString.newString(context.runtime, buffer.toString());
+
+        return buffer.append('@').append(Integer.toHexString(inspectHashCode()));
     }
 
-    @JRubyMethod(name = "==")
     @Override
+    @JRubyMethod(name = "==")
     public RubyBoolean op_eqq(ThreadContext context, IRubyObject other) {
         return eql_p(context, other);
     }
@@ -265,8 +280,8 @@ public class ArrayJavaProxy extends JavaProxy {
         return Arrays.equals((Object[]) thisArray, (Object[]) thatArray);
     }
 
-    @JRubyMethod
     @Override
+    @JRubyMethod
     public RubyFixnum hash() {
         return getRuntime().newFixnum( hashCode() );
     }
