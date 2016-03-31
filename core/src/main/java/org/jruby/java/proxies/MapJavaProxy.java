@@ -253,9 +253,10 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public void visitAll(Visitor visitor) {
             final Ruby runtime = getRuntime();
-            @SuppressWarnings("unchecked")
+            // NOTE: this is here to make maps act similar to Hash-es which allow modifications while
+            // iterating (meant from the same thread) ... thus we avoid iterating entrySet() directly
             final Map<Object, Object> map = mapDelegate();
-            final Map.Entry[] entries = map.entrySet().toArray( new Map.Entry[ map.size() ] );
+            final Map.Entry[] entries = map.entrySet().toArray( new Map.Entry[map.size() ] );
             for ( Map.Entry entry : entries ) {
                 IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
