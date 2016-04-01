@@ -2442,20 +2442,23 @@ public abstract class ArrayNodes {
         }
 
         private RuntimeException handleException(FormatException exception) {
-            try {
-                throw exception;
-            } catch (TooFewArgumentsException e) {
+            if (exception instanceof TooFewArgumentsException) {
                 return new RaiseException(coreLibrary().argumentErrorTooFewArguments(this));
-            } catch (NoImplicitConversionException e) {
+            } else if (exception instanceof NoImplicitConversionException) {
+                final NoImplicitConversionException e = (NoImplicitConversionException) exception;
                 return new RaiseException(coreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
-            } catch (OutsideOfStringException e) {
+            } else if (exception instanceof OutsideOfStringException) {
                 return new RaiseException(coreLibrary().argumentErrorXOutsideOfString(this));
-            } catch (CantCompressNegativeException e) {
+            } else if (exception instanceof CantCompressNegativeException) {
                 return new RaiseException(coreLibrary().argumentErrorCantCompressNegativeNumbers(this));
-            } catch (RangeException e) {
+            } else if (exception instanceof RangeException) {
+                final RangeException e = (RangeException) exception;
                 return new RaiseException(coreLibrary().rangeError(e.getMessage(), this));
-            } catch (CantConvertException e) {
+            } else if (exception instanceof CantConvertException) {
+                final CantConvertException e = (CantConvertException) exception;
                 return new RaiseException(coreLibrary().typeError(e.getMessage(), this));
+            } else {
+                throw new IllegalArgumentException();
             }
         }
 
