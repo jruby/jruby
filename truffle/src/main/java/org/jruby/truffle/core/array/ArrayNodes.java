@@ -2465,32 +2465,12 @@ public abstract class ArrayNodes {
                 bytes = Arrays.copyOf(bytes, result.getOutputLength());
             }
 
-            final Encoding encoding;
-            if (formatLength == 0) {
-                encoding = USASCIIEncoding.INSTANCE;
-            } else {
-                switch (result.getEncoding()) {
-                    case DEFAULT:
-                    case ASCII_8BIT:
-                        encoding = ASCIIEncoding.INSTANCE;
-                        break;
-                    case US_ASCII:
-                        encoding = USASCIIEncoding.INSTANCE;
-                        break;
-                    case UTF_8:
-                        encoding = UTF8Encoding.INSTANCE;
-                        break;
-                    default:
-                        throw new UnsupportedOperationException();
-                }
-            }
-
             if (makeLeafRopeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), null, null, null, null, null));
             }
 
-            final Rope rope = makeLeafRopeNode.executeMake(bytes, encoding, result.getStringCodeRange(), result.getStringLength());
+            final Rope rope = makeLeafRopeNode.executeMake(bytes, result.getEncoding().getEncodingForLength(formatLength), result.getStringCodeRange(), result.getStringLength());
             final DynamicObject string = createString(rope);
 
             if (result.isTainted()) {
