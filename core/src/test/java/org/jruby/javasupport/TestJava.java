@@ -101,7 +101,8 @@ public class TestJava extends junit.framework.TestCase {
             assert false;
         }
         catch (RaiseException ex) {
-            // assertNotNull(ex.getCause());
+            assertNotNull(ex.getCause());
+            assertEquals(ClassNotFoundException.class, ex.getCause().getClass());
         }
     }
 
