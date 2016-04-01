@@ -1307,6 +1307,7 @@ public class ParserSupport {
             if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
                 int slot = scope.isDefined(names[i]);
                 if (slot >= 0) {
+                    if (warnings.isVerbose()) warn(ID.AMBIGUOUS_ARGUMENT, getPosition(regexpNode), "named capture conflicts a local variable - " + names[i]);
                     locals.add(slot);
                 } else {
                     locals.add(getCurrentScope().addVariableThisScope(names[i]));
