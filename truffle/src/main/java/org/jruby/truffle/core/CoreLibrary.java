@@ -958,6 +958,18 @@ public class CoreLibrary {
         return argumentError(message, currentNode, null);
     }
 
+    public DynamicObject argumentErrorTooFewArguments(Node currentNode) {
+        return argumentError("too few arguments", currentNode, null);
+    }
+
+    public DynamicObject argumentErrorXOutsideOfString(Node currentNode) {
+        return argumentError("X outside of string", currentNode, null);
+    }
+
+    public DynamicObject argumentErrorCantCompressNegativeNumbers(Node currentNode) {
+        return argumentError("can't compress negative numbers", currentNode, null);
+    }
+
     @TruffleBoundary
     public DynamicObject argumentErrorUnknownKeyword(Object name, Node currentNode) {
         return argumentError("unknown keyword: " + name, currentNode, null);

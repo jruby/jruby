@@ -2445,13 +2445,13 @@ public abstract class ArrayNodes {
             try {
                 throw exception;
             } catch (TooFewArgumentsException e) {
-                return new RaiseException(coreLibrary().argumentError("too few arguments", this));
+                return new RaiseException(coreLibrary().argumentErrorTooFewArguments(this));
             } catch (NoImplicitConversionException e) {
                 return new RaiseException(coreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
             } catch (OutsideOfStringException e) {
-                return new RaiseException(coreLibrary().argumentError("X outside of string", this));
+                return new RaiseException(coreLibrary().argumentErrorXOutsideOfString(this));
             } catch (CantCompressNegativeException e) {
-                return new RaiseException(coreLibrary().argumentError("can't compress negative numbers", this));
+                return new RaiseException(coreLibrary().argumentErrorCantCompressNegativeNumbers(this));
             } catch (RangeException e) {
                 return new RaiseException(coreLibrary().rangeError(e.getMessage(), this));
             } catch (CantConvertException e) {
