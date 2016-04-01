@@ -616,7 +616,7 @@ public abstract class KernelNodes {
                 "isRubyString(filename)"
         })
         public Object evalNilBinding(VirtualFrame frame, DynamicObject source, DynamicObject noBinding,
-                                     DynamicObject filename, int lineNumber, @Cached("create()") IndirectCallNode callNode) {
+                                     DynamicObject filename, Object unusedLineNumber, @Cached("create()") IndirectCallNode callNode) {
             return evalNoBindingUncached(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE, callNode);
         }
 
