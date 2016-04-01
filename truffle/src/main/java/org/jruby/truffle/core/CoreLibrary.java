@@ -136,6 +136,7 @@ public class CoreLibrary {
     private final DynamicObject exceptionClass;
     private final DynamicObject falseClass;
     private final DynamicObject fiberClass;
+    private final DynamicObjectFactory fiberFactory;
     private final DynamicObject fixnumClass;
     private final DynamicObject floatClass;
     private final DynamicObject floatDomainErrorClass;
@@ -415,7 +416,8 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(encodingClass, Layouts.ENCODING.createEncodingShape(encodingClass, encodingClass));
         falseClass = defineClass("FalseClass");
         fiberClass = defineClass("Fiber");
-        Layouts.CLASS.setInstanceFactoryUnsafe(fiberClass, Layouts.FIBER.createFiberShape(fiberClass, fiberClass));
+        fiberFactory = Layouts.FIBER.createFiberShape(fiberClass, fiberClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(fiberClass, fiberFactory);
         defineModule("FileTest");
         hashClass = defineClass("Hash");
         hashFactory = Layouts.HASH.createHashShape(hashClass, hashClass);
@@ -1458,6 +1460,10 @@ public class CoreLibrary {
 
     public DynamicObject getFiberClass() {
         return fiberClass;
+    }
+
+    public DynamicObjectFactory getFiberFactory() {
+        return fiberFactory;
     }
 
     public DynamicObject getFixnumClass() {

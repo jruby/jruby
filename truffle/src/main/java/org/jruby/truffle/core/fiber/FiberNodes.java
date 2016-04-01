@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
@@ -35,25 +36,24 @@ import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @CoreClass(name = "Fiber")
 public abstract class FiberNodes {
 
-    public static DynamicObject createFiber(DynamicObject thread, DynamicObject rubyClass, String name) {
-        return createFiber(thread, rubyClass, name, false);
+    public static DynamicObject createFiber(DynamicObject thread, DynamicObjectFactory factory, String name) {
+        return createFiber(thread, factory, name, false);
     }
 
     public static DynamicObject createRootFiber(RubyContext context, DynamicObject thread) {
-        return createFiber(thread, context.getCoreLibrary().getFiberClass(), "root Fiber for Thread", true);
+        return createFiber(thread, context.getCoreLibrary().getFiberFactory(), "root Fiber for Thread", true);
     }
 
-    private static DynamicObject createFiber(DynamicObject thread, DynamicObject rubyClass, String name, boolean isRootFiber) {
+    private static DynamicObject createFiber(DynamicObject thread, DynamicObjectFactory factory, String name, boolean isRootFiber) {
         assert RubyGuards.isRubyThread(thread);
         return Layouts.FIBER.createFiber(
-                Layouts.CLASS.getInstanceFactory(rubyClass),
+                factory,
                 isRootFiber,
                 new CountDownLatch(1),
                 new LinkedBlockingQueue<FiberMessage>(2),
@@ -387,10 +387,12 @@ public abstract class FiberNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             DynamicObject parent = getContext().getThreadManager().getCurrentThread();
-            return createFiber(parent, rubyClass, null);
+            DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(rubyClass);
+            return createFiber(parent, factory, null);
         }
 
     }
