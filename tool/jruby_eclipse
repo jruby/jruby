@@ -35,7 +35,7 @@ ARGV.each { |arg|
   when /^-J-G:-/
     java_flags << "-D#{GRAAL_OPTIONS_PREFIX}#{$'}=false"
   when /^-J-G:/
-    java_flags << "-D#{GRAAL_OPTIONS_PREFIX}.#{$'}"
+    java_flags << "-D#{GRAAL_OPTIONS_PREFIX}#{$'}"
   when /^-J/
     java_flags << arg[2..-1]
   when /^-Xtruffle./
@@ -85,5 +85,9 @@ args << "-Djruby.shell=/bin/sh"
 args += java_flags
 args << "org.jruby.Main"
 args += rest
+
+if args.include?('-d')
+  puts args.join(' ')
+end
 
 exec(*args)
