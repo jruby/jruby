@@ -2428,26 +2428,6 @@ public abstract class StringNodes {
             return array;
         }
 
-        @Specialization
-        public Object unpack(DynamicObject array, boolean format) {
-            return ruby("raise TypeError");
-        }
-
-        @Specialization
-        public Object unpack(DynamicObject array, int format) {
-            return ruby("raise TypeError");
-        }
-
-        @Specialization
-        public Object unpack(DynamicObject array, long format) {
-            return ruby("raise TypeError");
-        }
-
-        @Specialization(guards = "isNil(format)")
-        public Object unpackNil(DynamicObject array, Object format) {
-            return ruby("raise TypeError");
-        }
-
         @Specialization(guards = {
                 "!isRubyString(format)",
                 "!isBoolean(format)",
