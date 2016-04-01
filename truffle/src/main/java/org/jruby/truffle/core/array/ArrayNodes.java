@@ -2503,27 +2503,27 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object pack(VirtualFrame frame, DynamicObject array, boolean format) {
+        public Object pack(DynamicObject array, boolean format) {
             return ruby("raise TypeError");
         }
 
         @Specialization
-        public Object pack(VirtualFrame frame, DynamicObject array, int format) {
+        public Object pack(DynamicObject array, int format) {
             return ruby("raise TypeError");
         }
 
         @Specialization
-        public Object pack(VirtualFrame frame, DynamicObject array, long format) {
+        public Object pack(DynamicObject array, long format) {
             return ruby("raise TypeError");
         }
 
         @Specialization(guards = "isNil(format)")
-        public Object packNil(VirtualFrame frame, DynamicObject array, Object format) {
+        public Object packNil(DynamicObject array, Object format) {
             return ruby("raise TypeError");
         }
 
         @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isNil(format)"})
-        public Object pack(VirtualFrame frame, DynamicObject array, Object format) {
+        public Object pack(DynamicObject array, Object format) {
             return ruby("pack(format.to_str)", "format", format);
         }
 
