@@ -58,6 +58,10 @@ import static org.jruby.util.cli.Options.TRUFFLE_YIELD_CACHE;
 
 public class Options {
 
+    // Platform
+
+    public final boolean PLATFORM_USE_JAVA = TRUFFLE_PLATFORM_USE_JAVA.load();
+
     // Features
 
     public final boolean COVERAGE = TRUFFLE_COVERAGE.load();
@@ -66,7 +70,6 @@ public class Options {
     // Resources
 
     public final String CORE_LOAD_PATH = TRUFFLE_CORE_LOAD_PATH.load();
-    public final boolean PLATFORM_USE_JAVA = TRUFFLE_PLATFORM_USE_JAVA.load();
 
     // Data structures
 
