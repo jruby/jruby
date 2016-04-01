@@ -225,8 +225,26 @@ public class ArrayJavaProxy extends JavaProxy {
 
     @Override
     @JRubyMethod(name = "==")
-    public RubyBoolean op_eqq(ThreadContext context, IRubyObject other) {
+    public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
+        if ( other instanceof RubyArray ) {
+            // we respond_to? to_ary thus shall handle [1].to_java == [1]
+            return context.runtime.newBoolean( equalsRubyArray((RubyArray) other) );
+        }
         return eql_p(context, other);
+    }
+
+    private boolean equalsRubyArray(final RubyArray rubyArray) {
+        final Object thisArray = this.getObject();
+        final int len = rubyArray.size();
+        if ( len != Array.getLength(thisArray) ) return false;
+        final Class<?> componentType = thisArray.getClass().getComponentType();
+        for ( int i = 0; i < len; i++ ) {
+            final Object ruby = rubyArray.eltInternal(i).toJava(componentType);
+            final Object elem = Array.get(thisArray, i);
+            if ( ruby == null ) return elem == null;
+            if ( ! ruby.equals(elem) ) return false;
+        }
+        return true;
     }
 
     @JRubyMethod(name = "eql?")
@@ -236,7 +254,7 @@ public class ArrayJavaProxy extends JavaProxy {
             final ArrayJavaProxy that = (ArrayJavaProxy) obj;
             equals = arraysEquals(this.getObject(), that.getObject());
         }
-        if ( obj.getClass().isArray() ) {
+        else if ( obj.getClass().isArray() ) {
             equals = arraysEquals(getObject(), obj);
         }
         return context.runtime.newBoolean(equals);
