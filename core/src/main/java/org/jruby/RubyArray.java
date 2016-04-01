@@ -1206,7 +1206,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     @JRubyMethod(name = "shift")
-    public RubyArray shift(ThreadContext context, IRubyObject num) {
+    public IRubyObject shift(ThreadContext context, IRubyObject num) {
         modify();
 
         RubyArray result = makeSharedFirst(context, num, false, context.runtime.getArray());

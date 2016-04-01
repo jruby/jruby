@@ -263,8 +263,8 @@ public class StringArraySet extends RubyArray {
     }
 
     @Override
-    public synchronized RubyArray shift(ThreadContext context, IRubyObject num) {
-        RubyArray result = super.shift(context, num);
+    public synchronized IRubyObject shift(ThreadContext context, IRubyObject num) {
+        IRubyObject result = super.shift(context, num);
         rehash();
         return result;
     }
