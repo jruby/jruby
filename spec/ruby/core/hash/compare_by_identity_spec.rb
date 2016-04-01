@@ -1,3 +1,6 @@
+require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../fixtures/classes', __FILE__)
+
 describe "Hash#compare_by_identity" do
   before :each do
     @h = {}
@@ -36,6 +39,12 @@ describe "Hash#compare_by_identity" do
     @idh[:foo] = :glark
     @idh[obj] = :a
     @idh[obj].should == :a
+  end
+
+  it "does not call #hash on keys" do
+    key = HashSpecs::ByIdentityKey.new
+    @idh[key] = 1
+    @idh[key].should == 1
   end
 
   it "regards #dup'd objects as having different identities" do
