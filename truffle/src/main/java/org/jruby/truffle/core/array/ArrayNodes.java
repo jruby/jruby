@@ -2399,6 +2399,8 @@ public abstract class ArrayNodes {
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private TaintNode taintNode;
 
+        private final BranchProfile exceptionProfile = BranchProfile.create();
+
         public PackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -2416,7 +2418,7 @@ public abstract class ArrayNodes {
             try {
                 result = (BytesResult) callPackNode.call(frame, new Object[] { getStore(array), getSize(array) });
             } catch (FormatException e) {
-                CompilerDirectives.transferToInterpreter();
+                exceptionProfile.enter();
                 throw handleException(e);
             }
 
@@ -2434,13 +2436,14 @@ public abstract class ArrayNodes {
             try {
                 result = (BytesResult) callPackNode.call(frame, compileFormat(format), new Object[] { getStore(array), getSize(array) });
             } catch (FormatException e) {
-                CompilerDirectives.transferToInterpreter();
+                exceptionProfile.enter();
                 throw handleException(e);
             }
 
             return finishPack(Layouts.STRING.getRope(format).byteLength(), result);
         }
 
+        @TruffleBoundary
         private RuntimeException handleException(FormatException exception) {
             if (exception instanceof TooFewArgumentsException) {
                 return new RaiseException(coreLibrary().argumentErrorTooFewArguments(this));
