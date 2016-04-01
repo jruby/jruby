@@ -150,14 +150,6 @@ public class NativeException extends RubyException {
         }
     }
 
-    public void printBacktrace(PrintStream errorStream) {
-        super.printBacktrace(errorStream);
-        if (getRuntime().isDebug()) {
-            errorStream.println("Complete Java stackTrace");
-            cause.printStackTrace(errorStream);
-        }
-    }
-
     public final Throwable getCause() {
         return cause;
     }
