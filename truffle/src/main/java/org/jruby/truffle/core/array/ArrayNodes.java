@@ -2400,6 +2400,7 @@ public abstract class ArrayNodes {
         @Child private TaintNode taintNode;
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
+        private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
 
         public PackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2476,7 +2477,7 @@ public abstract class ArrayNodes {
         private DynamicObject finishPack(int formatLength, BytesResult result) {
             byte[] bytes = (byte[]) result.getOutput();
 
-            if (bytes.length != result.getOutputLength()) {
+            if (resizeProfile.profile(bytes.length != result.getOutputLength())) {
                 bytes = Arrays.copyOf(bytes, result.getOutputLength());
             }
 
@@ -2485,7 +2486,7 @@ public abstract class ArrayNodes {
                 makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(
                         getContext(), null, null, null, null, null));
             }
-            
+
             final DynamicObject string = createString(makeLeafRopeNode.executeMake(
                     bytes,
                     result.getEncoding().getEncodingForLength(formatLength),
