@@ -99,24 +99,23 @@ public abstract class LexingCommon {
     }
 
     public String createTokenString(int start) {
-        byte[] bytes = lexb.getUnsafeBytes();
-        int begin = lexb.begin();
-        Charset charset;
+        return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start, getEncoding());
+    }
 
+    public String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
         try {
-            charset = getEncoding().getCharset();
+            Charset charset = getEncoding().getCharset();
             if (charset != null) {
                 if (charset == RubyEncoding.UTF8) {
-                    return RubyEncoding.decodeUTF8(bytes, begin + start, lex_p - start);
+                    return RubyEncoding.decodeUTF8(bytes, start, length);
                 } else {
-                    return new String(bytes, begin + start, lex_p - start, charset);
+                    return new String(bytes, start, length, charset);
                 }
             }
         } catch (UnsupportedCharsetException e) {}
 
-
-        return new String(bytes, begin + start, lex_p - start);
+        return new String(bytes, start, length);
     }
 
     public String createTokenString() {

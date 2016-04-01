@@ -318,7 +318,8 @@ public class RubyLexer extends LexingCommon {
 
     // FIXME: How does lexb.toString() vs getCurrentLine() differ.
     public void compile_error(PID pid, String message) {
-        throw new SyntaxException(pid, getFile(), ruby_sourceline, getCurrentLine(), message);
+        String src = createAsEncodedString(lex_lastline.unsafeBytes(), lex_lastline.begin(), lex_lastline.length(), getEncoding());
+        throw new SyntaxException(pid, getFile(), ruby_sourceline, src, message);
     }
 
     public void heredoc_restore(HeredocTerm here) {
