@@ -95,7 +95,7 @@ public abstract class SetNode extends RubyNode {
         boolean profiledByIdentity = byIdentityProfile.profile(byIdentity);
 
         int hashed = 0;
-        if (profiledByIdentity) {
+        if (!profiledByIdentity) {
             hashed = hashNode.hash(frame, key);
         }
 
