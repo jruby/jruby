@@ -2,7 +2,6 @@ package org.jruby.javasupport.binding;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.invokers.StaticMethodInvoker;
 
 /**
@@ -15,12 +14,7 @@ public class StaticMethodInvokerInstaller extends MethodInstaller {
     @Override void install(final RubyModule proxy) {
         if ( hasLocalMethod() ) {
             final RubyClass singletonClass = proxy.getSingletonClass();
-            DynamicMethod method = new StaticMethodInvoker(singletonClass, methods);
-            singletonClass.addMethod(name, method);
-            if ( aliases != null && isPublic() ) {
-                singletonClass.defineAliases(aliases, name);
-                //aliases = null;
-            }
+            defineMethods(singletonClass, new StaticMethodInvoker(singletonClass, methods), false);
         }
     }
 }
