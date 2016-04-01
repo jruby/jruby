@@ -85,10 +85,27 @@ public class NativeException extends RubyException {
     public final IRubyObject backtrace() {
         IRubyObject rubyTrace = super.backtrace();
         if ( rubyTrace.isNil() ) return rubyTrace;
-
         final Ruby runtime = getRuntime();
         final RubyArray rTrace = (RubyArray) rubyTrace;
         StackTraceElement[] jTrace = cause.getStackTrace();
+
+        // NOTE: with the new filtering ruby trace will already include the source (Java) part
+        if ( rTrace.size() > 0 && jTrace.length > 0 ) {
+            final String r0 = rTrace.eltInternal(0).toString();
+            // final StackTraceElement j0 = jTrace[0];
+            final String method = jTrace[0].getMethodName();
+            final String file = jTrace[0].getFileName();
+            if ( method != null && file != null &&
+                r0.indexOf(method) != -1 && r0.indexOf(file) != -1 ) {
+                return rTrace; // as is
+            }
+        }
+        // so join-ing is mostly unnecessary, but just in case (due compatibility) make sure :
+
+        return joinedBacktrace(runtime, rTrace, jTrace);
+    }
+
+    private static RubyArray joinedBacktrace(final Ruby runtime, final RubyArray rTrace, final StackTraceElement[] jTrace) {
         final IRubyObject[] trace = new IRubyObject[jTrace.length + rTrace.size()];
         final StringBuilder line = new StringBuilder(32);
         for ( int i = 0; i < jTrace.length; i++ ) {
