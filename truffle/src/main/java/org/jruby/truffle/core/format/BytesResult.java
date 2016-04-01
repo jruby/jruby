@@ -13,14 +13,14 @@ import org.jruby.truffle.core.rope.CodeRange;
 
 public class BytesResult {
 
-    private final Object output;
+    private final byte[] output;
     private final int outputLength;
     private final int stringLength;
     private final CodeRange stringCodeRange;
     private final boolean tainted;
     private final FormatEncoding encoding;
 
-    public BytesResult(Object output, int outputLength, int stringLength, CodeRange stringCodeRange, boolean tainted, FormatEncoding encoding) {
+    public BytesResult(byte[] output, int outputLength, int stringLength, CodeRange stringCodeRange, boolean tainted, FormatEncoding encoding) {
         this.output = output;
         this.outputLength = outputLength;
         this.stringLength = stringLength;
@@ -29,7 +29,7 @@ public class BytesResult {
         this.encoding = encoding;
     }
 
-    public Object getOutput() {
+    public byte[] getOutput() {
         return output;
     }
 

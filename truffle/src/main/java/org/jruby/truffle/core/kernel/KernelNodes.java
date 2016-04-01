@@ -1995,7 +1995,7 @@ public abstract class KernelNodes {
         }
 
         private DynamicObject finishFormat(int formatLength, BytesResult result) {
-            byte[] bytes = (byte[]) result.getOutput();
+            byte[] bytes = result.getOutput();
 
             if (resizeProfile.profile(bytes.length != result.getOutputLength())) {
                 bytes = Arrays.copyOf(bytes, result.getOutputLength());
