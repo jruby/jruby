@@ -207,6 +207,19 @@ public abstract class HashNodes {
             return PackedArrayStrategy.getValue(store, cachedIndex);
         }
 
+        @Specialization(guards = {
+                "isPackedHash(hash)",
+                "isCompareByIdentity(hash)",
+                "cachedIndex >= 0",
+                "cachedIndex < getSize(hash)",
+                "equal(frame, key, getKeyAt(hash, cachedIndex))"
+        }, limit = "1")
+        public Object getConstantIndexPackedArrayByIdentity(VirtualFrame frame, DynamicObject hash, Object key,
+                @Cached("index(frame, hash, key)") int cachedIndex) {
+            final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
+            return PackedArrayStrategy.getValue(store, cachedIndex);
+        }
+
         protected int hash(VirtualFrame frame, Object key) {
             return hashNode.hash(frame, key);
         }
@@ -226,14 +239,23 @@ public abstract class HashNodes {
                 return -1;
             }
 
-            final int hashed = hashNode.hash(frame, key);
+            int hashed = 0;
+            if (!HashGuards.isCompareByIdentity(hash)) {
+                hashed = hashNode.hash(frame, key);
+            }
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final int size = Layouts.HASH.getSize(hash);
 
             for (int n = 0; n < size; n++) {
-                if (hashed == PackedArrayStrategy.getHashed(store, n) && eql(frame, key, PackedArrayStrategy.getKey(store, n))) {
-                    return n;
+                if (HashGuards.isCompareByIdentity(hash)) {
+                    if (equal(frame, key, PackedArrayStrategy.getKey(store, n))) {
+                        return n;
+                    }
+                } else {
+                    if (hashed == PackedArrayStrategy.getHashed(store, n) && eql(frame, key, PackedArrayStrategy.getKey(store, n))) {
+                        return n;
+                    }
                 }
             }
 
