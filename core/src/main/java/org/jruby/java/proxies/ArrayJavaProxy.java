@@ -10,6 +10,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
 import org.jruby.RubyRange;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -102,15 +103,25 @@ public class ArrayJavaProxy extends JavaProxy {
     }
 
     @JRubyMethod(name = "[]", required = 1, rest = true)
-    public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
+    public final IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         if ( args.length == 1 ) return op_aref(context, args[0]);
         return getRange(context, args);
     }
 
     @JRubyMethod(name = "[]=")
-    public IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
+    public final IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
         final int i = convertArrayIndex(index);
         return ArrayUtils.asetDirect(context.runtime, getObject(), converter, i, value);
+    }
+
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public final IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        return dig(context, args, 0);
+    }
+
+    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
+        final IRubyObject val = at(context, args[idx++]);
+        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
     }
 
     private static int convertArrayIndex(final IRubyObject index) {
@@ -122,11 +133,13 @@ public class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod
     public IRubyObject at(ThreadContext context, IRubyObject index) {
+        return at(context, convertArrayIndex(index));
+    }
+
+    private final IRubyObject at(ThreadContext context, int i) {
         final Ruby runtime = context.runtime;
         final Object array = getObject();
         final int length = Array.getLength(array);
-
-        int i = convertArrayIndex(index);
 
         if ( i < 0 ) i = i + length;
 

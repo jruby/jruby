@@ -1062,4 +1062,40 @@ describe "ArrayJavaProxy" do
     expect( r_arr[0] ).to eql 1
   end
 
+  describe "#dig" do
+
+    it 'returns #at with one arg' do
+      expect( [1].to_java.dig(0) ).to eql 1
+      expect( [1].to_java(:byte).dig(0) ).to eql 1
+      expect( [1].to_java.dig(1) ).to be nil
+
+      expect( Java::long[2].new.dig(1) ).to be 0
+      expect( Java::long[2].new.dig(2) ).to be nil
+      expect( java.lang.String[1].new.dig(1) ).to be nil
+    end
+
+    it 'recurses array elements' do
+      arr = Java::int[2].new ; arr[0] = 2; arr[1] = 3
+      a = [ [ 1, arr ] ].to_java
+      expect( a.dig(0, 0) ).to eql 1
+      expect( a.dig(0, 1, 1) ).to eql 3
+      expect( a.dig(0, -1, 0) ).to eql 2
+    end
+
+    it 'returns the nested value specified if the sequence includes a key' do
+      a = [42, { foo: :bar }].to_java :Object
+      expect( a.dig(1, :foo) ).to eql :bar
+    end
+
+    it 'raises a TypeError for a non-numeric index' do
+      expect {  ['a'].dig(:first) }.to raise_error(TypeError)
+    end
+
+    it 'raises a TypeError if any intermediate step does not respond to #dig' do
+      a = [1, 2].to_java(:int)
+      expect { a.dig(0, 1) }.to raise_error(TypeError)
+    end
+
+  end
+
 end
