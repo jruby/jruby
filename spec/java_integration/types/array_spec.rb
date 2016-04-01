@@ -165,6 +165,10 @@ describe "A Java primitive Array of type" do
       expect( [ 1, -123, 127 ].to_java(:int).eql? arr2 ).to be false
       expect( arr1 == [ 1, -123 ] ).to be false
       expect( [ 1, -123, -127 ].to_java(:byte) == arr2 ).to be false
+
+      expect( arr1 === arr1 ).to be true
+      expect( arr2 === arr1 ).to be true
+      expect( arr1.class === arr2 ).to be true
     end
 
     it "makes an ascii 8 bit string on to_s" do
@@ -423,6 +427,10 @@ describe "A Java primitive Array of type" do
       expect( [-111, 101010.99].to_java(:double).eql? arr2 ).to be false
       expect( arr1 == [ -111.1, 101010.99 ] ).to be false
       expect( [ -111 ].to_java(:float) == arr2 ).to be false
+
+      expect( arr1 === arr1 ).to be true
+      expect( arr2 === arr1 ).to be true
+      expect( arr1.class === arr2 ).to be true
     end
 
     it "inspects to show type and contents" do
@@ -507,6 +515,10 @@ describe "A Java primitive Array of type" do
       expect( [-111, 12345678].to_java(:long).eql? arr2 ).to be false
       expect( arr1 == [ -111 ] ).to be false
       expect( [ -111 ].to_java(:int) == arr2 ).to be false
+
+      expect( arr1 === arr1 ).to be true
+      expect( arr2 === arr1 ).to be true
+      expect( arr1.class === arr2 ).to be true
     end
 
     it "inspects to show type and contents" do
