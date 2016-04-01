@@ -17,13 +17,16 @@ import org.jruby.runtime.builtin.IRubyObject;
  * A collection of utilities for manipulating Java arrays.
  */
 public class ArrayUtils {
+
+    private ArrayUtils() { /* no instances */ }
+
     public static IRubyObject arefDirect(Ruby runtime, Object array, JavaUtil.JavaConverter javaConverter, int intIndex) {
         try {
             return JavaUtil.convertJavaArrayElementToRuby(runtime, javaConverter, array, intIndex);
         } catch (IndexOutOfBoundsException e) {
             throw runtime.newArgumentError(
                     "index out of bounds for java array (" + intIndex +
-                            " for length " + Array.getLength(array) + ")");
+                            " for length " + Array.getLength(array) + ')');
         }
     }
 
@@ -96,15 +99,15 @@ public class ArrayUtils {
         } catch (IndexOutOfBoundsException e) {
             throw runtime.newArgumentError(
                     "index out of bounds for java array (" + intIndex +
-                            " for length " + Array.getLength(array) + ")");
+                            " for length " + Array.getLength(array) + ')');
         } catch (ArrayStoreException e) {
             throw runtime.newTypeError(
                     "wrong element type " + value.getClass() + "(array contains " +
-                            array.getClass().getComponentType().getName() + ")");
+                            array.getClass().getComponentType().getName() + ')');
         } catch (IllegalArgumentException iae) {
             throw runtime.newArgumentError(
                     "wrong element type " + value.getClass() + "(array contains " +
-                            array.getClass().getComponentType().getName() + ")");
+                            array.getClass().getComponentType().getName() + ')');
         }
         return value;
     }
@@ -115,15 +118,15 @@ public class ArrayUtils {
         } catch (IndexOutOfBoundsException e) {
             throw runtime.newArgumentError(
                                     "index out of bounds for java array (" + intIndex +
-                                    " for length " + Array.getLength(ary) + ")");
+                                    " for length " + Array.getLength(ary) + ')');
         } catch (ArrayStoreException e) {
             throw runtime.newTypeError(
                                     "wrong element type " + javaObject.getClass() + "(array contains " +
-                                    ary.getClass().getComponentType().getName() + ")");
+                                    ary.getClass().getComponentType().getName() + ')');
         } catch (IllegalArgumentException iae) {
             throw runtime.newArgumentError(
                                     "wrong element type " + javaObject.getClass() + "(array contains " +
-                                    ary.getClass().getComponentType().getName() + ")");
+                                    ary.getClass().getComponentType().getName() + ')');
         }
     }
 
