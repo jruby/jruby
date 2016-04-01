@@ -61,16 +61,10 @@ import org.jruby.truffle.core.coerce.ToStrNode;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
+import org.jruby.truffle.core.format.FormatExceptionTranslator;
 import org.jruby.truffle.core.format.unpack.ArrayResult;
 import org.jruby.truffle.core.format.unpack.UnpackCompiler;
-import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
-import org.jruby.truffle.core.format.exceptions.CantConvertException;
-import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
-import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
-import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
 import org.jruby.truffle.core.format.exceptions.FormatException;
-import org.jruby.truffle.core.format.exceptions.RangeException;
-import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
@@ -2365,7 +2359,7 @@ public abstract class StringNodes {
                         new Object[]{ rope.getBytes(), rope.byteLength() });
             } catch (FormatException e) {
                 exceptionProfile.enter();
-                throw handleException(e);
+                throw FormatExceptionTranslator.translate(this, e);
             }
 
             return finishUnpack(result);
@@ -2386,30 +2380,10 @@ public abstract class StringNodes {
                         new Object[]{ rope.getBytes(), rope.byteLength() });
             } catch (FormatException e) {
                 exceptionProfile.enter();
-                throw handleException(e);
+                throw FormatExceptionTranslator.translate(this, e);
             }
 
             return finishUnpack(result);
-        }
-
-        private RuntimeException handleException(FormatException exception) {
-            try {
-                throw exception;
-            } catch (InvalidFormatException e) {
-                return new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
-            } catch (TooFewArgumentsException e) {
-                return new RaiseException(coreLibrary().argumentError("too few arguments", this));
-            } catch (NoImplicitConversionException e) {
-                return new RaiseException(coreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
-            } catch (OutsideOfStringException e) {
-                return new RaiseException(coreLibrary().argumentError("X outside of string", this));
-            } catch (CantCompressNegativeException e) {
-                return new RaiseException(coreLibrary().argumentError("can't compress negative numbers", this));
-            } catch (RangeException e) {
-                return new RaiseException(coreLibrary().rangeError(e.getMessage(), this));
-            } catch (CantConvertException e) {
-                return new RaiseException(coreLibrary().typeError(e.getMessage(), this));
-            }
         }
 
         private DynamicObject finishUnpack(ArrayResult result) {

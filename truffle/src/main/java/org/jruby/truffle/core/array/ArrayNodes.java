@@ -30,9 +30,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
@@ -43,19 +40,13 @@ import org.jruby.truffle.core.CoreSourceSection;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
-import org.jruby.truffle.core.coerce.ToAryNode;
 import org.jruby.truffle.core.coerce.ToAryNodeGen;
 import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.core.coerce.ToIntNodeGen;
+import org.jruby.truffle.core.format.FormatExceptionTranslator;
 import org.jruby.truffle.core.format.pack.PackCompiler;
 import org.jruby.truffle.core.format.BytesResult;
-import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
-import org.jruby.truffle.core.format.exceptions.CantConvertException;
-import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
-import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
 import org.jruby.truffle.core.format.exceptions.FormatException;
-import org.jruby.truffle.core.format.exceptions.RangeException;
-import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
@@ -2427,7 +2418,7 @@ public abstract class ArrayNodes {
                         new Object[] { getStore(array), getSize(array) });
             } catch (FormatException e) {
                 exceptionProfile.enter();
-                throw handleException(e);
+                throw FormatExceptionTranslator.translate(this, e);
             }
 
             return finishPack(cachedFormatLength, result);
@@ -2446,32 +2437,10 @@ public abstract class ArrayNodes {
                         new Object[] { getStore(array), getSize(array) });
             } catch (FormatException e) {
                 exceptionProfile.enter();
-                throw handleException(e);
+                throw FormatExceptionTranslator.translate(this, e);
             }
 
             return finishPack(Layouts.STRING.getRope(format).byteLength(), result);
-        }
-
-        @TruffleBoundary
-        private RuntimeException handleException(FormatException exception) {
-            if (exception instanceof TooFewArgumentsException) {
-                return new RaiseException(coreLibrary().argumentErrorTooFewArguments(this));
-            } else if (exception instanceof NoImplicitConversionException) {
-                final NoImplicitConversionException e = (NoImplicitConversionException) exception;
-                return new RaiseException(coreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
-            } else if (exception instanceof OutsideOfStringException) {
-                return new RaiseException(coreLibrary().argumentErrorXOutsideOfString(this));
-            } else if (exception instanceof CantCompressNegativeException) {
-                return new RaiseException(coreLibrary().argumentErrorCantCompressNegativeNumbers(this));
-            } else if (exception instanceof RangeException) {
-                final RangeException e = (RangeException) exception;
-                return new RaiseException(coreLibrary().rangeError(e.getMessage(), this));
-            } else if (exception instanceof CantConvertException) {
-                final CantConvertException e = (CantConvertException) exception;
-                return new RaiseException(coreLibrary().typeError(e.getMessage(), this));
-            } else {
-                throw new IllegalArgumentException();
-            }
         }
 
         private DynamicObject finishPack(int formatLength, BytesResult result) {
