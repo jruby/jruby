@@ -298,11 +298,12 @@ public class RubyLexer extends LexingCommon {
         } else if (root instanceof ListNode) {
             ListNode list = (ListNode) root;
             int length = list.size();
-            // FIXME: I need a test case to see how this fails because MRI has bol (begin of line) boolean when
-            // it encounters non-str/dstr nodes but I am missing the knowledge to understand why it is needed
-            // and our layout is not as general as theirs so I cannot just nd->lit.
+            int currentLine = -1;
             for (int i = 0; i < length; i++) {
                 Node child = list.get(i);
+                if (currentLine == child.getLine()) continue;  // Only process first element on a line?
+
+                currentLine = child.getLine();                 // New line
 
                 if (child instanceof StrNode) {
                     dedent_string(((StrNode) child).getValue(), indent);
