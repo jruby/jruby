@@ -108,11 +108,11 @@ public abstract class FiberNodes {
                     assert !Layouts.FIBER.getRootFiber(fiber);
                     // Naturally exit the Java thread on catching this
                 } catch (BreakException e) {
-                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(context.getCoreLibrary().breakFromProcClosure(null)));
+                    addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(context.getCoreLibrary().breakFromProcClosure(null)));
                 } catch (ReturnException e) {
-                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(context.getCoreLibrary().unexpectedReturn(null)));
+                    addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(context.getCoreLibrary().unexpectedReturn(null)));
                 } catch (RaiseException e) {
-                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(e.getException()));
+                    addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(e.getException()));
                 }
             }
         });
@@ -147,9 +147,15 @@ public abstract class FiberNodes {
         Layouts.FIBER.setThread(fiber, null);
     }
 
+    @TruffleBoundary
+    private static void addToMessageQueue(DynamicObject fiber, FiberMessage message) {
+        Layouts.FIBER.getMessageQueue(fiber).add(message);
+    }
+
     /**
      * Send the Java thread that represents this fiber to sleep until it receives a resume or exit message.
      */
+    @TruffleBoundary
     private static Object[] waitForResume(RubyContext context, final DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
 
@@ -183,25 +189,18 @@ public abstract class FiberNodes {
      * thread (although the queue implementation may) and doesn't wait for the message to be received.
      */
     private static void resume(DynamicObject fromFiber, DynamicObject fiber, boolean yield, Object... args) {
-        assert RubyGuards.isRubyFiber(fromFiber);
-        assert RubyGuards.isRubyFiber(fiber);
-
-        Layouts.FIBER.getMessageQueue(fiber).add(new FiberResumeMessage(yield, fromFiber, args));
+        addToMessageQueue(fiber, new FiberResumeMessage(yield, fromFiber, args));
     }
 
     public static Object[] transferControlTo(RubyContext context, DynamicObject fromFiber, DynamicObject fiber, boolean yield, Object[] args) {
-        assert RubyGuards.isRubyFiber(fromFiber);
-        assert RubyGuards.isRubyFiber(fiber);
-
         resume(fromFiber, fiber, yield, args);
-
         return waitForResume(context, fromFiber);
     }
 
     public static void shutdown(DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         assert !Layouts.FIBER.getRootFiber(fiber);
-        Layouts.FIBER.getMessageQueue(fiber).add(new FiberExitMessage());
+        addToMessageQueue(fiber, new FiberExitMessage());
     }
 
     public interface FiberMessage {
@@ -217,7 +216,7 @@ public abstract class FiberNodes {
 
         protected Object singleValue(VirtualFrame frame, Object[] args) {
             if (singleValueCastNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 singleValueCastNode = insert(SingleValueCastNodeGen.create(getContext(), getSourceSection(), null));
             }
             return singleValueCastNode.executeSingleValue(frame, args);
@@ -227,9 +226,8 @@ public abstract class FiberNodes {
 
         @Specialization(guards = "isRubyFiber(fiber)")
         protected Object transfer(VirtualFrame frame, DynamicObject fiber, boolean isYield, Object[] args) {
-            CompilerDirectives.transferToInterpreter();
-
             if (!Layouts.FIBER.getAlive(fiber)) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().deadFiberCalledError(this));
             }
 
@@ -296,6 +294,7 @@ public abstract class FiberNodes {
             final DynamicObject fiberYieldedTo = Layouts.FIBER.getLastResumedByFiber(yieldingFiber);
 
             if (Layouts.FIBER.getRootFiber(yieldingFiber) || fiberYieldedTo == null) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().yieldFromRootFiberError(this));
             }
 
