@@ -43,6 +43,7 @@ import org.jruby.truffle.core.CoreSourceSection;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
+import org.jruby.truffle.core.coerce.ToAryNode;
 import org.jruby.truffle.core.coerce.ToAryNodeGen;
 import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.core.coerce.ToIntNodeGen;
@@ -1403,45 +1404,6 @@ public abstract class ArrayNodes {
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
-
-        @Specialization(guards = { "!isInteger(object)", "!isLong(object)", "wasProvided(object)", "!isRubyArray(object)" })
-        public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object object, NotProvided defaultValue, NotProvided block,
-                @Cached("createReplaceNode()") ReplaceNode replaceNode) {
-
-            DynamicObject copy = null;
-            if (respondToToAryNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
-            }
-            if (respondToToAryNode.doesRespondToString(frame, object, create7BitString("to_ary", UTF8Encoding.INSTANCE), true)) {
-                if (toAryNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                }
-                Object toAryResult = toAryNode.call(frame, object, "to_ary", null);
-                if (RubyGuards.isRubyArray(toAryResult)) {
-                    copy = (DynamicObject) toAryResult;
-                }
-
-            }
-
-            if (copy != null) {
-                return initializeFromArray(array, copy, NotProvided.INSTANCE, NotProvided.INSTANCE, replaceNode);
-            } else {
-                if (toIntNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-                }
-                int size = toIntNode.doInt(frame, object);
-                if (size < 0) {
-                    return initializeNegative(array, size, NotProvided.INSTANCE, NotProvided.INSTANCE);
-                } else {
-                    return initialize(array, size, NotProvided.INSTANCE, NotProvided.INSTANCE);
-                }
-
-            }
-
-        }
         
         @Specialization
         public DynamicObject initialize(DynamicObject array, NotProvided size, NotProvided defaultValue, NotProvided block) {
@@ -1454,7 +1416,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "size >= 0")
-        public DynamicObject initialize(DynamicObject array, int size, NotProvided defaultValue, NotProvided block) {
+        public DynamicObject initializeWithSize(DynamicObject array, int size, NotProvided defaultValue, NotProvided block) {
             return initialize(array, size, nil(), block);
         }
 
@@ -1542,11 +1504,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "wasProvided(sizeObject)", "!isInteger(sizeObject)", "wasProvided(defaultValue)" })
         public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object sizeObject, Object defaultValue, NotProvided block) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            int size = toIntNode.doInt(frame, sizeObject);
+            int size = toInt(frame, sizeObject);
             if (size < 0) {
                 return initializeNegative(array, size, defaultValue, NotProvided.INSTANCE);
             } else {
@@ -1604,6 +1562,54 @@ public abstract class ArrayNodes {
                 @Cached("createReplaceNode()") ReplaceNode replaceNode) {
             replaceNode.executeReplace(array, copy);
             return array;
+        }
+
+        @Specialization(guards = { "!isInteger(object)", "!isLong(object)", "wasProvided(object)", "!isRubyArray(object)" })
+        public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object object, NotProvided defaultValue, NotProvided block,
+                @Cached("createReplaceNode()") ReplaceNode replaceNode) {
+
+            DynamicObject copy = null;
+            if (respondToToAry(frame, object)) {
+                Object toAryResult = callToAry(frame, object);
+                if (RubyGuards.isRubyArray(toAryResult)) {
+                    copy = (DynamicObject) toAryResult;
+                }
+            }
+
+            if (copy != null) {
+                return initializeFromArray(array, copy, NotProvided.INSTANCE, NotProvided.INSTANCE, replaceNode);
+            } else {
+                int size = toInt(frame, object);
+                if (size < 0) {
+                    return initializeNegative(array, size, NotProvided.INSTANCE, NotProvided.INSTANCE);
+                } else {
+                    return initializeWithSize(array, size, NotProvided.INSTANCE, NotProvided.INSTANCE);
+                }
+            }
+        }
+
+        public boolean respondToToAry(VirtualFrame frame, Object object) {
+            if (respondToToAryNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+            }
+            return respondToToAryNode.doesRespondToString(frame, object, create7BitString("to_ary", UTF8Encoding.INSTANCE), true);
+        }
+
+        protected Object callToAry(VirtualFrame frame, Object object) {
+            if (toAryNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            }
+            return toAryNode.call(frame, object, "to_ary", null);
+        }
+
+        protected int toInt(VirtualFrame frame, Object value) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return toIntNode.doInt(frame, value);
         }
 
         protected ReplaceNode createReplaceNode() {
