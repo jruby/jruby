@@ -418,6 +418,35 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "safe_puts", onSingleton = true, required = 1)
+    public abstract static class SafePutsNode extends CoreMethodArrayArgumentsNode {
+
+        public SafePutsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject safePuts(DynamicObject string) {
+            for (char c : string.toString().toCharArray()) {
+                if (isAsciiPrintable(c)) {
+                    System.out.print(c);
+                } else {
+                    System.out.print('?');
+                }
+            }
+
+            System.out.println();
+
+            return nil();
+        }
+
+        private boolean isAsciiPrintable(char c) {
+            return c >= 32 && c <= 126 || c == '\n' || c == '\t';
+        }
+
+    }
+
     @CoreMethod(names = "convert_to_mutable_rope", onSingleton = true, required = 1)
     public abstract static class ConvertToMutableRope extends CoreMethodArrayArgumentsNode {
 
