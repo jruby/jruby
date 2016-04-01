@@ -2401,7 +2401,6 @@ public abstract class ArrayNodes {
 
         public PackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null, null);
         }
 
         @Specialization(guards = {"isRubyString(format)", "ropesEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
@@ -2486,6 +2485,10 @@ public abstract class ArrayNodes {
                 }
             }
 
+            if (makeLeafRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), null, null, null, null, null));
+            }
 
             final Rope rope = makeLeafRopeNode.executeMake(bytes, encoding, result.getStringCodeRange(), result.getStringLength());
             final DynamicObject string = createString(rope);
