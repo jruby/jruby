@@ -42,6 +42,7 @@ import org.jruby.truffle.core.CoreMethodNode;
 import org.jruby.truffle.core.CoreSourceSection;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
 import org.jruby.truffle.core.coerce.ToAryNodeGen;
 import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.core.coerce.ToIntNodeGen;
@@ -88,9 +89,7 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
-
 import java.util.Arrays;
-
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
@@ -1406,7 +1405,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isLong(object)", "wasProvided(object)", "!isRubyArray(object)" })
-        public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object object, NotProvided defaultValue, NotProvided block) {
+        public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object object, NotProvided defaultValue, NotProvided block,
+                @Cached("createReplaceNode()") ReplaceNode replaceNode) {
 
             DynamicObject copy = null;
             if (respondToToAryNode == null) {
@@ -1426,7 +1426,7 @@ public abstract class ArrayNodes {
             }
 
             if (copy != null) {
-                return initialize(array, copy, NotProvided.INSTANCE, NotProvided.INSTANCE);
+                return initializeFromArray(array, copy, NotProvided.INSTANCE, NotProvided.INSTANCE, replaceNode);
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -1600,10 +1600,14 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isRubyArray(copy)")
-        public DynamicObject initialize(DynamicObject array, DynamicObject copy, NotProvided defaultValue, Object maybeBlock) {
-            CompilerDirectives.transferToInterpreter();
-            setStoreAndSize(array, ArrayOperations.toObjectArray(copy), getSize(copy));
+        public DynamicObject initializeFromArray(DynamicObject array, DynamicObject copy, NotProvided defaultValue, Object maybeBlock,
+                @Cached("createReplaceNode()") ReplaceNode replaceNode) {
+            replaceNode.executeReplace(array, copy);
             return array;
+        }
+
+        protected ReplaceNode createReplaceNode() {
+            return ReplaceNodeFactory.create(getContext(), getSourceSection(), null, null);
         }
 
     }
@@ -3458,6 +3462,8 @@ public abstract class ArrayNodes {
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
+
+        public abstract DynamicObject executeReplace(DynamicObject array, DynamicObject other);
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode index) {
             return ToAryNodeGen.create(getContext(), getSourceSection(), index);
