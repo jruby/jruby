@@ -9,12 +9,35 @@
  */
 package org.jruby.truffle.core.format;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
+
 public enum FormatEncoding {
 
-    DEFAULT,
-    ASCII_8BIT,
-    US_ASCII,
-    UTF_8;
+    DEFAULT(ASCIIEncoding.INSTANCE),
+    ASCII_8BIT(ASCIIEncoding.INSTANCE),
+    US_ASCII(USASCIIEncoding.INSTANCE),
+    UTF_8(UTF8Encoding.INSTANCE);
+
+    private final Encoding encoding;
+
+    FormatEncoding(Encoding encoding) {
+        this.encoding = encoding;
+    }
+
+    public Encoding getEncoding() {
+        return encoding;
+    }
+
+    public Encoding getEncodingForLength(int length) {
+        if (length == 0) {
+            return USASCIIEncoding.INSTANCE;
+        } else {
+            return encoding;
+        }
+    }
 
     /**
      * Given the current encoding for a pack string, and something that requires
