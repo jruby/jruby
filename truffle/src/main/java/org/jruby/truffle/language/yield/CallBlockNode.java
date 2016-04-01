@@ -18,7 +18,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
@@ -34,16 +33,6 @@ import org.jruby.truffle.language.methods.DeclarationContext;
         @NodeChild(value = "arguments", type = RubyNode[].class)
 })
 public abstract class CallBlockNode extends RubyNode {
-
-    // Allowing the child to be Node.replace()'d.
-
-    static class CallNodeWrapperNode extends Node {
-        @Child DirectCallNode child;
-
-        public CallNodeWrapperNode(DirectCallNode child) {
-            this.child = insert(child);
-        }
-    }
 
     private final DeclarationContext declarationContext;
 
@@ -65,9 +54,9 @@ public abstract class CallBlockNode extends RubyNode {
             Object blockArgument,
             Object[] arguments,
             @Cached("getBlockCallTarget(block)") CallTarget cachedCallTarget,
-            @Cached("createBlockCallNode(cachedCallTarget)") CallNodeWrapperNode callNode) {
+            @Cached("createBlockCallNode(cachedCallTarget)") DirectCallNode callNode) {
         final Object[] frameArguments = packArguments(block, self, blockArgument, arguments);
-        return callNode.child.call(frame, frameArguments);
+        return callNode.call(frame, frameArguments);
     }
 
     @Specialization(contains = "callBlockCached")
@@ -98,9 +87,8 @@ public abstract class CallBlockNode extends RubyNode {
         return Layouts.PROC.getCallTargetForType(block);
     }
 
-    protected CallNodeWrapperNode createBlockCallNode(CallTarget callTarget) {
+    protected DirectCallNode createBlockCallNode(CallTarget callTarget) {
         final DirectCallNode callNode = Truffle.getRuntime().createDirectCallNode(callTarget);
-        final CallNodeWrapperNode callNodeWrapperNode = new CallNodeWrapperNode(callNode);
 
         if (getContext().getOptions().YIELD_ALWAYS_CLONE && callNode.isCallTargetCloningAllowed()) {
             callNode.cloneCallTarget();
@@ -110,7 +98,7 @@ public abstract class CallBlockNode extends RubyNode {
             callNode.forceInlining();
         }
 
-        return callNodeWrapperNode;
+        return callNode;
     }
 
     protected int getCacheLimit() {
