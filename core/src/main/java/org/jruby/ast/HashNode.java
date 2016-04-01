@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.KeyValuePair;
@@ -42,7 +43,7 @@ import org.jruby.util.KeyValuePair;
  * A Literal Hash that can represent either a {a=&amp;b, c=&amp;d} type expression or the list 
  * of default values in a method call.
  */
-public class HashNode extends Node {
+public class HashNode extends Node implements ILiteralNode {
     private final List<KeyValuePair<Node,Node>> pairs;
 
     public HashNode(ISourcePosition position) {

@@ -548,11 +548,34 @@ public class ParserSupport {
             lexer.compile_error(PID.MULTIPLE_ASSIGNMENT_IN_CONDITIONAL, "multiple assignment in conditional");
         } else if (node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
-            if (valueNode instanceof ILiteralNode || valueNode instanceof NilNode || valueNode instanceof TrueNode || valueNode instanceof FalseNode) {
+            if (isStaticContent(valueNode)) {
                 warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, node.getPosition(), "found = in conditional, should be ==");
             }
             return true;
         } 
+
+        return false;
+    }
+
+    // Only literals or does it contain something more dynamic like variables?
+    private boolean isStaticContent(Node node) {
+        if (node instanceof HashNode) {
+            HashNode hash = (HashNode) node;
+            for (KeyValuePair<Node, Node> pair : hash.getPairs()) {
+                if (!isStaticContent(pair.getKey()) || !isStaticContent(pair.getValue())) return false;
+            }
+            return true;
+        } else if (node instanceof ArrayNode) {
+            ArrayNode array = (ArrayNode) node;
+            int size = array.size();
+
+            for (int i = 0; i < size; i++) {
+                if (!isStaticContent(array.get(i))) return false;
+            }
+            return true;
+        } else if (node instanceof ILiteralNode || node instanceof NilNode || node instanceof TrueNode || node instanceof FalseNode) {
+            return true;
+        }
 
         return false;
     }
