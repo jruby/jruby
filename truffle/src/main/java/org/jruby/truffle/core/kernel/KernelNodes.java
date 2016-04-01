@@ -32,6 +32,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
@@ -61,16 +62,11 @@ import org.jruby.truffle.core.coerce.ToPathNodeGen;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
+import org.jruby.truffle.core.format.FormatExceptionTranslator;
 import org.jruby.truffle.core.format.printf.PrintfCompiler;
 import org.jruby.truffle.core.format.BytesResult;
-import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
-import org.jruby.truffle.core.format.exceptions.CantConvertException;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
-import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
-import org.jruby.truffle.core.format.exceptions.OutsideOfStringException;
 import org.jruby.truffle.core.format.exceptions.FormatException;
-import org.jruby.truffle.core.format.exceptions.RangeException;
-import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SameOrEqualNodeFactory;
@@ -1947,6 +1943,8 @@ public abstract class KernelNodes {
 
         @Child private TaintNode taintNode;
 
+        private final BranchProfile exceptionProfile = BranchProfile.create();
+
         public SprintfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1962,10 +1960,11 @@ public abstract class KernelNodes {
             final BytesResult result;
 
             try {
-                result = (BytesResult) callPackNode.call(frame, new Object[]{ arguments, arguments.length });
+                result = (BytesResult) callPackNode.call(frame,
+                        new Object[]{ arguments, arguments.length });
             } catch (FormatException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw handleException(e);
+                exceptionProfile.enter();
+                throw FormatExceptionTranslator.translate(this, e);
             }
 
             return finishFormat(cachedFormatLength, result);
@@ -1980,31 +1979,14 @@ public abstract class KernelNodes {
             final BytesResult result;
 
             try {
-                result = (BytesResult) callPackNode.call(frame, compileFormat(format), new Object[]{ arguments, arguments.length });
+                result = (BytesResult) callPackNode.call(frame, compileFormat(format),
+                        new Object[]{ arguments, arguments.length });
             } catch (FormatException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw handleException(e);
+                exceptionProfile.enter();
+                throw FormatExceptionTranslator.translate(this, e);
             }
 
             return finishFormat(Layouts.STRING.getRope(format).byteLength(), result);
-        }
-
-        private RuntimeException handleException(FormatException exception) {
-            try {
-                throw exception;
-            } catch (TooFewArgumentsException e) {
-                return new RaiseException(coreLibrary().argumentError("too few arguments", this));
-            } catch (NoImplicitConversionException e) {
-                return new RaiseException(coreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
-            } catch (OutsideOfStringException e) {
-                return new RaiseException(coreLibrary().argumentError("X outside of string", this));
-            } catch (CantCompressNegativeException e) {
-                return new RaiseException(coreLibrary().argumentError("can't compress negative numbers", this));
-            } catch (RangeException e) {
-                return new RaiseException(coreLibrary().rangeError(e.getMessage(), this));
-            } catch (CantConvertException e) {
-                return new RaiseException(coreLibrary().typeError(e.getMessage(), this));
-            }
         }
 
         private DynamicObject finishFormat(int formatLength, BytesResult result) {
@@ -2045,9 +2027,9 @@ public abstract class KernelNodes {
             assert RubyGuards.isRubyString(format);
 
             try {
-                return new PrintfCompiler(getContext(), this).compile(format.toString(), Layouts.STRING.getRope(format).getBytes());
+                return new PrintfCompiler(getContext(), this)
+                        .compile(format.toString(), Layouts.STRING.getRope(format).getBytes());
             } catch (InvalidFormatException e) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             }
         }
