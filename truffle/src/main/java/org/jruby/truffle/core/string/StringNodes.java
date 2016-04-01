@@ -2359,7 +2359,6 @@ public abstract class StringNodes {
             final ArrayResult result;
 
             try {
-                // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
                 result = (ArrayResult) callUnpackNode.call(frame,
                         new Object[]{ rope.getBytes(), rope.byteLength() });
             } catch (FormatException e) {
@@ -2381,7 +2380,6 @@ public abstract class StringNodes {
             final ArrayResult result;
 
             try {
-                // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
                 result = (ArrayResult) callUnpackNode.call(frame, compileFormat(format),
                         new Object[]{ rope.getBytes(), rope.byteLength() });
             } catch (FormatException e) {
