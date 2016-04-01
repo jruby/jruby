@@ -76,6 +76,8 @@ import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.core.proc.ProcNodes.ProcNewNode;
 import org.jruby.truffle.core.proc.ProcNodesFactory.ProcNewNodeFactory;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringCachingGuards;
@@ -135,6 +137,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -1941,9 +1944,11 @@ public abstract class KernelNodes {
     @ImportStatic(StringCachingGuards.class)
     public abstract static class SprintfNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private TaintNode taintNode;
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
+        private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
 
         public SprintfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1990,25 +1995,23 @@ public abstract class KernelNodes {
         }
 
         private DynamicObject finishFormat(int formatLength, BytesResult result) {
-            final DynamicObject string = createString(new ByteList((byte[]) result.getOutput(), 0, result.getOutputLength()));
+            byte[] bytes = (byte[]) result.getOutput();
 
-            if (formatLength == 0) {
-                StringOperations.forceEncodingVerySlow(string, USASCIIEncoding.INSTANCE);
-            } else {
-                switch (result.getEncoding()) {
-                    case DEFAULT:
-                    case ASCII_8BIT:
-                        break;
-                    case US_ASCII:
-                        StringOperations.forceEncodingVerySlow(string, USASCIIEncoding.INSTANCE);
-                        break;
-                    case UTF_8:
-                        StringOperations.forceEncodingVerySlow(string, UTF8Encoding.INSTANCE);
-                        break;
-                    default:
-                        throw new UnsupportedOperationException();
-                }
+            if (resizeProfile.profile(bytes.length != result.getOutputLength())) {
+                bytes = Arrays.copyOf(bytes, result.getOutputLength());
             }
+
+            if (makeLeafRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(
+                        getContext(), null, null, null, null, null));
+            }
+
+            final DynamicObject string = createString(makeLeafRopeNode.executeMake(
+                    bytes,
+                    result.getEncoding().getEncodingForLength(formatLength),
+                    result.getStringCodeRange(),
+                    result.getOutputLength()));
 
             if (result.isTainted()) {
                 if (taintNode == null) {
