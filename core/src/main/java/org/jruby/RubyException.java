@@ -159,8 +159,9 @@ public class RubyException extends RubyObject {
 
         if (exception.isEmpty()) return context.runtime.newString(rubyClass);
 
-        return RubyString.newString(context.runtime, new StringBuilder(2 + rubyClass.length() + 2 + exception.size() + 1).
-                append("#<").append(rubyClass).append(": ").append(exception.getByteList()).append('>')
+        return RubyString.newString(context.runtime,
+                new StringBuilder(2 + rubyClass.length() + 2 + exception.size() + 1).
+                    append("#<").append(rubyClass).append(": ").append(exception.getByteList()).append('>')
         );
     }
 
@@ -295,20 +296,19 @@ public class RubyException extends RubyObject {
      */
     public void printBacktrace(PrintStream errorStream, int skip) {
         IRubyObject trace = callMethod(getRuntime().getCurrentContext(), "backtrace");
-        if (!trace.isNil() && trace instanceof RubyArray) {
-            IRubyObject[] elements = trace.convertToArray().toJavaArray();
-
+        if ( trace.isNil() ) return;
+        if ( trace instanceof RubyArray ) {
+            IRubyObject[] elements = ((RubyArray) trace).toJavaArrayMaybeUnsafe();
             for (int i = skip; i < elements.length; i++) {
                 IRubyObject stackTraceLine = elements[i];
                 if (stackTraceLine instanceof RubyString) {
-                    printStackTraceLine(errorStream, stackTraceLine);
+                    errorStream.println("\tfrom " + stackTraceLine);
+                }
+                else {
+                    errorStream.println("\t" + stackTraceLine);
                 }
             }
         }
-    }
-
-    private void printStackTraceLine(PrintStream errorStream, IRubyObject stackTraceLine) {
-        errorStream.print("\tfrom " + stackTraceLine + '\n');
     }
 
     private boolean isArrayOfStrings(IRubyObject backtrace) {
