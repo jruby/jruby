@@ -2342,7 +2342,12 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyString(format)", "ropesEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
+        @Specialization(
+                guards = {
+                        "isRubyString(format)",
+                        "ropesEqual(format, cachedFormat)"
+                },
+                limit = "getCacheLimit()")
         public DynamicObject unpackCached(
                 VirtualFrame frame,
                 DynamicObject string,
@@ -2355,7 +2360,8 @@ public abstract class StringNodes {
 
             try {
                 // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
-                result = (ArrayResult) callUnpackNode.call(frame, new Object[]{rope.getBytes(), rope.byteLength()});
+                result = (ArrayResult) callUnpackNode.call(frame,
+                        new Object[]{ rope.getBytes(), rope.byteLength() });
             } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -2376,7 +2382,8 @@ public abstract class StringNodes {
 
             try {
                 // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
-                result = (ArrayResult) callUnpackNode.call(frame, compileFormat(format), new Object[]{rope.getBytes(), rope.byteLength()});
+                result = (ArrayResult) callUnpackNode.call(frame, compileFormat(format),
+                        new Object[]{ rope.getBytes(), rope.byteLength() });
             } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -2406,7 +2413,8 @@ public abstract class StringNodes {
         }
 
         private DynamicObject finishUnpack(ArrayResult result) {
-            final DynamicObject array = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), result.getOutput(), result.getOutputLength());
+            final DynamicObject array = Layouts.ARRAY.createArray(
+                    coreLibrary().getArrayFactory(), result.getOutput(), result.getOutputLength());
 
             if (result.isTainted()) {
                 if (taintNode == null) {
@@ -2440,14 +2448,18 @@ public abstract class StringNodes {
             return ruby("raise TypeError");
         }
 
-        @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isNil(format)"})
+        @Specialization(guards = {
+                "!isRubyString(format)",
+                "!isBoolean(format)",
+                "!isInteger(format)",
+                "!isLong(format)",
+                "!isNil(format)"})
         public Object unpack(DynamicObject array, Object format) {
             return ruby("unpack(format.to_str)", "format", format);
         }
 
         @TruffleBoundary
         protected CallTarget compileFormat(DynamicObject format) {
-            assert RubyGuards.isRubyString(format);
             return new UnpackCompiler(getContext(), this).compile(format.toString());
         }
 
