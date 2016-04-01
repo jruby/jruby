@@ -2338,6 +2338,8 @@ public abstract class StringNodes {
 
         @Child private TaintNode taintNode;
 
+        private final BranchProfile exceptionProfile = BranchProfile.create();
+
         public UnpackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -2362,7 +2364,7 @@ public abstract class StringNodes {
                 result = (ArrayResult) callUnpackNode.call(frame,
                         new Object[]{ rope.getBytes(), rope.byteLength() });
             } catch (FormatException e) {
-                CompilerDirectives.transferToInterpreter();
+                exceptionProfile.enter();
                 throw handleException(e);
             }
 
@@ -2383,7 +2385,7 @@ public abstract class StringNodes {
                 result = (ArrayResult) callUnpackNode.call(frame, compileFormat(format),
                         new Object[]{ rope.getBytes(), rope.byteLength() });
             } catch (FormatException e) {
-                CompilerDirectives.transferToInterpreter();
+                exceptionProfile.enter();
                 throw handleException(e);
             }
 
