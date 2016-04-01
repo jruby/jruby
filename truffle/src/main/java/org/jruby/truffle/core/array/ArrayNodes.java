@@ -2405,7 +2405,13 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyString(format)", "ropesEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
+        @Specialization(
+                guards = {
+                        "isRubyString(format)",
+                        "ropesEqual(format, cachedFormat)"
+                },
+                limit = "getCacheLimit()"
+        )
         public DynamicObject packCached(
                 VirtualFrame frame,
                 DynamicObject array,
@@ -2416,7 +2422,8 @@ public abstract class ArrayNodes {
             final BytesResult result;
 
             try {
-                result = (BytesResult) callPackNode.call(frame, new Object[] { getStore(array), getSize(array) });
+                result = (BytesResult) callPackNode.call(frame,
+                        new Object[] { getStore(array), getSize(array) });
             } catch (FormatException e) {
                 exceptionProfile.enter();
                 throw handleException(e);
@@ -2434,7 +2441,8 @@ public abstract class ArrayNodes {
             final BytesResult result;
 
             try {
-                result = (BytesResult) callPackNode.call(frame, compileFormat(format), new Object[] { getStore(array), getSize(array) });
+                result = (BytesResult) callPackNode.call(frame, compileFormat(format),
+                        new Object[] { getStore(array), getSize(array) });
             } catch (FormatException e) {
                 exceptionProfile.enter();
                 throw handleException(e);
@@ -2467,17 +2475,22 @@ public abstract class ArrayNodes {
 
         private DynamicObject finishPack(int formatLength, BytesResult result) {
             byte[] bytes = (byte[]) result.getOutput();
+
             if (bytes.length != result.getOutputLength()) {
                 bytes = Arrays.copyOf(bytes, result.getOutputLength());
             }
 
             if (makeLeafRopeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), null, null, null, null, null));
+                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(
+                        getContext(), null, null, null, null, null));
             }
-
-            final Rope rope = makeLeafRopeNode.executeMake(bytes, result.getEncoding().getEncodingForLength(formatLength), result.getStringCodeRange(), result.getStringLength());
-            final DynamicObject string = createString(rope);
+            
+            final DynamicObject string = createString(makeLeafRopeNode.executeMake(
+                    bytes,
+                    result.getEncoding().getEncodingForLength(formatLength),
+                    result.getStringCodeRange(),
+                    result.getStringLength()));
 
             if (result.isTainted()) {
                 if (taintNode == null) {
@@ -2491,14 +2504,19 @@ public abstract class ArrayNodes {
             return string;
         }
 
-        @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isNil(format)"})
+        @Specialization(guards = {
+                "!isRubyString(format)",
+                "!isBoolean(format)",
+                "!isInteger(format)",
+                "!isLong(format)",
+                "!isNil(format)"
+        })
         public Object pack(DynamicObject array, Object format) {
             return ruby("pack(format.to_str)", "format", format);
         }
 
         @TruffleBoundary
         protected CallTarget compileFormat(DynamicObject format) {
-            assert RubyGuards.isRubyString(format);
             return new PackCompiler(getContext(), this).compile(format.toString());
         }
 
