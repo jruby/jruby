@@ -27,8 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.PrintStream;
-
 import java.lang.reflect.Member;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -41,18 +39,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class NativeException extends RubyException {
 
     private final Throwable cause;
+    private final String messageAsJavaString;
     public static final String CLASS_NAME = "NativeException";
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
         super(runtime, rubyClass);
         this.cause = cause;
-        this.message = runtime.newString(cause.getClass().getName() + ": " + searchStackMessage(cause));
+        this.messageAsJavaString = cause.getClass().getName() + ": " + searchStackMessage(cause);
     }
     
     private NativeException(Ruby runtime, RubyClass rubyClass) {
-        super(runtime, rubyClass);
-        this.cause   = new Throwable();
-        this.message = RubyString.newEmptyString(runtime);
+        super(runtime, rubyClass, null);
+        this.cause = new Throwable();
+        this.messageAsJavaString = null;
     }
     
     private static ObjectAllocator NATIVE_EXCEPTION_ALLOCATOR = new ObjectAllocator() {
@@ -165,6 +164,22 @@ public class NativeException extends RubyException {
             System.arraycopy(origStackTrace, 0, newStackTrace, 0, len);
             cause.setStackTrace(newStackTrace);
         }
+    }
+
+    @Override
+    public final IRubyObject getMessage() {
+        if (message == null) {
+            if (messageAsJavaString == null) {
+                return message = getRuntime().getNil();
+            }
+            return message = getRuntime().newString(messageAsJavaString);
+        }
+        return message;
+    }
+
+    @Override
+    public final String getMessageAsJavaString() {
+        return messageAsJavaString;
     }
 
     public final Throwable getCause() {
