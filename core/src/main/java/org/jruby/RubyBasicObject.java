@@ -1189,11 +1189,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return 0;
     }
 
-    @Override
-    public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return op_equal_19(context, obj);
-    }
-
     /** rb_obj_equal
      *
      * Will by default use identity equality to compare objects. This
@@ -1201,20 +1196,21 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * The name of this method doesn't follow the convention because hierarchy problems
      */
+    @Override
     @JRubyMethod(name = "==")
-    public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
+    public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         return this == obj ? context.runtime.getTrue() : context.runtime.getFalse();
+    }
+
+    @Deprecated
+    public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
+        return op_equal(context, obj);
     }
 
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         // Remain unimplemented due to problems with the double java hierarchy
-        return context.runtime.getNil();
-    }
-
-    @JRubyMethod(name = "equal?", required = 1)
-    public IRubyObject equal_p19(ThreadContext context, IRubyObject other) {
-        return op_equal_19(context, other);
+        return context.nil;
     }
 
     /**
@@ -1931,8 +1927,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * Will use Java identity equality.
      */
-    public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
-        return this == obj ? context.runtime.getTrue() : context.runtime.getFalse();
+    @JRubyMethod(name = "equal?", required = 1)
+    public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
+        return this == other ? context.runtime.getTrue() : context.runtime.getFalse();
+    }
+
+    @Deprecated
+    public IRubyObject equal_p19(ThreadContext context, IRubyObject other) {
+        return equal_p(context, other);
     }
 
     /** rb_obj_equal
