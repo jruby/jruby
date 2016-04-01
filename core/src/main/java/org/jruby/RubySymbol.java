@@ -191,7 +191,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     /* Symbol class methods.
      *
      */
-
+    @Deprecated
     public static RubySymbol newSymbol(Ruby runtime, IRubyObject name) {
         if (name instanceof RubySymbol) {
             return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), false);
@@ -203,13 +203,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     public static RubySymbol newHardSymbol(Ruby runtime, IRubyObject name) {
-        if (name instanceof RubySymbol) {
-            return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), true);
-        } else if (name instanceof RubyString) {
-            return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList(), true);
-        } else {
-            return newSymbol(runtime, name.asJavaString());
+        if (name instanceof RubySymbol || name instanceof RubyString) {
+            return runtime.getSymbolTable().getSymbol(name.asJavaString(), true);
         }
+
+        return newSymbol(runtime, name.asJavaString());
     }
 
     public static RubySymbol newSymbol(Ruby runtime, String name) {
