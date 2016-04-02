@@ -12,12 +12,28 @@ function unsafe {
   run "$@" && ( echo "$@" was not unsafe ; exit 1 )
 }
 
+# Things that are alway safe
+
 safe -e "14"
+
+# Check our safe_puts is safe
+
 safe -e "Truffle::Primitive.safe_puts 'hello, world'"
+
+# But we can make that unsafe as well if really don't want any output
+
+unsafe -Xtruffle.platform.safe_puts=false -e "Truffle::Primitive.safe_puts 'hello, world'"
+
+# Check default unsafe operations
+
 #unsafe -e "puts 'hello, world'"
 unsafe -e '`echo foo`'
+
+# Check we can enable some unsafe operations if we want to
+
 safe -Xtruffle.platform.safe.processes=true -e '`echo foo`'
-unsafe -Xtruffle.platform.safe_puts=false -e "Truffle::Primitive.safe_puts 'hello, world'"
+
+# Check that safe_puts sanitises correctly
 
 if [[ `run -e "Truffle::Primitive.safe_puts 'foo © bar'"` != 'foo ? bar' ]]
 then
