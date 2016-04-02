@@ -284,6 +284,11 @@ describe "Ruby String literals" do
   it "on multiple lines with newlines and backslash in between are concatenated together" do
     long_string_literals.should == "Beautiful is better than ugly.Explicit is better than implicit."
   end
+
+  it "with a magic frozen comment produce the same object each time" do
+    ruby_exe(fixture(__FILE__, "freeze_magic_comment_one_literal.rb")).chomp.should == "true"
+  end
+
 end
 
 with_feature :encoding do
