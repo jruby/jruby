@@ -271,6 +271,9 @@ public class CoreMethodNodeManager {
                 case EXIT:
                     option = options.PLATFORM_SAFE_EXIT;
                     break;
+                case SAFE_PUTS:
+                    option = options.PLATFORM_SAFE_PUTS;
+                    break;
                 default:
                     throw new IllegalStateException();
             }

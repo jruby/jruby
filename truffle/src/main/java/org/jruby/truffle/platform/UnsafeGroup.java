@@ -11,5 +11,6 @@ package org.jruby.truffle.platform;
 
 public enum UnsafeGroup {
     PROCESSES,
-    EXIT
+    EXIT,
+    SAFE_PUTS
 }

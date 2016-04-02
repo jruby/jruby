@@ -59,6 +59,7 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.Graal;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
@@ -418,7 +419,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(names = "safe_puts", onSingleton = true, required = 1)
+    @CoreMethod(names = "safe_puts", onSingleton = true, required = 1, unsafe = UnsafeGroup.SAFE_PUTS)
     public abstract static class SafePutsNode extends CoreMethodArrayArgumentsNode {
 
         public SafePutsNode(RubyContext context, SourceSection sourceSection) {
@@ -428,10 +429,6 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject safePuts(DynamicObject string) {
-            if (!getContext().getOptions().PLATFORM_SAFE_PUTS) {
-                throw new RaiseException(coreLibrary().internalErrorUnsafe(this));
-            }
-
             for (char c : string.toString().toCharArray()) {
                 if (isAsciiPrintable(c)) {
                     System.out.print(c);
