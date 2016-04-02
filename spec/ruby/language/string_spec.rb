@@ -289,6 +289,10 @@ describe "Ruby String literals" do
     ruby_exe(fixture(__FILE__, "freeze_magic_comment_one_literal.rb")).chomp.should == "true"
   end
 
+  it "with a magic frozen comment produce the same object for literals with the same content" do
+    ruby_exe(fixture(__FILE__, "freeze_magic_comment_two_literals.rb")).chomp.should == "true"
+  end
+
 end
 
 with_feature :encoding do
