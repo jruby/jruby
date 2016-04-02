@@ -224,7 +224,7 @@ public class Options {
 
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE = bool(TRUFFLE, "truffle.platform.safe", false, "Disallow any unsafe access to the platform, such as IO, processes and so on.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_PROCESSES = bool(TRUFFLE, "truffle.platform.safe.processes", false, "Treat any methods that deal with processes as safe.");
-    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_EXIT = bool(TRUFFLE, "truffle.platform.safe.exit", false, "Treat exiting the VM as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_EXIT = bool(TRUFFLE, "truffle.platform.safe.exit", false, "Treat #exit! (hard exiting the VM) as safe.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_PUTS = bool(TRUFFLE, "truffle.platform.safe_puts", true, "Treat Truffle::Primitive.safe_puts as safe.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_USE_JAVA = bool(TRUFFLE, "truffle.platform.use_java", false, "Use a pure-Java platform, so no native POSIX.");
 
