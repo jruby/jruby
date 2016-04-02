@@ -297,6 +297,10 @@ describe "Ruby String literals" do
     ruby_exe(fixture(__FILE__, "freeze_magic_comment_across_files.rb")).chomp.should == "true"
   end
 
+  it "with a magic frozen comment produce different objects for literals with the same content in different files if the other file doesn't have the comment" do
+    ruby_exe(fixture(__FILE__, "freeze_magic_comment_across_files_no_comment.rb")).chomp.should == "true"
+  end
+
   it "with a magic frozen comment produce different objects for literals with the same content in different files if they have different encodings" do
     ruby_exe(fixture(__FILE__, "freeze_magic_comment_across_files_diff_enc.rb")).chomp.should == "true"
   end
