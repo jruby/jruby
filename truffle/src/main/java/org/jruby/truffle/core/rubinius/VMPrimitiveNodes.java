@@ -71,6 +71,7 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
@@ -141,7 +142,7 @@ public abstract class VMPrimitiveNodes {
     }
 
     // The hard #exit!
-    @RubiniusPrimitive(name = "vm_exit", needsSelf = false)
+    @RubiniusPrimitive(name = "vm_exit", needsSelf = false, unsafe = UnsafeGroup.EXIT)
     public static abstract class VMExitPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMExitPrimitiveNode(RubyContext context, SourceSection sourceSection) {

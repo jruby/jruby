@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.core.rubinius;
 
+import org.jruby.truffle.platform.UnsafeGroup;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -23,5 +25,7 @@ public @interface RubiniusPrimitive {
     boolean needsSelf() default true;
 
     int[] lowerFixnumParameters() default {};
+
+    UnsafeGroup[] unsafe() default {};
 
 }

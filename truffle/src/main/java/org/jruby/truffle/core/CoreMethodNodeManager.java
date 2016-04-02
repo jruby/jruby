@@ -236,7 +236,7 @@ public class CoreMethodNodeManager {
 
         RubyNode sequence;
 
-        if (context.getOptions().PLATFORM_SAFE && !isSafe(context, method)) {
+        if (context.getOptions().PLATFORM_SAFE && !isSafe(context, method.unsafe())) {
             sequence = new UnsafeNode(context, sourceSection);
         } else {
             sequence = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
@@ -258,15 +258,18 @@ public class CoreMethodNodeManager {
         return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode, false);
     }
 
-    private static boolean isSafe(RubyContext context, CoreMethod method) {
+    public static boolean isSafe(RubyContext context, UnsafeGroup[] groups) {
         final Options options = context.getOptions();
 
-        for (UnsafeGroup group : method.unsafe()) {
+        for (UnsafeGroup group : groups) {
             final boolean option;
 
             switch (group) {
                 case PROCESSES:
                     option = options.PLATFORM_SAFE_PROCESSES;
+                    break;
+                case EXIT:
+                    option = options.PLATFORM_SAFE_EXIT;
                     break;
                 default:
                     throw new IllegalStateException();
