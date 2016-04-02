@@ -5,11 +5,11 @@ function run {
 }
 
 function safe {
-  run "$@" || ( echo "$@" was not safe ; exit 1 )
+  run "$@" || { echo "$@" was not safe ; exit 1; }
 }
 
 function unsafe {
-  run "$@" && ( echo "$@" was not unsafe ; exit 1 )
+  run "$@" && { echo "$@" was not unsafe ; exit ; }
 }
 
 # Things that are alway safe
