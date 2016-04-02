@@ -81,4 +81,6 @@ public @interface CoreMethod {
 
     boolean returnsEnumeratorIfNoBlock() default false;
 
+    boolean unsafe() default false;
+
 }

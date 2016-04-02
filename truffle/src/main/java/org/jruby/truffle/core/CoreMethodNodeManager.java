@@ -231,17 +231,24 @@ public class CoreMethodNodeManager {
         }
 
         final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection, arity);
-        RubyNode sequence = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
 
-        if (method.returnsEnumeratorIfNoBlock()) {
-            // TODO BF 3-18-2015 Handle multiple method names correctly
-            sequence = new ReturnEnumeratorIfNoBlockNode(method.names()[0], sequence);
-        }
+        RubyNode sequence;
 
-        if (method.taintFromSelf() || method.taintFromParameter() != -1) {
-            sequence = new TaintResultNode(method.taintFromSelf(),
-                                           method.taintFromParameter(),
-                                           sequence);
+        if (context.getOptions().PLATFORM_SAFE && method.unsafe()) {
+            sequence = new UnsafeNode(context, sourceSection);
+        } else {
+            sequence = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
+
+            if (method.returnsEnumeratorIfNoBlock()) {
+                // TODO BF 3-18-2015 Handle multiple method names correctly
+                sequence = new ReturnEnumeratorIfNoBlockNode(method.names()[0], sequence);
+            }
+
+            if (method.taintFromSelf() || method.taintFromParameter() != -1) {
+                sequence = new TaintResultNode(method.taintFromSelf(),
+                        method.taintFromParameter(),
+                        sequence);
+            }
         }
 
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, method.unsupportedOperationBehavior());
