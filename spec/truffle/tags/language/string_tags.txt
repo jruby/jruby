@@ -1,2 +1,4 @@
 fails:Ruby String literals with a magic frozen comment produce the same object each time
 slow:Ruby String literals with a magic frozen comment produce the same object each time
+fails:Ruby String literals with a magic frozen comment produce the same object for literals with the same content
+slow:Ruby String literals with a magic frozen comment produce the same object for literals with the same content
