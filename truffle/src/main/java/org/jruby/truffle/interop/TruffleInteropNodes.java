@@ -56,7 +56,7 @@ public abstract class TruffleInteropNodes {
 
     // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
 
-    @CoreMethod(names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class InteropToRubyNode extends CoreMethodArrayArgumentsNode {
 
         public InteropToRubyNode(RubyContext context, SourceSection sourceSection) {
@@ -105,7 +105,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "executable?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "executable?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class IsExecutableNode extends CoreMethodArrayArgumentsNode {
 
         @Child private Node node;
@@ -122,7 +122,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "boxed_primitive?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "boxed_primitive?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class IsBoxedPrimitiveNode extends CoreMethodArrayArgumentsNode {
 
         @Child private Node node;
@@ -179,7 +179,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "null?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "null?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class IsNullNode extends CoreMethodArrayArgumentsNode {
 
         @Child private Node node;
@@ -196,7 +196,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "has_size_property?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "has_size_property?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class HasSizePropertyNode extends CoreMethodArrayArgumentsNode {
 
         @Child private Node node;
@@ -213,7 +213,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "read_property", isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = "read_property", isModuleFunction = true, needsSelf = false, required = 2)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class ReadPropertyNode extends CoreMethodArrayArgumentsNode {
 
@@ -286,7 +286,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "write_property", isModuleFunction = true, needsSelf = false, required = 3)
+    @CoreMethod(unsafeNeedsAudit = true, names = "write_property", isModuleFunction = true, needsSelf = false, required = 3)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class WritePropertyNode extends CoreMethodArrayArgumentsNode {
 
@@ -346,7 +346,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "unbox_value", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "unbox_value", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class UnboxValueNode extends CoreMethodArrayArgumentsNode {
 
         @Child private Node node;
@@ -405,7 +405,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, rest = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "execute", isModuleFunction = true, needsSelf = false, required = 1, rest = true)
     public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
 
         @Child private Node node;
@@ -430,7 +430,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "size", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "size", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class GetSizeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private Node node;
@@ -457,7 +457,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "export", isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = "export", isModuleFunction = true, needsSelf = false, required = 2)
     public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
 
         public ExportNode(RubyContext context, SourceSection sourceSection) {
@@ -475,7 +475,7 @@ public abstract class TruffleInteropNodes {
         }
     }
 
-    @CoreMethod(names = "import", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "import", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class ImportNode extends CoreMethodArrayArgumentsNode {
 
         public ImportNode(RubyContext context, SourceSection sourceSection) {
@@ -490,7 +490,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "mime_type_supported?", isModuleFunction = true, needsSelf = false, required =1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "mime_type_supported?", isModuleFunction = true, needsSelf = false, required =1)
     public abstract static class MimeTypeSupportedNode extends CoreMethodArrayArgumentsNode {
 
         public MimeTypeSupportedNode(RubyContext context, SourceSection sourceSection) {
@@ -505,7 +505,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "eval", isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = "eval", isModuleFunction = true, needsSelf = false, required = 2)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class EvalNode extends CoreMethodArrayArgumentsNode {
 
@@ -556,7 +556,7 @@ public abstract class TruffleInteropNodes {
 
     // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
 
-    @CoreMethod(names = "java_string_to_ruby", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "java_string_to_ruby", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class JavaStringToRubyNode extends CoreMethodArrayArgumentsNode {
 
         public JavaStringToRubyNode(RubyContext context, SourceSection sourceSection) {

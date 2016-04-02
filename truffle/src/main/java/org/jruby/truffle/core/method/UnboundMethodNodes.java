@@ -35,7 +35,7 @@ import org.jruby.truffle.language.objects.MetaClassNodeGen;
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
 
-    @CoreMethod(names = "==", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -54,7 +54,7 @@ public abstract class UnboundMethodNodes {
 
     }
 
-    @CoreMethod(names = "arity")
+    @CoreMethod(unsafeNeedsAudit = true, names = "arity")
     public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
 
         public ArityNode(RubyContext context, SourceSection sourceSection) {
@@ -68,7 +68,7 @@ public abstract class UnboundMethodNodes {
 
     }
 
-    @CoreMethod(names = "bind", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "bind", required = 1)
     public abstract static class BindNode extends CoreMethodArrayArgumentsNode {
 
         @Child private MetaClassNode metaClassNode;
@@ -105,7 +105,7 @@ public abstract class UnboundMethodNodes {
 
     }
 
-    @CoreMethod(names = "name")
+    @CoreMethod(unsafeNeedsAudit = true, names = "name")
     public abstract static class NameNode extends CoreMethodArrayArgumentsNode {
 
         public NameNode(RubyContext context, SourceSection sourceSection) {
@@ -120,7 +120,7 @@ public abstract class UnboundMethodNodes {
     }
 
     // TODO: We should have an additional method for this but we need to access it for #inspect.
-    @CoreMethod(names = "origin", visibility = Visibility.PRIVATE)
+    @CoreMethod(unsafeNeedsAudit = true, names = "origin", visibility = Visibility.PRIVATE)
     public abstract static class OriginNode extends CoreMethodArrayArgumentsNode {
 
         public OriginNode(RubyContext context, SourceSection sourceSection) {
@@ -134,7 +134,7 @@ public abstract class UnboundMethodNodes {
 
     }
 
-    @CoreMethod(names = "owner")
+    @CoreMethod(unsafeNeedsAudit = true, names = "owner")
     public abstract static class OwnerNode extends CoreMethodArrayArgumentsNode {
 
         public OwnerNode(RubyContext context, SourceSection sourceSection) {
@@ -148,7 +148,7 @@ public abstract class UnboundMethodNodes {
 
     }
 
-    @CoreMethod(names = "parameters")
+    @CoreMethod(unsafeNeedsAudit = true, names = "parameters")
     public abstract static class ParametersNode extends CoreMethodArrayArgumentsNode {
 
         public ParametersNode(RubyContext context, SourceSection sourceSection) {
@@ -165,7 +165,7 @@ public abstract class UnboundMethodNodes {
 
     }
 
-    @CoreMethod(names = "source_location")
+    @CoreMethod(unsafeNeedsAudit = true, names = "source_location")
     public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
@@ -188,7 +188,7 @@ public abstract class UnboundMethodNodes {
 
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {

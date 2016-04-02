@@ -173,7 +173,7 @@ public abstract class ThreadNodes {
         }
     }
 
-    @CoreMethod(names = "alive?")
+    @CoreMethod(unsafeNeedsAudit = true, names = "alive?")
     public abstract static class AliveNode extends CoreMethodArrayArgumentsNode {
 
         public AliveNode(RubyContext context, SourceSection sourceSection) {
@@ -188,7 +188,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "backtrace")
+    @CoreMethod(unsafeNeedsAudit = true, names = "backtrace")
     public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
@@ -219,7 +219,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "current", onSingleton = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "current", onSingleton = true)
     public abstract static class CurrentNode extends CoreMethodArrayArgumentsNode {
 
         public CurrentNode(RubyContext context, SourceSection sourceSection) {
@@ -233,7 +233,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = { "kill", "exit", "terminate" })
+    @CoreMethod(unsafeNeedsAudit = true, names = { "kill", "exit", "terminate" })
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
 
         public KillNode(RubyContext context, SourceSection sourceSection) {
@@ -262,7 +262,7 @@ public abstract class ThreadNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(unsafeNeedsAudit = true, names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE)
     public abstract static class HandleInterruptNode extends YieldingCoreMethodNode {
 
         private final DynamicObject immediateSymbol = getContext().getSymbolTable().getSymbol("immediate");
@@ -302,7 +302,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "initialize", rest = true, needsBlock = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "initialize", rest = true, needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -318,7 +318,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "join", optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "join", optional = 1)
     public abstract static class JoinNode extends CoreMethodArrayArgumentsNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
@@ -394,7 +394,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "main", onSingleton = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "main", onSingleton = true)
     public abstract static class MainNode extends CoreMethodArrayArgumentsNode {
 
         public MainNode(RubyContext context, SourceSection sourceSection) {
@@ -408,7 +408,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "pass", onSingleton = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "pass", onSingleton = true)
     public abstract static class PassNode extends CoreMethodArrayArgumentsNode {
 
         public PassNode(RubyContext context, SourceSection sourceSection) {
@@ -423,7 +423,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "status")
+    @CoreMethod(unsafeNeedsAudit = true, names = "status")
     public abstract static class StatusNode extends CoreMethodArrayArgumentsNode {
 
         public StatusNode(RubyContext context, SourceSection sourceSection) {
@@ -447,7 +447,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "stop?")
+    @CoreMethod(unsafeNeedsAudit = true, names = "stop?")
     public abstract static class StopNode extends CoreMethodArrayArgumentsNode {
 
         public StopNode(RubyContext context, SourceSection sourceSection) {
@@ -462,7 +462,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "value")
+    @CoreMethod(unsafeNeedsAudit = true, names = "value")
     public abstract static class ValueNode extends CoreMethodArrayArgumentsNode {
 
         public ValueNode(RubyContext context, SourceSection sourceSection) {
@@ -477,7 +477,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = { "wakeup", "run" })
+    @CoreMethod(unsafeNeedsAudit = true, names = { "wakeup", "run" })
     public abstract static class WakeupNode extends CoreMethodArrayArgumentsNode {
 
         public WakeupNode(RubyContext context, SourceSection sourceSection) {
@@ -504,7 +504,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "abort_on_exception")
+    @CoreMethod(unsafeNeedsAudit = true, names = "abort_on_exception")
     public abstract static class AbortOnExceptionNode extends CoreMethodArrayArgumentsNode {
 
         public AbortOnExceptionNode(RubyContext context, SourceSection sourceSection) {
@@ -518,7 +518,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "abort_on_exception=", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "abort_on_exception=", required = 1)
     public abstract static class SetAbortOnExceptionNode extends CoreMethodArrayArgumentsNode {
 
         public SetAbortOnExceptionNode(RubyContext context, SourceSection sourceSection) {
@@ -533,7 +533,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
@@ -549,7 +549,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "list", onSingleton = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "list", onSingleton = true)
     public abstract static class ListNode extends CoreMethodArrayArgumentsNode {
 
         public ListNode(RubyContext context, SourceSection sourceSection) {

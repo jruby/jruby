@@ -91,7 +91,7 @@ import static jnr.constants.platform.WaitFlags.WNOHANG;
  */
 public abstract class VMPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "vm_catch", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_catch", needsSelf = false)
     public abstract static class CatchNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private YieldNode dispatchNode;
@@ -126,7 +126,7 @@ public abstract class VMPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "vm_gc_start", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_gc_start", needsSelf = false)
     public static abstract class VMGCStartPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMGCStartPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -161,7 +161,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_extended_modules", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_extended_modules", needsSelf = false)
     public static abstract class VMExtendedModulesNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode newArrayNode;
@@ -192,7 +192,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_get_module_name", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_get_module_name", needsSelf = false)
     public static abstract class VMGetModuleNamePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMGetModuleNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -206,7 +206,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_get_user_home", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_get_user_home", needsSelf = false)
     public abstract static class VMGetUserHomePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMGetUserHomePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -227,7 +227,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_object_class", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_object_class", needsSelf = false)
     public static abstract class VMObjectClassPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private LogicalClassNode classNode;
@@ -244,7 +244,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_object_equal", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_object_equal", needsSelf = false)
     public static abstract class VMObjectEqualPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child ReferenceEqualNode referenceEqualNode;
@@ -261,7 +261,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_object_kind_of", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_object_kind_of", needsSelf = false)
     public static abstract class VMObjectKindOfPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private IsANode isANode;
@@ -278,7 +278,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_object_respond_to", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_object_respond_to", needsSelf = false)
     public static abstract class VMObjectRespondToPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private KernelNodes.RespondToNode respondToNode;
@@ -295,7 +295,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_object_singleton_class", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_object_singleton_class", needsSelf = false)
     public static abstract class VMObjectSingletonClassPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private KernelNodes.SingletonClassMethodNode singletonClassNode;
@@ -312,7 +312,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_raise_exception", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_raise_exception", needsSelf = false)
     public static abstract class VMRaiseExceptionPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
         public VMRaiseExceptionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -324,7 +324,7 @@ public abstract class VMPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "vm_set_module_name", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_set_module_name", needsSelf = false)
     public static abstract class VMSetModuleNamePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMSetModuleNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -338,7 +338,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_singleton_class_object", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_singleton_class_object", needsSelf = false)
     public static abstract class VMObjectSingletonClassObjectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMObjectSingletonClassObjectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -352,7 +352,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_throw", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_throw", needsSelf = false)
     public abstract static class ThrowNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public ThrowNode(RubyContext context, SourceSection sourceSection) {
@@ -366,7 +366,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_time", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_time", needsSelf = false)
     public abstract static class TimeNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public TimeNode(RubyContext context, SourceSection sourceSection) {
@@ -380,7 +380,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_times", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_times", needsSelf = false)
     public abstract static class TimesNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public TimesNode(RubyContext context, SourceSection sourceSection) {
@@ -433,7 +433,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_watch_signal", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_watch_signal", needsSelf = false)
     public static abstract class VMWatchSignalPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMWatchSignalPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -483,7 +483,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_get_config_item", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_get_config_item", needsSelf = false)
     public abstract static class VMGetConfigItemPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMGetConfigItemPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -504,7 +504,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_get_config_section", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_get_config_section", needsSelf = false)
     public abstract static class VMGetConfigSectionPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMGetConfigSectionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -538,7 +538,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_wait_pid", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_wait_pid", needsSelf = false)
     public abstract static class VMWaitPidPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMWaitPidPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -608,7 +608,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_set_class", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "vm_set_class", needsSelf = false)
     public abstract static class VMSetClassPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMSetClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {

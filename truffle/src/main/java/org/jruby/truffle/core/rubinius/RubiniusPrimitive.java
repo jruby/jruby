@@ -28,4 +28,6 @@ public @interface RubiniusPrimitive {
 
     UnsafeGroup[] unsafe() default {};
 
+    boolean unsafeNeedsAudit() default false;
+
 }

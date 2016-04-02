@@ -75,7 +75,7 @@ public abstract class IOPrimitiveNodes {
 
     private static int STDOUT = 1;
 
-    @RubiniusPrimitive(name = "io_allocate")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_allocate")
     public static abstract class IOAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode newBufferNode;
@@ -95,7 +95,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_connect_pipe", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_connect_pipe", needsSelf = false)
     public static abstract class IOConnectPipeNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         private final int RDONLY;
@@ -150,7 +150,7 @@ public abstract class IOPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 })
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 })
     public static abstract class IOOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -165,7 +165,7 @@ public abstract class IOPrimitiveNodes {
     }
 
 
-    @RubiniusPrimitive(name = "io_truncate", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_truncate", needsSelf = false)
     public static abstract class IOTruncatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOTruncatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -184,7 +184,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_ftruncate")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_ftruncate")
     public static abstract class IOFTruncatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOFTruncatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -199,7 +199,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_fnmatch", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_fnmatch", needsSelf = false)
     public static abstract class IOFNMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOFNMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -223,7 +223,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_ensure_open")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_ensure_open")
     public static abstract class IOEnsureOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOEnsureOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -246,7 +246,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_read_if_available", lowerFixnumParameters = 0)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_read_if_available", lowerFixnumParameters = 0)
     public static abstract class IOReadIfAvailableNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();
@@ -298,7 +298,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_reopen")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_reopen")
     public static abstract class IOReopenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
@@ -338,7 +338,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_reopen_path", lowerFixnumParameters = 1)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_reopen_path", lowerFixnumParameters = 1)
     public static abstract class IOReopenPathPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
@@ -397,7 +397,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_write")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_write")
     public static abstract class IOWritePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOWritePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -441,7 +441,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_close")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_close")
     public static abstract class IOClosePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode ensureOpenNode;
@@ -480,7 +480,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_seek", lowerFixnumParameters = {0, 1})
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_seek", lowerFixnumParameters = {0, 1})
     public static abstract class IOSeekPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOSeekPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -495,7 +495,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_accept")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_accept")
     public abstract static class AcceptNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public AcceptNode(RubyContext context, SourceSection sourceSection) {
@@ -529,7 +529,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_sysread")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_sysread")
     public static abstract class IOSysReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOSysReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -569,7 +569,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "io_select", needsSelf = false, lowerFixnumParameters = 3)
     public static abstract class IOSelectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();

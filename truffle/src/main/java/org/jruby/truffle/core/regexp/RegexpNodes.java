@@ -401,7 +401,7 @@ public abstract class RegexpNodes {
         return regexp;
     }
 
-    @CoreMethod(names = "=~", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
@@ -445,7 +445,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "hash")
+    @CoreMethod(unsafeNeedsAudit = true, names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
         public HashNode(RubyContext context, SourceSection sourceSection) {
@@ -461,7 +461,7 @@ public abstract class RegexpNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(names = "match_start", required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = "match_start", required = 2)
     public abstract static class MatchStartNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
@@ -482,7 +482,7 @@ public abstract class RegexpNodes {
         }
     }
 
-    @CoreMethod(names = { "quote", "escape" }, needsSelf = false, onSingleton = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "quote", "escape" }, needsSelf = false, onSingleton = true, required = 1)
     public abstract static class QuoteNode extends CoreMethodArrayArgumentsNode {
 
         public QuoteNode(RubyContext context, SourceSection sourceSection) {
@@ -505,7 +505,7 @@ public abstract class RegexpNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(names = "search_from", required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = "search_from", required = 2)
     public abstract static class SearchFromNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
@@ -521,7 +521,7 @@ public abstract class RegexpNodes {
         }
     }
 
-    @CoreMethod(names = "source")
+    @CoreMethod(unsafeNeedsAudit = true, names = "source")
     public abstract static class SourceNode extends CoreMethodArrayArgumentsNode {
 
         public SourceNode(RubyContext context, SourceSection sourceSection) {
@@ -535,7 +535,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "to_s")
+    @CoreMethod(unsafeNeedsAudit = true, names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -604,7 +604,7 @@ public abstract class RegexpNodes {
         }
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;

@@ -54,7 +54,7 @@ import java.io.File;
 
 public abstract class DirPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "dir_allocate")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "dir_allocate")
     public static abstract class DirAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
@@ -71,7 +71,7 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_open")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "dir_open")
     public static abstract class DirOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -110,7 +110,7 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_read")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "dir_read")
     public static abstract class DirReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -142,7 +142,7 @@ public abstract class DirPrimitiveNodes {
     }
 
 
-    @RubiniusPrimitive(name = "dir_control")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "dir_control")
     public static abstract class DirControlPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirControlPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -168,7 +168,7 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_close")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "dir_close")
     public static abstract class DirClosePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {

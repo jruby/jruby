@@ -35,7 +35,7 @@ public abstract class ProcessNodes {
     public static final int CLOCK_THREAD_CPUTIME = 3; // Linux only
     public static final int CLOCK_MONOTONIC_RAW = 4; // Linux only
 
-    @CoreMethod(names = "clock_gettime", onSingleton = true, required = 1, optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "clock_gettime", onSingleton = true, required = 1, optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "clock_id"),
             @NodeChild(type = RubyNode.class, value = "unit")
@@ -121,7 +121,7 @@ public abstract class ProcessNodes {
 
     }
 
-    @CoreMethod(names = "kill", onSingleton = true, required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = "kill", onSingleton = true, required = 2)
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
 
         public KillNode(RubyContext context, SourceSection sourceSection) {
@@ -153,7 +153,7 @@ public abstract class ProcessNodes {
 
     }
 
-    @CoreMethod(names = "pid", onSingleton = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "pid", onSingleton = true)
     public abstract static class PidNode extends CoreMethodArrayArgumentsNode {
 
         public PidNode(RubyContext context, SourceSection sourceSection) {

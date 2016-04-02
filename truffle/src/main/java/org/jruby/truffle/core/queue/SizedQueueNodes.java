@@ -39,7 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @CoreClass(name = "SizedQueue")
 public abstract class SizedQueueNodes {
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
@@ -53,7 +53,7 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @CoreMethod(names = "initialize", visibility = Visibility.PRIVATE, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "initialize", visibility = Visibility.PRIVATE, required = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -74,7 +74,7 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @CoreMethod(names = "max=", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "max=", required = 1)
     public abstract static class SetMaxNode extends CoreMethodArrayArgumentsNode {
 
         public SetMaxNode(RubyContext context, SourceSection sourceSection) {
@@ -104,7 +104,7 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @CoreMethod(names = "max")
+    @CoreMethod(unsafeNeedsAudit = true, names = "max")
     public abstract static class MaxNode extends CoreMethodArrayArgumentsNode {
 
         public MaxNode(RubyContext context, SourceSection sourceSection) {
@@ -122,7 +122,7 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @CoreMethod(names = { "push", "<<", "enq" }, required = 1, optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "push", "<<", "enq" }, required = 1, optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "queue"),
             @NodeChild(type = RubyNode.class, value = "value"),
@@ -179,7 +179,7 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @CoreMethod(names = { "pop", "shift", "deq" }, optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "pop", "shift", "deq" }, optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "queue"),
             @NodeChild(type = RubyNode.class, value = "nonBlocking")
@@ -232,7 +232,7 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @CoreMethod(names = "empty?")
+    @CoreMethod(unsafeNeedsAudit = true, names = "empty?")
     public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
         public EmptyNode(RubyContext context, SourceSection sourceSection) {
@@ -248,7 +248,7 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @CoreMethod(names = { "size", "length" })
+    @CoreMethod(unsafeNeedsAudit = true, names = { "size", "length" })
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -263,7 +263,7 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @CoreMethod(names = "clear")
+    @CoreMethod(unsafeNeedsAudit = true, names = "clear")
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {
@@ -280,7 +280,7 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @CoreMethod(names = "num_waiting")
+    @CoreMethod(unsafeNeedsAudit = true, names = "num_waiting")
     public abstract static class NumWaitingNode extends CoreMethodArrayArgumentsNode {
 
         public NumWaitingNode(RubyContext context, SourceSection sourceSection) {

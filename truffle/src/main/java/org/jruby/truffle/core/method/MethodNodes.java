@@ -50,7 +50,7 @@ import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
 
-    @CoreMethod(names = { "==", "eql?" }, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "==", "eql?" }, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child protected ReferenceEqualNode referenceEqualNode;
@@ -79,7 +79,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "arity")
+    @CoreMethod(unsafeNeedsAudit = true, names = "arity")
     public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
 
         public ArityNode(RubyContext context, SourceSection sourceSection) {
@@ -93,7 +93,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = { "call", "[]" }, needsBlock = true, rest = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "call", "[]" }, needsBlock = true, rest = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child ProcOrNullNode procOrNullNode;
@@ -119,7 +119,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "name")
+    @CoreMethod(unsafeNeedsAudit = true, names = "name")
     public abstract static class NameNode extends CoreMethodArrayArgumentsNode {
 
         public NameNode(RubyContext context, SourceSection sourceSection) {
@@ -135,7 +135,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "owner")
+    @CoreMethod(unsafeNeedsAudit = true, names = "owner")
     public abstract static class OwnerNode extends CoreMethodArrayArgumentsNode {
 
         public OwnerNode(RubyContext context, SourceSection sourceSection) {
@@ -149,7 +149,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "parameters")
+    @CoreMethod(unsafeNeedsAudit = true, names = "parameters")
     public abstract static class ParametersNode extends CoreMethodArrayArgumentsNode {
 
         public ParametersNode(RubyContext context, SourceSection sourceSection) {
@@ -166,7 +166,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "receiver")
+    @CoreMethod(unsafeNeedsAudit = true, names = "receiver")
     public abstract static class ReceiverNode extends CoreMethodArrayArgumentsNode {
 
         public ReceiverNode(RubyContext context, SourceSection sourceSection) {
@@ -180,7 +180,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "source_location")
+    @CoreMethod(unsafeNeedsAudit = true, names = "source_location")
     public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
@@ -204,7 +204,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "unbind")
+    @CoreMethod(unsafeNeedsAudit = true, names = "unbind")
     public abstract static class UnbindNode extends CoreMethodArrayArgumentsNode {
 
         @Child private LogicalClassNode classNode;
@@ -222,7 +222,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "to_proc")
+    @CoreMethod(unsafeNeedsAudit = true, names = "to_proc")
     public abstract static class ToProcNode extends CoreMethodArrayArgumentsNode {
 
         public ToProcNode(RubyContext context, SourceSection sourceSection) {
@@ -293,7 +293,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {

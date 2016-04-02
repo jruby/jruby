@@ -23,7 +23,7 @@ public abstract class UndefinedPrimitiveNodes {
 
     public final static String NAME = "undefined";
 
-    @RubiniusPrimitive(name = NAME)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = NAME)
     public static abstract class UndefinedPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public UndefinedPrimitiveNode(RubyContext context, SourceSection sourceSection) {

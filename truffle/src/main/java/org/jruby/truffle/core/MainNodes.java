@@ -22,7 +22,7 @@ import org.jruby.truffle.language.RubyNode;
 @CoreClass(name = "main")
 public abstract class MainNodes {
 
-    @CoreMethod(names = "public", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
+    @CoreMethod(unsafeNeedsAudit = true, names = "public", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
     public abstract static class PublicNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.PublicNode publicNode;
@@ -39,7 +39,7 @@ public abstract class MainNodes {
         }
     }
 
-    @CoreMethod(names = "private", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
+    @CoreMethod(unsafeNeedsAudit = true, names = "private", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
     public abstract static class PrivateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.PrivateNode privateNode;

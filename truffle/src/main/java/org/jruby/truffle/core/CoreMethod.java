@@ -84,4 +84,6 @@ public @interface CoreMethod {
 
     UnsafeGroup[] unsafe() default {};
 
+    boolean unsafeNeedsAudit() default false;
+
 }

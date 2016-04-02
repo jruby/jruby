@@ -19,7 +19,7 @@ import org.jruby.truffle.RubyContext;
  */
 public abstract class ExceptionPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "exception_errno_error", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "exception_errno_error", needsSelf = false)
     public static abstract class ExceptionErrnoErrorPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public ExceptionErrnoErrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {

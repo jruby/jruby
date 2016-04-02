@@ -117,7 +117,7 @@ import static org.jruby.truffle.core.string.StringOperations.rope;
  */
 public abstract class StringPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "character_ascii_p")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "character_ascii_p")
     @ImportStatic(StringGuards.class)
     public static abstract class CharacterAsciiPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -145,7 +145,7 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "character_printable_p")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "character_printable_p")
     public static abstract class CharacterPrintablePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public CharacterPrintablePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -165,7 +165,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_append")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_append")
     public static abstract class StringAppendPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeConcatNode makeConcatNode;
@@ -197,7 +197,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_awk_split")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_awk_split")
     public static abstract class StringAwkSplitPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
@@ -279,7 +279,7 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "string_byte_substring")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_byte_substring")
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "string"),
             @NodeChild(type = RubyNode.class, value = "index"),
@@ -366,7 +366,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_check_null_safe", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_check_null_safe", needsSelf = false)
     public static abstract class StringCheckNullSafePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringCheckNullSafePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -389,7 +389,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_chr_at", lowerFixnumParameters = 0)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_chr_at", lowerFixnumParameters = 0)
     @ImportStatic(StringGuards.class)
     public static abstract class StringChrAtPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -440,7 +440,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_compare_substring")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_compare_substring")
     public static abstract class StringCompareSubstringPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -496,7 +496,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_equal", needsSelf = true)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_equal", needsSelf = true)
     @ImportStatic(StringGuards.class)
     public static abstract class StringEqualPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -632,7 +632,7 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "string_find_character")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_find_character")
     @ImportStatic(StringGuards.class)
     public static abstract class StringFindCharacterNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -705,7 +705,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_from_codepoint", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_from_codepoint", needsSelf = false)
     public static abstract class StringFromCodepointPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringFromCodepointPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -781,7 +781,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_to_f", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_to_f", needsSelf = false)
     public static abstract class StringToFPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringToFPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -800,7 +800,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_index", lowerFixnumParameters = 1)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_index", lowerFixnumParameters = 1)
     @ImportStatic(StringGuards.class)
     public static abstract class StringIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -902,7 +902,7 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_character_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })
     @ImportStatic(StringGuards.class)
     public static abstract class CharacterByteIndexNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -925,7 +925,7 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "string_byte_character_index", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_byte_character_index", needsSelf = false)
     @ImportStatic(StringGuards.class)
     public static abstract class StringByteCharacterIndexNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -978,7 +978,7 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "string_character_index", needsSelf = false, lowerFixnumParameters = 2)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_character_index", needsSelf = false, lowerFixnumParameters = 2)
     public static abstract class StringCharacterIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringCharacterIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -1081,7 +1081,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })
     @ImportStatic(StringGuards.class)
     public static abstract class StringByteIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -1192,7 +1192,7 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "string_previous_byte_index")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_previous_byte_index")
     public static abstract class StringPreviousByteIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringPreviousByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -1223,7 +1223,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_copy_from", needsSelf = false, lowerFixnumParameters = { 2, 3, 4 })
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_copy_from", needsSelf = false, lowerFixnumParameters = { 2, 3, 4 })
     public static abstract class StringCopyFromPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringCopyFromPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -1284,7 +1284,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_resize_capacity", needsSelf = false, lowerFixnumParameters = 1)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_resize_capacity", needsSelf = false, lowerFixnumParameters = 1)
     public static abstract class StringResizeCapacityPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringResizeCapacityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -1299,7 +1299,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_rindex", lowerFixnumParameters = 1)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_rindex", lowerFixnumParameters = 1)
     public static abstract class StringRindexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.GetByteNode patternGetByteNode;
@@ -1373,7 +1373,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_pattern", lowerFixnumParameters = { 0, 1 })
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_pattern", lowerFixnumParameters = { 0, 1 })
     public static abstract class StringPatternPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -1416,7 +1416,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_splice", needsSelf = false, lowerFixnumParameters = {2, 3})
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_splice", needsSelf = false, lowerFixnumParameters = {2, 3})
     public static abstract class StringSplicePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeConcatNode appendMakeConcatNode;
@@ -1523,7 +1523,7 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "string_to_inum")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_to_inum")
     public static abstract class StringToInumPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringToInumPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -1564,7 +1564,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_byte_append")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_byte_append")
     public static abstract class StringByteAppendPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeConcatNode makeConcatNode;
@@ -1599,7 +1599,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_substring", lowerFixnumParameters = { 0, 1 })
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_substring", lowerFixnumParameters = { 0, 1 })
     @ImportStatic(StringGuards.class)
     public static abstract class StringSubstringPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -1757,7 +1757,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_from_bytearray", needsSelf = false, lowerFixnumParameters = { 1, 2 })
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_from_bytearray", needsSelf = false, lowerFixnumParameters = { 1, 2 })
     public static abstract class StringFromByteArrayPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringFromByteArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {

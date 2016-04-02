@@ -28,7 +28,7 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 @CoreClass(name = "Math")
 public abstract class MathNodes {
 
-    @CoreMethod(names = "acos", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "acos", isModuleFunction = true, required = 1)
     public abstract static class ACosNode extends SimpleMonadicMathNode {
 
         public ACosNode(RubyContext context, SourceSection sourceSection) {
@@ -47,7 +47,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "acosh", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "acosh", isModuleFunction = true, required = 1)
     public abstract static class ACosHNode extends SimpleMonadicMathNode {
 
         public ACosHNode(RubyContext context, SourceSection sourceSection) {
@@ -72,7 +72,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "asin", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "asin", isModuleFunction = true, required = 1)
     public abstract static class ASinNode extends SimpleMonadicMathNode {
 
         public ASinNode(RubyContext context, SourceSection sourceSection) {
@@ -91,7 +91,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "asinh", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "asinh", isModuleFunction = true, required = 1)
     public abstract static class ASinHNode extends SimpleMonadicMathNode {
 
         public ASinHNode(RubyContext context, SourceSection sourceSection) {
@@ -121,7 +121,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "atan", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "atan", isModuleFunction = true, required = 1)
     public abstract static class ATanNode extends SimpleMonadicMathNode {
 
         public ATanNode(RubyContext context, SourceSection sourceSection) {
@@ -135,7 +135,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "atan2", isModuleFunction = true, required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = "atan2", isModuleFunction = true, required = 2)
     public abstract static class ATan2Node extends SimpleDyadicMathNode {
 
         public ATan2Node(RubyContext context, SourceSection sourceSection) {
@@ -149,7 +149,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "atanh", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "atanh", isModuleFunction = true, required = 1)
     public abstract static class ATanHNode extends SimpleMonadicMathNode {
 
         public ATanHNode(RubyContext context, SourceSection sourceSection) {
@@ -184,7 +184,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "cbrt", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "cbrt", isModuleFunction = true, required = 1)
     public abstract static class CbRtNode extends SimpleMonadicMathNode {
 
         public CbRtNode(RubyContext context, SourceSection sourceSection) {
@@ -198,7 +198,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "cos", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "cos", isModuleFunction = true, required = 1)
     public abstract static class CosNode extends SimpleMonadicMathNode {
 
         public CosNode(RubyContext context, SourceSection sourceSection) {
@@ -212,7 +212,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "cosh", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "cosh", isModuleFunction = true, required = 1)
     public abstract static class CosHNode extends SimpleMonadicMathNode {
 
         public CosHNode(RubyContext context, SourceSection sourceSection) {
@@ -226,7 +226,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "erf", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "erf", isModuleFunction = true, required = 1)
     public abstract static class ErfNode extends SimpleMonadicMathNode {
 
         public ErfNode(RubyContext context, SourceSection sourceSection) {
@@ -254,7 +254,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "erfc", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "erfc", isModuleFunction = true, required = 1)
     public abstract static class ErfcNode extends SimpleMonadicMathNode {
 
         public ErfcNode(RubyContext context, SourceSection sourceSection) {
@@ -295,7 +295,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "exp", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "exp", isModuleFunction = true, required = 1)
     public abstract static class ExpNode extends SimpleMonadicMathNode {
 
         public ExpNode(RubyContext context, SourceSection sourceSection) {
@@ -309,7 +309,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "frexp", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "frexp", isModuleFunction = true, required = 1)
     public abstract static class FrExpNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsANode isANode;
@@ -373,7 +373,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "gamma", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "gamma", isModuleFunction = true, required = 1)
     public abstract static class GammaNode extends SimpleMonadicMathNode {
 
         public GammaNode(RubyContext context, SourceSection sourceSection) {
@@ -426,7 +426,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "hypot", isModuleFunction = true, required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = "hypot", isModuleFunction = true, required = 2)
     public abstract static class HypotNode extends SimpleDyadicMathNode {
 
         public HypotNode(RubyContext context, SourceSection sourceSection) {
@@ -440,7 +440,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "ldexp", isModuleFunction = true, required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = "ldexp", isModuleFunction = true, required = 2)
     public abstract static class LdexpNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsANode isANode;
@@ -535,7 +535,7 @@ public abstract class MathNodes {
 
 
 
-    @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "lgamma", isModuleFunction = true, required = 1)
     public abstract static class LGammaNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsANode isANode;
@@ -588,7 +588,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "log", isModuleFunction = true, required = 1, optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "log", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class LogNode extends SimpleDyadicMathNode {
 
         public LogNode(RubyContext context, SourceSection sourceSection) {
@@ -646,7 +646,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "log10", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "log10", isModuleFunction = true, required = 1)
     public abstract static class Log10Node extends SimpleMonadicMathNode {
 
         public Log10Node(RubyContext context, SourceSection sourceSection) {
@@ -665,7 +665,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "log2", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "log2", isModuleFunction = true, required = 1)
     public abstract static class Log2Node extends SimpleMonadicMathNode {
 
         private final double LOG2 = Math.log(2);
@@ -686,7 +686,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "sin", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "sin", isModuleFunction = true, required = 1)
     public abstract static class SinNode extends SimpleMonadicMathNode {
 
         public SinNode(RubyContext context, SourceSection sourceSection) {
@@ -700,7 +700,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "sinh", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "sinh", isModuleFunction = true, required = 1)
     public abstract static class SinHNode extends SimpleMonadicMathNode {
 
         public SinHNode(RubyContext context, SourceSection sourceSection) {
@@ -714,7 +714,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "tan", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "tan", isModuleFunction = true, required = 1)
     public abstract static class TanNode extends SimpleMonadicMathNode {
 
         public TanNode(RubyContext context, SourceSection sourceSection) {
@@ -728,7 +728,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "tanh", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "tanh", isModuleFunction = true, required = 1)
     public abstract static class TanHNode extends SimpleMonadicMathNode {
 
         public TanHNode(RubyContext context, SourceSection sourceSection) {
@@ -742,7 +742,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "sqrt", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "sqrt", isModuleFunction = true, required = 1)
     public abstract static class SqrtNode extends SimpleMonadicMathNode {
 
         public SqrtNode(RubyContext context, SourceSection sourceSection) {

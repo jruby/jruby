@@ -57,7 +57,7 @@ public abstract class SymbolNodes {
         return wrapper;
     }
 
-    @CoreMethod(names = "all_symbols", onSingleton = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "all_symbols", onSingleton = true)
     public abstract static class AllSymbolsNode extends CoreMethodArrayArgumentsNode {
 
         public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {
@@ -73,7 +73,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = { "==", "eql?" }, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "==", "eql?" }, required = 1)
     public abstract static class EqualNode extends BinaryCoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -92,7 +92,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "encoding")
+    @CoreMethod(unsafeNeedsAudit = true, names = "encoding")
     public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
 
         public EncodingNode(RubyContext context, SourceSection sourceSection) {
@@ -106,7 +106,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "hash")
+    @CoreMethod(unsafeNeedsAudit = true, names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
         public HashNode(RubyContext context, SourceSection sourceSection) {
@@ -120,7 +120,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "to_proc")
+    @CoreMethod(unsafeNeedsAudit = true, names = "to_proc")
     public abstract static class ToProcNode extends CoreMethodArrayArgumentsNode {
 
         public ToProcNode(RubyContext context, SourceSection sourceSection) {
@@ -168,7 +168,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "to_s")
+    @CoreMethod(unsafeNeedsAudit = true, names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -182,7 +182,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {

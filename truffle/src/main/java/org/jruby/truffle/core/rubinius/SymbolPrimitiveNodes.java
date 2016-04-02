@@ -20,7 +20,7 @@ import org.jruby.truffle.RubyContext;
  */
 public abstract class SymbolPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "symbol_is_constant")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "symbol_is_constant")
     public static abstract class SymbolIsConstantPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public SymbolIsConstantPrimitiveNode(RubyContext context, SourceSection sourceSection) {

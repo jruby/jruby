@@ -33,7 +33,7 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
  */
 public abstract class ObjectPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "object_id")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "object_id")
     public abstract static class ObjectIDPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public ObjectIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -107,7 +107,7 @@ public abstract class ObjectPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "object_infect", needsSelf = false)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "object_infect", needsSelf = false)
     public static abstract class ObjectInfectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private IsTaintedNode isTaintedNode;

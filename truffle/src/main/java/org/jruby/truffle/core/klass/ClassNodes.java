@@ -231,7 +231,7 @@ public abstract class ClassNodes {
         return null;
     }
 
-    @CoreMethod(names = "new", needsBlock = true, rest = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "new", needsBlock = true, rest = true)
     public abstract static class NewNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode allocateNode;
@@ -260,7 +260,7 @@ public abstract class ClassNodes {
         }
     }
 
-    @CoreMethod(names = "initialize", optional = 1, needsBlock = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "initialize", optional = 1, needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.InitializeNode moduleInitializeNode;
@@ -328,7 +328,7 @@ public abstract class ClassNodes {
 
     }
 
-    @CoreMethod(names = "inherited", required = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(unsafeNeedsAudit = true, names = "inherited", required = 1, visibility = Visibility.PRIVATE)
     public abstract static class InheritedNode extends CoreMethodArrayArgumentsNode {
 
         public InheritedNode(RubyContext context, SourceSection sourceSection) {
@@ -342,7 +342,7 @@ public abstract class ClassNodes {
 
     }
 
-    @CoreMethod(names = "superclass")
+    @CoreMethod(unsafeNeedsAudit = true, names = "superclass")
     public abstract static class SuperClassNode extends CoreMethodArrayArgumentsNode {
 
         public SuperClassNode(RubyContext context, SourceSection sourceSection) {
@@ -377,7 +377,7 @@ public abstract class ClassNodes {
         }
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
     public abstract static class AllocateConstructorNode extends CoreMethodArrayArgumentsNode {
 
         public AllocateConstructorNode(RubyContext context, SourceSection sourceSection) {

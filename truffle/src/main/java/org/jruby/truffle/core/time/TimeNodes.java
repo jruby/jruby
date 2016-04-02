@@ -39,7 +39,7 @@ public abstract class TimeNodes {
     private static final DateTime ZERO = new DateTime(0);
 
     // We need it to copy the internal data for a call to Kernel#clone.
-    @CoreMethod(names = "initialize_copy", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -91,7 +91,7 @@ public abstract class TimeNodes {
         }
     }
 
-    @CoreMethod(names = "localtime_internal", optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "localtime_internal", optional = 1)
     public abstract static class LocalTimeNode extends CoreMethodArrayArgumentsNode {
         @Child private ReadTimeZoneNode readTimeZoneNode;
 
@@ -136,7 +136,7 @@ public abstract class TimeNodes {
 
     }
 
-    @CoreMethod(names = "add_internal!", required = 2, visibility = Visibility.PROTECTED)
+    @CoreMethod(unsafeNeedsAudit = true, names = "add_internal!", required = 2, visibility = Visibility.PROTECTED)
     public abstract static class AddInternalNode extends CoreMethodArrayArgumentsNode {
 
         public AddInternalNode(RubyContext context, SourceSection sourceSection) {
@@ -154,7 +154,7 @@ public abstract class TimeNodes {
         }
     }
 
-    @CoreMethod(names = "dup_internal", required = 1, visibility = Visibility.PROTECTED)
+    @CoreMethod(unsafeNeedsAudit = true, names = "dup_internal", required = 1, visibility = Visibility.PROTECTED)
     public static abstract class DupInternalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -177,7 +177,7 @@ public abstract class TimeNodes {
         }
     }
 
-    @CoreMethod(names = "gmtime")
+    @CoreMethod(unsafeNeedsAudit = true, names = "gmtime")
     public abstract static class GmTimeNode extends CoreMethodArrayArgumentsNode {
 
         public GmTimeNode(RubyContext context, SourceSection sourceSection) {
@@ -198,7 +198,7 @@ public abstract class TimeNodes {
 
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;

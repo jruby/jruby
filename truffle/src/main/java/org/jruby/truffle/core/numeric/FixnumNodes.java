@@ -39,7 +39,7 @@ import java.math.BigInteger;
 @CoreClass(name = "Fixnum")
 public abstract class FixnumNodes {
 
-    @CoreMethod(names = "-@")
+    @CoreMethod(unsafeNeedsAudit = true, names = "-@")
     public abstract static class NegNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignumNode;
@@ -78,7 +78,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "+", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "+", required = 1)
     public abstract static class AddNode extends BignumNodes.BignumCoreMethodNode {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
@@ -127,7 +127,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "-", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "-", required = 1)
     public abstract static class SubNode extends BignumNodes.BignumCoreMethodNode {
 
         public SubNode(RubyContext context, SourceSection sourceSection) {
@@ -176,7 +176,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "*", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "*", required = 1)
     public abstract static class MulNode extends BignumNodes.BignumCoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -226,7 +226,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = { "/", "__slash__" }, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "/", "__slash__" }, required = 1)
     public abstract static class DivNode extends CoreMethodArrayArgumentsNode {
 
         private final BranchProfile bGreaterZero = BranchProfile.create();
@@ -380,7 +380,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "%", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "%", required = 1)
     public abstract static class ModNode extends BignumNodes.BignumCoreMethodNode {
 
         private final BranchProfile adjustProfile = BranchProfile.create();
@@ -447,7 +447,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "divmod", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodArrayArgumentsNode {
 
         @Child private GeneralDivModNode divModNode;
@@ -474,7 +474,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "<", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(unsafeNeedsAudit = true, names = "<", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class LessNode extends CoreMethodArrayArgumentsNode {
 
         public LessNode(RubyContext context, SourceSection sourceSection) {
@@ -516,7 +516,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "<=", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(unsafeNeedsAudit = true, names = "<=", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class LessEqualNode extends CoreMethodArrayArgumentsNode {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -558,7 +558,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = { "==", "===" }, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "==", "===" }, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode reverseCallNode;
@@ -603,7 +603,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "<=>", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
@@ -646,7 +646,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = ">=", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(unsafeNeedsAudit = true, names = ">=", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class GreaterEqualNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -688,7 +688,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = ">", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(unsafeNeedsAudit = true, names = ">", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class GreaterNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
@@ -731,7 +731,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "~")
+    @CoreMethod(unsafeNeedsAudit = true, names = "~")
     public abstract static class ComplementNode extends CoreMethodArrayArgumentsNode {
 
         public ComplementNode(RubyContext context, SourceSection sourceSection) {
@@ -750,7 +750,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "&", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "&", required = 1)
     public abstract static class BitAndNode extends BignumNodes.BignumCoreMethodNode {
 
         public BitAndNode(RubyContext context, SourceSection sourceSection) {
@@ -783,7 +783,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "|", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "|", required = 1)
     public abstract static class BitOrNode extends BignumNodes.BignumCoreMethodNode {
 
         public BitOrNode(RubyContext context, SourceSection sourceSection) {
@@ -806,7 +806,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "^", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "^", required = 1)
     public abstract static class BitXOrNode extends BignumNodes.BignumCoreMethodNode {
 
         public BitXOrNode(RubyContext context, SourceSection sourceSection) {
@@ -835,7 +835,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(unsafeNeedsAudit = true, names = "<<", required = 1, lowerFixnumParameters = 0)
     public abstract static class LeftShiftNode extends BignumNodes.BignumCoreMethodNode {
 
         @Child private RightShiftNode rightShiftNode;
@@ -903,7 +903,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(unsafeNeedsAudit = true, names = ">>", required = 1, lowerFixnumParameters = 0)
     public abstract static class RightShiftNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode fallbackCallNode;
@@ -979,7 +979,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = { "abs", "magnitude" })
+    @CoreMethod(unsafeNeedsAudit = true, names = { "abs", "magnitude" })
     public abstract static class AbsNode extends CoreMethodArrayArgumentsNode {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {
@@ -1014,7 +1014,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "bit_length")
+    @CoreMethod(unsafeNeedsAudit = true, names = "bit_length")
     public abstract static class BitLengthNode extends CoreMethodArrayArgumentsNode {
 
         public BitLengthNode(RubyContext context, SourceSection sourceSection) {
@@ -1041,7 +1041,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "floor")
+    @CoreMethod(unsafeNeedsAudit = true, names = "floor")
     public abstract static class FloorNode extends CoreMethodArrayArgumentsNode {
 
         public FloorNode(RubyContext context, SourceSection sourceSection) {
@@ -1060,7 +1060,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "inspect")
+    @CoreMethod(unsafeNeedsAudit = true, names = "inspect")
     public abstract static class InspectNode extends CoreMethodArrayArgumentsNode {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
@@ -1081,7 +1081,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "size", needsSelf = false)
+    @CoreMethod(unsafeNeedsAudit = true, names = "size", needsSelf = false)
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -1095,7 +1095,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "to_f")
+    @CoreMethod(unsafeNeedsAudit = true, names = "to_f")
     public abstract static class ToFNode extends CoreMethodArrayArgumentsNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
@@ -1114,7 +1114,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "to_s", optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "to_s", optional = 1)
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -1146,7 +1146,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "zero?")
+    @CoreMethod(unsafeNeedsAudit = true, names = "zero?")
     public abstract static class ZeroNode extends CoreMethodArrayArgumentsNode {
 
         public ZeroNode(RubyContext context, SourceSection sourceSection) {

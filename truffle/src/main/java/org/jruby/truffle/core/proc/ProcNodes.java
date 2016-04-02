@@ -81,7 +81,7 @@ public abstract class ProcNodes {
         PROC, LAMBDA
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
@@ -96,7 +96,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = "new", constructor = true, needsBlock = true, rest = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "new", constructor = true, needsBlock = true, rest = true)
     public abstract static class ProcNewNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode initializeNode;
@@ -160,7 +160,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = { "dup", "clone" })
+    @CoreMethod(unsafeNeedsAudit = true, names = { "dup", "clone" })
     public abstract static class DupNode extends UnaryCoreMethodNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -188,7 +188,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = "arity")
+    @CoreMethod(unsafeNeedsAudit = true, names = "arity")
     public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
 
         public ArityNode(RubyContext context, SourceSection sourceSection) {
@@ -202,7 +202,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = "binding")
+    @CoreMethod(unsafeNeedsAudit = true, names = "binding")
     public abstract static class BindingNode extends CoreMethodArrayArgumentsNode {
 
         public BindingNode(RubyContext context, SourceSection sourceSection) {
@@ -217,7 +217,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = {"call", "[]", "yield"}, rest = true, needsBlock = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = {"call", "[]", "yield"}, rest = true, needsBlock = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldNode yieldNode;
@@ -239,7 +239,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = "lambda?")
+    @CoreMethod(unsafeNeedsAudit = true, names = "lambda?")
     public abstract static class LambdaNode extends CoreMethodArrayArgumentsNode {
 
         public LambdaNode(RubyContext context, SourceSection sourceSection) {
@@ -253,7 +253,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = "parameters")
+    @CoreMethod(unsafeNeedsAudit = true, names = "parameters")
     public abstract static class ParametersNode extends CoreMethodArrayArgumentsNode {
 
         public ParametersNode(RubyContext context, SourceSection sourceSection) {
@@ -270,7 +270,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = "source_location")
+    @CoreMethod(unsafeNeedsAudit = true, names = "source_location")
     public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {

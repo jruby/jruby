@@ -214,7 +214,7 @@ public abstract class KernelNodes {
      * Check if operands are the same object or call #==.
      * Known as rb_equal() in MRI. The fact Kernel#=== uses this is pure coincidence.
      */
-    @CoreMethod(names = "===", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "===", required = 1)
     public abstract static class SameOrEqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
@@ -257,7 +257,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "=~", required = 1, needsSelf = false)
+    @CoreMethod(unsafeNeedsAudit = true, names = "=~", required = 1, needsSelf = false)
     public abstract static class MatchNode extends CoreMethodArrayArgumentsNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
@@ -271,7 +271,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "!~", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "!~", required = 1)
     public abstract static class NotMatchNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode matchNode;
@@ -288,7 +288,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "<=>" }, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "<=>" }, required = 1)
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         @Child private SameOrEqualNode equalNode;
@@ -309,7 +309,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "binding", isModuleFunction = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "binding", isModuleFunction = true)
     public abstract static class BindingNode extends CoreMethodArrayArgumentsNode {
 
         public BindingNode(RubyContext context, SourceSection sourceSection) {
@@ -327,7 +327,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "block_given?", isModuleFunction = true, needsCallerFrame = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "block_given?", isModuleFunction = true, needsCallerFrame = true)
     public abstract static class BlockGivenNode extends CoreMethodArrayArgumentsNode {
 
         public BlockGivenNode(RubyContext context, SourceSection sourceSection) {
@@ -348,7 +348,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "__callee__", needsSelf = false)
+    @CoreMethod(unsafeNeedsAudit = true, names = "__callee__", needsSelf = false)
     public abstract static class CalleeNameNode extends CoreMethodArrayArgumentsNode {
 
         public CalleeNameNode(RubyContext context, SourceSection sourceSection) {
@@ -363,7 +363,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = { 0, 1 })
+    @CoreMethod(unsafeNeedsAudit = true, names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = { 0, 1 })
     public abstract static class CallerLocationsNode extends CoreMethodArrayArgumentsNode {
 
         public CallerLocationsNode(RubyContext context, SourceSection sourceSection) {
@@ -404,7 +404,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "class")
+    @CoreMethod(unsafeNeedsAudit = true, names = "class")
     public abstract static class KernelClassNode extends CoreMethodArrayArgumentsNode {
 
         @Child private LogicalClassNode classNode;
@@ -451,7 +451,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "clone", taintFromSelf = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "clone", taintFromSelf = true)
     public abstract static class CloneNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile frozenProfile = ConditionProfile.createBinaryProfile();
@@ -494,7 +494,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "dup", taintFromSelf = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "dup", taintFromSelf = true)
     public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CopyNode copyNode;
@@ -518,7 +518,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3, lowerFixnumParameters = 3)
+    @CoreMethod(unsafeNeedsAudit = true, names = "eval", isModuleFunction = true, required = 1, optional = 3, lowerFixnumParameters = 3)
     @NodeChildren({
             @NodeChild(value = "source", type = RubyNode.class),
             @NodeChild(value = "binding", type = RubyNode.class),
@@ -726,7 +726,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "exec", isModuleFunction = true, required = 1, rest = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "exec", isModuleFunction = true, required = 1, rest = true)
     public abstract static class ExecNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toHashNode;
@@ -793,7 +793,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "fork", isModuleFunction = true, rest = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "fork", isModuleFunction = true, rest = true)
     public abstract static class ForkNode extends CoreMethodArrayArgumentsNode {
 
         public ForkNode(RubyContext context, SourceSection sourceSection) {
@@ -810,7 +810,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "freeze")
+    @CoreMethod(unsafeNeedsAudit = true, names = "freeze")
     public abstract static class KernelFreezeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FreezeNode freezeNode;
@@ -827,7 +827,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "frozen?")
+    @CoreMethod(unsafeNeedsAudit = true, names = "frozen?")
     public abstract static class KernelFrozenNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsFrozenNode isFrozenNode;
@@ -848,7 +848,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "gets", isModuleFunction = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "gets", isModuleFunction = true)
     public abstract static class GetsNode extends CoreMethodArrayArgumentsNode {
 
         public GetsNode(RubyContext context, SourceSection sourceSection) {
@@ -899,7 +899,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "hash")
+    @CoreMethod(unsafeNeedsAudit = true, names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
         public HashNode(RubyContext context, SourceSection sourceSection) {
@@ -939,7 +939,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "initialize_copy", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -960,7 +960,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "initialize_dup", "initialize_clone" }, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "initialize_dup", "initialize_clone" }, required = 1)
     public abstract static class InitializeDupCloneNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode initializeCopyNode;
@@ -977,7 +977,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "instance_of?", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "instance_of?", required = 1)
     public abstract static class InstanceOfNode extends CoreMethodArrayArgumentsNode {
 
         @Child private LogicalClassNode classNode;
@@ -994,7 +994,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "instance_variable_defined?", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "instance_variable_defined?", required = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
             @NodeChild(type = RubyNode.class, value = "name")
@@ -1019,7 +1019,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "instance_variable_get", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "instance_variable_get", required = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
             @NodeChild(type = RubyNode.class, value = "name")
@@ -1078,7 +1078,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "instance_variable_set", "__instance_variable_set__" }, raiseIfFrozenSelf = true, required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "instance_variable_set", "__instance_variable_set__" }, raiseIfFrozenSelf = true, required = 2)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
             @NodeChild(type = RubyNode.class, value = "name"),
@@ -1140,7 +1140,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "remove_instance_variable", raiseIfFrozenSelf = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "remove_instance_variable", raiseIfFrozenSelf = true, required = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
             @NodeChild(type = RubyNode.class, value = "name")
@@ -1170,7 +1170,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "instance_variables")
+    @CoreMethod(unsafeNeedsAudit = true, names = "instance_variables")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 
         @Child private BasicObjectNodes.InstanceVariablesNode instanceVariablesNode;
@@ -1187,7 +1187,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "is_a?", "kind_of?" }, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "is_a?", "kind_of?" }, required = 1)
     public abstract static class KernelIsANode extends CoreMethodArrayArgumentsNode {
 
         @Child IsANode isANode;
@@ -1210,7 +1210,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "lambda", isModuleFunction = true, needsBlock = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "lambda", isModuleFunction = true, needsBlock = true)
     public abstract static class LambdaNode extends CoreMethodArrayArgumentsNode {
 
         public LambdaNode(RubyContext context, SourceSection sourceSection) {
@@ -1245,7 +1245,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "local_variables", needsSelf = false)
+    @CoreMethod(unsafeNeedsAudit = true, names = "local_variables", needsSelf = false)
     public abstract static class LocalVariablesNode extends CoreMethodArrayArgumentsNode {
 
         public LocalVariablesNode(RubyContext context, SourceSection sourceSection) {
@@ -1261,7 +1261,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "__method__", needsSelf = false)
+    @CoreMethod(unsafeNeedsAudit = true, names = "__method__", needsSelf = false)
     public abstract static class MethodNameNode extends CoreMethodArrayArgumentsNode {
 
         public MethodNameNode(RubyContext context, SourceSection sourceSection) {
@@ -1277,7 +1277,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "method", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "method", required = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
             @NodeChild(type = RubyNode.class, value = "name")
@@ -1348,7 +1348,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "methods", optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "methods", optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
             @NodeChild(type = RubyNode.class, value = "regular")
@@ -1390,7 +1390,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "nil?", needsSelf = false)
+    @CoreMethod(unsafeNeedsAudit = true, names = "nil?", needsSelf = false)
     public abstract static class NilNode extends CoreMethodArrayArgumentsNode {
 
         public NilNode(RubyContext context, SourceSection sourceSection) {
@@ -1403,7 +1403,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "private_methods", optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "private_methods", optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
             @NodeChild(type = RubyNode.class, value = "includeAncestors")
@@ -1433,7 +1433,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "proc", isModuleFunction = true, needsBlock = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "proc", isModuleFunction = true, needsBlock = true)
     public abstract static class ProcNode extends CoreMethodArrayArgumentsNode {
 
         @Child ProcNewNode procNewNode;
@@ -1450,7 +1450,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "protected_methods", optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "protected_methods", optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
             @NodeChild(type = RubyNode.class, value = "includeAncestors")
@@ -1480,7 +1480,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "public_methods", optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "public_methods", optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
             @NodeChild(type = RubyNode.class, value = "includeAncestors")
@@ -1510,7 +1510,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "public_send", needsBlock = true, required = 1, rest = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "public_send", needsBlock = true, required = 1, rest = true)
     public abstract static class PublicSendNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dispatchNode;
@@ -1534,7 +1534,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "rand", isModuleFunction = true, optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "rand", isModuleFunction = true, optional = 1)
     public abstract static class RandNode extends CoreMethodArrayArgumentsNode {
 
         public RandNode(RubyContext context, SourceSection sourceSection) {
@@ -1568,7 +1568,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "require", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "require", isModuleFunction = true, required = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "feature")
     })
@@ -1617,7 +1617,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "require_relative", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "require_relative", isModuleFunction = true, required = 1)
     public abstract static class RequireRelativeNode extends CoreMethodArrayArgumentsNode {
 
         public RequireRelativeNode(RubyContext context, SourceSection sourceSection) {
@@ -1665,7 +1665,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "respond_to?", required = 1, optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "respond_to?", required = 1, optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
             @NodeChild(type = RubyNode.class, value = "name"),
@@ -1742,7 +1742,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "respond_to_missing?", required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = "respond_to_missing?", required = 2)
     public abstract static class RespondToMissingNode extends CoreMethodArrayArgumentsNode {
 
         public RespondToMissingNode(RubyContext context, SourceSection sourceSection) {
@@ -1761,7 +1761,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "set_trace_func", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "set_trace_func", isModuleFunction = true, required = 1)
     public abstract static class SetTraceFuncNode extends CoreMethodArrayArgumentsNode {
 
         public SetTraceFuncNode(RubyContext context, SourceSection sourceSection) {
@@ -1781,7 +1781,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "singleton_class")
+    @CoreMethod(unsafeNeedsAudit = true, names = "singleton_class")
     public abstract static class SingletonClassMethodNode extends CoreMethodArrayArgumentsNode {
 
         @Child private SingletonClassNode singletonClassNode;
@@ -1798,7 +1798,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "singleton_methods", optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "singleton_methods", optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
             @NodeChild(type = RubyNode.class, value = "includeAncestors")
@@ -1834,7 +1834,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "String", isModuleFunction = true, required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "String", isModuleFunction = true, required = 1)
     public abstract static class StringNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toS;
@@ -1856,7 +1856,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "sleep", isModuleFunction = true, optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "sleep", isModuleFunction = true, optional = 1)
     public abstract static class SleepNode extends CoreMethodArrayArgumentsNode {
 
         @Child NumericToFloatNode floatCastNode;
@@ -1941,7 +1941,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "format", "sprintf" }, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
+    @CoreMethod(unsafeNeedsAudit = true, names = { "format", "sprintf" }, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class SprintfNode extends CoreMethodArrayArgumentsNode {
 
@@ -2040,7 +2040,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "taint")
+    @CoreMethod(unsafeNeedsAudit = true, names = "taint")
     public abstract static class KernelTaintNode extends CoreMethodArrayArgumentsNode {
 
         @Child private TaintNode taintNode;
@@ -2060,7 +2060,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "tainted?")
+    @CoreMethod(unsafeNeedsAudit = true, names = "tainted?")
     public abstract static class KernelIsTaintedNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsTaintedNode isTaintedNode;
@@ -2105,7 +2105,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "to_s")
+    @CoreMethod(unsafeNeedsAudit = true, names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         @Child private LogicalClassNode classNode;
@@ -2134,7 +2134,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "untaint")
+    @CoreMethod(unsafeNeedsAudit = true, names = "untaint")
     public abstract static class UntaintNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsFrozenNode isFrozenNode;

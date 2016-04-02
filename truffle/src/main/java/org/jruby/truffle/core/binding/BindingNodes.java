@@ -104,7 +104,7 @@ public abstract class BindingNodes {
         return null;
     }
 
-    @CoreMethod(names = { "dup", "clone" })
+    @CoreMethod(unsafeNeedsAudit = true, names = { "dup", "clone" })
     public abstract static class DupNode extends UnaryCoreMethodNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -133,7 +133,7 @@ public abstract class BindingNodes {
     }
 
     @ImportStatic(BindingNodes.class)
-    @CoreMethod(names = "local_variable_get", required = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "local_variable_get", required = 1)
     public abstract static class LocalVariableGetNode extends CoreMethodArrayArgumentsNode {
 
         private final DynamicObject dollarUnderscore;
@@ -231,7 +231,7 @@ public abstract class BindingNodes {
     }
 
     @ImportStatic(BindingNodes.class)
-    @CoreMethod(names = "local_variable_set", required = 2)
+    @CoreMethod(unsafeNeedsAudit = true, names = "local_variable_set", required = 2)
     public abstract static class LocalVariableSetNode extends CoreMethodArrayArgumentsNode {
 
         private final DynamicObject dollarUnderscore;
@@ -297,7 +297,7 @@ public abstract class BindingNodes {
         }
     }
 
-    @CoreMethod(names = "local_variables")
+    @CoreMethod(unsafeNeedsAudit = true, names = "local_variables")
     public abstract static class LocalVariablesNode extends CoreMethodArrayArgumentsNode {
 
         public LocalVariablesNode(RubyContext context, SourceSection sourceSection) {
@@ -328,7 +328,7 @@ public abstract class BindingNodes {
         }
     }
 
-    @CoreMethod(names = "receiver")
+    @CoreMethod(unsafeNeedsAudit = true, names = "receiver")
     public abstract static class ReceiverNode extends UnaryCoreMethodNode {
 
         public ReceiverNode(RubyContext context, SourceSection sourceSection) {
@@ -341,7 +341,7 @@ public abstract class BindingNodes {
         }
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {

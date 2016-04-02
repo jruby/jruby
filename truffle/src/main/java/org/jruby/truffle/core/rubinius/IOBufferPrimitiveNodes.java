@@ -59,7 +59,7 @@ public abstract class IOBufferPrimitiveNodes {
     private static final int IOBUFFER_SIZE = 32768;
     private static final int STACK_BUF_SZ = 8192;
 
-    @RubiniusPrimitive(name = "iobuffer_allocate")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "iobuffer_allocate")
     public static abstract class IOBufferAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
@@ -80,7 +80,7 @@ public abstract class IOBufferPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "iobuffer_unshift", lowerFixnumParameters = 1)
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "iobuffer_unshift", lowerFixnumParameters = 1)
     public static abstract class IOBufferUnshiftPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOBufferUnshiftPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -112,7 +112,7 @@ public abstract class IOBufferPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "iobuffer_fill")
+    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "iobuffer_fill")
     public static abstract class IOBufferFillPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOBufferFillPrimitiveNode(RubyContext context, SourceSection sourceSection) {
