@@ -223,6 +223,7 @@ public class Options {
     public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
 
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE = bool(TRUFFLE, "truffle.platform.safe", false, "Disallow any unsafe access to the platform, such as IO");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_PUTS = bool(TRUFFLE, "truffle.platform.safe_puts", true, "Allow Truffle::Primitive.safe_puts.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_USE_JAVA = bool(TRUFFLE, "truffle.platform.use_java", false, "Use a pure-Java platform, so no native POSIX.");
 
     public static final Option<Boolean> TRUFFLE_COVERAGE = bool(TRUFFLE, "truffle.coverage", false, "Enable coverage (will be enabled by default in the future - currently has some bugs).");

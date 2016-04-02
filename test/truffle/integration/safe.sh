@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
-
 function run {
   ruby -X+T -Xtruffle.platform.safe=true "$@"
 }
@@ -17,6 +15,7 @@ function unsafe {
 #unsafe -e "puts 'hello, world'"
 safe -e "14"
 safe -e "Truffle::Primitive.safe_puts 'hello, world'"
+unsafe -Xtruffle.platform.safe_puts=false -e "Truffle::Primitive.safe_puts 'hello, world'"
 
 if [[ `run -e "Truffle::Primitive.safe_puts 'foo © bar'"` != 'foo ? bar' ]]
 then

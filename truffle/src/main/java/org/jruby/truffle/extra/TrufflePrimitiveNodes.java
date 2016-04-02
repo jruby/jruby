@@ -428,6 +428,10 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject safePuts(DynamicObject string) {
+            if (!getContext().getOptions().PLATFORM_SAFE_PUTS) {
+                throw new RaiseException(coreLibrary().internalErrorUnsafe(this));
+            }
+
             for (char c : string.toString().toCharArray()) {
                 if (isAsciiPrintable(c)) {
                     System.out.print(c);

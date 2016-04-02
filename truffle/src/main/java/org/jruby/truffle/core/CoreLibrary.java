@@ -1372,6 +1372,10 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(rangeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    public DynamicObject internalErrorUnsafe(Node currentNode) {
+        return internalError("unsafe operation", currentNode, null);
+    }
+
     public DynamicObject internalError(String message, Node currentNode) {
         return internalError(message, currentNode, null);
     }
