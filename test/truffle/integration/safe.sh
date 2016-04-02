@@ -16,6 +16,7 @@ safe -e "14"
 safe -e "Truffle::Primitive.safe_puts 'hello, world'"
 #unsafe -e "puts 'hello, world'"
 unsafe -e '`echo foo`'
+safe -Xtruffle.platform.safe.processes=true -e '`echo foo`'
 unsafe -Xtruffle.platform.safe_puts=false -e "Truffle::Primitive.safe_puts 'hello, world'"
 
 if [[ `run -e "Truffle::Primitive.safe_puts 'foo © bar'"` != 'foo ? bar' ]]

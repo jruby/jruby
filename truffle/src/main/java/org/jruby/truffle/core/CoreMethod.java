@@ -11,6 +11,7 @@ package org.jruby.truffle.core;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -81,6 +82,6 @@ public @interface CoreMethod {
 
     boolean returnsEnumeratorIfNoBlock() default false;
 
-    boolean unsafe() default false;
+    UnsafeGroup[] unsafe() default {};
 
 }

@@ -128,6 +128,7 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.ByteList;
 
 import java.io.BufferedReader;
@@ -145,7 +146,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
 
-    @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1, unsafe = true)
+    @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1, unsafe = {UnsafeGroup.PROCESSES })
     public abstract static class BacktickNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toHashNode;

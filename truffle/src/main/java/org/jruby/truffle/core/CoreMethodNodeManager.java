@@ -24,6 +24,7 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -40,6 +41,7 @@ import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.parser.jruby.Translator;
+import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -234,7 +236,7 @@ public class CoreMethodNodeManager {
 
         RubyNode sequence;
 
-        if (context.getOptions().PLATFORM_SAFE && method.unsafe()) {
+        if (context.getOptions().PLATFORM_SAFE && !isSafe(context, method)) {
             sequence = new UnsafeNode(context, sourceSection);
         } else {
             sequence = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
@@ -254,6 +256,28 @@ public class CoreMethodNodeManager {
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, method.unsupportedOperationBehavior());
 
         return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode, false);
+    }
+
+    private static boolean isSafe(RubyContext context, CoreMethod method) {
+        final Options options = context.getOptions();
+
+        for (UnsafeGroup group : method.unsafe()) {
+            final boolean option;
+
+            switch (group) {
+                case PROCESSES:
+                    option = options.PLATFORM_SAFE_PROCESSES;
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+
+            if (!option) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public void allMethodInstalled() {
