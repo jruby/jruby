@@ -21,7 +21,7 @@ public final class ForeignIsExecutableNode extends ForeignIsExecutableBaseNode {
 
     @Override
     public Object access(VirtualFrame frame, DynamicObject object) {
-        return RubyGuards.isRubyMethod(object);
+        return RubyGuards.isRubyMethod(object) || RubyGuards.isRubyProc(object);
     }
 
 }
