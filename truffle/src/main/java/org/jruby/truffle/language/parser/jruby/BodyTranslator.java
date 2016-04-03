@@ -2906,10 +2906,23 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitStrNode(org.jruby.ast.StrNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+
         final ByteList byteList = node.getValue();
         final int codeRange = node.getCodeRange();
         final Rope rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
-        final RubyNode ret = new StringLiteralNode(context, translate(node.getPosition()), rope);
+
+        final RubyNode ret;
+
+        if (node.isFrozen()) {
+            final DynamicObject frozenString = context.getFrozenStrings().getFrozenString(rope);
+
+            ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().METHOD,
+                    new ObjectLiteralNode(context, null, frozenString));
+        } else {
+            ret = new StringLiteralNode(context, sourceSection, rope);
+        }
+
         return addNewlineIfNeeded(node, ret);
     }
 
