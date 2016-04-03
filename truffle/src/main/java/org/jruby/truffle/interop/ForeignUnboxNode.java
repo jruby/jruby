@@ -14,6 +14,7 @@ import com.oracle.truffle.api.interop.AcceptMessage;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyObjectType;
@@ -26,7 +27,7 @@ public final class ForeignUnboxNode extends ForeignUnboxBaseNode {
     @Override
     public Object access(VirtualFrame frame, DynamicObject object) {
         if (stringProfile.profile(RubyGuards.isRubyString(object))) {
-            return StringOperations.getByteListReadOnly(object).get(0);
+            return Layouts.STRING.getRope(object).get(0);
         } else {
             return object;
         }
