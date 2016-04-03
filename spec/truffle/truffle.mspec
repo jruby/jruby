@@ -16,6 +16,10 @@ class MSpecScript
     set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G -Xtruffle.coverage=true]
   end
 
+  set :command_line, [
+    "spec/ruby/command_line"
+  ]
+
   set :language, [
     "spec/ruby/language"
   ]
