@@ -12,6 +12,7 @@ package org.jruby.truffle.interop;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.AcceptMessage;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
@@ -20,9 +21,11 @@ import org.jruby.truffle.language.RubyObjectType;
 @AcceptMessage(value = "UNBOX", receiverType = RubyObjectType.class, language = RubyLanguage.class)
 public final class ForeignUnboxNode extends ForeignUnboxBaseNode {
 
+    private final ConditionProfile stringProfile = ConditionProfile.createBinaryProfile();
+
     @Override
     public Object access(VirtualFrame frame, DynamicObject object) {
-        if (RubyGuards.isRubyString(object)) {
+        if (stringProfile.profile(RubyGuards.isRubyString(object))) {
             return StringOperations.getByteListReadOnly(object).get(0);
         } else {
             return object;
