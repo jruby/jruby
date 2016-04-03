@@ -2,4 +2,4 @@
 
 require_relative 'freeze_magic_comment_required_no_comment'
 
-p "abc".freeze.object_id != $second_literal_id
+p "abc".object_id != $second_literal_id
