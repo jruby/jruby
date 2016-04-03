@@ -11,7 +11,6 @@ package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -40,7 +39,7 @@ public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
 
     @Override
     public Object access(VirtualFrame frame, DynamicObject object, Object[] arguments) {
-        return getHelperNode().executeExecute(frame, object, arguments);
+        return getHelperNode().executeCall(frame, object, arguments);
     }
 
     private HelperNode getHelperNode() {
@@ -60,52 +59,119 @@ public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
     })
     protected static abstract class HelperNode extends RubyNode {
 
-        @Child private IndirectCallNode callNode;
-
         public HelperNode(RubyContext context,
                                  SourceSection sourceSection) {
             super(context, sourceSection);
-            callNode = Truffle.getRuntime().createIndirectCallNode();
         }
 
-        public abstract Object executeExecute(VirtualFrame frame, Object receiver, Object[] arguments);
+        public abstract Object executeCall(VirtualFrame frame, Object receiver, Object[] arguments);
 
-        @Specialization(guards = {"isRubyProc(proc)", "proc == cachedProc"})
-        protected Object doCallProc(VirtualFrame frame,
-                                    DynamicObject proc,
-                                    Object[] arguments,
-                                    @Cached("proc") DynamicObject cachedProc,
-                                    @Cached("create(getCallTarget(cachedProc))") DirectCallNode callNode) {
-            return callNode.call(frame, RubyArguments.pack(Layouts.PROC.getDeclarationFrame(cachedProc), null, Layouts.PROC.getMethod(cachedProc), DeclarationContext.METHOD, null, Layouts.PROC.getSelf(cachedProc), null, arguments));
+        @Specialization(
+                guards = {
+                        "isRubyProc(proc)",
+                        "proc == cachedProc"
+                },
+                limit = "getCacheLimit()"
+        )
+        protected Object callProcCached(VirtualFrame frame,
+                                        DynamicObject proc,
+                                        Object[] arguments,
+                                        @Cached("proc") DynamicObject cachedProc,
+                                        @Cached("create(getProcCallTarget(cachedProc))") DirectCallNode callNode) {
+            return callNode.call(
+                    frame,
+                    RubyArguments.pack(
+                            Layouts.PROC.getDeclarationFrame(cachedProc),
+                            null,
+                            Layouts.PROC.getMethod(cachedProc),
+                            DeclarationContext.METHOD,
+                            null,
+                            Layouts.PROC.getSelf(cachedProc),
+                            null,
+                            arguments));
         }
 
-        @Specialization(guards = "isRubyProc(proc)")
-        protected Object doCallProc(VirtualFrame frame, DynamicObject proc, Object[] arguments) {
-            return callNode.call(frame, Layouts.PROC.getCallTargetForType(proc), RubyArguments.pack(Layouts.PROC.getDeclarationFrame(proc), null, Layouts.PROC.getMethod(proc), DeclarationContext.METHOD, null, Layouts.PROC.getSelf(proc), null, arguments));
+        @Specialization(
+                guards = "isRubyProc(proc)",
+                contains = "callProcCached"
+        )
+        protected Object callProcUncached(VirtualFrame frame,
+                                          DynamicObject proc,
+                                          Object[] arguments,
+                                          @Cached("create()") IndirectCallNode callNode) {
+            return callNode.call(
+                    frame,
+                    getProcCallTarget(proc),
+                    RubyArguments.pack(
+                            Layouts.PROC.getDeclarationFrame(proc),
+                            null,
+                            Layouts.PROC.getMethod(proc),
+                            DeclarationContext.METHOD,
+                            null,
+                            Layouts.PROC.getSelf(proc),
+                            null,
+                            arguments));
         }
 
-        @Specialization(guards = {"isRubyMethod(method)", "method == cachedMethod"})
-        protected Object doCall(VirtualFrame frame,
+        protected CallTarget getProcCallTarget(DynamicObject proc) {
+            return Layouts.PROC.getCallTargetForType(proc);
+        }
+
+        @Specialization(
+                guards = {
+                        "isRubyMethod(method)",
+                        "method == cachedMethod"
+                },
+                limit = "getCacheLimit()"
+        )
+        protected Object callMethodCached(VirtualFrame frame,
                                 DynamicObject method,
                                 Object[] arguments,
                                 @Cached("method") DynamicObject cachedMethod,
-                                @Cached("getMethod(cachedMethod)") InternalMethod internalMethod,
-                                @Cached("create(getMethod(cachedMethod).getCallTarget())") DirectCallNode callNode) {
-            return callNode.call(frame, RubyArguments.pack(null, null, internalMethod, DeclarationContext.METHOD, null, Layouts.METHOD.getReceiver(cachedMethod), null, arguments));
+                                @Cached("getMethod(cachedMethod)") InternalMethod cachedInternalMethod,
+                                @Cached("create(cachedInternalMethod.getCallTarget())") DirectCallNode callNode) {
+            return callNode.call(
+                    frame,
+                    RubyArguments.pack(
+                            null,
+                            null,
+                            cachedInternalMethod,
+                            DeclarationContext.METHOD,
+                            null,
+                            Layouts.METHOD.getReceiver(cachedMethod),
+                            null,
+                            arguments));
         }
 
-        @Specialization(guards = "isRubyMethod(method)")
-        protected Object doCall(VirtualFrame frame, DynamicObject method, Object[] arguments) {
-            final InternalMethod internalMethod = Layouts.METHOD.getMethod(method);
-            return callNode.call(frame, internalMethod.getCallTarget(), RubyArguments.pack(null, null, internalMethod, DeclarationContext.METHOD, null, Layouts.METHOD.getReceiver(method), null, arguments));
-        }
-
-        protected CallTarget getCallTarget(DynamicObject proc) {
-            return Layouts.PROC.getCallTargetForType(proc);
+        @Specialization(
+                guards = "isRubyMethod(method)",
+                contains = "callMethodCached"
+        )
+        protected Object callMethodUncached(VirtualFrame frame,
+                                            DynamicObject method,
+                                            Object[] arguments,
+                                            @Cached("create()") IndirectCallNode callNode) {
+            final InternalMethod internalMethod = getMethod(method);
+            return callNode.call(
+                    frame,
+                    internalMethod.getCallTarget(),
+                    RubyArguments.pack(
+                            null,
+                            null,
+                            internalMethod,
+                            DeclarationContext.METHOD,
+                            null,
+                            Layouts.METHOD.getReceiver(method),
+                            null,
+                            arguments));
         }
 
         protected InternalMethod getMethod(DynamicObject method) {
             return Layouts.METHOD.getMethod(method);
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().INTEROP_EXECUTE_CACHE;
         }
 
     }
