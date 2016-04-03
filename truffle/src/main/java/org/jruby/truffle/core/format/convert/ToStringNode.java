@@ -23,7 +23,6 @@ import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;

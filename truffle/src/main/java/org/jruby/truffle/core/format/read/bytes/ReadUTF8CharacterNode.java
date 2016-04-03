@@ -17,9 +17,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.MissingValue;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
+import org.jruby.truffle.core.format.read.SourceNode;
 
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),

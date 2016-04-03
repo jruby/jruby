@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.format.read.bytes;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -17,8 +16,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.MissingValue;
+import org.jruby.truffle.core.format.read.SourceNode;
 
 import java.util.Arrays;
 

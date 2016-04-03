@@ -13,7 +13,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.AcceptMessage;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyObjectType;
 

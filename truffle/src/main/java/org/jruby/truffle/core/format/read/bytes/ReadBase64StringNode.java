@@ -51,12 +51,11 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
+import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
 import org.jruby.util.Pack;
 

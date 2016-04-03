@@ -28,7 +28,6 @@ import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.SingleValueCastNode;
 import org.jruby.truffle.core.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.core.proc.ProcNodes;
-import org.jruby.truffle.core.rubinius.ThreadPrimitiveNodes.ThreadRaisePrimitiveNode;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -36,6 +35,7 @@ import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 

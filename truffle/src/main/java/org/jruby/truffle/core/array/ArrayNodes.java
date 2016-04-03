@@ -43,10 +43,10 @@ import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
 import org.jruby.truffle.core.coerce.ToAryNodeGen;
 import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.core.coerce.ToIntNodeGen;
-import org.jruby.truffle.core.format.FormatExceptionTranslator;
-import org.jruby.truffle.core.format.pack.PackCompiler;
 import org.jruby.truffle.core.format.BytesResult;
+import org.jruby.truffle.core.format.FormatExceptionTranslator;
 import org.jruby.truffle.core.format.exceptions.FormatException;
+import org.jruby.truffle.core.format.pack.PackCompiler;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
@@ -81,7 +81,9 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
+
 import java.util.Arrays;
+
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
