@@ -1,1 +1,1 @@
-p "abc".freeze.object_id == "abc".freeze.object_id
+p "abc".object_id == "abc".object_id
