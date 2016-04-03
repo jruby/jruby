@@ -28,6 +28,8 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
+import org.jruby.truffle.language.objects.WriteObjectFieldNode;
+import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 
 @AcceptMessage(value = "WRITE", receiverType = RubyObjectType.class, language = RubyLanguage.class)
 public final class ForeignWriteNode extends ForeignWriteBaseNode {
@@ -152,21 +154,25 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
 
     public static class InteropInstanceVariableWriteNode extends RubyNode {
 
-        @Child private WriteInstanceVariableNode write;
+        @Child private WriteObjectFieldNode write;
         private final String name;
         private final int labelIndex;
+        private final int valueIndex;
 
         public InteropInstanceVariableWriteNode(RubyContext context, SourceSection sourceSection, String name, int labelIndex, int valueIndex) {
             super(context, sourceSection);
             this.name = name;
             this.labelIndex = labelIndex;
-            this.write = new WriteInstanceVariableNode(context, sourceSection, name, new RubyInteropReceiverNode(context, sourceSection), new RubyInteropArgumentNode(context, sourceSection, valueIndex));
+            this.valueIndex = valueIndex;
+            this.write = WriteObjectFieldNodeGen.create(context, name);
         }
 
         @Override
         public Object execute(VirtualFrame frame) {
             if (name.equals(ForeignAccess.getArguments(frame).get(labelIndex))) {
-                return write.execute(frame);
+                final Object value = ForeignAccess.getArguments(frame).get(valueIndex);
+                write.execute((DynamicObject) ForeignAccess.getReceiver(frame), value);
+                return value;
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new IllegalStateException("Not implemented");

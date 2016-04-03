@@ -30,6 +30,8 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
 @AcceptMessage(value = "READ", receiverType = RubyObjectType.class, language = RubyLanguage.class)
 public final class ForeignReadNode extends ForeignReadBaseNode {
@@ -170,21 +172,21 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
 
     public static class InteropInstanceVariableReadNode extends RubyNode {
 
-        @Child private ReadInstanceVariableNode read;
+        @Child private ReadObjectFieldNode read;
         private final String name;
         private final int labelIndex;
 
         public InteropInstanceVariableReadNode(RubyContext context, SourceSection sourceSection, String name, int labelIndex) {
             super(context, sourceSection);
             this.name = name;
-            this.read = new ReadInstanceVariableNode(context, sourceSection, name, new RubyInteropReceiverNode(context, sourceSection));
+            this.read = ReadObjectFieldNodeGen.create(context, name, nil());
             this.labelIndex = labelIndex;
         }
 
         @Override
         public Object execute(VirtualFrame frame) {
             if (name.equals(ForeignAccess.getArguments(frame).get(labelIndex))) {
-                return read.execute(frame);
+                return read.execute((DynamicObject) ForeignAccess.getReceiver(frame));
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new IllegalStateException("Not implemented");
