@@ -523,6 +523,27 @@ public abstract class ArrayNodes {
             }
         }
 
+        @Specialization(guards = {
+                "isRubyArray(replacement)",
+                "isIntArray(replacement)",
+                "length >= 0",
+                "length == getArraySize(replacement)"
+        })
+        public Object setOtherIntArraySameLength(DynamicObject array, int start, int length, DynamicObject replacement,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+            final int normalizedIndex = ArrayOperations.normalizeIndex(getSize(array), start, negativeIndexProfile);
+            if (normalizedIndex < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(coreLibrary().indexTooSmallError("array", start, getSize(array), this));
+            }
+
+            final int[] replacementStore = (int[]) getStore(replacement);
+            for (int i = 0; i < length; i++) {
+                write(array, normalizedIndex + i, replacementStore[i]);
+            }
+            return replacement;
+        }
+
         @Specialization(guards = { "!isInteger(startObject)", "!isInteger(lengthObject) || isRubyArray(value)" })
         public Object setOtherArray(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, DynamicObject value,
                 @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
@@ -664,6 +685,10 @@ public abstract class ArrayNodes {
             }
 
             return other;
+        }
+
+        protected int getArraySize(DynamicObject array) {
+            return getSize(array);
         }
 
         private Object write(DynamicObject array, int index, Object value) {
