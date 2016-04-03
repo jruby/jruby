@@ -28,9 +28,6 @@ public abstract class ToJavaStringNode extends RubyNode {
 
     public abstract String executeJavaString(VirtualFrame frame, Object object);
 
-    // TODO(CS): cache the conversion to a Java String? Or should the user do that themselves?
-
-    @TruffleBoundary
     @Specialization(guards = "isRubySymbol(symbol)")
     protected String toJavaStringSymbol(DynamicObject symbol) {
         return Layouts.SYMBOL.getString(symbol);
