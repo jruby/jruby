@@ -22,22 +22,22 @@ import org.jruby.truffle.language.RubyObjectType;
 public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
 
     @Child private Node findContextNode;
-    @Child private InteropExecute interopNode;
+    @Child private ExecuteMethodNode executeMethodNode;
 
     @Override
     public Object access(VirtualFrame frame, DynamicObject object, Object[] args) {
-        return getInteropNode().execute(frame);
+        return getInteropNode().executeWithTarget(frame, object);
     }
 
-    private InteropExecute getInteropNode() {
-        if (interopNode == null) {
+    private ExecuteMethodNode getInteropNode() {
+        if (executeMethodNode == null) {
             CompilerDirectives.transferToInterpreter();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
             final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-            interopNode = insert(new InteropExecute(context, null));
+            executeMethodNode = insert(ExecuteMethodNodeGen.create(context, null, null));
         }
 
-        return interopNode;
+        return executeMethodNode;
     }
 
 }
