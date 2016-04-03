@@ -16,6 +16,7 @@ import org.jcodings.Encoding;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -100,6 +101,22 @@ public class RopeTable {
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    public boolean contains(Rope rope) {
+        lock.readLock().lock();
+
+        try {
+            for (Map.Entry<Key, WeakReference<Rope>> entry : ropesTable.entrySet()) {
+                if (entry.getValue().get() == rope) {
+                    return true;
+                }
+            }
+        } finally {
+            lock.readLock().unlock();
+        }
+
+        return false;
     }
 
     public int getByteArrayReusedCount() {

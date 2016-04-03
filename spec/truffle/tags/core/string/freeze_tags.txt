@@ -1,1 +1,0 @@
-fails:String#freeze produces the same object whenever called on an instance of a literal in the source

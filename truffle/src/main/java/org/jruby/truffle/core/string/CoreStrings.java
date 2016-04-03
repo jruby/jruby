@@ -20,6 +20,7 @@ public class CoreStrings {
     public final CoreString GLOBAL_VARIABLE;
     public final CoreString INSTANCE_VARIABLE;
     public final CoreString LOCAL_VARIABLE;
+    public final CoreString METHOD;
     public final CoreString NIL;
     public final CoreString SELF;
     public final CoreString TRUE;
@@ -33,6 +34,7 @@ public class CoreStrings {
         GLOBAL_VARIABLE = new CoreString(context, "global-variable");
         INSTANCE_VARIABLE = new CoreString(context, "instance-variable");
         LOCAL_VARIABLE = new CoreString(context, "local-variable");
+        METHOD = new CoreString(context, "method");
         NIL = new CoreString(context, "nil");
         SELF = new CoreString(context, "self");
         TRUE = new CoreString(context, "true");

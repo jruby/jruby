@@ -25,6 +25,7 @@ import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
 import org.jruby.truffle.core.rope.RopeTable;
 import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.core.string.CoreStrings;
+import org.jruby.truffle.core.string.FrozenStrings;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.extra.AttachmentsManager;
@@ -76,6 +77,7 @@ public class RubyContext extends ExecutionContext {
     private final SourceCache sourceCache = new SourceCache(new SourceLoader(this));
     private final CallStackManager callStack = new CallStackManager(this);
     private final CoreStrings coreStrings = new CoreStrings(this);
+    private final FrozenStrings frozenStrings = new FrozenStrings(this);
 
     private final CompilerOptions compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
@@ -330,6 +332,10 @@ public class RubyContext extends ExecutionContext {
 
     public CoreStrings getCoreStrings() {
         return coreStrings;
+    }
+
+    public FrozenStrings getFrozenStrings() {
+        return frozenStrings;
     }
 
     public Object getClassVariableDefinitionLock() {

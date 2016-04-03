@@ -478,6 +478,19 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node receiver = node.getReceiverNode();
         final String methodName = node.getName();
 
+        if (receiver instanceof org.jruby.ast.StrNode && methodName.equals("freeze")) {
+            final org.jruby.ast.StrNode strNode = (org.jruby.ast.StrNode) receiver;
+            final ByteList byteList = strNode.getValue();
+            final int codeRange = strNode.getCodeRange();
+
+            final Rope rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
+
+            final DynamicObject frozenString = context.getFrozenStrings().getFrozenString(rope);
+
+            return new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().METHOD,
+                    new ObjectLiteralNode(context, null, frozenString));
+        }
+
         // Rubinius.<method>
         if (receiver instanceof org.jruby.ast.ConstNode
                 && ((org.jruby.ast.ConstNode) receiver).getName().equals("Rubinius")) {
