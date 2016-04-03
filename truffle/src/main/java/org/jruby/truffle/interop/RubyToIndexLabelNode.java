@@ -10,17 +10,23 @@
 package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.RubyNode;
 
-public abstract class RubyToIndexLabelNode extends TargetableRubyNode {
+@NodeChild(value = "value", type = RubyNode.class)
+public abstract class RubyToIndexLabelNode extends RubyNode {
 
     public RubyToIndexLabelNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
+
+    public abstract Object executeWithTarget(VirtualFrame frame, Object obj);
 
     @CompilerDirectives.TruffleBoundary
     @Specialization(guards = "isRubyString(index)")
