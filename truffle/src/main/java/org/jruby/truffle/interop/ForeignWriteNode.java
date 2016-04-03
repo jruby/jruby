@@ -27,7 +27,6 @@ import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 
@@ -184,7 +183,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
 
         private final String name;
         @Child private DispatchHeadNode head;
-        @Child private IndexLabelToRubyNode toRubyIndex;
+        @Child private ForeignToRubyNode toRubyIndex;
         private final int indexIndex;
         private final int valueIndex;
 
@@ -194,12 +193,12 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
             this.indexIndex = indexIndex;
             this.valueIndex = valueIndex;
             this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
-            this.toRubyIndex = IndexLabelToRubyNodeGen.create(context, sourceSection, null);
+            this.toRubyIndex = ForeignToRubyNodeGen.create(context, sourceSection, null);
         }
 
         @Override
         public Object execute(VirtualFrame frame) {
-            Object index = toRubyIndex.executeWithTarget(frame, ForeignAccess.getArguments(frame).get(indexIndex));
+            Object index = toRubyIndex.executeConvert(frame, ForeignAccess.getArguments(frame).get(indexIndex));
             Object value = ForeignAccess.getArguments(frame).get(valueIndex);
             return head.dispatch(frame, ForeignAccess.getReceiver(frame), name, null, new Object[] {index, value});
         }

@@ -14,7 +14,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.AcceptMessage;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
@@ -29,7 +28,6 @@ import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
@@ -128,7 +126,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
 
         private final String name;
         @Child private DispatchHeadNode head;
-        @Child private IndexLabelToRubyNode toRubyIndex;
+        @Child private ForeignToRubyNode toRubyIndex;
         private final int indexIndex;
 
         public ResolvedInteropIndexedReadNode(RubyContext context, SourceSection sourceSection, int indexIndex) {
@@ -136,12 +134,12 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             this.name = "[]";
             this.indexIndex = indexIndex;
             this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
-            this.toRubyIndex = IndexLabelToRubyNodeGen.create(context, sourceSection, null);
+            this.toRubyIndex = ForeignToRubyNodeGen.create(context, sourceSection, null);
         }
 
         @Override
         public Object execute(VirtualFrame frame) {
-            Object index = toRubyIndex.executeWithTarget(frame, ForeignAccess.getArguments(frame).get(indexIndex));
+            Object index = toRubyIndex.executeConvert(frame, ForeignAccess.getArguments(frame).get(indexIndex));
             return head.dispatch(frame, ForeignAccess.getReceiver(frame), name, null, new Object[] {index});
         }
     }
