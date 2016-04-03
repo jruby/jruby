@@ -487,8 +487,8 @@ public class BodyTranslator extends Translator {
 
             final DynamicObject frozenString = context.getFrozenStrings().getFrozenString(rope);
 
-            return new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().METHOD,
-                    new ObjectLiteralNode(context, null, frozenString));
+            return addNewlineIfNeeded(node, new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().METHOD,
+                    new ObjectLiteralNode(context, null, frozenString)));
         }
 
         // Rubinius.<method>
