@@ -9,7 +9,8 @@
  */
 package org.jruby.truffle.interop;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -20,27 +21,27 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeChild(value = "value", type = RubyNode.class)
-public abstract class RubyToIndexLabelNode extends RubyNode {
+public abstract class RubyToForeignNode extends RubyNode {
 
-    public RubyToIndexLabelNode(RubyContext context, SourceSection sourceSection) {
+    public RubyToForeignNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    public abstract Object executeWithTarget(VirtualFrame frame, Object obj);
+    public abstract Object executeConvert(VirtualFrame frame, Object object);
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     @Specialization(guards = "isRubyString(index)")
-    public Object doRubyString(DynamicObject index) {
+    public Object convertString(DynamicObject index) {
         return index.toString();
     }
 
     @Specialization(guards = "isRubySymbol(index)")
-    public Object doRubySymbol(DynamicObject index) {
+    public Object convertSymbol(DynamicObject index) {
         return Layouts.SYMBOL.getString(index);
     }
 
-    @Specialization(guards = "!isRubySymbol(index)")
-    public Object doObject(Object index) {
+    @Fallback
+    public Object convert(Object index) {
         return index;
     }
 

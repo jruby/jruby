@@ -22,8 +22,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.interop.RubyToIndexLabelNode;
-import org.jruby.truffle.interop.RubyToIndexLabelNodeGen;
+import org.jruby.truffle.interop.RubyToForeignNode;
+import org.jruby.truffle.interop.RubyToForeignNodeGen;
 import org.jruby.truffle.language.RubyNode;
 
 public final class CachedForeignDispatchNode extends CachedDispatchNode {
@@ -133,15 +133,15 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
 
     private static class PrepareArguments extends RubyNode {
 
-        @Children private final RubyToIndexLabelNode[] converters;
+        @Children private final RubyToForeignNode[] converters;
         private final int arity;
 
         public PrepareArguments(RubyContext context, SourceSection sourceSection, int arity) {
             super(context, sourceSection);
-            this.converters = new RubyToIndexLabelNode[arity];
+            this.converters = new RubyToForeignNode[arity];
             this.arity = arity;
             for (int i = 0; i < arity; i++) {
-                this.converters[i] = RubyToIndexLabelNodeGen.create(context, sourceSection, null);
+                this.converters[i] = RubyToForeignNodeGen.create(context, sourceSection, null);
             }
         }
 
@@ -149,7 +149,7 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
         public Object[] convertArguments(VirtualFrame frame, Object[] arguments, int offset) {
             Object[] result = new Object[arity + offset];
             for (int i = 0; i < arity; i++) {
-                result[i + offset] = converters[i].executeWithTarget(frame, arguments[i]);
+                result[i + offset] = converters[i].executeConvert(frame, arguments[i]);
             }
             return result;
         }
