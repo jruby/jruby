@@ -59,7 +59,8 @@
                                    StringInflectionsTest:    [:test_string_parameterized_no_separator,
                                                               :test_string_parameterized_normal,
                                                               :test_string_parameterized_underscore,
-                                                              :test_titleize] }
+                                                              :test_titleize],
+                                   TimeZoneTest:              :test_map_srednekolymsk_to_tzinfo }
 
 
                       undefine = if ENV['CI']
