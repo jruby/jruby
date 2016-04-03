@@ -34,7 +34,7 @@ public class FrozenStrings {
 
         if (string == null) {
             string = StringOperations.createString(context, rope);
-            string.set(Layouts.FROZEN_IDENTIFIER, true);
+            string.define(Layouts.FROZEN_IDENTIFIER, true);
             frozenStrings.put(rope, string);
         }
 
