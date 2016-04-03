@@ -11,4 +11,8 @@ describe "String#freeze" do
     "abc".object_id.should_not == "abc".object_id
   end
 
+  it "being a special form doesn't change the value of defined?" do
+    defined?("abc".freeze).should == "method"
+  end
+
 end
