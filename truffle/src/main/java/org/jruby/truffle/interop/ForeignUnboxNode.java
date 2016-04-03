@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.interop;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.AcceptMessage;
 import com.oracle.truffle.api.interop.Message;
@@ -19,7 +19,6 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyObjectType;
 
@@ -45,7 +44,7 @@ public final class ForeignUnboxNode extends ForeignUnboxBaseNode {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private void unsuported() {
         UnsupportedMessageException.raise(Message.UNBOX);
     }
