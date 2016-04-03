@@ -97,6 +97,11 @@ public class TranslatorDriver implements Parser {
         boolean isInlineSource = parserContext == ParserContext.SHELL;
         boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.INLINE || parserContext == ParserContext.MODULE;
         final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getJRubyRuntime(), 0, isInlineSource, !isEvalParse, false);
+
+        if (context.getJRubyRuntime().getInstanceConfig().isFrozenStringLiteral()) {
+            parserConfiguration.setFrozenStringLiteral(true);
+        }
+
         parserConfiguration.setDefaultEncoding(defaultEncoding);
 
         // Parse to the JRuby AST
