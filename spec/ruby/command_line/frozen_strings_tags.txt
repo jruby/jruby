@@ -1,3 +1,0 @@
-fails:The --enable-frozen-string-literal flag causes string literals to produce the same object each time
-fails:The --enable-frozen-string-literal flag causes string literals to produce the same object for literals with the same content
-fails:The --enable-frozen-string-literal flag causes string literals to produce the same object for literals with the same content in different files
