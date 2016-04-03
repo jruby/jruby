@@ -23,7 +23,7 @@ import org.jruby.truffle.language.RubyNode;
 @CoreClass(name = "TrueClass")
 public abstract class TrueClassNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "&", needsSelf = false, required = 1)
+    @CoreMethod(names = "&", needsSelf = false, required = 1)
     public abstract static class AndNode extends UnaryCoreMethodNode {
 
         public AndNode(RubyContext context, SourceSection sourceSection) {
@@ -40,7 +40,7 @@ public abstract class TrueClassNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "|", needsSelf = false, required = 1)
+    @CoreMethod(names = "|", needsSelf = false, required = 1)
     public abstract static class OrNode extends CoreMethodArrayArgumentsNode {
 
         public OrNode(RubyContext context, SourceSection sourceSection) {
@@ -53,7 +53,7 @@ public abstract class TrueClassNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "^", needsSelf = false, required = 1)
+    @CoreMethod(names = "^", needsSelf = false, required = 1)
     public abstract static class XorNode extends UnaryCoreMethodNode {
 
         public XorNode(RubyContext context, SourceSection sourceSection) {
