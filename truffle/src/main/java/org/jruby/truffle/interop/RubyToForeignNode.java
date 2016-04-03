@@ -10,7 +10,8 @@
 package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.Fallback;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -18,8 +19,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.language.RubyNode;
 
+@ImportStatic(StringCachingGuards.class)
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class RubyToForeignNode extends RubyNode {
 
@@ -27,22 +31,43 @@ public abstract class RubyToForeignNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeConvert(VirtualFrame frame, Object object);
+    public abstract Object executeConvert(VirtualFrame frame, Object value);
+
+    @Specialization(
+            guards = {
+                    "isRubyString(value)",
+                    "ropesEqual(value, cachedRope)"
+            },
+            limit = "getLimit()")
+    public String convertUncached(
+            DynamicObject value,
+            @Cached("privatizeRope(value)") Rope cachedRope,
+            @Cached("objectToString(value)") String convertedString) {
+        return convertedString;
+    }
 
     @TruffleBoundary
-    @Specialization(guards = "isRubyString(index)")
-    public Object convertString(DynamicObject index) {
-        return index.toString();
+    @Specialization(guards = "isRubyString(value)")
+    public String convertStringUncached(DynamicObject value) {
+        return value.toString();
     }
 
-    @Specialization(guards = "isRubySymbol(index)")
-    public Object convertSymbol(DynamicObject index) {
-        return Layouts.SYMBOL.getString(index);
+    protected int getLimit() {
+        return getContext().getOptions().INTEROP_CONVERT_CACHE;
     }
 
-    @Fallback
-    public Object convert(Object index) {
-        return index;
+    protected String objectToString(DynamicObject object) {
+        return object.toString();
+    }
+
+    @Specialization(guards = "isRubySymbol(value)")
+    public String convertSymbol(DynamicObject value) {
+        return Layouts.SYMBOL.getString(value);
+    }
+
+    @Specialization(guards = {"!isRubyString(value)", "!isRubySymbol(value)"})
+    public Object convert(Object value) {
+        return value;
     }
 
 }

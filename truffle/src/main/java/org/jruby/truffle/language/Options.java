@@ -37,6 +37,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SE
 import static org.jruby.util.cli.Options.TRUFFLE_INLINE_NEEDS_CALLER_FRAME;
 import static org.jruby.util.cli.Options.TRUFFLE_INSTANCE_VARIABLE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT;
+import static org.jruby.util.cli.Options.TRUFFLE_INTEROP_CONVERT_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_IS_A_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_METHODMISSING_ALWAYS_CLONE;
 import static org.jruby.util.cli.Options.TRUFFLE_METHODMISSING_ALWAYS_INLINE;
@@ -109,6 +110,7 @@ public class Options {
     public final int ENCODING_COMPATIBILE_QUERY_CACHE = TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE.load();
     public final int THREAD_CACHE = TRUFFLE_THREAD_CACHE.load();
     public final int ROPE_CLASS_CACHE = TRUFFLE_ROPE_CLASS_CACHE.load();
+    public final int INTEROP_CONVERT_CACHE = TRUFFLE_INTEROP_CONVERT_CACHE.load();
 
     // Cloning and inlining
 

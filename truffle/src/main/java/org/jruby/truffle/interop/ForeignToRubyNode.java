@@ -9,14 +9,15 @@
  */
 package org.jruby.truffle.interop;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.Fallback;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 
@@ -27,17 +28,36 @@ public abstract class ForeignToRubyNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeConvert(VirtualFrame frame, Object obj);
+    public abstract Object executeConvert(VirtualFrame frame, Object value);
 
-    @TruffleBoundary
-    @Specialization
-    public Object convert(String index) {
-        return createString(StringOperations.encodeRope(index, UTF8Encoding.INSTANCE));
+    @Specialization(guards = "stringsEquals(cachedValue, value)", limit = "getLimit()")
+    public DynamicObject convertStringCached(
+            String value,
+            @Cached("value") String cachedValue,
+            @Cached("getRope(value)") Rope cachedRope) {
+        return createString(cachedRope);
     }
 
-    @Fallback
-    public Object convert(Object index) {
-        return index;
+    @Specialization(contains = "convertStringCached")
+    public DynamicObject convertStringUncached(String value) {
+        return createString(getRope(value));
+    }
+
+    protected boolean stringsEquals(String a, String b) {
+        return a.equals(b);
+    }
+
+    protected Rope getRope(String value) {
+        return StringOperations.encodeRope(value, UTF8Encoding.INSTANCE);
+    }
+
+    protected int getLimit() {
+        return getContext().getOptions().INTEROP_CONVERT_CACHE;
+    }
+
+    @Specialization(guards = "!isString(value)")
+    public Object convert(Object value) {
+        return value;
     }
 
 }
