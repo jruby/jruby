@@ -14,10 +14,10 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.AcceptMessage;
-import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
@@ -32,74 +32,72 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 
-import java.util.List;
-
 @AcceptMessage(value = "EXECUTE", receiverType = RubyObjectType.class, language = RubyLanguage.class)
 public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
 
     @Child private Node findContextNode;
-    @Child private ExecuteMethodNode executeMethodNode;
+    @Child private HelperNode executeMethodNode;
 
     @Override
-    public Object access(VirtualFrame frame, DynamicObject object, Object[] args) {
-        return getInteropNode().executeWithTarget(frame, object);
+    public Object access(VirtualFrame frame, DynamicObject object, Object[] arguments) {
+        return getHelperNode().executeExecute(frame, object, arguments);
     }
 
-    private ExecuteMethodNode getInteropNode() {
+    private HelperNode getHelperNode() {
         if (executeMethodNode == null) {
             CompilerDirectives.transferToInterpreter();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
             final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-            executeMethodNode = insert(ForeignExecuteNodeFactory.ExecuteMethodNodeGen.create(context, null, null));
+            executeMethodNode = insert(ForeignExecuteNodeFactory.HelperNodeGen.create(context, null, null, null));
         }
 
         return executeMethodNode;
     }
 
-    @NodeChild(value="method", type = RubyNode.class)
-    public static abstract class ExecuteMethodNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild("receiver"),
+            @NodeChild("arguments")
+    })
+    protected static abstract class HelperNode extends RubyNode {
 
         @Child private IndirectCallNode callNode;
-        public ExecuteMethodNode(RubyContext context,
+
+        public HelperNode(RubyContext context,
                                  SourceSection sourceSection) {
             super(context, sourceSection);
             callNode = Truffle.getRuntime().createIndirectCallNode();
         }
 
+        public abstract Object executeExecute(VirtualFrame frame, Object receiver, Object[] arguments);
+
         @Specialization(guards = {"isRubyProc(proc)", "proc == cachedProc"})
-        protected Object doCallProc(VirtualFrame frame, DynamicObject proc,
+        protected Object doCallProc(VirtualFrame frame,
+                                    DynamicObject proc,
+                                    Object[] arguments,
                                     @Cached("proc") DynamicObject cachedProc,
                                     @Cached("create(getCallTarget(cachedProc))") DirectCallNode callNode) {
-            final List<Object> faArgs = ForeignAccess.getArguments(frame);
-            Object[] args = faArgs.toArray();
-            return callNode.call(frame, RubyArguments.pack(Layouts.PROC.getDeclarationFrame(cachedProc), null, Layouts.PROC.getMethod(cachedProc), DeclarationContext.METHOD, null, Layouts.PROC.getSelf(cachedProc), null, args));
+            return callNode.call(frame, RubyArguments.pack(Layouts.PROC.getDeclarationFrame(cachedProc), null, Layouts.PROC.getMethod(cachedProc), DeclarationContext.METHOD, null, Layouts.PROC.getSelf(cachedProc), null, arguments));
         }
 
         @Specialization(guards = "isRubyProc(proc)")
-        protected Object doCallProc(VirtualFrame frame, DynamicObject proc) {
-            final List<Object> faArgs = ForeignAccess.getArguments(frame);
-            Object[] args = faArgs.toArray();
-            return callNode.call(frame, Layouts.PROC.getCallTargetForType(proc), RubyArguments.pack(Layouts.PROC.getDeclarationFrame(proc), null, Layouts.PROC.getMethod(proc), DeclarationContext.METHOD, null, Layouts.PROC.getSelf(proc), null, args));
+        protected Object doCallProc(VirtualFrame frame, DynamicObject proc, Object[] arguments) {
+            return callNode.call(frame, Layouts.PROC.getCallTargetForType(proc), RubyArguments.pack(Layouts.PROC.getDeclarationFrame(proc), null, Layouts.PROC.getMethod(proc), DeclarationContext.METHOD, null, Layouts.PROC.getSelf(proc), null, arguments));
         }
 
         @Specialization(guards = {"isRubyMethod(method)", "method == cachedMethod"})
-        protected Object doCall(VirtualFrame frame, DynamicObject method,
+        protected Object doCall(VirtualFrame frame,
+                                DynamicObject method,
+                                Object[] arguments,
                                 @Cached("method") DynamicObject cachedMethod,
                                 @Cached("getMethod(cachedMethod)") InternalMethod internalMethod,
                                 @Cached("create(getMethod(cachedMethod).getCallTarget())") DirectCallNode callNode) {
-            final List<Object> faArgs = ForeignAccess.getArguments(frame);
-
-            Object[] args = faArgs.subList(0, faArgs.size()).toArray();
-            return callNode.call(frame, RubyArguments.pack(null, null, internalMethod, DeclarationContext.METHOD, null, Layouts.METHOD.getReceiver(cachedMethod), null, args));
+            return callNode.call(frame, RubyArguments.pack(null, null, internalMethod, DeclarationContext.METHOD, null, Layouts.METHOD.getReceiver(cachedMethod), null, arguments));
         }
 
         @Specialization(guards = "isRubyMethod(method)")
-        protected Object doCall(VirtualFrame frame, DynamicObject method) {
+        protected Object doCall(VirtualFrame frame, DynamicObject method, Object[] arguments) {
             final InternalMethod internalMethod = Layouts.METHOD.getMethod(method);
-            final List<Object> faArgs = ForeignAccess.getArguments(frame);
-
-            Object[] args = faArgs.subList(0, faArgs.size()).toArray();
-            return callNode.call(frame, internalMethod.getCallTarget(), RubyArguments.pack(null, null, internalMethod, DeclarationContext.METHOD, null, Layouts.METHOD.getReceiver(method), null, args));
+            return callNode.call(frame, internalMethod.getCallTarget(), RubyArguments.pack(null, null, internalMethod, DeclarationContext.METHOD, null, Layouts.METHOD.getReceiver(method), null, arguments));
         }
 
         protected CallTarget getCallTarget(DynamicObject proc) {
@@ -109,8 +107,6 @@ public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
         protected InternalMethod getMethod(DynamicObject method) {
             return Layouts.METHOD.getMethod(method);
         }
-
-        public abstract Object executeWithTarget(VirtualFrame frame, Object method);
 
     }
 
