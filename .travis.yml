@@ -46,6 +46,7 @@ env:
     - PHASE='-Prake -Dtask=spec:jruby'
     - PHASE='-Prake -Dtask=spec:jrubyc'
     - PHASE='-Prake -Dtask=spec:profiler'
+    - JT='test specs :command_line'
     - JT='test specs :language'
     - JT='test specs :core'
     - JT='test specs :library'
