@@ -32,7 +32,7 @@ import java.math.BigInteger;
 @CoreClass(name = "Integer")
 public abstract class IntegerNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "downto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "downto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class DownToNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode downtoInternalCall;
@@ -106,7 +106,7 @@ public abstract class IntegerNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "times", needsBlock = true)
+    @CoreMethod(names = "times", needsBlock = true)
     public abstract static class TimesNode extends YieldingCoreMethodNode {
 
         // TODO CS 2-May-15 we badly need OSR in this node
@@ -176,7 +176,7 @@ public abstract class IntegerNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "to_i", "to_int" })
+    @CoreMethod(names = { "to_i", "to_int" })
     public abstract static class ToINode extends CoreMethodArrayArgumentsNode {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
@@ -200,7 +200,7 @@ public abstract class IntegerNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "upto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "upto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode uptoInternalCall;
