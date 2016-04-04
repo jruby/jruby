@@ -465,6 +465,37 @@ public abstract class TruffleInteropNodes {
 
     }
 
+    @CoreMethod(unsafeNeedsAudit = true, names = "export", isModuleFunction = true, needsSelf = false, required = 2)
+    public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
+
+        public ExportNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(name) || isRubySymbol(name)")
+        public Object export(DynamicObject name, TruffleObject object) {
+            getContext().getInteropManager().exportObject(name, object);
+            return object;
+        }
+
+    }
+
+    @CoreMethod(names = "import", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class ImportNode extends CoreMethodArrayArgumentsNode {
+
+        public ImportNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(name) || isRubySymbol(name)")
+        public Object importObject(DynamicObject name) {
+            return getContext().getInteropManager().importObject(name);
+        }
+
+    }
+
     // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
 
     @CoreMethod(unsafeNeedsAudit = true, names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
@@ -512,39 +543,6 @@ public abstract class TruffleInteropNodes {
         @Specialization
         public int convert(String value) {
             return (int) value.charAt(0);
-        }
-
-    }
-
-    @CoreMethod(unsafeNeedsAudit = true, names = "export", isModuleFunction = true, needsSelf = false, required = 2)
-    public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
-
-        public ExportNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = "isRubyString(name)")
-        public Object export(VirtualFrame frame, DynamicObject name, TruffleObject object) {
-            getContext().getInteropManager().exportObject(name, object);
-            return object;
-        }
-
-        protected static String rubyStringToString(DynamicObject rubyString) {
-            return rubyString.toString();
-        }
-    }
-
-    @CoreMethod(unsafeNeedsAudit = true, names = "import", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class ImportNode extends CoreMethodArrayArgumentsNode {
-
-        public ImportNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public Object importObject(DynamicObject name) {
-            return getContext().getInteropManager().importObject(name);
         }
 
     }
