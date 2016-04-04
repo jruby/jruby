@@ -181,7 +181,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
         }
 
         protected int getCacheLimit() {
-            return getContext().getOptions().INTEROP_READ_CACHE;
+            return getContext().getOptions().INTEROP_WRITE_CACHE;
         }
 
     }

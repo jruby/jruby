@@ -40,6 +40,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT;
 import static org.jruby.util.cli.Options.TRUFFLE_INTEROP_CONVERT_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_INTEROP_EXECUTE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_INTEROP_READ_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_INTEROP_WRITE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_IS_A_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_METHODMISSING_ALWAYS_CLONE;
 import static org.jruby.util.cli.Options.TRUFFLE_METHODMISSING_ALWAYS_INLINE;
@@ -115,6 +116,7 @@ public class Options {
     public final int INTEROP_CONVERT_CACHE = TRUFFLE_INTEROP_CONVERT_CACHE.load();
     public final int INTEROP_EXECUTE_CACHE = TRUFFLE_INTEROP_EXECUTE_CACHE.load();
     public final int INTEROP_READ_CACHE = TRUFFLE_INTEROP_READ_CACHE.load();
+    public final int INTEROP_WRITE_CACHE = TRUFFLE_INTEROP_WRITE_CACHE.load();
 
     // Cloning and inlining
 
