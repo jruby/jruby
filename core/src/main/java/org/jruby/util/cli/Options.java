@@ -264,6 +264,7 @@ public class Options {
     public static final Option<Integer> TRUFFLE_INTEROP_EXECUTE_CACHE = integer(TRUFFLE, "truffle.interop.execute.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for interop EXECUTE messages.");
     public static final Option<Integer> TRUFFLE_INTEROP_READ_CACHE = integer(TRUFFLE, "truffle.interop.read.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for interop READ messages.");
     public static final Option<Integer> TRUFFLE_INTEROP_WRITE_CACHE = integer(TRUFFLE, "truffle.interop.write.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for interop WRITE messages.");
+    public static final Option<Integer> TRUFFLE_INTEROP_INVOKE_CACHE = integer(TRUFFLE, "truffle.interop.invoke.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for interop INVOKE messages.");
 
     public static final Option<Boolean> TRUFFLE_CLONE_DEFAULT = bool(TRUFFLE, "truffle.clone.default", true, "Default option for cloning.");
     public static final Option<Boolean> TRUFFLE_INLINE_DEFAULT = bool(TRUFFLE, "truffle.inline.default", true, "Default option for inlining.");

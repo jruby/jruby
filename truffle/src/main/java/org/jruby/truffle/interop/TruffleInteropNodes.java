@@ -115,6 +115,82 @@ public abstract class TruffleInteropNodes {
 
     }
 
+    @CoreMethod(unsafeNeedsAudit = true, names = "invoke", isModuleFunction = true, needsSelf = false, required = 2, rest = true)
+    public abstract static class InvokeNode extends CoreMethodArrayArgumentsNode {
+
+        public InvokeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(
+                guards = {
+                        "isRubyString(identifier) || isRubySymbol(identifier)",
+                        "args.length == cachedArgsLength"
+                },
+                limit = "getCacheLimit()"
+        )
+        public Object invokeCached(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                DynamicObject identifier,
+                Object[] args,
+                @Cached("args.length") int cachedArgsLength,
+                @Cached("createInvokeNode(cachedArgsLength)") Node invokeNode,
+                @Cached("createToJavaStringNode()") ToJavaStringNode toJavaStringNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendInvoke(
+                        invokeNode,
+                        frame,
+                        receiver,
+                        toJavaStringNode.executeToJavaString(frame, identifier),
+                        args);
+            } catch (UnsupportedTypeException
+                    | ArityException
+                    | UnsupportedMessageException
+                    | UnknownIdentifierException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        protected ToJavaStringNode createToJavaStringNode() {
+            return ToJavaStringNodeGen.create(getContext(), null, null);
+        }
+
+        @Specialization(
+                guards = "isRubyString(identifier) || isRubySymbol(identifier)",
+                contains = "invokeCached"
+        )
+        public Object invokeUncached(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                DynamicObject identifier,
+                Object[] args) {
+            CompilerDirectives.bailout("can't compile megamorphic interop INVOKE message sends");
+
+            final Node invokeNode = createInvokeNode(args.length);
+
+            try {
+                return ForeignAccess.sendInvoke(invokeNode, frame, receiver, identifier.toString(), args);
+            } catch (UnsupportedTypeException
+                    | ArityException
+                    | UnsupportedMessageException
+                    | UnknownIdentifierException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        protected Node createInvokeNode(int argsLength) {
+            return Message.createInvoke(argsLength).createNode();
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().INTEROP_INVOKE_CACHE;
+        }
+
+    }
+
     @CoreMethod(unsafeNeedsAudit = true, names = {"size?", "has_size_property?"}, isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class HasSizeNode extends CoreMethodArrayArgumentsNode {
 
