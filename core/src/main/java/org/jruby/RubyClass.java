@@ -46,6 +46,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1394,12 +1395,12 @@ public class RubyClass extends RubyModule {
             List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(methodName);
             Class[] methodSignature = getMethodSignatures().get(methodName);
 
-            String signature;
-            if (methodSignature == null) {
-                // non-signature signature with just IRubyObject
-                switch (methodEntry.getValue().getArity().getValue()) {
+            final String signature;
+            if (methodSignature == null) { // non-signature signature with just IRubyObject
+                final Arity arity = methodEntry.getValue().getArity();
+                switch (arity.getValue()) {
                 case 0:
-                    signature = sig(IRubyObject.class);
+                    signature = sig(IRubyObject.class); // return IRubyObject foo()
                     m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
@@ -1407,29 +1408,68 @@ public class RubyClass extends RubyModule {
                     m.ldc(methodName);
                     m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
                     break;
-                default:
-                    signature = sig(IRubyObject.class, IRubyObject[].class);
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
+                case 1:
+                    signature = sig(IRubyObject.class, IRubyObject.class); // return IRubyObject foo(IRubyObject arg1)
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.aload(0);
                     m.ldc(methodName);
-                    m.aload(1);
+                    m.aload(1); // IRubyObject arg1
+                    m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject.class));
+                    break;
+                // currently we only have :
+                //  callMethod(context, name)
+                //  callMethod(context, name, arg1)
+                // so for other arities use generic:
+                //  callMethod(context, name, args...)
+                default:
+                    if ( arity.isFixed() ) {
+                        final int paramCount = arity.getValue();
+                        Class[] params = new Class[paramCount]; Arrays.fill(params, IRubyObject.class);
+                        signature = sig(IRubyObject.class, params);
+                        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+                        generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                        m.aload(0);
+                        m.ldc(methodName);
+
+                        // generate an IRubyObject[] for the method arguments :
+                        m.pushInt(paramCount);
+                        m.anewarray(p(IRubyObject.class)); // new IRubyObject[size]
+                        for ( int i = 1; i <= paramCount; i++ ) {
+                            m.dup();
+                            m.pushInt(i - 1); // array index e.g. iconst_0
+                            m.aload(i); // IRubyObject arg1, arg2 e.g. aload_1
+                            m.aastore(); // arr[ i - 1 ] = arg_i
+                        }
+                    }
+                    else { // (generic) variable arity e.g. method(*args)
+                        // NOTE: maybe improve to match fixed part for < -1 e.g. (IRubObject, IRubyObject, IRubyObject...)
+                        signature = sig(IRubyObject.class, IRubyObject[].class);
+                        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
+                        generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                        m.aload(0);
+                        m.ldc(methodName);
+                        m.aload(1); // IRubyObject[] arg1
+                    }
                     m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
                 }
                 m.areturn();
-            } else {
-                // generate a real method signature for the method, with to/from coercions
+            }
+            else { // generate a real method signature for the method, with to/from coercions
 
                 // indices for temp values
                 Class[] params = new Class[methodSignature.length - 1];
                 System.arraycopy(methodSignature, 1, params, 0, params.length);
                 final int baseIndex = RealClassGenerator.calcBaseIndex(params, 1);
-
-                int rubyIndex = baseIndex;
+                final int rubyIndex = baseIndex;
 
                 signature = sig(methodSignature[0], params);
-                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+                int mod = ACC_PUBLIC;
+                if ( isVarArgsSignature(methodName, methodSignature) ) mod |= ACC_VARARGS;
+                m = new SkinnyMethodAdapter(cw, mod, javaMethodName, signature, null, null);
                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                 m.getstatic(javaPath, "ruby", ci(Ruby.class));
@@ -1464,17 +1504,18 @@ public class RubyClass extends RubyModule {
 
             String signature;
             if (methodSignature == null) {
+                final Arity arity = methodEntry.getValue().getArity();
                 // non-signature signature with just IRubyObject
-                switch (methodEntry.getValue().getArity().getValue()) {
+                switch (arity.getValue()) {
                 case 0:
                     signature = sig(IRubyObject.class);
                     if (instanceMethods.contains(javaMethodName + signature)) continue;
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
                     //m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
-                    m.ldc(methodName); // Method name
+                    m.ldc(methodName);
                     m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
                     break;
                 default:
@@ -1484,13 +1525,13 @@ public class RubyClass extends RubyModule {
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-                    m.ldc(methodName); // Method name
+                    m.ldc(methodName);
                     m.aload(0);
                     m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
                 }
                 m.areturn();
-            } else {
-                // generate a real method signature for the method, with to/from coercions
+            }
+            else { // generate a real method signature for the method, with to/from coercions
 
                 // indices for temp values
                 Class[] params = new Class[methodSignature.length - 1];
@@ -1568,6 +1609,13 @@ public class RubyClass extends RubyModule {
             reifiedClass = superClass.reifiedClass;
             allocator = superClass.allocator;
         }
+    }
+
+    private boolean isVarArgsSignature(final String method, final Class[] methodSignature) {
+        // TODO we should simply detect "java.lang.Object m1(java.lang.Object... args)"
+        // var-args distinguished from  "java.lang.Object m2(java.lang.Object[]  args)"
+        return methodSignature.length > 1 && // methodSignature[0] is return value
+               methodSignature[ methodSignature.length - 1 ].isArray() ;
     }
 
     private void logReifyException(final Throwable failure, final boolean error) {
@@ -1950,7 +1998,7 @@ public class RubyClass extends RubyModule {
     public enum CS_NAMES {
         INITIALIZE("initialize");
 
-        private CS_NAMES(String id) {
+        CS_NAMES(String id) {
             this.id = id;
         }
 
@@ -1965,7 +2013,8 @@ public class RubyClass extends RubyModule {
         }
 
         public final String id;
-    };
+    }
+
     private final CallSite[] baseCallSites = new CallSite[CS_NAMES.length];
     {
         for(int i = 0; i < baseCallSites.length; i++) {
