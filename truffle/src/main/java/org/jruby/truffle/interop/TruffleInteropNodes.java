@@ -22,6 +22,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -177,6 +178,73 @@ public abstract class TruffleInteropNodes {
 
     }
 
+    @CoreMethod(unsafeNeedsAudit = true, names = {"boxed?", "boxed_primitive?"}, isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class BoxedNode extends CoreMethodArrayArgumentsNode {
+
+        public BoxedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean isBoxed(boolean receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxed(byte receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxed(short receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxed(int receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxed(long receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxed(float receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxed(double receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxed(CharSequence receiver) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isBoxed(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                @Cached("createIsBoxedNode()") Node isBoxedNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            return ForeignAccess.sendIsBoxed(isBoxedNode, frame, receiver);
+        }
+
+        protected Node createIsBoxedNode() {
+            return Message.IS_BOXED.createNode();
+        }
+
+        @Fallback
+        public boolean isBoxed(Object receiver) {
+            return false;
+        }
+
+    }
+
     @CoreMethod(unsafeNeedsAudit = true, names = {"unbox", "unbox_value"}, isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class UnboxNode extends CoreMethodArrayArgumentsNode {
 
@@ -294,63 +362,6 @@ public abstract class TruffleInteropNodes {
         @Specialization
         public int convert(String value) {
             return (int) value.charAt(0);
-        }
-
-    }
-
-    @CoreMethod(unsafeNeedsAudit = true, names = "boxed_primitive?", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class IsBoxedPrimitiveNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private Node node;
-
-        public IsBoxedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.node = Message.IS_BOXED.createNode();
-        }
-
-        @Specialization
-        public boolean isBoxedPrimitive(VirtualFrame frame, boolean receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public boolean isBoxedPrimitive(VirtualFrame frame, byte receiver) {
-            return true;
-        }
-
-        @Specialization
-        public boolean isBoxedPrimitive(VirtualFrame frame, short receiver) {
-            return true;
-        }
-
-        @Specialization
-        public boolean isBoxedPrimitive(VirtualFrame frame, long receiver) {
-            return true;
-        }
-
-        @Specialization
-        public boolean isBoxedPrimitive(VirtualFrame frame, float receiver) {
-            return true;
-        }
-
-        @Specialization
-        public boolean isBoxedPrimitive(VirtualFrame frame, double receiver) {
-            return true;
-        }
-
-        @Specialization
-        public boolean isBoxedPrimitive(VirtualFrame frame, CharSequence receiver) {
-            return true;
-        }
-
-        @Specialization
-        public boolean isBoxedPrimitive(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) ForeignAccess.sendIsBoxed(node, frame, receiver);
-        }
-
-        @Specialization(guards = {"!isTruffleObject(receiver)", "!isJavaCharSequence(receiver)"})
-        public boolean isBoxedPrimitive(VirtualFrame frame, Object receiver) {
-            return false;
         }
 
     }
