@@ -52,7 +52,7 @@ env:
     - JT='test specs :library'
     - JT='test specs :truffle'
     - JT='test integration fast'
-    - JT='test integration long' JAVA_OPTS="$JAVA_OPTS -Xmx512m"
+    - JT='test integration long' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
 
 matrix:
   include:
