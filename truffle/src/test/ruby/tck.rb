@@ -33,7 +33,7 @@ end
 Truffle::Interop.export_method(:count_invocations)
 
 def apply_numbers(f)
-  Truffle::Interop.execute(f, 18, 32) + 10
+  f.call(18, 32) + 10
 end
 
 Truffle::Interop.export_method(:apply_numbers)
