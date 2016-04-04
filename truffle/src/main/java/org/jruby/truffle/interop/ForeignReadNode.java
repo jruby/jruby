@@ -212,6 +212,10 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
     })
     protected static abstract class StringCachedHelperNode extends RubyNode {
 
+        @Child private DoesRespondDispatchHeadNode definedNode;
+        @Child private DoesRespondDispatchHeadNode indexDefinedNode;
+        @Child private CallDispatchHeadNode callNode;
+
         protected final static String INDEX_METHOD_NAME = "[]";
 
         public StringCachedHelperNode(RubyContext context, SourceSection sourceSection) {
@@ -241,43 +245,52 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
         @Specialization(
                 guards = {
                         "notStartsAt(startsAt)",
-                        "methodDefined(frame, receiver, stringLabel, definedNode)"
+                        "methodDefined(frame, receiver, stringLabel, getDefinedNode())"
                 }
         )
         public Object callMethod(VirtualFrame frame,
                                  DynamicObject receiver,
                                  Object label,
                                  String stringLabel,
-                                 boolean startsAt,
-                                 @Cached("createDefinedNode()") DoesRespondDispatchHeadNode definedNode,
-                                 @Cached("createCallNode()") CallDispatchHeadNode callNode) {
-            return callNode.call(frame, receiver, stringLabel, null);
+                                 boolean startsAt) {
+            return getCallNode().call(frame, receiver, stringLabel, null);
         }
 
         @Specialization(
                 guards = {
                         "notStartsAt(startsAt)",
-                        "!methodDefined(frame, receiver, stringLabel, definedNode)",
-                        "methodDefined(frame, receiver, INDEX_METHOD_NAME, indexDefinedNode)"
+                        "!methodDefined(frame, receiver, stringLabel, getDefinedNode())",
+                        "methodDefined(frame, receiver, INDEX_METHOD_NAME, getIndexDefinedNode())"
                 }
         )
         public Object index(VirtualFrame frame,
                             DynamicObject receiver,
                             Object label,
                             String stringLabel,
-                            boolean startsAt,
-                            @Cached("createDefinedNode()") DoesRespondDispatchHeadNode definedNode,
-                            @Cached("createDefinedNode()") DoesRespondDispatchHeadNode indexDefinedNode,
-                            @Cached("createCallNode()") CallDispatchHeadNode callNode) {
-            return callNode.call(frame, receiver, "[]", null, label);
+                            boolean startsAt) {
+            return getCallNode().call(frame, receiver, "[]", null, label);
         }
 
         protected boolean notStartsAt(boolean startsAt) {
             return !startsAt;
         }
 
-        protected DoesRespondDispatchHeadNode createDefinedNode() {
-            return new DoesRespondDispatchHeadNode(getContext(), true);
+        protected DoesRespondDispatchHeadNode getDefinedNode() {
+            if (definedNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                definedNode = insert(new DoesRespondDispatchHeadNode(getContext(), true));
+            }
+
+            return definedNode;
+        }
+
+        protected DoesRespondDispatchHeadNode getIndexDefinedNode() {
+            if (indexDefinedNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                indexDefinedNode = insert(new DoesRespondDispatchHeadNode(getContext(), true));
+            }
+
+            return indexDefinedNode;
         }
 
         protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, String stringLabel,
@@ -285,8 +298,13 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             return definedNode.doesRespondTo(frame, stringLabel, receiver);
         }
 
-        protected CallDispatchHeadNode createCallNode() {
-            return DispatchHeadNodeFactory.createMethodCall(getContext(), true);
+        protected CallDispatchHeadNode getCallNode() {
+            if (callNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                callNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            }
+
+            return callNode;
         }
 
     }
