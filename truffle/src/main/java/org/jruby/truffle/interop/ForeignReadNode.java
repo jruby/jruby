@@ -58,7 +58,10 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
     }
 
     @ImportStatic(StringCachingGuards.class)
-    @NodeChildren({@NodeChild("receiver"), @NodeChild("label")})
+    @NodeChildren({
+            @NodeChild("receiver"),
+            @NodeChild("label")
+    })
     protected static abstract class StringCachingHelperNode extends RubyNode {
 
         public StringCachingHelperNode(RubyContext context, SourceSection sourceSection) {
@@ -73,34 +76,34 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                         "ropesEqual(label, cachedRope)"
                 }
         )
-        public Object helper2StringStringCached(VirtualFrame frame,
-                                                DynamicObject receiver,
-                                                DynamicObject label,
-                                                @Cached("privatizeRope(label)") Rope cachedRope,
-                                                @Cached("ropeToString(cachedRope)") String cachedString,
-                                                @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
-                                                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+        public Object cacheStringAndForward(VirtualFrame frame,
+                                            DynamicObject receiver,
+                                            DynamicObject label,
+                                            @Cached("privatizeRope(label)") Rope cachedRope,
+                                            @Cached("ropeToString(cachedRope)") String cachedString,
+                                            @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
+                                            @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, label, cachedString, cachedStartsWithAt);
         }
 
         @Specialization(guards = {"isRubySymbol(label)", "label == cachedLabel"})
-        public Object helper2StringSymbolCached(VirtualFrame frame,
-                                                DynamicObject receiver,
-                                                DynamicObject label,
-                                                @Cached("label") DynamicObject cachedLabel,
-                                                @Cached("objectToString(cachedLabel)") String cachedString,
-                                                @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
-                                                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+        public Object cacheSymbolAndForward(VirtualFrame frame,
+                                            DynamicObject receiver,
+                                            DynamicObject label,
+                                            @Cached("label") DynamicObject cachedLabel,
+                                            @Cached("objectToString(cachedLabel)") String cachedString,
+                                            @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
+                                            @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, cachedLabel, cachedString, cachedStartsWithAt);
         }
 
         @Specialization(guards = "label == cachedLabel")
-        public Object helper2StringCached(VirtualFrame frame,
-                                          DynamicObject receiver,
-                                          String label,
-                                          @Cached("label") String cachedLabel,
-                                          @Cached("startsWithAt(cachedLabel)") boolean cachedStartsWithAt,
-                                          @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+        public Object cacheJavaStringAndForward(VirtualFrame frame,
+                                               DynamicObject receiver,
+                                               String label,
+                                               @Cached("label") String cachedLabel,
+                                               @Cached("startsWithAt(cachedLabel)") boolean cachedStartsWithAt,
+                                               @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, cachedLabel, cachedLabel, cachedStartsWithAt);
         }
 
@@ -124,7 +127,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 "isRubyString(receiver)",
                 "index < 0"
         })
-        public int helper1IndexStringNegative(DynamicObject receiver, int index) {
+        public int indexStringNegative(DynamicObject receiver, int index) {
             return 0;
         }
 
@@ -133,7 +136,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 "index >= 0",
                 "!inRange(receiver, index)"
         })
-        public int helper1IndexStringOutOfRange(DynamicObject receiver, int index) {
+        public int indexStringOutOfRange(DynamicObject receiver, int index) {
             return 0;
         }
 
@@ -142,7 +145,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 "index >= 0",
                 "inRange(receiver, index)"
         })
-        public int helper1IndexString(DynamicObject receiver, int index) {
+        public int indexString(DynamicObject receiver, int index) {
             return Layouts.STRING.getRope(receiver).get(index);
         }
 
@@ -152,7 +155,12 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
 
     }
 
-    @NodeChildren({@NodeChild("receiver"), @NodeChild("label"), @NodeChild("stringLabel"), @NodeChild("startsAt")})
+    @NodeChildren({
+            @NodeChild("receiver"),
+            @NodeChild("label"),
+            @NodeChild("stringLabel"),
+            @NodeChild("startsAt")
+    })
     protected static abstract class StringCachedHelperNode extends RubyNode {
 
         protected final static String INDEX_METHOD_NAME = "[]";
@@ -161,62 +169,75 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             super(context, sourceSection);
         }
 
-        public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object label, String stringLabel, boolean startsAt);
+        public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object label,
+                                                         String stringLabel, boolean startsAt);
 
         @Specialization(guards = "startsAt(startsAt)")
-        public Object helper3At(DynamicObject receiver,
-                                Object label,
-                                String stringLabel,
-                                boolean startsAt,
-                                @Cached("createReadObjectFieldNode(stringLabel)") ReadObjectFieldNode readObjectFieldNode) {
+        public Object readInstanceVariable(DynamicObject receiver,
+                                           Object label,
+                                           String stringLabel,
+                                           boolean startsAt,
+                                           @Cached("createReadObjectFieldNode(stringLabel)") ReadObjectFieldNode readObjectFieldNode) {
             return readObjectFieldNode.execute(receiver);
-        }
-
-        protected ReadObjectFieldNode createReadObjectFieldNode(String label) {
-            return ReadObjectFieldNodeGen.create(getContext(), label, nil());
-        }
-
-        @Specialization(guards = {"notStartsAt(startsAt)", "methodDefined(frame, receiver, stringLabel, definedNode)"})
-        public Object helper4(VirtualFrame frame,
-                              DynamicObject receiver,
-                              Object label,
-                              String stringLabel,
-                              boolean startsAt,
-                              @Cached("createDefinedNode()") DoesRespondDispatchHeadNode definedNode,
-                              @Cached("createCallNode()") CallDispatchHeadNode callNode) {
-            return callNode.call(frame, receiver, stringLabel, null);
-        }
-
-        @Specialization(guards = {"notStartsAt(startsAt)", "!methodDefined(frame, receiver, stringLabel, definedNode)", "methodDefined(frame, receiver, INDEX_METHOD_NAME, indexDefinedNode)"})
-        public Object helper4(VirtualFrame frame,
-                              DynamicObject receiver,
-                              Object label,
-                              String stringLabel,
-                              boolean startsAt,
-                              @Cached("createDefinedNode()") DoesRespondDispatchHeadNode definedNode,
-                              @Cached("createDefinedNode()") DoesRespondDispatchHeadNode indexDefinedNode,
-                              @Cached("createCallNode()") CallDispatchHeadNode callNode) {
-            return callNode.call(frame, receiver, "[]", null, label);
-        }
-
-        protected DoesRespondDispatchHeadNode createDefinedNode() {
-            return new DoesRespondDispatchHeadNode(getContext(), true);
-        }
-
-        protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, String stringLabel, DoesRespondDispatchHeadNode definedNode) {
-            return definedNode.doesRespondTo(frame, stringLabel, receiver);
-        }
-
-        protected CallDispatchHeadNode createCallNode() {
-            return DispatchHeadNodeFactory.createMethodCall(getContext(), true);
         }
 
         protected boolean startsAt(boolean startsAt) {
             return startsAt;
         }
 
+        protected ReadObjectFieldNode createReadObjectFieldNode(String label) {
+            return ReadObjectFieldNodeGen.create(getContext(), label, nil());
+        }
+
+        @Specialization(
+                guards = {
+                        "notStartsAt(startsAt)",
+                        "methodDefined(frame, receiver, stringLabel, definedNode)"
+                }
+        )
+        public Object callMethod(VirtualFrame frame,
+                                 DynamicObject receiver,
+                                 Object label,
+                                 String stringLabel,
+                                 boolean startsAt,
+                                 @Cached("createDefinedNode()") DoesRespondDispatchHeadNode definedNode,
+                                 @Cached("createCallNode()") CallDispatchHeadNode callNode) {
+            return callNode.call(frame, receiver, stringLabel, null);
+        }
+
+        @Specialization(
+                guards = {
+                        "notStartsAt(startsAt)",
+                        "!methodDefined(frame, receiver, stringLabel, definedNode)",
+                        "methodDefined(frame, receiver, INDEX_METHOD_NAME, indexDefinedNode)"
+                }
+        )
+        public Object index(VirtualFrame frame,
+                            DynamicObject receiver,
+                            Object label,
+                            String stringLabel,
+                            boolean startsAt,
+                            @Cached("createDefinedNode()") DoesRespondDispatchHeadNode definedNode,
+                            @Cached("createDefinedNode()") DoesRespondDispatchHeadNode indexDefinedNode,
+                            @Cached("createCallNode()") CallDispatchHeadNode callNode) {
+            return callNode.call(frame, receiver, "[]", null, label);
+        }
+
         protected boolean notStartsAt(boolean startsAt) {
             return !startsAt;
+        }
+
+        protected DoesRespondDispatchHeadNode createDefinedNode() {
+            return new DoesRespondDispatchHeadNode(getContext(), true);
+        }
+
+        protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, String stringLabel,
+                                        DoesRespondDispatchHeadNode definedNode) {
+            return definedNode.doesRespondTo(frame, stringLabel, receiver);
+        }
+
+        protected CallDispatchHeadNode createCallNode() {
+            return DispatchHeadNodeFactory.createMethodCall(getContext(), true);
         }
 
     }
