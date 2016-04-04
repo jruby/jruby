@@ -118,7 +118,7 @@ public class ConstantLookupSite extends MutableCallSite {
         if (fallback == null) {
             fallback = Binder.from(type())
                     .insert(0, this)
-                    .invokeVirtualQuiet(Bootstrap.LOOKUP, "searchConst");
+                    .invokeVirtualQuiet(Bootstrap.LOOKUP, "searchModuleForConst");
         }
 
         setTarget(switchPoint.guardWithTest(target, fallback));
