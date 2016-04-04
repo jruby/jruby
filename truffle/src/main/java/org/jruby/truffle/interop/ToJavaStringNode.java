@@ -39,10 +39,10 @@ public abstract class ToJavaStringNode extends RubyNode {
                     "ropesEqual(value, cachedRope)"
             },
             limit = "getLimit()")
-    public String convertUncached(
+    public String stringUncached(
             DynamicObject value,
             @Cached("privatizeRope(value)") Rope cachedRope,
-            @Cached("objectToString(value)") String convertedString) {
+            @Cached("value.toString()") String convertedString) {
         return convertedString;
     }
 
@@ -51,14 +51,19 @@ public abstract class ToJavaStringNode extends RubyNode {
     }
 
     @TruffleBoundary
-    @Specialization(guards = "isRubyString(value)")
-    public String convertStringUncached(DynamicObject value) {
+    @Specialization(guards = "isRubyString(value)", contains = "stringUncached")
+    public String stringCached(DynamicObject value) {
         return value.toString();
     }
 
     @Specialization(guards = "isRubySymbol(value)")
-    public String convertSymbol(DynamicObject value) {
+    public String symbol(DynamicObject value) {
         return Layouts.SYMBOL.getString(value);
+    }
+
+    @Specialization
+    public String javaString(String value) {
+        return value;
     }
 
     protected int getLimit() {

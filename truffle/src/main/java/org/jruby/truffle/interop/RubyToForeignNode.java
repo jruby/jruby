@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.interop;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -18,8 +17,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -33,36 +30,16 @@ public abstract class RubyToForeignNode extends RubyNode {
 
     public abstract Object executeConvert(VirtualFrame frame, Object value);
 
-    @Specialization(
-            guards = {
-                    "isRubyString(value)",
-                    "ropesEqual(value, cachedRope)"
-            },
-            limit = "getLimit()")
-    public String convertUncached(
+    @Specialization(guards = "isRubySymbol(value) || isRubyString(value)")
+    public String convert(
+            VirtualFrame frame,
             DynamicObject value,
-            @Cached("privatizeRope(value)") Rope cachedRope,
-            @Cached("objectToString(value)") String convertedString) {
-        return convertedString;
+            @Cached("createToJavaStringNode()") ToJavaStringNode toJavaStringNode) {
+        return toJavaStringNode.executeToJavaString(frame, value);
     }
 
-    @TruffleBoundary
-    @Specialization(guards = "isRubyString(value)")
-    public String convertStringUncached(DynamicObject value) {
-        return value.toString();
-    }
-
-    protected int getLimit() {
-        return getContext().getOptions().INTEROP_CONVERT_CACHE;
-    }
-
-    protected String objectToString(DynamicObject object) {
-        return object.toString();
-    }
-
-    @Specialization(guards = "isRubySymbol(value)")
-    public String convertSymbol(DynamicObject value) {
-        return Layouts.SYMBOL.getString(value);
+    protected ToJavaStringNode createToJavaStringNode() {
+        return ToJavaStringNodeGen.create(getContext(), null, null);
     }
 
     @Specialization(guards = {"!isRubyString(value)", "!isRubySymbol(value)"})
