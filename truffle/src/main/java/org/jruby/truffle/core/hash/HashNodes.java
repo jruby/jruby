@@ -52,7 +52,7 @@ import java.util.Map;
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -69,7 +69,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "[]", constructor = true, rest = true)
+    @CoreMethod(names = "[]", constructor = true, rest = true)
     @ImportStatic(HashGuards.class)
     public abstract static class ConstructNode extends CoreMethodArrayArgumentsNode {
 
@@ -159,7 +159,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "[]", required = 1)
+    @CoreMethod(names = "[]", required = 1)
     @ImportStatic(HashGuards.class)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
@@ -358,7 +358,7 @@ public abstract class HashNodes {
 
     }
     
-    @CoreMethod(unsafeNeedsAudit = true, names = "_get_or_undefined", required = 1)
+    @CoreMethod(names = "_get_or_undefined", required = 1)
     public abstract static class GetOrUndefinedNode extends CoreMethodArrayArgumentsNode {
 
         @Child private GetIndexNode getIndexNode;
@@ -376,7 +376,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "[]=", required = 2, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "[]=", required = 2, raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
     public abstract static class SetIndexNode extends CoreMethodArrayArgumentsNode {
 
@@ -394,7 +394,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "clear", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
@@ -422,7 +422,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "compare_by_identity", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "compare_by_identity", raiseIfFrozenSelf = true)
     public abstract static class CompareByIdentityNode extends CoreMethodArrayArgumentsNode {
 
         public CompareByIdentityNode(RubyContext context, SourceSection sourceSection) {
@@ -437,7 +437,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "compare_by_identity?")
+    @CoreMethod(names = "compare_by_identity?")
     public abstract static class IsCompareByIdentityNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile profile = ConditionProfile.createBinaryProfile();
@@ -453,7 +453,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "default_proc")
+    @CoreMethod(names = "default_proc")
     public abstract static class DefaultProcNode extends CoreMethodArrayArgumentsNode {
 
         public DefaultProcNode(RubyContext context, SourceSection sourceSection) {
@@ -471,7 +471,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "delete", required = 1, needsBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete", required = 1, needsBlock = true, raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
     public abstract static class DeleteNode extends CoreMethodArrayArgumentsNode {
 
@@ -583,7 +583,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "each", "each_pair" }, needsBlock = true)
+    @CoreMethod(names = { "each", "each_pair" }, needsBlock = true)
     @ImportStatic(HashGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
@@ -654,7 +654,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "empty?")
+    @CoreMethod(names = "empty?")
     @ImportStatic(HashGuards.class)
     public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
@@ -674,7 +674,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "initialize", needsBlock = true, optional = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "initialize", needsBlock = true, optional = 1, raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
@@ -729,7 +729,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = {"initialize_copy", "replace"}, required = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = {"initialize_copy", "replace"}, required = 1, raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
@@ -804,7 +804,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = {"map", "collect"}, needsBlock = true)
+    @CoreMethod(names = {"map", "collect"}, needsBlock = true)
     @ImportStatic(HashGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
@@ -878,7 +878,7 @@ public abstract class HashNodes {
     }
 
     @ImportStatic(HashGuards.class)
-    @CoreMethod(unsafeNeedsAudit = true, names = "merge", required = 1, needsBlock = true)
+    @CoreMethod(names = "merge", required = 1, needsBlock = true)
     public abstract static class MergeNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
@@ -1216,7 +1216,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "default=", required = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "default=", required = 1, raiseIfFrozenSelf = true)
     public abstract static class SetDefaultNode extends CoreMethodArrayArgumentsNode {
 
         public SetDefaultNode(RubyContext context, SourceSection sourceSection) {
@@ -1231,7 +1231,7 @@ public abstract class HashNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "shift", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "shift", raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
     public abstract static class ShiftNode extends CoreMethodArrayArgumentsNode {
 
@@ -1342,7 +1342,7 @@ public abstract class HashNodes {
 
     }
     
-    @CoreMethod(unsafeNeedsAudit = true, names = {"size", "length"})
+    @CoreMethod(names = {"size", "length"})
     @ImportStatic(HashGuards.class)
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
@@ -1362,7 +1362,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "rehash", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "rehash", raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
     public abstract static class RehashNode extends CoreMethodArrayArgumentsNode {
 
