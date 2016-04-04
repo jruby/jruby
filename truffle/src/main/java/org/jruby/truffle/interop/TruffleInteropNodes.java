@@ -124,6 +124,27 @@ public abstract class TruffleInteropNodes {
 
     }
 
+    @CoreMethod(unsafeNeedsAudit = true, names = {"size?", "has_size_property?"}, isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class HasSizeNode extends CoreMethodArrayArgumentsNode {
+
+        public HasSizeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean hasSize(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                @Cached("createHasSizeNode()") Node hasSizeNode) {
+            return ForeignAccess.sendHasSize(hasSizeNode, frame, receiver);
+        }
+
+        protected Node createHasSizeNode() {
+            return Message.IS_EXECUTABLE.createNode();
+        }
+
+    }
+
     // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
 
     @CoreMethod(unsafeNeedsAudit = true, names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
@@ -245,23 +266,6 @@ public abstract class TruffleInteropNodes {
         @Specialization
         public boolean isNull(VirtualFrame frame, TruffleObject receiver) {
             return (boolean) ForeignAccess.sendIsNull(node, frame, receiver);
-        }
-
-    }
-
-    @CoreMethod(unsafeNeedsAudit = true, names = "has_size_property?", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class HasSizePropertyNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private Node node;
-
-        public HasSizePropertyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.node = Message.HAS_SIZE.createNode();
-        }
-
-        @Specialization
-        public boolean hasSizeProperty(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) ForeignAccess.sendHasSize(node, frame, receiver);
         }
 
     }
