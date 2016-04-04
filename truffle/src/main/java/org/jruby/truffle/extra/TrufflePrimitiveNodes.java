@@ -506,8 +506,9 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public DynamicObject flattenRope(DynamicObject string) {
-            final Rope flattened = RopeOperations.flatten(StringOperations.rope(string));
+        public DynamicObject flattenRope(DynamicObject string,
+                                         @Cached("create(getContext(), getSourceSection())") RopeNodes.FlattenNode flattenNode) {
+            final Rope flattened = flattenNode.executeFlatten(StringOperations.rope(string));
 
             return createString(flattened);
         }

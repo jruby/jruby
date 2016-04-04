@@ -653,4 +653,48 @@ public abstract class RopeNodes {
 
     }
 
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "rope")
+    })
+    public abstract static class FlattenNode extends RubyNode {
+
+        @Child private MakeLeafRopeNode makeLeafRopeNode;
+
+        public static FlattenNode create(RubyContext context, SourceSection sourceSection) {
+            return RopeNodesFactory.FlattenNodeGen.create(context, sourceSection, null);
+        }
+
+        public FlattenNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            makeLeafRopeNode = MakeLeafRopeNode.create(context, sourceSection);
+        }
+
+        public abstract LeafRope executeFlatten(Rope rope);
+
+        @Specialization
+        public LeafRope flattenLeafRope(LeafRope rope) {
+            return rope;
+        }
+
+        @Specialization(guards = { "!isLeafRope(rope)", "rope.getRawBytes() != null" })
+        public LeafRope flattenNonLeafWithBytes(Rope rope) {
+            return makeLeafRopeNode.executeMake(rope.getRawBytes(), rope.getEncoding(), rope.getCodeRange(), rope.characterLength());
+        }
+
+        @Specialization(guards = { "!isLeafRope(rope)", "rope.getRawBytes() == null" })
+        public LeafRope flatten(Rope rope) {
+            // NB: We call RopeOperations.flatten here rather than Rope#getBytes so we don't populate the byte[] in
+            // the source `rope`. Otherwise, we'll end up a fully populated reference in both the source `rope` and the
+            // flattened one, which could adversely affect GC.
+            final byte[] bytes = RopeOperations.flattenBytes(rope);
+
+            return makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength());
+        }
+
+        protected static boolean isLeafRope(Rope rope) {
+            return rope instanceof LeafRope;
+        }
+
+    }
+
 }
