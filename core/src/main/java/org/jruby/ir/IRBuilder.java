@@ -4,7 +4,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyString;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
@@ -1337,39 +1336,26 @@ public class IRBuilder {
         return putConstant((Colon3Node) constNode, value);
     }
 
-    private void genInheritanceSearchInstrs(Operand startingModule, Variable constVal, Label foundLabel, boolean noPrivateConstants, String name) {
-        addInstr(new InheritanceSearchConstInstr(constVal, startingModule, name, noPrivateConstants));
-        addInstr(BNEInstr.create(foundLabel, constVal, UndefinedValue.UNDEFINED));
-        addInstr(new ConstMissingInstr(constVal, startingModule, name, scope.maybeUsingRefinements()));
-        addInstr(new LabelInstr(foundLabel));
-    }
-
-    private Operand searchConstInInheritanceHierarchy(Operand startingModule, String name) {
-        Variable constVal = createTemporaryVariable();
-        genInheritanceSearchInstrs(startingModule, constVal, getNewLabel(), true, name);
-        return constVal;
+    private Operand searchModuleForConst(Operand startingModule, String name) {
+        return addResultInstr(new SearchModuleForConstInstr(createTemporaryVariable(), startingModule, name, true));
     }
 
     private Operand searchConst(String name) {
         return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, startingSearchScope(), false));
     }
 
-    public Operand buildColon2(final Colon2Node iVisited) {
-        Node leftNode = iVisited.getLeftNode();
-        final String name = iVisited.getName();
+    public Operand buildColon2(final Colon2Node colon2) {
+        Node lhs = colon2.getLeftNode();
 
         // Colon2ImplicitNode - (module|class) Foo.  Weird, but it is a wrinkle of AST inheritance.
-        if (leftNode == null) return searchConst(name);
+        if (lhs == null) return searchConst(colon2.getName());
 
-        // Colon2ConstNode
-        // 1. Load the module first (lhs of node)
-        // 2. Then load the constant from the module
-        Operand module = build(leftNode);
-        return searchConstInInheritanceHierarchy(module, name);
+        // Colon2ConstNode (Left::name)
+        return searchModuleForConst(build(lhs), colon2.getName());
     }
 
     public Operand buildColon3(Colon3Node node) {
-        return searchConstInInheritanceHierarchy(new ObjectClass(), node.getName());
+        return searchModuleForConst(new ObjectClass(), node.getName());
     }
 
     public Operand buildComplex(ComplexNode node) {

@@ -466,6 +466,17 @@ public abstract class IRBytecodeAdapter {
      */
     public abstract void searchConst(String name, boolean noPrivateConsts);
 
+
+    /**
+     * Lookup a constant from current module.
+     *
+     * Stack required: context, static scope
+     *
+     * @param name name of the constant
+     * @param noPrivateConsts whether to ignore private constants
+     */
+    public abstract void searchModuleForConst(String name, boolean noPrivateConsts);
+
     /**
      * Lookup a constant from a given class or module.
      *

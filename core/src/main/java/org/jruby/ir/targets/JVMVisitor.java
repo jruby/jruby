@@ -1919,6 +1919,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void SearchModuleForConstInstr(SearchModuleForConstInstr instr) {
+        jvmMethod().loadContext();
+        visit(instr.getCurrentModule());
+
+        jvmMethod().searchModuleForConst(instr.getConstName(), instr.isNoPrivateConsts());
+    }
+
+    @Override
     public void SetCapturedVarInstr(SetCapturedVarInstr instr) {
         jvmMethod().loadContext();
         visit(instr.getMatch2Result());
