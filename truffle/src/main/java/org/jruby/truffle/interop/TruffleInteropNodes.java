@@ -510,65 +510,6 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "unbox_value", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class UnboxValueNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private Node node;
-
-        public UnboxValueNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.node = Message.UNBOX.createNode();
-        }
-
-        @Specialization
-        public boolean unbox(VirtualFrame frame, boolean receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public byte unbox(VirtualFrame frame, byte receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public short unbox(VirtualFrame frame, short receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public long unbox(VirtualFrame frame, long receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public float unbox(VirtualFrame frame, float receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public double unbox(VirtualFrame frame, double receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public DynamicObject executeForeign(VirtualFrame frame, CharSequence receiver) {
-            // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
-
-            return Layouts.STRING.createString(coreLibrary().getStringFactory(), StringOperations.ropeFromByteList(ByteList.create(receiver)));
-        }
-
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver) {
-            try {
-                return ForeignAccess.sendUnbox(node, frame, receiver);
-            } catch (UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RuntimeException(e);
-            }
-        }
-
-    }
-
     @CoreMethod(unsafeNeedsAudit = true, names = "export", isModuleFunction = true, needsSelf = false, required = 2)
     public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
 
