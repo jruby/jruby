@@ -262,6 +262,7 @@ public class Options {
     public static final Option<Integer> TRUFFLE_ROPE_CLASS_CACHE = integer(TRUFFLE, "truffle.rope_class.cache", 6, "Cache size for rope operations that depend on a concrete rope implementation to avoid virtual calls.");
     public static final Option<Integer> TRUFFLE_INTEROP_CONVERT_CACHE = integer(TRUFFLE, "truffle.interop.convert.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for converting values for interop.");
     public static final Option<Integer> TRUFFLE_INTEROP_EXECUTE_CACHE = integer(TRUFFLE, "truffle.interop.execute.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for interop EXECUTE messages.");
+    public static final Option<Integer> TRUFFLE_INTEROP_READ_CACHE = integer(TRUFFLE, "truffle.interop.read.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for interop READ messages.");
 
     public static final Option<Boolean> TRUFFLE_CLONE_DEFAULT = bool(TRUFFLE, "truffle.clone.default", true, "Default option for cloning.");
     public static final Option<Boolean> TRUFFLE_INLINE_DEFAULT = bool(TRUFFLE, "truffle.inline.default", true, "Default option for inlining.");

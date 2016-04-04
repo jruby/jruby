@@ -10,6 +10,7 @@
 package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -74,7 +75,8 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 guards = {
                         "isRubyString(label)",
                         "ropesEqual(label, cachedRope)"
-                }
+                },
+                limit = "getCacheLimit()"
         )
         public Object cacheStringAndForward(VirtualFrame frame,
                                             DynamicObject receiver,
@@ -86,7 +88,25 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             return nextHelper.executeStringCachedHelper(frame, receiver, label, cachedString, cachedStartsWithAt);
         }
 
-        @Specialization(guards = {"isRubySymbol(label)", "label == cachedLabel"})
+        @Specialization(
+                guards = "isRubyString(label)",
+                contains = "cacheStringAndForward"
+        )
+        public Object uncachedStringAndForward(VirtualFrame frame,
+                                               DynamicObject receiver,
+                                               DynamicObject label,
+                                               @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+            final String labelString = objectToString(label);
+            return nextHelper.executeStringCachedHelper(frame, receiver, label, labelString, startsWithAt(labelString));
+        }
+
+        @Specialization(
+                guards = {
+                        "isRubySymbol(label)",
+                        "label == cachedLabel"
+                },
+                limit = "getCacheLimit()"
+        )
         public Object cacheSymbolAndForward(VirtualFrame frame,
                                             DynamicObject receiver,
                                             DynamicObject label,
@@ -97,7 +117,22 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             return nextHelper.executeStringCachedHelper(frame, receiver, cachedLabel, cachedString, cachedStartsWithAt);
         }
 
-        @Specialization(guards = "label == cachedLabel")
+        @Specialization(
+                guards = "isRubySymbol(label)",
+                contains = "cacheSymbolAndForward"
+        )
+        public Object uncachedSymbolAndForward(VirtualFrame frame,
+                                               DynamicObject receiver,
+                                               DynamicObject label,
+                                               @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+            final String labelString = objectToString(label);
+            return nextHelper.executeStringCachedHelper(frame, receiver, label, labelString, startsWithAt(labelString));
+        }
+
+        @Specialization(
+                guards = "label == cachedLabel",
+                limit = "getCacheLimit()"
+        )
         public Object cacheJavaStringAndForward(VirtualFrame frame,
                                                DynamicObject receiver,
                                                String label,
@@ -107,10 +142,19 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             return nextHelper.executeStringCachedHelper(frame, receiver, cachedLabel, cachedLabel, cachedStartsWithAt);
         }
 
+        @Specialization(contains = "cacheJavaStringAndForward")
+        public Object uncachedJavaStringAndForward(VirtualFrame frame,
+                                                   DynamicObject receiver,
+                                                   String label,
+                                                   @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+            return nextHelper.executeStringCachedHelper(frame, receiver, label, label, startsWithAt(label));
+        }
+
         protected StringCachedHelperNode createNextHelper() {
             return ForeignReadNodeFactory.StringCachedHelperNodeGen.create(getContext(), null, null, null, null, null);
         }
 
+        @TruffleBoundary
         protected String objectToString(DynamicObject string) {
             return string.toString();
         }
@@ -119,6 +163,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             return RopeOperations.decodeRope(getContext().getJRubyRuntime(), rope);
         }
 
+        @TruffleBoundary
         protected boolean startsWithAt(String label) {
             return !label.isEmpty() && label.charAt(0) == '@';
         }
@@ -151,6 +196,10 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
 
         protected boolean inRange(DynamicObject string, int index) {
             return index < Layouts.STRING.getRope(string).byteLength();
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().INTEROP_READ_CACHE;
         }
 
     }
