@@ -364,7 +364,7 @@ public abstract class TruffleInteropNodes {
                 TruffleObject receiver,
                 DynamicObject identifier,
                 @Cached("identifier") DynamicObject cachedIdentifier,
-                @Cached("identifier.toString()") String identifierString,
+                @Cached("cachedIdentifier.toString()") String identifierString,
                 @Cached("createReadNode()") Node readNode,
                 @Cached("create()") BranchProfile exceptionProfile) {
             try {
@@ -375,13 +375,19 @@ public abstract class TruffleInteropNodes {
             }
         }
 
-        @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
-        public Object read(
+        @Specialization(
+                guards = {
+                        "isRubyString(identifier)",
+                        "ropesEqual(identifier, cachedIdentifier)"
+                },
+                limit = "getCacheLimit()"
+        )
+        public Object readCached(
                 VirtualFrame frame,
                 TruffleObject receiver,
                 DynamicObject identifier,
                 @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
-                @Cached("identifier.toString()") String identifierString,
+                @Cached("cachedIdentifier.toString()") String identifierString,
                 @Cached("createReadNode()") Node readNode,
                 @Cached("create()") BranchProfile exceptionProfile) {
             try {
@@ -392,8 +398,35 @@ public abstract class TruffleInteropNodes {
             }
         }
 
+        @Specialization(
+                guards = "isRubyString(identifier)",
+                contains = "readCached"
+        )
+        public Object readUncached(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                DynamicObject identifier,
+                @Cached("createReadNode()") Node readNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendRead(readNode, frame, receiver, objectToString(identifier));
+            } catch (UnknownIdentifierException | UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        @TruffleBoundary
+        protected String objectToString(Object object) {
+            return object.toString();
+        }
+
         protected static Node createReadNode() {
             return Message.READ.createNode();
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().INTEROP_READ_CACHE;
         }
 
     }
@@ -429,7 +462,7 @@ public abstract class TruffleInteropNodes {
                 DynamicObject identifier,
                 Object value,
                 @Cached("identifier") DynamicObject cachedIdentifier,
-                @Cached("identifier.toString()") String identifierString,
+                @Cached("cachedIdentifier.toString()") String identifierString,
                 @Cached("createWriteNode()") Node writeNode,
                 @Cached("create()") BranchProfile exceptionProfile) {
             try {
@@ -440,14 +473,20 @@ public abstract class TruffleInteropNodes {
             }
         }
 
-        @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
-        public Object write(
+        @Specialization(
+                guards = {
+                        "isRubyString(identifier)",
+                        "ropesEqual(identifier, cachedIdentifier)"
+                },
+                limit = "getCacheLimit()"
+        )
+        public Object writeCached(
                 VirtualFrame frame,
                 TruffleObject receiver,
                 DynamicObject identifier,
                 Object value,
                 @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
-                @Cached("identifier.toString()") String identifierString,
+                @Cached("cachedIdentifier.toString()") String identifierString,
                 @Cached("createWriteNode()") Node writeNode,
                 @Cached("create()") BranchProfile exceptionProfile) {
             try {
@@ -458,8 +497,36 @@ public abstract class TruffleInteropNodes {
             }
         }
 
+        @Specialization(
+                guards = "isRubyString(identifier)",
+                contains = "writeCached"
+        )
+        public Object writeUncached(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                DynamicObject identifier,
+                Object value,
+                @Cached("createWriteNode()") Node writeNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendWrite(writeNode, frame, receiver, objectToString(identifier), value);
+            } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        @TruffleBoundary
+        protected String objectToString(Object object) {
+            return object.toString();
+        }
+
         protected static Node createWriteNode() {
             return Message.WRITE.createNode();
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().INTEROP_WRITE_CACHE;
         }
 
     }
