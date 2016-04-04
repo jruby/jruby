@@ -136,7 +136,6 @@
                                                                 :test_validates_presence_of_finds_global_default_key_translation_when_blank],
                                    NumericalityValidationTest: [:test_validates_numericality_with_equal_to] }
 
-                      p ENV
                       undefine = if ENV['CI']
                                    failures
                                  else

@@ -44,6 +44,11 @@
                   end
                 end
               end
+    systemu.rb: |
+                jruby_version = JRUBY_VERSION
+                Object.send :remove_const, :JRUBY_VERSION
+                require_relative '../jruby+truffle/2.2.0/gems/systemu-2.6.5/lib/systemu'
+                JRUBY_VERSION = jruby_version
     rails-html-sanitizer.rb: "puts 'HTML sanitization stubbed'"
 
 :run:

@@ -3,50 +3,53 @@
 <h1>People</h1>
 
 <table>
-    <thead>
-    <tr>
-        <td>Name:</td>
-        <td>Email:</td>
-    </tr>
-    </thead>
+  <thead>
+  <tr>
+    <td>Name:</td>
+    <td>Email:</td>
+    <td></td>
+  </tr>
+  </thead>
 
-    <tbody>
-    <% @people.each do |person| %>
-        <tr>
-            <td><%= person[:name] %></td>
-            <td><%= person[:email] %></td>
-        </tr>
-    <% end %>
-    </tbody>
+  <tbody>
+  <% @people.each do |person| %>
+      <tr>
+        <td><%= person.name %></td>
+        <td><%= person.email %></td>
+        <td><%= button_to 'Delete', person_path(id: person.id), method: :delete, class: 'btn', small: true %></td>
+      </tr>
+  <% end %>
+  </tbody>
 
-    <tfoot>
-    <tr>
-        <td>Total:</td>
-        <td><%= @people.size %></td>
-    </tr>
-    </tfoot>
+  <tfoot>
+  <tr>
+    <td>Total:</td>
+    <td><%= @people.size %></td>
+    <td><%= button_to 'Delete all', destroy_all_people_path, method: :delete, class: 'btn', small: true %></td>
+  </tr>
+  </tfoot>
 
 </table>
 
 
 <row>
-    <column cols="5">
+  <column cols="5">
 
-        <h2>New person</h2>
+    <h2>New person</h2>
 
-        <%= form_tag 'people', class: :forms do %>
-            <section>
-                <label>Name</label>
-                <%= text_field_tag :name %>
-            </section>
-            <section>
-                <label>Email</label>
-                <%= text_field_tag :email %>
-            </section>
-            <section>
-                <button type="primary">Create</button>
-            </section>
-        <% end %>
+    <%= form_tag 'people', class: :forms do %>
+        <section>
+          <label>Name</label>
+          <%= text_field_tag :name %>
+        </section>
+        <section>
+          <label>Email</label>
+          <%= text_field_tag :email %>
+        </section>
+        <section>
+          <button type="primary">Create</button>
+        </section>
+    <% end %>
 
-    </column>
+  </column>
 </row>

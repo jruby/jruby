@@ -125,3 +125,6 @@ notifications:
 # we are on a branch
     on_success: always
     on_failure: never
+
+services:
+  - redis-server

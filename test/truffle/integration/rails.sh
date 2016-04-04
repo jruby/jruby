@@ -13,9 +13,9 @@ $JRUBY_BIN/gem install bundler
 $JTR setup
 $JTR run -r rubygems -- bin/rails server &
 serverpid=$!
-url=http://localhost:3000/people.json
+url=http://localhost:3000
 
-while ! curl -s $url;
+while ! curl -s "$url/people.json";
 do
   echo -n .
   sleep 1
@@ -24,11 +24,15 @@ done
 echo Server is up
 
 set -x
-
-test "$(curl -s $url)" = '[{"name":"John Doe","email":"jd@example.com"}]'
-curl -s --data 'name=Anybody&email=ab@example.com' $url
-test "$(curl -s $url)" = '[{"name":"John Doe","email":"jd@example.com"},{"name":"Anybody","email":"ab@example.com"}]'
+curl -s -X "DELETE" "$url/people/destroy_all.json"
+test "$(curl -s "$url/people.json")" = '[]'
+curl -s --data 'name=Anybody&email=ab@example.com' "$url/people.json"
+echo "$(curl -s "$url/people.json")" | grep '"name":"Anybody","email":"ab@example.com"'
+curl -s -X "DELETE" "$url/people/destroy_all.json"
 
 kill %1
 kill $(cat tmp/pids/server.pid)
+
+set +x
+set +e
 
