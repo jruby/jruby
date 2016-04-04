@@ -62,7 +62,7 @@ public abstract class ExceptionNodes {
         return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace);
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "initialize", optional = 1)
+    @CoreMethod(names = "initialize", optional = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -83,7 +83,7 @@ public abstract class ExceptionNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "backtrace")
+    @CoreMethod(names = "backtrace")
     public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
 
         @Child ReadObjectFieldNode readCustomBacktrace;
@@ -108,7 +108,7 @@ public abstract class ExceptionNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "capture_backtrace!", optional = 1)
+    @CoreMethod(names = "capture_backtrace!", optional = 1)
     public abstract static class CaptureBacktraceNode extends CoreMethodArrayArgumentsNode {
 
         public CaptureBacktraceNode(RubyContext context, SourceSection sourceSection) {
@@ -130,7 +130,7 @@ public abstract class ExceptionNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "message")
+    @CoreMethod(names = "message")
     public abstract static class MessageNode extends CoreMethodArrayArgumentsNode {
 
         public MessageNode(RubyContext context, SourceSection sourceSection) {
@@ -150,7 +150,7 @@ public abstract class ExceptionNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
