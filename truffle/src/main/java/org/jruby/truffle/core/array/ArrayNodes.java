@@ -92,7 +92,7 @@ import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
@@ -109,7 +109,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "+", required = 1)
+    @CoreMethod(names = "+", required = 1)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "a"),
         @NodeChild(type = RubyNode.class, value = "b")
@@ -221,7 +221,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
+    @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
     public abstract static class MulNode extends ArrayCoreMethodNode {
 
         @Child private KernelNodes.RespondToNode respondToToStrNode;
@@ -343,7 +343,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnumParameters = { 0, 1 })
+    @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnumParameters = { 0, 1 })
     public abstract static class IndexNode extends ArrayCoreMethodNode {
 
         @Child protected ArrayReadDenormalizedNode readNode;
@@ -434,7 +434,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "[]=", required = 2, optional = 1, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
         @Child private ArrayWriteNormalizedNode writeNode;
@@ -711,7 +711,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "at", required = 1)
+    @CoreMethod(names = "at", required = 1)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "array"),
         @NodeChild(type = RubyNode.class, value = "index")
@@ -741,7 +741,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "clear", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends ArrayCoreMethodNode {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {
@@ -756,7 +756,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "compact")
+    @CoreMethod(names = "compact")
     @ImportStatic(ArrayGuards.class)
     public abstract static class CompactNode extends ArrayCoreMethodNode {
 
@@ -806,7 +806,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "compact!", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "compact!", raiseIfFrozenSelf = true)
     public abstract static class CompactBangNode extends ArrayCoreMethodNode {
 
         public CompactBangNode(RubyContext context, SourceSection sourceSection) {
@@ -843,7 +843,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "concat", required = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "concat", required = 1, raiseIfFrozenSelf = true)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "array"),
         @NodeChild(type = RubyNode.class, value = "other")
@@ -875,7 +875,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "delete", required = 1)
+    @CoreMethod(names = "delete", required = 1)
     public abstract static class DeleteNode extends ArrayCoreMethodNode {
 
         @Child private KernelNodes.SameOrEqualNode equalNode;
@@ -968,7 +968,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "delete_at", required = 1, raiseIfFrozenSelf = true, lowerFixnumParameters = 0)
+    @CoreMethod(names = "delete_at", required = 1, raiseIfFrozenSelf = true, lowerFixnumParameters = 0)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "array"),
         @NodeChild(type = RubyNode.class, value = "index")
@@ -1064,7 +1064,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "each", needsBlock = true)
+    @CoreMethod(names = "each", needsBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
@@ -1186,7 +1186,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "each_with_index", needsBlock = true)
+    @CoreMethod(names = "each_with_index", needsBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
@@ -1298,7 +1298,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "fill", rest = true, needsBlock = true)
+    @CoreMethod(names = "fill", rest = true, needsBlock = true)
     public abstract static class FillNode extends ArrayCoreMethodNode {
 
         public FillNode(RubyContext context, SourceSection sourceSection) {
@@ -1334,7 +1334,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "include?", required = 1)
+    @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
         @Child private KernelNodes.SameOrEqualNode equalNode;
@@ -1411,7 +1411,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "initialize", needsBlock = true, optional = 2, raiseIfFrozenSelf = true, lowerFixnumParameters = 0)
+    @CoreMethod(names = "initialize", needsBlock = true, optional = 2, raiseIfFrozenSelf = true, lowerFixnumParameters = 0)
     @ImportStatic(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
@@ -1636,7 +1636,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "initialize_copy", required = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "initialize_copy", required = 1, raiseIfFrozenSelf = true)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "from")
@@ -1704,7 +1704,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = {"inject", "reduce"}, needsBlock = true, optional = 2)
+    @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, optional = 2)
     @ImportStatic(ArrayGuards.class)
     public abstract static class InjectNode extends YieldingCoreMethodNode {
 
@@ -1888,7 +1888,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "insert", raiseIfFrozenSelf = true, rest = true, required = 1, optional = 1)
+    @CoreMethod(names = "insert", raiseIfFrozenSelf = true, rest = true, required = 1, optional = 1)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
@@ -1986,7 +1986,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = {"map", "collect"}, needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = {"map", "collect"}, needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
@@ -2100,7 +2100,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = {"map!", "collect!"}, needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
@@ -2174,7 +2174,7 @@ public abstract class ArrayNodes {
 
     // TODO: move into Enumerable?
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "max", needsBlock = true)
+    @CoreMethod(names = "max", needsBlock = true)
     public abstract static class MaxNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode eachNode;
@@ -2292,7 +2292,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "min", needsBlock = true)
+    @CoreMethod(names = "min", needsBlock = true)
     public abstract static class MinNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode eachNode;
@@ -2410,7 +2410,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "pack", required = 1, taintFromParameter = 0)
+    @CoreMethod(names = "pack", required = 1, taintFromParameter = 0)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
@@ -2523,7 +2523,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "pop", raiseIfFrozenSelf = true, optional = 1)
+    @CoreMethod(names = "pop", raiseIfFrozenSelf = true, optional = 1)
     public abstract static class PopNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
@@ -2860,7 +2860,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "<<", raiseIfFrozenSelf = true, required = 1)
+    @CoreMethod(names = "<<", raiseIfFrozenSelf = true, required = 1)
     public abstract static class LeftShiftNode extends ArrayCoreMethodNode {
 
         @Child private ArrayAppendOneNode appendOneNode;
@@ -2877,7 +2877,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "push", "__append__" }, rest = true, optional = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "push", "__append__" }, rest = true, optional = 1, raiseIfFrozenSelf = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
         private final BranchProfile extendBranch = BranchProfile.create();
@@ -3119,7 +3119,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "reject", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "reject", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
@@ -3202,7 +3202,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "delete_if" , needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete_if" , needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteIfNode extends YieldingCoreMethodNode {
 
@@ -3318,7 +3318,7 @@ public abstract class ArrayNodes {
     }
 
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "reject!", needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "reject!", needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
@@ -3441,7 +3441,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "replace", required = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "array"),
         @NodeChild(type = RubyNode.class, value = "other")
@@ -3495,7 +3495,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "select", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "select", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
@@ -3574,7 +3574,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "shift", raiseIfFrozenSelf = true, optional = 1)
+    @CoreMethod(names = "shift", raiseIfFrozenSelf = true, optional = 1)
     public abstract static class ShiftNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
@@ -4029,7 +4029,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = {"size", "length"})
+    @CoreMethod(names = {"size", "length"})
     public abstract static class SizeNode extends ArrayCoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -4043,7 +4043,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "sort", needsBlock = true)
+    @CoreMethod(names = "sort", needsBlock = true)
     public abstract static class SortNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode compareDispatchNode;
@@ -4166,7 +4166,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "unshift", rest = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "unshift", rest = true, raiseIfFrozenSelf = true)
     public abstract static class UnshiftNode extends CoreMethodArrayArgumentsNode {
 
         public UnshiftNode(RubyContext context, SourceSection sourceSection) {
@@ -4187,7 +4187,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "zip", rest = true, required = 1, needsBlock = true)
+    @CoreMethod(names = "zip", rest = true, required = 1, needsBlock = true)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode zipInternalCall;
