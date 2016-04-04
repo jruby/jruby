@@ -57,7 +57,7 @@ public abstract class MethodFilter {
             case PRIVATE:
                 return PRIVATE;
             default:
-                throw  new IllegalArgumentException("unsupported visibility: " + visibility);
+                throw new IllegalArgumentException("unsupported visibility: " + visibility);
         }
     }
 
