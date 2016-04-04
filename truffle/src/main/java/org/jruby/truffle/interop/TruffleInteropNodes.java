@@ -315,6 +315,27 @@ public abstract class TruffleInteropNodes {
 
     }
 
+    @CoreMethod(unsafeNeedsAudit = true, names = "null?", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class NullNode extends CoreMethodArrayArgumentsNode {
+
+        public NullNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean isNull(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                @Cached("createIsNullNode()") Node isNullNode) {
+            return ForeignAccess.sendIsNull(isNullNode, frame, receiver);
+        }
+
+        protected Node createIsNullNode() {
+            return Message.IS_NULL.createNode();
+        }
+
+    }
+
     // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
 
     @CoreMethod(unsafeNeedsAudit = true, names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
@@ -362,23 +383,6 @@ public abstract class TruffleInteropNodes {
         @Specialization
         public int convert(String value) {
             return (int) value.charAt(0);
-        }
-
-    }
-
-    @CoreMethod(unsafeNeedsAudit = true, names = "null?", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class IsNullNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private Node node;
-
-        public IsNullNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.node = Message.IS_NULL.createNode();
-        }
-
-        @Specialization
-        public boolean isNull(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) ForeignAccess.sendIsNull(node, frame, receiver);
         }
 
     }
