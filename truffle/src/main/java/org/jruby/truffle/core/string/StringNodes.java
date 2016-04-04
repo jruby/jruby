@@ -106,7 +106,7 @@ import static org.jruby.truffle.core.string.StringOperations.rope;
 @CoreClass(name = "String")
 public abstract class StringNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -123,7 +123,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "+", required = 1)
+    @CoreMethod(names = "+", required = 1)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "string"),
         @NodeChild(type = RubyNode.class, value = "other")
@@ -162,7 +162,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
+    @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
     public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -307,7 +307,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = {"==", "===", "eql?"}, required = 1)
+    @CoreMethod(names = {"==", "===", "eql?"}, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private StringPrimitiveNodes.StringEqualPrimitiveNode stringEqualNode;
@@ -344,7 +344,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "<=>", required = 1)
+    @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode cmpNode;
@@ -425,7 +425,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "<<", "concat" }, required = 1, taintFromParameter = 0, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFromParameter = 0, raiseIfFrozenSelf = true)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "string"),
             @NodeChild(type = RubyNode.class, value = "other")
@@ -471,7 +471,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintFromSelf = true)
+    @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintFromSelf = true)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToIntNode toIntNode;
@@ -633,7 +633,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "ascii_only?")
+    @CoreMethod(names = "ascii_only?")
     @ImportStatic(StringGuards.class)
     public abstract static class ASCIIOnlyNode extends CoreMethodArrayArgumentsNode {
 
@@ -658,7 +658,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "b", taintFromSelf = true)
+    @CoreMethod(names = "b", taintFromSelf = true)
     public abstract static class BNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.WithEncodingNode withEncodingNode;
@@ -677,7 +677,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "bytes")
+    @CoreMethod(names = "bytes")
     public abstract static class BytesNode extends CoreMethodArrayArgumentsNode {
 
         public BytesNode(RubyContext context, SourceSection sourceSection) {
@@ -700,7 +700,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "bytesize")
+    @CoreMethod(names = "bytesize")
     public abstract static class ByteSizeNode extends CoreMethodArrayArgumentsNode {
 
         public ByteSizeNode(RubyContext context, SourceSection sourceSection) {
@@ -714,7 +714,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "casecmp", required = 1)
+    @CoreMethod(names = "casecmp", required = 1)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "string"),
         @NodeChild(type = RubyNode.class, value = "other")
@@ -768,7 +768,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "chop!", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "chop!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class ChopBangNode extends CoreMethodArrayArgumentsNode {
 
@@ -800,7 +800,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "count", rest = true)
+    @CoreMethod(names = "count", rest = true)
     @ImportStatic(StringGuards.class)
     public abstract static class CountNode extends CoreMethodArrayArgumentsNode {
 
@@ -918,7 +918,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "delete!", rest = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete!", rest = true, raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class DeleteBangNode extends CoreMethodArrayArgumentsNode {
 
@@ -980,7 +980,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "downcase!", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "downcase!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class DowncaseBangNode extends CoreMethodArrayArgumentsNode {
 
@@ -1059,7 +1059,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "each_byte", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each_byte", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachByteNode extends YieldingCoreMethodNode {
 
         public EachByteNode(RubyContext context, SourceSection sourceSection) {
@@ -1087,7 +1087,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "each_char", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each_char", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(StringGuards.class)
     public abstract static class EachCharNode extends YieldingCoreMethodNode {
 
@@ -1171,7 +1171,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "empty?")
+    @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
         public EmptyNode(RubyContext context, SourceSection sourceSection) {
@@ -1184,7 +1184,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "encoding")
+    @CoreMethod(names = "encoding")
     public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
 
         public EncodingNode(RubyContext context, SourceSection sourceSection) {
@@ -1198,7 +1198,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "force_encoding", required = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "force_encoding", required = 1, raiseIfFrozenSelf = true)
     public abstract static class ForceEncodingNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.WithEncodingNode withEncodingNode;
@@ -1251,7 +1251,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getbyte", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "getbyte", required = 1, lowerFixnumParameters = 0)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.GetByteNode ropeGetByteNode;
@@ -1280,7 +1280,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "hash")
+    @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
         public HashNode(RubyContext context, SourceSection sourceSection) {
@@ -1294,7 +1294,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "initialize", optional = 1, taintFromParameter = 0)
+    @CoreMethod(names = "initialize", optional = 1, taintFromParameter = 0)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsFrozenNode isFrozenNode;
@@ -1338,7 +1338,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "initialize_copy", required = 1)
+    @CoreMethod(names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -1360,7 +1360,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "insert", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "string"),
         @NodeChild(type = RubyNode.class, value = "index"),
@@ -1477,7 +1477,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "lstrip!", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "lstrip!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class LstripBangNode extends CoreMethodArrayArgumentsNode {
 
@@ -1544,7 +1544,7 @@ public abstract class StringNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "modify!", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "modify!", raiseIfFrozenSelf = true)
     public abstract static class ModifyBangNode extends CoreMethodArrayArgumentsNode {
 
         public ModifyBangNode(RubyContext context, SourceSection sourceSection) {
@@ -1559,7 +1559,7 @@ public abstract class StringNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "num_bytes=", lowerFixnumParameters = 0, required = 1)
+    @CoreMethod(names = "num_bytes=", lowerFixnumParameters = 0, required = 1)
     public abstract static class SetNumBytesNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
@@ -1585,7 +1585,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "ord")
+    @CoreMethod(names = "ord")
     @ImportStatic(StringGuards.class)
     public abstract static class OrdNode extends CoreMethodArrayArgumentsNode {
 
@@ -1631,7 +1631,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameter = 0)
+    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameter = 0)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "string"),
         @NodeChild(type = RubyNode.class, value = "other")
@@ -1661,7 +1661,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "rstrip!", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "rstrip!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class RstripBangNode extends CoreMethodArrayArgumentsNode {
 
@@ -1732,7 +1732,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "swapcase!", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "swapcase!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class SwapcaseBangNode extends CoreMethodArrayArgumentsNode {
 
@@ -1786,7 +1786,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "dump", taintFromSelf = true)
+    @CoreMethod(names = "dump", taintFromSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class DumpNode extends CoreMethodArrayArgumentsNode {
 
@@ -1840,7 +1840,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "setbyte", required = 2, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "setbyte", required = 2, raiseIfFrozenSelf = true)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "string"),
         @NodeChild(type = RubyNode.class, value = "index"),
@@ -1890,7 +1890,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = {"size", "length"})
+    @CoreMethod(names = {"size", "length"})
     @ImportStatic(StringGuards.class)
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
@@ -1913,7 +1913,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "squeeze!", rest = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "squeeze!", rest = true, raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class SqueezeBangNode extends CoreMethodArrayArgumentsNode {
 
@@ -2026,7 +2026,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "succ!", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "succ!", raiseIfFrozenSelf = true)
     public abstract static class SuccBangNode extends CoreMethodArrayArgumentsNode {
 
         public SuccBangNode(RubyContext context, SourceSection sourceSection) {
@@ -2050,7 +2050,7 @@ public abstract class StringNodes {
 
     // String#sum is in Java because without OSR we can't warm up the Rubinius implementation
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "sum", optional = 1)
+    @CoreMethod(names = "sum", optional = 1)
     public abstract static class SumNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode addNode;
@@ -2112,7 +2112,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "to_f")
+    @CoreMethod(names = "to_f")
     public abstract static class ToFNode extends CoreMethodArrayArgumentsNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
@@ -2135,7 +2135,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "to_s", "to_str" })
+    @CoreMethod(names = { "to_s", "to_str" })
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -2158,7 +2158,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = {"to_sym", "intern"})
+    @CoreMethod(names = {"to_sym", "intern"})
     public abstract static class ToSymNode extends CoreMethodArrayArgumentsNode {
 
         public ToSymNode(RubyContext context, SourceSection sourceSection) {
@@ -2171,7 +2171,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "reverse!", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "reverse!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class ReverseBangNode extends CoreMethodArrayArgumentsNode {
 
@@ -2240,7 +2240,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "tr!", required = 2, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "tr!", required = 2, raiseIfFrozenSelf = true)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "self"),
         @NodeChild(type = RubyNode.class, value = "fromStr"),
@@ -2283,7 +2283,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "tr_s!", required = 2, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "tr_s!", required = 2, raiseIfFrozenSelf = true)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "fromStr"),
@@ -2326,7 +2326,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "unpack", required = 1, taintFromParameter = 0)
+    @CoreMethod(names = "unpack", required = 1, taintFromParameter = 0)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class UnpackNode extends ArrayCoreMethodNode {
 
@@ -2423,7 +2423,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "upcase", taintFromSelf = true)
+    @CoreMethod(names = "upcase", taintFromSelf = true)
     public abstract static class UpcaseNode extends CoreMethodArrayArgumentsNode {
 
         @Child CallDispatchHeadNode dupNode;
@@ -2445,7 +2445,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "upcase!", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "upcase!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class UpcaseBangNode extends CoreMethodArrayArgumentsNode {
 
@@ -2524,7 +2524,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "valid_encoding?")
+    @CoreMethod(names = "valid_encoding?")
     @ImportStatic(StringGuards.class)
     public abstract static class ValidEncodingQueryNode extends CoreMethodArrayArgumentsNode {
 
@@ -2544,7 +2544,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "capitalize!", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "capitalize!", raiseIfFrozenSelf = true)
     public abstract static class CapitalizeBangNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
@@ -2606,7 +2606,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "capitalize", taintFromSelf = true)
+    @CoreMethod(names = "capitalize", taintFromSelf = true)
     public abstract static class CapitalizeNode extends CoreMethodArrayArgumentsNode {
 
         @Child CallDispatchHeadNode capitalizeBangNode;
@@ -2628,7 +2628,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "clear", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {
