@@ -46,7 +46,7 @@ module ExecJS
         if Truffle::Interop.boxed_primitive?(value)
           Truffle::Interop.unbox_value(value)
         else
-          JSON.parse(Truffle::Interop.java_string_to_ruby(STRINGIFY.call(STRINGIFY, value)))
+          JSON.parse(Truffle::Interop.unbox(STRINGIFY.call(STRINGIFY, value)))
         end
       end
 
