@@ -407,7 +407,7 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization(guards = {"!isRubySymbol(identifier)", "!isRubyString(identifier)"})
-        public Object writeProperty(
+        public Object write(
                 VirtualFrame frame,
                 TruffleObject receiver,
                 Object identifier,
@@ -423,7 +423,7 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
-        public Object writeProperty(
+        public Object write(
                 VirtualFrame frame,
                 TruffleObject receiver,
                 DynamicObject identifier,
@@ -441,7 +441,7 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
-        public Object writeProperty(
+        public Object write(
                 VirtualFrame frame,
                 TruffleObject receiver,
                 DynamicObject identifier,
