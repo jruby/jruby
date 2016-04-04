@@ -59,7 +59,7 @@ import java.util.List;
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "!")
+    @CoreMethod(names = "!")
     public abstract static class NotNode extends UnaryCoreMethodNode {
 
         public NotNode(RubyContext context, SourceSection sourceSection) {
@@ -77,7 +77,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "!=", required = 1)
+    @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode equalNode;
@@ -94,7 +94,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "equal?", "==" }, required = 1)
+    @CoreMethod(names = { "equal?", "==" }, required = 1)
     public abstract static class ReferenceEqualNode extends BinaryCoreMethodNode {
 
         public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -137,7 +137,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "initialize", needsSelf = false)
+    @CoreMethod(names = "initialize", needsSelf = false)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -151,7 +151,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "instance_eval", needsBlock = true, optional = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "instance_eval", needsBlock = true, optional = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class InstanceEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldNode yield;
@@ -177,7 +177,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "instance_exec", needsBlock = true, rest = true)
+    @CoreMethod(names = "instance_exec", needsBlock = true, rest = true)
     public abstract static class InstanceExecNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldNode yield;
@@ -204,7 +204,7 @@ public abstract class BasicObjectNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "__instance_variables__")
+    @CoreMethod(names = "__instance_variables__")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 
         public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
@@ -233,7 +233,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "method_missing", needsBlock = true, rest = true, optional = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "method_missing", needsBlock = true, rest = true, optional = 1, visibility = Visibility.PRIVATE)
     public abstract static class MethodMissingNode extends CoreMethodArrayArgumentsNode {
 
         public MethodMissingNode(RubyContext context, SourceSection sourceSection) {
@@ -292,7 +292,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "__send__", needsBlock = true, rest = true, required = 1)
+    @CoreMethod(names = "__send__", needsBlock = true, rest = true, required = 1)
     public abstract static class SendNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dispatchNode;
@@ -316,7 +316,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
