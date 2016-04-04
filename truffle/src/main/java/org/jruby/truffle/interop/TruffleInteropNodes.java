@@ -496,57 +496,6 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
-
-    @CoreMethod(unsafeNeedsAudit = true, names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class InteropToRubyNode extends CoreMethodArrayArgumentsNode {
-
-        public InteropToRubyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public int convert(byte value) {
-            return value;
-        }
-
-        @Specialization
-        public int convert(short value) {
-            return value;
-        }
-
-        @Specialization
-        public int convert(char value) {
-            return value;
-        }
-
-        @Specialization
-        public int convert(int value) {
-            return value;
-        }
-
-        @Specialization
-        public long convert(long value) {
-            return value;
-        }
-
-        @Specialization
-        public double convert(float value) {
-            return value;
-        }
-
-        @Specialization
-        public double convert(double value) {
-            return value;
-        }
-
-        @Specialization
-        public int convert(String value) {
-            return (int) value.charAt(0);
-        }
-
-    }
-
     @CoreMethod(unsafeNeedsAudit = true, names = "mime_type_supported?", isModuleFunction = true, needsSelf = false, required =1)
     public abstract static class MimeTypeSupportedNode extends CoreMethodArrayArgumentsNode {
 
