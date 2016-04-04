@@ -36,6 +36,7 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
@@ -71,6 +72,54 @@ public abstract class TruffleInteropNodes {
 
         protected Node createIsExecutableNode() {
             return Message.IS_EXECUTABLE.createNode();
+        }
+
+    }
+
+    @CoreMethod(unsafeNeedsAudit = true, names = "execute", isModuleFunction = true, needsSelf = false, required = 1, rest = true)
+    public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
+
+        public ExecuteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(
+                guards = "args.length == cachedArgsLength",
+                limit = "10"
+        )
+        public Object executeForeignCached(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                Object[] args,
+                @Cached("args.length") int cachedArgsLength,
+                @Cached("createIsExecuteNode(cachedArgsLength)") Node executeNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendExecute(executeNode, frame, receiver, args);
+            } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Specialization(contains = "executeForeignCached")
+        public Object executeForeignUncached(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                Object[] args) {
+            CompilerDirectives.bailout("can't compile megamorphic interop EXECUTE message sends");
+
+            final Node executeNode = createIsExecuteNode(args.length);
+
+            try {
+                return ForeignAccess.sendExecute(executeNode, frame, receiver, args);
+            } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        protected Node createIsExecuteNode(int argsLength) {
+            return Message.createExecute(argsLength).createNode();
         }
 
     }
@@ -402,31 +451,6 @@ public abstract class TruffleInteropNodes {
             try {
                 return ForeignAccess.sendUnbox(node, frame, receiver);
             } catch (UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RuntimeException(e);
-            }
-        }
-
-    }
-
-    @CoreMethod(unsafeNeedsAudit = true, names = "execute", isModuleFunction = true, needsSelf = false, required = 1, rest = true)
-    public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private Node node;
-
-        public ExecuteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, Object[] args) {
-            if (node == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.node = Message.createExecute(args.length).createNode();
-            }
-            try {
-                return ForeignAccess.sendExecute(node, frame, receiver, args);
-            } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RuntimeException(e);
             }
