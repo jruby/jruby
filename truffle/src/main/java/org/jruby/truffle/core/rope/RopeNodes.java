@@ -276,12 +276,7 @@ public abstract class RopeNodes {
         }
 
         private int depth(Rope left, Rope right) {
-            return max(left.depth(), right.depth()) + 1;
-        }
-
-        private int max(int x, int y) {
-            // This approach is adapted from http://graphics.stanford.edu/~seander/bithacks.html?1=1#IntegerMinOrMax
-            return x - ((x - y) & ((x - y) >> (Integer.SIZE - 1)));
+            return Math.max(left.depth(), right.depth()) + 1;
         }
 
         protected static boolean isMutableRope(Rope rope) {
