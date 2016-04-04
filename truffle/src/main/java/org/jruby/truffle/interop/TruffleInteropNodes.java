@@ -399,6 +399,72 @@ public abstract class TruffleInteropNodes {
 
     }
 
+    @CoreMethod(unsafeNeedsAudit = true, names = {"write", "write_property"}, isModuleFunction = true, needsSelf = false, required = 3)
+    @ImportStatic(StringCachingGuards.class)
+    public abstract static class WriteNode extends CoreMethodArrayArgumentsNode {
+
+        public WriteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = {"!isRubySymbol(identifier)", "!isRubyString(identifier)"})
+        public Object writeProperty(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                Object identifier,
+                Object value,
+                @Cached("createWriteNode()") Node writeNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendWrite(writeNode, frame, receiver, identifier, value);
+            } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
+        public Object writeProperty(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                DynamicObject identifier,
+                Object value,
+                @Cached("identifier") DynamicObject cachedIdentifier,
+                @Cached("identifier.toString()") String identifierString,
+                @Cached("createWriteNode()") Node writeNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendWrite(writeNode, frame, receiver, identifierString, value);
+            } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
+        public Object writeProperty(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                DynamicObject identifier,
+                Object value,
+                @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
+                @Cached("identifier.toString()") String identifierString,
+                @Cached("createWriteNode()") Node writeNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendWrite(writeNode, frame, receiver, identifierString, value);
+            } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        protected static Node createWriteNode() {
+            return Message.WRITE.createNode();
+        }
+
+    }
+
     // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
 
     @CoreMethod(unsafeNeedsAudit = true, names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
@@ -446,66 +512,6 @@ public abstract class TruffleInteropNodes {
         @Specialization
         public int convert(String value) {
             return (int) value.charAt(0);
-        }
-
-    }
-
-    @CoreMethod(unsafeNeedsAudit = true, names = "write_property", isModuleFunction = true, needsSelf = false, required = 3)
-    @ImportStatic(StringCachingGuards.class)
-    public abstract static class WritePropertyNode extends CoreMethodArrayArgumentsNode {
-
-        public WritePropertyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = {"!isRubySymbol(identifier)", "!isRubyString(identifier)"})
-        public Object writeProperty(VirtualFrame frame,
-                                    TruffleObject receiver,
-                                    Object identifier,
-                                    Object value,
-                                    @Cached("createWriteNode()") Node writeNode) {
-            try {
-                return ForeignAccess.sendWrite(writeNode, frame, receiver, identifier, value);
-            } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
-        public Object writeProperty(VirtualFrame frame,
-                                    TruffleObject receiver,
-                                    DynamicObject identifier,
-                                    Object value,
-                                    @Cached("identifier") DynamicObject cachedIdentifier,
-                                    @Cached("identifier.toString()") String identifierString,
-                                    @Cached("createWriteNode()") Node writeNode) {
-            try {
-                return ForeignAccess.sendWrite(writeNode, frame, receiver, identifierString, value);
-            } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
-        public Object writeProperty(VirtualFrame frame,
-                                    TruffleObject receiver,
-                                    DynamicObject identifier,
-                                    Object value,
-                                    @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
-                                    @Cached("identifier.toString()") String identifierString,
-                                    @Cached("createWriteNode()") Node writeNode) {
-            try {
-                return ForeignAccess.sendWrite(writeNode, frame, receiver, identifierString, value);
-            } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RuntimeException(e);
-            }
-        }
-
-        protected static Node createWriteNode() {
-            return Message.WRITE.createNode();
         }
 
     }
