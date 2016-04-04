@@ -83,7 +83,7 @@ public abstract class TruffleInteropNodes {
                 TruffleObject receiver,
                 Object[] args,
                 @Cached("args.length") int cachedArgsLength,
-                @Cached("createIsExecuteNode(cachedArgsLength)") Node executeNode,
+                @Cached("createExecuteNode(cachedArgsLength)") Node executeNode,
                 @Cached("create()") BranchProfile exceptionProfile) {
             try {
                 return ForeignAccess.sendExecute(executeNode, frame, receiver, args);
@@ -100,7 +100,7 @@ public abstract class TruffleInteropNodes {
                 Object[] args) {
             CompilerDirectives.bailout("can't compile megamorphic interop EXECUTE message sends");
 
-            final Node executeNode = createIsExecuteNode(args.length);
+            final Node executeNode = createExecuteNode(args.length);
 
             try {
                 return ForeignAccess.sendExecute(executeNode, frame, receiver, args);
@@ -109,7 +109,7 @@ public abstract class TruffleInteropNodes {
             }
         }
 
-        protected Node createIsExecuteNode(int argsLength) {
+        protected Node createExecuteNode(int argsLength) {
             return Message.createExecute(argsLength).createNode();
         }
 
