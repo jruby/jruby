@@ -79,15 +79,15 @@ end
 Truffle::Interop.export_method(:evaluate_source)
 
 def complex_add(a, b)
-  Truffle::Interop.write_property a, :imaginary, Truffle::Interop.read_property(a, :imaginary) + Truffle::Interop.read_property(b, :imaginary)
-  Truffle::Interop.write_property a, :real, Truffle::Interop.read_property(a, :real) + Truffle::Interop.read_property(b, :real)
+  a.imaginary = Truffle::Interop.read_property(a, :imaginary) + Truffle::Interop.read_property(b, :imaginary)
+  a.real = Truffle::Interop.read_property(a, :real) + Truffle::Interop.read_property(b, :real)
 end
 
 Truffle::Interop.export_method(:complex_add)
 
 def complex_add_with_method(a, b)
-  Truffle::Interop.write_property a, :imaginary, Truffle::Interop.read_property(a, :imaginary) + Truffle::Interop.read_property(b, :imaginary)
-  Truffle::Interop.write_property a, :real, Truffle::Interop.read_property(a, :real) + Truffle::Interop.read_property(b, :real)
+  a.imaginary = Truffle::Interop.read_property(a, :imaginary) + Truffle::Interop.read_property(b, :imaginary)
+  a.real = Truffle::Interop.read_property(a, :real) + Truffle::Interop.read_property(b, :real)
 end
 
 Truffle::Interop.export_method(:complex_add_with_method)
@@ -111,8 +111,8 @@ def complex_copy(a, b)
   b = b.to_a
 
   a.zip(b).each do |x, y|
-    Truffle::Interop.write_property x, :imaginary, Truffle::Interop.read_property(y, :imaginary)
-    Truffle::Interop.write_property x, :real, Truffle::Interop.read_property(y, :real)
+    x.imaginary = Truffle::Interop.read_property(y, :imaginary)
+    x.real = Truffle::Interop.read_property(y, :real)
   end
 end
 
