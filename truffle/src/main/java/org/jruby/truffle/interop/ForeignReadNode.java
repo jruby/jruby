@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.AcceptMessage;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
