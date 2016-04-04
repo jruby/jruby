@@ -1351,27 +1351,14 @@ public class IRBuilder {
     }
 
     private Operand searchConst(String name) {
-        final boolean noPrivateConstants = false;
-        Variable v = createTemporaryVariable();
-/**
- * SSS FIXME: Went back to a single instruction for now.
- *
- * Do not split search into lexical-search, inheritance-search, and const-missing instrs.
- *
-        Label foundLabel = getNewLabel();
-        addInstr(new LexicalSearchConstInstr(v, startingSearchScope(s), name));
-        addInstr(BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
-        genInheritanceSearchInstrs(s, findContainerModule(startingScope), v, foundLabel, noPrivateConstants, name);
-**/
-        addInstr(new SearchConstInstr(v, name, startingSearchScope(), noPrivateConstants));
-        return v;
+        return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, startingSearchScope(), false));
     }
 
     public Operand buildColon2(final Colon2Node iVisited) {
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
 
-        // Colon2ImplicitNode
+        // Colon2ImplicitNode - (module|class) Foo.  Weird, but it is a wrinkle of AST inheritance.
         if (leftNode == null) return searchConst(name);
 
         // Colon2ConstNode
