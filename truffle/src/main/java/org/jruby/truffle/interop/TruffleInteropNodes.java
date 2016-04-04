@@ -336,6 +336,69 @@ public abstract class TruffleInteropNodes {
 
     }
 
+    @CoreMethod(unsafeNeedsAudit = true, names = {"read", "read_property"}, isModuleFunction = true, needsSelf = false, required = 2)
+    @ImportStatic(StringCachingGuards.class)
+    public abstract static class ReadNode extends CoreMethodArrayArgumentsNode {
+
+        public ReadNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = {"!isRubySymbol(identifier)", "!isRubyString(identifier)"})
+        public Object read(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                Object identifier,
+                @Cached("createReadNode()") Node readNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendRead(readNode, frame, receiver, identifier);
+            } catch (UnknownIdentifierException | UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
+        public Object read(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                DynamicObject identifier,
+                @Cached("identifier") DynamicObject cachedIdentifier,
+                @Cached("identifier.toString()") String identifierString,
+                @Cached("createReadNode()") Node readNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendRead(readNode, frame, receiver, identifierString);
+            } catch (UnknownIdentifierException | UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
+        public Object read(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                DynamicObject identifier,
+                @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
+                @Cached("identifier.toString()") String identifierString,
+                @Cached("createReadNode()") Node readNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendRead(readNode, frame, receiver, identifierString);
+            } catch (UnknownIdentifierException | UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        protected static Node createReadNode() {
+            return Message.READ.createNode();
+        }
+
+    }
+
     // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
 
     @CoreMethod(unsafeNeedsAudit = true, names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
@@ -383,79 +446,6 @@ public abstract class TruffleInteropNodes {
         @Specialization
         public int convert(String value) {
             return (int) value.charAt(0);
-        }
-
-    }
-
-    @CoreMethod(unsafeNeedsAudit = true, names = "read_property", isModuleFunction = true, needsSelf = false, required = 2)
-    @ImportStatic(StringCachingGuards.class)
-    public abstract static class ReadPropertyNode extends CoreMethodArrayArgumentsNode {
-
-        public ReadPropertyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        // TODO CS 21-Dec-15 should Truffle provide foreign access for strings?
-
-        @Specialization
-        public Object readProperty(String receiver, int identifier) {
-            return receiver.charAt(identifier);
-        }
-
-        @Specialization
-        public Object readProperty(String receiver, long identifier) {
-            return receiver.charAt((int) identifier);
-        }
-
-        @Specialization(guards = {"!isRubySymbol(identifier)", "!isRubyString(identifier)"})
-        public Object readProperty(VirtualFrame frame,
-                                   TruffleObject receiver,
-                                   Object identifier,
-                                   @Cached("createReadNode()") Node readNode) {
-            try {
-                return ForeignAccess.sendRead(readNode, frame, receiver, identifier);
-            } catch (UnknownIdentifierException | UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
-        public Object readProperty(VirtualFrame frame,
-                                   TruffleObject receiver,
-                                   DynamicObject identifier,
-                                   @Cached("identifier") DynamicObject cachedIdentifier,
-                                   @Cached("identifier.toString()") String identifierString,
-                                   @Cached("createReadNode()") Node readNode) {
-            try {
-                return ForeignAccess.sendRead(readNode, frame, receiver, identifierString);
-            } catch (UnknownIdentifierException | UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Specialization(guards = {"isRubyString(identifier)", "ropesEqual(identifier, cachedIdentifier)"})
-        public Object readProperty(VirtualFrame frame,
-                                   TruffleObject receiver,
-                                   DynamicObject identifier,
-                                   @Cached("privatizeRope(identifier)") Rope cachedIdentifier,
-                                   @Cached("identifier.toString()") String identifierString,
-                                   @Cached("createReadNode()") Node readNode) {
-            try {
-                return ForeignAccess.sendRead(readNode, frame, receiver, identifierString);
-            } catch (UnknownIdentifierException | UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RuntimeException(e);
-            }
-        }
-
-        protected static Node createReadNode() {
-            return Message.READ.createNode();
-        }
-
-        protected int getCacheLimit() {
-            return getContext().getOptions().EVAL_CACHE;
         }
 
     }
