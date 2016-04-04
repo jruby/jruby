@@ -54,6 +54,27 @@ import java.io.IOException;
 @CoreClass(name = "Truffle::Interop")
 public abstract class TruffleInteropNodes {
 
+    @CoreMethod(unsafeNeedsAudit = true, names = "executable?", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class IsExecutableNode extends CoreMethodArrayArgumentsNode {
+
+        public IsExecutableNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean isExecutable(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                @Cached("createIsExecutableNode()") Node isExecutableNode) {
+            return ForeignAccess.sendIsExecutable(isExecutableNode, frame, receiver);
+        }
+
+        protected Node createIsExecutableNode() {
+            return Message.IS_EXECUTABLE.createNode();
+        }
+
+    }
+
     // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
 
     @CoreMethod(unsafeNeedsAudit = true, names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
@@ -101,23 +122,6 @@ public abstract class TruffleInteropNodes {
         @Specialization
         public int convert(String value) {
             return (int) value.charAt(0);
-        }
-
-    }
-
-    @CoreMethod(unsafeNeedsAudit = true, names = "executable?", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class IsExecutableNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private Node node;
-
-        public IsExecutableNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.node = Message.IS_EXECUTABLE.createNode();
-        }
-
-        @Specialization
-        public boolean isExecutable(VirtualFrame frame, TruffleObject receiver) {
-            return (boolean) ForeignAccess.sendIsExecutable(node, frame, receiver);
         }
 
     }
