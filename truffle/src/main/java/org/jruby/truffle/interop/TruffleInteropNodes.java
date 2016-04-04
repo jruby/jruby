@@ -145,6 +145,38 @@ public abstract class TruffleInteropNodes {
 
     }
 
+    @CoreMethod(unsafeNeedsAudit = true, names = "size", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
+
+        public SizeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object size(String receiver) {
+            return receiver.length();
+        }
+
+        @Specialization
+        public Object size(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                @Cached("createGetSizeNode()") Node getSizeNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendGetSize(getSizeNode, frame, receiver);
+            } catch (UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        protected Node createGetSizeNode() {
+            return Message.GET_SIZE.createNode();
+        }
+
+    }
+
     // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
 
     @CoreMethod(unsafeNeedsAudit = true, names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
@@ -454,33 +486,6 @@ public abstract class TruffleInteropNodes {
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver) {
             try {
                 return ForeignAccess.sendUnbox(node, frame, receiver);
-            } catch (UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RuntimeException(e);
-            }
-        }
-
-    }
-
-    @CoreMethod(unsafeNeedsAudit = true, names = "size", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class GetSizeNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private Node node;
-
-        public GetSizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.node = Message.GET_SIZE.createNode();
-        }
-
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, String receiver) {
-            return receiver.length();
-        }
-
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver) {
-            try {
-                return ForeignAccess.sendGetSize(node, frame, receiver);
             } catch (UnsupportedMessageException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RuntimeException(e);
