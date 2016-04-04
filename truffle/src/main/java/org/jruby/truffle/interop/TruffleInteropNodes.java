@@ -177,6 +177,76 @@ public abstract class TruffleInteropNodes {
 
     }
 
+    @CoreMethod(unsafeNeedsAudit = true, names = {"unbox", "unbox_value"}, isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class UnboxNode extends CoreMethodArrayArgumentsNode {
+
+        public UnboxNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean unbox(boolean receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public byte unbox(byte receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public short unbox(short receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public int unbox(int receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public long unbox(long receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public float unbox(float receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public double unbox(double receiver) {
+            return receiver;
+        }
+
+        @Specialization
+        public DynamicObject unbox(CharSequence receiver) {
+            // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
+
+            return Layouts.STRING.createString(coreLibrary().getStringFactory(),
+                    StringOperations.ropeFromByteList(ByteList.create(receiver)));
+        }
+
+        @Specialization
+        public Object unbox(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                @Cached("createUnboxNode()") Node unboxNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return ForeignAccess.sendUnbox(unboxNode, frame, receiver);
+            } catch (UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new RuntimeException(e);
+            }
+        }
+
+        protected Node createUnboxNode() {
+            return Message.UNBOX.createNode();
+        }
+
+    }
+
     // TODO CS 21-Dec-15 this shouldn't be needed any more - we can handle byte, short, float etc natively
 
     @CoreMethod(unsafeNeedsAudit = true, names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
