@@ -96,7 +96,7 @@ public abstract class EncodingNodes {
         return Layouts.ENCODING.createEncoding(Layouts.CLASS.getInstanceFactory(encodingClass), encoding, name, dummy);
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "ascii_compatible?")
+    @CoreMethod(names = "ascii_compatible?")
     public abstract static class AsciiCompatibleNode extends CoreMethodArrayArgumentsNode {
 
         public AsciiCompatibleNode(RubyContext context, SourceSection sourceSection) {
@@ -109,7 +109,7 @@ public abstract class EncodingNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "compatible?", needsSelf = false, onSingleton = true, required = 2)
+    @CoreMethod(names = "compatible?", needsSelf = false, onSingleton = true, required = 2)
     public abstract static class CompatibleQueryNode extends CoreMethodArrayArgumentsNode {
 
         public CompatibleQueryNode(RubyContext context, SourceSection sourceSection) {
@@ -306,7 +306,7 @@ public abstract class EncodingNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "default_external_jruby=", onSingleton = true, required = 1)
+    @CoreMethod(names = "default_external_jruby=", onSingleton = true, required = 1)
     public abstract static class SetDefaultExternalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStrNode;
@@ -352,7 +352,7 @@ public abstract class EncodingNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "default_internal_jruby=", onSingleton = true, required = 1)
+    @CoreMethod(names = "default_internal_jruby=", onSingleton = true, required = 1)
     public abstract static class SetDefaultInternalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStrNode;
@@ -396,7 +396,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "list", onSingleton = true)
+    @CoreMethod(names = "list", onSingleton = true)
     public abstract static class ListNode extends CoreMethodArrayArgumentsNode {
 
         public ListNode(RubyContext context, SourceSection sourceSection) {
@@ -414,7 +414,7 @@ public abstract class EncodingNodes {
     }
 
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "locale_charmap", onSingleton = true)
+    @CoreMethod(names = "locale_charmap", onSingleton = true)
     public abstract static class LocaleCharacterMapNode extends CoreMethodArrayArgumentsNode {
 
         public LocaleCharacterMapNode(RubyContext context, SourceSection sourceSection) {
@@ -429,7 +429,7 @@ public abstract class EncodingNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "dummy?")
+    @CoreMethod(names = "dummy?")
     public abstract static class DummyNode extends CoreMethodArrayArgumentsNode {
 
         public DummyNode(RubyContext context, SourceSection sourceSection) {
@@ -443,7 +443,7 @@ public abstract class EncodingNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "encoding_map", onSingleton = true)
+    @CoreMethod(names = "encoding_map", onSingleton = true)
     public abstract static class EncodingMapNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode upcaseNode;
@@ -536,7 +536,7 @@ public abstract class EncodingNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "name", "to_s" })
+    @CoreMethod(names = { "name", "to_s" })
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -552,7 +552,7 @@ public abstract class EncodingNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
