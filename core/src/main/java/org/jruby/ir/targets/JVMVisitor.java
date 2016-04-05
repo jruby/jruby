@@ -166,23 +166,65 @@ public class JVMVisitor extends IRVisitor {
 
         int numberOfBasicBlocks = bbs.length;
         int ipc = 0; // synthetic, used for debug traces that show which instr failed
+
+        Label currentRescue = null;
+        Label currentRegionStart = null;
+        Label currentBlockStart = null;
+        Map<Label, org.objectweb.asm.Label> rescueEndForStart = new HashMap<>();
+        Map<Label, org.objectweb.asm.Label> syntheticEndForStart = new HashMap<>();
+
+        for (int i = 0; i < numberOfBasicBlocks; i++) {
+            BasicBlock bb = bbs[i];
+            currentBlockStart = bb.getLabel();
+
+            Label rescueLabel = exceptionTable.get(bb);
+
+            if (rescueLabel != null) {
+                if (currentRescue != null) {
+                    if (rescueLabel == currentRescue) {
+                        // continue, inside active rescue region
+                        continue;
+                    } else {
+                        // end of active region and start of new one
+                        rescueEndForStart.put(currentRegionStart, jvm.methodData().getLabel(bb.getLabel()));
+                        currentRescue = rescueLabel;
+                        currentRegionStart = bb.getLabel();
+                    }
+                } else {
+                    currentRescue = rescueLabel;
+                    currentRegionStart = bb.getLabel();
+                }
+            } else {
+                if (currentRescue == null) {
+                    // continue, no new or active region
+                    continue;
+                } else {
+                    // end of active region, no new region
+                    rescueEndForStart.put(currentRegionStart, jvm.methodData().getLabel(bb.getLabel()));
+                    currentRescue = null;
+                    currentRegionStart = null;
+                }
+            }
+        }
+
+        // handle unclosed final region
+        if (currentRegionStart != null) {
+            org.objectweb.asm.Label syntheticEnd = new org.objectweb.asm.Label();
+            rescueEndForStart.put(currentRegionStart, syntheticEnd);
+            syntheticEndForStart.put(currentBlockStart, syntheticEnd);
+        }
+
         for (int i = 0; i < numberOfBasicBlocks; i++) {
             BasicBlock bb = bbs[i];
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
             Label rescueLabel = exceptionTable.get(bb);
-            org.objectweb.asm.Label end = null;
 
             m.mark(start);
 
-            boolean newEnd = false;
-            if (rescueLabel != null) {
-                if (i+1 < numberOfBasicBlocks) {
-                    end = jvm.methodData().getLabel(bbs[i+1].getLabel());
-                } else {
-                    newEnd = true;
-                    end = new org.objectweb.asm.Label();
-                }
-
+            // if this is the start of a rescued region, emit trycatch
+            org.objectweb.asm.Label end;
+            if (rescueLabel != null && (end = rescueEndForStart.get(bb.getLabel())) != null) {
+                // first entry into a rescue region, do the try/catch
                 org.objectweb.asm.Label rescue = jvm.methodData().getLabel(rescueLabel);
                 jvmAdapter().trycatch(start, end, rescue, p(Throwable.class));
             }
@@ -201,8 +243,9 @@ public class JVMVisitor extends IRVisitor {
                 visit(instr);
             }
 
-            if (newEnd) {
-                m.mark(end);
+            org.objectweb.asm.Label syntheticEnd = syntheticEndForStart.get(bb.getLabel());
+            if (syntheticEnd != null) {
+                m.mark(syntheticEnd);
             }
         }
 
