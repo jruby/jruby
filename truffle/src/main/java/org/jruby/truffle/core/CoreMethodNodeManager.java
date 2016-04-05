@@ -265,6 +265,12 @@ public class CoreMethodNodeManager {
             final boolean option;
 
             switch (group) {
+                case IO:
+                    option = options.PLATFORM_SAFE_IO;
+                    break;
+                case THREADS:
+                    option = options.PLATFORM_SAFE_THREADS;
+                    break;
                 case PROCESSES:
                     option = options.PLATFORM_SAFE_PROCESSES;
                     break;
