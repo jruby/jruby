@@ -78,13 +78,14 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 },
                 limit = "getCacheLimit()"
         )
-        public Object cacheStringAndForward(VirtualFrame frame,
-                                            DynamicObject receiver,
-                                            DynamicObject label,
-                                            @Cached("privatizeRope(label)") Rope cachedRope,
-                                            @Cached("ropeToString(cachedRope)") String cachedString,
-                                            @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
-                                            @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+        public Object cacheStringAndForward(
+                VirtualFrame frame,
+                DynamicObject receiver,
+                DynamicObject label,
+                @Cached("privatizeRope(label)") Rope cachedRope,
+                @Cached("ropeToString(cachedRope)") String cachedString,
+                @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
+                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, label, cachedString, cachedStartsWithAt);
         }
 
@@ -92,10 +93,11 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 guards = "isRubyString(label)",
                 contains = "cacheStringAndForward"
         )
-        public Object uncachedStringAndForward(VirtualFrame frame,
-                                               DynamicObject receiver,
-                                               DynamicObject label,
-                                               @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+        public Object uncachedStringAndForward(
+                VirtualFrame frame,
+                DynamicObject receiver,
+                DynamicObject label,
+                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
             final String labelString = objectToString(label);
             return nextHelper.executeStringCachedHelper(frame, receiver, label, labelString, startsWithAt(labelString));
         }
@@ -107,13 +109,14 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 },
                 limit = "getCacheLimit()"
         )
-        public Object cacheSymbolAndForward(VirtualFrame frame,
-                                            DynamicObject receiver,
-                                            DynamicObject label,
-                                            @Cached("label") DynamicObject cachedLabel,
-                                            @Cached("objectToString(cachedLabel)") String cachedString,
-                                            @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
-                                            @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+        public Object cacheSymbolAndForward(
+                VirtualFrame frame,
+                DynamicObject receiver,
+                DynamicObject label,
+                @Cached("label") DynamicObject cachedLabel,
+                @Cached("objectToString(cachedLabel)") String cachedString,
+                @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
+                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, cachedLabel, cachedString, cachedStartsWithAt);
         }
 
@@ -121,10 +124,11 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 guards = "isRubySymbol(label)",
                 contains = "cacheSymbolAndForward"
         )
-        public Object uncachedSymbolAndForward(VirtualFrame frame,
-                                               DynamicObject receiver,
-                                               DynamicObject label,
-                                               @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+        public Object uncachedSymbolAndForward(
+                VirtualFrame frame,
+                DynamicObject receiver,
+                DynamicObject label,
+                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
             final String labelString = objectToString(label);
             return nextHelper.executeStringCachedHelper(frame, receiver, label, labelString, startsWithAt(labelString));
         }
@@ -133,20 +137,22 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 guards = "label == cachedLabel",
                 limit = "getCacheLimit()"
         )
-        public Object cacheJavaStringAndForward(VirtualFrame frame,
-                                               DynamicObject receiver,
-                                               String label,
-                                               @Cached("label") String cachedLabel,
-                                               @Cached("startsWithAt(cachedLabel)") boolean cachedStartsWithAt,
-                                               @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+        public Object cacheJavaStringAndForward(
+                VirtualFrame frame,
+                DynamicObject receiver,
+                String label,
+                @Cached("label") String cachedLabel,
+                @Cached("startsWithAt(cachedLabel)") boolean cachedStartsWithAt,
+                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, cachedLabel, cachedLabel, cachedStartsWithAt);
         }
 
         @Specialization(contains = "cacheJavaStringAndForward")
-        public Object uncachedJavaStringAndForward(VirtualFrame frame,
-                                                   DynamicObject receiver,
-                                                   String label,
-                                                   @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+        public Object uncachedJavaStringAndForward(
+                VirtualFrame frame,
+                DynamicObject receiver,
+                String label,
+                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, label, label, startsWithAt(label));
         }
 
@@ -226,11 +232,12 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                                                          String stringLabel, boolean startsAt);
 
         @Specialization(guards = "startsAt(startsAt)")
-        public Object readInstanceVariable(DynamicObject receiver,
-                                           Object label,
-                                           String stringLabel,
-                                           boolean startsAt,
-                                           @Cached("createReadObjectFieldNode(stringLabel)") ReadObjectFieldNode readObjectFieldNode) {
+        public Object readInstanceVariable(
+                DynamicObject receiver,
+                Object label,
+                String stringLabel,
+                boolean startsAt,
+                @Cached("createReadObjectFieldNode(stringLabel)") ReadObjectFieldNode readObjectFieldNode) {
             return readObjectFieldNode.execute(receiver);
         }
 
@@ -248,11 +255,12 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                         "methodDefined(frame, receiver, stringLabel, getDefinedNode())"
                 }
         )
-        public Object callMethod(VirtualFrame frame,
-                                 DynamicObject receiver,
-                                 Object label,
-                                 String stringLabel,
-                                 boolean startsAt) {
+        public Object callMethod(
+                VirtualFrame frame,
+                DynamicObject receiver,
+                Object label,
+                String stringLabel,
+                boolean startsAt) {
             return getCallNode().call(frame, receiver, stringLabel, null);
         }
 
@@ -263,11 +271,12 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                         "methodDefined(frame, receiver, INDEX_METHOD_NAME, getIndexDefinedNode())"
                 }
         )
-        public Object index(VirtualFrame frame,
-                            DynamicObject receiver,
-                            Object label,
-                            String stringLabel,
-                            boolean startsAt) {
+        public Object index(
+                VirtualFrame frame,
+                DynamicObject receiver,
+                Object label,
+                String stringLabel,
+                boolean startsAt) {
             return getCallNode().call(frame, receiver, "[]", null, label);
         }
 

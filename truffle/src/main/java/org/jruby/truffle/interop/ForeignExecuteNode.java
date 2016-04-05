@@ -74,11 +74,12 @@ public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
                 },
                 limit = "getCacheLimit()"
         )
-        protected Object callProcCached(VirtualFrame frame,
-                                        DynamicObject proc,
-                                        Object[] arguments,
-                                        @Cached("proc") DynamicObject cachedProc,
-                                        @Cached("create(getProcCallTarget(cachedProc))") DirectCallNode callNode) {
+        protected Object callProcCached(
+                VirtualFrame frame,
+                DynamicObject proc,
+                Object[] arguments,
+                @Cached("proc") DynamicObject cachedProc,
+                @Cached("create(getProcCallTarget(cachedProc))") DirectCallNode callNode) {
             return callNode.call(
                     frame,
                     RubyArguments.pack(
@@ -96,10 +97,11 @@ public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
                 guards = "isRubyProc(proc)",
                 contains = "callProcCached"
         )
-        protected Object callProcUncached(VirtualFrame frame,
-                                          DynamicObject proc,
-                                          Object[] arguments,
-                                          @Cached("create()") IndirectCallNode callNode) {
+        protected Object callProcUncached(
+                VirtualFrame frame,
+                DynamicObject proc,
+                Object[] arguments,
+                @Cached("create()") IndirectCallNode callNode) {
             return callNode.call(
                     frame,
                     getProcCallTarget(proc),
@@ -125,12 +127,13 @@ public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
                 },
                 limit = "getCacheLimit()"
         )
-        protected Object callMethodCached(VirtualFrame frame,
-                                DynamicObject method,
-                                Object[] arguments,
-                                @Cached("method") DynamicObject cachedMethod,
-                                @Cached("getMethod(cachedMethod)") InternalMethod cachedInternalMethod,
-                                @Cached("create(cachedInternalMethod.getCallTarget())") DirectCallNode callNode) {
+        protected Object callMethodCached(
+                VirtualFrame frame,
+                DynamicObject method,
+                Object[] arguments,
+                @Cached("method") DynamicObject cachedMethod,
+                @Cached("getMethod(cachedMethod)") InternalMethod cachedInternalMethod,
+                @Cached("create(cachedInternalMethod.getCallTarget())") DirectCallNode callNode) {
             return callNode.call(
                     frame,
                     RubyArguments.pack(
@@ -148,10 +151,11 @@ public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
                 guards = "isRubyMethod(method)",
                 contains = "callMethodCached"
         )
-        protected Object callMethodUncached(VirtualFrame frame,
-                                            DynamicObject method,
-                                            Object[] arguments,
-                                            @Cached("create()") IndirectCallNode callNode) {
+        protected Object callMethodUncached(
+                VirtualFrame frame,
+                DynamicObject method,
+                Object[] arguments,
+                @Cached("create()") IndirectCallNode callNode) {
             final InternalMethod internalMethod = getMethod(method);
             return callNode.call(
                     frame,
