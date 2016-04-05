@@ -35,6 +35,7 @@ import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -244,7 +245,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "initialize", needsBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "initialize", needsBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR, unsafe = UnsafeGroup.THREADS)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -260,7 +261,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "resume", rest = true)
+    @CoreMethod(names = "resume", rest = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class ResumeNode extends CoreMethodArrayArgumentsNode {
 
         @Child FiberTransferNode fiberTransferNode;
@@ -277,7 +278,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "yield", onSingleton = true, rest = true)
+    @CoreMethod(names = "yield", onSingleton = true, rest = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class YieldNode extends CoreMethodArrayArgumentsNode {
 
         @Child FiberTransferNode fiberTransferNode;
@@ -351,7 +352,7 @@ public abstract class FiberNodes {
         private static final long serialVersionUID = 1522270454305076317L;
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "alive?")
+    @CoreMethod(names = "alive?", unsafe = UnsafeGroup.THREADS)
     public abstract static class AliveNode extends UnaryCoreMethodNode {
 
         public AliveNode(RubyContext context, SourceSection sourceSection) {
@@ -365,7 +366,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "current", onSingleton = true)
+    @CoreMethod(names = "current", onSingleton = true)
     public abstract static class CurrentNode extends CoreMethodNode {
 
         public CurrentNode(RubyContext context, SourceSection sourceSection) {
@@ -380,7 +381,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
