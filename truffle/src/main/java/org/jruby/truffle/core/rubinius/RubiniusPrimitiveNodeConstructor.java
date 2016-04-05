@@ -59,7 +59,7 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
             arguments.add(transformArgument(readArgumentNode, n));
         }
 
-        if (context.getOptions().PLATFORM_SAFE && !CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
+        if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
             return new UnsafeNode(context, sourceSection);
         }
 
@@ -77,7 +77,7 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
     }
 
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
-        if (context.getOptions().PLATFORM_SAFE && !CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
+        if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
             return new UnsafeNode(context, sourceSection);
         }
 

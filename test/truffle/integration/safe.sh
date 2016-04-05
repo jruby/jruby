@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function run {
-  ruby -X+T -Xtruffle.platform.safe=true "$@"
+  ruby -X+T -Xtruffle.platform.safe=false "$@"
 }
 
 function safe {

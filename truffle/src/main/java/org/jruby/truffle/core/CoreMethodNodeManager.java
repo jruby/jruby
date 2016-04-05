@@ -236,7 +236,7 @@ public class CoreMethodNodeManager {
 
         RubyNode sequence;
 
-        if (context.getOptions().PLATFORM_SAFE && !isSafe(context, method.unsafe())) {
+        if (!isSafe(context, method.unsafe())) {
             sequence = new UnsafeNode(context, sourceSection);
         } else {
             sequence = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
