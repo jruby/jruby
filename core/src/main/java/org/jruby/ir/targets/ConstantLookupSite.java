@@ -99,7 +99,7 @@ public class ConstantLookupSite extends MutableCallSite {
     }
 
     public IRubyObject searchModuleForConst(ThreadContext context, IRubyObject cmVal) {
-        // Lexical lookup
+        // Inheritance lookup
         RubyModule module = (RubyModule) cmVal;
         Ruby runtime = context.getRuntime();
         IRubyObject constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
