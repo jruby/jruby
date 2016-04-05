@@ -105,7 +105,7 @@ public abstract class PsychParserNodes {
         public final Encoding encoding;
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
@@ -122,7 +122,7 @@ public abstract class PsychParserNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "parse", required = 1, optional = 1)
+    @CoreMethod(names = "parse", required = 1, optional = 1)
     public abstract static class ParseNode extends CoreMethodArrayArgumentsNode {
 
         @Node.Child private ToStrNode toStrNode;

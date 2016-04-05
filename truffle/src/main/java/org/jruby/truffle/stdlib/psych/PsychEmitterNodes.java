@@ -80,7 +80,7 @@ import java.util.Map;
 @CoreClass(name = "Psych::Emitter")
 public abstract class PsychEmitterNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
@@ -97,7 +97,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "initialize", visibility = Visibility.PRIVATE, required = 1, optional = 1)
+    @CoreMethod(names = "initialize", visibility = Visibility.PRIVATE, required = 1, optional = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -131,7 +131,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "start_stream", required = 1)
+    @CoreMethod(names = "start_stream", required = 1)
     public abstract static class StartStreamNode extends CoreMethodArrayArgumentsNode {
 
         public StartStreamNode(RubyContext context, SourceSection sourceSection) {
@@ -153,7 +153,7 @@ public abstract class PsychEmitterNodes {
     }
 
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "end_stream")
+    @CoreMethod(names = "end_stream")
     public abstract static class EndStreamNode extends CoreMethodArrayArgumentsNode {
 
         public EndStreamNode(RubyContext context, SourceSection sourceSection) {
@@ -170,7 +170,7 @@ public abstract class PsychEmitterNodes {
     }
 
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "start_document", required = 3)
+    @CoreMethod(names = "start_document", required = 3)
     public abstract static class StartDocumentNode extends CoreMethodArrayArgumentsNode {
 
         public StartDocumentNode(RubyContext context, SourceSection sourceSection) {
@@ -228,7 +228,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "end_document", required = 1)
+    @CoreMethod(names = "end_document", required = 1)
     public abstract static class EndDocumentNode extends CoreMethodArrayArgumentsNode {
 
         public EndDocumentNode(RubyContext context, SourceSection sourceSection) {
@@ -244,7 +244,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "scalar", required = 6)
+    @CoreMethod(names = "scalar", required = 6)
     public abstract static class ScalarNode extends CoreMethodArrayArgumentsNode {
 
         public ScalarNode(RubyContext context, SourceSection sourceSection) {
@@ -270,7 +270,7 @@ public abstract class PsychEmitterNodes {
     }
 
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "start_sequence", required = 4)
+    @CoreMethod(names = "start_sequence", required = 4)
     public abstract static class StartSequenceNode extends CoreMethodArrayArgumentsNode {
 
         public StartSequenceNode(RubyContext context, SourceSection sourceSection) {
@@ -296,7 +296,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "end_sequence")
+    @CoreMethod(names = "end_sequence")
     public abstract static class EndSequenceNode extends CoreMethodArrayArgumentsNode {
 
         public EndSequenceNode(RubyContext context, SourceSection sourceSection) {
@@ -312,7 +312,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "start_mapping", required = 4)
+    @CoreMethod(names = "start_mapping", required = 4)
     public abstract static class StartMappingNode extends CoreMethodArrayArgumentsNode {
 
         public StartMappingNode(RubyContext context, SourceSection sourceSection) {
@@ -339,7 +339,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "end_mapping")
+    @CoreMethod(names = "end_mapping")
     public abstract static class EndMappingNode extends CoreMethodArrayArgumentsNode {
 
         public EndMappingNode(RubyContext context, SourceSection sourceSection) {
@@ -355,7 +355,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "alias", required = 1)
+    @CoreMethod(names = "alias", required = 1)
     public abstract static class AliasNode extends CoreMethodArrayArgumentsNode {
 
         public AliasNode(RubyContext context, SourceSection sourceSection) {
@@ -371,7 +371,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "canonical=", required = 1)
+    @CoreMethod(names = "canonical=", required = 1)
     public abstract static class SetCanonicalNode extends CoreMethodArrayArgumentsNode {
 
         public SetCanonicalNode(RubyContext context, SourceSection sourceSection) {
@@ -386,7 +386,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "canonical")
+    @CoreMethod(names = "canonical")
     public abstract static class CanonicalNode extends CoreMethodArrayArgumentsNode {
 
         public CanonicalNode(RubyContext context, SourceSection sourceSection) {
@@ -400,7 +400,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "indentation=", required = 1)
+    @CoreMethod(names = "indentation=", required = 1)
     public abstract static class SetIndentationNode extends CoreMethodArrayArgumentsNode {
 
         public SetIndentationNode(RubyContext context, SourceSection sourceSection) {
@@ -415,7 +415,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "indentation")
+    @CoreMethod(names = "indentation")
     public abstract static class IndentationNode extends CoreMethodArrayArgumentsNode {
 
         public IndentationNode(RubyContext context, SourceSection sourceSection) {
@@ -429,7 +429,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "line_width=", required = 1)
+    @CoreMethod(names = "line_width=", required = 1)
     public abstract static class SetLineWidthNode extends CoreMethodArrayArgumentsNode {
 
         public SetLineWidthNode(RubyContext context, SourceSection sourceSection) {
@@ -444,7 +444,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "line_width")
+    @CoreMethod(names = "line_width")
     public abstract static class LineWidthNode extends CoreMethodArrayArgumentsNode {
 
         public LineWidthNode(RubyContext context, SourceSection sourceSection) {
