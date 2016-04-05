@@ -63,7 +63,7 @@ public class CodegenUtils {
                     throw new RuntimeException("Unrecognized type in compiler: " + n.getName());
                 }
             } else {
-                return "[" + ci(n);
+                return '[' + ci(n);
             }
         } else {
             if (n.isPrimitive()) {
@@ -89,7 +89,7 @@ public class CodegenUtils {
                     throw new RuntimeException("Unrecognized type in compiler: " + n.getName());
                 }
             } else {
-                return "L" + p(n) + ";";
+                return 'L' + p(n) + ';';
             }
         }
     }
@@ -282,7 +282,7 @@ public class CodegenUtils {
         if (multi) {
             commonClassSuffix += javaMethodName;
         } else {
-            commonClassSuffix += required + "$" + optional + "$" + javaMethodName;
+            commonClassSuffix += required + '$' + optional + '$' + javaMethodName;
         }
         return typeName + commonClassSuffix;
     }
