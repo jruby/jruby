@@ -61,7 +61,7 @@ public abstract class DigestNodes {
         return DigestLayoutImpl.INSTANCE.createDigest(Layouts.CLASS.getInstanceFactory(rubyClass), digest);
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "md5", onSingleton = true)
+    @CoreMethod(names = "md5", onSingleton = true)
     public abstract static class MD5Node extends CoreMethodArrayArgumentsNode {
 
         public MD5Node(RubyContext context, SourceSection sourceSection) {
@@ -76,7 +76,7 @@ public abstract class DigestNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "sha1", onSingleton = true)
+    @CoreMethod(names = "sha1", onSingleton = true)
     public abstract static class SHA1Node extends CoreMethodArrayArgumentsNode {
 
         public SHA1Node(RubyContext context, SourceSection sourceSection) {
@@ -91,7 +91,7 @@ public abstract class DigestNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "sha256", onSingleton = true)
+    @CoreMethod(names = "sha256", onSingleton = true)
     public abstract static class SHA256Node extends CoreMethodArrayArgumentsNode {
 
         public SHA256Node(RubyContext context, SourceSection sourceSection) {
@@ -106,7 +106,7 @@ public abstract class DigestNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "sha384", onSingleton = true)
+    @CoreMethod(names = "sha384", onSingleton = true)
     public abstract static class SHA384Node extends CoreMethodArrayArgumentsNode {
 
         public SHA384Node(RubyContext context, SourceSection sourceSection) {
@@ -121,7 +121,7 @@ public abstract class DigestNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "sha512", onSingleton = true)
+    @CoreMethod(names = "sha512", onSingleton = true)
     public abstract static class SHA512Node extends CoreMethodArrayArgumentsNode {
 
         public SHA512Node(RubyContext context, SourceSection sourceSection) {
@@ -136,7 +136,7 @@ public abstract class DigestNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "update", onSingleton = true, required = 2)
+    @CoreMethod(names = "update", onSingleton = true, required = 2)
     public abstract static class UpdateNode extends CoreMethodArrayArgumentsNode {
 
         public UpdateNode(RubyContext context, SourceSection sourceSection) {
@@ -154,7 +154,7 @@ public abstract class DigestNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "reset", onSingleton = true, required = 1)
+    @CoreMethod(names = "reset", onSingleton = true, required = 1)
     public abstract static class ResetNode extends CoreMethodArrayArgumentsNode {
 
         public ResetNode(RubyContext context, SourceSection sourceSection) {
@@ -170,7 +170,7 @@ public abstract class DigestNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "digest", onSingleton = true, required = 1)
+    @CoreMethod(names = "digest", onSingleton = true, required = 1)
     public abstract static class DigestNode extends CoreMethodArrayArgumentsNode {
 
         public DigestNode(RubyContext context, SourceSection sourceSection) {
@@ -197,7 +197,7 @@ public abstract class DigestNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "digest_length", onSingleton = true, required = 1)
+    @CoreMethod(names = "digest_length", onSingleton = true, required = 1)
     public abstract static class DigestLengthNode extends CoreMethodArrayArgumentsNode {
 
         public DigestLengthNode(RubyContext context, SourceSection sourceSection) {
@@ -212,7 +212,7 @@ public abstract class DigestNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "bubblebabble", onSingleton = true, required = 1)
+    @CoreMethod(names = "bubblebabble", onSingleton = true, required = 1)
     public abstract static class BubbleBabbleNode extends CoreMethodArrayArgumentsNode {
 
         public BubbleBabbleNode(RubyContext context, SourceSection sourceSection) {
