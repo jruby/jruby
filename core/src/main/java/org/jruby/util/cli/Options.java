@@ -223,6 +223,8 @@ public class Options {
     public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
 
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE = bool(TRUFFLE, "truffle.platform.safe", false, "Disallow any unsafe access to the platform, such as IO, processes and so on.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_IO = bool(TRUFFLE, "truffle.platform.safe.io", false, "Treat any methods that deal perofrm IO as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_THREADS = bool(TRUFFLE, "truffle.platform.safe.threads", false, "Treat any methods that deal with threads as safe.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_PROCESSES = bool(TRUFFLE, "truffle.platform.safe.processes", false, "Treat any methods that deal with processes as safe.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_EXIT = bool(TRUFFLE, "truffle.platform.safe.exit", false, "Treat #exit! (hard exiting the VM) as safe.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_PUTS = bool(TRUFFLE, "truffle.platform.safe_puts", true, "Treat Truffle::Primitive.safe_puts as safe.");
