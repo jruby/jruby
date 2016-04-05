@@ -168,7 +168,7 @@ public abstract class MatchDataNodes {
         return charOffsets;
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "[]", required = 1, optional = 1, lowerFixnumParameters = 0, taintFromSelf = true)
+    @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnumParameters = 0, taintFromSelf = true)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToIntNode toIntNode;
@@ -258,7 +258,7 @@ public abstract class MatchDataNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "begin", required = 1, lowerFixnumParameters = 1)
+    @CoreMethod(names = "begin", required = 1, lowerFixnumParameters = 1)
     public abstract static class BeginNode extends CoreMethodArrayArgumentsNode {
 
         public BeginNode(RubyContext context, SourceSection sourceSection) {
@@ -282,7 +282,7 @@ public abstract class MatchDataNodes {
     }
 
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "captures")
+    @CoreMethod(names = "captures")
     public abstract static class CapturesNode extends CoreMethodArrayArgumentsNode {
 
         public CapturesNode(RubyContext context, SourceSection sourceSection) {
@@ -297,7 +297,7 @@ public abstract class MatchDataNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "end", required = 1, lowerFixnumParameters = 1)
+    @CoreMethod(names = "end", required = 1, lowerFixnumParameters = 1)
     public abstract static class EndNode extends CoreMethodArrayArgumentsNode {
 
         public EndNode(RubyContext context, SourceSection sourceSection) {
@@ -321,7 +321,7 @@ public abstract class MatchDataNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "full")
+    @CoreMethod(names = "full")
     public abstract static class FullNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode newTupleNode;
@@ -352,7 +352,7 @@ public abstract class MatchDataNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "length", "size" })
+    @CoreMethod(names = { "length", "size" })
     public abstract static class LengthNode extends CoreMethodArrayArgumentsNode {
 
         public LengthNode(RubyContext context, SourceSection sourceSection) {
@@ -366,7 +366,7 @@ public abstract class MatchDataNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "pre_match")
+    @CoreMethod(names = "pre_match")
     public abstract static class PreMatchNode extends CoreMethodArrayArgumentsNode {
 
         @Child private TaintResultNode taintResultNode;
@@ -383,7 +383,7 @@ public abstract class MatchDataNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "post_match")
+    @CoreMethod(names = "post_match")
     public abstract static class PostMatchNode extends CoreMethodArrayArgumentsNode {
 
         @Child private TaintResultNode taintResultNode;
@@ -400,7 +400,7 @@ public abstract class MatchDataNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "to_a")
+    @CoreMethod(names = "to_a")
     public abstract static class ToANode extends CoreMethodArrayArgumentsNode {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {
@@ -414,7 +414,7 @@ public abstract class MatchDataNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "to_s")
+    @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -428,7 +428,7 @@ public abstract class MatchDataNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "regexp")
+    @CoreMethod(names = "regexp")
     public abstract static class RegexpNode extends CoreMethodArrayArgumentsNode {
 
         public RegexpNode(RubyContext context, SourceSection sourceSection) {
@@ -441,7 +441,7 @@ public abstract class MatchDataNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
