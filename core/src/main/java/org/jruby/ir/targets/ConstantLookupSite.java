@@ -98,8 +98,9 @@ public class ConstantLookupSite extends MutableCallSite {
         return constant;
     }
 
-    public IRubyObject searchModuleForConst(ThreadContext context, RubyModule module) {
+    public IRubyObject searchModuleForConst(ThreadContext context, IRubyObject cmVal) {
         // Lexical lookup
+        RubyModule module = (RubyModule) cmVal;
         Ruby runtime = context.getRuntime();
         IRubyObject constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
 
@@ -114,12 +115,21 @@ public class ConstantLookupSite extends MutableCallSite {
         MethodHandle target = Binder.from(type())
                 .drop(0, 2)
                 .constant(constant);
+
         MethodHandle fallback = getTarget();
         if (fallback == null) {
             fallback = Binder.from(type())
                     .insert(0, this)
                     .invokeVirtualQuiet(Bootstrap.LOOKUP, "searchModuleForConst");
         }
+
+        // test that module is same as before
+        MethodHandle test = Binder.from(type().changeReturnType(boolean.class))
+                .drop(0, 1)
+                .insert(1, module.id)
+                .invokeStaticQuiet(Bootstrap.LOOKUP, Bootstrap.class, "testArg0ModuleMatch");
+
+        target = guardWithTest(test, target, fallback);
 
         setTarget(switchPoint.guardWithTest(target, fallback));
 

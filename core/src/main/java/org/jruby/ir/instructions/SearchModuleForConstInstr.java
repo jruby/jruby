@@ -60,10 +60,7 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
 
     private Object cache(Ruby runtime, RubyModule module) {
         Object constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
-        if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
-        } else {
-            // recache
+        if (constant != null) {
             Invalidator invalidator = runtime.getConstantInvalidator(constName);
             cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator, module.hashCode());
         }
@@ -92,7 +89,7 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
         ConstantCache cache = this.cache;
         Object result = !ConstantCache.isCachedFrom(module, cache) ? cache(context.runtime, module) : cache.value;
 
-        if (result == UndefinedValue.UNDEFINED) {
+        if (result == null) {
             result = module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
         }
 

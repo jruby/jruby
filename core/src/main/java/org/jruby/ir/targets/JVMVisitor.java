@@ -1924,6 +1924,7 @@ public class JVMVisitor extends IRVisitor {
         visit(instr.getCurrentModule());
 
         jvmMethod().searchModuleForConst(instr.getConstName(), instr.isNoPrivateConsts());
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override

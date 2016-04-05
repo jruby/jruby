@@ -716,7 +716,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void searchModuleForConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("searchModuleForConst", sig(JVM.OBJECT, params(ThreadContext.class, RubyModule.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0);
+        adapter.invokedynamic("searchModuleForConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0);
     }
 
     public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
