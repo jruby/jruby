@@ -35,7 +35,8 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
     private final String nameForMessage;
     private final int arity;
 
-    @Child private Node directArray;
+    @Child private Node directArrayRead;
+    @Child private Node directArrayWrite;
     @Child private Node directField;
     @Child private Node directCall;
     @Child private Node nullCheck;
@@ -58,9 +59,9 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
 
     private void initializeNodes(RubyContext context, int arity) {
         if (name.equals("[]")) {
-            directArray = Message.READ.createNode();
+            directArrayRead = Message.READ.createNode();
         } else if (name.equals("[]=")) {
-            directArray = Message.WRITE.createNode();
+            directArrayWrite = Message.WRITE.createNode();
         } else if (name.endsWith("=") && arity == 1) {
             directField = Message.WRITE.createNode();
         } else if (name.equals("call")) {
@@ -106,9 +107,12 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
         }
 
         try {
-            if (directArray != null) {
+            if (directArrayRead != null) {
                 Object[] args = prepareArguments.convertArguments(frame, arguments, 0);
-                return ForeignAccess.sendRead(directArray, frame, receiverObject, args[0]);
+                return ForeignAccess.sendRead(directArrayRead, frame, receiverObject, args[0]);
+            } else if (directArrayWrite != null) {
+                Object[] args = prepareArguments.convertArguments(frame, arguments, 0);
+                return ForeignAccess.sendWrite(directArrayWrite, frame, receiverObject, args[0], args[1]);
             } else if (directField != null) {
                 Object[] args = prepareArguments.convertArguments(frame, arguments, 1);
                 args[0] = nameForMessage;

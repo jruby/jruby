@@ -79,15 +79,15 @@ end
 Truffle::Interop.export_method(:evaluate_source)
 
 def complex_add(a, b)
-  a.imaginary = Truffle::Interop.read_property(a, :imaginary) + Truffle::Interop.read_property(b, :imaginary)
-  a.real = Truffle::Interop.read_property(a, :real) + Truffle::Interop.read_property(b, :real)
+  a.imaginary = a[:imaginary] + b[:imaginary]
+  a.real = a[:real] + b[:real]
 end
 
 Truffle::Interop.export_method(:complex_add)
 
 def complex_add_with_method(a, b)
-  a.imaginary = Truffle::Interop.read_property(a, :imaginary) + Truffle::Interop.read_property(b, :imaginary)
-  a.real = Truffle::Interop.read_property(a, :real) + Truffle::Interop.read_property(b, :real)
+  a.imaginary = a[:imaginary] + b[:imaginary]
+  a.real = a[:real] + b[:real]
 end
 
 Truffle::Interop.export_method(:complex_add_with_method)
@@ -95,7 +95,7 @@ Truffle::Interop.export_method(:complex_add_with_method)
 def complex_sum_real(complexes)
   complexes = Truffle::Interop.enumerable(complexes)
 
-  complexes.map{ |c| Truffle::Interop.read_property(c, :real) }.inject(&:+)
+  complexes.map{ |c| c[:real] }.inject(&:+)
 end
 
 Truffle::Interop.export_method(:complex_sum_real)
@@ -111,8 +111,8 @@ def complex_copy(a, b)
   b = b.to_a
 
   a.zip(b).each do |x, y|
-    x.imaginary = Truffle::Interop.read_property(y, :imaginary)
-    x.real = Truffle::Interop.read_property(y, :real)
+    x.imaginary = y[:imaginary]
+    x.real = y[:real]
   end
 end
 
