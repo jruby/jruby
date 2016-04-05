@@ -164,7 +164,6 @@ public class JVMVisitor extends IRVisitor {
 
         IRBytecodeAdapter m = jvmMethod();
 
-        int numberOfBasicBlocks = bbs.length;
         int ipc = 0; // synthetic, used for debug traces that show which instr failed
 
         Label currentRescue = null;
@@ -173,37 +172,23 @@ public class JVMVisitor extends IRVisitor {
         Map<Label, org.objectweb.asm.Label> rescueEndForStart = new HashMap<>();
         Map<Label, org.objectweb.asm.Label> syntheticEndForStart = new HashMap<>();
 
-        for (int i = 0; i < numberOfBasicBlocks; i++) {
-            BasicBlock bb = bbs[i];
+        for (BasicBlock bb: bbs) {
             currentBlockStart = bb.getLabel();
-
             Label rescueLabel = exceptionTable.get(bb);
 
-            if (rescueLabel != null) {
-                if (currentRescue != null) {
-                    if (rescueLabel == currentRescue) {
-                        // continue, inside active rescue region
-                        continue;
-                    } else {
-                        // end of active region and start of new one
-                        rescueEndForStart.put(currentRegionStart, jvm.methodData().getLabel(bb.getLabel()));
-                        currentRescue = rescueLabel;
-                        currentRegionStart = bb.getLabel();
-                    }
-                } else {
-                    currentRescue = rescueLabel;
-                    currentRegionStart = bb.getLabel();
-                }
-            } else {
-                if (currentRescue == null) {
-                    // continue, no new or active region
-                    continue;
-                } else {
-                    // end of active region, no new region
-                    rescueEndForStart.put(currentRegionStart, jvm.methodData().getLabel(bb.getLabel()));
-                    currentRescue = null;
-                    currentRegionStart = null;
-                }
+            // not in a region at all (null-null) or in a region (a-a) but not at a boundary of the region.
+            if (rescueLabel == currentRescue) continue;
+
+            if (currentRescue != null) { // end of active region
+                rescueEndForStart.put(currentRegionStart, jvm.methodData().getLabel(bb.getLabel()));
+            }
+
+            if (rescueLabel != null) { // new region
+                currentRescue = rescueLabel;
+                currentRegionStart = bb.getLabel();
+            } else { // end of active region but no new region
+                currentRescue = null;
+                currentRegionStart = null;
             }
         }
 
@@ -214,8 +199,7 @@ public class JVMVisitor extends IRVisitor {
             syntheticEndForStart.put(currentBlockStart, syntheticEnd);
         }
 
-        for (int i = 0; i < numberOfBasicBlocks; i++) {
-            BasicBlock bb = bbs[i];
+        for (BasicBlock bb: bbs) {
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
             Label rescueLabel = exceptionTable.get(bb);
 
