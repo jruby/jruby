@@ -140,7 +140,7 @@ public class JavaNameMangler {
 
         return newPath.toString();
     }
-    
+
     public static String mangleStringForCleanJavaIdentifier(final String name) {
         StringBuilder cleanBuffer = new StringBuilder(name.length() * 3);
         mangleStringForCleanJavaIdentifier(cleanBuffer, name);
@@ -268,11 +268,11 @@ public class JavaNameMangler {
         return builder;
     }
 
-    public static boolean willMethodMangleOk(String name) {
+    public static boolean willMethodMangleOk(CharSequence name) {
         if (Platform.IS_IBM) {
             // IBM's JVM is much less forgiving, so we disallow anything with non-alphanumeric, _, and $
-            for (char c : name.toCharArray()) {
-                if (!Character.isJavaIdentifierPart(c)) return false;
+            for ( int i = 0; i < name.length(); i++ ) {
+                if (!Character.isJavaIdentifierPart(name.charAt(i))) return false;
             }
         }
         // other JVMs will accept our mangling algorithm
