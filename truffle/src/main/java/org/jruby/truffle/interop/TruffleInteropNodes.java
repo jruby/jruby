@@ -76,7 +76,7 @@ public abstract class TruffleInteropNodes {
 
         @Specialization(
                 guards = "args.length == cachedArgsLength",
-                limit = "10"
+                limit = "getCacheLimit()"
         )
         public Object executeForeignCached(
                 VirtualFrame frame,
@@ -111,6 +111,10 @@ public abstract class TruffleInteropNodes {
 
         protected Node createExecuteNode(int argsLength) {
             return Message.createExecute(argsLength).createNode();
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().INTEROP_EXECUTE_CACHE;
         }
 
     }
