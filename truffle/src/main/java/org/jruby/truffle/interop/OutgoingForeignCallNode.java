@@ -91,6 +91,10 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
             return new CallOutgoingNode(argsLength);
         } else if (name.equals("nil?") && argsLength == 0) {
             return new IsNilOutgoingNode();
+        } else if (name.endsWith("!") && argsLength == 0) {
+            return new InvokeOutgoingNode(name.substring(0, name.length() - 1), argsLength);
+        } else if (argsLength == 0) {
+            return new PropertyReadOutgoingNode(name);
         } else {
             return new InvokeOutgoingNode(name, argsLength);
         }
@@ -172,6 +176,31 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
             try {
                 return ForeignAccess.sendWrite(node, frame, receiver, args[0], args[1]);
             } catch (UnknownIdentifierException | UnsupportedMessageException | UnsupportedTypeException e) {
+                exceptionProfile();
+                throw new RuntimeException(e);
+            }
+        }
+
+    }
+
+    protected class PropertyReadOutgoingNode extends OutgoingNode {
+
+        private final String name;
+
+        @Child private Node node;
+
+        public PropertyReadOutgoingNode(String name) {
+            this.name = name;
+            node = Message.READ.createNode();
+        }
+
+        @Override
+        public Object executeCall(VirtualFrame frame, TruffleObject receiver, Object[] args) {
+            assert args.length == 0;
+
+            try {
+                return ForeignAccess.sendRead(node, frame, receiver, name);
+            } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile();
                 throw new RuntimeException(e);
             }
