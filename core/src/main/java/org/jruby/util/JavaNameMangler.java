@@ -15,6 +15,7 @@ import org.jruby.ir.IRScriptBody;
 import org.jruby.platform.Platform;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -283,20 +284,19 @@ public class JavaNameMangler {
     }
 
     public static String decodeMethodForBacktrace(String methodName) {
-        if (!methodName.startsWith("RUBY$")) return null;
+        if ( ! methodName.startsWith("RUBY$") ) return null;
 
-        String[] elts = methodName.split("\\$");
-        final String type = elts[1];
-
+        final List<String> name = StringSupport.split(methodName, '$');
+        final String type = name.get(1); // e.g. RUBY $ class $ methodName
         // root body gets named (root)
         switch (type) {
             case "script":    return "<top>";
             case "metaclass": return "singleton class";
             // remaining cases have an encoded name
-            case "method":    return demangleMethodName(elts[2]);
-            case "block":     return "block in " + demangleMethodName(elts[2]);
+            case "method":    return demangleMethodName(name.get(2));
+            case "block":     return "block in " + demangleMethodName(name.get(2));
             case "class":     // fall through
-            case "module":    return '<' + type + ':' + demangleMethodName(elts[2]) + '>';
+            case "module":    return '<' + type + ':' + demangleMethodName(name.get(2)) + '>';
         }
         throw new IllegalStateException("unknown encoded method type '" + type + "' from " + methodName);
     }
