@@ -1413,24 +1413,24 @@ CLASSDEF
   end
 
   # reproducing https://github.com/jruby/jruby/issues/1621
-  def test_concurrent_proxy_class_initialization_dead_lock
-    pend "Excluded for the moment to uncloud what else is keeping ci red (kares looking into this one)"
+  # def test_concurrent_proxy_class_initialization_dead_lock
+  #   pend "Excluded for the moment to uncloud what else is keeping ci red (kares looking into this one)"
 
-    timeout = 0.5; threads_to_kill = []
-    begin
-      threads = %w{ A B C D E F G H }.map do |sym|
-        Thread.new { Java::Default.const_get "Bug1621#{sym}" }
-      end
-      threads.each do |thread|
-        threads_to_kill << thread if thread.join(timeout).nil?
-      end
-      if threads_to_kill.any?
-        fail "threads: #{threads_to_kill.inspect} dead-locked!"
-      end
-    ensure
-      threads_to_kill.each { |thread| thread.exit rescue nil }
-    end
-  end
+  #   timeout = 0.5; threads_to_kill = []
+  #   begin
+  #     threads = %w{ A B C D E F G H }.map do |sym|
+  #       Thread.new { Java::Default.const_get "Bug1621#{sym}" }
+  #     end
+  #     threads.each do |thread|
+  #       threads_to_kill << thread if thread.join(timeout).nil?
+  #     end
+  #     if threads_to_kill.any?
+  #       fail "threads: #{threads_to_kill.inspect} dead-locked!"
+  #     end
+  #   ensure
+  #     threads_to_kill.each { |thread| thread.exit rescue nil }
+  #   end
+  # end
 
   def test_callable_no_match_raised_errors
     begin
