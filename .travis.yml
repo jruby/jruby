@@ -57,24 +57,24 @@ env:
 matrix:
   include:
     # these profile do no need to run for all JDKs
-    - env: PHASE='-Pdist'
+    - env: PHASE='-Pdist --projects !truffle'
       jdk: oraclejdk8
-    - env: PHASE='-Pjruby-jars'
+    - env: PHASE='-Pjruby-jars --projects !truffle'
       jdk: openjdk7
-    - env: PHASE='-Pmain'
+    - env: PHASE='-Pmain --projects !truffle'
       jdk: oraclejdk8
-    - env: PHASE='-Pcomplete'
+    - env: PHASE='-Pcomplete --projects !truffle'
       jdk: oraclejdk8
-    - env: PHASE='-Posgi'
+    - env: PHASE='-Posgi --projects !truffle'
       jdk: openjdk7
-    - env: PHASE='-Pj2ee'
+    - env: PHASE='-Pj2ee --projects !truffle'
       jdk: oraclejdk7
     # These next two started crashing on JDK7 in March 2015, possibly due to JVM issues on Travis's Docker-based env
-    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended --projects !truffle'
       jdk: oraclejdk8
-    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+    - env: PHASE='-Pmain,test -Dinvoker.test=extended --projects !truffle'
       jdk: oraclejdk8
-    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true --projects !truffle'
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
@@ -85,9 +85,9 @@ matrix:
     - env: JT=check_ambiguous_arguments
       jdk: oraclejdk8
     - env: JT='test mri'
-    - env: PHASE='-Pmain'
+    - env: PHASE='-Pmain --projects !truffle'
       jdk: oraclejdk8
-    - env: PHASE='-Pj2ee'
+    - env: PHASE='-Pj2ee --projects !truffle'
       jdk: oraclejdk7
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
