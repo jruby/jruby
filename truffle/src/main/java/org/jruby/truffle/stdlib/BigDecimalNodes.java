@@ -485,7 +485,7 @@ public abstract class BigDecimalNodes {
 
     // TODO (pitr 21-Jun-2015): Check for missing coerce on OpNodes
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "initialize", required = 1, optional = 1)
+    @CoreMethod(names = "initialize", required = 1, optional = 1)
     public abstract static class InitializeNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -562,7 +562,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "+", required = 1)
+    @CoreMethod(names = "+", required = 1)
     public abstract static class AddOpNode extends AbstractAddNode {
 
         public AddOpNode(RubyContext context, SourceSection sourceSection) {
@@ -585,7 +585,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "add", required = 2)
+    @CoreMethod(names = "add", required = 2)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class AddNode extends AbstractAddNode {
 
@@ -650,7 +650,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "-", required = 1)
+    @CoreMethod(names = "-", required = 1)
     public abstract static class SubOpNode extends AbstractSubNode {
 
         public SubOpNode(RubyContext context, SourceSection sourceSection) {
@@ -672,7 +672,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "sub", required = 2)
+    @CoreMethod(names = "sub", required = 2)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class SubNode extends AbstractSubNode {
 
@@ -695,7 +695,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "-@")
+    @CoreMethod(names = "-@")
     public abstract static class NegNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public NegNode(RubyContext context, SourceSection sourceSection) {
@@ -827,7 +827,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "*", required = 1)
+    @CoreMethod(names = "*", required = 1)
     public abstract static class MultOpNode extends AbstractMultNode {
 
         public MultOpNode(RubyContext context, SourceSection sourceSection) {
@@ -863,7 +863,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "mult", required = 2)
+    @CoreMethod(names = "mult", required = 2)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class MultNode extends AbstractMultNode {
 
@@ -1034,7 +1034,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "/", "quo" }, required = 1)
+    @CoreMethod(names = { "/", "quo" }, required = 1)
     public abstract static class DivOpNode extends AbstractDivNode {
 
         public DivOpNode(RubyContext context, SourceSection sourceSection) {
@@ -1071,7 +1071,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "div", required = 1, optional = 1)
+    @CoreMethod(names = "div", required = 1, optional = 1)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class DivNode extends AbstractDivNode {
 
@@ -1187,7 +1187,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "divmod", required = 1)
+    @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends OpNode {
 
         @Child private CallDispatchHeadNode signCall;
@@ -1298,7 +1298,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "remainder", required = 1)
+    @CoreMethod(names = "remainder", required = 1)
     public abstract static class RemainderNode extends OpNode {
 
         public RemainderNode(RubyContext context, SourceSection sourceSection) {
@@ -1341,7 +1341,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "modulo", "%" }, required = 1)
+    @CoreMethod(names = { "modulo", "%" }, required = 1)
     public abstract static class ModuloNode extends OpNode {
 
         public ModuloNode(RubyContext context, SourceSection sourceSection) {
@@ -1408,7 +1408,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "**", "power" }, required = 1, optional = 1)
+    @CoreMethod(names = { "**", "power" }, required = 1, optional = 1)
     @NodeChildren({
             @NodeChild(value = "self", type = RubyNode.class),
             @NodeChild(value = "exponent", type = RubyNode.class),
@@ -1487,7 +1487,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "sqrt", required = 1)
+    @CoreMethod(names = "sqrt", required = 1)
     @NodeChildren({
             @NodeChild(value = "self", type = RubyNode.class),
             @NodeChild(value = "precision", type = RubyNode.class),
@@ -1548,7 +1548,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "<=>", required = 1)
+    @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
@@ -1661,7 +1661,7 @@ public abstract class BigDecimalNodes {
 
     // TODO (pitr 20-May-2015): compare Ruby implementation of #== with a Java one
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "zero?")
+    @CoreMethod(names = "zero?")
     public abstract static class ZeroNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public ZeroNode(RubyContext context, SourceSection sourceSection) {
@@ -1707,7 +1707,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "sign")
+    @CoreMethod(names = "sign")
     public abstract static class SignNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         private final ConditionProfile positive = ConditionProfile.createBinaryProfile();
@@ -1754,7 +1754,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "nan?")
+    @CoreMethod(names = "nan?")
     public abstract static class NanNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public NanNode(RubyContext context, SourceSection sourceSection) {
@@ -1773,7 +1773,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "exponent")
+    @CoreMethod(names = "exponent")
     public abstract static class ExponentNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public ExponentNode(RubyContext context, SourceSection sourceSection) {
@@ -1803,7 +1803,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "abs")
+    @CoreMethod(names = "abs")
     public abstract static class AbsNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {
@@ -1838,7 +1838,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "round", optional = 2)
+    @CoreMethod(names = "round", optional = 2)
     public abstract static class RoundNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignumNode;
@@ -1916,7 +1916,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "finite?")
+    @CoreMethod(names = "finite?")
     public abstract static class FiniteNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public FiniteNode(RubyContext context, SourceSection sourceSection) {
@@ -1942,7 +1942,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "infinite?")
+    @CoreMethod(names = "infinite?")
     public abstract static class InfiniteNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public InfiniteNode(RubyContext context, SourceSection sourceSection) {
@@ -1968,7 +1968,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "precs")
+    @CoreMethod(names = "precs")
     public abstract static class PrecsNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public PrecsNode(RubyContext context, SourceSection sourceSection) {
@@ -1991,7 +1991,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "to_f")
+    @CoreMethod(names = "to_f")
     public abstract static class ToFNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
@@ -2023,7 +2023,7 @@ public abstract class BigDecimalNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "unscaled", visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "unscaled", visibility = Visibility.PRIVATE)
     public abstract static class UnscaledNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         public UnscaledNode(RubyContext context, SourceSection sourceSection) {
@@ -2045,7 +2045,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "to_i", "to_int" })
+    @CoreMethod(names = { "to_i", "to_int" })
     public abstract static class ToINode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
@@ -2233,7 +2233,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
