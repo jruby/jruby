@@ -100,6 +100,7 @@ DO NOT MODIFIY - GENERATED CODE
               <goal>compile</goal>
             </goals>
             <configuration>
+              <fork>true</fork>
               <includes>
                 <include>org/jruby/truffle/om/dsl/processor/OMProcessor.java</include>
               </includes>
@@ -116,6 +117,7 @@ DO NOT MODIFIY - GENERATED CODE
               <goal>compile</goal>
             </goals>
             <configuration>
+              <fork>true</fork>
               <annotationProcessors>
                 <annotationProcessor>org.jruby.truffle.om.dsl.processor.OMProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
