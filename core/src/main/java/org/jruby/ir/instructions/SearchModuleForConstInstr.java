@@ -49,7 +49,7 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new InheritanceSearchConstInstr(ii.getRenamedVariable(result),
+        return new SearchModuleForConstInstr(ii.getRenamedVariable(result),
                 getCurrentModule().cloneForInlining(ii), constName, noPrivateConsts);
     }
 
