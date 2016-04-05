@@ -279,33 +279,25 @@ public class JavaNameMangler {
         } else if (scope instanceof IRScriptBody) {
             return "RUBY$script";
         }
-        throw new RuntimeException("unknown scope type for backtrace encoding: " + scope.getClass());
+        throw new IllegalStateException("unknown scope type for backtrace encoding: " + scope.getClass());
     }
 
     public static String decodeMethodForBacktrace(String methodName) {
         if (!methodName.startsWith("RUBY$")) return null;
 
         String[] elts = methodName.split("\\$");
-        String type = elts[1];
-        String name;
+        final String type = elts[1];
 
         // root body gets named (root)
         switch (type) {
-            case "script":
-                return "<top>";
-            case "metaclass":
-                return "singleton class";
+            case "script":    return "<top>";
+            case "metaclass": return "singleton class";
+            // remaining cases have an encoded name
+            case "method":    return demangleMethodName(elts[2]);
+            case "block":     return "block in " + demangleMethodName(elts[2]);
+            case "class":     // fall through
+            case "module":    return '<' + type + ':' + demangleMethodName(elts[2]) + '>';
         }
-
-        // remaining cases have an encoded name
-        name = demangleMethodName(elts[2]);
-        switch (type) {
-            case "method":  return name;
-            case "block":   return "block in " + name;
-            case "class":   // fall through
-            case "module":  return "<" + type + ":" + name + ">";
-            default:
-                throw new RuntimeException("unknown encoded method type '" + type + "' from '" + methodName);
-        }
+        throw new IllegalStateException("unknown encoded method type '" + type + "' from " + methodName);
     }
 }
