@@ -35,7 +35,7 @@ public abstract class ByteArrayNodes {
         return Layouts.BYTE_ARRAY.createByteArray(factory, bytes);
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "get_byte", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
@@ -62,7 +62,7 @@ public abstract class ByteArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "prepend", required = 1)
+    @CoreMethod(names = "prepend", required = 1)
     public abstract static class PrependNode extends CoreMethodArrayArgumentsNode {
 
         public PrependNode(RubyContext context, SourceSection sourceSection) {
@@ -83,7 +83,7 @@ public abstract class ByteArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "set_byte", required = 2, lowerFixnumParameters = {0, 1})
+    @CoreMethod(names = "set_byte", required = 2, lowerFixnumParameters = {0, 1})
     public abstract static class SetByteNode extends CoreMethodArrayArgumentsNode {
 
         public SetByteNode(RubyContext context, SourceSection sourceSection) {
@@ -103,7 +103,7 @@ public abstract class ByteArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "size")
+    @CoreMethod(names = "size")
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -117,7 +117,7 @@ public abstract class ByteArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "locate", required = 3, lowerFixnumParameters = {1, 2})
+    @CoreMethod(names = "locate", required = 3, lowerFixnumParameters = {1, 2})
     public abstract static class LocateNode extends CoreMethodArrayArgumentsNode {
 
         public LocateNode(RubyContext context, SourceSection sourceSection) {
@@ -137,7 +137,7 @@ public abstract class ByteArrayNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
