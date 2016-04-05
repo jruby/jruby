@@ -827,7 +827,14 @@ public class Java implements Library {
         final boolean initJavaClass) {
         final Class<?> clazz;
         try { // loadJavaClass here to handle things like LinkageError through
-            clazz = runtime.getJavaSupport().loadJavaClass(className);
+            synchronized (Java.class) {
+                // a circular load might potentially dead-lock when loading concurrently
+                // this path is reached from JavaPackage#relativeJavaClassOrPackage ...
+                // another part preventing concurrent proxy initialization dead-locks is :
+                // JavaSupportImpl's proxyClassCache = ClassValue.newInstance( ... )
+                // ... having synchronized RubyModule computeValue(Class<?>)
+                clazz = runtime.getJavaSupport().loadJavaClass(className);
+            }
         }
         catch (ExceptionInInitializerError ex) {
             throw runtime.newNameError("cannot initialize Java class " + className + ' ' + '(' + ex + ')', className, ex, false);
