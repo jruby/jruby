@@ -725,7 +725,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "exec", isModuleFunction = true, required = 1, rest = true)
+    @CoreMethod(names = "exec", isModuleFunction = true, required = 1, rest = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class ExecNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toHashNode;
@@ -792,7 +792,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "fork", isModuleFunction = true, rest = true)
+    @CoreMethod(names = "fork", isModuleFunction = true, rest = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class ForkNode extends CoreMethodArrayArgumentsNode {
 
         public ForkNode(RubyContext context, SourceSection sourceSection) {
