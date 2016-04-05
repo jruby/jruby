@@ -22,7 +22,7 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
 
     @Child private OutgoingForeignCallNode outgoingForeignCallNode;
 
-    public CachedForeignDispatchNode(RubyContext context, DispatchNode next, Object cachedName, int arity) {
+    public CachedForeignDispatchNode(RubyContext context, DispatchNode next, Object cachedName) {
         super(context, cachedName, next, DispatchAction.CALL_METHOD);
         name = cachedName.toString();
         outgoingForeignCallNode = OutgoingForeignCallNodeGen.create(context, null, name, null, null);
