@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @CoreClass(name = "Rubinius::AtomicReference")
 public abstract class AtomicReferenceNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
@@ -42,7 +42,7 @@ public abstract class AtomicReferenceNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "get")
+    @CoreMethod(names = "get")
     public abstract static class GetNode extends CoreMethodArrayArgumentsNode {
 
         public GetNode(RubyContext context, SourceSection sourceSection) {
@@ -55,7 +55,7 @@ public abstract class AtomicReferenceNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "set", required = 1)
+    @CoreMethod(names = "set", required = 1)
     public abstract static class SetNode extends CoreMethodArrayArgumentsNode {
 
         public SetNode(RubyContext context, SourceSection sourceSection) {
@@ -69,7 +69,7 @@ public abstract class AtomicReferenceNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "compare_and_set", required = 2)
+    @CoreMethod(names = "compare_and_set", required = 2)
     public abstract static class CompareAndSetNode extends CoreMethodArrayArgumentsNode {
 
         public CompareAndSetNode(RubyContext context, SourceSection sourceSection) {
@@ -82,7 +82,7 @@ public abstract class AtomicReferenceNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "get_and_set", required = 1)
+    @CoreMethod(names = "get_and_set", required = 1)
     public abstract static class GetAndSetNode extends CoreMethodArrayArgumentsNode {
 
         public GetAndSetNode(RubyContext context, SourceSection sourceSection) {
