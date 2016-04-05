@@ -43,7 +43,7 @@ public class InternalMethod implements ObjectGraphNode {
 
     public static InternalMethod fromProc(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
             Visibility visibility, DynamicObject proc, CallTarget callTarget) {
-        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, false, proc, callTarget, null, null);
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, false, proc, callTarget, Layouts.PROC.getBlock(proc), null);
     }
 
     public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
