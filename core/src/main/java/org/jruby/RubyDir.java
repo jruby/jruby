@@ -799,12 +799,11 @@ public class RubyDir extends RubyObject {
                 return runtime.getNil();
             }
 
-            String[] rows = passwd.split("\n");
-            int rowCount = rows.length;
-            for (int i = 0; i < rowCount; i++) {
-                String[] fields = rows[i].split(":");
-                if (fields[0].equals(user)) {
-                    return runtime.newString(fields[5]);
+            List<String> rows = StringSupport.split(passwd, '\n');
+            for (int i = 0; i < rows.size(); i++) {
+                List<String> fields = StringSupport.split(rows.get(i), ':');
+                if (fields.get(0).equals(user)) {
+                    return runtime.newString(fields.get(5));
                 }
             }
         }
