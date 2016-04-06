@@ -43,7 +43,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "collect", "map" }, needsBlock = true, lowerFixnumSelf = true)
+    @CoreMethod(names = { "collect", "map" }, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
         public CollectNode(RubyContext context, SourceSection sourceSection) {
@@ -80,7 +80,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "each", needsBlock = true, lowerFixnumSelf = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode eachInternalCall;
@@ -173,7 +173,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "exclude_end?")
+    @CoreMethod(names = "exclude_end?")
     public abstract static class ExcludeEndNode extends CoreMethodArrayArgumentsNode {
 
         public ExcludeEndNode(RubyContext context, SourceSection sourceSection) {
@@ -197,7 +197,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "begin")
+    @CoreMethod(names = "begin")
     public abstract static class BeginNode extends CoreMethodArrayArgumentsNode {
 
         public BeginNode(RubyContext context, SourceSection sourceSection) {
@@ -221,7 +221,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "dup", "clone" })
+    @CoreMethod(names = { "dup", "clone" })
     public abstract static class DupNode extends UnaryCoreMethodNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -261,7 +261,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "end")
+    @CoreMethod(names = "end")
     public abstract static class EndNode extends CoreMethodArrayArgumentsNode {
 
         public EndNode(RubyContext context, SourceSection sourceSection) {
@@ -285,7 +285,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "step", needsBlock = true, optional = 1, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "step", needsBlock = true, optional = 1, returnsEnumeratorIfNoBlock = true)
     public abstract static class StepNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode stepInternalCall;
@@ -423,7 +423,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "to_a", lowerFixnumSelf = true)
+    @CoreMethod(names = "to_a", lowerFixnumSelf = true)
     public abstract static class ToANode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toAInternalCall;
@@ -529,7 +529,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "new", constructor = true, required = 2, optional = 1)
+    @CoreMethod(names = "new", constructor = true, required = 2, optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "rubyClass"),
             @NodeChild(type = RubyNode.class, value = "begin"),
@@ -603,7 +603,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
         @Child private AllocateObjectNode allocateNode;
