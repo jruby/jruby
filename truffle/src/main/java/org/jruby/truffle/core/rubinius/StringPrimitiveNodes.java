@@ -1675,12 +1675,12 @@ public abstract class StringPrimitiveNodes {
                     }
                     return makeRope(string, p - s, e - p);
                 } else {
-                    beg += StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeableReadOnly(string), enc);
+                    beg += rope.characterLength();
                     if (beg < 0) {
                         return nil();
                     }
                 }
-            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeableReadOnly(string), enc)) {
+            } else if (beg > 0 && beg > rope.characterLength()) {
                 return nil();
             }
             if (len == 0) {

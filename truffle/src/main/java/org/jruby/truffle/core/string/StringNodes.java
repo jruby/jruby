@@ -361,10 +361,13 @@ public abstract class StringNodes {
         public int compare(DynamicObject a, DynamicObject b) {
             // Taken from org.jruby.RubyString#op_cmp
 
-            final int ret = RopeOperations.cmp(rope(a), rope(b));
+            final Rope firstRope = rope(a);
+            final Rope secondRope = rope(b);
 
-            if ((ret == 0) && !StringSupport.areComparable(StringOperations.getCodeRangeableReadOnly(a), StringOperations.getCodeRangeableReadOnly(b))) {
-                return encoding(a).getIndex() > encoding(b).getIndex() ? 1 : -1;
+            final int ret = RopeOperations.cmp(firstRope, secondRope);
+
+            if ((ret == 0) && !RopeOperations.areComparable(firstRope, secondRope)) {
+                return firstRope.getEncoding().getIndex() > secondRope.getEncoding().getIndex() ? 1 : -1;
             }
 
             return ret;
@@ -734,7 +737,7 @@ public abstract class StringNodes {
         public Object caseCmpSingleByte(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19.
 
-            if (StringSupport.areCompatible(StringOperations.getCodeRangeableReadOnly(string), StringOperations.getCodeRangeableReadOnly(other)) == null) {
+            if (RopeOperations.areCompatible(rope(string), rope(other)) == null) {
                 return nil();
             }
 
@@ -746,7 +749,7 @@ public abstract class StringNodes {
         public Object caseCmp(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19 and
 
-            final Encoding encoding = StringSupport.areCompatible(StringOperations.getCodeRangeableReadOnly(string), StringOperations.getCodeRangeableReadOnly(other));
+            final Encoding encoding = RopeOperations.areCompatible(rope(string), rope(other));
 
             if (encoding == null) {
                 return nil();
