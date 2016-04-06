@@ -88,10 +88,6 @@ public abstract class Rope {
         return 0;
     }
 
-    public int getBegin() {
-        return begin();
-    }
-
     @Override
     public int hashCode() {
         if (hashCode == 0) {

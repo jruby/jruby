@@ -145,7 +145,7 @@ public abstract class RegexpPrimitiveNodes {
             final Encoding enc = RegexpNodes.checkEncoding(regexp, stringRope, true);
             ByteList preprocessed = RegexpSupport.preprocess(getContext().getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
             Rope preprocessedRope = RegexpNodes.shimModifiers(StringOperations.ropeFromByteList(preprocessed));
-            final Regex r = new Regex(preprocessedRope.getBytes(), preprocessedRope.getBegin(), preprocessedRope.getBegin() + preprocessedRope.byteLength(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, stringRope, true));
+            final Regex r = new Regex(preprocessedRope.getBytes(), preprocessedRope.begin(), preprocessedRope.begin() + preprocessedRope.byteLength(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, stringRope, true));
             final Matcher matcher = r.matcher(stringRope.getBytes(), stringRope.begin(), stringRope.begin() + stringRope.byteLength());
 
             if (forward) {

@@ -213,11 +213,11 @@ public abstract class IOPrimitiveNodes {
             final Rope pathRope = rope(path);
 
             return Dir.fnmatch(patternRope.getBytes(),
-                    patternRope.getBegin(),
-                    patternRope.getBegin() + patternRope.byteLength(),
+                    patternRope.begin(),
+                    patternRope.begin() + patternRope.byteLength(),
                     pathRope.getBytes(),
-                    pathRope.getBegin(),
-                    pathRope.getBegin() + pathRope.byteLength(),
+                    pathRope.begin(),
+                    pathRope.begin() + pathRope.byteLength(),
                     flags) != Dir.FNM_NOMATCH;
         }
 

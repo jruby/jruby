@@ -114,7 +114,7 @@ public class RopeOperations {
     @TruffleBoundary
     public static String decodeRope(Ruby runtime, Rope value) {
         if (value instanceof LeafRope) {
-            int begin = value.getBegin();
+            int begin = value.begin();
             int length = value.byteLength();
 
             Encoding encoding = value.getEncoding();

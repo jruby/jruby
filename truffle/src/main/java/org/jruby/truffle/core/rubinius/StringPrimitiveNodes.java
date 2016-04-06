@@ -218,7 +218,7 @@ public abstract class StringPrimitiveNodes {
             int i = lim > 0 ? 1 : 0;
 
             byte[]bytes = rope.getBytes();
-            int p = rope.getBegin();
+            int p = rope.begin();
             int ptr = p;
             int len = rope.byteLength();
             int end = p + len;
@@ -490,8 +490,8 @@ public abstract class StringPrimitiveNodes {
             final Rope otherRope = StringOperations.rope(other);
 
             // TODO (nirvdrum 21-Jan-16): Reimplement with something more friendly to rope byte[] layout?
-            return ByteList.memcmp(rope.getBytes(), rope.getBegin(), size,
-                    otherRope.getBytes(), otherRope.getBegin() + start, size);
+            return ByteList.memcmp(rope.getBytes(), rope.begin(), size,
+                    otherRope.getBytes(), otherRope.begin() + start, size);
         }
 
     }
@@ -849,7 +849,7 @@ public abstract class StringPrimitiveNodes {
 
             if (sourceLen - offset < otherLen) return -1;
             byte[]bytes = source.getBytes();
-            int p = source.getBegin();
+            int p = source.begin();
             int end = p + source.byteLength();
             if (offset != 0) {
                 offset = source.isSingleByteOptimizable() ? offset : StringSupport.offset(enc, bytes, p, end, offset);
@@ -858,9 +858,9 @@ public abstract class StringPrimitiveNodes {
             if (otherLen == 0) return offset;
 
             while (true) {
-                int pos = indexOf(source, other, p - source.getBegin());
+                int pos = indexOf(source, other, p - source.begin());
                 if (pos < 0) return pos;
-                pos -= (p - source.getBegin());
+                pos -= (p - source.begin());
                 int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
                 if (t == p + pos) return pos + offset;
                 if ((sourceLen -= t - p) <= 0) return -1;
@@ -1107,7 +1107,7 @@ public abstract class StringPrimitiveNodes {
 
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
-            int p = rope.getBegin();
+            int p = rope.begin();
             final int e = p + rope.byteLength();
 
             int i, k = index;
@@ -1156,9 +1156,9 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Encoding encoding = StringOperations.checkEncoding(getContext(), string, pattern, this);
-            int p = stringRope.getBegin();
+            int p = stringRope.begin();
             final int e = p + stringRope.byteLength();
-            int pp = patternRope.getBegin();
+            int pp = patternRope.begin();
             final int pe = pp + patternRope.byteLength();
             int s;
             int ss;
@@ -1209,7 +1209,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Rope rope = rope(string);
-            final int p = rope.getBegin();
+            final int p = rope.begin();
             final int end = p + rope.byteLength();
 
             final int b = rope.getEncoding().prevCharHead(rope.getBytes(), p, p + index, end);

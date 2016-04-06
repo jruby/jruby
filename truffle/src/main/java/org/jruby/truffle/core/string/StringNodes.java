@@ -1502,7 +1502,7 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#singleByteLStrip.
 
             final Rope rope = rope(string);
-            final int s = rope.getBegin();
+            final int s = rope.begin();
             final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytes();
 
@@ -1524,7 +1524,7 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
             final Encoding enc = RopeOperations.STR_ENC_GET(rope);
-            final int s = rope.getBegin();
+            final int s = rope.begin();
             final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytes();
 
@@ -1767,7 +1767,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            final int s = rope.getBegin();
+            final int s = rope.begin();
             final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytesCopy();
 
@@ -2080,7 +2080,7 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
             final byte[] bytes = rope.getBytes();
-            int p = rope.getBegin();
+            int p = rope.begin();
             final int len = rope.byteLength();
             final int end = p + len;
 
