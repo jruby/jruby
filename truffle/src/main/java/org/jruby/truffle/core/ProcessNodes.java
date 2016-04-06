@@ -22,6 +22,7 @@ import org.jruby.truffle.core.cast.DefaultValueNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.posix.ClockGetTime;
 import org.jruby.truffle.platform.posix.TimeSpec;
 import org.jruby.truffle.platform.signal.Signal;
@@ -121,7 +122,7 @@ public abstract class ProcessNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "kill", onSingleton = true, required = 2)
+    @CoreMethod(names = "kill", onSingleton = true, required = 2, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
 
         public KillNode(RubyContext context, SourceSection sourceSection) {
@@ -153,7 +154,7 @@ public abstract class ProcessNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "pid", onSingleton = true)
+    @CoreMethod(names = "pid", onSingleton = true)
     public abstract static class PidNode extends CoreMethodArrayArgumentsNode {
 
         public PidNode(RubyContext context, SourceSection sourceSection) {
