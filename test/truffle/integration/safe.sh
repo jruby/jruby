@@ -14,7 +14,7 @@ function unsafe {
 
 # Things that are alway safe
 
-safe -e "14"
+safe -e 14
 
 # Check our safe_puts is safe
 
@@ -32,7 +32,6 @@ unsafe -e 'exit!'
 
 # Check we can enable some unsafe operations if we want to
 
-safe -Xtruffle.platform.safe.processes=true -e '`echo foo`'
 safe -Xtruffle.platform.safe.exit=true -e 'exit'
 
 # Check that safe_puts sanitises correctly
