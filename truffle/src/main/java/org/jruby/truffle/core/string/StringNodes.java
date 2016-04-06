@@ -854,7 +854,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "crypt", required = 1, taintFromSelf = true, taintFromParameter = 0)
+    @CoreMethod(names = "crypt", required = 1, taintFromSelf = true, taintFromParameter = 0)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "string"),
             @NodeChild(type = RubyNode.class, value = "salt")

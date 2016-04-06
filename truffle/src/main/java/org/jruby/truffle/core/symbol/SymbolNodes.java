@@ -57,7 +57,7 @@ public abstract class SymbolNodes {
         return wrapper;
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "all_symbols", onSingleton = true)
+    @CoreMethod(names = "all_symbols", onSingleton = true)
     public abstract static class AllSymbolsNode extends CoreMethodArrayArgumentsNode {
 
         public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {

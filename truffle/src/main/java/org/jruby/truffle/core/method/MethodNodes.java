@@ -50,7 +50,7 @@ import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "==", "eql?" }, required = 1)
+    @CoreMethod(names = { "==", "eql?" }, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child protected ReferenceEqualNode referenceEqualNode;

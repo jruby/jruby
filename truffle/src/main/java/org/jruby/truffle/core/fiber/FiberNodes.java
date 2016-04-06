@@ -381,7 +381,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true, unsafe = UnsafeGroup.THREADS)
+    @CoreMethod(names = "allocate", constructor = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
