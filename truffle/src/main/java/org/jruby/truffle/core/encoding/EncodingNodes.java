@@ -220,7 +220,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(first)", "isRubySymbol(second)"})
         public Object isCompatibleStringSymbol(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeableReadOnly(first), SymbolNodes.getCodeRangeable(second));
+            final Encoding compatibleEncoding = compatibleEncodingForRopes(StringOperations.rope(first), Layouts.SYMBOL.getRope(second));
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -232,7 +232,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(first)", "isRubySymbol(second)"})
         public Object isCompatibleSymbolSymbol(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(SymbolNodes.getCodeRangeable(first), SymbolNodes.getCodeRangeable(second));
+            final Encoding compatibleEncoding = compatibleEncodingForRopes(Layouts.SYMBOL.getRope(first), Layouts.SYMBOL.getRope(second));
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -262,6 +262,13 @@ public abstract class EncodingNodes {
 
             final Rope firstRope = StringOperations.rope(first);
             final Rope secondRope = StringOperations.rope(second);
+
+            return compatibleEncodingForRopes(firstRope, secondRope);
+        }
+
+        @TruffleBoundary
+        public static Encoding compatibleEncodingForRopes(Rope firstRope, Rope secondRope) {
+            // Taken from org.jruby.RubyEncoding#areCompatible.
 
             final Encoding firstEncoding = firstRope.getEncoding();
             final Encoding secondEncoding = secondRope.getEncoding();

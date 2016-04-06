@@ -123,8 +123,7 @@ public class SymbolTable {
                     Layouts.CLASS.getInstanceFactory(symbolClass),
                     string,
                     flattenedRope,
-                    string.hashCode(),
-                    null);
+                    string.hashCode());
 
             symbolsTable.put(flattenedRope, new WeakReference<>(newSymbol));
             return newSymbol;
