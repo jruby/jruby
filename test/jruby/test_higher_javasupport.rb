@@ -2,7 +2,6 @@ require 'java'
 require 'rbconfig'
 require 'test/unit'
 require 'test/jruby/test_helper'
-require 'jruby/core_ext'
 
 TopLevelConstantExistsProc = Proc.new do
   java_import 'java.lang.String'
@@ -28,6 +27,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   class JRUBY5564; end
   def test_reified_class_in_jruby_class_loader
+    require 'jruby/core_ext'
     a_class = JRUBY5564.become_java!(false)
 
     # load the java class from the classloader
