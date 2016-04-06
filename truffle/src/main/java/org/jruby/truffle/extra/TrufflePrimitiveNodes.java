@@ -464,7 +464,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "debug_print_rope", onSingleton = true, required = 1, optional = 1, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "debug_print_rope", onSingleton = true, required = 1, optional = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintRopeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode;
@@ -948,7 +948,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "original_load_path", onSingleton = true)
+    @CoreMethod(names = "original_load_path", onSingleton = true)
     public abstract static class OriginalLoadPathNode extends CoreMethodNode {
 
         public OriginalLoadPathNode(RubyContext context, SourceSection sourceSection) {

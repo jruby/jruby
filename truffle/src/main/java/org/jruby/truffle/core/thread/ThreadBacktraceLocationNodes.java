@@ -25,7 +25,7 @@ import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 @CoreClass(name = "Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "absolute_path", "path" })
+    @CoreMethod(names = { "absolute_path", "path" })
     // TODO (eregon, 8 July 2015): these two methods are slightly different (path can be relative if it is the main script)
     public abstract static class AbsolutePathNode extends UnaryCoreMethodNode {
 
@@ -61,7 +61,7 @@ public class ThreadBacktraceLocationNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "lineno")
+    @CoreMethod(names = "lineno")
     public abstract static class LinenoNode extends UnaryCoreMethodNode {
 
         public LinenoNode(RubyContext context, SourceSection sourceSection) {
@@ -80,7 +80,7 @@ public class ThreadBacktraceLocationNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = {"to_s", "inspect"})
+    @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends UnaryCoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {

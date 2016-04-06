@@ -221,7 +221,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "current", onSingleton = true)
+    @CoreMethod(names = "current", onSingleton = true)
     public abstract static class CurrentNode extends CoreMethodArrayArgumentsNode {
 
         public CurrentNode(RubyContext context, SourceSection sourceSection) {
@@ -551,7 +551,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "list", onSingleton = true)
+    @CoreMethod(names = "list", onSingleton = true)
     public abstract static class ListNode extends CoreMethodArrayArgumentsNode {
 
         public ListNode(RubyContext context, SourceSection sourceSection) {

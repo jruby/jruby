@@ -362,7 +362,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = { 0, 1 })
+    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = { 0, 1 })
     public abstract static class CallerLocationsNode extends CoreMethodArrayArgumentsNode {
 
         public CallerLocationsNode(RubyContext context, SourceSection sourceSection) {
@@ -847,7 +847,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "gets", isModuleFunction = true)
+    @CoreMethod(names = "gets", isModuleFunction = true, unsafe = UnsafeGroup.IO)
     public abstract static class GetsNode extends CoreMethodArrayArgumentsNode {
 
         public GetsNode(RubyContext context, SourceSection sourceSection) {
@@ -1760,7 +1760,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "set_trace_func", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "set_trace_func", isModuleFunction = true, required = 1)
     public abstract static class SetTraceFuncNode extends CoreMethodArrayArgumentsNode {
 
         public SetTraceFuncNode(RubyContext context, SourceSection sourceSection) {
@@ -1855,7 +1855,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "sleep", isModuleFunction = true, optional = 1)
+    @CoreMethod(names = "sleep", isModuleFunction = true, optional = 1)
     public abstract static class SleepNode extends CoreMethodArrayArgumentsNode {
 
         @Child NumericToFloatNode floatCastNode;
