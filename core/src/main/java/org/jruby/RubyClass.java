@@ -51,7 +51,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -928,7 +927,7 @@ public class RubyClass extends RubyModule {
     public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
-        return initializeCommon(context, (RubyClass)superObject, block, true);
+        return initializeCommon(context, (RubyClass) superObject, block, true);
     }
 
     private IRubyObject initializeCommon(ThreadContext context, RubyClass superClazz, Block block, boolean ruby1_9 /*callInheritBeforeSuper*/) {
@@ -1640,10 +1639,10 @@ public class RubyClass extends RubyModule {
     }
 
     public synchronized void addParameterAnnotation(String method, int i, Class annoClass, Map<String,Object> value) {
-        if (parameterAnnotations == null) parameterAnnotations = new Hashtable<String,List<Map<Class,Map<String,Object>>>>();
+        if (parameterAnnotations == null) parameterAnnotations = new HashMap<>(8);
         List<Map<Class,Map<String,Object>>> paramList = parameterAnnotations.get(method);
         if (paramList == null) {
-            paramList = new ArrayList<Map<Class,Map<String,Object>>>(i + 1);
+            paramList = new ArrayList<>(i + 1);
             parameterAnnotations.put(method, paramList);
         }
         if (paramList.size() < i + 1) {
@@ -1654,8 +1653,7 @@ public class RubyClass extends RubyModule {
         if (annoClass != null && value != null) {
             Map<Class, Map<String, Object>> annos = paramList.get(i);
             if (annos == null) {
-                annos = new HashMap<Class, Map<String, Object>>();
-                paramList.set(i, annos);
+                paramList.set(i, annos = new LinkedHashMap<>(4));
             }
             annos.put(annoClass, value);
         } else {
@@ -1676,24 +1674,22 @@ public class RubyClass extends RubyModule {
     }
 
     public synchronized void addMethodAnnotation(String methodName, Class annotation, Map fields) {
-        if (methodAnnotations == null) methodAnnotations = new Hashtable<String,Map<Class,Map<String,Object>>>();
+        if (methodAnnotations == null) methodAnnotations = new HashMap<>(8);
 
         Map<Class,Map<String,Object>> annos = methodAnnotations.get(methodName);
         if (annos == null) {
-            annos = new Hashtable<Class,Map<String,Object>>();
-            methodAnnotations.put(methodName, annos);
+            methodAnnotations.put(methodName, annos = new LinkedHashMap<>(4));
         }
 
         annos.put(annotation, fields);
     }
 
     public synchronized void addFieldAnnotation(String fieldName, Class annotation, Map fields) {
-        if (fieldAnnotations == null) fieldAnnotations = new Hashtable<String,Map<Class,Map<String,Object>>>();
+        if (fieldAnnotations == null) fieldAnnotations = new HashMap<>(8);
 
         Map<Class,Map<String,Object>> annos = fieldAnnotations.get(fieldName);
         if (annos == null) {
-            annos = new Hashtable<Class,Map<String,Object>>();
-            fieldAnnotations.put(fieldName, annos);
+            fieldAnnotations.put(fieldName, annos = new LinkedHashMap<>(4));
         }
 
         annos.put(annotation, fields);
@@ -1713,13 +1709,13 @@ public class RubyClass extends RubyModule {
     }
 
     public synchronized void addMethodSignature(String methodName, Class[] types) {
-        if (methodSignatures == null) methodSignatures = new Hashtable<String,Class[]>();
+        if (methodSignatures == null) methodSignatures = new HashMap<>(16);
 
         methodSignatures.put(methodName, types);
     }
 
     public synchronized void addFieldSignature(String fieldName, Class type) {
-        if (fieldSignatures == null) fieldSignatures = new LinkedHashMap<String, Class>();
+        if (fieldSignatures == null) fieldSignatures = new LinkedHashMap<>(8);
 
         fieldSignatures.put(fieldName, type);
     }
@@ -1731,7 +1727,7 @@ public class RubyClass extends RubyModule {
     }
 
     public synchronized void addClassAnnotation(Class annotation, Map fields) {
-        if (classAnnotations == null) classAnnotations = new Hashtable<Class,Map<String,Object>>();
+        if (classAnnotations == null) classAnnotations = new LinkedHashMap<>(4);
 
         classAnnotations.put(annotation, fields);
     }
