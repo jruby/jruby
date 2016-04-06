@@ -984,4 +984,29 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "require_core", isModuleFunction = true, required = 1)
+    public abstract static class RequireCoreNode extends CoreMethodArrayArgumentsNode {
+
+        public RequireCoreNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(feature)")
+        public boolean requireRelative(VirtualFrame frame, DynamicObject feature, @Cached("create()") IndirectCallNode callNode) {
+            if (!(getContext().getCoreLibrary().isLoadingRubyCore() || getContext().getOptions().PLATFORM_SAFE_LOAD)) {
+                throw new RaiseException(getContext().getCoreLibrary().internalErrorUnsafe(this));
+            }
+
+            try {
+                final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceCache().getSource(getContext().getCoreLibrary().getCoreLoadPath() + "/" + feature.toString() + ".rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
+                final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
+                deferredCall.getCallTarget().call(deferredCall.getArguments());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return true;
+        }
+    }
+
 }
