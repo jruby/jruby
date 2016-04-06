@@ -1284,21 +1284,6 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_resize_capacity", needsSelf = false, lowerFixnumParameters = 1)
-    public static abstract class StringResizeCapacityPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public StringResizeCapacityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public DynamicObject stringResizeCapacity(DynamicObject string, int capacity) {
-            // TODO (nirvdrum 11-Jan-16): Any calls to this are suspect now that we use ropes. We don't have a way to preallocate a buffer to mutate.
-            return string;
-        }
-
-    }
-
     @RubiniusPrimitive(unsafeNeedsAudit = true, name = "string_rindex", lowerFixnumParameters = 1)
     public static abstract class StringRindexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
