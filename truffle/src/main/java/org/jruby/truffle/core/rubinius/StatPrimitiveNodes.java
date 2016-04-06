@@ -22,12 +22,13 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
+import org.jruby.truffle.platform.UnsafeGroup;
 
 public abstract class StatPrimitiveNodes {
 
     public static final HiddenKey STAT_IDENTIFIER = new HiddenKey("stat");
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_atime")
+    @RubiniusPrimitive(name = "stat_atime", unsafe = UnsafeGroup.IO)
     public static abstract class StatAtimePrimitiveNode extends StatReadPrimitiveNode {
 
         public StatAtimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -42,7 +43,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_ctime")
+    @RubiniusPrimitive(name = "stat_ctime", unsafe = UnsafeGroup.IO)
     public static abstract class StatCtimePrimitiveNode extends StatReadPrimitiveNode {
 
         public StatCtimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -57,7 +58,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_mtime")
+    @RubiniusPrimitive(name = "stat_mtime", unsafe = UnsafeGroup.IO)
     public static abstract class StatMtimePrimitiveNode extends StatReadPrimitiveNode {
 
         public StatMtimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -72,7 +73,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_nlink")
+    @RubiniusPrimitive(name = "stat_nlink", unsafe = UnsafeGroup.IO)
     public static abstract class NlinkPrimitiveNode extends StatReadPrimitiveNode {
 
         public NlinkPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -86,7 +87,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_rdev")
+    @RubiniusPrimitive(name = "stat_rdev", unsafe = UnsafeGroup.IO)
     public static abstract class RdevPrimitiveNode extends StatReadPrimitiveNode {
 
         public RdevPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -100,7 +101,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_blksize")
+    @RubiniusPrimitive(name = "stat_blksize", unsafe = UnsafeGroup.IO)
     public static abstract class StatBlksizePrimitiveNode extends StatReadPrimitiveNode {
 
         public StatBlksizePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -114,7 +115,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_blocks")
+    @RubiniusPrimitive(name = "stat_blocks", unsafe = UnsafeGroup.IO)
     public static abstract class StatBlocksPrimitiveNode extends StatReadPrimitiveNode {
 
         public StatBlocksPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -128,7 +129,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_dev")
+    @RubiniusPrimitive(name = "stat_dev", unsafe = UnsafeGroup.IO)
     public static abstract class StatDevPrimitiveNode extends StatReadPrimitiveNode {
 
         public StatDevPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -142,7 +143,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_ino")
+    @RubiniusPrimitive(name = "stat_ino", unsafe = UnsafeGroup.IO)
     public static abstract class StatInoPrimitiveNode extends StatReadPrimitiveNode {
 
         public StatInoPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -156,7 +157,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_stat")
+    @RubiniusPrimitive(name = "stat_stat", unsafe = UnsafeGroup.IO)
     public static abstract class StatStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private WriteObjectFieldNode writeStatNode;
@@ -186,7 +187,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_fstat")
+    @RubiniusPrimitive(name = "stat_fstat", unsafe = UnsafeGroup.IO)
     public static abstract class StatFStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private WriteObjectFieldNode writeStatNode;
@@ -211,7 +212,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_lstat")
+    @RubiniusPrimitive(name = "stat_lstat", unsafe = UnsafeGroup.IO)
     public static abstract class StatLStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private WriteObjectFieldNode writeStatNode;
@@ -256,7 +257,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_size")
+    @RubiniusPrimitive(name = "stat_size", unsafe = UnsafeGroup.IO)
     public static abstract class StatSizePrimitiveNode extends StatReadPrimitiveNode {
 
         public StatSizePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -270,7 +271,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_mode")
+    @RubiniusPrimitive(name = "stat_mode", unsafe = UnsafeGroup.IO)
     public static abstract class StatModePrimitiveNode extends StatReadPrimitiveNode {
 
         public StatModePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -284,7 +285,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_gid")
+    @RubiniusPrimitive(name = "stat_gid", unsafe = UnsafeGroup.IO)
     public static abstract class StatGIDPrimitiveNode extends StatReadPrimitiveNode {
 
         public StatGIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -298,7 +299,7 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "stat_uid")
+    @RubiniusPrimitive(name = "stat_uid", unsafe = UnsafeGroup.IO)
     public static abstract class StatUIDPrimitiveNode extends StatReadPrimitiveNode {
 
         public StatUIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
