@@ -277,6 +277,9 @@ public class CoreMethodNodeManager {
                 case PROCESSES:
                     option = options.PLATFORM_SAFE_PROCESSES;
                     break;
+                case SIGNALS:
+                    option = options.PLATFORM_SAFE_SIGNALS;
+                    break;
                 case EXIT:
                     option = options.PLATFORM_SAFE_EXIT;
                     break;

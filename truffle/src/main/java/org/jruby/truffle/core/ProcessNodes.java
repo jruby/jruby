@@ -122,7 +122,7 @@ public abstract class ProcessNodes {
 
     }
 
-    @CoreMethod(names = "kill", onSingleton = true, required = 2, unsafe = UnsafeGroup.PROCESSES)
+    @CoreMethod(names = "kill", onSingleton = true, required = 2, unsafe = {UnsafeGroup.PROCESSES, UnsafeGroup.SIGNALS})
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
 
         public KillNode(RubyContext context, SourceSection sourceSection) {
