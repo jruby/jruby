@@ -26,7 +26,7 @@ import java.util.Set;
 @CoreClass(name = "Truffle::ObjSpace")
 public abstract class ObjSpaceNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "memsize_of", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "memsize_of", isModuleFunction = true, required = 1)
     public abstract static class MemsizeOfNode extends CoreMethodArrayArgumentsNode {
 
         public MemsizeOfNode(RubyContext context, SourceSection sourceSection) {
@@ -86,7 +86,7 @@ public abstract class ObjSpaceNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "adjacent_objects", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "adjacent_objects", isModuleFunction = true, required = 1)
     public abstract static class AdjacentObjectsNode extends CoreMethodArrayArgumentsNode {
 
         public AdjacentObjectsNode(RubyContext context, SourceSection sourceSection) {
@@ -102,7 +102,7 @@ public abstract class ObjSpaceNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "root_objects", isModuleFunction = true)
+    @CoreMethod(names = "root_objects", isModuleFunction = true)
     public abstract static class RootObjectsNode extends CoreMethodArrayArgumentsNode {
 
         public RootObjectsNode(RubyContext context, SourceSection sourceSection) {
@@ -118,7 +118,7 @@ public abstract class ObjSpaceNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "trace_allocations_start", isModuleFunction = true)
+    @CoreMethod(names = "trace_allocations_start", isModuleFunction = true)
     public abstract static class TraceAllocationsStartNode extends CoreMethodArrayArgumentsNode {
 
         public TraceAllocationsStartNode(RubyContext context, SourceSection sourceSection) {
@@ -134,7 +134,7 @@ public abstract class ObjSpaceNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "trace_allocations_stop", isModuleFunction = true)
+    @CoreMethod(names = "trace_allocations_stop", isModuleFunction = true)
     public abstract static class TraceAllocationsStopNode extends CoreMethodArrayArgumentsNode {
 
         public TraceAllocationsStopNode(RubyContext context, SourceSection sourceSection) {
