@@ -49,14 +49,8 @@ public class ArrayJavaProxyCreator extends RubyObject {
         aggregateDimensions(sizes);
     }
 
-    @Deprecated // no longer used
-    public void setup(ThreadContext context, IRubyObject javaClass, IRubyObject[] sizes) {
-        elementType = (Class) javaClass.toJava(Class.class);
-        aggregateDimensions(sizes);
-    }
-
     @JRubyMethod(name = "[]", required = 1, rest = true)
-    public IRubyObject op_aref(ThreadContext context, IRubyObject[] sizes) {
+    public final IRubyObject op_aref(ThreadContext context, IRubyObject[] sizes) {
         Arity.checkArgumentCount(context.runtime, sizes, 1, -1);
         aggregateDimensions(sizes);
         return this;
