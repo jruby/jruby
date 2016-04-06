@@ -13,7 +13,7 @@ public abstract class ClassValue<T> {
         this.calculator = calculator;
     }
 
-    public abstract T get(Class cls);
+    public abstract T get(Class<?> cls);
 
     protected final ClassValueCalculator<T> calculator;
 
