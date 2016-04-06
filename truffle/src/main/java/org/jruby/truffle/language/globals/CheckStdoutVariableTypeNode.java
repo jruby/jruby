@@ -34,7 +34,7 @@ public class CheckStdoutVariableTypeNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final Object childValue = child.execute(frame);
 
-        if (childValue == nil() || !getRespondToWriteNode().doesRespondTo(frame, "write", childValue)) {
+        if (getContext().getOptions().PLATFORM_SAFE_IO && (childValue == nil() || !getRespondToWriteNode().doesRespondTo(frame, "write", childValue))) {
             unsuitableTypeProfile.enter();
             throw new RaiseException(coreLibrary().typeErrorMustHaveWriteMethod(childValue, this));
         }
