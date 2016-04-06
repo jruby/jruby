@@ -18,29 +18,14 @@ public abstract class ClassValue<T> {
     protected final ClassValueCalculator<T> calculator;
 
     public static <T> ClassValue<T> newInstance(ClassValueCalculator<T> calculator) {
-        if ( JAVA7_CLASS_VALUE ) return newJava7Instance(calculator);
-        return new MapBasedClassValue<T>(calculator);
+        if ( CLASS_VALUE ) return newJava7Instance(calculator);
+        return new MapBasedClassValue<>(calculator);
     }
 
     private static <T> ClassValue<T> newJava7Instance(ClassValueCalculator<T> calculator) {
-        return new Java7ClassValue<T>(calculator);
+        return new Java7ClassValue<>(calculator);
     }
 
-    private static final boolean JAVA7_CLASS_VALUE;
-
-    static {
-        boolean java7ClassValue = false;
-        if ( Options.INVOKEDYNAMIC_CLASS_VALUES.load() ) {
-            try {
-                Class.forName("java.lang.ClassValue");
-                Class.forName("org.jruby.util.collections.Java7ClassValue");
-                java7ClassValue = true;
-            }
-            catch (Exception ex) {
-                // fall through to Map version
-            }
-        }
-        JAVA7_CLASS_VALUE = java7ClassValue;
-    }
+    private static final boolean CLASS_VALUE = Options.INVOKEDYNAMIC_CLASS_VALUES.load();
 
 }
