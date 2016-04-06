@@ -24,7 +24,6 @@ public abstract class Rope {
     private final int ropeDepth;
     private int hashCode = 0;
     private byte[] bytes;
-    private ByteList unsafeByteList;
 
     protected Rope(Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth, byte[] bytes) {
         this.encoding = encoding;
@@ -48,14 +47,6 @@ public abstract class Rope {
 
     public boolean isEmpty() {
         return byteLength == 0;
-    }
-
-    final ByteList getUnsafeByteList() {
-        if (unsafeByteList == null) {
-            unsafeByteList = new ByteList(getBytes(), getEncoding(), false);
-        }
-
-        return unsafeByteList;
     }
 
     protected abstract byte getByteSlow(int index);

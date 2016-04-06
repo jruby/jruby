@@ -30,7 +30,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
@@ -478,7 +477,7 @@ public class RopeOperations {
 
 
     public static ByteList getByteListReadOnly(Rope rope) {
-        return rope.getUnsafeByteList();
+        return new ByteList(rope.getBytes(), rope.getEncoding(), false);
     }
 
     public static ByteList toByteListCopy(Rope rope) {
