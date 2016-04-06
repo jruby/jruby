@@ -100,7 +100,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "environ", isModuleFunction = true)
+    @CoreMethod(names = "environ", isModuleFunction = true, unsafe = {UnsafeGroup.MEMORY, UnsafeGroup.PROCESSES})
     public abstract static class EnvironNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -160,7 +160,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getegid", isModuleFunction = true)
+    @CoreMethod(names = "getegid", isModuleFunction = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class GetEGIDNode extends CoreMethodArrayArgumentsNode {
 
         public GetEGIDNode(RubyContext context, SourceSection sourceSection) {
@@ -174,7 +174,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getenv", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "getenv", isModuleFunction = true, required = 1, unsafe = {UnsafeGroup.MEMORY, UnsafeGroup.PROCESSES})
     public abstract static class GetenvNode extends CoreMethodArrayArgumentsNode {
 
         public GetenvNode(RubyContext context, SourceSection sourceSection) {
@@ -194,7 +194,7 @@ public abstract class PosixNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "geteuid", isModuleFunction = true)
+    @CoreMethod(names = "geteuid", isModuleFunction = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class GetEUIDNode extends CoreMethodArrayArgumentsNode {
 
         public GetEUIDNode(RubyContext context, SourceSection sourceSection) {
@@ -208,7 +208,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getgid", isModuleFunction = true)
+    @CoreMethod(names = "getgid", isModuleFunction = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class GetGIDNode extends CoreMethodArrayArgumentsNode {
 
         public GetGIDNode(RubyContext context, SourceSection sourceSection) {
@@ -222,7 +222,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getgroups", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "getgroups", isModuleFunction = true, required = 2, unsafe = {UnsafeGroup.MEMORY, UnsafeGroup.PROCESSES})
     public abstract static class GetGroupsNode extends CoreMethodArrayArgumentsNode {
 
         public GetGroupsNode(RubyContext context, SourceSection sourceSection) {
@@ -252,7 +252,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getrlimit", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "getrlimit", isModuleFunction = true, required = 2, unsafe = {UnsafeGroup.PROCESSES, UnsafeGroup.MEMORY})
     public abstract static class GetRLimitNode extends CoreMethodArrayArgumentsNode {
 
         public GetRLimitNode(RubyContext context, SourceSection sourceSection) {
@@ -274,7 +274,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getuid", isModuleFunction = true)
+    @CoreMethod(names = "getuid", isModuleFunction = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class GetUIDNode extends CoreMethodArrayArgumentsNode {
 
         public GetUIDNode(RubyContext context, SourceSection sourceSection) {
@@ -288,7 +288,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "memset", isModuleFunction = true, required = 3)
+    @CoreMethod(names = "memset", isModuleFunction = true, required = 3, unsafe = UnsafeGroup.MEMORY)
     public abstract static class MemsetNode extends CoreMethodArrayArgumentsNode {
 
         public MemsetNode(RubyContext context, SourceSection sourceSection) {
@@ -308,7 +308,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "putenv", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "putenv", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class PutenvNode extends CoreMethodArrayArgumentsNode {
 
         public PutenvNode(RubyContext context, SourceSection sourceSection) {
@@ -344,7 +344,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "setenv", isModuleFunction = true, required = 3)
+    @CoreMethod(names = "setenv", isModuleFunction = true, required = 3, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetenvNode extends CoreMethodArrayArgumentsNode {
 
         public SetenvNode(RubyContext context, SourceSection sourceSection) {
@@ -389,7 +389,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "umask", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "umask", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class UmaskNode extends CoreMethodArrayArgumentsNode {
 
         public UmaskNode(RubyContext context, SourceSection sourceSection) {
@@ -403,7 +403,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "unsetenv", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "unsetenv", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class UnsetenvNode extends CoreMethodArrayArgumentsNode {
 
         public UnsetenvNode(RubyContext context, SourceSection sourceSection) {
@@ -418,7 +418,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "utimes", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "utimes", isModuleFunction = true, required = 2, unsafe = {UnsafeGroup.PROCESSES, UnsafeGroup.MEMORY})
     public abstract static class UtimesNode extends CoreMethodArrayArgumentsNode {
 
         public UtimesNode(RubyContext context, SourceSection sourceSection) {
@@ -477,7 +477,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getpriority", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
+    @CoreMethod(names = "getpriority", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1}, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class GetPriorityNode extends CoreMethodArrayArgumentsNode {
 
         public GetPriorityNode(RubyContext context, SourceSection sourceSection) {
@@ -491,7 +491,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "setgid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "setgid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetgidNode extends CoreMethodArrayArgumentsNode {
 
         public SetgidNode(RubyContext context, SourceSection sourceSection) {
@@ -505,7 +505,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "setpriority", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 1, 2})
+    @CoreMethod(names = "setpriority", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 1, 2}, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetPriorityNode extends CoreMethodArrayArgumentsNode {
 
         public SetPriorityNode(RubyContext context, SourceSection sourceSection) {
@@ -519,7 +519,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "setresuid", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 1, 2})
+    @CoreMethod(names = "setresuid", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 1, 2}, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetResuidNode extends CoreMethodArrayArgumentsNode {
 
         public SetResuidNode(RubyContext context, SourceSection sourceSection) {
@@ -534,7 +534,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "seteuid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "seteuid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetEuidNode extends CoreMethodArrayArgumentsNode {
 
         public SetEuidNode(RubyContext context, SourceSection sourceSection) {
@@ -548,7 +548,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "setreuid", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
+    @CoreMethod(names = "setreuid", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1}, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetReuidNode extends CoreMethodArrayArgumentsNode {
 
         public SetReuidNode(RubyContext context, SourceSection sourceSection) {
@@ -563,7 +563,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "setrlimit", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "setrlimit", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetRLimitNode extends CoreMethodArrayArgumentsNode {
 
         public SetRLimitNode(RubyContext context, SourceSection sourceSection) {
@@ -584,7 +584,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "setruid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "setruid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetRuidNode extends CoreMethodArrayArgumentsNode {
 
         public SetRuidNode(RubyContext context, SourceSection sourceSection) {
@@ -599,7 +599,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "setuid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "setuid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetUidNode extends CoreMethodArrayArgumentsNode {
 
         public SetUidNode(RubyContext context, SourceSection sourceSection) {
@@ -613,7 +613,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "setsid", isModuleFunction = true)
+    @CoreMethod(names = "setsid", isModuleFunction = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetSidNode extends CoreMethodArrayArgumentsNode {
 
         public SetSidNode(RubyContext context, SourceSection sourceSection) {
@@ -721,7 +721,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "errno", isModuleFunction = true)
+    @CoreMethod(names = "errno", isModuleFunction = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class ErrnoNode extends CoreMethodArrayArgumentsNode {
 
         public ErrnoNode(RubyContext context, SourceSection sourceSection) {
@@ -735,7 +735,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "errno=", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "errno=", isModuleFunction = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class ErrnoAssignNode extends CoreMethodArrayArgumentsNode {
 
         public ErrnoAssignNode(RubyContext context, SourceSection sourceSection) {
@@ -771,7 +771,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getpgid", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "getpgid", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class GetpgidNode extends CoreMethodArrayArgumentsNode {
 
         public GetpgidNode(RubyContext context, SourceSection sourceSection) {
@@ -785,7 +785,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getpgrp", isModuleFunction = true)
+    @CoreMethod(names = "getpgrp", isModuleFunction = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class GetpgrpNode extends CoreMethodArrayArgumentsNode {
 
         public GetpgrpNode(RubyContext context, SourceSection sourceSection) {
@@ -813,7 +813,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getppid", isModuleFunction = true)
+    @CoreMethod(names = "getppid", isModuleFunction = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class GetppidNode extends CoreMethodArrayArgumentsNode {
 
         public GetppidNode(RubyContext context, SourceSection sourceSection) {
