@@ -128,7 +128,6 @@ import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.util.ByteList;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -683,7 +682,7 @@ public abstract class KernelNodes {
                                                 String filename,
                                                 int line,
                                                 boolean ownScopeForAssignments) {
-            ByteList code = StringOperations.getByteListReadOnly(rubySource);
+            final Rope code = StringOperations.rope(rubySource);
 
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
             final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");

@@ -237,10 +237,10 @@ public abstract class TrufflePrimitiveNodes {
         public DynamicObject dumpString(DynamicObject string) {
             final StringBuilder builder = new StringBuilder();
 
-            final ByteList byteList = StringOperations.getByteListReadOnly(string);
+            final Rope rope = StringOperations.rope(string);
 
-            for (int i = 0; i < byteList.length(); i++) {
-                builder.append(String.format("\\x%02x", byteList.get(i)));
+            for (int i = 0; i < rope.byteLength(); i++) {
+                builder.append(String.format("\\x%02x", rope.get(i)));
             }
 
             return createString(StringOperations.encodeRope(builder.toString(), UTF8Encoding.INSTANCE));

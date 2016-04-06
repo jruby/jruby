@@ -859,8 +859,8 @@ public abstract class PosixNodes {
         @Specialization(guards = {"isRubyString(hostName)", "isRubyString(serviceName)", "isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)"})
         public int getaddrinfoString(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
-                    StringOperations.getByteListReadOnly(hostName),
-                    StringOperations.getByteListReadOnly(serviceName),
+                    StringOperations.rope(hostName).toString(),
+                    StringOperations.rope(serviceName).toString(),
                     Layouts.POINTER.getPointer(hintsPointer),
                     Layouts.POINTER.getPointer(resultsPointer));
         }
@@ -869,7 +869,7 @@ public abstract class PosixNodes {
         @Specialization(guards = {"isRubyString(hostName)", "isNil(serviceName)", "isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)"})
         public int getaddrinfo(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
-                    StringOperations.getByteListReadOnly(hostName),
+                    StringOperations.rope(hostName).toString(),
                     null,
                     Layouts.POINTER.getPointer(hintsPointer),
                     Layouts.POINTER.getPointer(resultsPointer));

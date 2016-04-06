@@ -56,6 +56,7 @@ import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.method.MethodFilter;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringNodes;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -94,7 +95,6 @@ import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
@@ -670,7 +670,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary
         private CodeLoader.DeferredCall classEvalSource(DynamicObject module, DynamicObject rubySource, String file, int line) {
             assert RubyGuards.isRubyString(rubySource);
-            ByteList code = StringOperations.getByteListReadOnly(rubySource);
+            final Rope code = StringOperations.rope(rubySource);
 
             final MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
