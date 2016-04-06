@@ -1215,11 +1215,10 @@ public class RubyClass extends RubyModule {
      * @return true if the class can be reified, false otherwise
      */
     public boolean isReifiable() {
-        RubyClass realSuper = null;
-
         // already reified is not reifiable
         if (reifiedClass != null) return false;
 
+        final RubyClass realSuper;
         // root classes are not reifiable
         if (superClass == null || (realSuper = superClass.getRealClass()) == null) return false;
 
@@ -1750,17 +1749,15 @@ public class RubyClass extends RubyModule {
 
     @Override
     public Object toJava(Class klass) {
-        Class returnClass = null;
-
         if (klass == Class.class) {
+            if (reifiedClass == null) reifyWithAncestors(); // possibly auto-reify
             // Class requested; try java_class or else return nearest reified class
             if (respondsTo("java_class")) {
                 return callMethod("java_class").toJava(klass);
-            } else {
-                for (RubyClass current = this; current != null; current = current.getSuperClass()) {
-                    returnClass = current.getReifiedClass();
-                    if (returnClass != null) return returnClass;
-                }
+            }
+            for (RubyClass current = this; current != null; current = current.getSuperClass()) {
+                Class reifiedClazz = current.getReifiedClass();
+                if ( reifiedClazz != null ) return reifiedClazz;
             }
             // should never fall through, since RubyObject has a reified class
         }
@@ -1770,7 +1767,7 @@ public class RubyClass extends RubyModule {
             return this;
         }
 
-        return super.toJava(klass);
+        return defaultToJava(klass);
     }
 
     /**

@@ -39,6 +39,21 @@ class TestHigherJavasupport < Test::Unit::TestCase
     end
   end
 
+  class Klass1 < Object
+    def method1(arg); arg end
+  end
+  class Klass2 < Klass1
+    def self.method2; end
+  end
+
+  def test_passing_a_java_class_auto_reifies
+    assert_nil Klass2.to_java.getReifiedClass
+    # previously TestHelper.getClassName(Klass2) returned 'org.jruby.RubyObject'
+    assert_equal 'rubyobj.TestHigherJavasupport.Klass2', TestHelper.getClassName(Klass2)
+    assert_not_nil Klass2.to_java.getReifiedClass
+    assert_not_nil Klass1.to_java.getReifiedClass
+  end
+
   def test_java_passing_class
     assert_equal("java.util.ArrayList", TestHelper.getClassName(ArrayList))
   end
