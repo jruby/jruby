@@ -9,14 +9,9 @@
  */
 package org.jruby.truffle.interop;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.AcceptMessage;
-import com.oracle.truffle.api.interop.ForeignAccess;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyObjectType;
@@ -26,7 +21,7 @@ public final class ForeignIsExecutableNode extends ForeignIsExecutableBaseNode {
 
     @Override
     public Object access(VirtualFrame frame, DynamicObject object) {
-        return RubyGuards.isRubyMethod(object);
+        return RubyGuards.isRubyMethod(object) || RubyGuards.isRubyProc(object);
     }
 
 }

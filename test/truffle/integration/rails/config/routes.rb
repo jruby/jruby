@@ -56,5 +56,6 @@ Rails.application.routes.draw do
 
   resources :people do
     get 'platform', on: :collection
+    delete 'destroy_all', on: :collection
   end
 end

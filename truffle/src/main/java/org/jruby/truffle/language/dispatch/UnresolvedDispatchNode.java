@@ -85,7 +85,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 } else {
                     depth++;
                     if (RubyGuards.isForeignObject(receiverObject)) {
-                        newDispathNode = createForeign(argumentsObjects, first, methodName);
+                        newDispathNode = new CachedForeignDispatchNode(getContext(), first, methodName);
                     } else if (RubyGuards.isRubyBasicObject(receiverObject)) {
                         newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
                     } else {
@@ -99,10 +99,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         });
 
         return dispatch.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
-    }
-
-    private DispatchNode createForeign(Object[] argumentsObjects, DispatchNode first, Object methodName) {
-        return new CachedForeignDispatchNode(getContext(), first, methodName, argumentsObjects.length);
     }
 
     private DispatchNode doUnboxedObject(

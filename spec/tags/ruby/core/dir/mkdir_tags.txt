@@ -1,0 +1,1 @@
+windows:Dir.mkdir raises Errno::EEXIST if the argument points to the existing file

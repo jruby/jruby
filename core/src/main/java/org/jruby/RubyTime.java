@@ -896,17 +896,13 @@ public class RubyTime extends RubyObject {
         Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(zone);
 
         if (offsetMatcher.matches()) {
-            boolean minus_p = offsetMatcher.group(1).equals("-");
-            int hourOffset  = Integer.valueOf(offsetMatcher.group(2));
-
             if (zone.equals("+00:00")) {
                 zone = "UTC";
             } else {
                 // try non-localized time zone name
                 zone = dt.getZone().getNameKey(dt.getMillis());
                 if (zone == null) {
-                    char sign = minus_p ? '+' : '-';
-                    zone = "UTC" + sign + hourOffset;
+                    zone = "";
                 }
             }
         }

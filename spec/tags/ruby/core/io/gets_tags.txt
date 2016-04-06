@@ -1,0 +1,7 @@
+windows:IO#gets uses the default external encoding
+windows:IO#gets uses the IO object's external encoding, when set
+windows:IO#gets transcodes into the default internal encoding
+windows:IO#gets transcodes into the IO object's internal encoding, when set
+windows:IO#gets overwrites the default external encoding with the IO object's own external encoding
+windows:IO#gets ignores the internal encoding if the default external encoding is ASCII-8BIT
+windows:IO#gets transcodes to internal encoding if the IO object's external encoding is ASCII-8BIT

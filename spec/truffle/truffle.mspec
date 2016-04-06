@@ -16,6 +16,10 @@ class MSpecScript
     set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G]
   end
 
+  set :command_line, [
+    "spec/ruby/command_line"
+  ]
+
   set :language, [
     "spec/ruby/language"
   ]
@@ -67,6 +71,7 @@ class MSpecScript
   set :backtrace_filter, /mspec\//
 
   set :tags_patterns, [
+    [%r(^.*/command_line/),             'spec/truffle/tags/command_line/'],
     [%r(^.*/language/),                 'spec/truffle/tags/language/'],
     [%r(^.*/core/),                     'spec/truffle/tags/core/'],
     [%r(^.*/library/),                  'spec/truffle/tags/library/'],

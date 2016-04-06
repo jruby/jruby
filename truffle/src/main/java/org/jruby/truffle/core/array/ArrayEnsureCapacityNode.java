@@ -42,7 +42,7 @@ public abstract class ArrayEnsureCapacityNode extends RubyNode {
         final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
-            Layouts.ARRAY.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)));
+            Layouts.ARRAY.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(getContext(), store.length, requiredCapacity)));
             Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
             return true;
         } else {
@@ -55,7 +55,7 @@ public abstract class ArrayEnsureCapacityNode extends RubyNode {
         final long[] store = (long[]) Layouts.ARRAY.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
-            Layouts.ARRAY.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)));
+            Layouts.ARRAY.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(getContext(), store.length, requiredCapacity)));
             Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
             return true;
         } else {
@@ -68,7 +68,7 @@ public abstract class ArrayEnsureCapacityNode extends RubyNode {
         final double[] store = (double[]) Layouts.ARRAY.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
-            Layouts.ARRAY.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)));
+            Layouts.ARRAY.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(getContext(), store.length, requiredCapacity)));
             Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
             return true;
         } else {
@@ -81,7 +81,7 @@ public abstract class ArrayEnsureCapacityNode extends RubyNode {
         final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
-            Layouts.ARRAY.setStore(array, ArrayUtils.grow(store, ArrayUtils.capacity(store.length, requiredCapacity)));
+            Layouts.ARRAY.setStore(array, ArrayUtils.grow(store, ArrayUtils.capacity(getContext(), store.length, requiredCapacity)));
             Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
             return true;
         } else {

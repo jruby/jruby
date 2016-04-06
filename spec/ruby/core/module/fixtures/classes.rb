@@ -236,6 +236,20 @@ module ModuleSpecs
       alias_method :alias_super_call, :super_call
       alias_method :super_call, :alias_super_call
     end
+
+    class RedefineAfterAlias
+      include Parent
+
+      def super_call(arg)
+        super(arg)
+      end
+
+      alias_method :alias_super_call, :super_call
+
+      def super_call(arg)
+        :wrong
+      end
+    end
   end
 
 
@@ -372,6 +386,22 @@ module ModuleSpecs
       rescue RuntimeError
         return :good
       end
+    end
+
+    module FromThread
+      module A
+        autoload :B, fixture(__FILE__, "autoload_empty.rb")
+
+        class B
+          autoload :C, fixture(__FILE__, "autoload_abc.rb")
+
+          def self.foo
+            C.foo
+          end
+        end
+      end
+
+      class D < A::B; end
     end
   end
 

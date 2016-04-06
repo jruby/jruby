@@ -8,7 +8,7 @@
  * GNU Lesser General Public License version 2.1
  *
  *
- * Some of the code in this class is modified from org.jruby.runtime.Helpers,
+ * Some of the code in this class is modified from org.jruby.runtime.Helpers and org.jruby.util.StringSupport,
  * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
  *
  * Contains code modified from ByteList's ByteList.java
@@ -29,6 +29,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
@@ -113,7 +114,7 @@ public class RopeOperations {
     @TruffleBoundary
     public static String decodeRope(Ruby runtime, Rope value) {
         if (value instanceof LeafRope) {
-            int begin = value.getBegin();
+            int begin = value.begin();
             int length = value.byteLength();
 
             Encoding encoding = value.getEncoding();
@@ -410,8 +411,8 @@ public class RopeOperations {
         // Taken from org.jruby.util.ByteList#cmp.
 
         if (string == other) return 0;
-        final int size = string.realSize();
-        final int len =  Math.min(size, other.realSize());
+        final int size = string.byteLength();
+        final int len =  Math.min(size, other.byteLength());
         int offset = -1;
 
         final byte[] bytes = string.getBytes();
@@ -427,6 +428,60 @@ public class RopeOperations {
         if (offset < len) {
             return (bytes[string.begin() + offset]&0xFF) > (otherBytes[other.begin() + offset]&0xFF) ? 1 : -1;
         }
-        return size == other.realSize() ? 0 : size == len ? -1 : 1;
+        return size == other.byteLength() ? 0 : size == len ? -1 : 1;
     }
+
+    @TruffleBoundary
+    public static Encoding areCompatible(Rope rope, Rope other) {
+        // Taken from org.jruby.util.StringSupport.areCompatible.
+
+        Encoding enc1 = rope.getEncoding();
+        Encoding enc2 = other.getEncoding();
+
+        if (enc1 == enc2) return enc1;
+
+        if (other.isEmpty()) return enc1;
+        if (rope.isEmpty()) {
+            return (enc1.isAsciiCompatible() && isAsciiOnly(other)) ? enc1 : enc2;
+        }
+
+        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+
+        return RubyEncoding.areCompatible(enc1, rope.getCodeRange().toInt(), enc2, other.getCodeRange().toInt());
+    }
+
+    public static boolean isAsciiOnly(Rope rope) {
+        // Taken from org.jruby.util.StringSupport.isAsciiOnly.
+
+        return rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CR_7BIT;
+    }
+
+    public static boolean areComparable(Rope rope, Rope other) {
+        // Taken from org.jruby.util.StringSupport.areComparable.
+
+        if (rope.getEncoding() == other.getEncoding() ||
+                rope.isEmpty() || other.isEmpty()) return true;
+        return areComparableViaCodeRange(rope, other);
+    }
+
+    public static boolean areComparableViaCodeRange(Rope string, Rope other) {
+        // Taken from org.jruby.util.StringSupport.areComparableViaCodeRange.
+
+        CodeRange cr1 = string.getCodeRange();
+        CodeRange cr2 = other.getCodeRange();
+
+        if (cr1 == CR_7BIT && (cr2 == CR_7BIT || other.getEncoding().isAsciiCompatible())) return true;
+        if (cr2 == CR_7BIT && string.getEncoding().isAsciiCompatible()) return true;
+        return false;
+    }
+
+
+    public static ByteList getByteListReadOnly(Rope rope) {
+        return new ByteList(rope.getBytes(), rope.getEncoding(), false);
+    }
+
+    public static ByteList toByteListCopy(Rope rope) {
+        return new ByteList(rope.getBytes(), rope.getEncoding(), true);
+    }
+
 }

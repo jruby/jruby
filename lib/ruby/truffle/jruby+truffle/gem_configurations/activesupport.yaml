@@ -42,8 +42,7 @@
     # mock method_source gem
     method_source.rb: nil
     exclude_tests.rb: |
-                      crashes = {
-                          FileStoreTest: :test_two_classes_autoloading,
+                      silences_io = {
                           KernelTest:    [:test_silence_stream,
                                           :test_quietly,
                                           :test_capture] }
@@ -61,15 +60,13 @@
                                                               :test_string_parameterized_normal,
                                                               :test_string_parameterized_underscore,
                                                               :test_titleize],
-                                   TimeExtCalculationsTest:  [:test_seconds_since_midnight_at_daylight_savings_time_end,
-                                                              :test_seconds_until_end_of_day_at_daylight_savings_time_end],
-                                   TimeWithZoneTest:         [:test_no_method_error_has_proper_context] }
+                                   TimeZoneTest:              :test_map_srednekolymsk_to_tzinfo }
 
 
                       undefine = if ENV['CI']
-                                   crashes.merge(failures)
+                                   silences_io.merge(failures)
                                  else
-                                   crashes
+                                   silences_io
                                  end
 
                       undefine.each do |mod_name, tests|

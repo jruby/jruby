@@ -30,6 +30,7 @@ import org.jruby.Main;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayNodes;
@@ -53,6 +54,7 @@ import org.jruby.truffle.core.method.MethodNodesFactory;
 import org.jruby.truffle.core.method.UnboundMethodNodesFactory;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.mutex.MutexNodesFactory;
 import org.jruby.truffle.core.numeric.BignumNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
@@ -85,6 +87,7 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
+import org.jruby.truffle.language.globals.GlobalVariables;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -135,6 +138,7 @@ public class CoreLibrary {
     private final DynamicObject exceptionClass;
     private final DynamicObject falseClass;
     private final DynamicObject fiberClass;
+    private final DynamicObjectFactory fiberFactory;
     private final DynamicObject fixnumClass;
     private final DynamicObject floatClass;
     private final DynamicObject floatDomainErrorClass;
@@ -217,7 +221,7 @@ public class CoreLibrary {
     private final DynamicObjectFactory handleFactory;
 
     private final DynamicObject argv;
-    private final DynamicObject globalVariablesObject;
+    private final GlobalVariables globalVariables;
     private final DynamicObject mainObject;
     private final DynamicObject nilObject;
     private final DynamicObject rubiniusUndefined;
@@ -414,7 +418,8 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(encodingClass, Layouts.ENCODING.createEncodingShape(encodingClass, encodingClass));
         falseClass = defineClass("FalseClass");
         fiberClass = defineClass("Fiber");
-        Layouts.CLASS.setInstanceFactoryUnsafe(fiberClass, Layouts.FIBER.createFiberShape(fiberClass, fiberClass));
+        fiberFactory = Layouts.FIBER.createFiberShape(fiberClass, fiberClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(fiberClass, fiberFactory);
         defineModule("FileTest");
         hashClass = defineClass("Hash");
         hashFactory = Layouts.HASH.createHashShape(hashClass, hashClass);
@@ -446,8 +451,11 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(stringClass, stringFactory);
         symbolClass = defineClass("Symbol");
         Layouts.CLASS.setInstanceFactoryUnsafe(symbolClass, alwaysFrozen(Layouts.SYMBOL.createSymbolShape(symbolClass, symbolClass)));
+
         threadClass = defineClass("Thread");
+        threadClass.define("@abort_on_exception", false);
         Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, Layouts.THREAD.createThreadShape(threadClass, threadClass));
+
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location");
         Layouts.CLASS.setInstanceFactoryUnsafe(threadBacktraceLocationClass, ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass));
@@ -548,7 +556,7 @@ public class CoreLibrary {
         argv = Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0);
         rubiniusUndefined = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
 
-        globalVariablesObject = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
+        globalVariables = new GlobalVariables(nilObject);
 
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
         Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, DigestLayoutImpl.INSTANCE.createDigestShape(digestClass, digestClass));
@@ -646,28 +654,28 @@ public class CoreLibrary {
     }
 
     private void initializeGlobalVariables() {
-        DynamicObject globals = globalVariablesObject;
+        GlobalVariables globals = globalVariables;
 
-        globals.define("$LOAD_PATH", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0), 0);
-        globals.define("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), new Object[0], 0), 0);
-        globals.define("$:", globals.get("$LOAD_PATH", nilObject), 0);
-        globals.define("$\"", globals.get("$LOADED_FEATURES", nilObject), 0);
-        globals.define("$,", nilObject, 0);
-        globals.define("$*", argv, 0);
-        globals.define("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)), 0);
+        globals.put("$LOAD_PATH", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0));
+        globals.put("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), new Object[0], 0));
+        globals.put("$:", globals.getOrDefault("$LOAD_PATH", nilObject));
+        globals.put("$\"", globals.getOrDefault("$LOADED_FEATURES", nilObject));
+        globals.put("$,", nilObject);
+        globals.put("$*", argv);
+        globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)));
 
-        globals.define("$DEBUG", context.getJRubyRuntime().isDebug(), 0);
+        globals.put("$DEBUG", context.getJRubyRuntime().isDebug());
 
         Object value = context.getJRubyRuntime().warningsEnabled() ? context.getJRubyRuntime().isVerbose() : nilObject;
-        globals.define("$VERBOSE", value, 0);
+        globals.put("$VERBOSE", value);
 
         final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeRope(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
         node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
-        globals.define("$/", defaultRecordSeparator, 0);
+        globals.put("$/", defaultRecordSeparator);
 
-        globals.define("$SAFE", 0, 0);
+        globals.put("$SAFE", 0);
     }
 
     private void initializeConstants() {
@@ -730,7 +738,7 @@ public class CoreLibrary {
         int i = 0;
         for (Map.Entry<String, Integer> signal : SignalManager.SIGNALS_LIST.entrySet()) {
             DynamicObject signalName = StringOperations.createString(context, StringOperations.encodeRope(signal.getKey(), UTF8Encoding.INSTANCE));
-            Object[] objects = new Object[]{signalName, signal.getValue()};
+            Object[] objects = new Object[]{ signalName, signal.getValue() };
             signals[i++] = Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), objects, objects.length);
         }
 
@@ -946,8 +954,25 @@ public class CoreLibrary {
         return runtimeError(String.format("can't modify frozen %s", className), currentNode);
     }
 
+    @TruffleBoundary
+    public DynamicObject argumentErrorOneHashRequired(Node currentNode) {
+        return argumentError("one hash required", currentNode, null);
+    }
+
     public DynamicObject argumentError(String message, Node currentNode) {
         return argumentError(message, currentNode, null);
+    }
+
+    public DynamicObject argumentErrorTooFewArguments(Node currentNode) {
+        return argumentError("too few arguments", currentNode, null);
+    }
+
+    public DynamicObject argumentErrorXOutsideOfString(Node currentNode) {
+        return argumentError("X outside of string", currentNode, null);
+    }
+
+    public DynamicObject argumentErrorCantCompressNegativeNumbers(Node currentNode) {
+        return argumentError("can't compress negative numbers", currentNode, null);
     }
 
     @TruffleBoundary
@@ -1259,12 +1284,14 @@ public class CoreLibrary {
 
     public DynamicObject noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        DynamicObject logicalClass = getLogicalClass(receiver);
-        String repr = Layouts.MODULE.getFields(logicalClass).getName();
-        if (RubyGuards.isRubyModule(receiver)) {
-            repr = Layouts.MODULE.getFields(((DynamicObject) receiver)).getName() + ":" + repr;
-        }
-        return noMethodError(String.format("undefined method `%s' for %s", name, repr), name, currentNode);
+        final DynamicObject logicalClass = getLogicalClass(receiver);
+        final String moduleName = Layouts.MODULE.getFields(logicalClass).getName();
+
+        // e.g. BasicObject does not have to_s
+        final boolean hasToS = ModuleOperations.lookupMethod(logicalClass, "to_s", Visibility.PUBLIC) != null;
+        final Object stringRepresentation = hasToS ? getContext().send(receiver, "to_s", null) : getNilObject();
+
+        return noMethodError(String.format("undefined method `%s' for %s:%s", name, stringRepresentation, moduleName), name, currentNode);
     }
 
     public DynamicObject privateMethodError(String name, Object self, Node currentNode) {
@@ -1348,6 +1375,10 @@ public class CoreLibrary {
     public DynamicObject rangeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(rangeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+    }
+
+    public DynamicObject internalErrorUnsafe(Node currentNode) {
+        return internalError("unsafe operation", currentNode, null);
     }
 
     public DynamicObject internalError(String message, Node currentNode) {
@@ -1452,6 +1483,10 @@ public class CoreLibrary {
         return fiberClass;
     }
 
+    public DynamicObjectFactory getFiberFactory() {
+        return fiberFactory;
+    }
+
     public DynamicObject getFixnumClass() {
         return fixnumClass;
     }
@@ -1464,7 +1499,9 @@ public class CoreLibrary {
         return hashClass;
     }
 
-    public DynamicObject getStandardErrorClass() { return standardErrorClass; }
+    public DynamicObject getStandardErrorClass() {
+        return standardErrorClass;
+    }
 
     public DynamicObject getLoadErrorClass() {
         return loadErrorClass;
@@ -1538,7 +1575,9 @@ public class CoreLibrary {
         return timeClass;
     }
 
-    public DynamicObject getTypeErrorClass() { return typeErrorClass; }
+    public DynamicObject getTypeErrorClass() {
+        return typeErrorClass;
+    }
 
     public DynamicObject getTrueClass() {
         return trueClass;
@@ -1556,16 +1595,16 @@ public class CoreLibrary {
         return argv;
     }
 
-    public DynamicObject getGlobalVariablesObject() {
-        return globalVariablesObject;
+    public GlobalVariables getGlobalVariables() {
+        return globalVariables;
     }
 
     public DynamicObject getLoadPath() {
-        return (DynamicObject) globalVariablesObject.get("$LOAD_PATH", context.getCoreLibrary().getNilObject());
+        return (DynamicObject) globalVariables.getOrDefault("$LOAD_PATH", context.getCoreLibrary().getNilObject());
     }
 
     public DynamicObject getLoadedFeatures() {
-        return (DynamicObject) globalVariablesObject.get("$LOADED_FEATURES", context.getCoreLibrary().getNilObject());
+        return (DynamicObject) globalVariables.getOrDefault("$LOADED_FEATURES", context.getCoreLibrary().getNilObject());
     }
 
     public DynamicObject getMainObject() {

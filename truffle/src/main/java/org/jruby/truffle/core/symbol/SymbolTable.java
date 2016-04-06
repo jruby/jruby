@@ -23,6 +23,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
 import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.WeakHashMap;
@@ -39,6 +40,11 @@ public class SymbolTable {
 
     public SymbolTable(RubyContext context) {
         this.context = context;
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public DynamicObject getSymbol(byte[] bytes) {
+        return getSymbol(new String(bytes, StandardCharsets.US_ASCII));
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -117,8 +123,7 @@ public class SymbolTable {
                     Layouts.CLASS.getInstanceFactory(symbolClass),
                     string,
                     flattenedRope,
-                    string.hashCode(),
-                    null);
+                    string.hashCode());
 
             symbolsTable.put(flattenedRope, new WeakReference<>(newSymbol));
             return newSymbol;

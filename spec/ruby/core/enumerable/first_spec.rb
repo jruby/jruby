@@ -12,6 +12,11 @@ describe "Enumerable#first" do
     EnumerableSpecs::Empty.new.first.should == nil
   end
 
+  it 'returns a gathered array from yield parameters' do
+    EnumerableSpecs::YieldsMulti.new.to_enum.first.should == [1, 2]
+    EnumerableSpecs::YieldsMixed2.new.to_enum.first.should == nil
+  end
+
   it "raises a RangeError when passed a Bignum" do
     enum = EnumerableSpecs::Empty.new
     lambda { enum.first(bignum_value) }.should raise_error(RangeError)

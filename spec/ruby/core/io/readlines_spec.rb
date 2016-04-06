@@ -108,15 +108,17 @@ describe "IO#readlines" do
       lines.should == ["hello\n", "line2\n"]
     end
 
-    it "gets data from a fork when passed -" do
-      lines = IO.readlines("|-")
+    with_feature :fork do
+      it "gets data from a fork when passed -" do
+        lines = IO.readlines("|-")
 
-      if lines # parent
-        lines.should == ["hello\n", "from a fork\n"]
-      else
-        puts "hello"
-        puts "from a fork"
-        exit!
+        if lines # parent
+          lines.should == ["hello\n", "from a fork\n"]
+        else
+          puts "hello"
+          puts "from a fork"
+          exit!
+        end
       end
     end
   end

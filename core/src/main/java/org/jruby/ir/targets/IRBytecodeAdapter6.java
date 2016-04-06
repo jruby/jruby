@@ -715,6 +715,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokedynamic("searchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0);
     }
 
+    public void searchModuleForConst(String name, boolean noPrivateConsts) {
+        adapter.invokedynamic("searchModuleForConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0);
+    }
+
     public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
         adapter.invokedynamic("inheritanceSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0);
     }

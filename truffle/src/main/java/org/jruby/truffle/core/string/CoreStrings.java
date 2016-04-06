@@ -23,6 +23,7 @@ public class CoreStrings {
     public final CoreString INSTANCE_VARIABLE;
     public final CoreString LINE;
     public final CoreString LOCAL_VARIABLE;
+    public final CoreString METHOD;
     public final CoreString NIL;
     public final CoreString SELF;
     public final CoreString TRUE;
@@ -39,6 +40,7 @@ public class CoreStrings {
         INSTANCE_VARIABLE = new CoreString(context, "instance-variable");
         LINE = new CoreString(context, "line");
         LOCAL_VARIABLE = new CoreString(context, "local-variable");
+        METHOD = new CoreString(context, "method");
         NIL = new CoreString(context, "nil");
         SELF = new CoreString(context, "self");
         TRUE = new CoreString(context, "true");

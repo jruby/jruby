@@ -441,4 +441,10 @@ describe "Module#autoload" do
       end
     end
   end
+
+  it "loads the registered constant even if the constant was already loaded by another thread" do
+    Thread.new {
+      ModuleSpecs::Autoload::FromThread::D.foo
+    }.value.should == :foo
+  end
 end

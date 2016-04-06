@@ -409,8 +409,9 @@ module Commands
     when nil
       test_tck
       test_specs('run')
-      test_mri
-      test_integration
+      # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled
+      test_integration('all')
+      test_compiler
     when 'compiler' then test_compiler(*rest)
     when 'integration' then test_integration(*rest)
     when 'specs' then test_specs('run', *rest)
@@ -465,21 +466,21 @@ module Commands
     fast = args.delete('fast') || all ||
         !long # fast is the default
 
-    env_vars = {}
+    env_vars               = {}
     env_vars["JRUBY_OPTS"] = '-Xtruffle.graal.warn_unless=false'
-    env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
-    integration_path = "#{JRUBY_DIR}/test/truffle/integration"
-    long_tests = File.read(File.join(integration_path, 'long-tests.txt')).lines.map(&:chomp)
-    test_names = args.empty? ? '*' : '{' + args.join(',') + '}'
+    env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
+    integration_path       = "#{JRUBY_DIR}/test/truffle/integration"
+    long_tests             = File.read(File.join(integration_path, 'long-tests.txt')).lines.map(&:chomp)
+    single_test            = !args.empty?
+    test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
     Dir["#{integration_path}/#{test_names}.sh"].each do |test_script|
-      next if no_gems && File.read(test_script).include?('gem install')
+      is_long     = long_tests.include?(File.basename(test_script))
+      gem_check   = !(no_gems && File.read(test_script).include?('gem install'))
+      group_check = (is_long && long) || (!is_long && fast)
+      run         = single_test || group_check && gem_check
 
-      is_long = long_tests.include?(File.basename(test_script))
-
-      if (is_long && long) || (!is_long && fast)
-        sh env_vars, test_script
-      end
+      sh env_vars, test_script if run
     end
   end
   private :test_integration

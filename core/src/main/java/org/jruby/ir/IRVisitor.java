@@ -124,6 +124,7 @@ public abstract class IRVisitor {
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) { error(runtimehelpercall); }
     public void SaveBindingVisibilityInstr(SaveBindingVisibilityInstr instr) { error(instr); }
     public void SearchConstInstr(SearchConstInstr searchconstinstr) { error(searchconstinstr); }
+    public void SearchModuleForConstInstr(SearchModuleForConstInstr searchconstinstr) { error(searchconstinstr); }
     public void SetCapturedVarInstr(SetCapturedVarInstr instr) { error(instr); }
     public void StoreLocalVarInstr(StoreLocalVarInstr storelocalvarinstr) { error(storelocalvarinstr); }
     public void ThreadPollInstr(ThreadPollInstr threadpollinstr) { error(threadpollinstr); }

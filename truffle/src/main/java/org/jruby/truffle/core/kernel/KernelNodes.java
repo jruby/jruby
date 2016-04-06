@@ -32,11 +32,11 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
@@ -61,16 +61,11 @@ import org.jruby.truffle.core.coerce.ToPathNodeGen;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
-import org.jruby.truffle.core.format.parser.PrintfCompiler;
-import org.jruby.truffle.core.format.runtime.PackResult;
-import org.jruby.truffle.core.format.runtime.exceptions.CantCompressNegativeException;
-import org.jruby.truffle.core.format.runtime.exceptions.CantConvertException;
-import org.jruby.truffle.core.format.runtime.exceptions.FormatException;
-import org.jruby.truffle.core.format.runtime.exceptions.NoImplicitConversionException;
-import org.jruby.truffle.core.format.runtime.exceptions.OutsideOfStringException;
-import org.jruby.truffle.core.format.runtime.exceptions.PackException;
-import org.jruby.truffle.core.format.runtime.exceptions.RangeException;
-import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException;
+import org.jruby.truffle.core.format.BytesResult;
+import org.jruby.truffle.core.format.FormatExceptionTranslator;
+import org.jruby.truffle.core.format.exceptions.FormatException;
+import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
+import org.jruby.truffle.core.format.printf.PrintfCompiler;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SameOrEqualNodeFactory;
@@ -80,6 +75,8 @@ import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.core.proc.ProcNodes.ProcNewNode;
 import org.jruby.truffle.core.proc.ProcNodesFactory.ProcNewNodeFactory;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringCachingGuards;
@@ -130,7 +127,7 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -139,6 +136,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -146,7 +144,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
 
-    @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1, unsafe = {UnsafeGroup.IO, UnsafeGroup.PROCESSES})
     public abstract static class BacktickNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toHashNode;
@@ -616,7 +614,7 @@ public abstract class KernelNodes {
                 "isRubyString(filename)"
         })
         public Object evalNilBinding(VirtualFrame frame, DynamicObject source, DynamicObject noBinding,
-                                     DynamicObject filename, int lineNumber, @Cached("create()") IndirectCallNode callNode) {
+                                     DynamicObject filename, Object unusedLineNumber, @Cached("create()") IndirectCallNode callNode) {
             return evalNoBindingUncached(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE, callNode);
         }
 
@@ -684,7 +682,7 @@ public abstract class KernelNodes {
                                                 String filename,
                                                 int line,
                                                 boolean ownScopeForAssignments) {
-            ByteList code = StringOperations.getByteListReadOnly(rubySource);
+            final Rope code = StringOperations.rope(rubySource);
 
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
             final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
@@ -726,7 +724,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "exec", isModuleFunction = true, required = 1, rest = true)
+    @CoreMethod(names = "exec", isModuleFunction = true, required = 1, rest = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class ExecNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toHashNode;
@@ -793,7 +791,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "fork", isModuleFunction = true, rest = true)
+    @CoreMethod(names = "fork", isModuleFunction = true, rest = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class ForkNode extends CoreMethodArrayArgumentsNode {
 
         public ForkNode(RubyContext context, SourceSection sourceSection) {
@@ -848,7 +846,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "gets", isModuleFunction = true)
+    @CoreMethod(names = "gets", isModuleFunction = true, unsafe = UnsafeGroup.IO)
     public abstract static class GetsNode extends CoreMethodArrayArgumentsNode {
 
         public GetsNode(RubyContext context, SourceSection sourceSection) {
@@ -1568,7 +1566,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "require", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "require", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.LOAD)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "feature")
     })
@@ -1617,7 +1615,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "require_relative", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "require_relative", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.LOAD)
     public abstract static class RequireRelativeNode extends CoreMethodArrayArgumentsNode {
 
         public RequireRelativeNode(RubyContext context, SourceSection sourceSection) {
@@ -1945,7 +1943,11 @@ public abstract class KernelNodes {
     @ImportStatic(StringCachingGuards.class)
     public abstract static class SprintfNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private TaintNode taintNode;
+
+        private final BranchProfile exceptionProfile = BranchProfile.create();
+        private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
 
         public SprintfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1959,13 +1961,14 @@ public abstract class KernelNodes {
                 @Cached("privatizeRope(format)") Rope cachedFormat,
                 @Cached("ropeLength(cachedFormat)") int cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
-            final PackResult result;
+            final BytesResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, new Object[]{ arguments, arguments.length });
-            } catch (PackException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw handleException(e);
+                result = (BytesResult) callPackNode.call(frame,
+                        new Object[]{ arguments, arguments.length });
+            } catch (FormatException e) {
+                exceptionProfile.enter();
+                throw FormatExceptionTranslator.translate(this, e);
             }
 
             return finishFormat(cachedFormatLength, result);
@@ -1977,56 +1980,37 @@ public abstract class KernelNodes {
                 DynamicObject format,
                 Object[] arguments,
                 @Cached("create()") IndirectCallNode callPackNode) {
-            final PackResult result;
+            final BytesResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, compileFormat(format), new Object[]{ arguments, arguments.length });
-            } catch (PackException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw handleException(e);
+                result = (BytesResult) callPackNode.call(frame, compileFormat(format),
+                        new Object[]{ arguments, arguments.length });
+            } catch (FormatException e) {
+                exceptionProfile.enter();
+                throw FormatExceptionTranslator.translate(this, e);
             }
 
             return finishFormat(Layouts.STRING.getRope(format).byteLength(), result);
         }
 
-        private RuntimeException handleException(PackException exception) {
-            try {
-                throw exception;
-            } catch (TooFewArgumentsException e) {
-                return new RaiseException(coreLibrary().argumentError("too few arguments", this));
-            } catch (NoImplicitConversionException e) {
-                return new RaiseException(coreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
-            } catch (OutsideOfStringException e) {
-                return new RaiseException(coreLibrary().argumentError("X outside of string", this));
-            } catch (CantCompressNegativeException e) {
-                return new RaiseException(coreLibrary().argumentError("can't compress negative numbers", this));
-            } catch (RangeException e) {
-                return new RaiseException(coreLibrary().rangeError(e.getMessage(), this));
-            } catch (CantConvertException e) {
-                return new RaiseException(coreLibrary().typeError(e.getMessage(), this));
-            }
-        }
+        private DynamicObject finishFormat(int formatLength, BytesResult result) {
+            byte[] bytes = result.getOutput();
 
-        private DynamicObject finishFormat(int formatLength, PackResult result) {
-            final DynamicObject string = createString(new ByteList((byte[]) result.getOutput(), 0, result.getOutputLength()));
-
-            if (formatLength == 0) {
-                StringOperations.forceEncodingVerySlow(string, USASCIIEncoding.INSTANCE);
-            } else {
-                switch (result.getEncoding()) {
-                    case DEFAULT:
-                    case ASCII_8BIT:
-                        break;
-                    case US_ASCII:
-                        StringOperations.forceEncodingVerySlow(string, USASCIIEncoding.INSTANCE);
-                        break;
-                    case UTF_8:
-                        StringOperations.forceEncodingVerySlow(string, UTF8Encoding.INSTANCE);
-                        break;
-                    default:
-                        throw new UnsupportedOperationException();
-                }
+            if (resizeProfile.profile(bytes.length != result.getOutputLength())) {
+                bytes = Arrays.copyOf(bytes, result.getOutputLength());
             }
+
+            if (makeLeafRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(
+                        getContext(), null, null, null, null, null));
+            }
+
+            final DynamicObject string = createString(makeLeafRopeNode.executeMake(
+                    bytes,
+                    result.getEncoding().getEncodingForLength(formatLength),
+                    result.getStringCodeRange(),
+                    result.getOutputLength()));
 
             if (result.isTainted()) {
                 if (taintNode == null) {
@@ -2045,9 +2029,9 @@ public abstract class KernelNodes {
             assert RubyGuards.isRubyString(format);
 
             try {
-                return new PrintfCompiler(getContext(), this).compile(StringOperations.getByteListReadOnly(format));
-            } catch (FormatException e) {
-                CompilerDirectives.transferToInterpreter();
+                return new PrintfCompiler(getContext(), this)
+                        .compile(format.toString(), Layouts.STRING.getRope(format).getBytes());
+            } catch (InvalidFormatException e) {
                 throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
             }
         }

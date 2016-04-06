@@ -130,8 +130,8 @@ public class ClassExtensionLibrary implements Library {
         nameBuilder.setLength(0);
         fileBuilder.setLength(0);
         for (int j = i; j < all.length - 1; j++) {
-            nameBuilder.append(all[j]).append(".");
-            fileBuilder.append(all[j]).append("/");
+            nameBuilder.append(all[j]).append('.');
+            fileBuilder.append(all[j]).append('/');
         }
         nameBuilder.append(serviceName);
         fileBuilder.append(serviceName).append(".class");

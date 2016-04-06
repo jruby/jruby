@@ -60,6 +60,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.Graal;
 import org.jruby.truffle.stdlib.CoverageManager;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
@@ -237,10 +238,10 @@ public abstract class TrufflePrimitiveNodes {
         public DynamicObject dumpString(DynamicObject string) {
             final StringBuilder builder = new StringBuilder();
 
-            final ByteList byteList = StringOperations.getByteListReadOnly(string);
+            final Rope rope = StringOperations.rope(string);
 
-            for (int i = 0; i < byteList.length(); i++) {
-                builder.append(String.format("\\x%02x", byteList.get(i)));
+            for (int i = 0; i < rope.byteLength(); i++) {
+                builder.append(String.format("\\x%02x", rope.get(i)));
             }
 
             return createString(StringOperations.encodeRope(builder.toString(), UTF8Encoding.INSTANCE));
@@ -292,7 +293,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(names = "simple_shell", onSingleton = true)
+    @CoreMethod(names = "simple_shell", onSingleton = true, unsafe = UnsafeGroup.IO)
     public abstract static class SimpleShellNode extends CoreMethodArrayArgumentsNode {
 
         public SimpleShellNode(RubyContext context, SourceSection sourceSection) {
@@ -400,7 +401,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(names = "debug_print", onSingleton = true, required = 1)
+    @CoreMethod(names = "debug_print", onSingleton = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintNode extends CoreMethodArrayArgumentsNode {
 
         public DebugPrintNode(RubyContext context, SourceSection sourceSection) {
@@ -412,6 +413,35 @@ public abstract class TrufflePrimitiveNodes {
         public DynamicObject debugPrint(DynamicObject string) {
             System.err.println(string.toString());
             return nil();
+        }
+
+    }
+
+    @CoreMethod(names = "safe_puts", onSingleton = true, required = 1, unsafe = UnsafeGroup.SAFE_PUTS)
+    public abstract static class SafePutsNode extends CoreMethodArrayArgumentsNode {
+
+        public SafePutsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject safePuts(DynamicObject string) {
+            for (char c : string.toString().toCharArray()) {
+                if (isAsciiPrintable(c)) {
+                    System.out.print(c);
+                } else {
+                    System.out.print('?');
+                }
+            }
+
+            System.out.println();
+
+            return nil();
+        }
+
+        private boolean isAsciiPrintable(char c) {
+            return c >= 32 && c <= 126 || c == '\n' || c == '\t';
         }
 
     }
@@ -432,7 +462,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(names = "debug_print_rope", onSingleton = true, required = 1, optional = 1)
+    @CoreMethod(names = "debug_print_rope", onSingleton = true, required = 1, optional = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintRopeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode;
@@ -474,8 +504,9 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public DynamicObject flattenRope(DynamicObject string) {
-            final Rope flattened = RopeOperations.flatten(StringOperations.rope(string));
+        public DynamicObject flattenRope(DynamicObject string,
+                                         @Cached("create(getContext(), getSourceSection())") RopeNodes.FlattenNode flattenNode) {
+            final Rope flattened = flattenNode.executeFlatten(StringOperations.rope(string));
 
             return createString(flattened);
         }
@@ -538,7 +569,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true, required = 1)
+    @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true, required = 1, unsafe = UnsafeGroup.AT_EXIT)
     public abstract static class AtExitSystemNode extends CoreMethodArrayArgumentsNode {
 
         public AtExitSystemNode(RubyContext context, SourceSection sourceSection) {
@@ -630,7 +661,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(names = "print_backtrace", onSingleton = true)
+    @CoreMethod(names = "print_backtrace", onSingleton = true, unsafe = UnsafeGroup.IO)
     public abstract static class PrintBacktraceNode extends CoreMethodNode {
 
         public PrintBacktraceNode(RubyContext context, SourceSection sourceSection) {
@@ -714,7 +745,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(names = "spawn_process", onSingleton = true, required = 3)
+    @CoreMethod(names = "spawn_process", onSingleton = true, required = 3, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SpawnProcessNode extends CoreMethodArrayArgumentsNode {
 
         public SpawnProcessNode(RubyContext context, SourceSection sourceSection) {
@@ -783,7 +814,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1)
+    @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1, unsafe = UnsafeGroup.LOAD)
     public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
 
         public LoadNode(RubyContext context, SourceSection sourceSection) {
@@ -823,7 +854,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()")IndirectCallNode callNode) {
-            coreLibrary().getGlobalVariablesObject().define(
+            coreLibrary().getGlobalVariables().put(
                     "$0",
                     StringOperations.createString(getContext(),
                             ByteList.create(getContext().getJRubyInterop().getArg0())));
@@ -935,6 +966,73 @@ public abstract class TrufflePrimitiveNodes {
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array, array.length);
         }
 
+    }
+
+    @CoreMethod(names = "io_safe?", onSingleton = true)
+    public abstract static class IsIOSafeNode extends CoreMethodNode {
+
+        public IsIOSafeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean ioSafe() {
+            return getContext().getOptions().PLATFORM_SAFE_IO;
+        }
+
+    }
+
+    @CoreMethod(names = "memory_safe?", onSingleton = true)
+    public abstract static class IsMemorySafeNode extends CoreMethodNode {
+
+        public IsMemorySafeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean memorySafe() {
+            return getContext().getOptions().PLATFORM_SAFE_MEMORY;
+        }
+
+    }
+
+    @CoreMethod(names = "signals_safe?", onSingleton = true)
+    public abstract static class AreSignalsSafeNode extends CoreMethodNode {
+
+        public AreSignalsSafeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean signalsSafe() {
+            return getContext().getOptions().PLATFORM_SAFE_SIGNALS;
+        }
+
+    }
+
+    @CoreMethod(names = "require_core", isModuleFunction = true, required = 1)
+    public abstract static class RequireCoreNode extends CoreMethodArrayArgumentsNode {
+
+        public RequireCoreNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(feature)")
+        public boolean requireRelative(VirtualFrame frame, DynamicObject feature, @Cached("create()") IndirectCallNode callNode) {
+            if (!(getContext().getCoreLibrary().isLoadingRubyCore() || getContext().getOptions().PLATFORM_SAFE_LOAD)) {
+                throw new RaiseException(getContext().getCoreLibrary().internalErrorUnsafe(this));
+            }
+
+            try {
+                final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceCache().getSource(getContext().getCoreLibrary().getCoreLoadPath() + "/" + feature.toString() + ".rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
+                final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
+                deferredCall.getCallTarget().call(deferredCall.getArguments());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return true;
+        }
     }
 
 }

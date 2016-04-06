@@ -517,7 +517,7 @@ public class RubyObject extends RubyBasicObject {
     }
 
     // MRI: rb_obj_dig
-    static IRubyObject dig(ThreadContext context, IRubyObject obj, IRubyObject[] args, int idx) {
+    public static IRubyObject dig(ThreadContext context, IRubyObject obj, IRubyObject[] args, int idx) {
         if ( obj.isNil() ) return context.nil;
         if ( obj instanceof RubyArray ) {
             // TODO: cache somewhere

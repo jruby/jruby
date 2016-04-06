@@ -66,7 +66,12 @@ public abstract class SetNode extends RubyNode {
 
     @Specialization(guards = { "isNullHash(hash)", "!isRubyString(key)" })
     public Object setNull(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
-        Object store = PackedArrayStrategy.createStore(getContext(), hashNode.hash(frame, key), key, value);
+        int hashed = 0;
+        if (!byIdentityProfile.profile(byIdentity)) {
+            hashed = hashNode.hash(frame, key);
+        }
+
+        Object store = PackedArrayStrategy.createStore(getContext(), hashed, key, value);
         assert HashOperations.verifyStore(getContext(), store, 1, null, null);
         Layouts.HASH.setStore(hash, store);
         Layouts.HASH.setSize(hash, 1);
@@ -92,27 +97,30 @@ public abstract class SetNode extends RubyNode {
     public Object setPackedArray(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
         assert HashOperations.verifyStore(getContext(), hash);
 
-        final int hashed = hashNode.hash(frame, key);
+        boolean profiledByIdentity = byIdentityProfile.profile(byIdentity);
+
+        int hashed = 0;
+        if (!profiledByIdentity) {
+            hashed = hashNode.hash(frame, key);
+        }
 
         final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
         final int size = Layouts.HASH.getSize(hash);
 
         for (int n = 0; n < getContext().getOptions().HASH_PACKED_ARRAY_MAX; n++) {
             if (n < size) {
-                if (hashed == PackedArrayStrategy.getHashed(store, n)) {
-                    final boolean equal;
+                final boolean equal;
+                if (profiledByIdentity) {
+                    equal = equalNode.executeReferenceEqual(frame, key, PackedArrayStrategy.getKey(store, n));
+                } else {
+                    equal = hashed == PackedArrayStrategy.getHashed(store, n) &&
+                            eqlNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, n));
+                }
 
-                    if (byIdentityProfile.profile(byIdentity)) {
-                        equal = equalNode.executeReferenceEqual(frame, key, PackedArrayStrategy.getKey(store, n));
-                    } else {
-                        equal = eqlNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, n));
-                    }
-
-                    if (equal) {
-                        PackedArrayStrategy.setValue(store, n, value);
-                        assert HashOperations.verifyStore(getContext(), hash);
-                        return value;
-                    }
+                if (equal) {
+                    PackedArrayStrategy.setValue(store, n, value);
+                    assert HashOperations.verifyStore(getContext(), hash);
+                    return value;
                 }
             }
         }

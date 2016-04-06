@@ -115,12 +115,14 @@ import org.jruby.truffle.language.globals.CheckProgramNameVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckRecordSeparatorVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckStdoutVariableTypeNode;
 import org.jruby.truffle.language.globals.ReadGlobalVariableNode;
+import org.jruby.truffle.language.globals.ReadGlobalVariableNodeGen;
 import org.jruby.truffle.language.globals.ReadLastBacktraceNode;
 import org.jruby.truffle.language.globals.ReadMatchReferenceNode;
 import org.jruby.truffle.language.globals.ReadThreadLocalGlobalVariableNode;
 import org.jruby.truffle.language.globals.UpdateLastBacktraceNode;
 import org.jruby.truffle.language.globals.UpdateVerbosityNode;
 import org.jruby.truffle.language.globals.WriteGlobalVariableNode;
+import org.jruby.truffle.language.globals.WriteGlobalVariableNodeGen;
 import org.jruby.truffle.language.globals.WriteProgramNameNodeGen;
 import org.jruby.truffle.language.globals.WriteReadOnlyGlobalNode;
 import org.jruby.truffle.language.literal.BooleanLiteralNode;
@@ -489,6 +491,19 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final org.jruby.ast.Node receiver = node.getReceiverNode();
         final String methodName = node.getName();
+
+        if (receiver instanceof org.jruby.ast.StrNode && methodName.equals("freeze")) {
+            final org.jruby.ast.StrNode strNode = (org.jruby.ast.StrNode) receiver;
+            final ByteList byteList = strNode.getValue();
+            final int codeRange = strNode.getCodeRange();
+
+            final Rope rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
+
+            final DynamicObject frozenString = context.getFrozenStrings().getFrozenString(rope);
+
+            return addNewlineIfNeeded(node, new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().METHOD,
+                    new ObjectLiteralNode(context, null, frozenString)));
+        }
 
         // Rubinius.<method>
         if (receiver instanceof org.jruby.ast.ConstNode
@@ -1657,7 +1672,7 @@ public class BodyTranslator extends Translator {
 
             return addNewlineIfNeeded(node, assignment);
         } else {
-            final RubyNode writeGlobalVariableNode = new WriteGlobalVariableNode(context, sourceSection, name, rhs);
+            final RubyNode writeGlobalVariableNode = WriteGlobalVariableNodeGen.create(context, sourceSection, name, rhs);
 
             final RubyNode translated;
 
@@ -1705,7 +1720,7 @@ public class BodyTranslator extends Translator {
             // Instead, it reads the backtrace field of the thread-local $! value.
             ret = new ReadLastBacktraceNode(context, sourceSection);
         } else {
-            ret = new ReadGlobalVariableNode(context, sourceSection, name);
+            ret = ReadGlobalVariableNodeGen.create(context, sourceSection, name);
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -2905,10 +2920,23 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitStrNode(org.jruby.ast.StrNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+
         final ByteList byteList = node.getValue();
         final int codeRange = node.getCodeRange();
         final Rope rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
-        final RubyNode ret = new StringLiteralNode(context, translate(node.getPosition()), rope);
+
+        final RubyNode ret;
+
+        if (node.isFrozen()) {
+            final DynamicObject frozenString = context.getFrozenStrings().getFrozenString(rope);
+
+            ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().METHOD,
+                    new ObjectLiteralNode(context, null, frozenString));
+        } else {
+            ret = new StringLiteralNode(context, sourceSection, rope);
+        }
+
         return addNewlineIfNeeded(node, ret);
     }
 

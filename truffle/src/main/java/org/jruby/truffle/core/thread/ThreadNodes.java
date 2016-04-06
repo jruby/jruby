@@ -31,6 +31,7 @@ import org.jruby.truffle.core.exception.ExceptionNodes;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.core.rubinius.ThreadPrimitiveNodes.ThreadRaisePrimitiveNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -39,6 +40,7 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
+import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -60,7 +62,7 @@ public abstract class ThreadNodes {
                 null,
                 null,
                 new CountDownLatch(1),
-                false,
+                getGlobalAbortOnException(context),
                 null,
                 null,
                 null,
@@ -68,6 +70,11 @@ public abstract class ThreadNodes {
                 0);
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object)); // Because it is cyclic
         return object;
+    }
+
+    public static boolean getGlobalAbortOnException(RubyContext context) {
+        final DynamicObject threadClass = context.getCoreLibrary().getThreadClass();
+        return (boolean) threadClass.get("@abort_on_exception");
     }
 
     private static DynamicObject createThreadLocals(RubyContext context) {
@@ -108,21 +115,32 @@ public abstract class ThreadNodes {
         final String name = "Ruby Thread@" + info;
         Layouts.THREAD.setNameUnsafe(thread, name);
         Thread.currentThread().setName(name);
+        DynamicObject fiber = Layouts.THREAD.getFiberManager(thread).getRootFiber();
 
         start(context, thread);
+        FiberNodes.start(context, fiber);
         try {
-            DynamicObject fiber = Layouts.THREAD.getFiberManager(thread).getRootFiber();
-            FiberNodes.run(context, fiber, currentNode, task);
+            task.run();
         } catch (ThreadExitException e) {
             Layouts.THREAD.setValue(thread, context.getCoreLibrary().getNilObject());
             return;
         } catch (RaiseException e) {
-            Layouts.THREAD.setException(thread, e.getException());
+            setException(context, thread, e.getException(), currentNode);
         } catch (ReturnException e) {
-            Layouts.THREAD.setException(thread, context.getCoreLibrary().unexpectedReturn(currentNode));
+            setException(context, thread, context.getCoreLibrary().unexpectedReturn(currentNode), currentNode);
         } finally {
+            FiberNodes.cleanup(context, fiber);
             cleanup(context, thread);
         }
+    }
+
+    private static void setException(RubyContext context, DynamicObject thread, DynamicObject exception, Node currentNode) {
+        final DynamicObject mainThread = context.getThreadManager().getRootThread();
+        final boolean isSystemExit = Layouts.BASIC_OBJECT.getLogicalClass(exception) == context.getCoreLibrary().getSystemExitClass();
+        if (thread != mainThread && (isSystemExit || Layouts.THREAD.getAbortOnException(thread))) {
+            ThreadRaisePrimitiveNode.raiseInThread(context, mainThread, exception, currentNode);
+        }
+        Layouts.THREAD.setException(thread, exception);
     }
 
     public static void start(RubyContext context, DynamicObject thread) {
@@ -157,7 +175,7 @@ public abstract class ThreadNodes {
         }
     }
 
-    @CoreMethod(names = "alive?")
+    @CoreMethod(names = "alive?", unsafe = UnsafeGroup.THREADS)
     public abstract static class AliveNode extends CoreMethodArrayArgumentsNode {
 
         public AliveNode(RubyContext context, SourceSection sourceSection) {
@@ -172,7 +190,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "backtrace")
+    @CoreMethod(names = "backtrace", unsafe = UnsafeGroup.THREADS)
     public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
@@ -217,7 +235,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = { "kill", "exit", "terminate" })
+    @CoreMethod(names = { "kill", "exit", "terminate" }, unsafe = UnsafeGroup.THREADS)
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
 
         public KillNode(RubyContext context, SourceSection sourceSection) {
@@ -246,7 +264,7 @@ public abstract class ThreadNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE, unsafe = UnsafeGroup.THREADS)
     public abstract static class HandleInterruptNode extends YieldingCoreMethodNode {
 
         private final DynamicObject immediateSymbol = getContext().getSymbolTable().getSymbol("immediate");
@@ -286,7 +304,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "initialize", rest = true, needsBlock = true)
+    @CoreMethod(names = "initialize", rest = true, needsBlock = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -302,7 +320,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "join", optional = 1)
+    @CoreMethod(names = "join", optional = 1, unsafe = UnsafeGroup.THREADS)
     public abstract static class JoinNode extends CoreMethodArrayArgumentsNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
@@ -392,7 +410,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "pass", onSingleton = true)
+    @CoreMethod(names = "pass", onSingleton = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class PassNode extends CoreMethodArrayArgumentsNode {
 
         public PassNode(RubyContext context, SourceSection sourceSection) {
@@ -407,7 +425,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "status")
+    @CoreMethod(names = "status", unsafe = UnsafeGroup.THREADS)
     public abstract static class StatusNode extends CoreMethodArrayArgumentsNode {
 
         public StatusNode(RubyContext context, SourceSection sourceSection) {
@@ -431,7 +449,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "stop?")
+    @CoreMethod(names = "stop?", unsafe = UnsafeGroup.THREADS)
     public abstract static class StopNode extends CoreMethodArrayArgumentsNode {
 
         public StopNode(RubyContext context, SourceSection sourceSection) {
@@ -446,7 +464,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "value")
+    @CoreMethod(names = "value", unsafe = UnsafeGroup.THREADS)
     public abstract static class ValueNode extends CoreMethodArrayArgumentsNode {
 
         public ValueNode(RubyContext context, SourceSection sourceSection) {
@@ -461,7 +479,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = { "wakeup", "run" })
+    @CoreMethod(names = { "wakeup", "run" }, unsafe = UnsafeGroup.THREADS)
     public abstract static class WakeupNode extends CoreMethodArrayArgumentsNode {
 
         public WakeupNode(RubyContext context, SourceSection sourceSection) {
@@ -488,7 +506,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "abort_on_exception")
+    @CoreMethod(names = "abort_on_exception", unsafe = UnsafeGroup.THREADS)
     public abstract static class AbortOnExceptionNode extends CoreMethodArrayArgumentsNode {
 
         public AbortOnExceptionNode(RubyContext context, SourceSection sourceSection) {
@@ -502,7 +520,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "abort_on_exception=", required = 1)
+    @CoreMethod(names = "abort_on_exception=", required = 1, unsafe = UnsafeGroup.THREADS)
     public abstract static class SetAbortOnExceptionNode extends CoreMethodArrayArgumentsNode {
 
         public SetAbortOnExceptionNode(RubyContext context, SourceSection sourceSection) {
@@ -517,7 +535,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {

@@ -2,3 +2,4 @@ fails:IO#close on an IO.popen stream clears #pid
 fails:IO#close on an IO.popen stream sets $?
 fails:IO#close on an IO.popen stream waits for the child to exit
 fails:IO#close does not raise anything when self was already closed
+fails:IO#close does nothing if already closed

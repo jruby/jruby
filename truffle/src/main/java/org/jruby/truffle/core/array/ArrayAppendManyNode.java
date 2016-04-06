@@ -110,7 +110,7 @@ public abstract class ArrayAppendManyNode extends RubyNode {
         final int newSize = oldSize + otherSize;
 
         if (extendProfile.profile(newSize > storeMirror.getLength())) {
-            final ArrayMirror newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacity(storeMirror.getLength(), newSize));
+            final ArrayMirror newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacity(getContext(), storeMirror.getLength(), newSize));
             otherStoreMirror.copyTo(newStoreMirror, 0, oldSize, otherSize);
             Layouts.ARRAY.setStore(array, newStoreMirror.getArray());
             Layouts.ARRAY.setSize(array, newSize);
@@ -151,7 +151,7 @@ public abstract class ArrayAppendManyNode extends RubyNode {
         final Object[] oldStore = (Object[]) Layouts.ARRAY.getStore(array);
 
         if (extendProfile.profile(newSize > oldStore.length)) {
-            final Object[] newStore = ArrayUtils.grow(oldStore, ArrayUtils.capacity(oldStore.length, newSize));
+            final Object[] newStore = ArrayUtils.grow(oldStore, ArrayUtils.capacity(getContext(), oldStore.length, newSize));
             otherStoreMirror.copyTo(newStore, 0, oldSize, otherSize);
             Layouts.ARRAY.setStore(array, newStore);
             Layouts.ARRAY.setSize(array, newSize);

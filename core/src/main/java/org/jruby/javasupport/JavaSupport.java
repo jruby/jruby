@@ -83,8 +83,11 @@ public abstract class JavaSupport {
 
     public abstract RubyClass getJavaClassClass();
 
+    public abstract RubyClass getJavaPackageClass() ;
+
     public abstract RubyModule getJavaInterfaceTemplate();
 
+    @Deprecated
     public abstract RubyModule getPackageModuleTemplate();
 
     public abstract RubyClass getJavaProxyClass();

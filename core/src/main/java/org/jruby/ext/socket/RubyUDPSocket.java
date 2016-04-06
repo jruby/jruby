@@ -276,7 +276,8 @@ public class RubyUDPSocket extends RubyIPSocket {
             int written;
 
             RubyString data = _mesg.convertToString();
-            ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
+            ByteList dataBL = data.getByteList();
+            ByteBuffer buf = ByteBuffer.wrap(dataBL.unsafeBytes(), dataBL.begin(), dataBL.realSize());
 
             written = ((DatagramChannel) this.getChannel()).write(buf);
 
@@ -321,7 +322,8 @@ public class RubyUDPSocket extends RubyIPSocket {
 
             RubyString nameStr = _host.convertToString();
             RubyString data = _mesg.convertToString();
-            ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
+            ByteList dataBL = data.getByteList();
+            ByteBuffer buf = ByteBuffer.wrap(dataBL.unsafeBytes(), dataBL.begin(), dataBL.realSize());
 
             byte[] buf2 = data.getBytes();
             DatagramPacket sendDP;

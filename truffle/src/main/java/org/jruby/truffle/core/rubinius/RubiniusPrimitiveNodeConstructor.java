@@ -12,6 +12,8 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreMethodNodeManager;
+import org.jruby.truffle.core.UnsafeNode;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.RubyNode;
@@ -57,6 +59,10 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
             arguments.add(transformArgument(readArgumentNode, n));
         }
 
+        if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
+            return new UnsafeNode(context, sourceSection);
+        }
+
         if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
             return new CallRubiniusPrimitiveNode(context, sourceSection,
                     factory.createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])), returnID);
@@ -71,6 +77,10 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
     }
 
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
+        if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
+            return new UnsafeNode(context, sourceSection);
+        }
+
         for (int n = 1; n < arguments.length; n++) {
             arguments[n] = transformArgument(arguments[n], n);
         }
@@ -86,6 +96,5 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
             return argument;
         }
     }
-
 
 }

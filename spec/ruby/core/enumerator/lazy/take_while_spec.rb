@@ -20,7 +20,7 @@ describe "Enumerator::Lazy#take_while" do
     ret.should_not equal(@yieldsmixed)
   end
 
-  it "sets nil to size" do
+  it "sets #size to nil" do
     enumerator_class::Lazy.new(Object.new, 100) {}.take_while { true }.size.should == nil
   end
 
@@ -44,7 +44,7 @@ describe "Enumerator::Lazy#take_while" do
   end
 
   describe "on a nested Lazy" do
-    it "sets nil to size" do
+    it "sets #size to nil" do
       enumerator_class::Lazy.new(Object.new, 100) {}.take(20).take_while { true }.size.should == nil
     end
 

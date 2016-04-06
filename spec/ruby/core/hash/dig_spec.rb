@@ -10,7 +10,7 @@ ruby_version_is '2.3' do
       h.dig(1).should be_nil
     end
 
-    it "does recurse" do
+    it "returns the nested value specified by the sequence of keys" do
       h = { foo: { bar: { baz: 1 } } }
       h.dig(:foo, :bar, :baz).should == 1
       h.dig(:foo, :bar, :nope).should be_nil
@@ -18,7 +18,17 @@ ruby_version_is '2.3' do
       h.dig(:bar, :baz, :foo).should be_nil
     end
 
-    it "raises without args" do
+    it "returns the nested value specified if the sequence includes an index" do
+      h = { foo: [1, 2, 3] }
+      h.dig(:foo, 2).should == 3
+    end
+
+    it "returns nil if any intermediate step is nil" do
+      h = { foo: { bar: { baz: 1 } } }
+      h.dig(:foo, :zot, :xyz).should == nil
+    end
+
+    it "raises an ArgumentError if no arguments provided" do
       lambda { { the: 'borg' }.dig() }.should raise_error(ArgumentError)
     end
 
@@ -47,6 +57,5 @@ ruby_version_is '2.3' do
       h[:foo].should_receive(:dig).with(:bar, :baz).and_return(42)
       h.dig(:foo, :bar, :baz).should == 42
     end
-
   end
 end

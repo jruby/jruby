@@ -49,6 +49,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.io.File;
 
@@ -71,7 +72,7 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_open")
+    @RubiniusPrimitive(name = "dir_open", unsafe = UnsafeGroup.IO)
     public static abstract class DirOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -110,7 +111,7 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_read")
+    @RubiniusPrimitive(name = "dir_read", unsafe = UnsafeGroup.IO)
     public static abstract class DirReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -142,7 +143,7 @@ public abstract class DirPrimitiveNodes {
     }
 
 
-    @RubiniusPrimitive(name = "dir_control")
+    @RubiniusPrimitive(name = "dir_control", unsafe = UnsafeGroup.IO)
     public static abstract class DirControlPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirControlPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -168,7 +169,7 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_close")
+    @RubiniusPrimitive(name = "dir_close", unsafe = UnsafeGroup.IO)
     public static abstract class DirClosePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public DirClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {

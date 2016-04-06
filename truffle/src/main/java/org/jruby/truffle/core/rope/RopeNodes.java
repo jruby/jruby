@@ -82,8 +82,9 @@ public abstract class RopeNodes {
         public Rope substringOneByte(Rope base, int offset, int byteLength,
                                         @Cached("createBinaryProfile()") ConditionProfile isUTF8,
                                         @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
-                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit) {
-            final int index = base.get(offset) & 0xff;
+                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit,
+                                        @Cached("create(getContext(), getSourceSection())") GetByteNode getByteNode) {
+            final int index = getByteNode.executeGetByte(base, offset);
 
             if (isUTF8.profile(base.getEncoding() == UTF8Encoding.INSTANCE)) {
                 return RopeConstants.UTF8_SINGLE_BYTE_ROPES[index];
@@ -275,12 +276,7 @@ public abstract class RopeNodes {
         }
 
         private int depth(Rope left, Rope right) {
-            return max(left.depth(), right.depth()) + 1;
-        }
-
-        private int max(int x, int y) {
-            // This approach is adapted from http://graphics.stanford.edu/~seander/bithacks.html?1=1#IntegerMinOrMax
-            return x - ((x - y) & ((x - y) >> (Integer.SIZE - 1)));
+            return Math.max(left.depth(), right.depth()) + 1;
         }
 
         protected static boolean isMutableRope(Rope rope) {
@@ -627,4 +623,78 @@ public abstract class RopeNodes {
         }
 
     }
+
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "rope"),
+            @NodeChild(type = RubyNode.class, value = "index")
+    })
+    public abstract static class GetByteNode extends RubyNode {
+
+        public static GetByteNode create(RubyContext context, SourceSection sourceSection) {
+            return RopeNodesFactory.GetByteNodeGen.create(context, sourceSection, null, null);
+        }
+
+        public GetByteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract int executeGetByte(Rope rope, int index);
+
+        @Specialization(guards = "rope.getRawBytes() != null")
+        public int getByte(Rope rope, int index) {
+            return rope.getRawBytes()[index] & 0xff;
+        }
+
+        @Specialization(guards = "rope.getRawBytes() == null")
+        @TruffleBoundary
+        public int getByteSlow(Rope rope, int index) {
+            return rope.get(index) & 0xff;
+        }
+
+    }
+
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "rope")
+    })
+    public abstract static class FlattenNode extends RubyNode {
+
+        @Child private MakeLeafRopeNode makeLeafRopeNode;
+
+        public static FlattenNode create(RubyContext context, SourceSection sourceSection) {
+            return RopeNodesFactory.FlattenNodeGen.create(context, sourceSection, null);
+        }
+
+        public FlattenNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            makeLeafRopeNode = MakeLeafRopeNode.create(context, sourceSection);
+        }
+
+        public abstract LeafRope executeFlatten(Rope rope);
+
+        @Specialization
+        public LeafRope flattenLeafRope(LeafRope rope) {
+            return rope;
+        }
+
+        @Specialization(guards = { "!isLeafRope(rope)", "rope.getRawBytes() != null" })
+        public LeafRope flattenNonLeafWithBytes(Rope rope) {
+            return makeLeafRopeNode.executeMake(rope.getRawBytes(), rope.getEncoding(), rope.getCodeRange(), rope.characterLength());
+        }
+
+        @Specialization(guards = { "!isLeafRope(rope)", "rope.getRawBytes() == null" })
+        public LeafRope flatten(Rope rope) {
+            // NB: We call RopeOperations.flatten here rather than Rope#getBytes so we don't populate the byte[] in
+            // the source `rope`. Otherwise, we'll end up a fully populated reference in both the source `rope` and the
+            // flattened one, which could adversely affect GC.
+            final byte[] bytes = RopeOperations.flattenBytes(rope);
+
+            return makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength());
+        }
+
+        protected static boolean isLeafRope(Rope rope) {
+            return rope instanceof LeafRope;
+        }
+
+    }
+
 }

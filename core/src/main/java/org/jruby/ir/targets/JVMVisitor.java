@@ -164,25 +164,51 @@ public class JVMVisitor extends IRVisitor {
 
         IRBytecodeAdapter m = jvmMethod();
 
-        int numberOfBasicBlocks = bbs.length;
         int ipc = 0; // synthetic, used for debug traces that show which instr failed
-        for (int i = 0; i < numberOfBasicBlocks; i++) {
-            BasicBlock bb = bbs[i];
+
+        Label currentRescue = null;
+        Label currentRegionStart = null;
+        Label currentBlockStart = null;
+        Map<Label, org.objectweb.asm.Label> rescueEndForStart = new HashMap<>();
+        Map<Label, org.objectweb.asm.Label> syntheticEndForStart = new HashMap<>();
+
+        for (BasicBlock bb: bbs) {
+            currentBlockStart = bb.getLabel();
+            Label rescueLabel = exceptionTable.get(bb);
+
+            // not in a region at all (null-null) or in a region (a-a) but not at a boundary of the region.
+            if (rescueLabel == currentRescue) continue;
+
+            if (currentRescue != null) { // end of active region
+                rescueEndForStart.put(currentRegionStart, jvm.methodData().getLabel(bb.getLabel()));
+            }
+
+            if (rescueLabel != null) { // new region
+                currentRescue = rescueLabel;
+                currentRegionStart = bb.getLabel();
+            } else { // end of active region but no new region
+                currentRescue = null;
+                currentRegionStart = null;
+            }
+        }
+
+        // handle unclosed final region
+        if (currentRegionStart != null) {
+            org.objectweb.asm.Label syntheticEnd = new org.objectweb.asm.Label();
+            rescueEndForStart.put(currentRegionStart, syntheticEnd);
+            syntheticEndForStart.put(currentBlockStart, syntheticEnd);
+        }
+
+        for (BasicBlock bb: bbs) {
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
             Label rescueLabel = exceptionTable.get(bb);
-            org.objectweb.asm.Label end = null;
 
             m.mark(start);
 
-            boolean newEnd = false;
-            if (rescueLabel != null) {
-                if (i+1 < numberOfBasicBlocks) {
-                    end = jvm.methodData().getLabel(bbs[i+1].getLabel());
-                } else {
-                    newEnd = true;
-                    end = new org.objectweb.asm.Label();
-                }
-
+            // if this is the start of a rescued region, emit trycatch
+            org.objectweb.asm.Label end;
+            if (rescueLabel != null && (end = rescueEndForStart.get(bb.getLabel())) != null) {
+                // first entry into a rescue region, do the try/catch
                 org.objectweb.asm.Label rescue = jvm.methodData().getLabel(rescueLabel);
                 jvmAdapter().trycatch(start, end, rescue, p(Throwable.class));
             }
@@ -201,8 +227,9 @@ public class JVMVisitor extends IRVisitor {
                 visit(instr);
             }
 
-            if (newEnd) {
-                m.mark(end);
+            org.objectweb.asm.Label syntheticEnd = syntheticEndForStart.get(bb.getLabel());
+            if (syntheticEnd != null) {
+                m.mark(syntheticEnd);
             }
         }
 
@@ -289,7 +316,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Handle emitModuleBodyJIT(IRModuleBody method) {
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
 
         String clsName = jvm.scriptToClass(method.getFileName());
         jvm.pushscript(clsName, method.getFileName());
@@ -314,7 +341,7 @@ public class JVMVisitor extends IRVisitor {
 
     public Handle emitClosure(IRClosure closure, boolean print) {
         /* Compile the closure like a method */
-        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, print);
 
@@ -322,7 +349,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Handle emitModuleBody(IRModuleBody method) {
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
 
         Signature signature = signatureFor(method, false);
         emitScope(method, name, signature, false, true);
@@ -1916,6 +1943,15 @@ public class JVMVisitor extends IRVisitor {
         visit(searchconstinstr.getStartingScope());
         jvmMethod().searchConst(searchconstinstr.getConstName(), searchconstinstr.isNoPrivateConsts());
         jvmStoreLocal(searchconstinstr.getResult());
+    }
+
+    @Override
+    public void SearchModuleForConstInstr(SearchModuleForConstInstr instr) {
+        jvmMethod().loadContext();
+        visit(instr.getCurrentModule());
+
+        jvmMethod().searchModuleForConst(instr.getConstName(), instr.isNoPrivateConsts());
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override

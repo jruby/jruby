@@ -214,7 +214,7 @@ public class FeatureLoader {
             if (size < store.length) {
                 store[size] = feature;
             } else {
-                final Object[] newStore = ArrayUtils.grow(store, ArrayUtils.capacityForOneMore(store.length));
+                final Object[] newStore = ArrayUtils.grow(store, ArrayUtils.capacityForOneMore(context, store.length));
                 newStore[size] = feature;
                 Layouts.ARRAY.setStore(loadedFeatures, newStore);
             }

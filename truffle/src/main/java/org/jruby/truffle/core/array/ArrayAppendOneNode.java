@@ -99,7 +99,7 @@ public abstract class ArrayAppendOneNode extends RubyNode {
         final int newSize = oldSize + 1;
 
         if (extendProfile.profile(newSize > storeMirror.getLength())) {
-            final ArrayMirror newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacityForOneMore(storeMirror.getLength()));
+            final ArrayMirror newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacityForOneMore(getContext(), storeMirror.getLength()));
             newStoreMirror.set(oldSize, value);
             Layouts.ARRAY.setStore(array, newStoreMirror.getArray());
             Layouts.ARRAY.setSize(array, newSize);
@@ -117,7 +117,7 @@ public abstract class ArrayAppendOneNode extends RubyNode {
         final int newSize = oldSize + 1;
 
         final int[] oldStore = (int[]) Layouts.ARRAY.getStore(array);
-        long[] newStore = ArrayUtils.longCopyOf(oldStore, ArrayUtils.capacity(oldStore.length, newSize));
+        long[] newStore = ArrayUtils.longCopyOf(oldStore, ArrayUtils.capacity(getContext(), oldStore.length, newSize));
 
         newStore[oldSize] = value;
         Layouts.ARRAY.setStore(array, newStore);
@@ -149,7 +149,7 @@ public abstract class ArrayAppendOneNode extends RubyNode {
         final int oldSize = Layouts.ARRAY.getSize(array);
         final int newSize = oldSize + 1;
         final int oldCapacity = storeMirror.getLength();
-        final int newCapacity = newSize > oldCapacity ? ArrayUtils.capacityForOneMore(storeMirror.getLength()) : oldCapacity;
+        final int newCapacity = newSize > oldCapacity ? ArrayUtils.capacityForOneMore(getContext(), storeMirror.getLength()) : oldCapacity;
         Object[] newStore = storeMirror.getBoxedCopy(newCapacity);
         newStore[oldSize] = value;
         Layouts.ARRAY.setStore(array, newStore);

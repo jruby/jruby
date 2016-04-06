@@ -1,0 +1,1 @@
+fails:BasicObject#method_missing for an instance sets the receiver of the raised NoMethodError

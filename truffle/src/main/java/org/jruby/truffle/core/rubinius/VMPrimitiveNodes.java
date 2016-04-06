@@ -71,6 +71,7 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
@@ -141,7 +142,7 @@ public abstract class VMPrimitiveNodes {
     }
 
     // The hard #exit!
-    @RubiniusPrimitive(name = "vm_exit", needsSelf = false)
+    @RubiniusPrimitive(name = "vm_exit", needsSelf = false, unsafe = UnsafeGroup.EXIT)
     public static abstract class VMExitPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMExitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -150,7 +151,6 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmExit(int status) {
-            getContext().shutdown();
             throw new ExitException(status);
         }
 
@@ -206,7 +206,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_get_user_home", needsSelf = false)
+    @RubiniusPrimitive(name = "vm_get_user_home", needsSelf = false, unsafe = UnsafeGroup.IO)
     public abstract static class VMGetUserHomePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMGetUserHomePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -433,7 +433,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_watch_signal", needsSelf = false)
+    @RubiniusPrimitive(name = "vm_watch_signal", needsSelf = false, unsafe = UnsafeGroup.SIGNALS)
     public static abstract class VMWatchSignalPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMWatchSignalPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -538,7 +538,7 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_wait_pid", needsSelf = false)
+    @RubiniusPrimitive(name = "vm_wait_pid", needsSelf = false, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class VMWaitPidPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public VMWaitPidPrimitiveNode(RubyContext context, SourceSection sourceSection) {

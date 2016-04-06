@@ -34,6 +34,10 @@ public abstract class RubyGuards {
         return value instanceof Double;
     }
 
+    public static boolean isString(Object value) {
+        return value instanceof String;
+    }
+
     public static boolean isJavaCharSequence(Object value) {
         return value instanceof CharSequence;
     }

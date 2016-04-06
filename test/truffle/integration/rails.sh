@@ -8,27 +8,38 @@ JRUBY_BIN=../../../../bin
 JRUBY=$JRUBY_BIN/jruby
 JTR=$JRUBY_BIN/jruby+truffle
 
-$JRUBY_BIN/gem install bundler
+if [ -n "$CI" -a -z "$HAS_REDIS" ]
+then
+    echo "No Redis. Skipping rails test."
 
-$JTR setup
-$JTR run -r rubygems -- bin/rails server &
-serverpid=$!
-url=http://localhost:3000/people.json
+else
 
-while ! curl -s $url;
-do
-  echo -n .
-  sleep 1
-done
+    $JRUBY_BIN/gem install bundler
 
-echo Server is up
+    $JTR setup
+    $JTR run -r rubygems -- bin/rails server &
+    serverpid=$!
+    url=http://localhost:3000
 
-set -x
+    while ! curl -s "$url/people.json";
+    do
+      echo -n .
+      sleep 1
+    done
 
-test "$(curl -s $url)" = '[{"name":"John Doe","email":"jd@example.com"}]'
-curl -s --data 'name=Anybody&email=ab@example.com' $url
-test "$(curl -s $url)" = '[{"name":"John Doe","email":"jd@example.com"},{"name":"Anybody","email":"ab@example.com"}]'
+    echo Server is up
 
-kill %1
-kill $(cat tmp/pids/server.pid)
+    set -x
+    curl -s -X "DELETE" "$url/people/destroy_all.json"
+    test "$(curl -s "$url/people.json")" = '[]'
+    curl -s --data 'name=Anybody&email=ab@example.com' "$url/people.json"
+    echo "$(curl -s "$url/people.json")" | grep '"name":"Anybody","email":"ab@example.com"'
+    curl -s -X "DELETE" "$url/people/destroy_all.json"
 
+    kill %1
+    kill $(cat tmp/pids/server.pid)
+
+    set +x
+    set +e
+
+fi

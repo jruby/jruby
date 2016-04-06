@@ -40,6 +40,7 @@ project 'JRuby Truffle' do
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
+                   :fork => true,
                    'annotationProcessors' => [ 'com.oracle.truffle.object.dsl.processor.LayoutProcessor',
                                                'com.oracle.truffle.dsl.processor.InstrumentableProcessor',
                                                'com.oracle.truffle.dsl.processor.TruffleProcessor',

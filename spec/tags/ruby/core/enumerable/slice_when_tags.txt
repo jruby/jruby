@@ -1,2 +1,3 @@
 fails:Enumerable#slice_when when given a block splits chunks between adjacent elements i and j where the block returns true
 fails:Enumerable#slice_when when given a block calls the block for length of the receiver enumerable minus one times
+fails:when an iterator method yields more than one value processes all yielded values

@@ -6,6 +6,10 @@ ruby_version_is '2.3' do
       @thread = Thread.new {}
     end
 
+    after :each do
+      @thread.join
+    end
+
     it "is nil initially" do
       @thread.name.should == nil
     end
@@ -19,6 +23,10 @@ ruby_version_is '2.3' do
   describe "Thread#name=" do
     before :each do
       @thread = Thread.new {}
+    end
+
+    after :each do
+      @thread.join
     end
 
     it "can be set to a String" do

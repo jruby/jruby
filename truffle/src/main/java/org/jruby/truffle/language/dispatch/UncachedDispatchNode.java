@@ -17,10 +17,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.core.conversion.ToJavaStringNode;
-import org.jruby.truffle.core.conversion.ToJavaStringNodeGen;
 import org.jruby.truffle.core.conversion.ToSymbolNode;
 import org.jruby.truffle.core.conversion.ToSymbolNodeGen;
+import org.jruby.truffle.interop.ToJavaStringNode;
+import org.jruby.truffle.interop.ToJavaStringNodeGen;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
@@ -67,7 +67,7 @@ public class UncachedDispatchNode extends DispatchNode {
 
         final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(RubyArguments.getSelf(frame));
 
-        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name), ignoreVisibility);
+        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeToJavaString(frame, name), ignoreVisibility);
 
         if (method != null) {
             if (dispatchAction == DispatchAction.CALL_METHOD) {

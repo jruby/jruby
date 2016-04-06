@@ -56,6 +56,7 @@ import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.method.MethodFilter;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringNodes;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -93,7 +94,7 @@ import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.yield.YieldNode;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
@@ -540,7 +541,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "autoload", required = 2)
+    @CoreMethod(names = "autoload", required = 2, unsafe = UnsafeGroup.LOAD)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "module"),
             @NodeChild(type = RubyNode.class, value = "name"),
@@ -669,7 +670,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary
         private CodeLoader.DeferredCall classEvalSource(DynamicObject module, DynamicObject rubySource, String file, int line) {
             assert RubyGuards.isRubyString(rubySource);
-            ByteList code = StringOperations.getByteListReadOnly(rubySource);
+            final Rope code = StringOperations.rope(rubySource);
 
             final MaterializedFrame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
@@ -1534,103 +1535,6 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "private_method_defined?", required = 1)
-    @NodeChildren({
-            @NodeChild(type = RubyNode.class, value = "module"),
-            @NodeChild(type = RubyNode.class, value = "name")
-    })
-    public abstract static class PrivateMethodDefinedNode extends CoreMethodNode {
-
-        public PrivateMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CreateCast("name")
-        public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
-        }
-
-        @Specialization
-        public boolean isPrivateMethodDefined(DynamicObject module, String name) {
-            InternalMethod method = ModuleOperations.lookupMethod(module, name);
-            return method != null && method.getVisibility().isPrivate();
-        }
-
-    }
-
-    @CoreMethod(names = "protected_instance_methods", optional = 1)
-    @NodeChildren({
-            @NodeChild(type = RubyNode.class, value = "module"),
-            @NodeChild(type = RubyNode.class, value = "includeAncestors")
-    })
-    public abstract static class ProtectedInstanceMethodsNode extends CoreMethodNode {
-
-        public ProtectedInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CreateCast("includeAncestors")
-        public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, includeAncestors);
-        }
-
-        @Specialization
-        public DynamicObject protectedInstanceMethods(DynamicObject module, boolean includeAncestors) {
-            CompilerDirectives.transferToInterpreter();
-            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.PROTECTED).toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
-        }
-    }
-
-    @CoreMethod(names = "protected_method_defined?", required = 1)
-    @NodeChildren({
-            @NodeChild(type = RubyNode.class, value = "module"),
-            @NodeChild(type = RubyNode.class, value = "name")
-    })
-    public abstract static class ProtectedMethodDefinedNode extends CoreMethodNode {
-
-        public ProtectedMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CreateCast("name")
-        public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
-        }
-
-        @Specialization
-        public boolean isProtectedMethodDefined(DynamicObject module, String name) {
-            InternalMethod method = ModuleOperations.lookupMethod(module, name);
-            return method != null && method.getVisibility().isProtected();
-        }
-
-    }
-
-    @CoreMethod(names = "private_instance_methods", optional = 1)
-    @NodeChildren({
-        @NodeChild(type = RubyNode.class, value = "module"),
-        @NodeChild(type = RubyNode.class, value = "includeAncestors")
-    })
-    public abstract static class PrivateInstanceMethodsNode extends CoreMethodNode {
-
-        public PrivateInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CreateCast("includeAncestors")
-        public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, includeAncestors);
-        }
-
-        @Specialization
-        public DynamicObject privateInstanceMethods(DynamicObject module, boolean includeAncestors) {
-            CompilerDirectives.transferToInterpreter();
-
-            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.PRIVATE).toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
-        }
-    }
-
     @CoreMethod(names = "public_instance_method", required = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "module"),
@@ -1665,15 +1569,17 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "public_instance_methods", optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "module"),
             @NodeChild(type = RubyNode.class, value = "includeAncestors")
     })
-    public abstract static class PublicInstanceMethodsNode extends CoreMethodNode {
+    protected abstract static class AbstractInstanceMethodsNode extends CoreMethodNode {
 
-        public PublicInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+        final Visibility visibility;
+
+        public AbstractInstanceMethodsNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
             super(context, sourceSection);
+            this.visibility = visibility;
         }
 
         @CreateCast("includeAncestors")
@@ -1682,23 +1588,54 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public DynamicObject publicInstanceMethods(DynamicObject module, boolean includeAncestors) {
+        @TruffleBoundary
+        public DynamicObject getInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.PUBLIC).toArray();
+            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.by(visibility)).toArray();
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
+
     }
 
-    @CoreMethod(names = "public_method_defined?", required = 1)
+    @CoreMethod(names = "public_instance_methods", optional = 1)
+    public abstract static class PublicInstanceMethodsNode extends AbstractInstanceMethodsNode {
+
+        public PublicInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection, Visibility.PUBLIC);
+        }
+
+    }
+
+    @CoreMethod(names = "protected_instance_methods", optional = 1)
+    public abstract static class ProtectedInstanceMethodsNode extends AbstractInstanceMethodsNode {
+
+        public ProtectedInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection, Visibility.PROTECTED);
+        }
+
+    }
+    @CoreMethod(names = "private_instance_methods", optional = 1)
+    public abstract static class PrivateInstanceMethodsNode extends AbstractInstanceMethodsNode {
+
+        public PrivateInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection, Visibility.PRIVATE);
+        }
+
+    }
+
+
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "module"),
             @NodeChild(type = RubyNode.class, value = "name")
     })
-    public abstract static class PublicMethodDefinedNode extends CoreMethodNode {
+    protected abstract static class AbstractMethodDefinedNode extends CoreMethodNode {
 
-        public PublicMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+        final Visibility visibility;
+
+        public AbstractMethodDefinedNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
             super(context, sourceSection);
+            this.visibility = visibility;
         }
 
         @CreateCast("name")
@@ -1707,9 +1644,36 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isPublicMethodDefined(DynamicObject module, String name) {
-            InternalMethod method = ModuleOperations.lookupMethod(module, name);
-            return method != null && method.getVisibility() == Visibility.PUBLIC;
+        public boolean isMethodDefined(DynamicObject module, String name) {
+            // TODO (pitr-ch 30-Mar-2016): cache lookup
+            return ModuleOperations.lookupMethod(module, name, visibility) != null;
+        }
+
+    }
+
+    @CoreMethod(names = "public_method_defined?", required = 1)
+    public abstract static class PublicMethodDefinedNode extends AbstractMethodDefinedNode {
+
+        public PublicMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection, Visibility.PUBLIC);
+        }
+
+    }
+
+    @CoreMethod(names = "protected_method_defined?", required = 1)
+    public abstract static class ProtectedMethodDefinedNode extends AbstractMethodDefinedNode {
+
+        public ProtectedMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection, Visibility.PROTECTED);
+        }
+
+    }
+
+    @CoreMethod(names = "private_method_defined?", required = 1)
+    public abstract static class PrivateMethodDefinedNode extends AbstractMethodDefinedNode {
+
+        public PrivateMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection, Visibility.PRIVATE);
         }
 
     }

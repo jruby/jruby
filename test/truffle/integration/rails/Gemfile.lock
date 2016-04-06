@@ -49,6 +49,8 @@ GEM
     json (1.8.3-java)
     loofah (2.0.3)
       nokogiri (>= 1.5.9)
+    macaddr (1.7.1)
+      systemu (~> 2.6.2)
     mail (2.6.3)
       mime-types (>= 1.16, < 3)
     mime-types (2.99)
@@ -85,6 +87,12 @@ GEM
     rake (10.5.0)
     rdoc (4.2.2)
       json (~> 1.4)
+    redis (3.2.2)
+    redis_orm (0.7)
+      activemodel (>= 3.0.0)
+      activesupport (>= 3.0.0)
+      redis (>= 2.2.0)
+      uuid (>= 2.3.2)
     sdoc (0.4.1)
       json (~> 1.7, >= 1.7.7)
       rdoc (~> 4.0)
@@ -95,12 +103,15 @@ GEM
       actionpack (>= 4.0)
       activesupport (>= 4.0)
       sprockets (>= 3.0.0)
+    systemu (2.6.5)
     thor (0.19.1)
     thread_safe (0.3.5-java)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
     tzinfo-data (1.2016.1)
       tzinfo (>= 1.0.0)
+    uuid (2.3.8)
+      macaddr (~> 1.0)
 
 PLATFORMS
   java
@@ -108,8 +119,10 @@ PLATFORMS
 DEPENDENCIES
   jbuilder (~> 2.0)
   rails (= 4.2.5.1)
+  redis
+  redis_orm
   sdoc (~> 0.4.0)
   tzinfo-data
 
 BUNDLED WITH
-   1.10.6
+   1.11.2

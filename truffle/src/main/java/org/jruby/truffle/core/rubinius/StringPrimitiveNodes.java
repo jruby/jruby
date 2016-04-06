@@ -218,9 +218,9 @@ public abstract class StringPrimitiveNodes {
             int i = lim > 0 ? 1 : 0;
 
             byte[]bytes = rope.getBytes();
-            int p = rope.getBegin();
+            int p = rope.begin();
             int ptr = p;
-            int len = rope.getRealSize();
+            int len = rope.byteLength();
             int end = p + len;
             Encoding enc = rope.getEncoding();
             boolean skip = true;
@@ -490,8 +490,8 @@ public abstract class StringPrimitiveNodes {
             final Rope otherRope = StringOperations.rope(other);
 
             // TODO (nirvdrum 21-Jan-16): Reimplement with something more friendly to rope byte[] layout?
-            return ByteList.memcmp(rope.getBytes(), rope.getBegin(), size,
-                    otherRope.getBytes(), otherRope.getBegin() + start, size);
+            return ByteList.memcmp(rope.getBytes(), rope.begin(), size,
+                    otherRope.getBytes(), otherRope.begin() + start, size);
         }
 
     }
@@ -677,7 +677,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Encoding enc = rope.getEncoding();
-            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), rope.begin(), rope.begin() + rope.realSize());
+            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), rope.begin(), rope.begin() + rope.byteLength());
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
@@ -849,8 +849,8 @@ public abstract class StringPrimitiveNodes {
 
             if (sourceLen - offset < otherLen) return -1;
             byte[]bytes = source.getBytes();
-            int p = source.getBegin();
-            int end = p + source.getRealSize();
+            int p = source.begin();
+            int end = p + source.byteLength();
             if (offset != 0) {
                 offset = source.isSingleByteOptimizable() ? offset : StringSupport.offset(enc, bytes, p, end, offset);
                 p += offset;
@@ -858,9 +858,9 @@ public abstract class StringPrimitiveNodes {
             if (otherLen == 0) return offset;
 
             while (true) {
-                int pos = indexOf(source, other, p - source.getBegin());
+                int pos = indexOf(source, other, p - source.begin());
                 if (pos < 0) return pos;
-                pos -= (p - source.getBegin());
+                pos -= (p - source.begin());
                 int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
                 if (t == p + pos) return pos + offset;
                 if ((sourceLen -= t - p) <= 0) return -1;
@@ -875,10 +875,10 @@ public abstract class StringPrimitiveNodes {
 
             final byte[] source = sourceRope.getBytes();
             final int sourceOffset = sourceRope.begin();
-            final int sourceCount = sourceRope.realSize();
+            final int sourceCount = sourceRope.byteLength();
             final byte[] target = otherRope.getBytes();
             final int targetOffset = otherRope.begin();
-            final int targetCount = otherRope.realSize();
+            final int targetCount = otherRope.byteLength();
 
             if (fromIndex >= sourceCount) return (targetCount == 0 ? sourceCount : -1);
             if (fromIndex < 0) fromIndex = 0;
@@ -935,19 +935,19 @@ public abstract class StringPrimitiveNodes {
 
         public abstract int executeStringBytCharacterIndex(VirtualFrame frame, DynamicObject string, int index, int start);
 
-        @Specialization(guards = "isSingleByteOptimizableOrAsciiOnly(string)")
+        @Specialization(guards = "isSingleByteOptimizable(string)")
         public int stringByteCharacterIndexSingleByte(DynamicObject string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
             return index;
         }
 
-        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiOnly(string)", "isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
+        @Specialization(guards = { "!isSingleByteOptimizable(string)", "isFixedWidthEncoding(string)" })
         public int stringByteCharacterIndexFixedWidth(DynamicObject string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
             return index / encoding(string).minLength();
         }
 
-        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiOnly(string)", "!isFixedWidthEncoding(string)", "isValidUtf8(string)" })
+        @Specialization(guards = { "!isSingleByteOptimizable(string)", "!isFixedWidthEncoding(string)", "isValidUtf8(string)" })
         public int stringByteCharacterIndexValidUtf8(DynamicObject string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
 
@@ -956,7 +956,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiOnly(string)", "!isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
+        @Specialization(guards = { "!isSingleByteOptimizable(string)", "!isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
         public int stringByteCharacterIndex(DynamicObject string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index and Encoding::find_byte_character_index.
 
@@ -1107,8 +1107,8 @@ public abstract class StringPrimitiveNodes {
 
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
-            int p = rope.getBegin();
-            final int e = p + rope.getRealSize();
+            int p = rope.begin();
+            final int e = p + rope.byteLength();
 
             int i, k = index;
 
@@ -1156,10 +1156,10 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Encoding encoding = StringOperations.checkEncoding(getContext(), string, pattern, this);
-            int p = stringRope.getBegin();
-            final int e = p + stringRope.getRealSize();
-            int pp = patternRope.getBegin();
-            final int pe = pp + patternRope.getRealSize();
+            int p = stringRope.begin();
+            final int e = p + stringRope.byteLength();
+            int pp = patternRope.begin();
+            final int pe = pp + patternRope.byteLength();
             int s;
             int ss;
 
@@ -1209,8 +1209,8 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Rope rope = rope(string);
-            final int p = rope.getBegin();
-            final int end = p + rope.getRealSize();
+            final int p = rope.begin();
+            final int end = p + rope.byteLength();
 
             final int b = rope.getEncoding().prevCharHead(rope.getBytes(), p, p + index, end);
 
@@ -1247,7 +1247,7 @@ public abstract class StringPrimitiveNodes {
             if(negativeStartOffsetProfile.profile(src < 0)) src = 0;
             if(sizeTooLargeInReplacementProfile.profile(cnt > osz - src)) cnt = osz - src;
 
-            final ByteList stringBytes = Layouts.STRING.getRope(string).toByteListCopy();
+            final ByteList stringBytes = RopeOperations.toByteListCopy(Layouts.STRING.getRope(string));
             int sz = stringBytes.unsafeBytes().length - stringBytes.begin();
             if(negativeDestinationOffsetProfile.profile(dst < 0)) dst = 0;
             if(sizeTooLargeInStringProfile.profile(cnt > sz - dst)) cnt = sz - dst;
@@ -1284,26 +1284,16 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_resize_capacity", needsSelf = false, lowerFixnumParameters = 1)
-    public static abstract class StringResizeCapacityPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public StringResizeCapacityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public DynamicObject stringResizeCapacity(DynamicObject string, int capacity) {
-            // TODO (nirvdrum 11-Jan-16): Any calls to this are suspect now that we use ropes. We don't have a way to preallocate a buffer to mutate.
-            return string;
-        }
-
-    }
-
     @RubiniusPrimitive(name = "string_rindex", lowerFixnumParameters = 1)
     public static abstract class StringRindexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
+        @Child private RopeNodes.GetByteNode patternGetByteNode;
+        @Child private RopeNodes.GetByteNode stringGetByteNode;
+
         public StringRindexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            patternGetByteNode = RopeNodes.GetByteNode.create(context, sourceSection);
+            stringGetByteNode = RopeNodes.GetByteNode.create(context, sourceSection);
         }
 
         @Specialization(guards = "isRubyString(pattern)")
@@ -1332,10 +1322,10 @@ public abstract class StringPrimitiveNodes {
                 }
 
                 case 1: {
-                    final int matcher = patternRope.get(0);
+                    final int matcher = patternGetByteNode.executeGetByte(patternRope, 0);
 
                     while (pos >= 0) {
-                        if (stringRope.get(pos) == matcher) {
+                        if (stringGetByteNode.executeGetByte(stringRope, pos) == matcher) {
                             return pos;
                         }
 
@@ -1685,12 +1675,12 @@ public abstract class StringPrimitiveNodes {
                     }
                     return makeRope(string, p - s, e - p);
                 } else {
-                    beg += StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeableReadOnly(string), enc);
+                    beg += rope.characterLength();
                     if (beg < 0) {
                         return nil();
                     }
                 }
-            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeableReadOnly(string), enc)) {
+            } else if (beg > 0 && beg > rope.characterLength()) {
                 return nil();
             }
             if (len == 0) {

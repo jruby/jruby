@@ -48,7 +48,10 @@ import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.io.EncodingUtils;
 import sun.misc.Unsafe;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public final class StringSupport {
     public static final int CR_MASK      = RubyObject.USER0_F | RubyObject.USER1_F;
@@ -66,6 +69,46 @@ public final class StringSupport {
     public static final int TRANS_SIZE = 256;
 
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
+
+    /**
+     * Split string into sub-parts.
+     * @param str the string
+     * @param sep the separator
+     * @see String#split(String)
+     *
+     * @note We differ from the non-limited {@link String#split(String)} in handling consecutive separator chars at the
+     * end of string. While <code>"1;;"split(";")<code/> returns `[ "1" ]` this version returns `[ "1", "" ]` which is
+     * consistent when consecutive separators occur elsewhere.
+     */
+    public static List<String> split(final String str, final char sep) {
+        return split(str, sep, 0);
+    }
+
+    /**
+     * Split string into (limited) sub-parts.
+     * @param str the string
+     * @param sep the separator
+     * @param lim has same effect as with {@link String#split(String, int)}
+     */
+    public static List<String> split(final String str, final char sep, final int lim) {
+        final int len = str.length();
+        if ( len == 0 ) return Collections.singletonList(str);
+
+        final ArrayList<String> result = new ArrayList<>(lim <= 0 ? 8 : lim);
+
+        int e; int s = 0; int count = 0;
+        while ( (e = str.indexOf(sep, s)) != -1 ) {
+            if ( lim == ++count ) { // limited (lim > 0) case
+                result.add(str.substring(s));
+                return result;
+            }
+            result.add(str.substring(s, e));
+            s = e + 1;
+        }
+        if ( s < len || ( s == len && lim > 0 ) ) result.add(str.substring(s));
+
+        return result;
+    }
 
     public static String codeRangeAsString(int codeRange) {
         switch (codeRange) {

@@ -20,17 +20,19 @@ describe "IO.foreach" do
       ScratchPad.recorded.should == ["hello\n", "line2\n"]
     end
 
-    it "gets data from a fork when passed -" do
-      parent_pid = $$
+    with_feature :fork do
+      it "gets data from a fork when passed -" do
+        parent_pid = $$
 
-      ret = IO.foreach("|-") { |l| ScratchPad << l; true }
+        ret = IO.foreach("|-") { |l| ScratchPad << l; true }
 
-      if $$ == parent_pid
-        ScratchPad.recorded.should == ["hello\n", "from a fork\n"]
-      else # child
-        puts "hello"
-        puts "from a fork"
-        exit!
+        if $$ == parent_pid
+          ScratchPad.recorded.should == ["hello\n", "from a fork\n"]
+        else # child
+          puts "hello"
+          puts "from a fork"
+          exit!
+        end
       end
     end
   end

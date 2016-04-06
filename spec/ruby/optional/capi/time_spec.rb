@@ -251,4 +251,37 @@ describe "CApiTimeSpecs" do
       nsec.should == t.nsec
     end
   end
+
+  ruby_version_is "2.3" do
+    describe "rb_time_timespec_new" do
+      it "returns a time object with the given timespec and UTC offset" do
+        @s.rb_time_timespec_new(1447087832, 476451125, 32400).should == Time.at(1447087832, 476451.125).localtime(32400)
+      end
+
+      describe "when offset given is within range of -86400 and 86400 (exclusive)" do
+        it "sets time's is_gmt to false" do
+          @s.rb_time_timespec_new(1447087832, 476451125, 0).gmt?.should be_false
+        end
+
+        it "sets time's offset to the offset given" do
+          @s.rb_time_timespec_new(1447087832, 476451125, 86399).gmtoff.should == 86399
+        end
+      end
+
+      it "returns time object in UTC if offset given equals INT_MAX - 1" do
+        @s.rb_time_timespec_new(1447087832, 476451125, 0x7ffffffe).utc?.should be_true
+      end
+
+      it "returns time object in localtime if offset given equals INT_MAX" do
+        @s.rb_time_timespec_new(1447087832, 476451125, 0x7fffffff).should == Time.at(1447087832, 476451.125).localtime
+        t = Time.now
+        @s.rb_time_timespec_new(t.tv_sec, t.tv_nsec, 0x7fffffff).gmtoff.should == t.gmtoff
+      end
+
+      it "raises an ArgumentError if offset passed is not within range of -86400 and 86400 (exclusive)" do
+        lambda { @s.rb_time_timespec_new(1447087832, 476451125, 86400) }.should raise_error(ArgumentError)
+        lambda { @s.rb_time_timespec_new(1447087832, 476451125, -86400) }.should raise_error(ArgumentError)
+      end
+    end
+  end
 end

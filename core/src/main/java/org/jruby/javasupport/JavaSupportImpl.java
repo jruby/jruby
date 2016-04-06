@@ -85,6 +85,7 @@ public class JavaSupportImpl extends JavaSupport {
     private RubyClass javaObjectClass;
     private JavaClass objectJavaClass;
     private RubyClass javaClassClass;
+    private RubyClass javaPackageClass;
     private RubyClass javaArrayClass;
     private RubyClass javaProxyClass;
     private RubyClass arrayJavaProxyCreatorClass;
@@ -156,30 +157,34 @@ public class JavaSupportImpl extends JavaSupport {
     public Class loadJavaClassVerbose(String className) {
         try {
             return loadJavaClass(className);
-        } catch (ClassNotFoundException cnfExcptn) {
-            throw runtime.newNameError("cannot load Java class " + className, className, cnfExcptn);
-        } catch (ExceptionInInitializerError eiie) {
-            throw runtime.newNameError("cannot initialize Java class " + className, className, eiie);
-        } catch (LinkageError le) {
-            throw runtime.newNameError("cannot link Java class " + className + ", probable missing dependency: " + le.getLocalizedMessage(), className, le);
-        } catch (SecurityException se) {
-            if (runtime.isVerbose()) se.printStackTrace(runtime.getErrorStream());
-            throw runtime.newSecurityError(se.getLocalizedMessage());
+        } catch (ClassNotFoundException ex) {
+            throw initCause(runtime.newNameError("cannot load Java class " + className, className, ex), ex);
+        } catch (ExceptionInInitializerError ex) {
+            throw initCause(runtime.newNameError("cannot initialize Java class " + className, className, ex), ex);
+        } catch (LinkageError ex) {
+            throw initCause(runtime.newNameError("cannot link Java class " + className + ", probable missing dependency: " + ex.getLocalizedMessage(), className, ex), ex);
+        } catch (SecurityException ex) {
+            if (runtime.isVerbose()) ex.printStackTrace(runtime.getErrorStream());
+            throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);
         }
     }
 
     public Class loadJavaClassQuiet(String className) {
         try {
             return loadJavaClass(className);
-        } catch (ClassNotFoundException cnfExcptn) {
-            throw runtime.newNameError("cannot load Java class " + className, className, cnfExcptn, false);
-        } catch (ExceptionInInitializerError eiie) {
-            throw runtime.newNameError("cannot initialize Java class " + className, className, eiie, false);
-        } catch (LinkageError le) {
-            throw runtime.newNameError("cannot link Java class " + className, className, le, false);
-        } catch (SecurityException se) {
-            throw runtime.newSecurityError(se.getLocalizedMessage());
+        } catch (ClassNotFoundException ex) {
+            throw initCause(runtime.newNameError("cannot load Java class " + className, className, ex, false), ex);
+        } catch (ExceptionInInitializerError ex) {
+            throw initCause(runtime.newNameError("cannot initialize Java class " + className, className, ex, false), ex);
+        } catch (LinkageError ex) {
+            throw initCause(runtime.newNameError("cannot link Java class " + className, className, ex, false), ex);
+        } catch (SecurityException ex) {
+            throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);
         }
+    }
+
+    private static RaiseException initCause(final RaiseException ex, final Throwable cause) {
+        ex.initCause(cause); return ex;
     }
 
     public JavaClass getJavaClassFromCache(Class clazz) {
@@ -275,12 +280,19 @@ public class JavaSupportImpl extends JavaSupport {
         return javaClassClass = getJavaModule().getClass("JavaClass");
     }
 
+    public RubyClass getJavaPackageClass() {
+        RubyClass clazz;
+        if ((clazz = javaPackageClass) != null) return clazz;
+        return javaPackageClass = getJavaModule().getClass("JavaPackage");
+    }
+
     public RubyModule getJavaInterfaceTemplate() {
         RubyModule module;
         if ((module = javaInterfaceTemplate) != null) return module;
         return javaInterfaceTemplate = runtime.getModule("JavaInterfaceTemplate");
     }
 
+    @Deprecated
     public RubyModule getPackageModuleTemplate() {
         RubyModule module;
         if ((module = packageModuleTemplate) != null) return module;

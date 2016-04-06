@@ -63,6 +63,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.runtime.builtin.IRubyObject.NULL_ARRAY;
 import org.jruby.util.Numeric;
 import org.jruby.util.SafeDoubleParser;
+import org.jruby.util.StringSupport;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -1626,14 +1627,14 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private CharSequence floatingPointValue(String arg) {
-        String values[] = value.abs().stripTrailingZeros().toPlainString().split("\\.");
-        String whole = values.length > 0 ? values[0] : "0";
-        String after = values.length > 1 ? values[1] : "0";
+        List<String> values = StringSupport.split(value.abs().stripTrailingZeros().toPlainString(), '.');
+        String whole = values.size() > 0 ? values.get(0) : "0";
+        String after = values.size() > 1 ? values.get(1) : "0";
         StringBuilder build = new StringBuilder().append(sign(arg, value.signum()));
 
         if (groups(arg) == 0) {
             build.append(whole);
-            if (after != null) build.append(".").append(after);
+            if (after != null) build.append('.').append(after);
         } else {
             int index = 0;
             String sep = "";
@@ -1646,7 +1647,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 index += groups(arg);
             }
             if (null != after) {
-                build.append(".");
+                build.append('.');
                 index = 0;
                 sep = "";
                 while (index < after.length()) {

@@ -42,21 +42,21 @@ public abstract class ArrayGeneralizeNode extends RubyNode {
     @Specialization(guards = "isIntArray(array)")
     public DynamicObject generalizeInt(DynamicObject array, int requiredCapacity) {
         final int[] store = (int[]) Layouts.ARRAY.getStore(array);
-        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
+        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(getContext(), store.length, requiredCapacity) - store.length));
         return array;
     }
 
     @Specialization(guards = "isLongArray(array)")
     public DynamicObject generalizeLong(DynamicObject array, int requiredCapacity) {
         final long[] store = (long[]) Layouts.ARRAY.getStore(array);
-        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
+        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(getContext(), store.length, requiredCapacity) - store.length));
         return array;
     }
 
     @Specialization(guards = "isDoubleArray(array)")
     public DynamicObject generalizeDouble(DynamicObject array, int requiredCapacity) {
         final double[] store = (double[]) Layouts.ARRAY.getStore(array);
-        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
+        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(getContext(), store.length, requiredCapacity) - store.length));
         return array;
     }
 

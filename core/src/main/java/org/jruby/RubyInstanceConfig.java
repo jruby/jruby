@@ -43,11 +43,13 @@ import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.StringSupport;
 import org.jruby.util.UriLikePathHelper;
 import org.jruby.util.cli.ArgumentProcessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
+
 import org.objectweb.asm.Opcodes;
 
 import java.io.BufferedInputStream;
@@ -60,7 +62,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -94,8 +95,7 @@ public class RubyInstanceConfig {
             managementEnabled = false;
         } else {
             if (COMPILE_EXCLUDE != null) {
-                String[] elements = COMPILE_EXCLUDE.split(",");
-                excludedMethods.addAll(Arrays.asList(elements));
+                excludedMethods.addAll(StringSupport.split(COMPILE_EXCLUDE, ','));
             }
 
             managementEnabled = Options.MANAGEMENT_ENABLED.load();

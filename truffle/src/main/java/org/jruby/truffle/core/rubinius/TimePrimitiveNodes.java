@@ -301,11 +301,11 @@ public abstract class TimePrimitiveNodes {
             DateTime dt = new DateTime(year, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC);
 
             dt = dt.plusMonths(month - 1)
-                .plusDays(mday - 1)
-                .plusHours(hour)
-                .plusMinutes(min)
-                .plusSeconds(sec)
-                .plusMillis( nsec / 1_000_000 );
+                    .plusDays(mday - 1)
+                    .plusHours(hour)
+                    .plusMinutes(min)
+                    .plusSeconds(sec)
+                    .plusMillis(nsec / 1_000_000);
 
             final DateTimeZone zone;
             final boolean relativeOffset;
@@ -317,7 +317,7 @@ public abstract class TimePrimitiveNodes {
             } else if (utcoffset == nil()) {
                 zone = TimeZoneParser.parse(this, StringOperations.getString(getContext(), envZon));
                 // TODO BJF 16-Feb-2016 verify which zone the following date time should be in
-                final String zoneName = TimeZoneParser.getShortZoneName( dt.withZoneRetainFields(zone), zone);
+                final String zoneName = TimeZoneParser.getShortZoneName(dt.withZoneRetainFields(zone), zone);
                 zoneToStore = createString(StringOperations.encodeRope(zoneName, UTF8Encoding.INSTANCE));
                 relativeOffset = false;
             } else if (utcoffset instanceof Integer) {
@@ -339,25 +339,15 @@ public abstract class TimePrimitiveNodes {
 
             dt = dt.withZoneRetainFields(zone);
 
-            // Following if block copied over from RubyTime.java createTime method
-            // If we're at a DST boundary, we need to choose the correct side of the boundary
-            if (isdst != -1) {
-                final DateTime beforeDstBoundary = dt.withEarlierOffsetAtOverlap();
-                final DateTime afterDstBoundary = dt.withLaterOffsetAtOverlap();
-
-                final int offsetBeforeBoundary = zone.getOffset(beforeDstBoundary);
-                final int offsetAfterBoundary = zone.getOffset(afterDstBoundary);
-
-                // If the time is during DST, we need to pick the time with the highest offset
-                dt = offsetBeforeBoundary > offsetAfterBoundary ? beforeDstBoundary : afterDstBoundary;
+            if (isdst == 0) {
+                dt = dt.withLaterOffsetAtOverlap();
             }
 
-            if (isdst == -1) {
-                return allocateObjectNode.allocate(timeClass, dt, nsec % 1_000_000, zoneToStore, utcoffset, relativeOffset, fromutc);
-            } else {
-                // TODO (pitr 26-Nov-2015): is this correct to create the DateTime without isdst application?
-                return allocateObjectNode.allocate(timeClass, dt, nsec % 1_000_000, zoneToStore, utcoffset, relativeOffset, fromutc);
+            if (isdst == 1) {
+                dt = dt.withEarlierOffsetAtOverlap();
             }
+
+            return allocateObjectNode.allocate(timeClass, dt, nsec % 1_000_000, zoneToStore, utcoffset, relativeOffset, fromutc);
         }
 
         private static int cast(Object value) {

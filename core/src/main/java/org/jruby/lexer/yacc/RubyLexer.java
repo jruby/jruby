@@ -298,11 +298,12 @@ public class RubyLexer extends LexingCommon {
         } else if (root instanceof ListNode) {
             ListNode list = (ListNode) root;
             int length = list.size();
-            // FIXME: I need a test case to see how this fails because MRI has bol (begin of line) boolean when
-            // it encounters non-str/dstr nodes but I am missing the knowledge to understand why it is needed
-            // and our layout is not as general as theirs so I cannot just nd->lit.
+            int currentLine = -1;
             for (int i = 0; i < length; i++) {
                 Node child = list.get(i);
+                if (currentLine == child.getLine()) continue;  // Only process first element on a line?
+
+                currentLine = child.getLine();                 // New line
 
                 if (child instanceof StrNode) {
                     dedent_string(((StrNode) child).getValue(), indent);
@@ -317,7 +318,8 @@ public class RubyLexer extends LexingCommon {
 
     // FIXME: How does lexb.toString() vs getCurrentLine() differ.
     public void compile_error(PID pid, String message) {
-        throw new SyntaxException(pid, getFile(), ruby_sourceline, getCurrentLine(), message);
+        String src = createAsEncodedString(lex_lastline.unsafeBytes(), lex_lastline.begin(), lex_lastline.length(), getEncoding());
+        throw new SyntaxException(pid, getFile(), ruby_sourceline, src, message);
     }
 
     public void heredoc_restore(HeredocTerm here) {
@@ -1079,6 +1081,7 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_BEG);
             return Tokens.tOP_ASGN;
         case '.':
+            setState(EXPR_DOT);
             yaccValue = "&.";
             return Tokens.tANDDOT;
         }
@@ -1630,7 +1633,12 @@ public class RubyLexer extends LexingCommon {
             if (tok != 0) return tok;
         }
 
-        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
+        if (isAfterOperator()) {
+            setState(EXPR_ARG);
+        } else {
+            if (isLexState(lex_state, EXPR_CLASS)) commandStart = true;
+            setState(EXPR_BEG);
+        }
 
         switch (c) {
         case '=':

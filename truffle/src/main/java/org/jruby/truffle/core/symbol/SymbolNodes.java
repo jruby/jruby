@@ -43,20 +43,6 @@ import java.util.Arrays;
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
 
-    public static SymbolCodeRangeableWrapper getCodeRangeable(DynamicObject symbol) {
-        SymbolCodeRangeableWrapper wrapper = Layouts.SYMBOL.getCodeRangeableWrapper(symbol);
-
-        if (wrapper != null) {
-            return wrapper;
-        }
-
-        wrapper = new SymbolCodeRangeableWrapper(symbol);
-
-        Layouts.SYMBOL.setCodeRangeableWrapper(symbol, wrapper);
-
-        return wrapper;
-    }
-
     @CoreMethod(names = "all_symbols", onSingleton = true)
     public abstract static class AllSymbolsNode extends CoreMethodArrayArgumentsNode {
 

@@ -61,16 +61,10 @@ import org.jruby.truffle.core.coerce.ToStrNode;
 import org.jruby.truffle.core.coerce.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
-import org.jruby.truffle.core.format.parser.UnpackCompiler;
-import org.jruby.truffle.core.format.runtime.PackResult;
-import org.jruby.truffle.core.format.runtime.exceptions.CantCompressNegativeException;
-import org.jruby.truffle.core.format.runtime.exceptions.CantConvertException;
-import org.jruby.truffle.core.format.runtime.exceptions.FormatException;
-import org.jruby.truffle.core.format.runtime.exceptions.NoImplicitConversionException;
-import org.jruby.truffle.core.format.runtime.exceptions.OutsideOfStringException;
-import org.jruby.truffle.core.format.runtime.exceptions.PackException;
-import org.jruby.truffle.core.format.runtime.exceptions.RangeException;
-import org.jruby.truffle.core.format.runtime.exceptions.TooFewArgumentsException;
+import org.jruby.truffle.core.format.FormatExceptionTranslator;
+import org.jruby.truffle.core.format.exceptions.FormatException;
+import org.jruby.truffle.core.format.unpack.ArrayResult;
+import org.jruby.truffle.core.format.unpack.UnpackCompiler;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
@@ -367,10 +361,13 @@ public abstract class StringNodes {
         public int compare(DynamicObject a, DynamicObject b) {
             // Taken from org.jruby.RubyString#op_cmp
 
-            final int ret = RopeOperations.cmp(rope(a), rope(b));
+            final Rope firstRope = rope(a);
+            final Rope secondRope = rope(b);
 
-            if ((ret == 0) && !StringSupport.areComparable(StringOperations.getCodeRangeableReadOnly(a), StringOperations.getCodeRangeableReadOnly(b))) {
-                return encoding(a).getIndex() > encoding(b).getIndex() ? 1 : -1;
+            final int ret = RopeOperations.cmp(firstRope, secondRope);
+
+            if ((ret == 0) && !RopeOperations.areComparable(firstRope, secondRope)) {
+                return firstRope.getEncoding().getIndex() > secondRope.getEncoding().getIndex() ? 1 : -1;
             }
 
             return ret;
@@ -740,7 +737,7 @@ public abstract class StringNodes {
         public Object caseCmpSingleByte(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19.
 
-            if (StringSupport.areCompatible(StringOperations.getCodeRangeableReadOnly(string), StringOperations.getCodeRangeableReadOnly(other)) == null) {
+            if (RopeOperations.areCompatible(rope(string), rope(other)) == null) {
                 return nil();
             }
 
@@ -752,7 +749,7 @@ public abstract class StringNodes {
         public Object caseCmp(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19 and
 
-            final Encoding encoding = StringSupport.areCompatible(StringOperations.getCodeRangeableReadOnly(string), StringOperations.getCodeRangeableReadOnly(other));
+            final Encoding encoding = RopeOperations.areCompatible(rope(string), rope(other));
 
             if (encoding == null) {
                 return nil();
@@ -1260,26 +1257,30 @@ public abstract class StringNodes {
     @CoreMethod(names = "getbyte", required = 1, lowerFixnumParameters = 0)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.GetByteNode ropeGetByteNode;
+
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            ropeGetByteNode = RopeNodesFactory.GetByteNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public Object getByte(DynamicObject string, int index,
                               @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
                               @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile) {
-            final byte[] bytes = rope(string).getBytes();
+            final Rope rope = rope(string);
 
             if (negativeIndexProfile.profile(index < 0)) {
-                index += bytes.length;
+                index += rope.byteLength();
             }
 
-            if (indexOutOfBoundsProfile.profile((index < 0) || (index >= bytes.length))) {
+            if (indexOutOfBoundsProfile.profile((index < 0) || (index >= rope.byteLength()))) {
                 return nil();
             }
 
-            return bytes[index] & 0xff;
+            return ropeGetByteNode.executeGetByte(rope, index);
         }
+
     }
 
     @CoreMethod(names = "hash")
@@ -1501,8 +1502,8 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#singleByteLStrip.
 
             final Rope rope = rope(string);
-            final int s = rope.getBegin();
-            final int end = s + rope.getRealSize();
+            final int s = rope.begin();
+            final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytes();
 
             int p = s;
@@ -1523,8 +1524,8 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
             final Encoding enc = RopeOperations.STR_ENC_GET(rope);
-            final int s = rope.getBegin();
-            final int end = s + rope.getRealSize();
+            final int s = rope.begin();
+            final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytes();
 
             int p = s;
@@ -1591,6 +1592,8 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class OrdNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.GetByteNode ropeGetByteNode;
+
         public OrdNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1604,7 +1607,12 @@ public abstract class StringNodes {
         // TODO (nirvdrum 03-Feb-16): Is it possible to have a single-byte optimizable string that isn't ASCII-compatible?
         @Specialization(guards = { "!isEmpty(string)", "isSingleByteOptimizable(string)" })
         public int ordAsciiOnly(DynamicObject string) {
-            return rope(string).get(0) & 0xff;
+            if (ropeGetByteNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                ropeGetByteNode = insert(RopeNodes.GetByteNode.create(getContext(), getSourceSection()));
+            }
+
+            return ropeGetByteNode.executeGetByte(rope(string), 0);
         }
 
         @Specialization(guards = { "!isEmpty(string)", "!isSingleByteOptimizable(string)" })
@@ -1612,7 +1620,7 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
 
             try {
-                return codePoint(rope.getEncoding(), rope.getBytes(), rope.begin(), rope.begin() + rope.realSize());
+                return codePoint(rope.getEncoding(), rope.getBytes(), rope.begin(), rope.begin() + rope.byteLength());
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
@@ -1759,8 +1767,8 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            final int s = rope.getBegin();
-            final int end = s + rope.getRealSize();
+            final int s = rope.begin();
+            final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytesCopy();
 
             if (singleByteOptimizableProfile.profile(rope.isSingleByteOptimizable())) {
@@ -1930,7 +1938,7 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#squeeze_bang19.
 
             final Rope rope = rope(string);
-            final ByteList buffer = rope.toByteListCopy();
+            final ByteList buffer = RopeOperations.toByteListCopy(rope);
 
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE];
             for (int i = 0; i < StringSupport.TRANS_SIZE; i++) squeeze[i] = true;
@@ -1976,13 +1984,13 @@ public abstract class StringNodes {
                                           @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
 
             final Rope rope = rope(string);
-            final ByteList buffer = rope.toByteListCopy();
+            final ByteList buffer = RopeOperations.toByteListCopy(rope);
 
             DynamicObject otherStr = otherStrings[0];
             Rope otherRope = rope(otherStr);
             Encoding enc = StringOperations.checkEncoding(getContext(), string, otherStr, this);
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getJRubyRuntime(), squeeze, null, true, enc);
+            StringSupport.TrTables tables = StringSupport.trSetupTable(RopeOperations.getByteListReadOnly(otherRope), getContext().getJRubyRuntime(), squeeze, null, true, enc);
 
             boolean singlebyte = rope.isSingleByteOptimizable() && otherRope.isSingleByteOptimizable();
 
@@ -1991,7 +1999,7 @@ public abstract class StringNodes {
                 otherRope = rope(otherStr);
                 enc = StringOperations.checkEncoding(getContext(), string, otherStr, this);
                 singlebyte = singlebyte && otherRope.isSingleByteOptimizable();
-                tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getJRubyRuntime(), squeeze, tables, false, enc);
+                tables = StringSupport.trSetupTable(RopeOperations.getByteListReadOnly(otherRope), getContext().getJRubyRuntime(), squeeze, tables, false, enc);
             }
 
             if (singleByteOptimizableProfile.profile(singlebyte)) {
@@ -2072,8 +2080,8 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
             final byte[] bytes = rope.getBytes();
-            int p = rope.getBegin();
-            final int len = rope.getRealSize();
+            int p = rope.begin();
+            final int len = rope.byteLength();
             final int end = p + len;
 
             if (bits >= 8 * 8) { // long size * bits in byte
@@ -2327,11 +2335,18 @@ public abstract class StringNodes {
 
         @Child private TaintNode taintNode;
 
+        private final BranchProfile exceptionProfile = BranchProfile.create();
+
         public UnpackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyString(format)", "ropesEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
+        @Specialization(
+                guards = {
+                        "isRubyString(format)",
+                        "ropesEqual(format, cachedFormat)"
+                },
+                limit = "getCacheLimit()")
         public DynamicObject unpackCached(
                 VirtualFrame frame,
                 DynamicObject string,
@@ -2340,17 +2355,17 @@ public abstract class StringNodes {
                 @Cached("create(compileFormat(format))") DirectCallNode callUnpackNode) {
             final Rope rope = rope(string);
 
-            final PackResult result;
+            final ArrayResult result;
 
             try {
-                // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
-                result = (PackResult) callUnpackNode.call(frame, new Object[]{rope.getBytes(), rope.byteLength()});
-            } catch (PackException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw handleException(e);
+                result = (ArrayResult) callUnpackNode.call(frame,
+                        new Object[]{ rope.getBytes(), rope.byteLength() });
+            } catch (FormatException e) {
+                exceptionProfile.enter();
+                throw FormatExceptionTranslator.translate(this, e);
             }
 
-            return finishUnpack(cachedFormat, result);
+            return finishUnpack(result);
         }
 
         @Specialization(contains = "unpackCached", guards = "isRubyString(format)")
@@ -2361,59 +2376,22 @@ public abstract class StringNodes {
                 @Cached("create()") IndirectCallNode callUnpackNode) {
             final Rope rope = rope(string);
 
-            final PackResult result;
+            final ArrayResult result;
 
             try {
-                // TODO CS 20-Dec-15 bytes() creates a copy as the nodes aren't ready for a start offset yet
-                result = (PackResult) callUnpackNode.call(frame, compileFormat(format), new Object[]{rope.getBytes(), rope.byteLength()});
-            } catch (PackException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw handleException(e);
-            }
-
-            return finishUnpack(rope, result);
-        }
-
-        private RuntimeException handleException(PackException exception) {
-            try {
-                throw exception;
+                result = (ArrayResult) callUnpackNode.call(frame, compileFormat(format),
+                        new Object[]{ rope.getBytes(), rope.byteLength() });
             } catch (FormatException e) {
-                return new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
-            } catch (TooFewArgumentsException e) {
-                return new RaiseException(coreLibrary().argumentError("too few arguments", this));
-            } catch (NoImplicitConversionException e) {
-                return new RaiseException(coreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
-            } catch (OutsideOfStringException e) {
-                return new RaiseException(coreLibrary().argumentError("X outside of string", this));
-            } catch (CantCompressNegativeException e) {
-                return new RaiseException(coreLibrary().argumentError("can't compress negative numbers", this));
-            } catch (RangeException e) {
-                return new RaiseException(coreLibrary().rangeError(e.getMessage(), this));
-            } catch (CantConvertException e) {
-                return new RaiseException(coreLibrary().typeError(e.getMessage(), this));
+                exceptionProfile.enter();
+                throw FormatExceptionTranslator.translate(this, e);
             }
+
+            return finishUnpack(result);
         }
 
-        private DynamicObject finishUnpack(Rope format, PackResult result) {
-            final DynamicObject array = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), result.getOutput(), result.getOutputLength());
-
-            if (format.isEmpty()) {
-                //StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
-            } else {
-                switch (result.getEncoding()) {
-                    case DEFAULT:
-                    case ASCII_8BIT:
-                        break;
-                    case US_ASCII:
-                        //StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
-                        break;
-                    case UTF_8:
-                        //StringOperations.forceEncoding(string, UTF8Encoding.INSTANCE);
-                        break;
-                    default:
-                        throw new UnsupportedOperationException();
-                }
-            }
+        private DynamicObject finishUnpack(ArrayResult result) {
+            final DynamicObject array = Layouts.ARRAY.createArray(
+                    coreLibrary().getArrayFactory(), result.getOutput(), result.getOutputLength());
 
             if (result.isTainted()) {
                 if (taintNode == null) {
@@ -2427,34 +2405,18 @@ public abstract class StringNodes {
             return array;
         }
 
-        @Specialization
-        public Object unpack(DynamicObject array, boolean format) {
-            return ruby("raise TypeError");
-        }
-
-        @Specialization
-        public Object unpack(DynamicObject array, int format) {
-            return ruby("raise TypeError");
-        }
-
-        @Specialization
-        public Object unpack(DynamicObject array, long format) {
-            return ruby("raise TypeError");
-        }
-
-        @Specialization(guards = "isNil(format)")
-        public Object unpackNil(DynamicObject array, Object format) {
-            return ruby("raise TypeError");
-        }
-
-        @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isNil(format)"})
+        @Specialization(guards = {
+                "!isRubyString(format)",
+                "!isBoolean(format)",
+                "!isInteger(format)",
+                "!isLong(format)",
+                "!isNil(format)"})
         public Object unpack(DynamicObject array, Object format) {
             return ruby("unpack(format.to_str)", "format", format);
         }
 
         @TruffleBoundary
         protected CallTarget compileFormat(DynamicObject format) {
-            assert RubyGuards.isRubyString(format);
             return new UnpackCompiler(getContext(), this).compile(format.toString());
         }
 
@@ -2536,7 +2498,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            final ByteList bytes = rope.toByteListCopy();
+            final ByteList bytes = RopeOperations.toByteListCopy(rope);
 
             try {
                 final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());

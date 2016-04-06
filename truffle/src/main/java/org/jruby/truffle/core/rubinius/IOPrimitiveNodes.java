@@ -60,6 +60,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.stdlib.sockets.FDSet;
 import org.jruby.truffle.stdlib.sockets.FDSetFactory;
 import org.jruby.truffle.stdlib.sockets.FDSetFactoryFactory;
@@ -75,7 +76,7 @@ public abstract class IOPrimitiveNodes {
 
     private static int STDOUT = 1;
 
-    @RubiniusPrimitive(name = "io_allocate")
+    @RubiniusPrimitive(name = "io_allocate", unsafe = UnsafeGroup.IO)
     public static abstract class IOAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode newBufferNode;
@@ -95,7 +96,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_connect_pipe", needsSelf = false)
+    @RubiniusPrimitive(name = "io_connect_pipe", needsSelf = false, unsafe = UnsafeGroup.IO)
     public static abstract class IOConnectPipeNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         private final int RDONLY;
@@ -150,7 +151,7 @@ public abstract class IOPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 })
+    @RubiniusPrimitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 }, unsafe = UnsafeGroup.IO)
     public static abstract class IOOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -165,7 +166,7 @@ public abstract class IOPrimitiveNodes {
     }
 
 
-    @RubiniusPrimitive(name = "io_truncate", needsSelf = false)
+    @RubiniusPrimitive(name = "io_truncate", needsSelf = false, unsafe = UnsafeGroup.IO)
     public static abstract class IOTruncatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOTruncatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -184,7 +185,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_ftruncate")
+    @RubiniusPrimitive(name = "io_ftruncate", unsafe = UnsafeGroup.IO)
     public static abstract class IOFTruncatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOFTruncatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -199,7 +200,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_fnmatch", needsSelf = false)
+    @RubiniusPrimitive(name = "io_fnmatch", needsSelf = false, unsafe = UnsafeGroup.IO)
     public static abstract class IOFNMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOFNMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -213,17 +214,17 @@ public abstract class IOPrimitiveNodes {
             final Rope pathRope = rope(path);
 
             return Dir.fnmatch(patternRope.getBytes(),
-                    patternRope.getBegin(),
-                    patternRope.getBegin() + patternRope.getRealSize(),
+                    patternRope.begin(),
+                    patternRope.begin() + patternRope.byteLength(),
                     pathRope.getBytes(),
-                    pathRope.getBegin(),
-                    pathRope.getBegin() + pathRope.getRealSize(),
+                    pathRope.begin(),
+                    pathRope.begin() + pathRope.byteLength(),
                     flags) != Dir.FNM_NOMATCH;
         }
 
     }
 
-    @RubiniusPrimitive(name = "io_ensure_open")
+    @RubiniusPrimitive(name = "io_ensure_open", unsafe = UnsafeGroup.IO)
     public static abstract class IOEnsureOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOEnsureOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -246,7 +247,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_read_if_available", lowerFixnumParameters = 0)
+    @RubiniusPrimitive(name = "io_read_if_available", lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
     public static abstract class IOReadIfAvailableNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();
@@ -298,7 +299,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_reopen")
+    @RubiniusPrimitive(name = "io_reopen", unsafe = UnsafeGroup.IO)
     public static abstract class IOReopenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
@@ -338,7 +339,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_reopen_path", lowerFixnumParameters = 1)
+    @RubiniusPrimitive(name = "io_reopen_path", lowerFixnumParameters = 1, unsafe = UnsafeGroup.IO)
     public static abstract class IOReopenPathPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
@@ -397,7 +398,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_write")
+    @RubiniusPrimitive(name = "io_write", unsafe = UnsafeGroup.IO)
     public static abstract class IOWritePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOWritePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -441,7 +442,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_close")
+    @RubiniusPrimitive(name = "io_close", unsafe = UnsafeGroup.IO)
     public static abstract class IOClosePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode ensureOpenNode;
@@ -480,7 +481,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_seek", lowerFixnumParameters = {0, 1})
+    @RubiniusPrimitive(name = "io_seek", lowerFixnumParameters = {0, 1}, unsafe = UnsafeGroup.IO)
     public static abstract class IOSeekPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOSeekPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -495,7 +496,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_accept")
+    @RubiniusPrimitive(name = "io_accept", unsafe = UnsafeGroup.IO)
     public abstract static class AcceptNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public AcceptNode(RubyContext context, SourceSection sourceSection) {
@@ -529,7 +530,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_sysread")
+    @RubiniusPrimitive(name = "io_sysread", unsafe = UnsafeGroup.IO)
     public static abstract class IOSysReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOSysReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -569,7 +570,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3)
+    @RubiniusPrimitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3, unsafe = UnsafeGroup.IO)
     public static abstract class IOSelectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();

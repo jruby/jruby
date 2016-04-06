@@ -24,7 +24,6 @@ import java.util.Set;
  * A Ruby method: either a method in a module,
  * a literal module/class body
  * or some meta-information for eval'd code.
- *
  * Blocks capture the method in which they are defined.
  */
 public class InternalMethod implements ObjectGraphNode {
@@ -42,14 +41,15 @@ public class InternalMethod implements ObjectGraphNode {
     private final DynamicObject capturedDefaultDefinee;
 
     public static InternalMethod fromProc(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
-            Visibility visibility, DynamicObject proc, CallTarget callTarget) {
-        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, false, proc, callTarget, null, null);
+                                          Visibility visibility, DynamicObject proc, CallTarget callTarget) {
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, false, proc, callTarget, Layouts.PROC.getBlock(proc), null);
     }
 
     public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
-            Visibility visibility, CallTarget callTarget) {
+                          Visibility visibility, CallTarget callTarget) {
         this(sharedMethodInfo, name, declaringModule, visibility, false, null, callTarget, null, null);
     }
+
     public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
                           Visibility visibility, boolean undefined, DynamicObject proc, CallTarget callTarget) {
         this(sharedMethodInfo, name, declaringModule, visibility, undefined, proc, callTarget, null, null);
@@ -89,7 +89,7 @@ public class InternalMethod implements ObjectGraphNode {
         return undefined;
     }
 
-    public CallTarget getCallTarget(){
+    public CallTarget getCallTarget() {
         return callTarget;
     }
 
@@ -158,7 +158,7 @@ public class InternalMethod implements ObjectGraphNode {
     public Set<DynamicObject> getAdjacentObjects() {
         final Set<DynamicObject> adjacent = new HashSet<>();
 
-        if (declaringModule  != null) {
+        if (declaringModule != null) {
             adjacent.add(declaringModule);
         }
 
