@@ -1485,6 +1485,10 @@ CLASSDEF
     JRuby.runtime.defineReadonlyVariable('$an_answer', proxied_java_object, org.jruby.internal.runtime.GlobalVariable::Scope::GLOBAL)
     assert $an_answer
     assert_equal 42.to_s, $an_answer.get
+
+    proxied_java_object = Java::int[1].new; proxied_java_object[0] = 42
+    JRuby.runtime.defineReadonlyVariable('$an_answer', proxied_java_object, org.jruby.internal.runtime.GlobalVariable::Scope::GLOBAL)
+    assert_equal 42, $an_answer[0]
   end
 
   def test_callable_no_match_raised_errors
