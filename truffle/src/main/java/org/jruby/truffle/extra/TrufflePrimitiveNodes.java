@@ -992,8 +992,22 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public boolean ioSafe() {
+        public boolean memorySafe() {
             return getContext().getOptions().PLATFORM_SAFE_MEMORY;
+        }
+
+    }
+
+    @CoreMethod(names = "signals_safe?", onSingleton = true)
+    public abstract static class AreSignalsSafeNode extends CoreMethodNode {
+
+        public AreSignalsSafeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean signalsSafe() {
+            return getContext().getOptions().PLATFORM_SAFE_SIGNALS;
         }
 
     }
