@@ -20,9 +20,15 @@ class IO
 
 end
 
-STDIN = File.new(0)
-STDOUT = File.new(1)
-STDERR = File.new(2)
+if Truffle::Primitive.io_safe?
+  STDIN = File.new(0)
+  STDOUT = File.new(1)
+  STDERR = File.new(2)
+else
+  STDIN = nil
+  STDOUT = nil
+  STDERR = nil
+end
 
 $stdin = STDIN
 $stdout = STDOUT
