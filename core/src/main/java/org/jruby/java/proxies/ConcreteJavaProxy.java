@@ -222,12 +222,13 @@ public class ConcreteJavaProxy extends JavaProxy {
                 return object;
             }
         }
-        else if (type.isAssignableFrom(clazz)) {
+        else if ( type.isAssignableFrom(clazz) ) {
             if ( Java.OBJECT_PROXY_CACHE || metaClass.getCacheProxy() ) {
                 getRuntime().getJavaSupport().getObjectProxyCache().put(object, this);
             }
             return object;
         }
+        else if ( type.isAssignableFrom(getClass()) ) return this; // e.g. IRubyObject.class
 
         throw getRuntime().newTypeError("failed to coerce " + clazz.getName() + " to " + type.getName());
     }

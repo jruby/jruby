@@ -1479,6 +1479,14 @@ CLASSDEF
     end
   end
 
+  def test_java_proxy_coerce_into_ruby_object; require 'jruby' # @see GH-1925
+    proxied_java_object = java.util.concurrent.atomic.AtomicReference.new '42'
+    # defineReadonlyVariable expects an IRubyObject
+    JRuby.runtime.defineReadonlyVariable('$an_answer', proxied_java_object, org.jruby.internal.runtime.GlobalVariable::Scope::GLOBAL)
+    assert $an_answer
+    assert_equal 42.to_s, $an_answer.get
+  end
+
   def test_callable_no_match_raised_errors
     begin
       java.lang.StringBuilder.new([])
