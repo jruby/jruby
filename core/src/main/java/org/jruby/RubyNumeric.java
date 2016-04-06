@@ -193,7 +193,7 @@ public class RubyNumeric extends RubyObject {
      */
     public static byte num2chr(IRubyObject arg) {
         if (arg instanceof RubyString) {
-            String value = ((RubyString) arg).toString();
+            String value = arg.toString();
 
             if (value != null && value.length() > 0) return (byte) value.charAt(0);
         }
@@ -425,7 +425,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
 
-    protected IRubyObject[] getCoerced(ThreadContext context, IRubyObject other, boolean error) {
+    protected final IRubyObject[] getCoerced(ThreadContext context, IRubyObject other, boolean error) {
         final Ruby runtime = context.runtime;
         final IRubyObject $ex = context.getErrorInfo();
         final IRubyObject result;
@@ -442,7 +442,7 @@ public class RubyNumeric extends RubyObject {
             return null;
         }
 
-        return coerceResult(runtime, result, true).toJavaArray();
+        return coerceResult(runtime, result, true).toJavaArrayMaybeUnsafe();
     }
 
     protected IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other, boolean err) {
@@ -524,7 +524,7 @@ public class RubyNumeric extends RubyObject {
      */
     protected final IRubyObject coerceRescue(ThreadContext context, IRubyObject other) {
         coerceFailed(context, other);
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     /** coerce_failed
