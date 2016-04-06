@@ -411,7 +411,7 @@ public class ArrayJavaProxy extends JavaProxy {
         throw context.runtime.newTypeError("only Fixnum ranges supported");
     }
 
-    public static class ArrayNewMethod extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne {
+    private static final class ArrayNewMethod extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne {
 
         private final DynamicMethod newMethod;
 
