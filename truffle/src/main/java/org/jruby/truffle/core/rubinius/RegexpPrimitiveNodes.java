@@ -37,7 +37,7 @@ import org.jruby.util.RegexpSupport;
  */
 public abstract class RegexpPrimitiveNodes {
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "regexp_fixed_encoding_p")
+    @RubiniusPrimitive(name = "regexp_fixed_encoding_p")
     public static abstract class RegexpFixedEncodingPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RegexpFixedEncodingPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -51,7 +51,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "regexp_initialize", lowerFixnumParameters = 1)
+    @RubiniusPrimitive(name = "regexp_initialize", lowerFixnumParameters = 1)
     @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpInitializePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -79,7 +79,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "regexp_options")
+    @RubiniusPrimitive(name = "regexp_options")
     @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpOptionsPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -100,7 +100,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "regexp_propagate_last_match")
+    @RubiniusPrimitive(name = "regexp_propagate_last_match")
     public static abstract class RegexpPropagateLastMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RegexpPropagateLastMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -115,7 +115,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "regexp_search_region", lowerFixnumParameters = {1, 2})
+    @RubiniusPrimitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
     @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpSearchRegionPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -159,7 +159,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "regexp_set_last_match")
+    @RubiniusPrimitive(name = "regexp_set_last_match")
     public static abstract class RegexpSetLastMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RegexpSetLastMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -180,7 +180,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "regexp_set_block_last_match")
+    @RubiniusPrimitive(name = "regexp_set_block_last_match")
     public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public RegexpSetBlockLastMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
