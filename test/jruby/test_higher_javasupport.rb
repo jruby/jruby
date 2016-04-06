@@ -1463,7 +1463,7 @@ CLASSDEF
 
   # reproducing https://github.com/jruby/jruby/issues/1621
   def test_concurrent_proxy_class_initialization_dead_lock
-    timeout = 0.5; threads_to_kill = []
+    timeout = (ENV['TEST_CONCURRENT_TIMEOUT'] || 0.5).to_f; threads_to_kill = []
     begin
       threads = %w{ A B C D E F G H }.map do |sym|
         Thread.new { Java::Default.const_get "Bug1621#{sym}" }
