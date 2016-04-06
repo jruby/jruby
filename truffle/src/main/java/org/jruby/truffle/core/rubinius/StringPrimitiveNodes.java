@@ -941,7 +941,7 @@ public abstract class StringPrimitiveNodes {
             return index;
         }
 
-        @Specialization(guards = { "!isSingleByteOptimizable(string)", "isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
+        @Specialization(guards = { "!isSingleByteOptimizable(string)", "isFixedWidthEncoding(string)" })
         public int stringByteCharacterIndexFixedWidth(DynamicObject string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
             return index / encoding(string).minLength();
