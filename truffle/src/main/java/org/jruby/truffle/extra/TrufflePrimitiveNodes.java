@@ -970,4 +970,18 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "io_safe?", onSingleton = true)
+    public abstract static class IsIOSafeNode extends CoreMethodNode {
+
+        public IsIOSafeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean ioSafe() {
+            return getContext().getOptions().PLATFORM_SAFE_IO;
+        }
+
+    }
+
 }

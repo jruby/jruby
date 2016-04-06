@@ -34,19 +34,21 @@ class << STDIN
   end
 end
 
-if STDOUT.tty?
-  STDOUT.sync = true
-else
-  Truffle::Primitive.at_exit true do
-    STDOUT.flush
+if Truffle::Primitive.io_safe?
+  if STDOUT.tty?
+    STDOUT.sync = true
+  else
+    Truffle::Primitive.at_exit true do
+      STDOUT.flush
+    end
   end
-end
 
-if STDERR.tty?
-  STDERR.sync = true
-else
-  Truffle::Primitive.at_exit true do
-    STDERR.flush
+  if STDERR.tty?
+    STDERR.sync = true
+  else
+    Truffle::Primitive.at_exit true do
+      STDERR.flush
+    end
   end
 end
 
@@ -263,7 +265,7 @@ module Truffle::Primitive
     else
       kwargs = {}
     end
-    
+
     binding.local_variable_set(kwrest_name, kwargs) if kwrest_name
     array
   end
