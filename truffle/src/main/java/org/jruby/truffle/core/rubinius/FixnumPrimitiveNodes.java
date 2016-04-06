@@ -25,7 +25,7 @@ import java.math.BigInteger;
  */
 public abstract class FixnumPrimitiveNodes {
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "fixnum_coerce")
+    @RubiniusPrimitive(name = "fixnum_coerce")
     public static abstract class FixnumCoercePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public FixnumCoercePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -49,7 +49,7 @@ public abstract class FixnumPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "fixnum_pow")
+    @RubiniusPrimitive(name = "fixnum_pow")
     public abstract static class FixnumPowPrimitiveNode extends BignumNodes.BignumCoreMethodNode {
 
         private final ConditionProfile negativeProfile = ConditionProfile.createBinaryProfile();

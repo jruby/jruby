@@ -43,7 +43,7 @@ import static org.jruby.truffle.core.string.StringOperations.rope;
  */
 public abstract class EncodingConverterPrimitiveNodes {
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "encoding_converter_allocate")
+    @RubiniusPrimitive(name = "encoding_converter_allocate")
     public static abstract class EncodingConverterAllocateNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public EncodingConverterAllocateNode(RubyContext context, SourceSection sourceSection) {
@@ -57,7 +57,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "encoding_converter_primitive_convert")
+    @RubiniusPrimitive(name = "encoding_converter_primitive_convert")
     public static abstract class PrimitiveConvertNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
@@ -173,7 +173,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "encoding_converter_putback")
+    @RubiniusPrimitive(name = "encoding_converter_putback")
     public static abstract class EncodingConverterPutbackNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public EncodingConverterPutbackNode(RubyContext context, SourceSection sourceSection) {
@@ -218,7 +218,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "encoding_converter_last_error")
+    @RubiniusPrimitive(name = "encoding_converter_last_error")
     public static abstract class EncodingConverterLastErrorNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode newLookupTableNode;
@@ -273,7 +273,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "encoding_converter_primitive_errinfo")
+    @RubiniusPrimitive(name = "encoding_converter_primitive_errinfo")
     public static abstract class EncodingConverterErrinfoNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public EncodingConverterErrinfoNode(RubyContext context, SourceSection sourceSection) {

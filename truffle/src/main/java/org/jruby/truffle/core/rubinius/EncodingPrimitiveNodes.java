@@ -21,7 +21,7 @@ import org.jruby.truffle.core.encoding.EncodingNodes;
  */
 public abstract class EncodingPrimitiveNodes {
 
-    @RubiniusPrimitive(unsafeNeedsAudit = true, name = "encoding_get_object_encoding", needsSelf = false)
+    @RubiniusPrimitive(name = "encoding_get_object_encoding", needsSelf = false)
     public static abstract class EncodingGetObjectEncodingNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public EncodingGetObjectEncodingNode(RubyContext context, SourceSection sourceSection) {
