@@ -35,7 +35,7 @@ public abstract class ProcessNodes {
     public static final int CLOCK_THREAD_CPUTIME = 3; // Linux only
     public static final int CLOCK_MONOTONIC_RAW = 4; // Linux only
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "clock_gettime", onSingleton = true, required = 1, optional = 1)
+    @CoreMethod(names = "clock_gettime", onSingleton = true, required = 1, optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "clock_id"),
             @NodeChild(type = RubyNode.class, value = "unit")
