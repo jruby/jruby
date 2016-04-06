@@ -39,7 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @CoreClass(name = "Queue")
 public abstract class QueueNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
@@ -56,7 +56,7 @@ public abstract class QueueNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "push", "<<", "enq" }, required = 1)
+    @CoreMethod(names = { "push", "<<", "enq" }, required = 1)
     public abstract static class PushNode extends CoreMethodArrayArgumentsNode {
 
         public PushNode(RubyContext context, SourceSection sourceSection) {
@@ -79,7 +79,7 @@ public abstract class QueueNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "pop", "shift", "deq" }, optional = 1)
+    @CoreMethod(names = { "pop", "shift", "deq" }, optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "queue"),
             @NodeChild(type = RubyNode.class, value = "nonBlocking")
@@ -133,7 +133,7 @@ public abstract class QueueNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "receive_timeout", required = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "receive_timeout", required = 1, visibility = Visibility.PRIVATE)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "queue"),
             @NodeChild(type = RubyNode.class, value = "duration")
@@ -183,7 +183,7 @@ public abstract class QueueNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "empty?")
+    @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
         public EmptyNode(RubyContext context, SourceSection sourceSection) {
@@ -199,7 +199,7 @@ public abstract class QueueNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = { "size", "length" })
+    @CoreMethod(names = { "size", "length" })
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -215,7 +215,7 @@ public abstract class QueueNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "clear")
+    @CoreMethod(names = "clear")
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {
@@ -232,7 +232,7 @@ public abstract class QueueNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "marshal_dump")
+    @CoreMethod(names = "marshal_dump")
     public abstract static class MarshalDumpNode extends CoreMethodArrayArgumentsNode {
 
         public MarshalDumpNode(RubyContext context, SourceSection sourceSection) {
@@ -247,7 +247,7 @@ public abstract class QueueNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "num_waiting")
+    @CoreMethod(names = "num_waiting")
     public abstract static class NumWaitingNode extends CoreMethodArrayArgumentsNode {
 
         public NumWaitingNode(RubyContext context, SourceSection sourceSection) {
