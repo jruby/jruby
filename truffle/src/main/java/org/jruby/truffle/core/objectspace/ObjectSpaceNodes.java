@@ -36,7 +36,7 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "_id2ref", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "_id2ref", isModuleFunction = true, required = 1)
     @ImportStatic(ObjectIDOperations.class)
     public abstract static class ID2RefNode extends CoreMethodArrayArgumentsNode {
 
@@ -103,7 +103,7 @@ public abstract class ObjectSpaceNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "each_object", isModuleFunction = true, needsBlock = true, optional = 1, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each_object", isModuleFunction = true, needsBlock = true, optional = 1, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachObjectNode extends YieldingCoreMethodNode {
 
         public EachObjectNode(RubyContext context, SourceSection sourceSection) {
@@ -149,7 +149,7 @@ public abstract class ObjectSpaceNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "define_finalizer", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "define_finalizer", isModuleFunction = true, required = 2)
     public abstract static class DefineFinalizerNode extends CoreMethodArrayArgumentsNode {
 
         // MRI would do a dynamic call to #respond_to? but it seems better to warn the user earlier.
@@ -175,7 +175,7 @@ public abstract class ObjectSpaceNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "undefine_finalizer", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "undefine_finalizer", isModuleFunction = true, required = 1)
     public abstract static class UndefineFinalizerNode extends CoreMethodArrayArgumentsNode {
 
         public UndefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
