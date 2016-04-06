@@ -43,15 +43,15 @@ module ExecJS
       private
 
       def unbox(value)
-        if Truffle::Interop.boxed_primitive?(value)
-          Truffle::Interop.unbox_value(value)
+        if Truffle::Interop.boxed?(value)
+          value
         else
           JSON.parse(Truffle::Interop.unbox(STRINGIFY.call(STRINGIFY, value)))
         end
       end
 
       def box(value)
-        if Truffle::Interop.boxed_primitive?(value) || value.is_a?(String)
+        if Truffle::Interop.boxed?(value) || value.is_a?(String)
           value
         else
           PARSE.call(PARSE, JSON.generate(value))
