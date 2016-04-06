@@ -26,7 +26,7 @@ unsafe -Xtruffle.platform.safe_puts=false -e "Truffle::Primitive.safe_puts 'hell
 
 # Check default unsafe operations
 
-#unsafe -e "puts 'hello, world'"
+unsafe -e "puts 'hello, world'"
 unsafe -e '`echo foo`'
 unsafe -e 'exit!'
 
