@@ -31,6 +31,7 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.nio.charset.StandardCharsets;
 
@@ -39,7 +40,7 @@ import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "access", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "access", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class AccessNode extends CoreMethodArrayArgumentsNode {
 
         public AccessNode(RubyContext context, SourceSection sourceSection) {
@@ -55,7 +56,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "chmod", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "chmod", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class ChmodNode extends CoreMethodArrayArgumentsNode {
 
         public ChmodNode(RubyContext context, SourceSection sourceSection) {
@@ -70,7 +71,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "chown", isModuleFunction = true, required = 3, lowerFixnumParameters = {1, 2})
+    @CoreMethod(names = "chown", isModuleFunction = true, required = 3, lowerFixnumParameters = {1, 2}, unsafe = UnsafeGroup.IO)
     public abstract static class ChownNode extends CoreMethodArrayArgumentsNode {
 
         public ChownNode(RubyContext context, SourceSection sourceSection) {
@@ -85,7 +86,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "dup", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "dup", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
@@ -115,7 +116,7 @@ public abstract class PosixNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "fchmod", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "fchmod", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class FchmodNode extends CoreMethodArrayArgumentsNode {
 
         public FchmodNode(RubyContext context, SourceSection sourceSection) {
@@ -130,7 +131,7 @@ public abstract class PosixNodes {
     }
 
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "fsync", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "fsync", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class FsyncNode extends CoreMethodArrayArgumentsNode {
 
         public FsyncNode(RubyContext context, SourceSection sourceSection) {
@@ -145,7 +146,7 @@ public abstract class PosixNodes {
     }
 
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "fchown", isModuleFunction = true, required = 3)
+    @CoreMethod(names = "fchown", isModuleFunction = true, required = 3, unsafe = UnsafeGroup.IO)
     public abstract static class FchownNode extends CoreMethodArrayArgumentsNode {
 
         public FchownNode(RubyContext context, SourceSection sourceSection) {
@@ -322,7 +323,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "readlink", isModuleFunction = true, required = 3)
+    @CoreMethod(names = "readlink", isModuleFunction = true, required = 3, unsafe = UnsafeGroup.IO)
     public abstract static class ReadlinkNode extends CoreMethodArrayArgumentsNode {
 
         public ReadlinkNode(RubyContext context, SourceSection sourceSection) {
@@ -358,7 +359,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "link", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "link", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class LinkNode extends CoreMethodArrayArgumentsNode {
 
         public LinkNode(RubyContext context, SourceSection sourceSection) {
@@ -373,7 +374,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "unlink", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "unlink", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class UnlinkNode extends CoreMethodArrayArgumentsNode {
 
         public UnlinkNode(RubyContext context, SourceSection sourceSection) {
@@ -438,7 +439,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "mkdir", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "mkdir", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class MkdirNode extends CoreMethodArrayArgumentsNode {
 
         public MkdirNode(RubyContext context, SourceSection sourceSection) {
@@ -453,7 +454,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "chdir", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "chdir", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class ChdirNode extends CoreMethodArrayArgumentsNode {
 
         public ChdirNode(RubyContext context, SourceSection sourceSection) {
@@ -626,7 +627,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "flock", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
+    @CoreMethod(names = "flock", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1}, unsafe = UnsafeGroup.IO)
     public abstract static class FlockNode extends CoreMethodArrayArgumentsNode {
 
         public FlockNode(RubyContext context, SourceSection sourceSection) {
@@ -640,7 +641,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "major", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "major", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
     public abstract static class MajorNode extends CoreMethodArrayArgumentsNode {
 
         public MajorNode(RubyContext context, SourceSection sourceSection) {
@@ -654,7 +655,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "minor", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "minor", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
     public abstract static class MinorNode extends CoreMethodArrayArgumentsNode {
 
         public MinorNode(RubyContext context, SourceSection sourceSection) {
@@ -668,7 +669,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "rename", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "rename", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class RenameNode extends CoreMethodArrayArgumentsNode {
 
         public RenameNode(RubyContext context, SourceSection sourceSection) {
@@ -683,7 +684,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "rmdir", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "rmdir", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class RmdirNode extends CoreMethodArrayArgumentsNode {
 
         public RmdirNode(RubyContext context, SourceSection sourceSection) {
@@ -698,7 +699,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "getcwd", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "getcwd", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class GetcwdNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
@@ -749,7 +750,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "fcntl", isModuleFunction = true, required = 3)
+    @CoreMethod(names = "fcntl", isModuleFunction = true, required = 3, unsafe = UnsafeGroup.IO)
     public abstract static class FcntlNode extends CoreMethodArrayArgumentsNode {
 
         public FcntlNode(RubyContext context, SourceSection sourceSection) {
@@ -798,7 +799,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "isatty", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "isatty", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class IsATTYNode extends CoreMethodArrayArgumentsNode {
 
         public IsATTYNode(RubyContext context, SourceSection sourceSection) {
@@ -826,7 +827,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "symlink", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "symlink", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class SymlinkNode extends CoreMethodArrayArgumentsNode {
 
         public SymlinkNode(RubyContext context, SourceSection sourceSection) {
@@ -841,7 +842,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "_getaddrinfo", isModuleFunction = true, required = 4)
+    @CoreMethod(names = "_getaddrinfo", isModuleFunction = true, required = 4, unsafe = UnsafeGroup.IO)
     public abstract static class GetAddrInfoNode extends CoreMethodArrayArgumentsNode {
 
         public GetAddrInfoNode(RubyContext context, SourceSection sourceSection) {
@@ -876,7 +877,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "_connect", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 2})
+    @CoreMethod(names = "_connect", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 2}, unsafe = UnsafeGroup.IO)
     public abstract static class ConnectNode extends CoreMethodArrayArgumentsNode {
 
         public ConnectNode(RubyContext context, SourceSection sourceSection) {
@@ -891,7 +892,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "freeaddrinfo", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "freeaddrinfo", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class FreeAddrInfoNode extends CoreMethodArrayArgumentsNode {
 
         public FreeAddrInfoNode(RubyContext context, SourceSection sourceSection) {
@@ -907,7 +908,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "_getnameinfo", isModuleFunction = true, required = 7)
+    @CoreMethod(names = "_getnameinfo", isModuleFunction = true, required = 7, unsafe = UnsafeGroup.IO)
     public abstract static class GetNameInfoNode extends CoreMethodArrayArgumentsNode {
 
         public GetNameInfoNode(RubyContext context, SourceSection sourceSection) {
@@ -964,7 +965,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "shutdown", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "shutdown", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class ShutdownNode extends CoreMethodArrayArgumentsNode {
 
         public ShutdownNode(RubyContext context, SourceSection sourceSection) {
@@ -979,7 +980,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "socket", isModuleFunction = true, required = 3)
+    @CoreMethod(names = "socket", isModuleFunction = true, required = 3, unsafe = UnsafeGroup.IO)
     public abstract static class SocketNode extends CoreMethodArrayArgumentsNode {
 
         public SocketNode(RubyContext context, SourceSection sourceSection) {
@@ -994,7 +995,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "setsockopt", isModuleFunction = true, required = 5, lowerFixnumParameters = {0, 1, 2, 4})
+    @CoreMethod(names = "setsockopt", isModuleFunction = true, required = 5, lowerFixnumParameters = {0, 1, 2, 4}, unsafe = UnsafeGroup.IO)
     public abstract static class SetSockOptNode extends CoreMethodArrayArgumentsNode {
 
         public SetSockOptNode(RubyContext context, SourceSection sourceSection) {
@@ -1009,7 +1010,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "_bind", isModuleFunction = true, required = 3)
+    @CoreMethod(names = "_bind", isModuleFunction = true, required = 3, unsafe = UnsafeGroup.IO)
     public abstract static class BindNode extends CoreMethodArrayArgumentsNode {
 
         public BindNode(RubyContext context, SourceSection sourceSection) {
@@ -1024,7 +1025,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "listen", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "listen", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class ListenNode extends CoreMethodArrayArgumentsNode {
 
         public ListenNode(RubyContext context, SourceSection sourceSection) {
@@ -1039,7 +1040,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "gethostname", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "gethostname", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class GetHostNameNode extends CoreMethodArrayArgumentsNode {
 
         public GetHostNameNode(RubyContext context, SourceSection sourceSection) {
@@ -1054,7 +1055,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "_getpeername", isModuleFunction = true, required = 3)
+    @CoreMethod(names = "_getpeername", isModuleFunction = true, required = 3, unsafe = UnsafeGroup.IO)
     public abstract static class GetPeerNameNode extends CoreMethodArrayArgumentsNode {
 
         public GetPeerNameNode(RubyContext context, SourceSection sourceSection) {
@@ -1069,7 +1070,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "_getsockname", isModuleFunction = true, required = 3)
+    @CoreMethod(names = "_getsockname", isModuleFunction = true, required = 3, unsafe = UnsafeGroup.IO)
     public abstract static class GetSockNameNode extends CoreMethodArrayArgumentsNode {
 
         public GetSockNameNode(RubyContext context, SourceSection sourceSection) {
@@ -1084,7 +1085,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "_getsockopt", isModuleFunction = true, required = 5)
+    @CoreMethod(names = "_getsockopt", isModuleFunction = true, required = 5, unsafe = UnsafeGroup.IO)
     public abstract static class GetSockOptNode extends CoreMethodArrayArgumentsNode {
 
         public GetSockOptNode(RubyContext context, SourceSection sourceSection) {
@@ -1107,7 +1108,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "close", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "close", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class CloseNode extends CoreMethodArrayArgumentsNode {
 
         public CloseNode(RubyContext context, SourceSection sourceSection) {
