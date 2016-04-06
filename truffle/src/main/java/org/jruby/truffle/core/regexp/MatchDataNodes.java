@@ -205,7 +205,7 @@ public abstract class MatchDataNodes {
         public Object getIndexSymbol(DynamicObject matchData, DynamicObject index, NotProvided length) {
             try {
                 final Rope value = Layouts.SYMBOL.getRope(index);
-                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
+                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.getBegin(), value.getBegin() + value.byteLength(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             } catch (final ValueException e) {
@@ -221,7 +221,7 @@ public abstract class MatchDataNodes {
         public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length) {
             try {
                 final Rope value = StringOperations.rope(index);
-                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
+                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.getBegin(), value.getBegin() + value.byteLength(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             }

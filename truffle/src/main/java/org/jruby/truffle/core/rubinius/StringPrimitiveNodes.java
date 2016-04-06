@@ -220,7 +220,7 @@ public abstract class StringPrimitiveNodes {
             byte[]bytes = rope.getBytes();
             int p = rope.getBegin();
             int ptr = p;
-            int len = rope.getRealSize();
+            int len = rope.byteLength();
             int end = p + len;
             Encoding enc = rope.getEncoding();
             boolean skip = true;
@@ -677,7 +677,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Encoding enc = rope.getEncoding();
-            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), rope.begin(), rope.begin() + rope.realSize());
+            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), rope.begin(), rope.begin() + rope.byteLength());
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
@@ -850,7 +850,7 @@ public abstract class StringPrimitiveNodes {
             if (sourceLen - offset < otherLen) return -1;
             byte[]bytes = source.getBytes();
             int p = source.getBegin();
-            int end = p + source.getRealSize();
+            int end = p + source.byteLength();
             if (offset != 0) {
                 offset = source.isSingleByteOptimizable() ? offset : StringSupport.offset(enc, bytes, p, end, offset);
                 p += offset;
@@ -875,10 +875,10 @@ public abstract class StringPrimitiveNodes {
 
             final byte[] source = sourceRope.getBytes();
             final int sourceOffset = sourceRope.begin();
-            final int sourceCount = sourceRope.realSize();
+            final int sourceCount = sourceRope.byteLength();
             final byte[] target = otherRope.getBytes();
             final int targetOffset = otherRope.begin();
-            final int targetCount = otherRope.realSize();
+            final int targetCount = otherRope.byteLength();
 
             if (fromIndex >= sourceCount) return (targetCount == 0 ? sourceCount : -1);
             if (fromIndex < 0) fromIndex = 0;
@@ -1108,7 +1108,7 @@ public abstract class StringPrimitiveNodes {
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
             int p = rope.getBegin();
-            final int e = p + rope.getRealSize();
+            final int e = p + rope.byteLength();
 
             int i, k = index;
 
@@ -1157,9 +1157,9 @@ public abstract class StringPrimitiveNodes {
 
             final Encoding encoding = StringOperations.checkEncoding(getContext(), string, pattern, this);
             int p = stringRope.getBegin();
-            final int e = p + stringRope.getRealSize();
+            final int e = p + stringRope.byteLength();
             int pp = patternRope.getBegin();
-            final int pe = pp + patternRope.getRealSize();
+            final int pe = pp + patternRope.byteLength();
             int s;
             int ss;
 
@@ -1210,7 +1210,7 @@ public abstract class StringPrimitiveNodes {
 
             final Rope rope = rope(string);
             final int p = rope.getBegin();
-            final int end = p + rope.getRealSize();
+            final int end = p + rope.byteLength();
 
             final int b = rope.getEncoding().prevCharHead(rope.getBytes(), p, p + index, end);
 

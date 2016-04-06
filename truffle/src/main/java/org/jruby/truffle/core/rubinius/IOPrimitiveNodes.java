@@ -214,10 +214,10 @@ public abstract class IOPrimitiveNodes {
 
             return Dir.fnmatch(patternRope.getBytes(),
                     patternRope.getBegin(),
-                    patternRope.getBegin() + patternRope.getRealSize(),
+                    patternRope.getBegin() + patternRope.byteLength(),
                     pathRope.getBytes(),
                     pathRope.getBegin(),
-                    pathRope.getBegin() + pathRope.getRealSize(),
+                    pathRope.getBegin() + pathRope.byteLength(),
                     flags) != Dir.FNM_NOMATCH;
         }
 

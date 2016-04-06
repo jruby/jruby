@@ -411,8 +411,8 @@ public class RopeOperations {
         // Taken from org.jruby.util.ByteList#cmp.
 
         if (string == other) return 0;
-        final int size = string.realSize();
-        final int len =  Math.min(size, other.realSize());
+        final int size = string.byteLength();
+        final int len =  Math.min(size, other.byteLength());
         int offset = -1;
 
         final byte[] bytes = string.getBytes();
@@ -428,7 +428,7 @@ public class RopeOperations {
         if (offset < len) {
             return (bytes[string.begin() + offset]&0xFF) > (otherBytes[other.begin() + offset]&0xFF) ? 1 : -1;
         }
-        return size == other.realSize() ? 0 : size == len ? -1 : 1;
+        return size == other.byteLength() ? 0 : size == len ? -1 : 1;
     }
 
     @TruffleBoundary

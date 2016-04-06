@@ -1503,7 +1503,7 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
             final int s = rope.getBegin();
-            final int end = s + rope.getRealSize();
+            final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytes();
 
             int p = s;
@@ -1525,7 +1525,7 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
             final Encoding enc = RopeOperations.STR_ENC_GET(rope);
             final int s = rope.getBegin();
-            final int end = s + rope.getRealSize();
+            final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytes();
 
             int p = s;
@@ -1620,7 +1620,7 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
 
             try {
-                return codePoint(rope.getEncoding(), rope.getBytes(), rope.begin(), rope.begin() + rope.realSize());
+                return codePoint(rope.getEncoding(), rope.getBytes(), rope.begin(), rope.begin() + rope.byteLength());
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
@@ -1768,7 +1768,7 @@ public abstract class StringNodes {
             }
 
             final int s = rope.getBegin();
-            final int end = s + rope.getRealSize();
+            final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytesCopy();
 
             if (singleByteOptimizableProfile.profile(rope.isSingleByteOptimizable())) {
@@ -2081,7 +2081,7 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
             final byte[] bytes = rope.getBytes();
             int p = rope.getBegin();
-            final int len = rope.getRealSize();
+            final int len = rope.byteLength();
             final int end = p + len;
 
             if (bits >= 8 * 8) { // long size * bits in byte

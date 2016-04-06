@@ -10,7 +10,6 @@
 package org.jruby.truffle.core.rope;
 
 import org.jcodings.Encoding;
-import org.jruby.util.ByteList;
 
 import java.util.Arrays;
 
@@ -91,14 +90,6 @@ public abstract class Rope {
 
     public int getBegin() {
         return begin();
-    }
-
-    public int realSize() {
-        return byteLength();
-    }
-
-    public int getRealSize() {
-        return realSize();
     }
 
     @Override
