@@ -984,6 +984,20 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "memory_safe?", onSingleton = true)
+    public abstract static class IsMemorySafeNode extends CoreMethodNode {
+
+        public IsMemorySafeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean ioSafe() {
+            return getContext().getOptions().PLATFORM_SAFE_MEMORY;
+        }
+
+    }
+
     @CoreMethod(names = "require_core", isModuleFunction = true, required = 1)
     public abstract static class RequireCoreNode extends CoreMethodArrayArgumentsNode {
 
