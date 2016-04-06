@@ -271,6 +271,9 @@ public class CoreMethodNodeManager {
                 case IO:
                     option = options.PLATFORM_SAFE_IO;
                     break;
+                case MEMORY:
+                    option = options.PLATFORM_SAFE_MEMORY;
+                    break;
                 case THREADS:
                     option = options.PLATFORM_SAFE_THREADS;
                     break;

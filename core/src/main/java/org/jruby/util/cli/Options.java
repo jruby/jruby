@@ -224,7 +224,8 @@ public class Options {
 
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE = bool(TRUFFLE, "truffle.platform.safe", true, "Default value for the safety of all operations.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_LOAD = bool(TRUFFLE, "truffle.platform.safe.load", TRUFFLE_PLATFORM_SAFE.load(), "Treat loading, requiring and autoloading as safe.");
-    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_IO = bool(TRUFFLE, "truffle.platform.safe.io", TRUFFLE_PLATFORM_SAFE.load(), "Treat any methods that deal perofrm IO as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_IO = bool(TRUFFLE, "truffle.platform.safe.io", TRUFFLE_PLATFORM_SAFE.load(), "Treat any methods that deal with IO as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_MEMORY = bool(TRUFFLE, "truffle.platform.safe.memory", TRUFFLE_PLATFORM_SAFE.load(), "Treat any methods that deal with unmanaged memory as safe.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_THREADS = bool(TRUFFLE, "truffle.platform.safe.threads", TRUFFLE_PLATFORM_SAFE.load(), "Treat any methods that deal with threads as safe.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_PROCESSES = bool(TRUFFLE, "truffle.platform.safe.processes", TRUFFLE_PLATFORM_SAFE.load(), "Treat any methods that deal with processes as safe.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_SIGNALS = bool(TRUFFLE, "truffle.platform.safe.siganls", TRUFFLE_PLATFORM_SAFE.load(), "Treat any methods that deal with signals as safe.");
