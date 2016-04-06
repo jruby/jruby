@@ -588,7 +588,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "autoload?", required = 1)
+    @CoreMethod(names = "autoload?", required = 1)
     public abstract static class AutoloadQueryNode extends CoreMethodArrayArgumentsNode {
 
         public AutoloadQueryNode(RubyContext context, SourceSection sourceSection) {
