@@ -1567,7 +1567,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "require", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "require", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.LOAD)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "feature")
     })
@@ -1616,7 +1616,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "require_relative", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "require_relative", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.LOAD)
     public abstract static class RequireRelativeNode extends CoreMethodArrayArgumentsNode {
 
         public RequireRelativeNode(RubyContext context, SourceSection sourceSection) {

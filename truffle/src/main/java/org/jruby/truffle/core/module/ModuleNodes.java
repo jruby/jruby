@@ -93,6 +93,7 @@ import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
@@ -540,7 +541,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "autoload", required = 2)
+    @CoreMethod(names = "autoload", required = 2, unsafe = UnsafeGroup.LOAD)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "module"),
             @NodeChild(type = RubyNode.class, value = "name"),

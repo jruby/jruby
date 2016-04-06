@@ -265,6 +265,9 @@ public class CoreMethodNodeManager {
             final boolean option;
 
             switch (group) {
+                case LOAD:
+                    option = options.PLATFORM_SAFE_LOAD;
+                    break;
                 case IO:
                     option = options.PLATFORM_SAFE_IO;
                     break;

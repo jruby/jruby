@@ -10,6 +10,7 @@
 package org.jruby.truffle.platform;
 
 public enum UnsafeGroup {
+    LOAD,
     IO,
     THREADS,
     PROCESSES,

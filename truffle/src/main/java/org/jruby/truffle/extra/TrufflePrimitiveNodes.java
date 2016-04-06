@@ -816,7 +816,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "load", isModuleFunction = true, required = 1, optional = 1)
+    @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1, unsafe = UnsafeGroup.LOAD)
     public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
 
         public LoadNode(RubyContext context, SourceSection sourceSection) {
