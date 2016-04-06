@@ -51,6 +51,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_PACK_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_RECOVER_LOOP_MIN;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_UNROLL_LIMIT;
 import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE;
+import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_AT_EXIT;
 import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_EXIT;
 import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_IO;
 import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_PROCESSES;
@@ -76,6 +77,7 @@ public class Options {
     public final boolean PLATFORM_SAFE_THREADS = TRUFFLE_PLATFORM_SAFE_THREADS.load();
     public final boolean PLATFORM_SAFE_PROCESSES = TRUFFLE_PLATFORM_SAFE_PROCESSES.load();
     public final boolean PLATFORM_SAFE_EXIT = TRUFFLE_PLATFORM_SAFE_EXIT.load();
+    public final boolean PLATFORM_SAFE_AT_EXIT = TRUFFLE_PLATFORM_SAFE_AT_EXIT.load();
     public final boolean PLATFORM_SAFE_PUTS = TRUFFLE_PLATFORM_SAFE_PUTS.load();
     public final boolean PLATFORM_USE_JAVA = TRUFFLE_PLATFORM_USE_JAVA.load();
 

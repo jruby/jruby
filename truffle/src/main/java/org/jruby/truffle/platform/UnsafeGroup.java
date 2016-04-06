@@ -14,5 +14,6 @@ public enum UnsafeGroup {
     THREADS,
     PROCESSES,
     EXIT,
+    AT_EXIT,
     SAFE_PUTS
 }

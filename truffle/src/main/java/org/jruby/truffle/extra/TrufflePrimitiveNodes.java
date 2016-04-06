@@ -571,7 +571,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "at_exit", isModuleFunction = true, needsBlock = true, required = 1)
+    @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true, required = 1, unsafe = UnsafeGroup.AT_EXIT)
     public abstract static class AtExitSystemNode extends CoreMethodArrayArgumentsNode {
 
         public AtExitSystemNode(RubyContext context, SourceSection sourceSection) {

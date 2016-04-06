@@ -277,6 +277,9 @@ public class CoreMethodNodeManager {
                 case EXIT:
                     option = options.PLATFORM_SAFE_EXIT;
                     break;
+                case AT_EXIT:
+                    option = options.PLATFORM_SAFE_AT_EXIT;
+                    break;
                 case SAFE_PUTS:
                     option = options.PLATFORM_SAFE_PUTS;
                     break;
