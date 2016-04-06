@@ -54,7 +54,7 @@ public class StringGuards {
 
     public static boolean isValidUtf8(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringOperations.isCodeRangeValid(string) && Layouts.STRING.getRope(string).getEncoding() instanceof UTF8Encoding;
+        return StringOperations.isCodeRangeValid(string) && Layouts.STRING.getRope(string).getEncoding().isUTF8();
     }
 
     public static boolean isEmpty(DynamicObject string) {
