@@ -1247,7 +1247,7 @@ public abstract class StringPrimitiveNodes {
             if(negativeStartOffsetProfile.profile(src < 0)) src = 0;
             if(sizeTooLargeInReplacementProfile.profile(cnt > osz - src)) cnt = osz - src;
 
-            final ByteList stringBytes = Layouts.STRING.getRope(string).toByteListCopy();
+            final ByteList stringBytes = RopeOperations.toByteListCopy(Layouts.STRING.getRope(string));
             int sz = stringBytes.unsafeBytes().length - stringBytes.begin();
             if(negativeDestinationOffsetProfile.profile(dst < 0)) dst = 0;
             if(sizeTooLargeInStringProfile.profile(cnt > sz - dst)) cnt = sz - dst;

@@ -29,6 +29,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
@@ -429,4 +430,13 @@ public class RopeOperations {
         }
         return size == other.realSize() ? 0 : size == len ? -1 : 1;
     }
+
+    public static ByteList getByteListReadOnly(Rope rope) {
+        return rope.getUnsafeByteList();
+    }
+
+    public static ByteList toByteListCopy(Rope rope) {
+        return new ByteList(rope.getBytes(), rope.getEncoding(), true);
+    }
+
 }

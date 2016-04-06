@@ -30,6 +30,7 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -116,7 +117,7 @@ public abstract class EncodingConverterNodes {
 
         private IRubyObject toJRuby(Object object) {
             if (RubyGuards.isRubyString(object)) {
-                return getContext().getJRubyRuntime().newString(StringOperations.rope((DynamicObject) object).toByteListCopy());
+                return getContext().getJRubyRuntime().newString(RopeOperations.toByteListCopy(StringOperations.rope((DynamicObject) object)));
             } else if (RubyGuards.isRubyEncoding(object)) {
                 return getContext().getJRubyRuntime().getEncodingService().rubyEncodingFromObject(getContext().getJRubyRuntime().newString(Layouts.ENCODING.getName((DynamicObject) object)));
             } else {

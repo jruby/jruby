@@ -83,7 +83,7 @@ public abstract class RegexpNodes {
 
         final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
         final Encoding enc = checkEncoding(regexp, sourceRope, true);
-        final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), regexpSourceRope.getUnsafeByteList(), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
+        final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
 
         final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, sourceRope, true));
         final Matcher matcher = r.matcher(sourceRope.getBytes(), sourceRope.begin(), sourceRope.begin() + sourceRope.realSize());
@@ -274,7 +274,7 @@ public abstract class RegexpNodes {
         }
              */
 
-            final ByteList byteList = bytes.getUnsafeByteList();
+            final ByteList byteList = RopeOperations.getByteListReadOnly(bytes);
             Encoding enc = bytes.getEncoding();
             Encoding[] fixedEnc = new Encoding[]{null};
             ByteList unescaped = RegexpSupport.preprocess(context.getJRubyRuntime(), byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
@@ -545,7 +545,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject regexp) {
-            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getJRubyRuntime(), Layouts.REGEXP.getSource(regexp).getUnsafeByteList(), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
+            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getJRubyRuntime(), RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp)), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
         }
 
     }

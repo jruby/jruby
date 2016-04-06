@@ -1935,7 +1935,7 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#squeeze_bang19.
 
             final Rope rope = rope(string);
-            final ByteList buffer = rope.toByteListCopy();
+            final ByteList buffer = RopeOperations.toByteListCopy(rope);
 
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE];
             for (int i = 0; i < StringSupport.TRANS_SIZE; i++) squeeze[i] = true;
@@ -1981,13 +1981,13 @@ public abstract class StringNodes {
                                           @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
 
             final Rope rope = rope(string);
-            final ByteList buffer = rope.toByteListCopy();
+            final ByteList buffer = RopeOperations.toByteListCopy(rope);
 
             DynamicObject otherStr = otherStrings[0];
             Rope otherRope = rope(otherStr);
             Encoding enc = StringOperations.checkEncoding(getContext(), string, otherStr, this);
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getJRubyRuntime(), squeeze, null, true, enc);
+            StringSupport.TrTables tables = StringSupport.trSetupTable(RopeOperations.getByteListReadOnly(otherRope), getContext().getJRubyRuntime(), squeeze, null, true, enc);
 
             boolean singlebyte = rope.isSingleByteOptimizable() && otherRope.isSingleByteOptimizable();
 
@@ -1996,7 +1996,7 @@ public abstract class StringNodes {
                 otherRope = rope(otherStr);
                 enc = StringOperations.checkEncoding(getContext(), string, otherStr, this);
                 singlebyte = singlebyte && otherRope.isSingleByteOptimizable();
-                tables = StringSupport.trSetupTable(otherRope.getUnsafeByteList(), getContext().getJRubyRuntime(), squeeze, tables, false, enc);
+                tables = StringSupport.trSetupTable(RopeOperations.getByteListReadOnly(otherRope), getContext().getJRubyRuntime(), squeeze, tables, false, enc);
             }
 
             if (singleByteOptimizableProfile.profile(singlebyte)) {
@@ -2495,7 +2495,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            final ByteList bytes = rope.toByteListCopy();
+            final ByteList bytes = RopeOperations.toByteListCopy(rope);
 
             try {
                 final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());

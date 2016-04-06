@@ -25,6 +25,7 @@ import org.jruby.truffle.core.regexp.RegexpGuards;
 import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
@@ -142,7 +143,7 @@ public abstract class RegexpPrimitiveNodes {
             final Rope stringRope = StringOperations.rope(string);
             final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
             final Encoding enc = RegexpNodes.checkEncoding(regexp, stringRope, true);
-            ByteList preprocessed = RegexpSupport.preprocess(getContext().getJRubyRuntime(), regexpSourceRope.getUnsafeByteList(), enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
+            ByteList preprocessed = RegexpSupport.preprocess(getContext().getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
             Rope preprocessedRope = RegexpNodes.shimModifiers(StringOperations.ropeFromByteList(preprocessed));
             final Regex r = new Regex(preprocessedRope.getBytes(), preprocessedRope.getBegin(), preprocessedRope.getBegin() + preprocessedRope.getRealSize(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, stringRope, true));
             final Matcher matcher = r.matcher(stringRope.getBytes(), stringRope.begin(), stringRope.begin() + stringRope.realSize());

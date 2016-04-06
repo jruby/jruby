@@ -13,6 +13,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 
@@ -82,7 +83,7 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public ByteList getByteList() {
-        return Layouts.SYMBOL.getRope(symbol).getUnsafeByteList();
+        return RopeOperations.getByteListReadOnly(Layouts.SYMBOL.getRope(symbol));
     }
 
 }

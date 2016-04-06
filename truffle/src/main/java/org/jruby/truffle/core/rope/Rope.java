@@ -50,15 +50,13 @@ public abstract class Rope {
         return byteLength == 0;
     }
 
-    public final ByteList getUnsafeByteList() {
+    final ByteList getUnsafeByteList() {
         if (unsafeByteList == null) {
             unsafeByteList = new ByteList(getBytes(), getEncoding(), false);
         }
 
         return unsafeByteList;
     }
-
-    public final ByteList toByteListCopy() { return new ByteList(getBytes(), getEncoding(), true); }
 
     protected abstract byte getByteSlow(int index);
 
