@@ -856,7 +856,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()")IndirectCallNode callNode) {
-            coreLibrary().getGlobalVariablesObject().define(
+            coreLibrary().getGlobalVariables().put(
                     "$0",
                     StringOperations.createString(getContext(),
                             ByteList.create(getContext().getJRubyInterop().getArg0())));

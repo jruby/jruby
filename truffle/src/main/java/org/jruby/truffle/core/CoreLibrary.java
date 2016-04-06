@@ -86,6 +86,7 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
+import org.jruby.truffle.language.globals.GlobalVariables;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -219,7 +220,7 @@ public class CoreLibrary {
     private final DynamicObjectFactory handleFactory;
 
     private final DynamicObject argv;
-    private final DynamicObject globalVariablesObject;
+    private final GlobalVariables globalVariables;
     private final DynamicObject mainObject;
     private final DynamicObject nilObject;
     private final DynamicObject rubiniusUndefined;
@@ -552,7 +553,7 @@ public class CoreLibrary {
         argv = Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0);
         rubiniusUndefined = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
 
-        globalVariablesObject = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
+        globalVariables = new GlobalVariables(nilObject);
 
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
         Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, DigestLayoutImpl.INSTANCE.createDigestShape(digestClass, digestClass));
@@ -649,28 +650,28 @@ public class CoreLibrary {
     }
 
     private void initializeGlobalVariables() {
-        DynamicObject globals = globalVariablesObject;
+        GlobalVariables globals = globalVariables;
 
-        globals.define("$LOAD_PATH", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0), 0);
-        globals.define("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), new Object[0], 0), 0);
-        globals.define("$:", globals.get("$LOAD_PATH", nilObject), 0);
-        globals.define("$\"", globals.get("$LOADED_FEATURES", nilObject), 0);
-        globals.define("$,", nilObject, 0);
-        globals.define("$*", argv, 0);
-        globals.define("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)), 0);
+        globals.put("$LOAD_PATH", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0));
+        globals.put("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), new Object[0], 0));
+        globals.put("$:", globals.getOrDefault("$LOAD_PATH", nilObject));
+        globals.put("$\"", globals.getOrDefault("$LOADED_FEATURES", nilObject));
+        globals.put("$,", nilObject);
+        globals.put("$*", argv);
+        globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)));
 
-        globals.define("$DEBUG", context.getJRubyRuntime().isDebug(), 0);
+        globals.put("$DEBUG", context.getJRubyRuntime().isDebug());
 
         Object value = context.getJRubyRuntime().warningsEnabled() ? context.getJRubyRuntime().isVerbose() : nilObject;
-        globals.define("$VERBOSE", value, 0);
+        globals.put("$VERBOSE", value);
 
         final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeRope(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
         node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
-        globals.define("$/", defaultRecordSeparator, 0);
+        globals.put("$/", defaultRecordSeparator);
 
-        globals.define("$SAFE", 0, 0);
+        globals.put("$SAFE", 0);
     }
 
     private void initializeConstants() {
@@ -1590,16 +1591,16 @@ public class CoreLibrary {
         return argv;
     }
 
-    public DynamicObject getGlobalVariablesObject() {
-        return globalVariablesObject;
+    public GlobalVariables getGlobalVariables() {
+        return globalVariables;
     }
 
     public DynamicObject getLoadPath() {
-        return (DynamicObject) globalVariablesObject.get("$LOAD_PATH", context.getCoreLibrary().getNilObject());
+        return (DynamicObject) globalVariables.getOrDefault("$LOAD_PATH", context.getCoreLibrary().getNilObject());
     }
 
     public DynamicObject getLoadedFeatures() {
-        return (DynamicObject) globalVariablesObject.get("$LOADED_FEATURES", context.getCoreLibrary().getNilObject());
+        return (DynamicObject) globalVariables.getOrDefault("$LOADED_FEATURES", context.getCoreLibrary().getNilObject());
     }
 
     public DynamicObject getMainObject() {

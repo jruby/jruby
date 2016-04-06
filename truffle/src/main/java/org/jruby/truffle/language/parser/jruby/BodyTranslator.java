@@ -113,12 +113,14 @@ import org.jruby.truffle.language.globals.CheckProgramNameVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckRecordSeparatorVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckStdoutVariableTypeNode;
 import org.jruby.truffle.language.globals.ReadGlobalVariableNode;
+import org.jruby.truffle.language.globals.ReadGlobalVariableNodeGen;
 import org.jruby.truffle.language.globals.ReadLastBacktraceNode;
 import org.jruby.truffle.language.globals.ReadMatchReferenceNode;
 import org.jruby.truffle.language.globals.ReadThreadLocalGlobalVariableNode;
 import org.jruby.truffle.language.globals.UpdateLastBacktraceNode;
 import org.jruby.truffle.language.globals.UpdateVerbosityNode;
 import org.jruby.truffle.language.globals.WriteGlobalVariableNode;
+import org.jruby.truffle.language.globals.WriteGlobalVariableNodeGen;
 import org.jruby.truffle.language.globals.WriteProgramNameNodeGen;
 import org.jruby.truffle.language.globals.WriteReadOnlyGlobalNode;
 import org.jruby.truffle.language.literal.BooleanLiteralNode;
@@ -1658,7 +1660,7 @@ public class BodyTranslator extends Translator {
 
             return addNewlineIfNeeded(node, assignment);
         } else {
-            final RubyNode writeGlobalVariableNode = new WriteGlobalVariableNode(context, sourceSection, name, rhs);
+            final RubyNode writeGlobalVariableNode = WriteGlobalVariableNodeGen.create(context, sourceSection, name, rhs);
 
             final RubyNode translated;
 
@@ -1706,7 +1708,7 @@ public class BodyTranslator extends Translator {
             // Instead, it reads the backtrace field of the thread-local $! value.
             ret = new ReadLastBacktraceNode(context, sourceSection);
         } else {
-            ret = new ReadGlobalVariableNode(context, sourceSection, name);
+            ret = ReadGlobalVariableNodeGen.create(context, sourceSection, name);
         }
 
         return addNewlineIfNeeded(node, ret);
