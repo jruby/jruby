@@ -195,7 +195,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = {"size?", "has_size_property?"}, isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "size?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class HasSizeNode extends CoreMethodArrayArgumentsNode {
 
         public HasSizeNode(RubyContext context, SourceSection sourceSection) {
@@ -248,7 +248,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = {"boxed?", "boxed_primitive?"}, isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "boxed?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class BoxedNode extends CoreMethodArrayArgumentsNode {
 
         public BoxedNode(RubyContext context, SourceSection sourceSection) {
@@ -315,7 +315,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = {"unbox", "unbox_value"}, isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "unbox", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class UnboxNode extends CoreMethodArrayArgumentsNode {
 
         public UnboxNode(RubyContext context, SourceSection sourceSection) {
@@ -406,7 +406,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = {"read", "read_property"}, isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(names = "read", isModuleFunction = true, needsSelf = false, required = 2)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class ReadNode extends CoreMethodArrayArgumentsNode {
 
@@ -502,7 +502,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = {"write", "write_property"}, isModuleFunction = true, needsSelf = false, required = 3)
+    @CoreMethod(names = "write", isModuleFunction = true, needsSelf = false, required = 3)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class WriteNode extends CoreMethodArrayArgumentsNode {
 
