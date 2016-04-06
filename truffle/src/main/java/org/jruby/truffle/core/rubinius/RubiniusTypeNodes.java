@@ -22,7 +22,7 @@ import org.jruby.truffle.core.YieldingCoreMethodNode;
 @CoreClass(name = "Rubinius::Type")
 public abstract class RubiniusTypeNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "each_ancestor", onSingleton = true, required = 1, needsBlock = true)
+    @CoreMethod(names = "each_ancestor", onSingleton = true, required = 1, needsBlock = true)
     public abstract static class EachAncestorNode extends YieldingCoreMethodNode {
 
         public EachAncestorNode(RubyContext context, SourceSection sourceSection) {
