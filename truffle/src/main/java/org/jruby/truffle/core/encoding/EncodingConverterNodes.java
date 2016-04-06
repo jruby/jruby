@@ -46,7 +46,7 @@ public abstract class EncodingConverterNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "initialize_jruby", required = 2, optional = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "initialize_jruby", required = 2, optional = 1, visibility = Visibility.PRIVATE)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -128,7 +128,7 @@ public abstract class EncodingConverterNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(unsafeNeedsAudit = true, names = "transcoding_map", onSingleton = true)
+    @CoreMethod(names = "transcoding_map", onSingleton = true)
     public abstract static class TranscodingMapNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode upcaseNode;
@@ -175,7 +175,7 @@ public abstract class EncodingConverterNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
