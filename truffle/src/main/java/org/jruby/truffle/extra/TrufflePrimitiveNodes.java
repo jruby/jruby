@@ -152,7 +152,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "gc_count", onSingleton = true)
+    @CoreMethod(names = "gc_count", onSingleton = true)
     public abstract static class GCCountNode extends CoreMethodArrayArgumentsNode {
 
         public GCCountNode(RubyContext context, SourceSection sourceSection) {
@@ -167,7 +167,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "gc_time", onSingleton = true)
+    @CoreMethod(names = "gc_time", onSingleton = true)
     public abstract static class GCTimeNode extends CoreMethodArrayArgumentsNode {
 
         public GCTimeNode(RubyContext context, SourceSection sourceSection) {
@@ -182,7 +182,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "assert_constant", onSingleton = true, required = 1)
+    @CoreMethod(names = "assert_constant", onSingleton = true, required = 1)
     public abstract static class AssertConstantNode extends CoreMethodArrayArgumentsNode {
 
         public AssertConstantNode(RubyContext context, SourceSection sourceSection) {
@@ -196,7 +196,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "assert_not_compiled", onSingleton = true)
+    @CoreMethod(names = "assert_not_compiled", onSingleton = true)
     public abstract static class AssertNotCompiledNode extends CoreMethodArrayArgumentsNode {
 
         public AssertNotCompiledNode(RubyContext context, SourceSection sourceSection) {
@@ -211,7 +211,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "java_class_of", onSingleton = true, required = 1)
+    @CoreMethod(names = "java_class_of", onSingleton = true, required = 1)
     public abstract static class JavaClassOfNode extends CoreMethodArrayArgumentsNode {
 
         public JavaClassOfNode(RubyContext context, SourceSection sourceSection) {
@@ -248,7 +248,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "graal?", onSingleton = true)
+    @CoreMethod(names = "graal?", onSingleton = true)
     public abstract static class GraalNode extends CoreMethodArrayArgumentsNode {
 
         public GraalNode(RubyContext context, SourceSection sourceSection) {
@@ -263,7 +263,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "substrate?", onSingleton = true)
+    @CoreMethod(names = "substrate?", onSingleton = true)
     public abstract static class SubstrateNode extends CoreMethodArrayArgumentsNode {
 
         public SubstrateNode(RubyContext context, SourceSection sourceSection) {
@@ -277,7 +277,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "graal_version", onSingleton = true)
+    @CoreMethod(names = "graal_version", onSingleton = true)
     public abstract static class GraalVersionNode extends CoreMethodArrayArgumentsNode {
 
         public GraalVersionNode(RubyContext context, SourceSection sourceSection) {
@@ -847,7 +847,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "run_jruby_root", onSingleton = true)
+    @CoreMethod(names = "run_jruby_root", onSingleton = true)
     public abstract static class RunJRubyRootNode extends CoreMethodArrayArgumentsNode {
 
         public RunJRubyRootNode(RubyContext context, SourceSection sourceSection) {
