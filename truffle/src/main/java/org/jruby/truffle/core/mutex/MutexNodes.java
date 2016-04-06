@@ -34,7 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @CoreClass(name = "Mutex")
 public abstract class MutexNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
@@ -51,7 +51,7 @@ public abstract class MutexNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "lock")
+    @CoreMethod(names = "lock")
     public abstract static class LockNode extends UnaryCoreMethodNode {
 
         public LockNode(RubyContext context, SourceSection sourceSection) {
@@ -91,7 +91,7 @@ public abstract class MutexNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "locked?")
+    @CoreMethod(names = "locked?")
     public abstract static class IsLockedNode extends UnaryCoreMethodNode {
 
         public IsLockedNode(RubyContext context, SourceSection sourceSection) {
@@ -105,7 +105,7 @@ public abstract class MutexNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "owned?")
+    @CoreMethod(names = "owned?")
     public abstract static class IsOwnedNode extends UnaryCoreMethodNode {
 
         public IsOwnedNode(RubyContext context, SourceSection sourceSection) {
@@ -119,7 +119,7 @@ public abstract class MutexNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "try_lock")
+    @CoreMethod(names = "try_lock")
     public abstract static class TryLockNode extends UnaryCoreMethodNode {
 
         public TryLockNode(RubyContext context, SourceSection sourceSection) {
@@ -150,7 +150,7 @@ public abstract class MutexNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "unlock")
+    @CoreMethod(names = "unlock")
     public abstract static class UnlockNode extends UnaryCoreMethodNode {
 
         public UnlockNode(RubyContext context, SourceSection sourceSection) {
@@ -188,7 +188,7 @@ public abstract class MutexNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "sleep", optional = 1)
+    @CoreMethod(names = "sleep", optional = 1)
     public abstract static class SleepNode extends CoreMethodArrayArgumentsNode {
 
         public SleepNode(RubyContext context, SourceSection sourceSection) {
