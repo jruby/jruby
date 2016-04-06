@@ -292,7 +292,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "simple_shell", onSingleton = true)
+    @CoreMethod(unsafeNeedsAudit = true, names = "simple_shell", onSingleton = true, unsafe = UnsafeGroup.IO)
     public abstract static class SimpleShellNode extends CoreMethodArrayArgumentsNode {
 
         public SimpleShellNode(RubyContext context, SourceSection sourceSection) {
