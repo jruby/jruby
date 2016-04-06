@@ -1270,13 +1270,13 @@ public class RubyClass extends RubyModule {
 
     private static final boolean DEBUG_REIFY = false;
 
-    public synchronized void reify() {
+    public final void reify() {
         reify(null, true);
     }
-    public synchronized void reify(String classDumpDir) {
+    public final void reify(String classDumpDir) {
         reify(classDumpDir, true);
     }
-    public synchronized void reify(boolean useChildLoader) {
+    public final void reify(boolean useChildLoader) {
         reify(null, useChildLoader);
     }
 
@@ -1305,263 +1305,7 @@ public class RubyClass extends RubyModule {
             reifiedParent = superClass.reifiedClass;
         }
 
-        final Class[] interfaces = Java.getInterfacesFromRubyClass(this);
-        final String[] interfaceNames = new String[interfaces.length + 1];
-        // mark this as a Reified class
-        interfaceNames[0] = p(Reified.class);
-        // add the other user-specified interfaces
-        for (int i = 0; i < interfaces.length; i++) {
-            interfaceNames[i + 1] = p(interfaces[i]);
-        }
-
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(reifiedParent),
-                interfaceNames);
-
-        if (classAnnotations != null && !classAnnotations.isEmpty()) {
-            for (Map.Entry<Class,Map<String,Object>> entry : classAnnotations.entrySet()) {
-                Class annoType = entry.getKey();
-                Map<String,Object> fields = entry.getValue();
-
-                AnnotationVisitor av = cw.visitAnnotation(ci(annoType), true);
-                CodegenUtils.visitAnnotationFields(av, fields);
-                av.visitEnd();
-            }
-        }
-
-        // fields to hold Ruby and RubyClass references
-        cw.visitField(ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null);
-        cw.visitField(ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null);
-
-        // static initializing method
-        SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, "clinit", sig(void.class, Ruby.class, RubyClass.class), null, null);
-        m.start();
-        m.aload(0);
-        m.putstatic(javaPath, "ruby", ci(Ruby.class));
-        m.aload(1);
-        m.putstatic(javaPath, "rubyClass", ci(RubyClass.class));
-        m.voidreturn();
-        m.end();
-
-        // standard constructor that accepts Ruby, RubyClass
-        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, Ruby.class, RubyClass.class), null, null);
-        m.aload(0);
-        m.aload(1);
-        m.aload(2);
-        m.invokespecial(p(reifiedParent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
-        m.voidreturn();
-        m.end();
-
-        // no-arg constructor using static references to Ruby and RubyClass
-        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class), null, null);
-        m.aload(0);
-        m.getstatic(javaPath, "ruby", ci(Ruby.class));
-        m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-        m.invokespecial(p(reifiedParent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
-        m.voidreturn();
-        m.end();
-
-        // define fields
-        for (Map.Entry<String, Class> fieldSignature : getFieldSignatures().entrySet()) {
-            String fieldName = fieldSignature.getKey();
-            Class type = fieldSignature.getValue();
-            Map<Class, Map<String, Object>> fieldAnnos = getFieldAnnotations().get(fieldName);
-
-            FieldVisitor fieldVisitor = cw.visitField(ACC_PUBLIC, fieldName, ci(type), null, null);
-
-            if (fieldAnnos == null) continue;
-
-            for (Map.Entry<Class, Map<String, Object>> fieldAnno : fieldAnnos.entrySet()) {
-                Class annoType = fieldAnno.getKey();
-                AnnotationVisitor av = fieldVisitor.visitAnnotation(ci(annoType), true);
-                CodegenUtils.visitAnnotationFields(av, fieldAnno.getValue());
-            }
-            fieldVisitor.visitEnd();
-        }
-
-        // gather a list of instance methods, so we don't accidentally make static ones that conflict
-        final Set<String> instanceMethods = new HashSet<String>(getMethods().size());
-
-        // define instance methods
-        for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
-            final String methodName = methodEntry.getKey();
-
-            if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
-
-            String javaMethodName = JavaNameMangler.mangleMethodName(methodName);
-
-            Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(methodName);
-            List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(methodName);
-            Class[] methodSignature = getMethodSignatures().get(methodName);
-
-            final String signature;
-            if (methodSignature == null) { // non-signature signature with just IRubyObject
-                final Arity arity = methodEntry.getValue().getArity();
-                switch (arity.getValue()) {
-                case 0:
-                    signature = sig(IRubyObject.class); // return IRubyObject foo()
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
-                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-
-                    m.aload(0);
-                    m.ldc(methodName);
-                    m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
-                    break;
-                case 1:
-                    signature = sig(IRubyObject.class, IRubyObject.class); // return IRubyObject foo(IRubyObject arg1)
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
-                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-
-                    m.aload(0);
-                    m.ldc(methodName);
-                    m.aload(1); // IRubyObject arg1
-                    m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject.class));
-                    break;
-                // currently we only have :
-                //  callMethod(context, name)
-                //  callMethod(context, name, arg1)
-                // so for other arities use generic:
-                //  callMethod(context, name, args...)
-                default:
-                    if ( arity.isFixed() ) {
-                        final int paramCount = arity.getValue();
-                        Class[] params = new Class[paramCount]; Arrays.fill(params, IRubyObject.class);
-                        signature = sig(IRubyObject.class, params);
-                        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
-                        generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-
-                        m.aload(0);
-                        m.ldc(methodName);
-
-                        // generate an IRubyObject[] for the method arguments :
-                        m.pushInt(paramCount);
-                        m.anewarray(p(IRubyObject.class)); // new IRubyObject[size]
-                        for ( int i = 1; i <= paramCount; i++ ) {
-                            m.dup();
-                            m.pushInt(i - 1); // array index e.g. iconst_0
-                            m.aload(i); // IRubyObject arg1, arg2 e.g. aload_1
-                            m.aastore(); // arr[ i - 1 ] = arg_i
-                        }
-                    }
-                    else { // (generic) variable arity e.g. method(*args)
-                        // NOTE: maybe improve to match fixed part for < -1 e.g. (IRubObject, IRubyObject, IRubyObject...)
-                        signature = sig(IRubyObject.class, IRubyObject[].class);
-                        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
-                        generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-
-                        m.aload(0);
-                        m.ldc(methodName);
-                        m.aload(1); // IRubyObject[] arg1
-                    }
-                    m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
-                }
-                m.areturn();
-            }
-            else { // generate a real method signature for the method, with to/from coercions
-
-                // indices for temp values
-                Class[] params = new Class[methodSignature.length - 1];
-                System.arraycopy(methodSignature, 1, params, 0, params.length);
-                final int baseIndex = RealClassGenerator.calcBaseIndex(params, 1);
-                final int rubyIndex = baseIndex;
-
-                signature = sig(methodSignature[0], params);
-                int mod = ACC_PUBLIC;
-                if ( isVarArgsSignature(methodName, methodSignature) ) mod |= ACC_VARARGS;
-                m = new SkinnyMethodAdapter(cw, mod, javaMethodName, signature, null, null);
-                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-
-                m.getstatic(javaPath, "ruby", ci(Ruby.class));
-                m.astore(rubyIndex);
-
-                m.aload(0); // self
-                m.ldc(methodName); // method name
-                RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
-                m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
-
-                RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
-            }
-
-            if (DEBUG_REIFY) LOG.debug("defining {}#{} as {}#{}", getName(), methodName, javaName, javaMethodName + signature);
-
-            instanceMethods.add(javaMethodName + signature);
-
-            m.end();
-        }
-
-        // define class/static methods
-        for (Map.Entry<String,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
-            String methodName = methodEntry.getKey();
-
-            if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
-
-            String javaMethodName = JavaNameMangler.mangleMethodName(methodName);
-
-            Map<Class,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(methodName);
-            List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(methodName);
-            Class[] methodSignature = getMetaClass().getMethodSignatures().get(methodName);
-
-            String signature;
-            if (methodSignature == null) {
-                final Arity arity = methodEntry.getValue().getArity();
-                // non-signature signature with just IRubyObject
-                switch (arity.getValue()) {
-                case 0:
-                    signature = sig(IRubyObject.class);
-                    if (instanceMethods.contains(javaMethodName + signature)) continue;
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, javaMethodName, signature, null, null);
-                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-
-                    m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-                    //m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
-                    m.ldc(methodName);
-                    m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
-                    break;
-                default:
-                    signature = sig(IRubyObject.class, IRubyObject[].class);
-                    if (instanceMethods.contains(javaMethodName + signature)) continue;
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
-                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-
-                    m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-                    m.ldc(methodName);
-                    m.aload(0);
-                    m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
-                }
-                m.areturn();
-            }
-            else { // generate a real method signature for the method, with to/from coercions
-
-                // indices for temp values
-                Class[] params = new Class[methodSignature.length - 1];
-                System.arraycopy(methodSignature, 1, params, 0, params.length);
-                final int baseIndex = RealClassGenerator.calcBaseIndex(params, 0);
-                int rubyIndex = baseIndex;
-
-                signature = sig(methodSignature[0], params);
-                if (instanceMethods.contains(javaMethodName + signature)) continue;
-                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
-                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-
-                m.getstatic(javaPath, "ruby", ci(Ruby.class));
-                m.astore(rubyIndex);
-
-                m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-
-                m.ldc(methodName); // method name
-                RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
-                m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
-
-                RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
-            }
-
-            if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(), methodName, javaName, javaMethodName + signature);
-
-            m.end();
-        }
-
-
-        cw.visitEnd();
+        final byte[] classBytes = new Reificator(reifiedParent).reify(javaName, javaPath);
 
         final ClassDefiningClassLoader parentCL;
         if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
@@ -1575,7 +1319,6 @@ public class RubyClass extends RubyModule {
         }
         // Attempt to load the name we plan to use; skip reification if it exists already (see #1229).
         try {
-            final byte[] classBytes = cw.toByteArray();
             Class result = parentCL.defineClass(javaName, classBytes);
             dumpReifiedClass(classDumpDir, javaPath, classBytes);
 
@@ -1609,6 +1352,279 @@ public class RubyClass extends RubyModule {
             allocator = superClass.allocator;
         }
     }
+
+    private final class Reificator {
+
+        private final Class reifiedParent;
+
+        Reificator(Class<?> reifiedParent) {
+            this.reifiedParent = reifiedParent;
+        }
+
+        byte[] reify(final String javaName, final String javaPath) {
+            final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+            cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(reifiedParent), interfaces());
+
+            if (classAnnotations != null && !classAnnotations.isEmpty()) {
+                for (Map.Entry<Class,Map<String,Object>> entry : classAnnotations.entrySet()) {
+                    Class annoType = entry.getKey();
+                    Map<String,Object> fields = entry.getValue();
+
+                    AnnotationVisitor av = cw.visitAnnotation(ci(annoType), true);
+                    CodegenUtils.visitAnnotationFields(av, fields);
+                    av.visitEnd();
+                }
+            }
+
+            // fields to hold Ruby and RubyClass references
+            cw.visitField(ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null);
+            cw.visitField(ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null);
+
+            // static initializing method
+            SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, "clinit", sig(void.class, Ruby.class, RubyClass.class), null, null);
+            m.start();
+            m.aload(0);
+            m.putstatic(javaPath, "ruby", ci(Ruby.class));
+            m.aload(1);
+            m.putstatic(javaPath, "rubyClass", ci(RubyClass.class));
+            m.voidreturn();
+            m.end();
+
+            // standard constructor that accepts Ruby, RubyClass
+            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, Ruby.class, RubyClass.class), null, null);
+            m.aload(0);
+            m.aload(1);
+            m.aload(2);
+            m.invokespecial(p(reifiedParent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+            m.voidreturn();
+            m.end();
+
+            // no-arg constructor using static references to Ruby and RubyClass
+            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class), null, null);
+            m.aload(0);
+            m.getstatic(javaPath, "ruby", ci(Ruby.class));
+            m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+            m.invokespecial(p(reifiedParent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+            m.voidreturn();
+            m.end();
+
+            // define fields
+            for (Map.Entry<String, Class> fieldSignature : getFieldSignatures().entrySet()) {
+                String fieldName = fieldSignature.getKey();
+                Class type = fieldSignature.getValue();
+                Map<Class, Map<String, Object>> fieldAnnos = getFieldAnnotations().get(fieldName);
+
+                FieldVisitor fieldVisitor = cw.visitField(ACC_PUBLIC, fieldName, ci(type), null, null);
+
+                if (fieldAnnos == null) continue;
+
+                for (Map.Entry<Class, Map<String, Object>> fieldAnno : fieldAnnos.entrySet()) {
+                    Class annoType = fieldAnno.getKey();
+                    AnnotationVisitor av = fieldVisitor.visitAnnotation(ci(annoType), true);
+                    CodegenUtils.visitAnnotationFields(av, fieldAnno.getValue());
+                }
+                fieldVisitor.visitEnd();
+            }
+
+            // gather a list of instance methods, so we don't accidentally make static ones that conflict
+            final Set<String> instanceMethods = new HashSet<String>(getMethods().size());
+
+            // define instance methods
+            for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
+                final String methodName = methodEntry.getKey();
+
+                if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
+
+                String javaMethodName = JavaNameMangler.mangleMethodName(methodName);
+
+                Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(methodName);
+                List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(methodName);
+                Class[] methodSignature = getMethodSignatures().get(methodName);
+
+                final String signature;
+                if (methodSignature == null) { // non-signature signature with just IRubyObject
+                    final Arity arity = methodEntry.getValue().getArity();
+                    switch (arity.getValue()) {
+                        case 0:
+                            signature = sig(IRubyObject.class); // return IRubyObject foo()
+                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                            m.aload(0);
+                            m.ldc(methodName);
+                            m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
+                            break;
+                        case 1:
+                            signature = sig(IRubyObject.class, IRubyObject.class); // return IRubyObject foo(IRubyObject arg1)
+                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                            m.aload(0);
+                            m.ldc(methodName);
+                            m.aload(1); // IRubyObject arg1
+                            m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject.class));
+                            break;
+                        // currently we only have :
+                        //  callMethod(context, name)
+                        //  callMethod(context, name, arg1)
+                        // so for other arities use generic:
+                        //  callMethod(context, name, args...)
+                        default:
+                            if ( arity.isFixed() ) {
+                                final int paramCount = arity.getValue();
+                                Class[] params = new Class[paramCount]; Arrays.fill(params, IRubyObject.class);
+                                signature = sig(IRubyObject.class, params);
+                                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+                                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                                m.aload(0);
+                                m.ldc(methodName);
+
+                                // generate an IRubyObject[] for the method arguments :
+                                m.pushInt(paramCount);
+                                m.anewarray(p(IRubyObject.class)); // new IRubyObject[size]
+                                for ( int i = 1; i <= paramCount; i++ ) {
+                                    m.dup();
+                                    m.pushInt(i - 1); // array index e.g. iconst_0
+                                    m.aload(i); // IRubyObject arg1, arg2 e.g. aload_1
+                                    m.aastore(); // arr[ i - 1 ] = arg_i
+                                }
+                            }
+                            else { // (generic) variable arity e.g. method(*args)
+                                // NOTE: maybe improve to match fixed part for < -1 e.g. (IRubObject, IRubyObject, IRubyObject...)
+                                signature = sig(IRubyObject.class, IRubyObject[].class);
+                                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
+                                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                                m.aload(0);
+                                m.ldc(methodName);
+                                m.aload(1); // IRubyObject[] arg1
+                            }
+                            m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
+                    }
+                    m.areturn();
+                }
+                else { // generate a real method signature for the method, with to/from coercions
+
+                    // indices for temp values
+                    Class[] params = new Class[methodSignature.length - 1];
+                    System.arraycopy(methodSignature, 1, params, 0, params.length);
+                    final int baseIndex = RealClassGenerator.calcBaseIndex(params, 1);
+                    final int rubyIndex = baseIndex;
+
+                    signature = sig(methodSignature[0], params);
+                    int mod = ACC_PUBLIC;
+                    if ( isVarArgsSignature(methodName, methodSignature) ) mod |= ACC_VARARGS;
+                    m = new SkinnyMethodAdapter(cw, mod, javaMethodName, signature, null, null);
+                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                    m.getstatic(javaPath, "ruby", ci(Ruby.class));
+                    m.astore(rubyIndex);
+
+                    m.aload(0); // self
+                    m.ldc(methodName); // method name
+                    RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
+                    m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
+
+                    RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
+                }
+
+                if (DEBUG_REIFY) LOG.debug("defining {}#{} as {}#{}", getName(), methodName, javaName, javaMethodName + signature);
+
+                instanceMethods.add(javaMethodName + signature);
+
+                m.end();
+            }
+
+            // define class/static methods
+            for (Map.Entry<String,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
+                String methodName = methodEntry.getKey();
+
+                if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
+
+                String javaMethodName = JavaNameMangler.mangleMethodName(methodName);
+
+                Map<Class,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(methodName);
+                List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(methodName);
+                Class[] methodSignature = getMetaClass().getMethodSignatures().get(methodName);
+
+                String signature;
+                if (methodSignature == null) {
+                    final Arity arity = methodEntry.getValue().getArity();
+                    // non-signature signature with just IRubyObject
+                    switch (arity.getValue()) {
+                        case 0:
+                            signature = sig(IRubyObject.class);
+                            if (instanceMethods.contains(javaMethodName + signature)) continue;
+                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, javaMethodName, signature, null, null);
+                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                            m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+                            //m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
+                            m.ldc(methodName);
+                            m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
+                            break;
+                        default:
+                            signature = sig(IRubyObject.class, IRubyObject[].class);
+                            if (instanceMethods.contains(javaMethodName + signature)) continue;
+                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
+                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                            m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+                            m.ldc(methodName);
+                            m.aload(0);
+                            m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
+                    }
+                    m.areturn();
+                }
+                else { // generate a real method signature for the method, with to/from coercions
+
+                    // indices for temp values
+                    Class[] params = new Class[methodSignature.length - 1];
+                    System.arraycopy(methodSignature, 1, params, 0, params.length);
+                    final int baseIndex = RealClassGenerator.calcBaseIndex(params, 0);
+                    int rubyIndex = baseIndex;
+
+                    signature = sig(methodSignature[0], params);
+                    if (instanceMethods.contains(javaMethodName + signature)) continue;
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
+                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                    m.getstatic(javaPath, "ruby", ci(Ruby.class));
+                    m.astore(rubyIndex);
+
+                    m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+
+                    m.ldc(methodName); // method name
+                    RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
+                    m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
+
+                    RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
+                }
+
+                if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(), methodName, javaName, javaMethodName + signature);
+
+                m.end();
+            }
+
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        private String[] interfaces() {
+            final Class[] interfaces = Java.getInterfacesFromRubyClass(RubyClass.this);
+            final String[] interfaceNames = new String[interfaces.length + 1];
+            // mark this as a Reified class
+            interfaceNames[0] = p(Reified.class);
+            // add the other user-specified interfaces
+            for (int i = 0; i < interfaces.length; i++) {
+                interfaceNames[i + 1] = p(interfaces[i]);
+            }
+            return interfaceNames;
+        }
+
+    } // class Reificator
 
     private boolean isVarArgsSignature(final String method, final Class[] methodSignature) {
         // TODO we should simply detect "java.lang.Object m1(java.lang.Object... args)"
