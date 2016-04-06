@@ -77,4 +77,66 @@ public class StringSupportTest {
         assertEquals(Arrays.asList(str.split(":", 1)), StringSupport.split(str, ':', 1));
     }
 
+    public static void main(String[] args) {
+        System.out.println("WARMUP: ");
+        runSplitTest(100 * 1000);
+        System.gc(); System.gc();
+        System.out.println("\n\n");
+        runSplitTest(500 * 1000);
+    }
+
+    private static void runSplitTest(final long TIMES) {
+        long time;
+
+        System.gc();
+        time = stringSupportSplit(TIMES, "1:2", ':');
+
+        System.out.println("StringSupport.split(\"1:2\", ':') " + TIMES + "x took: " + time);
+
+        System.gc();
+        time = javaStringSplit(TIMES, "1:2", ":");
+
+        System.out.println("\"1:2\".split(\":\") " + TIMES + "x took: " + time);
+
+        //
+
+        System.gc();
+        time = stringSupportSplit(TIMES, "no-split-separator-match", ';');
+
+        System.out.println("StringSupport.split(\"no-split-separator-match\", ';') " + TIMES + "x took: " + time);
+
+        System.gc();
+        time = javaStringSplit(TIMES, "no-split-separator-match", ";");
+
+        System.out.println("\"no-split-separator-match\".split(\";\") " + TIMES + "x took: " + time);
+
+        //
+
+        System.gc();
+        time = stringSupportSplit(TIMES, "this\nis\na\nlonger\n\nstring\n,well\nnot\nvery-long-but\nstill\n", '\n');
+
+        System.out.println("StringSupport.split(\"this...\", '\\n') " + TIMES + "x took: " + time);
+
+        System.gc();
+        time = javaStringSplit(TIMES, "this\nis\na\nlonger\n\nstring\n,well\nnot\nvery-long-but\nstill\n", "\n");
+
+        System.out.println("\"this...\".split(\"\\n\") " + TIMES + "x took: " + time);
+    }
+
+    private static long stringSupportSplit(final long TIMES, final String str, final char sep) {
+        long time = System.currentTimeMillis();
+        for ( int i=0; i<TIMES; i++ ) {
+            StringSupport.split(str, sep);
+        }
+        return System.currentTimeMillis() - time;
+    }
+
+    private static long javaStringSplit(final long TIMES, final String str, final String sep) {
+        long time = System.currentTimeMillis();
+        for ( int i=0; i<TIMES; i++ ) {
+            str.split(sep);
+        }
+        return System.currentTimeMillis() - time;
+    }
+
 }
