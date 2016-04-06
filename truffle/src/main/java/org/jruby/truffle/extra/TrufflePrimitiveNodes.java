@@ -77,7 +77,7 @@ import java.util.Map;
 @CoreClass(name = "Truffle::Primitive")
 public abstract class TrufflePrimitiveNodes {
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "binding_of_caller", isModuleFunction = true)
+    @CoreMethod(names = "binding_of_caller", isModuleFunction = true)
     public abstract static class BindingOfCallerNode extends CoreMethodArrayArgumentsNode {
 
         public BindingOfCallerNode(RubyContext context, SourceSection sourceSection) {
@@ -117,7 +117,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "source_of_caller", isModuleFunction = true)
+    @CoreMethod(names = "source_of_caller", isModuleFunction = true)
     public abstract static class SourceOfCallerNode extends CoreMethodArrayArgumentsNode {
 
         public SourceOfCallerNode(RubyContext context, SourceSection sourceSection) {
@@ -225,7 +225,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "dump_string", onSingleton = true, required = 1)
+    @CoreMethod(names = "dump_string", onSingleton = true, required = 1)
     public abstract static class DumpStringNode extends CoreMethodArrayArgumentsNode {
 
         public DumpStringNode(RubyContext context, SourceSection sourceSection) {
@@ -308,7 +308,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "coverage_result", onSingleton = true)
+    @CoreMethod(names = "coverage_result", onSingleton = true)
     public abstract static class CoverageResultNode extends CoreMethodArrayArgumentsNode {
 
         public CoverageResultNode(RubyContext context, SourceSection sourceSection) {
@@ -352,7 +352,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "coverage_start", onSingleton = true)
+    @CoreMethod(names = "coverage_start", onSingleton = true)
     public abstract static class CoverageStartNode extends CoreMethodArrayArgumentsNode {
 
         public CoverageStartNode(RubyContext context, SourceSection sourceSection) {
@@ -371,7 +371,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "attach", onSingleton = true, required = 2, needsBlock = true)
+    @CoreMethod(names = "attach", onSingleton = true, required = 2, needsBlock = true)
     public abstract static class AttachNode extends CoreMethodArrayArgumentsNode {
 
         public AttachNode(RubyContext context, SourceSection sourceSection) {
@@ -386,7 +386,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "detach", onSingleton = true, required = 1)
+    @CoreMethod(names = "detach", onSingleton = true, required = 1)
     public abstract static class DetachNode extends CoreMethodArrayArgumentsNode {
 
         public DetachNode(RubyContext context, SourceSection sourceSection) {
@@ -403,7 +403,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "debug_print", onSingleton = true, required = 1)
+    @CoreMethod(names = "debug_print", onSingleton = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintNode extends CoreMethodArrayArgumentsNode {
 
         public DebugPrintNode(RubyContext context, SourceSection sourceSection) {
@@ -448,7 +448,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "convert_to_mutable_rope", onSingleton = true, required = 1)
+    @CoreMethod(names = "convert_to_mutable_rope", onSingleton = true, required = 1)
     public abstract static class ConvertToMutableRope extends CoreMethodArrayArgumentsNode {
 
         public ConvertToMutableRope(RubyContext context, SourceSection sourceSection) {
@@ -464,7 +464,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "debug_print_rope", onSingleton = true, required = 1, optional = 1)
+    @CoreMethod(unsafeNeedsAudit = true, names = "debug_print_rope", onSingleton = true, required = 1, optional = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintRopeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode;
@@ -498,7 +498,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "flatten_rope", onSingleton = true, required = 1)
+    @CoreMethod(names = "flatten_rope", onSingleton = true, required = 1)
     public abstract static class FlattenRopeNode extends CoreMethodArrayArgumentsNode {
 
         public FlattenRopeNode(RubyContext context, SourceSection sourceSection) {
@@ -515,7 +515,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "jruby_home_directory", onSingleton = true)
+    @CoreMethod(names = "jruby_home_directory", onSingleton = true)
     public abstract static class JRubyHomeDirectoryNode extends CoreMethodNode {
 
         public JRubyHomeDirectoryNode(RubyContext context, SourceSection sourceSection) {
@@ -530,7 +530,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "jruby_home_directory_protocol", onSingleton = true)
+    @CoreMethod(names = "jruby_home_directory_protocol", onSingleton = true)
     public abstract static class JRubyHomeDirectoryProtocolNode extends CoreMethodNode {
 
         public JRubyHomeDirectoryProtocolNode(RubyContext context, SourceSection sourceSection) {
@@ -557,7 +557,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "host_os", onSingleton = true)
+    @CoreMethod(names = "host_os", onSingleton = true)
     public abstract static class HostOSNode extends CoreMethodNode {
 
         public HostOSNode(RubyContext context, SourceSection sourceSection) {
@@ -586,7 +586,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "install_rubinius_primitive", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "install_rubinius_primitive", isModuleFunction = true, required = 1)
     public abstract static class InstallRubiniusPrimitiveNode extends CoreMethodArrayArgumentsNode {
 
         public InstallRubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -601,7 +601,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "fixnum_lower", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "fixnum_lower", isModuleFunction = true, required = 1)
     public abstract static class FixnumLowerPrimitiveNode extends UnaryCoreMethodNode {
 
         public FixnumLowerPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -629,7 +629,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "synchronized", isModuleFunction = true, required = 1, needsBlock = true)
+    @CoreMethod(names = "synchronized", isModuleFunction = true, required = 1, needsBlock = true)
     public abstract static class SynchronizedPrimitiveNode extends YieldingCoreMethodNode {
 
         public SynchronizedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -645,7 +645,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "full_memory_barrier", isModuleFunction = true)
+    @CoreMethod(names = "full_memory_barrier", isModuleFunction = true)
     public abstract static class FullMemoryBarrierPrimitiveNode extends CoreMethodNode {
 
         public FullMemoryBarrierPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -663,7 +663,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "print_backtrace", onSingleton = true)
+    @CoreMethod(names = "print_backtrace", onSingleton = true, unsafe = UnsafeGroup.IO)
     public abstract static class PrintBacktraceNode extends CoreMethodNode {
 
         public PrintBacktraceNode(RubyContext context, SourceSection sourceSection) {
@@ -685,7 +685,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "ast", onSingleton = true, required = 1)
+    @CoreMethod(names = "ast", onSingleton = true, required = 1)
     public abstract static class ASTNode extends CoreMethodArrayArgumentsNode {
 
         public ASTNode(RubyContext context, SourceSection sourceSection) {
@@ -734,7 +734,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "object_type_of", onSingleton = true, required = 1)
+    @CoreMethod(names = "object_type_of", onSingleton = true, required = 1)
     public abstract static class ObjectTypeOfNode extends CoreMethodArrayArgumentsNode {
 
         public ObjectTypeOfNode(RubyContext context, SourceSection sourceSection) {
@@ -747,7 +747,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "spawn_process", onSingleton = true, required = 3)
+    @CoreMethod(names = "spawn_process", onSingleton = true, required = 3, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SpawnProcessNode extends CoreMethodArrayArgumentsNode {
 
         public SpawnProcessNode(RubyContext context, SourceSection sourceSection) {
@@ -803,7 +803,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "context", onSingleton = true)
+    @CoreMethod(names = "context", onSingleton = true)
     public abstract static class ContextNode extends CoreMethodArrayArgumentsNode {
 
         public ContextNode(RubyContext context, SourceSection sourceSection) {
@@ -899,7 +899,7 @@ public abstract class TrufflePrimitiveNodes {
      * for testing compilation of String becuase most other ways to construct a string can currently escape.
      */
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "create_simple_string", onSingleton = true)
+    @CoreMethod(names = "create_simple_string", onSingleton = true)
     public abstract static class CreateSimpleStringNode extends CoreMethodArrayArgumentsNode {
 
         public CreateSimpleStringNode(RubyContext context, SourceSection sourceSection) {
@@ -912,7 +912,7 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "logical_processors", onSingleton = true)
+    @CoreMethod(names = "logical_processors", onSingleton = true)
     public abstract static class LogicalProcessorsNode extends CoreMethodNode {
 
         public LogicalProcessorsNode(RubyContext context, SourceSection sourceSection) {
@@ -926,7 +926,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(unsafeNeedsAudit = true, names = "original_argv", onSingleton = true)
+    @CoreMethod(names = "original_argv", onSingleton = true)
     public abstract static class OriginalArgvNode extends CoreMethodNode {
 
         public OriginalArgvNode(RubyContext context, SourceSection sourceSection) {
