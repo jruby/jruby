@@ -88,8 +88,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     static ThreadLocal<Ruby> runtimeTLS = new ThreadLocal<Ruby>();
 
     private final Class proxyClass;
-    private final ArrayList<JavaProxyMethod> methods = new ArrayList<JavaProxyMethod>();
-    private final HashMap<String, ArrayList<JavaProxyMethod>> methodMap = new HashMap<String, ArrayList<JavaProxyMethod>>();
+    private final ArrayList<JavaProxyMethod> methods = new ArrayList<>();
+    private final HashMap<String, ArrayList<JavaProxyMethod>> methodMap = new HashMap<>();
 
     /* package scope */
     JavaProxyClass(final Class<?> proxyClass) {
@@ -427,7 +427,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
             ArrayList<JavaProxyMethod> methodsWithName = this.methodMap.get(name);
             if (methodsWithName == null) {
-                methodsWithName = new ArrayList<JavaProxyMethod>(2);
+                methodsWithName = new ArrayList<>(2);
                 methodMap.put(name, methodsWithName);
             }
             methodsWithName.add(proxyMethod);
@@ -540,7 +540,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
     }
 
-    private static final HashSet<String> EXCLUDE_MODULES = new HashSet<String>();
+    private static final HashSet<String> EXCLUDE_MODULES = new HashSet<>(8, 1);
     static {
         EXCLUDE_MODULES.add("Kernel");
         EXCLUDE_MODULES.add("Java");

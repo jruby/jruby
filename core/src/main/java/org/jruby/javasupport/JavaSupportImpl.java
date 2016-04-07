@@ -36,6 +36,7 @@ package org.jruby.javasupport;
 import java.lang.reflect.Member;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -101,9 +102,6 @@ public class JavaSupportImpl extends JavaSupport {
     private RubyClass javaProxyConstructorClass;
 
     private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>(64);
-
-    // A cache of all JavaProxyClass objects created for this runtime
-    private Map<Set<?>, JavaProxyClass> javaProxyClassCache = Collections.synchronizedMap(new HashMap<Set<?>, JavaProxyClass>());
 
     public JavaSupportImpl(final Ruby runtime) {
         this.runtime = runtime;
@@ -355,10 +353,6 @@ public class JavaSupportImpl extends JavaSupport {
         return javaConstructorClass = getJavaModule().getClass("JavaConstructor");
     }
 
-    public Map<Set<?>, JavaProxyClass> getJavaProxyClassCache() {
-        return this.javaProxyClassCache;
-    }
-
     public ClassValue<Map<String, AssignedName>> getStaticAssignedNames() {
         return staticAssignedNames;
     }
@@ -367,21 +361,72 @@ public class JavaSupportImpl extends JavaSupport {
         return instanceAssignedNames;
     }
 
-    public void beginProxy(Class cls, RubyModule proxy) {
+    public final void beginProxy(Class cls, RubyModule proxy) {
         UnfinishedProxy up = new UnfinishedProxy(proxy);
         up.lock();
         unfinishedProxies.put(cls, up);
     }
 
-    public void endProxy(Class cls) {
+    public final void endProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.remove(cls);
         up.unlock();
     }
 
-    public RubyModule getUnfinishedProxy(Class cls) {
+    public final RubyModule getUnfinishedProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.get(cls);
         if (up != null && up.isHeldByCurrentThread()) return up.proxy;
         return null;
+    }
+
+    @Deprecated
+    public Map<Set<?>, JavaProxyClass> getJavaProxyClassCache() {
+        Map<Set<?>, JavaProxyClass> javaProxyClassCache = new HashMap<>(javaProxyClasses.size());
+        synchronized (javaProxyClasses) {
+            for ( Map.Entry<ProxyClassKey, JavaProxyClass> entry : javaProxyClasses.entrySet() ) {
+                final ProxyClassKey key = entry.getKey();
+                final Set<Object> cacheKey = new HashSet<>();
+                cacheKey.add(key.superClass);
+                for (int i = 0; i < key.interfaces.length; i++) {
+                    cacheKey.add(key.interfaces[i]);
+                }
+                // add (potentially) overridden names to the key.
+                if ( ! key.names.isEmpty() ) cacheKey.addAll(key.names);
+
+                javaProxyClassCache.put(cacheKey, entry.getValue());
+            }
+        }
+
+        return Collections.unmodifiableMap(javaProxyClassCache);
+    }
+
+    // cache of all JavaProxyClass objects created for this runtime
+    private final Map<ProxyClassKey, JavaProxyClass> javaProxyClasses = new HashMap<>();
+
+    @Override
+    final JavaProxyClass fetchJavaProxyClass(ProxyClassKey classKey) {
+        synchronized (javaProxyClasses) {
+            return javaProxyClasses.get(classKey);
+        }
+    }
+
+    @Override
+    final JavaProxyClass saveJavaProxyClass(ProxyClassKey classKey, JavaProxyClass klass) {
+        synchronized (javaProxyClasses) {
+            JavaProxyClass existing = javaProxyClasses.get(classKey);
+            if ( existing != null ) return existing;
+            javaProxyClasses.put(classKey, klass);
+        }
+        return klass;
+    }
+
+    // internal helper to access non-public fetch method
+    public static JavaProxyClass fetchJavaProxyClass(final Ruby runtime, ProxyClassKey classKey) {
+        return runtime.getJavaSupport().fetchJavaProxyClass(classKey);
+    }
+
+    // internal helper to access non-public save method
+    public static JavaProxyClass saveJavaProxyClass(final Ruby runtime, ProxyClassKey classKey, JavaProxyClass klass) {
+        return runtime.getJavaSupport().saveJavaProxyClass(classKey, klass);
     }
 
     @Deprecated
@@ -427,8 +472,4 @@ public class JavaSupportImpl extends JavaSupport {
         }
     }
 
-    @Deprecated
-    public static Class getPrimitiveClass(String primitiveType) {
-        return JavaUtil.PRIMITIVE_CLASSES.get(primitiveType);
-    }
 }

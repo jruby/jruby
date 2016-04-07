@@ -45,6 +45,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.Ruby;
+import org.jruby.javasupport.JavaSupport;
+import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -135,21 +137,13 @@ public class JavaProxyClassFactory {
         if (loader == null) loader = JavaProxyClassFactory.class.getClassLoader();
         if (superClass == null) superClass = Object.class;
         if (interfaces == null) interfaces = EMPTY_CLASS_ARRAY;
+        if (names == null) names = Collections.EMPTY_SET; // so we can assume names != null
 
-        // TODO key is a bit crazy - unfortunately Set<?> leaked into public API
-        final Set<Object> cacheKey = new HashSet<Object>();
-        cacheKey.add(superClass);
-        for (int i = 0; i < interfaces.length; i++) {
-            cacheKey.add(interfaces[i]);
-        }
-        // add (potentially) overridden names to the key.
-        if (names != null) cacheKey.addAll(names);
-        else names = Collections.emptySet(); // so we can assume names != null
-
-        Map<Set<?>, JavaProxyClass> proxyCache = runtime.getJavaSupport().getJavaProxyClassCache();
-        JavaProxyClass proxyClass = proxyCache.get(cacheKey);
+        // TODO could we possibly avoid **names** gathering and keying ?!?
+        //  ... currently this causes to regenerate proxy classes when a Ruby method is added on the type
+        JavaSupport.ProxyClassKey classKey = JavaSupport.ProxyClassKey.getInstance(superClass, interfaces, names);
+        JavaProxyClass proxyClass = JavaSupportImpl.fetchJavaProxyClass(runtime, classKey);
         if (proxyClass == null) {
-
             if (targetClassName == null) {
                 targetClassName = targetClassName(superClass);
             }
@@ -159,7 +153,7 @@ public class JavaProxyClassFactory {
             Map<MethodKey, MethodData> methods = collectMethods(superClass, interfaces, names);
             proxyClass = generate(loader, targetClassName, superClass, interfaces, methods, selfType);
 
-            proxyCache.put(cacheKey, proxyClass);
+            proxyClass = JavaSupportImpl.saveJavaProxyClass(runtime, classKey, proxyClass);
         }
 
         return proxyClass;
@@ -552,7 +546,7 @@ public class JavaProxyClassFactory {
         HashSet<Class> allClasses = new HashSet<>();
         addClass(allClasses, methods, superClass, names);
         addInterfaces(allClasses, methods, interfaces, names);
-
+        
         return methods;
     }
 
@@ -690,8 +684,7 @@ public class JavaProxyClassFactory {
         public boolean equals(Object obj) {
             if ( obj instanceof MethodKey ) {
                 MethodKey key = (MethodKey) obj;
-                return name.equals(key.name) &&
-                       Arrays.equals(arguments, key.arguments);
+                return name.equals(key.name) && Arrays.equals(arguments, key.arguments);
             }
             return false;
         }
@@ -699,6 +692,19 @@ public class JavaProxyClassFactory {
         @Override
         public int hashCode() {
             return name.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder str = new StringBuilder().append(name);
+            str.append('(');
+            final int last = arguments.length - 1;
+            for ( int i=0; i<last; i++ ) {
+                str.append(arguments[i].getName()).append(',');
+            }
+            if ( last >= 0 ) str.append(arguments[last].getName());
+            str.append(')');
+            return str.toString();
         }
     }
 
