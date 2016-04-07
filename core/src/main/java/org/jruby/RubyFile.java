@@ -676,92 +676,65 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
-    public static String dirname(ThreadContext context, String jfilename) {
-        String name = jfilename.replace('\\', '/');
-        int minPathLength = 1;
-        boolean trimmedSlashes = false;
 
-        boolean startsWithDriveLetterOnWindows = startsWithDriveLetterOnWindows(name);
+    // get dirname with uri scheme stripped off and then recombine that back to scheme.
+    private static String adjustURIDirname(ThreadContext context, String path, int start) {
+        String adjustedPath = dirname(context, path.substring(start));
+        if (adjustedPath.equals(".") || adjustedPath.equals("/")) adjustedPath = "";
+        return path.substring(0, start) + adjustedPath;
+    }
 
-        if (startsWithDriveLetterOnWindows) {
-            minPathLength = 3;
+    // will strip any trailing forward or backslashes except unless the string gets too short.
+    private static String stripTrailingSlashes(String path, int minPathLength) {
+        while (path.length() > minPathLength) { // lol
+            int lastIndex = path.length() - 1;
+            char c = path.charAt(lastIndex);
+            if (c != '/' && c != '\\') break;
+            path = path.substring(0, lastIndex);
         }
+        return path;
+    }
+    /**
+     * Return the dirname of the speficied filename.  path is the original string.  On windows
+     * if this is a file path it will leave the delimiter the same.  If it represents a URI then it
+     * needs to become forward slashes.
+     *
+     * Internally we have two strings in this method: path and normalizedPath which is normalized
+     * to '/' so we only have to do indexes against a single format of file.
+     */
+    // FIXME: MRI returns '//' -> '//' and '\\\\' -> '\\\\' (bug?).  useless values seemingly?
+    public static String dirname(ThreadContext context, String path) {
+        String normalizedPath = path.replace('\\', '/');
+        boolean hasDriveLetter = startsWithDriveLetterOnWindows(normalizedPath);
 
-        // jar like paths
-        if (name.contains(".jar!/")) {
-            int start = name.indexOf("!/") + 1;
-            String path = dirname(context, name.substring(start));
-            if (path.equals(".") || path.equals("/")) path = "";
-            return name.substring(0, start) + path;
-        }
-        // address all the url like paths first
-        if (PROTOCOL_PATTERN.matcher(name).matches()) {
-            int start = name.indexOf(":/") + 2;
-            String path = dirname(context, name.substring(start));
-            if (path.equals(".")) path = "";
-            return name.substring(0, start) + path;
-        }
+        // Dealing with URIs.  These are use normalized path because \ is never valid.
+        if (normalizedPath.contains(".jar!/")) return adjustURIDirname(context, normalizedPath, normalizedPath.indexOf("!/") + 1);
+        if (PROTOCOL_PATTERN.matcher(normalizedPath).matches()) return adjustURIDirname(context, normalizedPath,normalizedPath.indexOf(":/") + 2);
 
-        while (name.length() > minPathLength && name.charAt(name.length() - 1) == '/') {
-            trimmedSlashes = true;
-            name = name.substring(0, name.length() - 1);
-        }
+        if (hasDriveLetter && normalizedPath.length() == 2) return path + '.';  // 'C:' passed in
 
-        String result;
-        if (startsWithDriveLetterOnWindows && name.length() == 2) {
-            if (trimmedSlashes) {
-                // C:\ is returned unchanged
-                result = jfilename.substring(0, 3);
-            } else {
-                result = jfilename.substring(0, 2) + '.';
-            }
-        } else {
-            //TODO deal with UNC names
-            int index = name.lastIndexOf('/');
+        normalizedPath = stripTrailingSlashes(normalizedPath, hasDriveLetter ? 3 : 1); // '/foo[/\\]+' -> '/foo/'
 
-            if (index == -1) {
-                if (startsWithDriveLetterOnWindows) {
-                    return jfilename.substring(0, 2) + '.';
-                } else {
-                    return ".";
-                }
-            }
-            if (index == 0) {
-                return "/";
-            }
+        // stripped off one or more / from trailing slash normalization above...cope with it (C: handled earlier)
+        if (hasDriveLetter && normalizedPath.length() == 2) return path.substring(0, 3); // C:[/\\]+
 
-            if (startsWithDriveLetterOnWindows && index == 2) {
-                // Include additional path separator
-                // (so that dirname of "C:\file.txt" is  "C:\", not "C:")
-                index++;
+        int lastSlash = normalizedPath.lastIndexOf('/');
+        if (lastSlash == -1) return hasDriveLetter ? path.substring(0, 2) + '.' : ".";  // 'C:foo' or 'foo' (no slash)
+        if (lastSlash == 0) return path.substring(0, 1); // '/' or '\'
+        if (lastSlash == 2 && hasDriveLetter) return path.substring(0, 3); // 'C:[/\\]file'
+
+        if (normalizedPath.startsWith("//")) { // UNC path
+            if (lastSlash == 1) return path.substring(0, normalizedPath.length());  // '//foo'
+
+            if (!normalizedPath.substring(2, lastSlash - 2).contains("/")) { // '//foo/bar'
+                return path.substring(0, normalizedPath.length());
             }
 
-            if (jfilename.startsWith("\\\\")) {
-                index = jfilename.length();
-                String[] splitted = jfilename.split(Pattern.quote("\\"));
-                int last = splitted.length-1;
-                if (splitted[last].contains(".")) {
-                    index = jfilename.lastIndexOf('\\');
-                }
-                
-            }
-            
-            result = jfilename.substring(0, index);
-            
-        }
-        
-        char endChar;
-        // trim trailing slashes
-        while (result.length() > minPathLength) {
-            endChar = result.charAt(result.length() - 1);
-            if (endChar == '/' || endChar == '\\') {
-                result = result.substring(0, result.length() - 1);
-            } else {
-                break;
-            }
+            // deeper UNC path
         }
 
-        return result;
+        // we strip one last time for case '/foo///////bar.txt'
+        return stripTrailingSlashes(path.substring(0, lastSlash), hasDriveLetter ? 3 : 1);
     }
 
     /**
