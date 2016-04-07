@@ -695,7 +695,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return path;
     }
     /**
-     * Return the dirname of the speficied filename.  path is the original string.  On windows
+     * Return the dirname of the specified filename.  path is the original string.  On windows
      * if this is a file path it will leave the delimiter the same.  If it represents a URI then it
      * needs to become forward slashes.
      *
