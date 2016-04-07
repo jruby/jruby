@@ -43,8 +43,8 @@ public class GlobalVariables {
         final GlobalVariableStorage currentStorage = variables.get(key);
         if (currentStorage == null) {
             final GlobalVariableStorage newStorage = new GlobalVariableStorage(defaultValue);
-            final GlobalVariableStorage wasStorage = variables.putIfAbsent(key, newStorage);
-            return (wasStorage == null) ? newStorage : wasStorage;
+            final GlobalVariableStorage racyNewStorage = variables.putIfAbsent(key, newStorage);
+            return (racyNewStorage == null) ? newStorage : racyNewStorage;
         } else {
             return currentStorage;
         }
