@@ -19,12 +19,14 @@ import java.math.BigDecimal;
 @Layout
 public interface BigDecimalLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createBigDecimalShape(DynamicObject logicalClass,
-                                               DynamicObject metaClass);
+    DynamicObjectFactory createBigDecimalShape(
+            DynamicObject logicalClass,
+            DynamicObject metaClass);
 
-    DynamicObject createBigDecimal(DynamicObjectFactory factory,
-                                   BigDecimal value,
-                                   BigDecimalNodes.Type type);
+    DynamicObject createBigDecimal(
+            DynamicObjectFactory factory,
+            BigDecimal value,
+            BigDecimalNodes.Type type);
 
     boolean isBigDecimal(DynamicObject object);
 
