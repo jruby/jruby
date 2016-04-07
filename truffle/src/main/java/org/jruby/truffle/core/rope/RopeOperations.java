@@ -233,6 +233,9 @@ public class RopeOperations {
             final SubstringRope substring = (SubstringRope) rope;
 
             visitBytes(substring.getChild(), visitor, rope.begin() + substring.getOffset() + offset, length);
+        } else {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException("Don't know how to visit rope of type: " + rope.getClass().getName());
         }
     }
 
