@@ -176,7 +176,7 @@ public abstract class RopeNodes {
                 if (getContext().getOptions().ROPE_LAZY_SUBSTRINGS) {
                     return new SubstringRope(base, offset, byteLength, byteLength, CR_7BIT);
                 } else {
-                    return new AsciiOnlyLeafRope(base.extractRange(offset, byteLength), base.getEncoding());
+                    return new AsciiOnlyLeafRope(RopeOperations.extractRange(base, offset, byteLength), base.getEncoding());
                 }
             }
 
@@ -186,7 +186,7 @@ public abstract class RopeNodes {
                 if (getContext().getOptions().ROPE_LAZY_SUBSTRINGS) {
                     return new SubstringRope(base, offset, byteLength, byteLength, CR_VALID);
                 } else {
-                    return new ValidLeafRope(base.extractRange(offset, byteLength), base.getEncoding(), byteLength);
+                    return new ValidLeafRope(RopeOperations.extractRange(base, offset, byteLength), base.getEncoding(), byteLength);
                 }
             }
 
@@ -213,7 +213,7 @@ public abstract class RopeNodes {
                     makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), getSourceSection(), null, null, null, null));
                 }
 
-                final byte[] bytes = base.extractRange(offset, byteLength);
+                final byte[] bytes = RopeOperations.extractRange(base, offset, byteLength);
 
                 return makeLeafRopeNode.executeMake(bytes, base.getEncoding(), codeRange, characterLength);
             }

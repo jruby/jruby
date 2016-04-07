@@ -276,6 +276,22 @@ public class RopeOperations {
         }
     }
 
+    @TruffleBoundary
+    public static byte[] extractRange(Rope rope, int offset, int length) {
+        final ByteList result = new ByteList(length);
+
+        visitBytes(rope, new BytesVisitor() {
+
+            @Override
+            public void accept(byte[] bytes, int offset, int length) {
+                result.append(bytes, offset, length);
+            }
+
+        }, offset, length);
+
+        return result.getUnsafeBytes();
+    }
+
     /**
      * Performs an iterative depth first search of the Rope tree to calculate its byte[] without needing to populate
      * the byte[] for each level beneath. Every LeafRope has its byte[] populated by definition. The goal is to determine
