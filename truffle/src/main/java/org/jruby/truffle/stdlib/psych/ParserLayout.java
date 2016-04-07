@@ -20,12 +20,14 @@ import org.yaml.snakeyaml.parser.Parser;
 @Layout
 public interface ParserLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createParserShape(DynamicObject logicalClass,
-                                               DynamicObject metaClass);
+    DynamicObjectFactory createParserShape(
+            DynamicObject logicalClass,
+            DynamicObject metaClass);
 
-    DynamicObject createParser(DynamicObjectFactory factory,
-                               @Nullable Parser parser,
-                               @Nullable Event event);
+    DynamicObject createParser(
+            DynamicObjectFactory factory,
+            @Nullable Parser parser,
+            @Nullable Event event);
 
     boolean isParser(DynamicObject object);
 
