@@ -60,6 +60,9 @@ import java.util.regex.Pattern;
  * script or by a native executable.
  */
 public class ArgumentProcessor {
+
+    public static final String SEPARATOR = "(?<!jar:file|jar|file|classpath|uri:classloader|uri|http|https):";
+
     private static final class Argument {
         public final String originalValue;
         public final String dashedValue;
@@ -249,7 +252,11 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'I':
                     String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
-                    String[] ls = s.split(java.io.File.pathSeparator);
+                    String separator = java.io.File.pathSeparator;
+                    if (":".equals(separator)) {
+                        separator = SEPARATOR;
+                    }
+                    String[] ls = s.split(separator);
                     config.getLoadPaths().addAll(Arrays.asList(ls));
                     break FOR;
                 case 'J':

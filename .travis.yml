@@ -85,8 +85,6 @@ matrix:
     - env: JT=check_ambiguous_arguments
       jdk: oraclejdk8
     - env: JT='test mri'
-    - env: PHASE='-Pmain --projects !truffle'
-      jdk: oraclejdk8
     - env: PHASE='-Pj2ee --projects !truffle'
       jdk: oraclejdk7
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
