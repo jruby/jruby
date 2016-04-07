@@ -43,15 +43,15 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
 
-    @CoreMethod(names = { "collect", "map" }, needsBlock = true, lowerFixnumSelf = true)
-    public abstract static class CollectNode extends YieldingCoreMethodNode {
+    @CoreMethod(names = { "map", "collect" }, needsBlock = true, lowerFixnumSelf = true)
+    public abstract static class MapNode extends YieldingCoreMethodNode {
 
-        public CollectNode(RubyContext context, SourceSection sourceSection) {
+        public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
-        public DynamicObject collect(VirtualFrame frame, DynamicObject range, DynamicObject block,
+        public DynamicObject map(VirtualFrame frame, DynamicObject range, DynamicObject block,
                 @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
             final int end = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
