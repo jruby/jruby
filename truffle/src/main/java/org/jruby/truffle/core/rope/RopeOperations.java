@@ -243,7 +243,7 @@ public class RopeOperations {
         } else if (rope instanceof SubstringRope) {
             final SubstringRope substring = (SubstringRope) rope;
 
-            visitBytes(substring.getChild(), visitor, rope.begin() + substring.getOffset() + offset, length);
+            visitBytes(substring.getChild(), visitor, substring.getOffset() + offset, length);
         } else if (rope instanceof RepeatingRope) {
             final RepeatingRope repeating = (RepeatingRope) rope;
             final Rope child = repeating.getChild();
