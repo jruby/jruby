@@ -125,8 +125,8 @@ public abstract class ArrayNodes {
             return ToAryNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization(guards = {"isNullArray(a)", "isNullArray(b)"})
-        public DynamicObject addNull(DynamicObject a, DynamicObject b) {
+        @Specialization(guards = { "isNullArray(a)", "isNullArray(b)" })
+        public DynamicObject addNullNull(DynamicObject a, DynamicObject b) {
             return createArray(getContext(), null, 0);
         }
 
@@ -189,7 +189,7 @@ public abstract class ArrayNodes {
             return createArray(getContext(), Arrays.copyOf((Object[]) getStore(b), size), size);
         }
 
-        @Specialization(guards = {"!isObjectArray(a)", "isRubyArray(b)", "isObjectArray(b)"})
+        @Specialization(guards = { "!isObjectArray(a)", "isObjectArray(b)" })
         public DynamicObject addOtherObject(DynamicObject a, DynamicObject b) {
             final int combinedSize = getSize(a) + getSize(b);
             final Object[] combined = new Object[combinedSize];
@@ -198,7 +198,7 @@ public abstract class ArrayNodes {
             return createArray(getContext(), combined, combinedSize);
         }
 
-        @Specialization(guards = {"isObjectArray(a)", "isRubyArray(b)", "!isObjectArray(b)"})
+        @Specialization(guards = { "isObjectArray(a)", "!isObjectArray(b)" })
         public DynamicObject addObject(DynamicObject a, DynamicObject b) {
             final int combinedSize = getSize(a) + getSize(b);
             final Object[] combined = new Object[combinedSize];
@@ -207,13 +207,13 @@ public abstract class ArrayNodes {
             return createArray(getContext(), combined, combinedSize);
         }
 
-        @Specialization(guards = {"isEmptyArray(a)", "isRubyArray(b)"})
+        @Specialization(guards = "isEmptyArray(a)")
         public DynamicObject addEmpty(DynamicObject a, DynamicObject b) {
             final int size = getSize(b);
             return createArray(getContext(), ArrayUtils.box(getStore(b)), size);
         }
 
-        @Specialization(guards = {"isEmptyArray(b)", "isRubyArray(b)"})
+        @Specialization(guards = "isEmptyArray(b)")
         public DynamicObject addOtherEmpty(DynamicObject a, DynamicObject b) {
             final int size = getSize(a);
             return createArray(getContext(), ArrayUtils.box(getStore(a)), size);
