@@ -66,12 +66,6 @@ public abstract class Rope {
         return getBytes().clone();
     }
 
-    public void visitBytes(BytesVisitor visitor) {
-        visitBytes(visitor, 0, byteLength());
-    }
-
-    public abstract void visitBytes(BytesVisitor visitor, int offset, int length);
-
     public final Encoding getEncoding() {
         return encoding;
     }

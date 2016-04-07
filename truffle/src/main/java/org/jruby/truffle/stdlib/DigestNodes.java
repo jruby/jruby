@@ -21,6 +21,7 @@ import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.BytesVisitor;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
 
@@ -149,7 +150,7 @@ public abstract class DigestNodes {
         public DynamicObject update(DynamicObject digestObject, DynamicObject message) {
             final MessageDigest digest = DigestLayoutImpl.INSTANCE.getDigest(digestObject);
 
-            StringOperations.rope(message).visitBytes(new BytesVisitor() {
+            RopeOperations.visitBytes(StringOperations.rope(message), new BytesVisitor() {
 
                 @Override
                 public void accept(byte[] bytes, int offset, int length) {

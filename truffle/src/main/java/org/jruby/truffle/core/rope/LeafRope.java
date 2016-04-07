@@ -23,11 +23,6 @@ public abstract class LeafRope extends Rope {
     }
 
     @Override
-    public void visitBytes(BytesVisitor visitor, int offset, int length) {
-        visitor.accept(getRawBytes(), begin() + offset, length);
-    }
-
-    @Override
     public String toString() {
         // This should be used for debugging only.
         return RopeOperations.decodeUTF8(this);

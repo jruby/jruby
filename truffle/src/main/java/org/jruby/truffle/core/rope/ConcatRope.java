@@ -56,32 +56,6 @@ public class ConcatRope extends Rope {
         return right.getByteSlow(index - left.byteLength());
     }
 
-    @TruffleBoundary
-    @Override
-    public void visitBytes(BytesVisitor visitor, int offset, int length) {
-        assert length <= byteLength();
-
-        final int leftLength = left.byteLength();
-
-        if (offset < leftLength) {
-            final int leftUsed;
-
-            if (offset + length > leftLength) {
-                leftUsed = leftLength - offset;
-            } else {
-                leftUsed = length;
-            }
-
-            left.visitBytes(visitor, offset, leftUsed);
-
-            if (leftUsed < length) {
-                right.visitBytes(visitor, 0, length - leftUsed);
-            }
-        } else {
-            right.visitBytes(visitor, offset - leftLength, length);
-        }
-    }
-
     public Rope getLeft() {
         return left;
     }

@@ -197,6 +197,45 @@ public class RopeOperations {
         return create(flattenBytes(rope), rope.getEncoding(), rope.getCodeRange());
     }
 
+    public static void visitBytes(Rope rope, BytesVisitor visitor) {
+        visitBytes(rope, visitor, 0, rope.byteLength());
+    }
+
+    @TruffleBoundary
+    public static void visitBytes(Rope rope, BytesVisitor visitor, int offset, int length) {
+        if (rope instanceof LeafRope) {
+            visitor.accept(rope.getRawBytes(), rope.begin() + offset, length);
+        } else if (rope instanceof ConcatRope) {
+            final ConcatRope concat = (ConcatRope) rope;
+
+            assert length <= rope.byteLength();
+
+            final int leftLength = concat.getLeft().byteLength();
+
+            if (offset < leftLength) {
+                final int leftUsed;
+
+                if (offset + length > leftLength) {
+                    leftUsed = leftLength - offset;
+                } else {
+                    leftUsed = length;
+                }
+
+                visitBytes(concat.getLeft(), visitor, offset, leftUsed);
+
+                if (leftUsed < length) {
+                    visitBytes(concat.getRight(), visitor, 0, length - leftUsed);
+                }
+            } else {
+                visitBytes(concat.getRight(), visitor, offset - leftLength, length);
+            }
+        } else if (rope instanceof SubstringRope) {
+            final SubstringRope substring = (SubstringRope) rope;
+
+            visitBytes(substring.getChild(), visitor, rope.begin() + substring.getOffset() + offset, length);
+        }
+    }
+
     /**
      * Performs an iterative depth first search of the Rope tree to calculate its byte[] without needing to populate
      * the byte[] for each level beneath. Every LeafRope has its byte[] populated by definition. The goal is to determine

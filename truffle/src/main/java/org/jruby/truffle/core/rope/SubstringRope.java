@@ -46,11 +46,6 @@ public class SubstringRope extends Rope {
         return child.getByteSlow(index + offset);
     }
 
-    @Override
-    public void visitBytes(BytesVisitor visitor, int visitOffset, int length) {
-        child.visitBytes(visitor, begin() + offset + visitOffset, length);
-    }
-
     public Rope getChild() {
         return child;
     }
