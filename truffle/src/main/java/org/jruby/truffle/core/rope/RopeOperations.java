@@ -214,7 +214,7 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static void visitBytes(Rope rope, BytesVisitor visitor, int offset, int length) {
-        if (rope instanceof LeafRope) {
+        if (rope.getRawBytes() != null) {
             visitor.accept(rope.getRawBytes(), rope.begin() + offset, length);
         } else if (rope instanceof ConcatRope) {
             final ConcatRope concat = (ConcatRope) rope;
