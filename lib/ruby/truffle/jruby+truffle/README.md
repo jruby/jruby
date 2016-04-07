@@ -1,28 +1,28 @@
 # JRuby+Truffle Runner
 
 `jruby+truffle` is a small command line utility designed to run and
-test Ruby gems and applications on JRuby+Truffle Ruby runtime. It uses other
-Ruby implementation to prepare environment and to execute files, tests
+test Ruby gems and applications on the JRuby+Truffle Ruby runtime. It uses another
+Ruby implementation to prepare the environment and executes files and tests
 on JRuby+Truffle. It is a temporary tool to make working with JRuby+Truffle
 easy until it fully supports `rubygems` and `bundler`
 
 ## Installation
 
-The command line tool is part of the JRuby distribution. It's available in
-JRuby's bin directory.
+The command line tool is part of the JRuby distribution. It is available in
+JRuby's `bin` directory.
 
-Just run `jruby+truffle --help` to see available subcommands.
+Just run `jruby+truffle --help` to see the available subcommands.
 
 ## Setup
 
-There is a `setup` subcommand to create environment for JRuby+Truffle.
+There is a `setup` subcommand to create the environment for JRuby+Truffle.
 
--   Go to directory of a gem/application you would like to test.
+-   Go to a directory of a gem/application you would like to test.
 -   Run `jruby+truffle setup`
 
-It uses default configuration (part of the tool) if one is available for a
+It uses the default configuration (part of the tool) if one is available for a
 given gem (it looks for a `gemspec` in current directory). It installs all
-required gems (based on `Gemfile`) to local bundle (default path:
+required gems (based on the `Gemfile`) to a local bundle directory (default path:
 `.jruby+truffle_bundle`), and executes other steps defined in the configuration
 files or as command line options (see `jruby+truffle
 setup --help` to learn what additional setup steps are available, or see one of
@@ -32,15 +32,15 @@ it finishes, the `run` subcommand can be used.
 ## Running
 
 After the environment is set the gem can be used to execute code, files, or
-gem's executables on JRuby+Truffle in prepared environment. Examples follows
+gem's executables on JRuby+Truffle in the prepared environment. Examples follows
 (options after `--` are interpreted by Ruby, options before `--` are options
 for this tool):
 
 -   `jruby+truffle run -- file.rb` - executes file.rb
 -   `jruby+truffle run -- -e '1+1'` - evaluates 1+1 expression
--   `jruby+truffle run -- -I test test/a_test_file_test.rb` - runs a test-file
+-   `jruby+truffle run -- -I test test/a_test_file_test.rb` - runs a test file
 -   `jruby+truffle run -S rspec -- spec/a_spec_file_spec.rb` - runs a spec file
-    using executable of rspec gem
+    using the `rspec` executable of the rspec gem
 -   `jruby+truffle run --require mocks -- file.rb` - executes file.rb, but
     requires mocks first. (mocks can be made to load always by putting the
     option to configuration file (`.jruby+truffle.yaml`) instead)
@@ -49,22 +49,22 @@ See `jruby+truffle run --help` to see all available options.
 
 ## Clean up
 
-To remove all files added during setup phase run `jruby+truffle clean`, it'll
-only keep `.jruby+truffle.yaml` configuration file for future re-setup.
+To remove all files added during the setup phase, run `jruby+truffle clean`,
+it will only keep the `.jruby+truffle.yaml` configuration file for future re-setup.
 
 ## Pre-configuration
 
-Options which are required always or are part of the setup step can
-pre-configured in the default configuration (included in the tool) or in local 
-`.jruby+truffle.yaml` configuration file to avoid repeating options on command
-line. The configuration file has a 2 level deep tree structure. First level is
-a name of the command (or `:global`), second level is the name of the option
+Options which are always required or are part of the setup step can
+pre-configured in the default configuration (included in the tool) or in the local 
+`.jruby+truffle.yaml` configuration file to avoid repeating options on the command
+line. The configuration file has a 2-level deep tree structure. The first level is
+the name of the command (or `:global`) and the second level is the name of the option
 which is same as its long variant with `-` replaced by `_`. 
 
 Configuration values are deep-merged in following order (potentially 
 overriding): default values, default gem configuration, local configuration, 
 command-line options. This tool contains default configurations for some gems 
-in `gem_configurations` directory, they are used if available. An example of
+in the `gem_configurations` directory, which are used if available. An example of
 activesupport's configuration file follows:
 
 
@@ -94,7 +94,7 @@ activesupport's configuration file follows:
 
 ## Using the tool in CI
 
-Assuming there are similar stored commands for a given gem:
+Assuming there are stored commands for a given gem like below:
  
 ```yaml
 :stored_commands:
@@ -115,11 +115,11 @@ then `jruby+truffle --config openweather stored ci` can be used to run tests of 
 cd workspace
 git clone git@github.com:jruby/jruby.git
 cd jruby
-tool/jt.rb build # compile JRuby
+tool/jt.rb build # compiles JRuby
 cd ..
 
 # assuming rbenv is installed, add your local compiled JRuby to rbenv
-ln -s ~/labs/jruby /usr/local/Cellar/rbenv/0.4.0/versions/jruby-local
+ln -s `pwd`/jruby /usr/local/Cellar/rbenv/0.4.0/versions/jruby-local
 
 git clone git@github.com:ruby-concurrency/concurrent-ruby.git
 cd concurrent-ruby
@@ -127,5 +127,5 @@ git checkout v0.9.1 # latest release
 rbenv shell jruby-local # use your compiled JRuby
 jruby+truffle setup
 jruby+truffle run -S rspec -- spec --format progress # run all tests
-# you should see only few errors
+# you should see only a few errors
 ```
