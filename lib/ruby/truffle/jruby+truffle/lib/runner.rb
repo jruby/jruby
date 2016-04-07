@@ -461,11 +461,12 @@ class JRubyTruffleRunner
         ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception])
     ]
 
-    cmd_options = [
+    bundler_setup = "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb"
+    cmd_options   = [
         *(truffle_options unless @options[:run][:no_truffle]),
         (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
         *ruby_options,
-        '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
+        *(['-r', bundler_setup] if File.exist? bundler_setup),
         *@options[:run][:load_path].flat_map { |v| ['-I', v] },
         *@options[:run][:require].flat_map { |v| ['-r', v] }
     ].compact
