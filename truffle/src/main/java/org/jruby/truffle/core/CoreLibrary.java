@@ -777,7 +777,7 @@ public class CoreLibrary {
             try {
                 final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
                 final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
-                deferredCall.getCallTarget().call(deferredCall.getArguments());
+                deferredCall.callWithoutCallNode();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

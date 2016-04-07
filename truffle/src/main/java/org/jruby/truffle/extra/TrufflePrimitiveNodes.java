@@ -831,7 +831,7 @@ public abstract class TrufflePrimitiveNodes {
             try {
                 final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceCache().getSource(StringOperations.getString(getContext(), file)), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
                 final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
-                callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+                deferredCall.call(frame, callNode);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().loadErrorCannotLoad(file.toString(), this));
@@ -889,7 +889,7 @@ public abstract class TrufflePrimitiveNodes {
                     null,
                     coreLibrary().getMainObject());
 
-            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+            return deferredCall.call(frame, callNode);
         }
     }
 
@@ -1030,7 +1030,7 @@ public abstract class TrufflePrimitiveNodes {
             try {
                 final RubyRootNode rootNode = codeLoader.parse(getContext().getSourceCache().getSource(path), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
                 final CodeLoader.DeferredCall deferredCall = codeLoader.prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, coreLibrary.getMainObject());
-                deferredCall.getCallTarget().call(deferredCall.getArguments());
+                deferredCall.callWithoutCallNode();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

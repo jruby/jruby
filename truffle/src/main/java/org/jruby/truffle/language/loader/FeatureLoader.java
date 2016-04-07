@@ -175,7 +175,7 @@ public class FeatureLoader {
                     rootNode, null,
                     context.getCoreLibrary().getMainObject());
 
-            callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+            deferredCall.call(frame, callNode);
 
             addToLoadedFeatures(pathString);
 

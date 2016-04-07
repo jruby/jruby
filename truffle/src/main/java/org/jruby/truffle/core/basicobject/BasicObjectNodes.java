@@ -168,7 +168,7 @@ public abstract class BasicObjectNodes {
             final Source source = Source.fromText(code.toString(), "(eval)");
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
             final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
-            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+            return deferredCall.call(frame, callNode);
         }
 
         @Specialization
