@@ -25,7 +25,7 @@ public interface ArrayMirror {
 
     Object getArray();
 
-    Object copyArrayAndMirror();
+    ArrayMirror copyArrayAndMirror();
 
     Object[] getBoxedCopy();
 
