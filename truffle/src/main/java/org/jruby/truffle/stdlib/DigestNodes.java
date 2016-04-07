@@ -19,7 +19,9 @@ import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.rope.BytesVisitor;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
 
@@ -146,9 +148,17 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject update(DynamicObject digestObject, DynamicObject message) {
-            final Rope rope = StringOperations.rope(message);
+            final MessageDigest digest = DigestLayoutImpl.INSTANCE.getDigest(digestObject);
 
-            DigestLayoutImpl.INSTANCE.getDigest(digestObject).update(rope.getBytes(), rope.begin(), rope.byteLength());
+            RopeOperations.visitBytes(StringOperations.rope(message), new BytesVisitor() {
+
+                @Override
+                public void accept(byte[] bytes, int offset, int length) {
+                    digest.update(bytes, offset, length);
+                }
+
+            });
+
             return digestObject;
         }
 

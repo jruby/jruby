@@ -33,43 +33,6 @@ public class RepeatingRope extends Rope {
         return child.getByteSlow(index % child.byteLength());
     }
 
-    @Override
-    public byte[] extractRange(int offset, int length) {
-        assert length <= this.byteLength();
-
-        final byte[] ret = new byte[length];
-
-        if (getRawBytes() != null) {
-            System.arraycopy(getRawBytes(), offset, ret, 0, length);
-        } else {
-            final int start = offset % child.byteLength();
-            final byte[] firstPart = child.extractRange(start, child.byteLength() - start);
-            final int lengthMinusFirstPart = length - firstPart.length;
-            final int remainingEnd = lengthMinusFirstPart % child.byteLength();
-
-            System.arraycopy(firstPart, 0, ret, 0, firstPart.length);
-
-            if (lengthMinusFirstPart >= child.byteLength()) {
-                final byte[] secondPart = child.getBytes();
-
-                final int repeatPartCount = lengthMinusFirstPart / child.byteLength();
-                for (int i = 0; i < repeatPartCount; i++) {
-                    System.arraycopy(secondPart, 0, ret, firstPart.length + (secondPart.length * i), secondPart.length);
-                }
-
-                if (remainingEnd > 0) {
-                    final byte[] thirdPart = child.extractRange(0, remainingEnd);
-                    System.arraycopy(thirdPart, 0, ret, length - thirdPart.length, thirdPart.length);
-                }
-            } else {
-                final byte[] secondPart = child.extractRange(0, remainingEnd);
-                System.arraycopy(secondPart, 0, ret, length - secondPart.length, secondPart.length);
-            }
-        }
-
-        return ret;
-    }
-
     public Rope getChild() {
         return child;
     }

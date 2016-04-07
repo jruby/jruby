@@ -66,8 +66,6 @@ public abstract class Rope {
         return getBytes().clone();
     }
 
-    public abstract byte[] extractRange(int offset, int length);
-
     public final Encoding getEncoding() {
         return encoding;
     }
