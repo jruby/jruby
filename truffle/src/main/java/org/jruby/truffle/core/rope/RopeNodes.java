@@ -653,9 +653,43 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = "rope.getRawBytes() == null")
-        @TruffleBoundary
-        public int getByteSlow(Rope rope, int index) {
-            return rope.get(index) & 0xff;
+        public int getByteSubstringRope(SubstringRope rope, int index,
+                                        @Cached("createBinaryProfile()") ConditionProfile childRawBytesNullProfile) {
+            if (childRawBytesNullProfile.profile(rope.getChild().getRawBytes() == null)) {
+                return rope.getByteSlow(index) & 0xff;
+            }
+
+            return rope.getChild().getRawBytes()[index + rope.getOffset()] & 0xff;
+        }
+
+        @Specialization(guards = "rope.getRawBytes() == null")
+        public int getByteRepeatingRope(RepeatingRope rope, int index,
+                                        @Cached("createBinaryProfile()") ConditionProfile childRawBytesNullProfile) {
+            if (childRawBytesNullProfile.profile(rope.getChild().getRawBytes() == null)) {
+                return rope.getByteSlow(index) & 0xff;
+            }
+
+            return rope.getChild().getRawBytes()[index % rope.getChild().byteLength()] & 0xff;
+        }
+
+        @Specialization(guards = "rope.getRawBytes() == null")
+        public int getByteConcatRope(ConcatRope rope, int index,
+                                     @Cached("createBinaryProfile()") ConditionProfile chooseLeftChildProfile,
+                                     @Cached("createBinaryProfile()") ConditionProfile leftChildRawBytesNullProfile,
+                                     @Cached("createBinaryProfile()") ConditionProfile rightChildRawBytesNullProfile) {
+            if (chooseLeftChildProfile.profile(index < rope.getLeft().byteLength())) {
+                if (leftChildRawBytesNullProfile.profile(rope.getLeft().getRawBytes() == null)) {
+                    return rope.getLeft().getByteSlow(index) & 0xff;
+                }
+
+                return rope.getLeft().getRawBytes()[index] & 0xff;
+            }
+
+            if (rightChildRawBytesNullProfile.profile(rope.getRight().getRawBytes() == null)) {
+                return rope.getRight().getByteSlow(index - rope.getLeft().byteLength()) & 0xff;
+            }
+
+            return rope.getRight().getRawBytes()[index - rope.getLeft().byteLength()] & 0xff;
         }
 
     }
