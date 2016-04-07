@@ -41,13 +41,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.Ruby;
@@ -116,19 +110,19 @@ public class JavaProxyClassFactory {
                 Object instance = clazz.newInstance();
                 if ( instance instanceof JavaProxyClassFactory ) {
                     factory = (JavaProxyClassFactory) instance;
-                    LOG.info("Created proxy class factory: " + factory);
+                    LOG.info("Created proxy class factory: {}", factory);
                 } else {
-                    LOG.error("Invalid proxy class factory: " + instance);
+                    LOG.error("Invalid proxy class factory: {}", instance);
                 }
             }
             catch (ClassNotFoundException e) {
-                LOG.error("ClassNotFoundException creating proxy class factory: " + e);
+                LOG.error("ClassNotFoundException creating proxy class factory: ", e);
             }
             catch (InstantiationException e) {
-                LOG.error("InstantiationException creating proxy class factory: " + e);
+                LOG.error("InstantiationException creating proxy class factory: ", e);
             }
             catch (IllegalAccessException e) {
-                LOG.error("IllegalAccessException creating proxy class factory: " + e);
+                LOG.error("IllegalAccessException creating proxy class factory: ", e);
             }
         }
 
@@ -161,7 +155,7 @@ public class JavaProxyClassFactory {
             }
             validateArgs(runtime, targetClassName, superClass);
 
-            Type selfType = Type.getType("L" + toInternalClassName(targetClassName) + ";");
+            Type selfType = Type.getType('L' + toInternalClassName(targetClassName) + ';');
             Map<MethodKey, MethodData> methods = collectMethods(superClass, interfaces, names);
             proxyClass = generate(loader, targetClassName, superClass, interfaces, methods, selfType);
 
@@ -244,26 +238,22 @@ public class JavaProxyClassFactory {
             final Object[] parameters = { className, data, 0, data.length, JavaProxyClassFactory.class.getProtectionDomain() };
             return (Class) defineClassMethod.invoke(loader, parameters);
         }
-        catch (IllegalArgumentException e) {
-            LOG.warn("defining class with name " + className + " failed", e);
-            return null;
-        }
-        catch (IllegalAccessException e) {
+        catch (IllegalArgumentException|IllegalAccessException e) {
             LOG.warn("defining class with name " + className + " failed", e);
             return null;
         }
         catch (InvocationTargetException e) {
-            LOG.warn("defining class with name " + className + " failed", e);
+            LOG.warn("defining class with name " + className + " failed", e.getTargetException());
             return null;
         }
     }
 
-    private ClassWriter beginProxyClass(final String className,
+    private static ClassWriter beginProxyClass(final String className,
             final Class superClass, final Class[] interfaces) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
         // start class
-        cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
+        cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
                 toInternalClassName(className), /*signature*/ null,
                 toInternalClassName(superClass),
                 interfaceNamesForProxyClass(interfaces));
@@ -274,7 +264,7 @@ public class JavaProxyClassFactory {
                 INVOCATION_HANDLER_TYPE.getDescriptor(), null, null
         ).visitEnd();
 
-        // private static JavaProxyClass __proxy_class;
+        // private static final JavaProxyClass __proxy_class;
         cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
                 PROXY_CLASS_FIELD_NAME,
                 PROXY_CLASS_TYPE.getDescriptor(), null, null
@@ -283,7 +273,7 @@ public class JavaProxyClassFactory {
         return cw;
     }
 
-    private String[] interfaceNamesForProxyClass(final Class[] interfaces) {
+    private static String[] interfaceNamesForProxyClass(final Class[] interfaces) {
         String[] interfaceNames = new String[interfaces.length + 1];
 
         for (int i = 0; i < interfaces.length; i++) {
@@ -295,7 +285,7 @@ public class JavaProxyClassFactory {
         return interfaceNames;
     }
 
-    private void generateProxyMethods(Class superClass,
+    private static void generateProxyMethods(Class superClass,
             Map<MethodKey, MethodData> methods, Type selfType, ClassVisitor cw,
             GeneratorAdapter clazzInit) {
         for (MethodData md: methods.values()) {
@@ -307,7 +297,9 @@ public class JavaProxyClassFactory {
     /**
      * @see InternalJavaProxy
      */
-    private void generateGetInvocationHandler(Type selfType, ClassVisitor cw) {
+    private static void generateGetInvocationHandler(Type selfType, ClassVisitor cw) {
+        // public JavaProxyInvocationHandler ___getInvocationHandler() { return this.__handler; }
+
         // make getter for handler (due implements InternalJavaProxy)
         GeneratorAdapter gh = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
                 new org.objectweb.asm.commons.Method("___getInvocationHandler",
@@ -323,7 +315,9 @@ public class JavaProxyClassFactory {
     /**
      * @see InternalJavaProxy
      */
-    private void generateGetProxyClass(Type selfType, ClassVisitor cw) {
+    private static void generateGetProxyClass(Type selfType, ClassVisitor cw) {
+        // public static JavaProxyClass __getProxyClass() { return __proxy_class; }
+
         // make getter for proxy class (due implements InternalJavaProxy)
         GeneratorAdapter gpc = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
                 new org.objectweb.asm.commons.Method("___getProxyClass",
@@ -334,7 +328,7 @@ public class JavaProxyClassFactory {
         gpc.endMethod();
     }
 
-    private void generateConstructors(Class superClass, Type selfType, ClassVisitor cw) {
+    private static void generateConstructors(Class superClass, Type selfType, ClassVisitor cw) {
         Constructor[] cons = superClass.getDeclaredConstructors();
 
         for (int i = 0; i < cons.length; i++) {
@@ -346,7 +340,7 @@ public class JavaProxyClassFactory {
         }
     }
 
-    private GeneratorAdapter createClassInitializer(Type selfType, ClassVisitor cw) {
+    private static GeneratorAdapter createClassInitializer(Type selfType, ClassVisitor cw) {
         GeneratorAdapter clazzInit = new GeneratorAdapter(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
                 new org.objectweb.asm.commons.Method("<clinit>", Type.VOID_TYPE, EMPTY_TYPE_ARRAY),
                 null, EMPTY_TYPE_ARRAY, cw);
@@ -356,11 +350,12 @@ public class JavaProxyClassFactory {
         clazzInit.invokeStatic(INTERNAL_PROXY_HELPER_TYPE, initProxyClass);
         clazzInit.dup();
         clazzInit.putStatic(selfType, PROXY_CLASS_FIELD_NAME, PROXY_CLASS_TYPE);
+        // __proxy_class = InternalJavaProxyHelper.initProxyClass( Class.forName(className) );
 
         return clazzInit;
     }
 
-    private void generateProxyMethod(Type selfType, Type superType,
+    private static void generateProxyMethod(Type selfType, Type superType,
             ClassVisitor cw, GeneratorAdapter clazzInit, MethodData md) {
         if (!md.generateProxyMethod()) return;
 
@@ -469,7 +464,7 @@ public class JavaProxyClassFactory {
         }
     }
 
-    private Class[] generateConstructor(Type selfType, Constructor constructor, ClassVisitor cw) {
+    private static Class[] generateConstructor(Type selfType, Constructor constructor, ClassVisitor cw) {
         Class[] superConstructorParameterTypes = constructor.getParameterTypes();
         Class[] newConstructorParameterTypes = new Class[superConstructorParameterTypes.length + 1];
         System.arraycopy(superConstructorParameterTypes, 0,
@@ -552,16 +547,16 @@ public class JavaProxyClassFactory {
             final Class[] interfaces,
             final Set<String> names) {
 
-        Map<MethodKey, MethodData> methods = new HashMap<MethodKey, MethodData>();
+        Map<MethodKey, MethodData> methods = new HashMap<>();
 
-        HashSet<Class> allClasses = new HashSet<Class>();
+        HashSet<Class> allClasses = new HashSet<>();
         addClass(allClasses, methods, superClass, names);
         addInterfaces(allClasses, methods, interfaces, names);
 
         return methods;
     }
 
-    static class MethodData {
+    static final class MethodData {
 
         final Set<Method> methods = new HashSet<Method>();
 
@@ -576,7 +571,7 @@ public class JavaProxyClassFactory {
             //hasPublicDecl = method.getDeclaringClass().isInterface() || Modifier.isPublic(method.getModifiers());
         }
 
-        public String scrambledSignature() {
+        private StringBuilder scrambledSignature() {
             StringBuilder sb = new StringBuilder();
             Class[] parms = getParameterTypes();
             for (int i = 0; i < parms.length; i++) {
@@ -587,14 +582,14 @@ public class JavaProxyClassFactory {
                 name = name.replace(';', '2');
                 sb.append(name);
             }
-            return sb.toString();
+            return sb;
         }
 
         public Class getDeclaringClass() {
             return mostSpecificMethod.getDeclaringClass();
         }
 
-        public org.objectweb.asm.commons.Method getMethod() {
+        private org.objectweb.asm.commons.Method getMethod() {
             return new org.objectweb.asm.commons.Method(getName(), Type
                     .getType(getReturnType()), getType(getParameterTypes()));
         }
@@ -615,18 +610,18 @@ public class JavaProxyClassFactory {
             return mostSpecificParameterTypes;
         }
 
-        public Class[] getExceptions() {
-            final Set<Class> exceptions = new HashSet<Class>();
+        private Class[] getExceptions() {
+            final IdentityHashMap<Class, ?> exceptions = new IdentityHashMap<>(8);
 
             for ( final Method method : this.methods ) {
                 Class[] exTypes = method.getExceptionTypes();
                 for (int i = 0; i < exTypes.length; i++) {
                     final Class<?> exType = exTypes[i];
 
-                    if ( exceptions.contains(exType) ) continue;
+                    if ( exceptions.containsKey(exType) ) continue;
 
                     boolean add = true;
-                    Iterator<Class> it = exceptions.iterator();
+                    Iterator<Class> it = exceptions.keySet().iterator();
                     while ( it.hasNext() ) {
                         final Class<?> curType = it.next();
 
@@ -640,17 +635,17 @@ public class JavaProxyClassFactory {
                         }
                     }
 
-                    if ( add ) exceptions.add(exType);
+                    if ( add ) exceptions.put(exType, null);
                 }
             }
-            return exceptions.toArray(new Class[ exceptions.size() ]);
+            return exceptions.isEmpty() ? EMPTY_CLASS_ARRAY : exceptions.keySet().toArray(new Class[ exceptions.size() ]);
         }
 
-        public boolean generateProxyMethod() {
+        private boolean generateProxyMethod() {
             return ! isFinal() && ! isPrivate();
         }
 
-        public void add(Method method) {
+        private void add(Method method) {
             methods.add(method);
             //hasPublicDecl |= Modifier.isPublic(method.getModifiers());
         }
@@ -681,7 +676,7 @@ public class JavaProxyClassFactory {
         }
     }
 
-    static class MethodKey {
+    static final class MethodKey {
 
         private final String name;
         private final Class[] arguments;
