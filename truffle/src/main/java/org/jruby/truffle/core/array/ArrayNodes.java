@@ -132,63 +132,32 @@ public abstract class ArrayNodes {
             return createArray(getContext(), null, 0);
         }
 
-        @Specialization(guards = {"isObjectArray(a)", "isNullArray(b)"})
-        public DynamicObject addObjectNull(DynamicObject a, DynamicObject b) {
-            return createArray(getContext(), Arrays.copyOf((Object[]) getStore(a), getSize(a)), getSize(a));
+        @Specialization(guards = { "isNullArray(a)", "!isNullArray(b)", "strategy.matches(b)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject addNullOther(DynamicObject a, DynamicObject b,
+                @Cached("of(b)") ArrayStrategy strategy) {
+            final int size = Layouts.ARRAY.getSize(b);
+            final Object store = strategy.newMirror(b).copyArrayAndMirror().getArray(); // TODO: should be extractRange(0, size)
+            return createArray(getContext(), store, size);
         }
 
-        @Specialization(guards = {"isIntArray(a)", "isIntArray(b)"})
-        public DynamicObject addBothIntegerFixnum(DynamicObject a, DynamicObject b) {
-            final int combinedSize = getSize(a) + getSize(b);
-            final int[] combined = new int[combinedSize];
-            System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
-            System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return createArray(getContext(), combined, combinedSize);
+        @Specialization(guards = { "!isNullArray(a)", "isNullArray(b)", "strategy.matches(a)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject addOtherNull(DynamicObject a, DynamicObject b,
+                @Cached("of(a)") ArrayStrategy strategy) {
+            final int size = Layouts.ARRAY.getSize(a);
+            final Object store = strategy.newMirror(a).copyArrayAndMirror().getArray(); // TODO: should be extractRange(0, size)
+            return createArray(getContext(), store, size);
         }
 
-        @Specialization(guards = {"isLongArray(a)", "isLongArray(b)"})
-        public DynamicObject addBothLongFixnum(DynamicObject a, DynamicObject b) {
-            final int combinedSize = getSize(a) + getSize(b);
-            final long[] combined = new long[combinedSize];
-            System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
-            System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return createArray(getContext(), combined, combinedSize);
-        }
-
-        @Specialization(guards = {"isDoubleArray(a)", "isRubyArray(b)", "isDoubleArray(b)"})
-        public DynamicObject addBothFloat(DynamicObject a, DynamicObject b) {
-            final int combinedSize = getSize(a) + getSize(b);
-            final double[] combined = new double[combinedSize];
-            System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
-            System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return createArray(getContext(), combined, combinedSize);
-        }
-
-        @Specialization(guards = {"isObjectArray(a)", "isRubyArray(b)", "isObjectArray(b)"})
-        public DynamicObject addBothObject(DynamicObject a, DynamicObject b) {
-            final int combinedSize = getSize(a) + getSize(b);
-            final Object[] combined = new Object[combinedSize];
-            System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
-            System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return createArray(getContext(), combined, combinedSize);
-        }
-
-        @Specialization(guards = {"isNullArray(a)", "isRubyArray(b)", "isIntArray(b)"})
-        public DynamicObject addNullIntegerFixnum(DynamicObject a, DynamicObject b) {
-            final int size = getSize(b);
-            return createArray(getContext(), Arrays.copyOf((int[]) getStore(b), size), size);
-        }
-
-        @Specialization(guards = {"isNullArray(a)", "isRubyArray(b)", "isLongArray(b)"})
-        public DynamicObject addNullLongFixnum(DynamicObject a, DynamicObject b) {
-            final int size = getSize(b);
-            return createArray(getContext(), Arrays.copyOf((long[]) getStore(b), size), size);
-        }
-
-        @Specialization(guards = {"isNullArray(a)", "isRubyArray(b)", "isObjectArray(b)"})
-        public DynamicObject addNullObject(DynamicObject a, DynamicObject b) {
-            final int size = getSize(b);
-            return createArray(getContext(), Arrays.copyOf((Object[]) getStore(b), size), size);
+        @Specialization(guards = { "strategy.matches(a)", "strategy.matches(b)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject addSameType(DynamicObject a, DynamicObject b,
+                @Cached("of(a)") ArrayStrategy strategy) {
+            final int aSize = Layouts.ARRAY.getSize(a);
+            final int bSize = Layouts.ARRAY.getSize(b);
+            final int combinedSize = aSize + bSize;
+            final ArrayMirror mirror = strategy.newArray(combinedSize);
+            strategy.newMirror(a).copyTo(mirror, 0, 0, aSize);
+            strategy.newMirror(b).copyTo(mirror, 0, aSize, bSize);
+            return createArray(getContext(), mirror.getArray(), combinedSize);
         }
 
         @Specialization(guards = { "!isObjectArray(a)", "isObjectArray(b)" })

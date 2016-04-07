@@ -36,65 +36,22 @@ public abstract class ArrayAppendOneNode extends RubyNode {
 
     // Append into an empty array
 
-    @Specialization(guards = "isNullArray(array)")
-    public DynamicObject appendOneEmpty(DynamicObject array, int value) {
-        Layouts.ARRAY.setStore(array, new int[]{value});
-        Layouts.ARRAY.setSize(array, 1);
-        return array;
-    }
-
-    @Specialization(guards = "isNullArray(array)")
-    public DynamicObject appendOneEmpty(DynamicObject array, long value) {
-        Layouts.ARRAY.setStore(array, new long[]{value});
-        Layouts.ARRAY.setSize(array, 1);
-        return array;
-    }
-
-    @Specialization(guards = "isNullArray(array)")
-    public DynamicObject appendOneEmpty(DynamicObject array, double value) {
-        Layouts.ARRAY.setStore(array, new double[]{value});
-        Layouts.ARRAY.setSize(array, 1);
-        return array;
-    }
-
-    @Specialization(guards = "isNullArray(array)")
-    public DynamicObject appendOneEmpty(DynamicObject array, Object value) {
-        Layouts.ARRAY.setStore(array, new Object[]{value});
+    @Specialization(guards = { "isNullArray(array)", "strategy.accepts(value)" }, limit = "ARRAY_STRATEGIES")
+    public DynamicObject appendOneEmpty(DynamicObject array, Object value,
+            @Cached("forValue(value)") ArrayStrategy strategy) {
+        Layouts.ARRAY.setStore(array, strategy.newArrayWith(value));
         Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
     // Append of the correct type
 
-    @Specialization(guards = "isIntArray(array)")
-    public DynamicObject appendOneSameType(DynamicObject array, int value,
-                                   @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
-        return array;
-    }
-
-    @Specialization(guards = "isLongArray(array)")
-    public DynamicObject appendOneSameType(DynamicObject array, long value,
-                                @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
-        return array;
-    }
-
-    @Specialization(guards = "isDoubleArray(array)")
-    public DynamicObject appendOneSameType(DynamicObject array, double value,
-                                @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
-        return array;
-    }
-
-    @Specialization(guards = "isObjectArray(array)")
+    // TODO (long[] << int) case
+    @Specialization(guards = { "strategy.matches(array)", "strategy.accepts(value)" }, limit = "ARRAY_STRATEGIES")
     public DynamicObject appendOneSameType(DynamicObject array, Object value,
-                                  @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
-        return array;
-    }
-
-    public void appendOneSameTypeGeneric(DynamicObject array, ArrayMirror storeMirror, Object value, ConditionProfile extendProfile) {
+            @Cached("of(array)") ArrayStrategy strategy,
+            @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
+        final ArrayMirror storeMirror = strategy.newMirror(array);
         final int oldSize = Layouts.ARRAY.getSize(array);
         final int newSize = oldSize + 1;
 
@@ -107,6 +64,7 @@ public abstract class ArrayAppendOneNode extends RubyNode {
             storeMirror.set(oldSize, value);
             Layouts.ARRAY.setSize(array, newSize);
         }
+        return array;
     }
 
     // Append forcing a generalization from int[] to long[]
