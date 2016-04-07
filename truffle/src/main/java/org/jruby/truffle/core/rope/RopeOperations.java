@@ -214,13 +214,13 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static void visitBytes(Rope rope, BytesVisitor visitor, int offset, int length) {
+        assert length <= rope.byteLength();
+
         if (rope.getRawBytes() != null) {
             visitor.accept(rope.getRawBytes(), rope.begin() + offset, length);
         } else if (rope instanceof ConcatRope) {
             final ConcatRope concat = (ConcatRope) rope;
-
-            assert length <= rope.byteLength();
-
+            
             final int leftLength = concat.getLeft().byteLength();
 
             if (offset < leftLength) {
@@ -247,8 +247,6 @@ public class RopeOperations {
         } else if (rope instanceof RepeatingRope) {
             final RepeatingRope repeating = (RepeatingRope) rope;
             final Rope child = repeating.getChild();
-
-            assert length <= rope.byteLength();
 
             final int start = offset % child.byteLength();
             final int firstPartLength = child.byteLength() - start;
