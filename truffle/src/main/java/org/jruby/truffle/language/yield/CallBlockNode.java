@@ -51,7 +51,7 @@ public abstract class CallBlockNode extends RubyNode {
             VirtualFrame frame,
             DynamicObject block,
             Object self,
-            Object blockArgument,
+            DynamicObject blockArgument,
             Object[] arguments,
             @Cached("getBlockCallTarget(block)") CallTarget cachedCallTarget,
             @Cached("createBlockCallNode(cachedCallTarget)") DirectCallNode callNode) {
@@ -64,14 +64,14 @@ public abstract class CallBlockNode extends RubyNode {
             VirtualFrame frame,
             DynamicObject block,
             Object self,
-            Object blockArgument,
+            DynamicObject blockArgument,
             Object[] arguments,
             @Cached("create()") IndirectCallNode callNode) {
         final Object[] frameArguments = packArguments(block, self, blockArgument, arguments);
         return callNode.call(frame, getBlockCallTarget(block), frameArguments);
     }
 
-    private Object[] packArguments(DynamicObject block, Object self, Object blockArgument, Object[] arguments) {
+    private Object[] packArguments(DynamicObject block, Object self, DynamicObject blockArgument, Object[] arguments) {
         return RubyArguments.pack(
                 Layouts.PROC.getDeclarationFrame(block),
                 null,
@@ -79,7 +79,7 @@ public abstract class CallBlockNode extends RubyNode {
                 declarationContext,
                 Layouts.PROC.getFrameOnStackMarker(block),
                 self,
-                (DynamicObject) blockArgument,
+                blockArgument,
                 arguments);
     }
 
