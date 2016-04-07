@@ -244,6 +244,32 @@ public class RopeOperations {
             final SubstringRope substring = (SubstringRope) rope;
 
             visitBytes(substring.getChild(), visitor, rope.begin() + substring.getOffset() + offset, length);
+        } else if (rope instanceof RepeatingRope) {
+            final RepeatingRope repeating = (RepeatingRope) rope;
+            final Rope child = repeating.getChild();
+
+            assert length <= rope.byteLength();
+
+            final int start = offset % child.byteLength();
+            final int firstPartLength = child.byteLength() - start;
+            visitBytes(child, visitor, start, firstPartLength);
+            final int lengthMinusFirstPart = length - firstPartLength;
+            final int remainingEnd = lengthMinusFirstPart % child.byteLength();
+
+            if (lengthMinusFirstPart >= child.byteLength()) {
+                final byte[] secondPart = child.getBytes();
+
+                final int repeatPartCount = lengthMinusFirstPart / child.byteLength();
+                for (int i = 0; i < repeatPartCount; i++) {
+                    visitBytes(child, visitor, 0, secondPart.length);
+                }
+
+                if (remainingEnd > 0) {
+                    visitBytes(child, visitor, 0, remainingEnd);
+                }
+            } else {
+                visitBytes(child, visitor, 0, remainingEnd);
+            }
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException("Don't know how to visit rope of type: " + rope.getClass().getName());
