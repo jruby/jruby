@@ -7,10 +7,16 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.stdlib.sockets;
+package org.jruby.truffle.platform.sockets;
 
-public interface FDSetFactory {
+import jnr.ffi.Pointer;
 
-    FDSet create();
+public interface FDSet {
+
+    void set(int fd);
+
+    boolean isSet(int fd);
+
+    Pointer getPointer();
 
 }

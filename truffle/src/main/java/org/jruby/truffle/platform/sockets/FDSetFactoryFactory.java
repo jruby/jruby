@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.stdlib.sockets;
+package org.jruby.truffle.platform.sockets;
 
 import org.jruby.ext.ffi.Platform;
 
