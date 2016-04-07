@@ -500,7 +500,6 @@ public class CoreLibrary {
         defineModule(truffleModule, "Etc");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
-        Layouts.CLASS.setInstanceFactoryUnsafe(psychParserClass, Layouts.PSYCH_PARSER.createParserShape(psychParserClass, psychParserClass));
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
         final DynamicObject psychEmitterClass = defineClass(psychModule, psychHandlerClass, "Emitter");
         Layouts.CLASS.setInstanceFactoryUnsafe(psychEmitterClass, Layouts.PSYCH_EMITTER.createEmitterShape(psychEmitterClass, psychEmitterClass));
