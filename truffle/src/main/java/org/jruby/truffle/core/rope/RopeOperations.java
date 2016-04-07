@@ -271,7 +271,6 @@ public class RopeOperations {
                 visitBytes(child, visitor, 0, remainingEnd);
             }
         } else {
-            CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException("Don't know how to visit rope of type: " + rope.getClass().getName());
         }
     }
@@ -471,7 +470,6 @@ public class RopeOperations {
                     }
                 }
             } else {
-                CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException("Don't know how to flatten rope of type: " + rope.getClass().getName());
             }
         }
