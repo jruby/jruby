@@ -44,6 +44,7 @@ public abstract class CallBlockNode extends RubyNode {
     public abstract Object executeCallBlock(VirtualFrame frame, DynamicObject block, Object self,
                                             DynamicObject blockArgument, Object[] arguments);
 
+    // blockArgument is typed as Object below because it must accept "null".
     @Specialization(
             guards = "getBlockCallTarget(block) == cachedCallTarget",
             limit = "getCacheLimit()")
@@ -51,7 +52,7 @@ public abstract class CallBlockNode extends RubyNode {
             VirtualFrame frame,
             DynamicObject block,
             Object self,
-            DynamicObject blockArgument,
+            Object blockArgument,
             Object[] arguments,
             @Cached("getBlockCallTarget(block)") CallTarget cachedCallTarget,
             @Cached("createBlockCallNode(cachedCallTarget)") DirectCallNode callNode) {
@@ -64,14 +65,14 @@ public abstract class CallBlockNode extends RubyNode {
             VirtualFrame frame,
             DynamicObject block,
             Object self,
-            DynamicObject blockArgument,
+            Object blockArgument,
             Object[] arguments,
             @Cached("create()") IndirectCallNode callNode) {
         final Object[] frameArguments = packArguments(block, self, blockArgument, arguments);
         return callNode.call(frame, getBlockCallTarget(block), frameArguments);
     }
 
-    private Object[] packArguments(DynamicObject block, Object self, DynamicObject blockArgument, Object[] arguments) {
+    private Object[] packArguments(DynamicObject block, Object self, Object blockArgument, Object[] arguments) {
         return RubyArguments.pack(
                 Layouts.PROC.getDeclarationFrame(block),
                 null,
@@ -79,7 +80,7 @@ public abstract class CallBlockNode extends RubyNode {
                 declarationContext,
                 Layouts.PROC.getFrameOnStackMarker(block),
                 self,
-                blockArgument,
+                (DynamicObject) blockArgument,
                 arguments);
     }
 
