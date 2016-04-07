@@ -147,7 +147,18 @@ public class RopeOperations {
             final ConcatRope concatRope = (ConcatRope) value;
 
             return decodeRope(runtime, concatRope.getLeft()) + decodeRope(runtime, concatRope.getRight());
-        } else {
+        } else if (value instanceof RepeatingRope) {
+            final RepeatingRope repeatingRope = (RepeatingRope) value;
+
+            final String childString = decodeRope(runtime, repeatingRope.getChild());
+            final StringBuilder builder = new StringBuilder(childString.length() * repeatingRope.getTimes());
+            for (int i = 0; i < repeatingRope.getTimes(); i++) {
+                builder.append(childString);
+            }
+
+            return builder.toString();
+        }
+        else {
             throw new RuntimeException("Decoding to String is not supported for rope of type: " + value.getClass().getName());
         }
     }
@@ -390,6 +401,33 @@ public class RopeOperations {
                         substringLengths.push(adjustedByteLength);
                     }
                 }
+            } else if (current instanceof RepeatingRope) {
+                final RepeatingRope repeatingRope = (RepeatingRope) current;
+
+                // In the absence of any SubstringRopes, we always take the full contents of the MultiplyRope.
+                if (substringLengths.isEmpty()) {
+                    // TODO (nirvdrum 06-Apr-16) Rather than process the same child over and over, there may be opportunity to re-use the results from a single pass.
+                    for (int i = 0; i < repeatingRope.getTimes(); i++) {
+                        workStack.push(repeatingRope.getChild());
+                    }
+                } else {
+                    final int bytesToCopy = substringLengths.peek();
+                    int loopCount = bytesToCopy / repeatingRope.getChild().byteLength();
+
+                    // Fix the offset to be appropriate for a given child. The offset is reset the first time it is
+                    // consumed, so there's no need to worry about adversely affecting anything by adjusting it here.
+                    offset %= repeatingRope.getChild().byteLength();
+
+                    // Adjust the loop count in case we're straddling a boundary.
+                    if (offset != 0) {
+                        loopCount++;
+                    }
+
+                    // TODO (nirvdrum 06-Apr-16) Rather than process the same child over and over, there may be opportunity to re-use the results from whole sections.
+                    for (int i = 0; i < loopCount; i++) {
+                        workStack.push(repeatingRope.getChild());
+                    }
+                }
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException("Don't know how to flatten rope of type: " + rope.getClass().getName());
@@ -443,6 +481,28 @@ public class RopeOperations {
             }
 
             return hashForRange(right, hash, offset - leftLength, length);
+        } else if (rope instanceof RepeatingRope) {
+            final RepeatingRope repeatingRope = (RepeatingRope) rope;
+            final Rope child = repeatingRope.getChild();
+
+            int remainingLength = length;
+            int loopCount = length / child.byteLength();
+
+            offset %= child.byteLength();
+
+            // Adjust the loop count in case we're straddling a boundary.
+            if (offset != 0) {
+                loopCount++;
+            }
+
+            int hash = startingHashCode;
+            for (int i = 0; i < loopCount; i++) {
+                hash = hashForRange(child, hash, offset, remainingLength >= child.byteLength() ? child.byteLength() : remainingLength % child.byteLength());
+                remainingLength = child.byteLength() - offset;
+                offset = 0;
+            }
+
+            return hash;
         } else {
             throw new RuntimeException("Hash code not supported for rope of type: " + rope.getClass().getName());
         }

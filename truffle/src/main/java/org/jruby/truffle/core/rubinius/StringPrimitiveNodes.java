@@ -87,6 +87,7 @@ import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.RepeatingRope;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
@@ -1370,33 +1371,49 @@ public abstract class StringPrimitiveNodes {
             makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null, null);
         }
 
-        @Specialization(guards = "value == 0")
+        @Specialization(guards = "value >= 0")
         public DynamicObject stringPatternZero(DynamicObject stringClass, int size, int value) {
-            ByteList bytes = new ByteList(new byte[size]);
-            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(bytes, CodeRange.CR_UNKNOWN), null);
+            final Rope repeatingRope = new RepeatingRope(RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[value], size);
+
+            return allocateObjectNode.allocate(stringClass, repeatingRope, null);
         }
 
-        @Specialization(guards = "value != 0")
-        public DynamicObject stringPattern(DynamicObject stringClass, int size, int value) {
-            final byte[] bytes = new byte[size];
-            Arrays.fill(bytes, (byte) value);
-            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(new ByteList(bytes), CodeRange.CR_UNKNOWN), null);
+        @Specialization(guards = { "isRubyString(string)", "patternFitsEvenly(string, size)" })
+        public DynamicObject stringPatternFitsEvenly(DynamicObject stringClass, int size, DynamicObject string) {
+            final Rope rope = rope(string);
+            final Rope repeatingRope = new RepeatingRope(rope, size / rope.byteLength());
+
+            return allocateObjectNode.allocate(stringClass, repeatingRope, null);
         }
 
-        @Specialization(guards = "isRubyString(string)")
+        @Specialization(guards = { "isRubyString(string)", "!patternFitsEvenly(string, size)" })
+        @TruffleBoundary
         public DynamicObject stringPattern(DynamicObject stringClass, int size, DynamicObject string) {
             final Rope rope = rope(string);
             final byte[] bytes = new byte[size];
 
-            // TODO (nirvdrum 21-Jan-16): Investigate whether using a ConcatRope would be better here.
+            // TODO (nirvdrum 21-Jan-16): Investigate whether using a ConcatRope (potentially combined with a RepeatingRope) would be better here.
             if (! rope.isEmpty()) {
                 for (int n = 0; n < size; n += rope.byteLength()) {
                     System.arraycopy(rope.getBytes(), rope.begin(), bytes, n, Math.min(rope.byteLength(), size - n));
                 }
             }
 
-            // TODO (nirvdrum 21-Jan-16): Verify the encoding and code range are correct.
-            return allocateObjectNode.allocate(stringClass, makeLeafRopeNode.executeMake(bytes, encoding(string), CodeRange.CR_UNKNOWN, NotProvided.INSTANCE), null);
+            // If we reach this specialization, the `size` attribute will cause a truncated `string` to appear at the
+            // end of the resulting string in order to pad the value out. A truncated CR_7BIT string is always CR_7BIT.
+            // A truncated CR_VALID string could be any of the code range values.
+            final CodeRange codeRange = rope.getCodeRange() == CodeRange.CR_7BIT ? CodeRange.CR_7BIT : CodeRange.CR_UNKNOWN;
+            final Object characterLength = codeRange == CodeRange.CR_7BIT ? size : NotProvided.INSTANCE;
+
+            return allocateObjectNode.allocate(stringClass, makeLeafRopeNode.executeMake(bytes, encoding(string), codeRange, characterLength), null);
+        }
+
+        protected boolean patternFitsEvenly(DynamicObject string, int size) {
+            assert RubyGuards.isRubyString(string);
+
+            final int byteLength = rope(string).byteLength();
+
+            return byteLength > 0 && (size % byteLength) == 0;
         }
 
     }

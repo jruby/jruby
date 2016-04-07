@@ -29,13 +29,15 @@ public abstract class AssertConstantNode extends RubyNode {
 
     @Specialization
     public Object assertCompilationConstant(Object value) {
-        final boolean[] compilationConstant = new boolean[]{CompilerDirectives.isCompilationConstant(value)};
+        final boolean[] compilationConstant = new boolean[]{ CompilerDirectives.isCompilationConstant(value) };
+
+        // If we didn't cause the value to escape, the transfer would float above the isCompilationConstant
 
         sideEffect = compilationConstant;
 
         if (!compilationConstant[0]) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new RaiseException(coreLibrary().internalError("Value in Truffle::Primitive.assert_constant was not constant", this));
+            throw new RaiseException(coreLibrary().internalErrorAssertConstantNotConstant(this));
         }
 
         return value;

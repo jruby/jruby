@@ -9,7 +9,8 @@
  */
 package org.jruby.truffle.stdlib;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -33,31 +34,6 @@ public abstract class ObjSpaceNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isNil(nil)")
-        public int memsizeOf(Object nil) {
-            return 0;
-        }
-
-        @Specialization
-        public int memsizeOf(boolean object) {
-            return 0;
-        }
-
-        @Specialization
-        public int memsizeOf(int object) {
-            return 0;
-        }
-
-        @Specialization
-        public int memsizeOf(long object) {
-            return 0;
-        }
-
-        @Specialization
-        public int memsizeOf(double object) {
-            return 0;
-        }
-
         @Specialization(guards = "isRubyArray(object)")
         public int memsizeOfArray(DynamicObject object) {
             return 1 + object.getShape().getPropertyListInternal(false).size() + Layouts.ARRAY.getSize(object);
@@ -78,10 +54,20 @@ public abstract class ObjSpaceNodes {
             return 1 + object.getShape().getPropertyListInternal(false).size() + Layouts.MATCH_DATA.getValues(object).length;
         }
 
-        @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)", "!isRubyHash(object)",
-                "!isRubyString(object)", "!isRubyMatchData(object)"})
+        @Specialization(guards = {
+                "!isNil(object)",
+                "!isRubyArray(object)",
+                "!isRubyHash(object)",
+                "!isRubyString(object)",
+                "!isRubyMatchData(object)"
+        })
         public int memsizeOfObject(DynamicObject object) {
             return 1 + object.getShape().getPropertyListInternal(false).size();
+        }
+
+        @Fallback
+        public int memsize(Object object) {
+            return 0;
         }
 
     }
@@ -93,7 +79,7 @@ public abstract class ObjSpaceNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject adjacentObjects(DynamicObject object) {
             final Set<DynamicObject> objects = ObjectGraph.getAdjacentObjects(object);
@@ -109,7 +95,7 @@ public abstract class ObjSpaceNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject rootObjects() {
             final Set<DynamicObject> objects = ObjectGraph.stopAndGetRootObjects(this, getContext());
@@ -125,7 +111,7 @@ public abstract class ObjSpaceNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject traceAllocationsStart() {
             getContext().getObjectSpaceManager().traceAllocationsStart();
@@ -141,7 +127,7 @@ public abstract class ObjSpaceNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject traceAllocationsStop() {
             getContext().getObjectSpaceManager().traceAllocationsStop();

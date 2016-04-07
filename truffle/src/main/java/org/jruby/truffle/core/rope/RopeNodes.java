@@ -121,6 +121,22 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = { "byteLength > 1", "!sameAsBase(base, offset, byteLength)" })
+        public Rope substringMultiplyRope(RepeatingRope base, int offset, int byteLength,
+                                          @Cached("createBinaryProfile()") ConditionProfile is7BitProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile matchesChildProfile) {
+            final boolean offsetFitsChild = offset % base.getChild().byteLength() == 0;
+            final boolean byteLengthFitsChild = byteLength == base.getChild().byteLength();
+
+            // TODO (nirvdrum 07-Apr-16) We can specialize any number of children that fit perfectly into the length, not just count == 1. But we may need to create a new RepeatingNode to handle count > 1.
+            if (matchesChildProfile.profile(offsetFitsChild && byteLengthFitsChild)) {
+                return base.getChild();
+            }
+
+            return makeSubstring(base, offset, byteLength, is7BitProfile, isBinaryStringProfile);
+        }
+
+        @Specialization(guards = { "byteLength > 1", "!sameAsBase(base, offset, byteLength)" })
         public Rope substringConcatRope(ConcatRope base, int offset, int byteLength,
                                       @Cached("createBinaryProfile()") ConditionProfile is7BitProfile,
                                       @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile) {
@@ -646,9 +662,43 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = "rope.getRawBytes() == null")
-        @TruffleBoundary
-        public int getByteSlow(Rope rope, int index) {
-            return rope.get(index) & 0xff;
+        public int getByteSubstringRope(SubstringRope rope, int index,
+                                        @Cached("createBinaryProfile()") ConditionProfile childRawBytesNullProfile) {
+            if (childRawBytesNullProfile.profile(rope.getChild().getRawBytes() == null)) {
+                return rope.getByteSlow(index) & 0xff;
+            }
+
+            return rope.getChild().getRawBytes()[index + rope.getOffset()] & 0xff;
+        }
+
+        @Specialization(guards = "rope.getRawBytes() == null")
+        public int getByteRepeatingRope(RepeatingRope rope, int index,
+                                        @Cached("createBinaryProfile()") ConditionProfile childRawBytesNullProfile) {
+            if (childRawBytesNullProfile.profile(rope.getChild().getRawBytes() == null)) {
+                return rope.getByteSlow(index) & 0xff;
+            }
+
+            return rope.getChild().getRawBytes()[index % rope.getChild().byteLength()] & 0xff;
+        }
+
+        @Specialization(guards = "rope.getRawBytes() == null")
+        public int getByteConcatRope(ConcatRope rope, int index,
+                                     @Cached("createBinaryProfile()") ConditionProfile chooseLeftChildProfile,
+                                     @Cached("createBinaryProfile()") ConditionProfile leftChildRawBytesNullProfile,
+                                     @Cached("createBinaryProfile()") ConditionProfile rightChildRawBytesNullProfile) {
+            if (chooseLeftChildProfile.profile(index < rope.getLeft().byteLength())) {
+                if (leftChildRawBytesNullProfile.profile(rope.getLeft().getRawBytes() == null)) {
+                    return rope.getLeft().getByteSlow(index) & 0xff;
+                }
+
+                return rope.getLeft().getRawBytes()[index] & 0xff;
+            }
+
+            if (rightChildRawBytesNullProfile.profile(rope.getRight().getRawBytes() == null)) {
+                return rope.getRight().getByteSlow(index - rope.getLeft().byteLength()) & 0xff;
+            }
+
+            return rope.getRight().getRawBytes()[index - rope.getLeft().byteLength()] & 0xff;
         }
 
     }

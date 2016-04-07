@@ -1381,6 +1381,14 @@ public class CoreLibrary {
         return internalError(message, currentNode, null);
     }
 
+    public DynamicObject internalErrorAssertConstantNotConstant(Node currentNode) {
+        return internalError("Value in Truffle::Primitive.assert_constant was not constant", currentNode);
+    }
+
+    public DynamicObject internalErrorAssertNotCompiledCompiled(Node currentNode) {
+        return internalError("Call to Truffle::Primitive.assert_not_compiled was compiled", currentNode);
+    }
+
     public DynamicObject internalError(String message, Node currentNode, Throwable javaThrowable) {
         CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("internal implementation error - " + message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
