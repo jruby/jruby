@@ -1370,17 +1370,13 @@ public abstract class StringPrimitiveNodes {
             makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null, null);
         }
 
-        @Specialization(guards = "value == 0")
+        @Specialization(guards = "value >= 0")
         public DynamicObject stringPatternZero(DynamicObject stringClass, int size, int value) {
-            ByteList bytes = new ByteList(new byte[size]);
-            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(bytes, CodeRange.CR_UNKNOWN), null);
-        }
-
-        @Specialization(guards = "value != 0")
-        public DynamicObject stringPattern(DynamicObject stringClass, int size, int value) {
             final byte[] bytes = new byte[size];
             Arrays.fill(bytes, (byte) value);
-            return allocateObjectNode.allocate(stringClass, StringOperations.ropeFromByteList(new ByteList(bytes), CodeRange.CR_UNKNOWN), null);
+
+            final Rope rope = makeLeafRopeNode.executeMake(bytes, ASCIIEncoding.INSTANCE, value > 127 ? CodeRange.CR_VALID : CodeRange.CR_7BIT, size);
+            return allocateObjectNode.allocate(stringClass, rope, null);
         }
 
         @Specialization(guards = "isRubyString(string)")
