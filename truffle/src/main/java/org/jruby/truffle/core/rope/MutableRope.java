@@ -41,11 +41,6 @@ public class MutableRope extends LeafRope {
         return (byte) byteList.get(index);
     }
 
-    @Override
-    public byte[] extractRange(int offset, int length) {
-        return new ByteList(byteList, offset, length).bytes();
-    }
-
     public ByteList getByteList() {
         return byteList;
     }

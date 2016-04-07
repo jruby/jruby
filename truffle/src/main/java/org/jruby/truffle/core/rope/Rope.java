@@ -72,8 +72,6 @@ public abstract class Rope {
 
     public abstract void visitBytes(BytesVisitor visitor, int offset, int length);
 
-    public abstract byte[] extractRange(int offset, int length);
-
     public final Encoding getEncoding() {
         return encoding;
     }
