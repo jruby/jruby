@@ -322,25 +322,24 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
-            CompilerDirectives.transferToInterpreter();
-
             getContext().getJRubyRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(encodingString)")
         public DynamicObject defaultExternal(DynamicObject encodingString) {
-            CompilerDirectives.transferToInterpreter();
-
             final DynamicObject rubyEncoding = getEncoding(encodingString.toString());
             getContext().getJRubyRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
 
             return rubyEncoding;
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isNil(nil)")
         public DynamicObject defaultExternal(Object nil) {
             throw new RaiseException(coreLibrary().argumentError("default external can not be nil", this));
@@ -368,19 +367,17 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject defaultInternal(DynamicObject encoding) {
-            CompilerDirectives.transferToInterpreter();
-
             getContext().getJRubyRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isNil(encoding)")
         public DynamicObject defaultInternal(Object encoding) {
-            CompilerDirectives.transferToInterpreter();
-
             getContext().getJRubyRuntime().setDefaultInternalEncoding(null);
 
             return nil();
@@ -388,8 +385,6 @@ public abstract class EncodingNodes {
 
         @Specialization(guards = { "!isRubyEncoding(encoding)", "!isNil(encoding)" })
         public DynamicObject defaultInternal(VirtualFrame frame, Object encoding) {
-            CompilerDirectives.transferToInterpreter();
-
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -410,10 +405,9 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject list() {
-            CompilerDirectives.transferToInterpreter();
-
             final Object[] encodings = cloneEncodingList();
 
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), encodings, encodings.length);
@@ -428,9 +422,9 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject localeCharacterMap() {
-            CompilerDirectives.transferToInterpreter();
             final ByteList name = new ByteList(getContext().getJRubyRuntime().getEncodingService().getLocaleEncoding().getName());
             return createString(name);
         }
