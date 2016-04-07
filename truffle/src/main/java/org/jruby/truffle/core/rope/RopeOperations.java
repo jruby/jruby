@@ -229,6 +229,11 @@ public class RopeOperations {
             final int leftLength = concat.getLeft().byteLength();
 
             if (offset < leftLength) {
+                /*
+                 * The left branch might not be large enough to extract the full byte range we want. In that case,
+                 * we'll extract what we can and extract the difference from the right side.
+                 */
+                
                 final int leftUsed;
 
                 if (offset + length > leftLength) {
