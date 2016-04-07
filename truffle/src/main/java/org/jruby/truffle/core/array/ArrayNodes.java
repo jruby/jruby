@@ -39,6 +39,8 @@ import org.jruby.truffle.core.CoreMethodNode;
 import org.jruby.truffle.core.CoreSourceSection;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.core.array.ArrayNodesFactory.MaxBlockNodeFactory;
+import org.jruby.truffle.core.array.ArrayNodesFactory.MinBlockNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
 import org.jruby.truffle.core.coerce.ToAryNodeGen;
 import org.jruby.truffle.core.coerce.ToIntNode;
