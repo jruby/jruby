@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
@@ -20,6 +21,7 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.BytesVisitor;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
@@ -202,7 +204,8 @@ public abstract class DigestNodes {
                 throw new RuntimeException(e);
             }
 
-            return createString(new ByteList(clonedDigest.digest()));
+            return createString(RopeOperations.create(
+                    clonedDigest.digest(), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID));
         }
 
     }
@@ -233,7 +236,6 @@ public abstract class DigestNodes {
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject bubblebabble(DynamicObject message) {
             final Rope rope = StringOperations.rope(message);
-
             return createString(BubbleBabble.bubblebabble(rope.getBytes(), rope.begin(), rope.byteLength()));
         }
 
