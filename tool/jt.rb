@@ -410,10 +410,10 @@ module Commands
       test_tck
       test_specs('run')
       # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled
-      test_integration('all')
+      test_integration({'CI' => true, 'HAS_REDIS' => true}, 'all')
       test_compiler
     when 'compiler' then test_compiler(*rest)
-    when 'integration' then test_integration(*rest)
+    when 'integration' then test_integration({}, *rest)
     when 'specs' then test_specs('run', *rest)
     when 'tck' then
       args = []
@@ -457,7 +457,7 @@ module Commands
   end
   private :test_compiler
 
-  def test_integration(*args)
+  def test_integration(env, *args)
     no_gems = args.delete('--no-gems')
 
     all  = args.delete('all')
@@ -465,8 +465,7 @@ module Commands
     fast = args.delete('fast') || all ||
         !long # fast is the default
 
-    env_vars               = {}
-
+    env_vars   = env
     jruby_opts = []
 
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
