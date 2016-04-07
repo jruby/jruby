@@ -45,7 +45,6 @@ public class AttachmentsManager {
 
     private final RubyContext context;
     private final LineToProbesMap lineToProbesMap;
-    private final Map<LineLocation, List<Instrument>> attachments = new HashMap<>();
 
     public AttachmentsManager(RubyContext context) {
         this.context = context;
