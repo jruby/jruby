@@ -27,6 +27,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.SpawnFileAction;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
@@ -40,6 +41,7 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.array.ArrayStrategy;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.hash.BucketsStrategy;
 import org.jruby.truffle.core.rope.CodeRange;
@@ -1037,6 +1039,21 @@ public abstract class TrufflePrimitiveNodes {
 
             return true;
         }
+    }
+
+    @CoreMethod(names = "array_storage", onSingleton = true, required = 1)
+    public abstract static class ArrayStorageNode extends CoreMethodArrayArgumentsNode {
+
+        public ArrayStorageNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyArray(array)")
+        public DynamicObject arrayStorage(DynamicObject array) {
+            String storage = ArrayStrategy.of(array).toString();
+            return StringOperations.createString(getContext(), StringOperations.createRope(storage, USASCIIEncoding.INSTANCE));
+        }
+
     }
 
 }

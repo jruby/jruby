@@ -15,6 +15,9 @@ import org.jruby.truffle.language.RubyGuards;
 
 public class ArrayGuards {
 
+    // Enough to handle (all types + null) * (all types + null).
+    public static final int ARRAY_STRATEGIES = 25;
+
     // Storage strategies
 
     public static boolean isNullArray(DynamicObject array) {

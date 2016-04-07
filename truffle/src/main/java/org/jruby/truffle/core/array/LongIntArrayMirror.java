@@ -11,11 +11,12 @@ package org.jruby.truffle.core.array;
 
 import java.util.Arrays;
 
-class IntegerArrayMirror extends BasicArrayMirror {
+/** Mirror for a long[] array doing the proper casting for int values */
+class LongIntArrayMirror extends BasicArrayMirror {
 
-    private final int[] array;
+    private final long[] array;
 
-    public IntegerArrayMirror(int[] array) {
+    public LongIntArrayMirror(long[] array) {
         this.array = array;
     }
 
@@ -31,30 +32,20 @@ class IntegerArrayMirror extends BasicArrayMirror {
 
     @Override
     public void set(int index, Object value) {
-        array[index] = (int) value;
+        // Integer => int => long
+        array[index] = (long) (int) value;
     }
 
     @Override
     public ArrayMirror copyArrayAndMirror(int newLength) {
-        return new IntegerArrayMirror(Arrays.copyOf(array, newLength));
+        return new LongIntArrayMirror(Arrays.copyOf(array, newLength));
     }
 
     @Override
     public void copyTo(ArrayMirror destination, int sourceStart, int destinationStart, int count) {
-        if (destination instanceof LongArrayMirror) {
-            for (int i = 0; i < count; i++) {
-                destination.set(destinationStart + i, (long) array[sourceStart + i]);
-            }
-        } else {
-            for (int i = 0; i < count; i++) {
-                destination.set(destinationStart + i, array[sourceStart + i]);
-            }
+        for (int i = 0; i < count; i++) {
+            destination.set(destinationStart + i, array[sourceStart + i]);
         }
-    }
-
-    @Override
-    public Object[] getBoxedCopy(int newLength) {
-        return ArrayUtils.box(array, newLength);
     }
 
     @Override

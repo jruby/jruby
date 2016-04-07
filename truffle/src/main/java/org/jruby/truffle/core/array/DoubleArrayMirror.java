@@ -41,7 +41,9 @@ class DoubleArrayMirror extends BasicArrayMirror {
 
     @Override
     public void copyTo(ArrayMirror destination, int sourceStart, int destinationStart, int count) {
-        System.arraycopy(array, sourceStart, destination.getArray(), destinationStart, count);
+        for (int i = 0; i < count; i++) {
+            destination.set(destinationStart + i, array[sourceStart + i]);
+        }
     }
 
     @Override
