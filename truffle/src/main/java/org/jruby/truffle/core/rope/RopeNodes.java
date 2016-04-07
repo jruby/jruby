@@ -123,7 +123,16 @@ public abstract class RopeNodes {
         @Specialization(guards = { "byteLength > 1", "!sameAsBase(base, offset, byteLength)" })
         public Rope substringMultiplyRope(RepeatingRope base, int offset, int byteLength,
                                           @Cached("createBinaryProfile()") ConditionProfile is7BitProfile,
-                                          @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile) {
+                                          @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile matchesChildProfile) {
+            final boolean offsetFitsChild = offset % base.getChild().byteLength() == 0;
+            final boolean byteLengthFitsChild = byteLength == base.getChild().byteLength();
+
+            // TODO (nirvdrum 07-Apr-16) We can specialize any number of children that fit perfectly into the length, not just count == 1. But we may need to create a new RepeatingNode to handle count > 1.
+            if (matchesChildProfile.profile(offsetFitsChild && byteLengthFitsChild)) {
+                return base.getChild();
+            }
+
             return makeSubstring(base, offset, byteLength, is7BitProfile, isBinaryStringProfile);
         }
 
