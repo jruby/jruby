@@ -8,7 +8,7 @@
  * GNU Lesser General Public License version 2.1
  */
 
-package org.jruby.truffle.platform.sockets;
+package org.jruby.truffle.platform.posix;
 
 import jnr.ffi.Pointer;
 
