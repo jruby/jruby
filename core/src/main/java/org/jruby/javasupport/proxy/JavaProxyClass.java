@@ -446,47 +446,46 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     private static Class[] parse(final ClassLoader loader, String desc) throws ClassNotFoundException {
-        final List<Class> types = new ArrayList<Class>();
+        final ArrayList<Class> types = new ArrayList<>(8);
         int idx = 1;
         while (desc.charAt(idx) != ')') {
 
             int arr = 0;
             while (desc.charAt(idx) == '[') {
-                idx += 1;
-                arr += 1;
+                idx++; arr += 1;
             }
 
             Class type;
 
             switch (desc.charAt(idx)) {
-            case 'L':
-                int semi = desc.indexOf(';', idx);
-                final String name = desc.substring(idx + 1, semi);
-                idx = semi;
-                try {
-                    type = AccessController.doPrivileged(new PrivilegedExceptionAction<Class>() {
-                        public Class run() throws ClassNotFoundException {
-                            return Class.forName(name.replace('/', '.'), false, loader);
-                        }
-                    });
-                } catch (PrivilegedActionException e) {
-                    throw (ClassNotFoundException) e.getException();
-                }
-                break;
+                case 'L':
+                    int semi = desc.indexOf(';', idx);
+                    final String name = desc.substring(idx + 1, semi);
+                    idx = semi;
+                    try {
+                        type = AccessController.doPrivileged(new PrivilegedExceptionAction<Class>() {
+                            public Class run() throws ClassNotFoundException {
+                                return Class.forName(name.replace('/', '.'), false, loader);
+                            }
+                        });
+                    } catch (PrivilegedActionException e) {
+                        throw (ClassNotFoundException) e.getException();
+                    }
+                    break;
 
-            case 'B': type = Byte.TYPE; break;
-            case 'C': type = Character.TYPE; break;
-            case 'Z': type = Boolean.TYPE; break;
-            case 'S': type = Short.TYPE; break;
-            case 'I': type = Integer.TYPE; break;
-            case 'J': type = Long.TYPE; break;
-            case 'F': type = Float.TYPE; break;
-            case 'D': type = Double.TYPE; break;
-            default:
-                throw new InternalError("cannot parse " + desc + "[" + idx + "]");
+                case 'B': type = Byte.TYPE; break;
+                case 'C': type = Character.TYPE; break;
+                case 'Z': type = Boolean.TYPE; break;
+                case 'S': type = Short.TYPE; break;
+                case 'I': type = Integer.TYPE; break;
+                case 'J': type = Long.TYPE; break;
+                case 'F': type = Float.TYPE; break;
+                case 'D': type = Double.TYPE; break;
+                default:
+                    throw new InternalError("cannot parse " + desc + '[' + idx + ']');
             }
 
-            idx += 1;
+            idx++;
 
             if (arr != 0) {
                 type = Array.newInstance(type, new int[arr]).getClass();
@@ -495,7 +494,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             types.add(type);
         }
 
-        return types.toArray(new Class[types.size()]);
+        return types.isEmpty() ? EMPTY_CLASS_ARRAY : types.toArray(new Class[types.size()]);
     }
 
     //
