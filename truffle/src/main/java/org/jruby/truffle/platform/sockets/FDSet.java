@@ -7,16 +7,56 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
+
 package org.jruby.truffle.platform.sockets;
 
 import jnr.ffi.Pointer;
 
-public interface FDSet {
+public class FDSet {
 
-    void set(int fd);
+    private final static int MAX_FDS = 1024;
+    private final static int FIELD_SIZE_IN_BYTES = 4;
+    private final static int FIELD_SIZE_IN_BITS = FIELD_SIZE_IN_BYTES * 8;
 
-    boolean isSet(int fd);
+    private final Pointer bitmap;
 
-    Pointer getPointer();
+    public FDSet() {
+        bitmap = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().allocateDirect(MAX_FDS / 8);
+    }
 
+    public void set(int fd) {
+        checkBounds(fd);
+
+        final int offset = bitmapAddressOffset(fd);
+
+        bitmap.putInt(offset, bitmap.getInt(offset) | bitmapElementMask(fd));
+    }
+
+    public boolean isSet(int fd) {
+        checkBounds(fd);
+
+        return (bitmap.getInt(bitmapAddressOffset(fd)) & bitmapElementMask(fd)) != 0;
+    }
+
+    public Pointer getPointer() {
+        return bitmap;
+    }
+
+    private void checkBounds(int fd) {
+        if (fd < 0 || fd >= MAX_FDS) {
+            throw new IllegalArgumentException(String.format("Supplied file descriptor value must be > 0 and < %d", MAX_FDS));
+        }
+    }
+
+    private int bitmapElementIndex(int fd) {
+        return fd / FIELD_SIZE_IN_BITS;
+    }
+
+    private int bitmapAddressOffset(int fd) {
+        return bitmapElementIndex(fd) * FIELD_SIZE_IN_BYTES;
+    }
+
+    private int bitmapElementMask(int fd) {
+        return 1 << (fd % FIELD_SIZE_IN_BITS);
+    }
 }

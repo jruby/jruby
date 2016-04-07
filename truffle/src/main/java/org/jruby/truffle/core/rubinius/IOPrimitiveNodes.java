@@ -62,8 +62,6 @@ import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.sockets.FDSet;
-import org.jruby.truffle.platform.sockets.FDSetFactory;
-import org.jruby.truffle.platform.sockets.FDSetFactoryFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -250,8 +248,6 @@ public abstract class IOPrimitiveNodes {
     @RubiniusPrimitive(name = "io_read_if_available", lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
     public static abstract class IOReadIfAvailableNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();
-
         public IOReadIfAvailableNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -267,7 +263,7 @@ public abstract class IOPrimitiveNodes {
 
             final int fd = Layouts.IO.getDescriptor(file);
 
-            final FDSet fdSet = fdSetFactory.create();
+            final FDSet fdSet = new FDSet();
             fdSet.set(fd);
 
             final Timeval timeoutObject = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
@@ -573,8 +569,6 @@ public abstract class IOPrimitiveNodes {
     @RubiniusPrimitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3, unsafe = UnsafeGroup.IO)
     public static abstract class IOSelectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();
-
         public IOSelectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -596,7 +590,7 @@ public abstract class IOPrimitiveNodes {
             final int[] readableFds = getFileDescriptors(readables);
             final int nfds = max(readableFds) + 1;
 
-            final FDSet readableSet = fdSetFactory.create();
+            final FDSet readableSet = new FDSet();
 
             final ThreadManager.ResultOrTimeout<Integer> result = getContext().getThreadManager().runUntilTimeout(this, timeoutMicros, new ThreadManager.BlockingTimeoutAction<Integer>() {
                 @Override
@@ -651,7 +645,7 @@ public abstract class IOPrimitiveNodes {
             final int[] writableFds = getFileDescriptors(writables);
             final int nfds = max(writableFds) + 1;
 
-            final FDSet writableSet = fdSetFactory.create();
+            final FDSet writableSet = new FDSet();
 
 
             final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
