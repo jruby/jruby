@@ -12,6 +12,7 @@ package org.jruby.truffle.core.rope;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
+import org.jruby.util.func.Function1;
 
 public class ConcatRope extends Rope {
 
@@ -53,6 +54,35 @@ public class ConcatRope extends Rope {
         }
 
         return right.getByteSlow(index - left.byteLength());
+    }
+
+    @TruffleBoundary
+    @Override
+    public void visitBytes(BytesVisitor visitor, int offset, int length) {
+        assert length <= byteLength();
+
+        final int leftLength = left.byteLength();
+
+        if (offset < leftLength) {
+            final int leftUsed;
+
+            if (offset + length > leftLength) {
+                leftUsed = leftLength - offset;
+            } else {
+                leftUsed = length;
+            }
+
+            left.visitBytes(visitor, offset, leftUsed);
+
+            if (leftUsed < length) {
+                right.visitBytes(visitor, 0, length - leftUsed);
+                return;
+            } else {
+                return;
+            }
+        }
+
+        right.visitBytes(visitor, offset - leftLength, length);
     }
 
     @Override

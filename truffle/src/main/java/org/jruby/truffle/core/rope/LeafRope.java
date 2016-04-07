@@ -23,6 +23,11 @@ public abstract class LeafRope extends Rope {
     }
 
     @Override
+    public void visitBytes(BytesVisitor visitor, int offset, int length) {
+        visitor.accept(getRawBytes(), begin() + offset, length);
+    }
+
+    @Override
     public byte[] extractRange(int offset, int length) {
         assert offset + length <= byteLength();
 

@@ -47,6 +47,11 @@ public class SubstringRope extends Rope {
     }
 
     @Override
+    public void visitBytes(BytesVisitor visitor, int visitOffset, int length) {
+        child.visitBytes(visitor, begin() + offset + visitOffset, length);
+    }
+
+    @Override
     @TruffleBoundary
     public byte[] extractRange(int offset, int length) {
         assert length <= this.byteLength();
