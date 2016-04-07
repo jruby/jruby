@@ -14,6 +14,7 @@ exclude :test_getbyte_extended_file , "needs investigation"
 exclude :test_getc_extended_file , "needs investigation"
 exclude :test_gets_extended_file , "needs investigation"
 exclude :test_gets_para_extended_file , "needs investigation"
+exclude :test_chmod_m17n, "needs investigation" if windows
 exclude :test_read_all_extended_file , "needs investigation"
 exclude :test_realdirpath , "needs investigation"
 exclude :test_realpath , "needs investigation"

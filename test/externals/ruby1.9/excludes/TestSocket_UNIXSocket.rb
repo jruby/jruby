@@ -1,6 +1,3 @@
-windows = RbConfig::CONFIG['host_os'] =~ /mswin|mingw/
-
-exclude :text_accept_unix, "no support" if !windows
 exclude :test_addr, "needs investigation"
 exclude :test_dgram_pair, "needs investigation"
 exclude :test_epipe, "needs investigation"
@@ -12,5 +9,3 @@ exclude :test_noname_unpack_sockaddr_un, "needs investigation"
 exclude :test_nul, "needs investigation"
 exclude :test_socket_pair_with_block, "needs investigation"
 exclude :test_too_long_path, "needs investigation"
-exclude :test_unix_server_socket, "no support" if !windows
-exclude :test_unix_socket_pair_with_block, "no support" if !windows
