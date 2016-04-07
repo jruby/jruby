@@ -12,6 +12,8 @@ require 'digest'
 
 describe "digest updating" do
   
+  # These tests are here as a convienent way to check we're iterating over ropes correctly when doing IO
+  
   it "works on leaf ropes" do
     Digest::MD5.hexdigest('foo').should == 'acbd18db4cc2f85cedef654fccc4a4d8'
   end
@@ -34,6 +36,18 @@ describe "digest updating" do
   
   it "works on substring ropes that only use the right of a concat rope" do
     Digest::MD5.hexdigest(('foo' + 'bar')[4...5]).should == '0cc175b9c0f1b6a831c399e269772661'
+  end
+  
+  it "works on repeating ropes that only use the first repetition" do
+    Digest::MD5.hexdigest(('foo' * 2)[1...2]).should == 'd95679752134a2d9eb61dbd7b91c4bcc'
+  end
+  
+  it "works on repeating ropes that only use the second repetition" do
+    Digest::MD5.hexdigest(('foo' * 2)[4...5]).should == 'd95679752134a2d9eb61dbd7b91c4bcc'
+  end
+  
+  it "works on repeating ropes that cross two repetitions" do
+    Digest::MD5.hexdigest(('foo' * 2)[2...-2]).should == '8bf8854bebe108183caeb845c7676ae4'
   end
   
 end
