@@ -68,7 +68,8 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
         }
 
-        @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
+        @CreateCast("operand")
+        public RubyNode createCast(RubyNode operand) {
             return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
         }
 
@@ -105,16 +106,32 @@ public abstract class BasicObjectNodes {
 
         public abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
 
-        @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
-        @Specialization public boolean equal(int a, int b) { return a == b; }
-        @Specialization public boolean equal(long a, long b) { return a == b; }
-        @Specialization public boolean equal(double a, double b) { return Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b); }
-
-        @Specialization public boolean equal(DynamicObject a, DynamicObject b) {
+        @Specialization
+        public boolean equal(boolean a, boolean b) {
             return a == b;
         }
 
-        @Specialization(guards = {"isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)"})
+        @Specialization
+        public boolean equal(int a, int b) {
+            return a == b;
+        }
+
+        @Specialization
+        public boolean equal(long a, long b) {
+            return a == b;
+        }
+
+        @Specialization
+        public boolean equal(double a, double b) {
+            return Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b);
+        }
+
+        @Specialization
+        public boolean equal(DynamicObject a, DynamicObject b) {
+            return a == b;
+        }
+
+        @Specialization(guards = { "isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)" })
         public boolean equal(Object a, Object b) {
             return false;
         }
