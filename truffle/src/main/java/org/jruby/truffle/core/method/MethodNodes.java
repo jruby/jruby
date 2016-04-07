@@ -40,8 +40,8 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.methods.CallMethodNode;
-import org.jruby.truffle.language.methods.CallMethodNodeGen;
+import org.jruby.truffle.language.methods.CallInternalMethodNode;
+import org.jruby.truffle.language.methods.CallInternalMethodNodeGen;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.LogicalClassNode;
@@ -97,12 +97,12 @@ public abstract class MethodNodes {
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child ProcOrNullNode procOrNullNode;
-        @Child CallMethodNode callMethodNode;
+        @Child CallInternalMethodNode callMethodNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
-            callMethodNode = CallMethodNodeGen.create(context, sourceSection, null, null);
+            callMethodNode = CallInternalMethodNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
