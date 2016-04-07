@@ -214,6 +214,11 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static void visitBytes(Rope rope, BytesVisitor visitor, int offset, int length) {
+        /*
+         * TODO: CS-7-Apr-16 rewrite this to be iterative as flattenBytes is, but with new logic for offset and length
+         * creating a range, then write flattenBytes in terms of visitBytes.
+         */
+
         assert length <= rope.byteLength();
 
         if (rope.getRawBytes() != null) {
