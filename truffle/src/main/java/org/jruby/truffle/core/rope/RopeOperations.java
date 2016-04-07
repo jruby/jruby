@@ -30,6 +30,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.util.ByteList;
+import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
@@ -285,18 +286,22 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static byte[] extractRange(Rope rope, int offset, int length) {
-        final ByteList result = new ByteList(length);
+        final byte[] result = new byte[length];
+
+        final Memo<Integer> resultPosition = new Memo<>(0);
 
         visitBytes(rope, new BytesVisitor() {
 
             @Override
             public void accept(byte[] bytes, int offset, int length) {
-                result.append(bytes, offset, length);
+                final int resultPositionValue = resultPosition.get();
+                System.arraycopy(bytes, offset, result, resultPositionValue, length);
+                resultPosition.set(resultPositionValue + length);
             }
 
         }, offset, length);
 
-        return result.getUnsafeBytes();
+        return result;
     }
 
     /**
