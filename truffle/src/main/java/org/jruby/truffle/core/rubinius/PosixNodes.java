@@ -735,7 +735,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(names = "errno=", isModuleFunction = true, unsafe = UnsafeGroup.PROCESSES)
+    @CoreMethod(names = "errno=", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class ErrnoAssignNode extends CoreMethodArrayArgumentsNode {
 
         public ErrnoAssignNode(RubyContext context, SourceSection sourceSection) {
