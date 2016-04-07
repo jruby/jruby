@@ -76,13 +76,10 @@ public class ConcatRope extends Rope {
 
             if (leftUsed < length) {
                 right.visitBytes(visitor, 0, length - leftUsed);
-                return;
-            } else {
-                return;
             }
+        } else {
+            right.visitBytes(visitor, offset - leftLength, length);
         }
-
-        right.visitBytes(visitor, offset - leftLength, length);
     }
 
     @Override
