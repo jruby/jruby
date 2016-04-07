@@ -37,7 +37,6 @@ import org.jruby.util.FileResource;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.func.Function2;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -384,10 +383,13 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("-T")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+                        Options.COMPILE_MODE.unforce();
                         config.setDisableGems(false);
                     } else if (extendedOption.equals("+T")) {
                         Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
+                        // Make the static option consistent with the compile mode.
+                        Options.COMPILE_MODE.force("TRUFFLE");
                         config.setDisableGems(true);
                     } else if (extendedOption.endsWith("...")) {
                         Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));

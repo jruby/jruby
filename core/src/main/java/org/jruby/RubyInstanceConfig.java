@@ -1641,6 +1641,10 @@ public class RubyInstanceConfig {
         public boolean shouldPrecompileAll() {
             return this == FORCE;
         }
+
+        public boolean isTruffle() {
+            return this == TRUFFLE;
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
