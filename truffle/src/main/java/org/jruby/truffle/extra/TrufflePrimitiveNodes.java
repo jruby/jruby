@@ -64,7 +64,6 @@ import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.unsafe.UnsafeHolder;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -1021,13 +1020,16 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization(guards = "isRubyString(feature)")
         public boolean requireRelative(VirtualFrame frame, DynamicObject feature, @Cached("create()") IndirectCallNode callNode) {
-            if (!(getContext().getCoreLibrary().isLoadingRubyCore() || getContext().getOptions().PLATFORM_SAFE_LOAD)) {
-                throw new RaiseException(getContext().getCoreLibrary().internalErrorUnsafe(this));
+            final CoreLibrary coreLibrary = getContext().getCoreLibrary();
+            if (!(coreLibrary.isLoadingRubyCore() || getContext().getOptions().PLATFORM_SAFE_LOAD)) {
+                throw new RaiseException(coreLibrary.internalErrorUnsafe(this));
             }
 
+            final CodeLoader codeLoader = getContext().getCodeLoader();
+            final String path = coreLibrary.getCoreLoadPath() + "/" + feature.toString() + ".rb";
             try {
-                final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceCache().getSource(getContext().getCoreLibrary().getCoreLoadPath() + "/" + feature.toString() + ".rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
-                final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
+                final RubyRootNode rootNode = codeLoader.parse(getContext().getSourceCache().getSource(path), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
+                final CodeLoader.DeferredCall deferredCall = codeLoader.prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, coreLibrary.getMainObject());
                 deferredCall.getCallTarget().call(deferredCall.getArguments());
             } catch (IOException e) {
                 throw new RuntimeException(e);
