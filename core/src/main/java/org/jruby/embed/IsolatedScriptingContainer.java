@@ -24,6 +24,14 @@ import org.jruby.util.UriLikePathHelper;
  * This container also sets option classloader.delegate to false, i.e. the JRubyClassloader 
  * for each runtime will lookup classes first on itself before looking into the parent 
  * classloader.
+ *
+ * WARNING: this can give problems when joda-time is used inside the 
+ *   JRubyClassloader or with current version of nokogiri (1.6.7.2) as it uses 
+ *   (sun-)jdk classes which conflicts with classes nokogiri loaded into the 
+ *   JRubyClassloader.
+ *
+ * With any classloader related problem the first thing is to try
+ * <code>container.getProvider().getRubyInstanceConfig().setClassloaderDelegate(true);</code> to solve it.
  */
 public class IsolatedScriptingContainer extends ScriptingContainer {
 
