@@ -170,15 +170,25 @@ public abstract class StringOperations {
         StringOperations.setRope(string, RopeOperations.withEncodingVerySlow(oldRope, encoding, CodeRange.CR_UNKNOWN));
     }
 
-    public static int normalizeIndex(int length, int index) {
-        return ArrayOperations.normalizeIndex(length, index);
+    public static long normalizeIndex(long length, long index) {
+        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.SLOWPATH_PROBABILITY, index < 0)) {
+            return length + index;
+        } else {
+            return index;
+        }
     }
 
-    public static int clampExclusiveIndex(DynamicObject string, int index) {
+    public static long clampExclusiveIndex(DynamicObject string, long index) {
         assert RubyGuards.isRubyString(string);
 
         // TODO (nirvdrum 21-Jan-16): Verify this is supposed to be the byteLength and not the characterLength.
-        return ArrayOperations.clampExclusiveIndex(StringOperations.rope(string).byteLength(), index);
+        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index < 0)) {
+            return 0;
+        } else if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index > rope(string).byteLength())) {
+            return rope(string).byteLength();
+        } else {
+            return index;
+        }
     }
 
     public static Encoding checkEncoding(RubyContext context, DynamicObject string, DynamicObject other, Node node) {

@@ -81,6 +81,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.cast.ArrayAttributeCastNodeGen;
 import org.jruby.truffle.core.cast.TaintResultNode;
@@ -93,6 +94,7 @@ import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.string.StringGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
@@ -134,11 +136,17 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = "!is7Bit(character)")
         public boolean isCharacterAsciiMultiByte(DynamicObject character) {
             final Rope rope = rope(character);
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't calculate codepoint for characters larger than int range");
+            }
+
             final int codepoint = StringSupport.preciseCodePoint(
                     rope.getEncoding(),
                     rope.getBytes(),
                     0,
-                    rope.byteLength());
+                    (int) rope.byteLength());
 
             final boolean found = codepoint != -1;
 
@@ -159,7 +167,12 @@ public abstract class StringPrimitiveNodes {
             final Rope rope = rope(character);
             final Encoding encoding = rope.getEncoding();
 
-            final int codepoint = encoding.mbcToCode(rope.getBytes(), 0, rope.byteLength());
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't get the code point for characters larger than int range");
+            }
+
+            final int codepoint = encoding.mbcToCode(rope.getBytes(), 0, (int) rope.byteLength());
 
             return encoding.isPrint(codepoint);
         }
@@ -218,10 +231,15 @@ public abstract class StringPrimitiveNodes {
             final boolean limit = lim > 0;
             int i = lim > 0 ? 1 : 0;
 
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't string_awk_split ropes larger than int range");
+            }
+
             byte[]bytes = rope.getBytes();
             int p = rope.begin();
             int ptr = p;
-            int len = rope.byteLength();
+            int len = (int) rope.byteLength();
             int end = p + len;
             Encoding enc = rope.getEncoding();
             boolean skip = true;
@@ -314,7 +332,7 @@ public abstract class StringPrimitiveNodes {
         public Object executeStringByteSubstring(DynamicObject string, Object index, Object length) { return nil(); }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, int index, NotProvided length,
+        public Object stringByteSubstring(DynamicObject string, long index, NotProvided length,
                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile,
                                           @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile,
                                           @Cached("createBinaryProfile()") ConditionProfile lengthTooLongProfile,
@@ -334,7 +352,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, int index, int length,
+        public Object stringByteSubstring(DynamicObject string, long index, long length,
                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile,
                                           @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile,
                                           @Cached("createBinaryProfile()") ConditionProfile lengthTooLongProfile) {
@@ -343,8 +361,8 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Rope rope = rope(string);
-            final int stringLength = rope.characterLength();
-            final int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
+            final long stringLength = rope.characterLength();
+            final long normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
 
             if (indexOutOfBoundsProfile.profile(normalizedIndex < 0 || normalizedIndex > rope.byteLength())) {
                 return nil();
@@ -399,12 +417,12 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "indexOutOfBounds(string, byteIndex)")
-        public Object stringChrAtOutOfBounds(DynamicObject string, int byteIndex) {
+        public Object stringChrAtOutOfBounds(DynamicObject string, long byteIndex) {
             return false;
         }
 
         @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "isSingleByteOptimizable(string)" })
-        public Object stringChrAtSingleByte(DynamicObject string, int byteIndex,
+        public Object stringChrAtSingleByte(DynamicObject string, long byteIndex,
                                             @Cached("create(getContext(), getSourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
             return stringByteSubstringNode.executeStringByteSubstring(string, byteIndex, 1);
         }
@@ -415,7 +433,13 @@ public abstract class StringPrimitiveNodes {
             // Taken from Rubinius's Character::create_from.
 
             final Rope rope = rope(string);
-            final int end = rope.byteLength();
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work out the length for subranges of ropes larger than the int range");
+            }
+
+            final int end = (int) rope.byteLength();
             final int c = preciseLength(rope, byteIndex, end);
 
             if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
@@ -435,7 +459,7 @@ public abstract class StringPrimitiveNodes {
             return StringSupport.preciseLength(rope.getEncoding(), rope.getBytes(), p, end);
         }
 
-        protected static boolean indexOutOfBounds(DynamicObject string, int byteIndex) {
+        protected static boolean indexOutOfBounds(DynamicObject string, long byteIndex) {
             return ((byteIndex < 0) || (byteIndex >= rope(string).byteLength()));
         }
 
@@ -449,11 +473,21 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(other)")
-        public int stringCompareSubstring(VirtualFrame frame, DynamicObject string, DynamicObject other, int start, int size) {
+        public int stringCompareSubstring(VirtualFrame frame, DynamicObject string, DynamicObject other, long start, long size) {
             // Transliterated from Rubinius C++.
 
-            final int stringLength = StringOperations.rope(string).characterLength();
-            final int otherLength = StringOperations.rope(other).characterLength();
+            if (!CoreLibrary.fitsIntoInteger(start)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't compare substrings starting outside int range");
+            }
+
+            if (!CoreLibrary.fitsIntoInteger(size)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't compare substrings ending outside int range");
+            }
+
+            final long stringLength = StringOperations.rope(string).characterLength();
+            final long otherLength = StringOperations.rope(other).characterLength();
 
             if (start < 0) {
                 start += otherLength;
@@ -491,8 +525,8 @@ public abstract class StringPrimitiveNodes {
             final Rope otherRope = StringOperations.rope(other);
 
             // TODO (nirvdrum 21-Jan-16): Reimplement with something more friendly to rope byte[] layout?
-            return ByteList.memcmp(rope.getBytes(), rope.begin(), size,
-                    otherRope.getBytes(), otherRope.begin() + start, size);
+            return ByteList.memcmp(rope.getBytes(), rope.begin(), (int) size,
+                    otherRope.getBytes(), otherRope.begin() + (int) start, (int) size);
         }
 
     }
@@ -678,10 +712,10 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Encoding enc = rope.getEncoding();
-            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), rope.begin(), rope.begin() + rope.byteLength());
+            final long clen = rope.characterLength();
 
             final DynamicObject ret;
-            if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
+            if (RopeOperations.MBCLEN_CHARFOUND_P(clen)) {
                 ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), makeSubstringNode.executeMake(rope, offset, clen), null);
             } else {
                 // TODO (nirvdrum 13-Jan-16) We know that the code range is CR_7BIT. Ensure we're not wasting time figuring that out again in the substring creation.
@@ -818,16 +852,16 @@ public abstract class StringPrimitiveNodes {
 
 
         @Specialization(guards = { "isRubyString(pattern)", "!isBrokenCodeRange(pattern)" })
-        public Object stringIndex(VirtualFrame frame, DynamicObject string, DynamicObject pattern, int start) {
+        public Object stringIndex(VirtualFrame frame, DynamicObject string, DynamicObject pattern, long start) {
             if (byteIndexToCharIndexNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 byteIndexToCharIndexNode = insert(StringPrimitiveNodesFactory.StringByteCharacterIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
             }
 
             // Rubinius will pass in a byte index for the `start` value, but StringSupport.index requires a character index.
-            final int charIndex = byteIndexToCharIndexNode.executeStringBytCharacterIndex(frame, string, start, 0);
+            final long charIndex = byteIndexToCharIndexNode.executeStringBytCharacterIndex(frame, string, start, 0);
 
-            final int index = index(rope(string), rope(pattern), charIndex, encoding(string));
+            final long index = index(rope(string), rope(pattern), charIndex, encoding(string));
 
             if (index == -1) {
                 return nil();
@@ -837,11 +871,16 @@ public abstract class StringPrimitiveNodes {
         }
 
         @TruffleBoundary
-        private int index(Rope source, Rope other, int offset, Encoding enc) {
+        private long index(Rope source, Rope other, long offset, Encoding enc) {
             // Taken from org.jruby.util.StringSupport.index.
 
-            int sourceLen = source.characterLength();
-            int otherLen = other.characterLength();
+            if (!CoreLibrary.fitsIntoInteger(other.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't index into MBC strings larger than int range");
+            }
+
+            long sourceLen = source.characterLength();
+            long otherLen = other.characterLength();
 
             if (offset < 0) {
                 offset += sourceLen;
@@ -851,18 +890,23 @@ public abstract class StringPrimitiveNodes {
             if (sourceLen - offset < otherLen) return -1;
             byte[]bytes = source.getBytes();
             int p = source.begin();
-            int end = p + source.byteLength();
+            long end = p + source.byteLength();
             if (offset != 0) {
-                offset = source.isSingleByteOptimizable() ? offset : StringSupport.offset(enc, bytes, p, end, offset);
+                offset = source.isSingleByteOptimizable() ? offset : StringSupport.offset(enc, bytes, p, (int) end, (int) offset);
                 p += offset;
             }
             if (otherLen == 0) return offset;
 
+            if (!CoreLibrary.fitsIntoInteger(source.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't index into source rope larger than int range");
+            }
+
             while (true) {
-                int pos = indexOf(source, other, p - source.begin());
+                long pos = indexOf(source, other, p - source.begin());
                 if (pos < 0) return pos;
                 pos -= (p - source.begin());
-                int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
+                int t = enc.rightAdjustCharHead(bytes, p, (int) (p + pos), (int) end);
                 if (t == p + pos) return pos + offset;
                 if ((sourceLen -= t - p) <= 0) return -1;
                 offset += t - p;
@@ -871,29 +915,39 @@ public abstract class StringPrimitiveNodes {
         }
 
         @TruffleBoundary
-        private int indexOf(Rope sourceRope, Rope otherRope, int fromIndex) {
+        private long indexOf(Rope sourceRope, Rope otherRope, long fromIndex) {
             // Taken from org.jruby.util.ByteList.indexOf.
+
+            if (!CoreLibrary.fitsIntoInteger(sourceRope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't index into source rope larger than int range");
+            }
+
+            if (!CoreLibrary.fitsIntoInteger(otherRope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't index into target rope larger than int range");
+            }
 
             final byte[] source = sourceRope.getBytes();
             final int sourceOffset = sourceRope.begin();
-            final int sourceCount = sourceRope.byteLength();
+            final long sourceCount = sourceRope.byteLength();
             final byte[] target = otherRope.getBytes();
             final int targetOffset = otherRope.begin();
-            final int targetCount = otherRope.byteLength();
+            final long targetCount = otherRope.byteLength();
 
             if (fromIndex >= sourceCount) return (targetCount == 0 ? sourceCount : -1);
             if (fromIndex < 0) fromIndex = 0;
             if (targetCount == 0) return fromIndex;
 
             byte first  = target[targetOffset];
-            int max = sourceOffset + (sourceCount - targetCount);
+            long max = sourceOffset + (sourceCount - targetCount);
 
-            for (int i = sourceOffset + fromIndex; i <= max; i++) {
+            for (int i = (int) (sourceOffset + fromIndex); i <= max; i++) {
                 if (source[i] != first) while (++i <= max && source[i] != first);
 
                 if (i <= max) {
                     int j = i + 1;
-                    int end = j + targetCount - 1;
+                    long end = j + targetCount - 1;
                     for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++);
 
                     if (j == end) return i - sourceOffset;
@@ -911,18 +965,28 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public abstract int executeInt(VirtualFrame frame, DynamicObject string, int index, int start);
+        public abstract long executeLong(VirtualFrame frame, DynamicObject string, long index, long start);
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
-        public int stringCharacterByteIndex(DynamicObject string, int index, int start) {
+        public long stringCharacterByteIndex(DynamicObject string, long index, long start) {
             return start + index;
         }
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
-        public int stringCharacterByteIndexMultiByteEncoding(DynamicObject string, int index, int start) {
+        public long stringCharacterByteIndexMultiByteEncoding(DynamicObject string, long index, long start) {
             final Rope rope = rope(string);
 
-            return StringSupport.nth(rope.getEncoding(), rope.getBytes(), start, rope.byteLength(), index);
+            if (!CoreLibrary.fitsIntoInteger(index)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Index must be in int range");
+            }
+
+            if (!CoreLibrary.fitsIntoInteger(start)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Start must be in int range");
+            }
+
+            return (long) StringSupport.nth(rope.getEncoding(), rope.getBytes(), (int) start, (int) rope.byteLength(), (int) index);
         }
     }
 
@@ -934,22 +998,22 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public abstract int executeStringBytCharacterIndex(VirtualFrame frame, DynamicObject string, int index, int start);
+        public abstract long executeStringBytCharacterIndex(VirtualFrame frame, DynamicObject string, long index, long start);
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
-        public int stringByteCharacterIndexSingleByte(DynamicObject string, int index, int start) {
+        public long stringByteCharacterIndexSingleByte(DynamicObject string, long index, long start) {
             // Taken from Rubinius's String::find_byte_character_index.
             return index;
         }
 
         @Specialization(guards = { "!isSingleByteOptimizable(string)", "isFixedWidthEncoding(string)" })
-        public int stringByteCharacterIndexFixedWidth(DynamicObject string, int index, int start) {
+        public long stringByteCharacterIndexFixedWidth(DynamicObject string, long index, long start) {
             // Taken from Rubinius's String::find_byte_character_index.
             return index / encoding(string).minLength();
         }
 
         @Specialization(guards = { "!isSingleByteOptimizable(string)", "!isFixedWidthEncoding(string)", "isValidUtf8(string)" })
-        public int stringByteCharacterIndexValidUtf8(DynamicObject string, int index, int start) {
+        public long stringByteCharacterIndexValidUtf8(DynamicObject string, long index, long start) {
             // Taken from Rubinius's String::find_byte_character_index.
 
             // TODO (nirvdrum 02-Apr-15) There's a way to optimize this for UTF-8, but porting all that code isn't necessary at the moment.
@@ -958,13 +1022,24 @@ public abstract class StringPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = { "!isSingleByteOptimizable(string)", "!isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
-        public int stringByteCharacterIndex(DynamicObject string, int index, int start) {
+        public long stringByteCharacterIndex(DynamicObject string, long index, long start) {
             // Taken from Rubinius's String::find_byte_character_index and Encoding::find_byte_character_index.
 
             final Rope rope = rope(string);
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't index rope larger than int range");
+            }
+
+            if (!CoreLibrary.fitsIntoInteger(start)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Start value cannot be larger than int range");
+            }
+
             final byte[] bytes = rope.getBytes();
             final Encoding encoding = rope.getEncoding();
-            int p = start;
+            int p = (int) start;
             final int end = bytes.length;
             int charIndex = 0;
 
@@ -996,11 +1071,12 @@ public abstract class StringPrimitiveNodes {
             final Rope stringRope = rope(string);
             final Rope patternRope = rope(pattern);
 
-            final int total = stringRope.byteLength();
+
+            final long total = stringRope.byteLength();
             int p = stringRope.begin();
-            final int e = p + total;
+            final long e = p + total;
             int pp = patternRope.begin();
-            final int pe = pp + patternRope.byteLength();
+            final long pe = pp + patternRope.byteLength();
             int s;
             int ss;
 
@@ -1031,8 +1107,14 @@ public abstract class StringPrimitiveNodes {
             int index = 0;
             int c;
 
+            if (!CoreLibrary.fitsIntoInteger(stringRope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't index rope larger than int range");
+            }
+
+
             while(p < e && index < offset) {
-                c = StringSupport.preciseLength(enc, stringBytes, p, e);
+                c = StringSupport.preciseLength(enc, stringBytes, p, (int) e);
 
                 if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
                     p += c;
@@ -1043,7 +1125,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             for(s = p, ss = pp; p < e; s = p += c, ++index) {
-                c = StringSupport.preciseLength(enc, stringBytes, p, e);
+                c = StringSupport.preciseLength(enc, stringBytes, p, (int) e);
                 if ( !StringSupport.MBCLEN_CHARFOUND_P(c)) return nil();
 
                 if (stringBytes[p] != patternBytes[pp]) continue;
@@ -1065,7 +1147,7 @@ public abstract class StringPrimitiveNodes {
                         break;
                     }
 
-                    c = StringSupport.preciseLength(enc, stringBytes, p, e);
+                    c = StringSupport.preciseLength(enc, stringBytes, p, (int) e);
                     if (! StringSupport.MBCLEN_CHARFOUND_P(c)) break;
                 }
 
@@ -1091,7 +1173,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
-        public Object stringByteIndexSingleByte(DynamicObject string, int index, int start,
+        public Object stringByteIndexSingleByte(DynamicObject string, long index, long start,
                                                 @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile) {
             if (indexTooLargeProfile.profile(index > rope(string).byteLength())) {
                 return nil();
@@ -1101,17 +1183,22 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
-        public Object stringByteIndex(DynamicObject string, int index, int start,
+        public Object stringByteIndex(DynamicObject string, long index, long start,
                                       @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile,
                                       @Cached("createBinaryProfile()") ConditionProfile invalidByteProfile) {
             // Taken from Rubinius's String::byte_index.
 
+            if (!CoreLibrary.fitsIntoInteger(rope(string).byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't index into rope larger than int range");
+            }
+
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
             int p = rope.begin();
-            final int e = p + rope.byteLength();
+            final long e = p + rope.byteLength();
 
-            int i, k = index;
+            long i, k = index;
 
             if (k < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -1119,7 +1206,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             for (i = 0; i < k && p < e; i++) {
-                final int c = StringSupport.preciseLength(enc, rope.getBytes(), p, e);
+                final int c = StringSupport.preciseLength(enc, rope.getBytes(), p, (int) e);
 
                 // If it's an invalid byte, just treat it as a single byte
                 if(invalidByteProfile.profile(! StringSupport.MBCLEN_CHARFOUND_P(c))) {
@@ -1137,7 +1224,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(pattern)")
-        public Object stringByteIndex(DynamicObject string, DynamicObject pattern, int offset,
+        public Object stringByteIndex(DynamicObject string, DynamicObject pattern, long offset,
                                       @Cached("createBinaryProfile()") ConditionProfile emptyPatternProfile,
                                       @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile) {
             // Taken from Rubinius's String::byte_index.
@@ -1156,11 +1243,16 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
+            if (!CoreLibrary.fitsIntoInteger(stringRope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't index rope larger than int range");
+            }
+
             final Encoding encoding = StringOperations.checkEncoding(getContext(), string, pattern, this);
             int p = stringRope.begin();
-            final int e = p + stringRope.byteLength();
+            final long e = p + stringRope.byteLength();
             int pp = patternRope.begin();
-            final int pe = pp + patternRope.byteLength();
+            final long pe = pp + patternRope.byteLength();
             int s;
             int ss;
 
@@ -1179,7 +1271,7 @@ public abstract class StringPrimitiveNodes {
                     p = s;
                     pp = ss;
                 } else {
-                    final int c = StringSupport.preciseLength(encoding, stringBytes, s, e);
+                    final int c = StringSupport.preciseLength(encoding, stringBytes, s, (int) e);
 
                     if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
                         return s - stringRope.begin();
@@ -1211,9 +1303,14 @@ public abstract class StringPrimitiveNodes {
 
             final Rope rope = rope(string);
             final int p = rope.begin();
-            final int end = p + rope.byteLength();
+            final long end = p + rope.byteLength();
 
-            final int b = rope.getEncoding().prevCharHead(rope.getBytes(), p, p + index, end);
+            if (!CoreLibrary.fitsIntoInteger(end)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't index into rope larger than int range");
+            }
+
+            final int b = rope.getEncoding().prevCharHead(rope.getBytes(), p, p + index, (int) end);
 
             if (b == -1) {
                 return nil();
@@ -1239,12 +1336,12 @@ public abstract class StringPrimitiveNodes {
                                             @Cached("createBinaryProfile()") ConditionProfile sizeTooLargeInStringProfile) {
             // Taken from Rubinius's String::copy_from.
 
-            int src = start;
-            int dst = dest;
-            int cnt = size;
+            long src = start;
+            long dst = dest;
+            long cnt = size;
 
             final Rope otherRope = rope(other);
-            int osz = otherRope.byteLength();
+            long osz = otherRope.byteLength();
             if(negativeStartOffsetProfile.profile(src < 0)) src = 0;
             if(sizeTooLargeInReplacementProfile.profile(cnt > osz - src)) cnt = osz - src;
 
@@ -1253,7 +1350,17 @@ public abstract class StringPrimitiveNodes {
             if(negativeDestinationOffsetProfile.profile(dst < 0)) dst = 0;
             if(sizeTooLargeInStringProfile.profile(cnt > sz - dst)) cnt = sz - dst;
 
-            System.arraycopy(otherRope.getBytes(), otherRope.begin() + src, stringBytes.getUnsafeBytes(), stringBytes.begin() + dest, cnt);
+            if (!CoreLibrary.fitsIntoInteger(otherRope.begin() + src) || !CoreLibrary.fitsIntoInteger(stringBytes.begin() + dest)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't copy ropes larger than int range");
+            }
+
+            if (!CoreLibrary.fitsIntoInteger(cnt)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't copy more bytes than fit int range");
+            }
+
+            System.arraycopy(otherRope.getBytes(), otherRope.begin() + (int) src, stringBytes.getUnsafeBytes(), stringBytes.begin() + (int) dest, (int) cnt);
 
             StringOperations.setRope(string, StringOperations.ropeFromByteList(stringBytes));
 
@@ -1298,10 +1405,10 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(pattern)")
-        public Object stringRindex(DynamicObject string, DynamicObject pattern, int start) {
+        public Object stringRindex(DynamicObject string, DynamicObject pattern, long start) {
             // Taken from Rubinius's String::rindex.
 
-            int pos = start;
+            long pos = start;
 
             if (pos < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -1310,8 +1417,14 @@ public abstract class StringPrimitiveNodes {
 
             final Rope stringRope = rope(string);
             final Rope patternRope = rope(pattern);
-            final int total = stringRope.byteLength();
-            final int matchSize = patternRope.byteLength();
+
+            if (!CoreLibrary.fitsIntoInteger(patternRope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't rindex pattern rope larger than int range");
+            }
+
+            final long total = stringRope.byteLength();
+            final int matchSize = (int) patternRope.byteLength();
 
             if (pos >= total) {
                 pos = total - 1;
@@ -1341,11 +1454,16 @@ public abstract class StringPrimitiveNodes {
                         pos = total - matchSize;
                     }
 
-                    int cur = pos;
+                    long cur = pos;
+
+                    if (cur >= 0 && (!CoreLibrary.fitsIntoInteger(stringRope.byteLength()) || !CoreLibrary.fitsIntoInteger(patternRope.byteLength()))) {
+                        CompilerDirectives.transferToInterpreter();
+                        throw new RopeTooLongException("Can't compare ropes larger than int range");
+                    }
 
                     while (cur >= 0) {
                         // TODO (nirvdrum 21-Jan-16): Investigate a more rope efficient memcmp.
-                        if (ByteList.memcmp(stringRope.getBytes(), cur, patternRope.getBytes(), 0, matchSize) == 0) {
+                        if (ByteList.memcmp(stringRope.getBytes(), (int) cur, patternRope.getBytes(), 0, (int) matchSize) == 0) {
                             return cur;
                         }
 
@@ -1372,14 +1490,14 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "value >= 0")
-        public DynamicObject stringPatternZero(DynamicObject stringClass, int size, int value) {
+        public DynamicObject stringPatternZero(DynamicObject stringClass, long size, int value) {
             final Rope repeatingRope = new RepeatingRope(RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[value], size);
 
             return allocateObjectNode.allocate(stringClass, repeatingRope, null);
         }
 
         @Specialization(guards = { "isRubyString(string)", "patternFitsEvenly(string, size)" })
-        public DynamicObject stringPatternFitsEvenly(DynamicObject stringClass, int size, DynamicObject string) {
+        public DynamicObject stringPatternFitsEvenly(DynamicObject stringClass, long size, DynamicObject string) {
             final Rope rope = rope(string);
             final Rope repeatingRope = new RepeatingRope(rope, size / rope.byteLength());
 
@@ -1388,14 +1506,25 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = { "isRubyString(string)", "!patternFitsEvenly(string, size)" })
         @TruffleBoundary
-        public DynamicObject stringPattern(DynamicObject stringClass, int size, DynamicObject string) {
+        public DynamicObject stringPattern(DynamicObject stringClass, long size, DynamicObject string) {
             final Rope rope = rope(string);
-            final byte[] bytes = new byte[size];
+
+            if (!CoreLibrary.fitsIntoInteger(size)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't create pattern string larger than int range");
+            }
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't create pattern string from source larger than int range");
+            }
+
+            final byte[] bytes = new byte[(int) size];
 
             // TODO (nirvdrum 21-Jan-16): Investigate whether using a ConcatRope (potentially combined with a RepeatingRope) would be better here.
             if (! rope.isEmpty()) {
                 for (int n = 0; n < size; n += rope.byteLength()) {
-                    System.arraycopy(rope.getBytes(), rope.begin(), bytes, n, Math.min(rope.byteLength(), size - n));
+                    System.arraycopy(rope.getBytes(), rope.begin(), bytes, n, (int) Math.min(rope.byteLength(), size - n));
                 }
             }
 
@@ -1408,10 +1537,10 @@ public abstract class StringPrimitiveNodes {
             return allocateObjectNode.allocate(stringClass, makeLeafRopeNode.executeMake(bytes, encoding(string), codeRange, characterLength), null);
         }
 
-        protected boolean patternFitsEvenly(DynamicObject string, int size) {
+        protected boolean patternFitsEvenly(DynamicObject string, long size) {
             assert RubyGuards.isRubyString(string);
 
-            final int byteLength = rope(string).byteLength();
+            final long byteLength = rope(string).byteLength();
 
             return byteLength > 0 && (size % byteLength) == 0;
         }
@@ -1613,10 +1742,10 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public abstract Object execute(VirtualFrame frame, DynamicObject string, int beg, int len);
+        public abstract Object execute(VirtualFrame frame, DynamicObject string, long beg, long len);
 
         @Specialization(guards = { "len >= 0" , "isSingleByteOptimizable(string)" })
-        public Object stringSubstring(DynamicObject string, int beg, int len,
+        public Object stringSubstring(DynamicObject string, long beg, long len,
                                                            @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile tooLargeBeginProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
@@ -1629,7 +1758,7 @@ public abstract class StringPrimitiveNodes {
                 len = 0;
             }
 
-            final int length = rope.byteLength();
+            final long length = rope.byteLength();
             if (tooLargeBeginProfile.profile(beg > length)) {
                 return nil();
             }
@@ -1656,11 +1785,17 @@ public abstract class StringPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = { "len >= 0", "!isSingleByteOptimizable(string)" })
-        public Object stringSubstring(DynamicObject string, int beg, int len) {
+        public Object stringSubstring(DynamicObject string, long beg, long len) {
             // Taken from org.jruby.RubyString#substr19 & org.jruby.RubyString#multibyteSubstr19.
 
             final Rope rope = rope(string);
-            final int length = rope.byteLength();
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't substring rope larger than int range");
+            }
+
+            final int length = (int) rope.byteLength();
 
             if (rope.isEmpty()) {
                 len = 0;
@@ -1703,11 +1838,11 @@ public abstract class StringPrimitiveNodes {
             if (len == 0) {
                 p = 0;
             } else if (StringOperations.isCodeRangeValid(string) && enc instanceof UTF8Encoding) {
-                p = StringSupport.utf8Nth(bytes, s, end, beg);
-                len = StringSupport.utf8Offset(bytes, p, end, len);
+                p = StringSupport.utf8Nth(bytes, s, end, (int) beg);
+                len = StringSupport.utf8Offset(bytes, p, end, (int) len);
             } else if (enc.isFixedWidth()) {
                 int w = enc.maxLength();
-                p = s + beg * w;
+                p = (int) (s + beg * w);
                 if (p > end) {
                     p = end;
                     len = 0;
@@ -1716,20 +1851,20 @@ public abstract class StringPrimitiveNodes {
                 } else {
                     len *= w;
                 }
-            } else if ((p = StringSupport.nth(enc, bytes, s, end, beg)) == end) {
+            } else if ((p = StringSupport.nth(enc, bytes, s, end, (int) beg)) == end) {
                 len = 0;
             } else {
-                len = StringSupport.offset(enc, bytes, p, end, len);
+                len = StringSupport.offset(enc, bytes, p, end, (int) len);
             }
             return makeRope(string, p - s, len);
         }
 
         @Specialization(guards = "len < 0")
-        public Object stringSubstringNegativeLength(DynamicObject string, int beg, int len) {
+        public Object stringSubstringNegativeLength(DynamicObject string, long beg, long len) {
             return nil();
         }
 
-        private DynamicObject makeRope(DynamicObject string, int beg, int len) {
+        private DynamicObject makeRope(DynamicObject string, long beg, long len) {
             assert RubyGuards.isRubyString(string);
 
             if (allocateNode == null) {

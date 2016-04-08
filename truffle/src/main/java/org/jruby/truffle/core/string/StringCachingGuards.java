@@ -40,7 +40,7 @@ public abstract class StringCachingGuards {
         }
     }
 
-    public static int ropeLength(Rope rope) {
+    public static long ropeLength(Rope rope) {
         return rope.byteLength();
     }
 

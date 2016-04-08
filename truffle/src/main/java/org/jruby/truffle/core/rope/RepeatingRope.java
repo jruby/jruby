@@ -10,14 +10,16 @@
 
 package org.jruby.truffle.core.rope;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
+import org.jruby.truffle.core.CoreLibrary;
 
 public class RepeatingRope extends Rope {
 
     private final Rope child;
-    private final int times;
+    private final long times;
 
-    public RepeatingRope(Rope child, int times) {
+    public RepeatingRope(Rope child, long times) {
         super(child.getEncoding(), child.getCodeRange(), child.isSingleByteOptimizable(), child.byteLength() * times, child.characterLength() * times, child.depth() + 1, null);
         this.child = child;
         this.times = times;
@@ -29,7 +31,7 @@ public class RepeatingRope extends Rope {
     }
 
     @Override
-    protected byte getByteSlow(int index) {
+    protected byte getByteSlow(long index) {
         return child.getByteSlow(index % child.byteLength());
     }
 
@@ -37,14 +39,19 @@ public class RepeatingRope extends Rope {
         return child;
     }
 
-    public int getTimes() {
+    public long getTimes() {
         return times;
     }
 
     @Override
     public String toString() {
+        if (!CoreLibrary.fitsIntoInteger(byteLength())) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't convert larger than int range to a Java String");
+        }
+
         final String childString = child.toString();
-        final StringBuilder builder = new StringBuilder(childString.length() * times);
+        final StringBuilder builder = new StringBuilder((int) (childString.length() * times));
 
         for (int i = 0; i < times; i++) {
             builder.append(childString);

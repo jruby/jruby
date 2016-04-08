@@ -28,6 +28,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.util.ByteList;
@@ -56,10 +57,10 @@ public abstract class RopeNodes {
             super(context, sourceSection);
         }
 
-        public abstract Rope executeMake(Rope base, int offset, int byteLength);
+        public abstract Rope executeMake(Rope base, long offset, long byteLength);
 
         @Specialization(guards = "byteLength == 0")
-        public Rope substringZeroBytes(Rope base, int offset, int byteLength,
+        public Rope substringZeroBytes(Rope base, long offset, long byteLength,
                                         @Cached("createBinaryProfile()") ConditionProfile isUTF8,
                                         @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
                                         @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit) {
@@ -79,7 +80,7 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = "byteLength == 1")
-        public Rope substringOneByte(Rope base, int offset, int byteLength,
+        public Rope substringOneByte(Rope base, long offset, long byteLength,
                                         @Cached("createBinaryProfile()") ConditionProfile isUTF8,
                                         @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
                                         @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit,
@@ -102,26 +103,26 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = { "byteLength > 1", "sameAsBase(base, offset, byteLength)" })
-        public Rope substringSameAsBase(Rope base, int offset, int byteLength) {
+        public Rope substringSameAsBase(Rope base, long offset, long byteLength) {
             return base;
         }
 
         @Specialization(guards = { "byteLength > 1", "!sameAsBase(base, offset, byteLength)" })
-        public Rope substringLeafRope(LeafRope base, int offset, int byteLength,
+        public Rope substringLeafRope(LeafRope base, long offset, long byteLength,
                                   @Cached("createBinaryProfile()") ConditionProfile is7BitProfile,
                                   @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile) {
             return makeSubstring(base, offset, byteLength, is7BitProfile, isBinaryStringProfile);
         }
 
         @Specialization(guards = { "byteLength > 1", "!sameAsBase(base, offset, byteLength)" })
-        public Rope substringSubstringRope(SubstringRope base, int offset, int byteLength,
+        public Rope substringSubstringRope(SubstringRope base, long offset, long byteLength,
                                       @Cached("createBinaryProfile()") ConditionProfile is7BitProfile,
                                       @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile) {
             return makeSubstring(base.getChild(), offset + base.getOffset(), byteLength, is7BitProfile, isBinaryStringProfile);
         }
 
         @Specialization(guards = { "byteLength > 1", "!sameAsBase(base, offset, byteLength)" })
-        public Rope substringMultiplyRope(RepeatingRope base, int offset, int byteLength,
+        public Rope substringMultiplyRope(RepeatingRope base, long offset, long byteLength,
                                           @Cached("createBinaryProfile()") ConditionProfile is7BitProfile,
                                           @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile,
                                           @Cached("createBinaryProfile()") ConditionProfile matchesChildProfile) {
@@ -137,7 +138,7 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = { "byteLength > 1", "!sameAsBase(base, offset, byteLength)" })
-        public Rope substringConcatRope(ConcatRope base, int offset, int byteLength,
+        public Rope substringConcatRope(ConcatRope base, long offset, long byteLength,
                                       @Cached("createBinaryProfile()") ConditionProfile is7BitProfile,
                                       @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile) {
             Rope root = base;
@@ -171,7 +172,7 @@ public abstract class RopeNodes {
             return makeSubstring(root, offset, byteLength, is7BitProfile, isBinaryStringProfile);
         }
 
-        private Rope makeSubstring(Rope base, int offset, int byteLength, ConditionProfile is7BitProfile, ConditionProfile isBinaryStringProfile) {
+        private Rope makeSubstring(Rope base, long offset, long byteLength, ConditionProfile is7BitProfile, ConditionProfile isBinaryStringProfile) {
             if (is7BitProfile.profile(base.getCodeRange() == CR_7BIT)) {
                 if (getContext().getOptions().ROPE_LAZY_SUBSTRINGS) {
                     return new SubstringRope(base, offset, byteLength, byteLength, CR_7BIT);
@@ -194,8 +195,18 @@ public abstract class RopeNodes {
         }
 
         @TruffleBoundary
-        private Rope makeSubstringNon7Bit(Rope base, int offset, int byteLength) {
-            final long packedLengthAndCodeRange = RopeOperations.calculateCodeRangeAndLength(base.getEncoding(), base.getBytes(), offset, offset + byteLength);
+        private Rope makeSubstringNon7Bit(Rope base, long offset, long byteLength) {
+            if (!CoreLibrary.fitsIntoInteger(offset)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't index byte array outside of int range");
+            }
+
+            if (!CoreLibrary.fitsIntoInteger(byteLength)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't figure code range or length for array larger than int size");
+            }
+
+            final long packedLengthAndCodeRange = RopeOperations.calculateCodeRangeAndLength(base.getEncoding(), base.getBytes(), (int) offset, (int) (offset + byteLength));
             final CodeRange codeRange = CodeRange.fromInt(StringSupport.unpackArg(packedLengthAndCodeRange));
             final int characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
 
@@ -219,7 +230,7 @@ public abstract class RopeNodes {
             }
         }
 
-        protected static boolean sameAsBase(Rope base, int offset, int byteLength) {
+        protected static boolean sameAsBase(Rope base, long offset, long byteLength) {
             return (byteLength - offset) == base.byteLength();
         }
 
@@ -654,35 +665,38 @@ public abstract class RopeNodes {
             super(context, sourceSection);
         }
 
-        public abstract int executeGetByte(Rope rope, int index);
+        public abstract int executeGetByte(Rope rope, long index);
 
         @Specialization(guards = "rope.getRawBytes() != null")
-        public int getByte(Rope rope, int index) {
-            return rope.getRawBytes()[index] & 0xff;
+        public int getByte(Rope rope, long index) {
+            // If the raw bytes aren't null, then by definition the byteLength must be in the int range.
+            return rope.getRawBytes()[(int) index] & 0xff;
         }
 
         @Specialization(guards = "rope.getRawBytes() == null")
-        public int getByteSubstringRope(SubstringRope rope, int index,
+        public int getByteSubstringRope(SubstringRope rope, long index,
                                         @Cached("createBinaryProfile()") ConditionProfile childRawBytesNullProfile) {
             if (childRawBytesNullProfile.profile(rope.getChild().getRawBytes() == null)) {
                 return rope.getByteSlow(index) & 0xff;
             }
 
-            return rope.getChild().getRawBytes()[index + rope.getOffset()] & 0xff;
+            // If the raw bytes aren't null, then by definition the byteLength must be in the int range.
+            return rope.getChild().getRawBytes()[(int) (index + rope.getOffset())] & 0xff;
         }
 
         @Specialization(guards = "rope.getRawBytes() == null")
-        public int getByteRepeatingRope(RepeatingRope rope, int index,
+        public int getByteRepeatingRope(RepeatingRope rope, long index,
                                         @Cached("createBinaryProfile()") ConditionProfile childRawBytesNullProfile) {
             if (childRawBytesNullProfile.profile(rope.getChild().getRawBytes() == null)) {
                 return rope.getByteSlow(index) & 0xff;
             }
 
-            return rope.getChild().getRawBytes()[index % rope.getChild().byteLength()] & 0xff;
+            // If the raw bytes aren't null, then by definition the byteLength must be in the int range.
+            return rope.getChild().getRawBytes()[(int) (index % rope.getChild().byteLength())] & 0xff;
         }
 
         @Specialization(guards = "rope.getRawBytes() == null")
-        public int getByteConcatRope(ConcatRope rope, int index,
+        public int getByteConcatRope(ConcatRope rope, long index,
                                      @Cached("createBinaryProfile()") ConditionProfile chooseLeftChildProfile,
                                      @Cached("createBinaryProfile()") ConditionProfile leftChildRawBytesNullProfile,
                                      @Cached("createBinaryProfile()") ConditionProfile rightChildRawBytesNullProfile) {
@@ -691,14 +705,16 @@ public abstract class RopeNodes {
                     return rope.getLeft().getByteSlow(index) & 0xff;
                 }
 
-                return rope.getLeft().getRawBytes()[index] & 0xff;
+                // If the raw bytes aren't null, then by definition the byteLength must be in the int range.
+                return rope.getLeft().getRawBytes()[(int) index] & 0xff;
             }
 
             if (rightChildRawBytesNullProfile.profile(rope.getRight().getRawBytes() == null)) {
                 return rope.getRight().getByteSlow(index - rope.getLeft().byteLength()) & 0xff;
             }
 
-            return rope.getRight().getRawBytes()[index - rope.getLeft().byteLength()] & 0xff;
+            // If the raw bytes aren't null, then by definition the byteLength must be in the int range.
+            return rope.getRight().getRawBytes()[(int) (index - rope.getLeft().byteLength())] & 0xff;
         }
 
     }

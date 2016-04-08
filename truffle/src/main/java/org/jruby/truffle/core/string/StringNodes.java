@@ -45,6 +45,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.CoreMethodNode;
@@ -76,6 +77,7 @@ import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.language.NotProvided;
@@ -426,8 +428,8 @@ public abstract class StringNodes {
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
         public Object getIndex(VirtualFrame frame, DynamicObject string, int index, Object length) {
             final Rope rope = rope(string);
-            final int stringLength = rope.characterLength();
-            int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
+            final long stringLength = rope.characterLength();
+            long normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
 
             if (normalizedIndex < 0 || normalizedIndex >= rope.byteLength()) {
                 outOfBounds.enter();
@@ -462,10 +464,10 @@ public abstract class StringNodes {
             return sliceRange(frame, string, coercedBegin, coercedEnd, Layouts.OBJECT_RANGE.getExcludedEnd(range));
         }
 
-        private Object sliceRange(VirtualFrame frame, DynamicObject string, int begin, int end, boolean doesExcludeEnd) {
+        private Object sliceRange(VirtualFrame frame, DynamicObject string, long begin, long end, boolean doesExcludeEnd) {
             assert RubyGuards.isRubyString(string);
 
-            final int stringLength = rope(string).characterLength();
+            final long stringLength = rope(string).characterLength();
             begin = StringOperations.normalizeIndex(stringLength, begin);
 
             if (begin < 0 || begin > stringLength) {
@@ -480,7 +482,7 @@ public abstract class StringNodes {
                 }
 
                 end = StringOperations.normalizeIndex(stringLength, end);
-                int length = StringOperations.clampExclusiveIndex(string, doesExcludeEnd ? end : end + 1);
+                long length = StringOperations.clampExclusiveIndex(string, doesExcludeEnd ? end : end + 1);
 
                 if (length > stringLength) {
                     length = stringLength;
@@ -644,7 +646,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int byteSize(DynamicObject string) {
+        public long byteSize(DynamicObject string) {
             return rope(string).byteLength();
         }
 
@@ -815,6 +817,16 @@ public abstract class StringNodes {
             final Rope value = rope(string);
             final Rope other = rope(salt);
 
+            if (!CoreLibrary.fitsIntoInteger(value.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't crypt strings larger than int range");
+            }
+
+            if (!CoreLibrary.fitsIntoInteger(other.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't crypt ropes with salt larger than int range");
+            }
+
             final Encoding ascii8bit = getContext().getJRubyRuntime().getEncodingService().getAscii8bitEncoding();
             if (other.byteLength() < 2) {
                 CompilerDirectives.transferToInterpreter();
@@ -822,8 +834,8 @@ public abstract class StringNodes {
             }
 
             final TrufflePosix posix = posix();
-            final byte[] keyBytes = Arrays.copyOfRange(value.getBytes(), 0, value.byteLength());
-            final byte[] saltBytes = Arrays.copyOfRange(other.getBytes(), 0, other.byteLength());
+            final byte[] keyBytes = Arrays.copyOfRange(value.getBytes(), 0, (int) value.byteLength());
+            final byte[] saltBytes = Arrays.copyOfRange(other.getBytes(), 0, (int) other.byteLength());
 
             if (saltBytes[0] == 0 || saltBytes[1] == 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -1083,7 +1095,7 @@ public abstract class StringNodes {
         // source string, you'll get a different rope. Unlike String#each_byte, String#each_char does not make
         // modifications to the string visible to the rest of the iteration.
         private Object substr(Rope rope, DynamicObject string, int beg, int len) {
-            int length = rope.byteLength();
+            long length = rope.byteLength();
             if (len < 0 || beg > length) return nil();
 
             if (beg < 0) {
@@ -1091,7 +1103,7 @@ public abstract class StringNodes {
                 if (beg < 0) return nil();
             }
 
-            int end = Math.min(length, beg + len);
+            long end = Math.min(length, beg + len);
 
             final Rope substringRope = makeSubstringNode.executeMake(rope, beg, end - beg);
 
@@ -1385,9 +1397,9 @@ public abstract class StringNodes {
                         String.format("incompatible encodings: %s and %s", source.getEncoding(), insert.getEncoding()), this));
             }
 
-            final int stringLength = source.characterLength();
-            final int normalizedIndex = StringNodesHelper.checkIndex(stringLength, index, this);
-            final int byteIndex = characterByteIndexNode.executeInt(frame, string, normalizedIndex, 0);
+            final long stringLength = source.characterLength();
+            final long normalizedIndex = StringNodesHelper.checkIndex(stringLength, index, this);
+            final long byteIndex = characterByteIndexNode.executeLong(frame, string, normalizedIndex, 0);
 
             final Rope splitLeft = leftMakeSubstringNode.executeMake(source, 0, byteIndex);
             final Rope splitRight = rightMakeSubstringNode.executeMake(source, byteIndex, source.byteLength() - byteIndex);
@@ -1435,8 +1447,14 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#singleByteLStrip.
 
             final Rope rope = rope(string);
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't lstrip strings larger than int range");
+            }
+
             final int s = rope.begin();
-            final int end = s + rope.byteLength();
+            final int end = (int) (s + rope.byteLength());
             final byte[] bytes = rope.getBytes();
 
             int p = s;
@@ -1456,9 +1474,15 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#multiByteLStrip.
 
             final Rope rope = rope(string);
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't lstrip strings larger than int range");
+            }
+
             final Encoding enc = RopeOperations.STR_ENC_GET(rope);
             final int s = rope.begin();
-            final int end = s + rope.byteLength();
+            final int end = (int) (s + rope.byteLength());
             final byte[] bytes = rope.getBytes();
 
             int p = s;
@@ -1561,8 +1585,13 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        private int codePoint(Encoding encoding, byte[] bytes, int p, int end) {
-            return StringSupport.codePoint(encoding, bytes, p, end);
+        private int codePoint(Encoding encoding, byte[] bytes, long p, long end) {
+            if (!CoreLibrary.fitsIntoInteger(p) || !CoreLibrary.fitsIntoInteger(end)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't offset into array outside int range");
+            }
+
+            return StringSupport.codePoint(encoding, bytes, (int) p, (int) end);
         }
 
     }
@@ -1619,9 +1648,15 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#rstrip_bang19 and org.jruby.RubyString#singleByteRStrip19.
 
             final Rope rope = rope(string);
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't rstrip strings larger than int range");
+            }
+
             final byte[] bytes = rope.getBytes();
             final int start = 0;
-            final int end = rope.byteLength();
+            final int end = (int) rope.byteLength();
             int endp = end - 1;
             while (endp >= start && (bytes[endp] == 0 ||
                     ASCIIEncoding.INSTANCE.isSpace(bytes[endp] & 0xff))) endp--;
@@ -1641,10 +1676,16 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#rstrip_bang19 and org.jruby.RubyString#multiByteRStrip19.
 
             final Rope rope = rope(string);
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't rstrip strings larger than int range");
+            }
+
             final Encoding enc = RopeOperations.STR_ENC_GET(rope);
             final byte[] bytes = rope.getBytes();
             final int start = 0;
-            final int end = rope.byteLength();
+            final int end = (int) rope.byteLength();
 
             int endp = end;
             int prev;
@@ -1700,8 +1741,13 @@ public abstract class StringNodes {
                 return nil();
             }
 
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't swapcase strings larger than int range");
+            }
+
             final int s = rope.begin();
-            final int end = s + rope.byteLength();
+            final int end = (int) (s + rope.byteLength());
             final byte[] bytes = rope.getBytesCopy();
 
             if (singleByteOptimizableProfile.profile(rope.isSingleByteOptimizable())) {
@@ -1799,6 +1845,7 @@ public abstract class StringNodes {
             rightMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
         }
 
+        // TODO (nirvdrum 07-Apr-16) This needs to be updated for long-length strings.
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
             return FixnumLowerNodeGen.create(getContext(), getSourceSection(),
                     ToIntNodeGen.create(getContext(), getSourceSection(), index));
@@ -1810,8 +1857,8 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int setByte(DynamicObject string, int index, int value) {
-            final int normalizedIndex = StringNodesHelper.checkIndexForRef(string, index, this);
+        public int setByte(DynamicObject string, long index, int value) {
+            final long normalizedIndex = StringNodesHelper.checkIndexForRef(string, index, this);
 
             final Rope rope = rope(string);
 
@@ -1835,7 +1882,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int size(DynamicObject string,
+        public long size(DynamicObject string,
                         @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
             final Rope rope = rope(string);
 
@@ -2012,9 +2059,15 @@ public abstract class StringNodes {
             // Copied from JRuby
 
             final Rope rope = rope(string);
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't sum ropes larger than int range");
+            }
+
             final byte[] bytes = rope.getBytes();
             int p = rope.begin();
-            final int len = rope.byteLength();
+            final int len = (int) rope.byteLength();
             final int end = p + len;
 
             if (bits >= 8 * 8) { // long size * bits in byte
@@ -2505,6 +2558,11 @@ public abstract class StringNodes {
                                 String.format("incompatible encoding with this operation: %s", enc), this));
             }
 
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't capitalize ropes larger than int range");
+            }
+
             if (rope.isEmpty()) {
                 return nil();
             }
@@ -2512,7 +2570,7 @@ public abstract class StringNodes {
             StringOperations.modifyAndKeepCodeRange(string);
 
             int s = 0;
-            int end = s + rope.byteLength();
+            int end = (int) (s + rope.byteLength());
             byte[] bytes = rope.getBytesCopy();
             boolean modify = false;
 
@@ -2581,7 +2639,7 @@ public abstract class StringNodes {
 
     public static class StringNodesHelper {
 
-        public static int checkIndex(int length, int index, RubyNode node) {
+        public static long checkIndex(long length, long index, RubyNode node) {
             if (index > length) {
                 CompilerDirectives.transferToInterpreter();
 
@@ -2603,10 +2661,10 @@ public abstract class StringNodes {
             return index;
         }
 
-        public static int checkIndexForRef(DynamicObject string, int index, RubyNode node) {
+        public static long checkIndexForRef(DynamicObject string, long index, RubyNode node) {
             assert RubyGuards.isRubyString(string);
 
-            final int length = rope(string).byteLength();
+            final long length = rope(string).byteLength();
 
             if (index >= length) {
                 CompilerDirectives.transferToInterpreter();

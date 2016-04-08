@@ -15,7 +15,7 @@ import org.jcodings.Encoding;
 
 public class ValidLeafRope extends LeafRope {
 
-    public ValidLeafRope(byte[] bytes, Encoding encoding, int characterLength) {
+    public ValidLeafRope(byte[] bytes, Encoding encoding, long characterLength) {
         super(bytes, encoding, CodeRange.CR_VALID, encoding.isSingleByte(), characterLength);
     }
 

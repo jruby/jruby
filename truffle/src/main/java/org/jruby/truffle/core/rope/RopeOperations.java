@@ -29,6 +29,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
@@ -109,14 +110,24 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static String decodeUTF8(Rope rope) {
-        return RubyEncoding.decodeUTF8(rope.getBytes(), 0, rope.byteLength());
+        if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't create a string longer than int range");
+        }
+
+        return RubyEncoding.decodeUTF8(rope.getBytes(), 0, (int) rope.byteLength());
     }
 
     @TruffleBoundary
     public static String decodeRope(Ruby runtime, Rope value) {
+        if (!CoreLibrary.fitsIntoInteger(value.byteLength())) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't create a string longer than int range");
+        }
+
         if (value instanceof LeafRope) {
             int begin = value.begin();
-            int length = value.byteLength();
+            int length = (int) value.byteLength();
 
             Encoding encoding = value.getEncoding();
 
@@ -143,7 +154,12 @@ public class RopeOperations {
         } else if (value instanceof SubstringRope) {
             final SubstringRope substringRope = (SubstringRope) value;
 
-            return decodeRope(runtime, substringRope.getChild()).substring(substringRope.getOffset(), substringRope.getOffset() + substringRope.characterLength());
+            if (!CoreLibrary.fitsIntoInteger(substringRope.getOffset()) || !CoreLibrary.fitsIntoInteger(substringRope.getOffset() + substringRope.characterLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't take substring of a Java String outside of the int range");
+            }
+
+            return decodeRope(runtime, substringRope.getChild()).substring((int) substringRope.getOffset(), (int) (substringRope.getOffset() + substringRope.characterLength()));
         } else if (value instanceof ConcatRope) {
             final ConcatRope concatRope = (ConcatRope) value;
 
@@ -151,8 +167,13 @@ public class RopeOperations {
         } else if (value instanceof RepeatingRope) {
             final RepeatingRope repeatingRope = (RepeatingRope) value;
 
+            if (!CoreLibrary.fitsIntoInteger(repeatingRope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't generate a Java String larger than int range");
+            }
+
             final String childString = decodeRope(runtime, repeatingRope.getChild());
-            final StringBuilder builder = new StringBuilder(childString.length() * repeatingRope.getTimes());
+            final StringBuilder builder = new StringBuilder((int) (childString.length() * repeatingRope.getTimes()));
             for (int i = 0; i < repeatingRope.getTimes(); i++) {
                 builder.append(childString);
             }
@@ -167,7 +188,17 @@ public class RopeOperations {
     // MRI: get_actual_encoding
     @TruffleBoundary
     public static Encoding STR_ENC_GET(Rope rope) {
-        return EncodingUtils.getActualEncoding(rope.getEncoding(), rope.getBytes(), 0, rope.byteLength());
+        if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Encoding names can't be longer than int range");
+        }
+
+        return EncodingUtils.getActualEncoding(rope.getEncoding(), rope.getBytes(), 0, (int) rope.byteLength());
+    }
+
+    // MBCLEN_CHARFOUND_P, ONIGENC_MBCLEN_CHARFOUND_P
+    public static boolean MBCLEN_CHARFOUND_P(long r) {
+        return 0 < r;
     }
 
     @TruffleBoundary
@@ -214,7 +245,7 @@ public class RopeOperations {
     }
 
     @TruffleBoundary
-    public static void visitBytes(Rope rope, BytesVisitor visitor, int offset, int length) {
+    public static void visitBytes(Rope rope, BytesVisitor visitor, long offset, long length) {
         /*
          * TODO: CS-7-Apr-16 rewrite this to be iterative as flattenBytes is, but with new logic for offset and length
          * creating a range, then write flattenBytes in terms of visitBytes.
@@ -227,7 +258,7 @@ public class RopeOperations {
         } else if (rope instanceof ConcatRope) {
             final ConcatRope concat = (ConcatRope) rope;
             
-            final int leftLength = concat.getLeft().byteLength();
+            final long leftLength = concat.getLeft().byteLength();
 
             if (offset < leftLength) {
                 /*
@@ -235,7 +266,7 @@ public class RopeOperations {
                  * we'll extract what we can and extract the difference from the right side.
                  */
                 
-                final int leftUsed;
+                final long leftUsed;
 
                 if (offset + length > leftLength) {
                     leftUsed = leftLength - offset;
@@ -259,16 +290,16 @@ public class RopeOperations {
             final RepeatingRope repeating = (RepeatingRope) rope;
             final Rope child = repeating.getChild();
 
-            final int start = offset % child.byteLength();
-            final int firstPartLength = child.byteLength() - start;
+            final long start = offset % child.byteLength();
+            final long firstPartLength = child.byteLength() - start;
             visitBytes(child, visitor, start, firstPartLength);
-            final int lengthMinusFirstPart = length - firstPartLength;
-            final int remainingEnd = lengthMinusFirstPart % child.byteLength();
+            final long lengthMinusFirstPart = length - firstPartLength;
+            final long remainingEnd = lengthMinusFirstPart % child.byteLength();
 
             if (lengthMinusFirstPart >= child.byteLength()) {
                 final byte[] secondPart = child.getBytes();
 
-                final int repeatPartCount = lengthMinusFirstPart / child.byteLength();
+                final long repeatPartCount = lengthMinusFirstPart / child.byteLength();
                 for (int i = 0; i < repeatPartCount; i++) {
                     visitBytes(child, visitor, 0, secondPart.length);
                 }
@@ -285,18 +316,33 @@ public class RopeOperations {
     }
 
     @TruffleBoundary
-    public static byte[] extractRange(Rope rope, int offset, int length) {
-        final byte[] result = new byte[length];
+    public static byte[] extractRange(Rope rope, long offset, long length) {
+        if (!CoreLibrary.fitsIntoInteger(length)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't extract range larger than int size");
+        }
+
+        final byte[] result = new byte[(int) length];
 
         final Memo<Integer> resultPosition = new Memo<>(0);
 
         visitBytes(rope, new BytesVisitor() {
 
             @Override
-            public void accept(byte[] bytes, int offset, int length) {
+            public void accept(byte[] bytes, long offset, long length) {
+                if (!CoreLibrary.fitsIntoInteger(offset)) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RopeTooLongException("Offset outside of int range");
+                }
+
+                if (!CoreLibrary.fitsIntoInteger(length)) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RopeTooLongException("Length outside of int range");
+                }
+
                 final int resultPositionValue = resultPosition.get();
-                System.arraycopy(bytes, offset, result, resultPositionValue, length);
-                resultPosition.set(resultPositionValue + length);
+                System.arraycopy(bytes, (int) offset, result, resultPositionValue, (int) length);
+                resultPosition.set(resultPositionValue + (int) length);
             }
 
         }, offset, length);
@@ -316,6 +362,11 @@ public class RopeOperations {
      */
     @TruffleBoundary
     public static byte[] flattenBytes(Rope rope) {
+        if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't flatten a rope larger than int size");
+        }
+
         if (rope instanceof LeafRope) {
             return rope.getRawBytes();
         }
@@ -323,7 +374,7 @@ public class RopeOperations {
         int bufferPosition = 0;
         int offset = 0;
 
-        final byte[] buffer = new byte[rope.byteLength()];
+        final byte[] buffer = new byte[(int) rope.byteLength()];
 
         // As we traverse the rope tree, we need to keep track of any bounded lengths of SubstringRopes. LeafRopes always
         // provide their full byte[]. ConcatRope always provides the full byte[] of each of its children. SubstringRopes,
@@ -347,7 +398,7 @@ public class RopeOperations {
             if (current.getRawBytes() != null) {
                 // In the absence of any SubstringRopes, we always take the full contents of the current rope.
                 if (substringLengths.isEmpty()) {
-                    System.arraycopy(current.getRawBytes(), offset, buffer, bufferPosition, current.byteLength());
+                    System.arraycopy(current.getRawBytes(), offset, buffer, bufferPosition, (int) current.byteLength());
                     bufferPosition += current.byteLength();
                 } else {
                     int bytesToCopy = substringLengths.pop();
@@ -357,7 +408,7 @@ public class RopeOperations {
                     // the currently calculated byte[] offset and the number of bytes to extract, determine how many
                     // bytes we can copy to the buffer.
                     if (bytesToCopy > (current.byteLength() - offset)) {
-                        currentBytesToCopy = current.byteLength() - offset;
+                        currentBytesToCopy = (int) (current.byteLength() - offset);
                     } else {
                         currentBytesToCopy = bytesToCopy;
                     }
@@ -393,7 +444,7 @@ public class RopeOperations {
                     workStack.push(concatRope.getRight());
                     workStack.push(concatRope.getLeft());
                 } else {
-                    final int leftLength = concatRope.getLeft().byteLength();
+                    final int leftLength = (int) concatRope.getLeft().byteLength();
 
                     // If we reach here, this ConcatRope is a descendant of a SubstringRope at some level. Based on
                     // the currently calculated byte[] offset and the number of bytes to extract, determine which of
@@ -425,11 +476,11 @@ public class RopeOperations {
                 // Either we haven't seen another SubstringRope or it's been cleared off the work queue. In either case,
                 // we can start fresh.
                 if (substringLengths.isEmpty()) {
-                    substringLengths.push(substringRope.byteLength());
+                    substringLengths.push((int) substringRope.byteLength());
                 } else {
                     // Since we may be taking a substring of a substring, we need to note that we're not extracting the
                     // entirety of the current SubstringRope.
-                    final int adjustedByteLength = substringRope.byteLength() - (offset - substringRope.getOffset());
+                    final int adjustedByteLength = (int) (substringRope.byteLength() - (offset - substringRope.getOffset()));
 
                     // We have to do some bookkeeping once we encounter multiple SubstringRopes along the same ancestry
                     // chain. The top of the stack always indicates the number of bytes to extract from any descendants.
@@ -466,7 +517,7 @@ public class RopeOperations {
                     }
                 } else {
                     final int bytesToCopy = substringLengths.peek();
-                    int loopCount = bytesToCopy / repeatingRope.getChild().byteLength();
+                    int loopCount = (int) (bytesToCopy / repeatingRope.getChild().byteLength());
 
                     // Fix the offset to be appropriate for a given child. The offset is reset the first time it is
                     // consumed, so there's no need to worry about adversely affecting anything by adjusting it here.
@@ -490,13 +541,18 @@ public class RopeOperations {
         return buffer;
     }
 
-    public static int hashCodeForLeafRope(byte[] bytes, int startingHashCode, int offset, int length) {
+    public static int hashCodeForLeafRope(byte[] bytes, int startingHashCode, long offset, long length) {
         assert offset <= bytes.length;
         assert length <= bytes.length;
 
+        if (!CoreLibrary.fitsIntoInteger(offset)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't index an array outside of int bounds");
+        }
+
         int hashCode = startingHashCode;
-        final int endIndex = offset + length;
-        for (int i = offset; i < endIndex; i++) {
+        final long endIndex = offset + length;
+        for (int i = (int) offset; i < endIndex; i++) {
             hashCode = 31 * hashCode + bytes[i];
         }
 
@@ -504,7 +560,7 @@ public class RopeOperations {
     }
 
     @TruffleBoundary
-    public static int hashForRange(Rope rope, int startingHashCode, int offset, int length) {
+    public static int hashForRange(Rope rope, int startingHashCode, long offset, long length) {
         if (rope instanceof LeafRope) {
             return hashCodeForLeafRope(rope.getBytes(), startingHashCode, offset, length);
         } else if (rope instanceof SubstringRope) {
@@ -517,13 +573,13 @@ public class RopeOperations {
             final Rope right = concatRope.getRight();
 
             int hash = startingHashCode;
-            final int leftLength = left.byteLength();
+            final long leftLength = left.byteLength();
 
             if (offset < leftLength) {
                 // The left branch might not be large enough to extract the full hash code we want. In that case,
                 // we'll extract what we can and extract the difference from the right side.
                 if (offset + length > leftLength) {
-                    final int coveredByLeft = leftLength - offset;
+                    final long coveredByLeft = leftLength - offset;
                     hash = hashForRange(left, hash, offset, coveredByLeft);
                     hash = hashForRange(right, hash, 0, length - coveredByLeft);
 
@@ -538,8 +594,8 @@ public class RopeOperations {
             final RepeatingRope repeatingRope = (RepeatingRope) rope;
             final Rope child = repeatingRope.getChild();
 
-            int remainingLength = length;
-            int loopCount = length / child.byteLength();
+            long remainingLength = length;
+            long loopCount = length / child.byteLength();
 
             offset %= child.byteLength();
 
@@ -566,8 +622,8 @@ public class RopeOperations {
         // Taken from org.jruby.util.ByteList#cmp.
 
         if (string == other) return 0;
-        final int size = string.byteLength();
-        final int len =  Math.min(size, other.byteLength());
+        final long size = string.byteLength();
+        final long len =  Math.min(size, other.byteLength());
         int offset = -1;
 
         final byte[] bytes = string.getBytes();

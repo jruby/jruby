@@ -10,14 +10,16 @@
 
 package org.jruby.truffle.core.rope;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.util.ByteList;
 
 public class MutableRope extends LeafRope {
 
     private final ByteList byteList;
 
-    protected MutableRope(byte[] bytes, Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int characterLength) {
+    protected MutableRope(byte[] bytes, Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, long characterLength) {
         super(bytes, encoding, codeRange, singleByteOptimizable, characterLength);
         this.byteList = new ByteList(bytes, encoding, true);
     }
@@ -37,8 +39,13 @@ public class MutableRope extends LeafRope {
     }
 
     @Override
-    public byte getByteSlow(int index) {
-        return (byte) byteList.get(index);
+    public byte getByteSlow(long index) {
+        if (!CoreLibrary.fitsIntoInteger(index)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Index outside of int range");
+        }
+
+        return (byte) byteList.get((int) index);
     }
 
     public ByteList getByteList() {

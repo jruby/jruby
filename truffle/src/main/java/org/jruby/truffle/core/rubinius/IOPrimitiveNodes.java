@@ -48,10 +48,12 @@ import jnr.constants.platform.Fcntl;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
@@ -211,12 +213,22 @@ public abstract class IOPrimitiveNodes {
             final Rope patternRope = rope(pattern);
             final Rope pathRope = rope(path);
 
+            if (!CoreLibrary.fitsIntoInteger(patternRope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work with patterns larger than int range");
+            }
+
+            if (!CoreLibrary.fitsIntoInteger(pathRope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work with paths larger than int range");
+            }
+
             return Dir.fnmatch(patternRope.getBytes(),
                     patternRope.begin(),
-                    patternRope.begin() + patternRope.byteLength(),
+                    (int) (patternRope.begin() + patternRope.byteLength()),
                     pathRope.getBytes(),
                     pathRope.begin(),
-                    pathRope.begin() + pathRope.byteLength(),
+                    (int) (pathRope.begin() + pathRope.byteLength()),
                     flags) != Dir.FNM_NOMATCH;
         }
 
@@ -408,13 +420,18 @@ public abstract class IOPrimitiveNodes {
 
             final Rope rope = rope(string);
 
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't write strings larger than int range");
+            }
+
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
-                getContext().getDebugStandardOut().write(rope.getBytes(), rope.begin(), rope.byteLength());
-                return rope.byteLength();
+                getContext().getDebugStandardOut().write(rope.getBytes(), rope.begin(), (int) rope.byteLength());
+                return (int) rope.byteLength();
             }
 
             // TODO (eregon, 11 May 2015): review consistency under concurrent modification
-            final ByteBuffer buffer = ByteBuffer.wrap(rope.getBytes(), rope.begin(), rope.byteLength());
+            final ByteBuffer buffer = ByteBuffer.wrap(rope.getBytes(), rope.begin(), (int) rope.byteLength());
 
             int total = 0;
 

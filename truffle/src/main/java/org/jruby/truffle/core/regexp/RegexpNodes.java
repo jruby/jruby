@@ -43,6 +43,7 @@ import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
@@ -54,6 +55,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
@@ -81,13 +83,18 @@ public abstract class RegexpNodes {
 
         final Rope sourceRope = StringOperations.rope(source);
 
+        if (!CoreLibrary.fitsIntoInteger(sourceRope.byteLength())) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't work with strings larger than int range");
+        }
+
         final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
         final Encoding enc = checkEncoding(regexp, sourceRope, true);
         final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
 
         final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, sourceRope, true));
-        final Matcher matcher = r.matcher(sourceRope.getBytes(), sourceRope.begin(), sourceRope.begin() + sourceRope.byteLength());
-        int range = sourceRope.begin() + sourceRope.byteLength();
+        final Matcher matcher = r.matcher(sourceRope.getBytes(), sourceRope.begin(), (int) (sourceRope.begin() + sourceRope.byteLength()));
+        int range = (int) (sourceRope.begin() + sourceRope.byteLength());
 
         return matchCommon(context, makeSubstringNode, regexp, source, operator, setNamedCaptures, matcher, sourceRope.begin() + startPos, range);
     }
@@ -98,6 +105,11 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyString(source);
 
         final Rope sourceRope = StringOperations.rope(source);
+
+        if (!CoreLibrary.fitsIntoInteger(sourceRope.byteLength())) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't work with strings larger than int range");
+        }
 
         final int match = matcher.search(startPos, range, Option.DEFAULT);
 
@@ -145,7 +157,7 @@ public abstract class RegexpNodes {
         }
 
         final DynamicObject pre = createSubstring(makeSubstringNode, source, 0, region.beg[0]);
-        final DynamicObject post = createSubstring(makeSubstringNode, source, region.end[0], sourceRope.byteLength() - region.end[0]);
+        final DynamicObject post = createSubstring(makeSubstringNode, source, region.end[0], (int) (sourceRope.byteLength() - region.end[0]));
         final DynamicObject global = createSubstring(makeSubstringNode, source, region.beg[0], region.end[0] - region.beg[0]);
 
         final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getMatchDataClass()),

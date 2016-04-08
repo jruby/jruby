@@ -33,6 +33,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.CoreMethodNode;
@@ -56,6 +57,7 @@ import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
@@ -2438,7 +2440,7 @@ public abstract class ArrayNodes {
                 DynamicObject array,
                 DynamicObject format,
                 @Cached("privatizeRope(format)") Rope cachedFormat,
-                @Cached("ropeLength(cachedFormat)") int cachedFormatLength,
+                @Cached("ropeLength(cachedFormat)") long cachedFormatLength,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
             final BytesResult result;
 
@@ -2450,7 +2452,12 @@ public abstract class ArrayNodes {
                 throw FormatExceptionTranslator.translate(this, e);
             }
 
-            return finishPack(cachedFormatLength, result);
+            if (!CoreLibrary.fitsIntoInteger(cachedFormatLength)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work with format strings larger than int range");
+            }
+
+            return finishPack((int) cachedFormatLength, result);
         }
 
         @Specialization(contains = "packCached", guards = "isRubyString(format)")
@@ -2469,7 +2476,14 @@ public abstract class ArrayNodes {
                 throw FormatExceptionTranslator.translate(this, e);
             }
 
-            return finishPack(Layouts.STRING.getRope(format).byteLength(), result);
+            final Rope rope = StringOperations.rope(format);
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work with format strings longer than int range");
+            }
+
+            return finishPack((int) rope.byteLength(), result);
         }
 
         private DynamicObject finishPack(int formatLength, BytesResult result) {

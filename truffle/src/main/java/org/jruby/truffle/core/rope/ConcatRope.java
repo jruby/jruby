@@ -12,7 +12,6 @@ package org.jruby.truffle.core.rope;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
-import org.jruby.util.func.Function1;
 
 public class ConcatRope extends Rope {
 
@@ -48,7 +47,7 @@ public class ConcatRope extends Rope {
 
     @Override
     @TruffleBoundary
-    public byte getByteSlow(int index) {
+    public byte getByteSlow(long index) {
         if (index < left.byteLength()) {
             return left.getByteSlow(index);
         }

@@ -11,20 +11,20 @@
 package org.jruby.truffle.core.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
+import org.jruby.truffle.core.CoreLibrary;
 
 public class SubstringRope extends Rope {
 
     private final Rope child;
-    private final int offset;
+    private final long offset;
 
-    public SubstringRope(Rope child, int offset, int byteLength, int characterLength, CodeRange codeRange) {
+    public SubstringRope(Rope child, long offset, long byteLength, long characterLength, CodeRange codeRange) {
         // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
         this(child, child.getEncoding(), offset, byteLength, characterLength, codeRange);
     }
 
-    private SubstringRope(Rope child, Encoding encoding, int offset, int byteLength, int characterLength, CodeRange codeRange) {
+    private SubstringRope(Rope child, Encoding encoding, long offset, long byteLength, long characterLength, CodeRange codeRange) {
         // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
         super(encoding, codeRange, child.isSingleByteOptimizable(), byteLength, characterLength, child.depth() + 1, null);
         this.child = child;
@@ -42,7 +42,7 @@ public class SubstringRope extends Rope {
     }
 
     @Override
-    public byte getByteSlow(int index) {
+    public byte getByteSlow(long index) {
         return child.getByteSlow(index + offset);
     }
 
@@ -50,14 +50,24 @@ public class SubstringRope extends Rope {
         return child;
     }
 
-    public int getOffset() {
+    public long getOffset() {
         return offset;
     }
 
     @Override
     public String toString() {
+        if (!CoreLibrary.fitsIntoInteger(this.offset)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't create string from rope out of int range");
+        }
+
+        if (!CoreLibrary.fitsIntoInteger(byteLength())) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't create string from rope larger than int range");
+        }
+
         // This should be used for debugging only.
-        return child.toString().substring(offset, offset + byteLength());
+        return child.toString().substring((int) offset, (int) (offset + byteLength()));
     }
 
 }

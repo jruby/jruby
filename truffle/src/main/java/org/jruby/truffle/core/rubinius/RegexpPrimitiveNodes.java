@@ -20,12 +20,14 @@ import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.joni.Regex;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.regexp.RegexpGuards;
 import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
@@ -145,8 +147,14 @@ public abstract class RegexpPrimitiveNodes {
             final Encoding enc = RegexpNodes.checkEncoding(regexp, stringRope, true);
             ByteList preprocessed = RegexpSupport.preprocess(getContext().getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
             Rope preprocessedRope = RegexpNodes.shimModifiers(StringOperations.ropeFromByteList(preprocessed));
-            final Regex r = new Regex(preprocessedRope.getBytes(), preprocessedRope.begin(), preprocessedRope.begin() + preprocessedRope.byteLength(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, stringRope, true));
-            final Matcher matcher = r.matcher(stringRope.getBytes(), stringRope.begin(), stringRope.begin() + stringRope.byteLength());
+
+            if (!CoreLibrary.fitsIntoInteger(preprocessedRope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work with strings larger than int range");
+            }
+
+            final Regex r = new Regex(preprocessedRope.getBytes(), preprocessedRope.begin(), (int) (preprocessedRope.begin() + preprocessedRope.byteLength()), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, stringRope, true));
+            final Matcher matcher = r.matcher(stringRope.getBytes(), stringRope.begin(), (int) (stringRope.begin() + stringRope.byteLength()));
 
             if (forward) {
                 // Search forward through the string.

@@ -21,6 +21,7 @@ import org.joni.Region;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
@@ -32,6 +33,7 @@ import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.core.coerce.ToIntNodeGen;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.string.StringGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
@@ -205,7 +207,13 @@ public abstract class MatchDataNodes {
         public Object getIndexSymbol(DynamicObject matchData, DynamicObject index, NotProvided length) {
             try {
                 final Rope value = Layouts.SYMBOL.getRope(index);
-                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.begin(), value.begin() + value.byteLength(), Layouts.MATCH_DATA.getRegion(matchData));
+
+                if (!CoreLibrary.fitsIntoInteger(value.byteLength())) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RopeTooLongException("Can't work with strings larger than int range");
+                }
+
+                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.begin(), (int) (value.begin() + value.byteLength()), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             } catch (final ValueException e) {
@@ -221,7 +229,13 @@ public abstract class MatchDataNodes {
         public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length) {
             try {
                 final Rope value = StringOperations.rope(index);
-                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.begin(), value.begin() + value.byteLength(), Layouts.MATCH_DATA.getRegion(matchData));
+
+                if (!CoreLibrary.fitsIntoInteger(value.byteLength())) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RopeTooLongException("Can't work with strings larger than int range");
+                }
+
+                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.begin(), (int) (value.begin() + value.byteLength()), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             }

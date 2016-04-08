@@ -11,6 +11,6 @@ package org.jruby.truffle.core.rope;
 
 public interface BytesVisitor {
 
-    void accept(byte[] bytes, int offset, int length);
+    void accept(byte[] bytes, long offset, long length);
 
 }

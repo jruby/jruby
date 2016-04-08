@@ -45,9 +45,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.exception.ExceptionNodes;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
@@ -93,7 +95,13 @@ public abstract class IOBufferPrimitiveNodes {
             Layouts.IO_BUFFER.setWriteSynced(ioBuffer, false);
 
             final Rope rope = StringOperations.rope(string);
-            int stringSize = rope.byteLength() - startPosition;
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work with strings larger than int range");
+            }
+
+            int stringSize = (int) (rope.byteLength() - startPosition);
             final int usedSpace = Layouts.IO_BUFFER.getUsed(ioBuffer);
             final int availableSpace = IOBUFFER_SIZE - usedSpace;
 

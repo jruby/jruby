@@ -18,13 +18,13 @@ public abstract class Rope {
     private final Encoding encoding;
     private final CodeRange codeRange;
     private final boolean singleByteOptimizable;
-    private final int byteLength;
-    private final int characterLength;
+    private final long byteLength;
+    private final long characterLength;
     private final int ropeDepth;
     private int hashCode = 0;
     private byte[] bytes;
 
-    protected Rope(Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth, byte[] bytes) {
+    protected Rope(Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, long byteLength, long characterLength, int ropeDepth, byte[] bytes) {
         this.encoding = encoding;
         this.codeRange = codeRange;
         this.singleByteOptimizable = singleByteOptimizable;
@@ -36,11 +36,11 @@ public abstract class Rope {
 
     public abstract Rope withEncoding(Encoding newEncoding, CodeRange newCodeRange);
 
-    public final int characterLength() {
+    public final long characterLength() {
         return characterLength;
     }
 
-    public final int byteLength() {
+    public final long byteLength() {
         return byteLength;
     }
 
@@ -48,7 +48,7 @@ public abstract class Rope {
         return byteLength == 0;
     }
 
-    protected abstract byte getByteSlow(int index);
+    protected abstract byte getByteSlow(long index);
 
     public final byte[] getRawBytes() {
         return bytes;

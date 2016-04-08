@@ -45,7 +45,7 @@ public abstract class ObjSpaceNodes {
         }
 
         @Specialization(guards = "isRubyString(object)")
-        public int memsizeOfString(DynamicObject object) {
+        public long memsizeOfString(DynamicObject object) {
             return 1 + object.getShape().getPropertyListInternal(false).size() + StringOperations.rope(object).byteLength();
         }
 

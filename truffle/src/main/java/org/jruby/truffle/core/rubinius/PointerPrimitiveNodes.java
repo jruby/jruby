@@ -19,10 +19,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.ffi.PointerGuards;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
@@ -342,7 +344,13 @@ public abstract class PointerPrimitiveNodes {
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject address(DynamicObject pointer, DynamicObject string, int maxLength) {
             final Rope rope = StringOperations.rope(string);
-            final int length = Math.min(rope.byteLength(), maxLength);
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work with strings larger than int range");
+            }
+
+            final int length = (int) Math.min(rope.byteLength(), maxLength);
             Layouts.POINTER.getPointer(pointer).put(0, rope.getBytes(), 0, length);
             return pointer;
         }

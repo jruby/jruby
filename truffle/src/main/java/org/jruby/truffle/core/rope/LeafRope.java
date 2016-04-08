@@ -9,17 +9,24 @@
  */
 package org.jruby.truffle.core.rope;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
+import org.jruby.truffle.core.CoreLibrary;
 
 public abstract class LeafRope extends Rope {
 
-    public LeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int characterLength) {
+    public LeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, long characterLength) {
         super(encoding, codeRange, singleByteOptimizable, bytes.length, characterLength, 1, bytes);
     }
 
     @Override
-    public byte getByteSlow(int index) {
-        return getRawBytes()[index];
+    public byte getByteSlow(long index) {
+        if (!CoreLibrary.fitsIntoInteger(index)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Index outside of int range");
+        }
+
+        return getRawBytes()[(int) index];
     }
 
     @Override

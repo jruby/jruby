@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.stdlib;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -17,6 +18,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
@@ -24,6 +26,7 @@ import org.jruby.truffle.core.rope.BytesVisitor;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
 
@@ -155,8 +158,9 @@ public abstract class DigestNodes {
             RopeOperations.visitBytes(StringOperations.rope(message), new BytesVisitor() {
 
                 @Override
-                public void accept(byte[] bytes, int offset, int length) {
-                    digest.update(bytes, offset, length);
+                public void accept(byte[] bytes, long offset, long length) {
+                    // Since bytes is limited to int range, the offset and length must as well, so casting is safe.
+                    digest.update(bytes, (int) offset, (int) length);
                 }
 
             });
@@ -236,7 +240,13 @@ public abstract class DigestNodes {
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject bubblebabble(DynamicObject message) {
             final Rope rope = StringOperations.rope(message);
-            return createString(BubbleBabble.bubblebabble(rope.getBytes(), rope.begin(), rope.byteLength()));
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't create a ByteList larger than int range");
+            }
+
+            return createString(BubbleBabble.bubblebabble(rope.getBytes(), rope.begin(), (int) rope.byteLength()));
         }
 
     }

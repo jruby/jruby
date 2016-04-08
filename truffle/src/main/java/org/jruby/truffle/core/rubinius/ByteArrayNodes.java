@@ -19,11 +19,13 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
@@ -72,7 +74,13 @@ public abstract class ByteArrayNodes {
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject prepend(DynamicObject bytes, DynamicObject string) {
             final Rope rope = StringOperations.rope(string);
-            final int prependLength = rope.byteLength();
+
+            if (!CoreLibrary.fitsIntoInteger(rope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work with strings larger than int range");
+            }
+
+            final int prependLength = (int) rope.byteLength();
             final int originalLength = Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes().length;
             final int newLength = prependLength + originalLength;
             final byte[] prependedBytes = new byte[newLength];

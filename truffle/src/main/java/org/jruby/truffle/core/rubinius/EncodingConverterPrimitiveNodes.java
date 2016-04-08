@@ -21,6 +21,7 @@ import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.encoding.EncodingConverterNodes;
 import org.jruby.truffle.core.rope.Rope;
@@ -28,6 +29,7 @@ import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
@@ -69,19 +71,19 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)", "isRubyHash(options)"})
         public Object encodingConverterPrimitiveConvert(DynamicObject encodingConverter, DynamicObject source,
-                                                        DynamicObject target, int offset, int size, DynamicObject options) {
+                                                        DynamicObject target, long offset, long size, DynamicObject options) {
             throw new UnsupportedOperationException("not implemented");
         }
 
         @Specialization(guards = {"isNil(source)", "isRubyString(target)"})
         public Object primitiveConvertNilSource(DynamicObject encodingConverter, DynamicObject source,
-                                                        DynamicObject target, int offset, int size, int options) {
+                                                        DynamicObject target, long offset, long size, int options) {
             return primitiveConvertHelper(encodingConverter, source, target, offset, size, options);
         }
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)"})
         public Object encodingConverterPrimitiveConvert(DynamicObject encodingConverter, DynamicObject source,
-                                                        DynamicObject target, int offset, int size, int options) {
+                                                        DynamicObject target, long offset, long size, int options) {
 
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
@@ -90,11 +92,17 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         @TruffleBoundary
         private Object primitiveConvertHelper(DynamicObject encodingConverter, DynamicObject source,
-                                              DynamicObject target, int offset, int size, int options) {
+                                              DynamicObject target, long offset, long size, int options) {
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
             final boolean nonNullSource = source != nil();
             Rope sourceRope = nonNullSource ? rope(source) : RopeConstants.EMPTY_UTF8_ROPE;
+
+            if (!CoreLibrary.fitsIntoInteger(sourceRope.byteLength())) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work with strings larger than int range");
+            }
+
             final Rope targetRope = rope(target);
             final ByteList outBytes = RopeOperations.toByteListCopy(targetRope);
 
@@ -140,9 +148,9 @@ public abstract class EncodingConverterPrimitiveNodes {
                 outBytes.ensure((int) outputByteEnd);
 
                 inPtr.p = 0;
-                outPtr.p = offset;
-                int os = outPtr.p + size;
-                EConvResult res = ec.convert(sourceRope.getBytes(), inPtr, sourceRope.byteLength() + inPtr.p, outBytes.getUnsafeBytes(), outPtr, os, options);
+                outPtr.p = (int) offset;
+                int os = (int) (outPtr.p + size);
+                EConvResult res = ec.convert(sourceRope.getBytes(), inPtr, (int) (sourceRope.byteLength() + inPtr.p), outBytes.getUnsafeBytes(), outPtr, os, options);
 
                 outBytes.setRealSize(outPtr.p - outBytes.begin());
 
