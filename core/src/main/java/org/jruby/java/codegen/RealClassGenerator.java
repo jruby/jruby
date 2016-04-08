@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
@@ -54,6 +55,8 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.ClassDefiningJRubyClassLoader;
 import static org.jruby.util.CodegenUtils.*;
+
+import org.jruby.util.Loader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
@@ -112,7 +115,9 @@ public abstract class RealClassGenerator {
         Map<String, List<Method>> simpleToAll = buildSimpleToAllMap(interfaces, superTypeNames);
 
         Class newClass = defineRealImplClass(ruby, name, superClass, superTypeNames, simpleToAll);
-
+        if (!newClass.isAssignableFrom(interfaces[0])) {
+            new RuntimeException(newClass.getInterfaces()[0].getClassLoader() + " " + interfaces[0].getClassLoader());
+        }
         return newClass;
     }
 
@@ -280,7 +285,7 @@ public abstract class RealClassGenerator {
             mv.ldc(eachName);
         }
         mv.invokevirtual(p(RuntimeCache.class), "searchWithCache",
-                sig(DynamicMethod.class, params(IRubyObject.class, int.class, String.class, nameSet.size())));
+            sig(DynamicMethod.class, params(IRubyObject.class, int.class, String.class, nameSet.size())));
 
         // get current context
         mv.aload(rubyIndex);
@@ -471,7 +476,17 @@ public abstract class RealClassGenerator {
         // end class
         cw.visitEnd();
 
-        // create the class
+        // first try to find the class
+        Class newClass = null;
+        for(Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
+            try {
+                newClass = loader.loadClass(name);
+                break;
+            }
+            catch(ClassNotFoundException ignored) {
+            }
+        }
+
         final ClassDefiningJRubyClassLoader loader;
         if (superClass.getClassLoader() instanceof ClassDefiningJRubyClassLoader) {
             loader = new ClassDefiningJRubyClassLoader(superClass.getClassLoader());
@@ -479,13 +494,29 @@ public abstract class RealClassGenerator {
             loader = new ClassDefiningJRubyClassLoader(runtime.getJRubyClassLoader());
         }
 
-        Class newClass;
-        try {
-            newClass = loader.loadClass(name);
+        if (newClass == null) {
+            try {
+                newClass = loader.loadClass(name);
+            }
+            catch (ClassNotFoundException ignored) {
+            }
         }
-        catch (ClassNotFoundException ex) {
+
+        // create the class
+        if (newClass == null) {
             final byte[] bytecode = cw.toByteArray();
-            newClass = loader.defineClass(name, bytecode);
+            MultiClassLoader multiClassLoader = new MultiClassLoader(superClass.getClassLoader());
+            for(Loader cLoader : runtime.getInstanceConfig().getExtraLoaders()) {
+                multiClassLoader.addClassLoader(cLoader.getClassLoader());
+            }
+            try {
+                newClass = new ClassDefiningJRubyClassLoader(multiClassLoader).defineClass(name, bytecode);
+            }
+            catch(Error ignored) {
+            }
+            if (newClass == null) {
+                newClass = loader.defineClass(name, bytecode);
+            }
             if ( DEBUG ) writeClassFile(name, bytecode);
         }
 

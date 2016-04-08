@@ -115,7 +115,7 @@ public class FeatureLoader {
         }
     }
 
-    private boolean doRequire(final VirtualFrame frame, final String expandedPath, final IndirectCallNode calNode) {
+    private boolean doRequire(final VirtualFrame frame, final String expandedPath, final IndirectCallNode callNode) {
         if (isFeatureLoaded(expandedPath)) {
             return false;
         }
@@ -137,7 +137,7 @@ public class FeatureLoader {
             return false;
         }
 
-        context.getThreadManager().runUntilResult(calNode, new ThreadManager.BlockingAction<Boolean>() {
+        context.getThreadManager().runUntilResult(callNode, new ThreadManager.BlockingAction<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
                 lock.lockInterruptibly();
@@ -167,7 +167,7 @@ public class FeatureLoader {
                     ParserContext.TOP_LEVEL,
                     null,
                     true,
-                    calNode);
+                    callNode);
 
             final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
                     ParserContext.TOP_LEVEL,
@@ -175,7 +175,7 @@ public class FeatureLoader {
                     rootNode, null,
                     context.getCoreLibrary().getMainObject());
 
-            calNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+            deferredCall.call(frame, callNode);
 
             addToLoadedFeatures(pathString);
 

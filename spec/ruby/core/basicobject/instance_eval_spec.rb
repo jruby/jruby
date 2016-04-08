@@ -159,4 +159,13 @@ end
 
     obj.instance_eval(&m).should == obj
   end
+
+  it "evaluates string with given filename and linenumber" do
+    err = begin
+      Object.new.instance_eval("raise", "a_file", 10)
+    rescue => e
+      e
+    end
+    err.backtrace.first.split(":")[0..1].should == ["a_file", "10"]
+  end
 end

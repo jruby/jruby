@@ -40,9 +40,8 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.methods.CallMethodNode;
-import org.jruby.truffle.language.methods.CallMethodNodeGen;
-import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.language.methods.CallBoundMethodNode;
+import org.jruby.truffle.language.methods.CallBoundMethodNodeGen;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
@@ -96,25 +95,18 @@ public abstract class MethodNodes {
     @CoreMethod(names = { "call", "[]" }, needsBlock = true, rest = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
+        @Child CallBoundMethodNode callBoundMethodNode;
         @Child ProcOrNullNode procOrNullNode;
-        @Child CallMethodNode callMethodNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            callBoundMethodNode = CallBoundMethodNodeGen.create(context, sourceSection, null, null, null);
             procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
-            callMethodNode = CallMethodNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block) {
-            final InternalMethod internalMethod = Layouts.METHOD.getMethod(method);
-            final Object[] frameArguments = packArguments(method, internalMethod, arguments, block);
-
-            return callMethodNode.executeCallMethod(frame, internalMethod, frameArguments);
-        }
-
-        private Object[] packArguments(DynamicObject method, InternalMethod internalMethod, Object[] arguments, Object block) {
-            return RubyArguments.pack(null, null, internalMethod, DeclarationContext.METHOD, null, Layouts.METHOD.getReceiver(method), procOrNullNode.executeProcOrNull(block), arguments);
+            return callBoundMethodNode.executeCallBoundMethod(frame, method, arguments, procOrNullNode.executeProcOrNull(block));
         }
 
     }

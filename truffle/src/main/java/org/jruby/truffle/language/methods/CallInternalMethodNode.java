@@ -25,9 +25,9 @@ import org.jruby.truffle.language.RubyNode;
         @NodeChild("method"),
         @NodeChild(value = "arguments", type = RubyNode[].class)
 })
-public abstract class CallMethodNode extends RubyNode {
+public abstract class CallInternalMethodNode extends RubyNode {
 
-    public CallMethodNode(RubyContext context, SourceSection sourceSection) {
+    public CallInternalMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 

@@ -46,6 +46,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
 import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.proxy.JavaProxyClass;
@@ -147,6 +148,13 @@ public class JavaSupportImpl extends JavaSupport {
         Class primitiveClass;
         if ((primitiveClass = JavaUtil.PRIMITIVE_CLASSES.get(className)) == null) {
             if (!Ruby.isSecurityRestricted()) {
+                for(Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
+                    try {
+                        return loader.loadClass(className);
+                    }
+                    catch(ClassNotFoundException ignored) {
+                    }
+                }
                 return Class.forName(className, true, runtime.getJRubyClassLoader());
             }
             return Class.forName(className);

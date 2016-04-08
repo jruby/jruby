@@ -30,6 +30,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.util.ByteList;
+import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
@@ -147,7 +148,18 @@ public class RopeOperations {
             final ConcatRope concatRope = (ConcatRope) value;
 
             return decodeRope(runtime, concatRope.getLeft()) + decodeRope(runtime, concatRope.getRight());
-        } else {
+        } else if (value instanceof RepeatingRope) {
+            final RepeatingRope repeatingRope = (RepeatingRope) value;
+
+            final String childString = decodeRope(runtime, repeatingRope.getChild());
+            final StringBuilder builder = new StringBuilder(childString.length() * repeatingRope.getTimes());
+            for (int i = 0; i < repeatingRope.getTimes(); i++) {
+                builder.append(childString);
+            }
+
+            return builder.toString();
+        }
+        else {
             throw new RuntimeException("Decoding to String is not supported for rope of type: " + value.getClass().getName());
         }
     }
@@ -195,6 +207,101 @@ public class RopeOperations {
         }
 
         return create(flattenBytes(rope), rope.getEncoding(), rope.getCodeRange());
+    }
+
+    public static void visitBytes(Rope rope, BytesVisitor visitor) {
+        visitBytes(rope, visitor, 0, rope.byteLength());
+    }
+
+    @TruffleBoundary
+    public static void visitBytes(Rope rope, BytesVisitor visitor, int offset, int length) {
+        /*
+         * TODO: CS-7-Apr-16 rewrite this to be iterative as flattenBytes is, but with new logic for offset and length
+         * creating a range, then write flattenBytes in terms of visitBytes.
+         */
+
+        assert length <= rope.byteLength();
+
+        if (rope.getRawBytes() != null) {
+            visitor.accept(rope.getRawBytes(), rope.begin() + offset, length);
+        } else if (rope instanceof ConcatRope) {
+            final ConcatRope concat = (ConcatRope) rope;
+            
+            final int leftLength = concat.getLeft().byteLength();
+
+            if (offset < leftLength) {
+                /*
+                 * The left branch might not be large enough to extract the full byte range we want. In that case,
+                 * we'll extract what we can and extract the difference from the right side.
+                 */
+                
+                final int leftUsed;
+
+                if (offset + length > leftLength) {
+                    leftUsed = leftLength - offset;
+                } else {
+                    leftUsed = length;
+                }
+
+                visitBytes(concat.getLeft(), visitor, offset, leftUsed);
+
+                if (leftUsed < length) {
+                    visitBytes(concat.getRight(), visitor, 0, length - leftUsed);
+                }
+            } else {
+                visitBytes(concat.getRight(), visitor, offset - leftLength, length);
+            }
+        } else if (rope instanceof SubstringRope) {
+            final SubstringRope substring = (SubstringRope) rope;
+
+            visitBytes(substring.getChild(), visitor, substring.getOffset() + offset, length);
+        } else if (rope instanceof RepeatingRope) {
+            final RepeatingRope repeating = (RepeatingRope) rope;
+            final Rope child = repeating.getChild();
+
+            final int start = offset % child.byteLength();
+            final int firstPartLength = child.byteLength() - start;
+            visitBytes(child, visitor, start, firstPartLength);
+            final int lengthMinusFirstPart = length - firstPartLength;
+            final int remainingEnd = lengthMinusFirstPart % child.byteLength();
+
+            if (lengthMinusFirstPart >= child.byteLength()) {
+                final byte[] secondPart = child.getBytes();
+
+                final int repeatPartCount = lengthMinusFirstPart / child.byteLength();
+                for (int i = 0; i < repeatPartCount; i++) {
+                    visitBytes(child, visitor, 0, secondPart.length);
+                }
+
+                if (remainingEnd > 0) {
+                    visitBytes(child, visitor, 0, remainingEnd);
+                }
+            } else {
+                visitBytes(child, visitor, 0, remainingEnd);
+            }
+        } else {
+            throw new UnsupportedOperationException("Don't know how to visit rope of type: " + rope.getClass().getName());
+        }
+    }
+
+    @TruffleBoundary
+    public static byte[] extractRange(Rope rope, int offset, int length) {
+        final byte[] result = new byte[length];
+
+        final Memo<Integer> resultPosition = new Memo<>(0);
+
+        visitBytes(rope, new BytesVisitor() {
+
+            @Override
+            public void accept(byte[] bytes, int offset, int length) {
+                final int resultPositionValue = resultPosition.get();
+                System.arraycopy(bytes, offset, result, resultPositionValue, length);
+                resultPosition.set(resultPositionValue + length);
+            }
+
+        }, offset, length);
+
+        return result;
     }
 
     /**
@@ -348,8 +455,34 @@ public class RopeOperations {
                         substringLengths.push(adjustedByteLength);
                     }
                 }
+            } else if (current instanceof RepeatingRope) {
+                final RepeatingRope repeatingRope = (RepeatingRope) current;
+
+                // In the absence of any SubstringRopes, we always take the full contents of the MultiplyRope.
+                if (substringLengths.isEmpty()) {
+                    // TODO (nirvdrum 06-Apr-16) Rather than process the same child over and over, there may be opportunity to re-use the results from a single pass.
+                    for (int i = 0; i < repeatingRope.getTimes(); i++) {
+                        workStack.push(repeatingRope.getChild());
+                    }
+                } else {
+                    final int bytesToCopy = substringLengths.peek();
+                    int loopCount = bytesToCopy / repeatingRope.getChild().byteLength();
+
+                    // Fix the offset to be appropriate for a given child. The offset is reset the first time it is
+                    // consumed, so there's no need to worry about adversely affecting anything by adjusting it here.
+                    offset %= repeatingRope.getChild().byteLength();
+
+                    // Adjust the loop count in case we're straddling a boundary.
+                    if (offset != 0) {
+                        loopCount++;
+                    }
+
+                    // TODO (nirvdrum 06-Apr-16) Rather than process the same child over and over, there may be opportunity to re-use the results from whole sections.
+                    for (int i = 0; i < loopCount; i++) {
+                        workStack.push(repeatingRope.getChild());
+                    }
+                }
             } else {
-                CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException("Don't know how to flatten rope of type: " + rope.getClass().getName());
             }
         }
@@ -401,6 +534,28 @@ public class RopeOperations {
             }
 
             return hashForRange(right, hash, offset - leftLength, length);
+        } else if (rope instanceof RepeatingRope) {
+            final RepeatingRope repeatingRope = (RepeatingRope) rope;
+            final Rope child = repeatingRope.getChild();
+
+            int remainingLength = length;
+            int loopCount = length / child.byteLength();
+
+            offset %= child.byteLength();
+
+            // Adjust the loop count in case we're straddling a boundary.
+            if (offset != 0) {
+                loopCount++;
+            }
+
+            int hash = startingHashCode;
+            for (int i = 0; i < loopCount; i++) {
+                hash = hashForRange(child, hash, offset, remainingLength >= child.byteLength() ? child.byteLength() : remainingLength % child.byteLength());
+                remainingLength = child.byteLength() - offset;
+                offset = 0;
+            }
+
+            return hash;
         } else {
             throw new RuntimeException("Hash code not supported for rope of type: " + rope.getClass().getName());
         }

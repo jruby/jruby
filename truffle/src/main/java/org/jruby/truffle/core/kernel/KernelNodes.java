@@ -604,7 +604,7 @@ public abstract class KernelNodes {
             final MaterializedFrame topFrame = Layouts.BINDING.getFrame(binding);
             RubyArguments.setSelf(topFrame.getArguments(), RubyArguments.getSelf(frame));
             final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, "(eval)", 1, true);
-            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+            return deferredCall.call(frame, callNode);
 
         }
 
@@ -625,7 +625,7 @@ public abstract class KernelNodes {
         public Object evalBinding(VirtualFrame frame, DynamicObject source, DynamicObject binding, NotProvided filename,
                                   NotProvided lineNumber, @Cached("create()") IndirectCallNode callNode) {
             final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, "(eval)", 1, false);
-            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+            return deferredCall.call(frame, callNode);
         }
 
         @Specialization(guards = {
@@ -664,7 +664,7 @@ public abstract class KernelNodes {
         public Object evalBindingFilenameLine(VirtualFrame frame, DynamicObject source, DynamicObject binding, DynamicObject filename,
                                               int lineNumber, @Cached("create()") IndirectCallNode callNode) {
             final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, filename.toString(), lineNumber, false);
-            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+            return deferredCall.call(frame, callNode);
         }
 
         @TruffleBoundary

@@ -84,8 +84,6 @@ import org.jruby.truffle.stdlib.BigDecimalLayout;
 import org.jruby.truffle.stdlib.BigDecimalLayoutImpl;
 import org.jruby.truffle.stdlib.psych.EmitterLayout;
 import org.jruby.truffle.stdlib.psych.EmitterLayoutImpl;
-import org.jruby.truffle.stdlib.psych.ParserLayout;
-import org.jruby.truffle.stdlib.psych.ParserLayoutImpl;
 
 public abstract class Layouts {
 
@@ -124,7 +122,6 @@ public abstract class Layouts {
     public static final TimeLayout TIME = TimeLayoutImpl.INSTANCE;
     public static final UnboundMethodLayout UNBOUND_METHOD = UnboundMethodLayoutImpl.INSTANCE;
     public static final WeakRefLayout WEAK_REF_LAYOUT = WeakRefLayoutImpl.INSTANCE;
-    public static final ParserLayout PSYCH_PARSER = ParserLayoutImpl.INSTANCE;
     public static final EmitterLayout PSYCH_EMITTER = EmitterLayoutImpl.INSTANCE;
     public static final RandomizerLayout RANDOMIZER = RandomizerLayoutImpl.INSTANCE;
     public static final AtomicReferenceLayout ATOMIC_REFERENCE = AtomicReferenceLayoutImpl.INSTANCE;

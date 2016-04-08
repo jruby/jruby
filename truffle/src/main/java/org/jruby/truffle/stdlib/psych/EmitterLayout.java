@@ -20,13 +20,15 @@ import org.yaml.snakeyaml.emitter.Emitter;
 @Layout
 public interface EmitterLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createEmitterShape(DynamicObject logicalClass,
-                                           DynamicObject metaClass);
+    DynamicObjectFactory createEmitterShape(
+            DynamicObject logicalClass,
+            DynamicObject metaClass);
 
-    DynamicObject createEmitter(DynamicObjectFactory factory,
-                               @Nullable Emitter emitter,
-                               @Nullable DumperOptions options,
-                               @Nullable Object io);
+    DynamicObject createEmitter(
+            DynamicObjectFactory factory,
+            @Nullable Emitter emitter,
+            @Nullable DumperOptions options,
+            @Nullable Object io);
 
     boolean isEmitter(DynamicObject object);
 

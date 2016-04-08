@@ -116,7 +116,7 @@ public class SimpleShell {
                                 rootNode, currentFrame,
                                 RubyArguments.getSelf(currentFrame.getArguments()));
 
-                        final Object result = deferredCall.getCallTarget().call(deferredCall.getArguments());
+                        final Object result = deferredCall.callWithoutCallNode();
 
                         String inspected;
 

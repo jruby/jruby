@@ -69,6 +69,7 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.RepeatingRope;
 import org.jruby.truffle.core.rope.MutableRope;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
@@ -212,75 +213,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isSingleByteString(string)", "times > 1" })
         public DynamicObject multiply(DynamicObject string, int times) {
-            if (makeConcatNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                makeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(getContext(), getSourceSection(), null, null, null));
-            }
-
-            final Rope baseRope = rope(string);
-            final Rope concatLeafRope = makeConcatNode.executeMake(baseRope, baseRope, baseRope.getEncoding());
-
-            final boolean timesIsPowerOf2 = (times & (times - 1)) == 0;
-            final double log2_times = Math.log(times) / Math.log(2);
-
-            final int lowestLevelWidth = timesIsPowerOf2 ? times / 2 : (int) (Math.pow(2, Math.floor(log2_times)));
-            final int populateNode = times - lowestLevelWidth;
-
-            Rope[] nextLevel = new Rope[lowestLevelWidth];
-            for (int i = 0; i < nextLevel.length; i++) {
-                if (i < populateNode) {
-                    nextLevel[i] = concatLeafRope;
-                } else {
-                    nextLevel[i] = null;
-                }
-            }
-
-            final int levels = (int) Math.ceil(log2_times);
-            boolean canCacheLeftTree = true;
-            boolean canCacheRightTree = true;
-
-            for (int level = levels - 1; level > 0; level--) {
-                final int levelWidth = (int) Math.pow(2, level - 1);
-                final Rope[] currentLevel = new Rope[levelWidth];
-                Rope cachedRope = null;
-
-                for (int i = 0; i < levelWidth; i++) {
-                    final Rope left = nextLevel[i * 2];
-                    final Rope right = nextLevel[i * 2 + 1];
-
-                    if (left == null) {
-                        currentLevel[i] = concatLeafRope;
-
-                        if (i < levelWidth / 2) {
-                            canCacheLeftTree = false;
-                        } else {
-                            canCacheRightTree = false;
-                        }
-                    } else if (right == null) {
-                        currentLevel[i] = makeConcatNode.executeMake(left, baseRope, baseRope.getEncoding());
-
-                        if (i < levelWidth / 2) {
-                            canCacheLeftTree = false;
-                        } else {
-                            canCacheRightTree = false;
-                        }
-                    } else {
-                        if ((canCacheLeftTree && i < levelWidth / 2) || (canCacheRightTree && i >= levelWidth / 2)) {
-                            if (cachedRope == null) {
-                                cachedRope = makeConcatNode.executeMake(left, right, baseRope.getEncoding());
-                            }
-
-                            currentLevel[i] = cachedRope;
-                        } else {
-                            currentLevel[i] = makeConcatNode.executeMake(left, right, baseRope.getEncoding());
-                        }
-                    }
-                }
-
-                nextLevel = currentLevel;
-            }
-
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), nextLevel[0], null);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new RepeatingRope(rope(string), times), null);
         }
 
         @Specialization(guards = "isRubyBignum(times)")

@@ -1,13 +1,12 @@
 package org.jruby.embed;
 
 import java.net.URL;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.LinkedList;
 
-import org.jruby.util.ClassLoaderGetResourses;
+import org.jruby.util.ClassesLoader;
 import org.jruby.util.UriLikePathHelper;
 
 /**
@@ -58,7 +57,7 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         setLoadPaths(loadPaths);
 
         // set the right jruby home
-        UriLikePathHelper uriPath = new UriLikePathHelper(new ClassLoaderGetResourses(getClassLoader()));
+        UriLikePathHelper uriPath = new UriLikePathHelper(new ClassesLoader(getClassLoader()));
         URL url = uriPath.getResource("/.jrubydir");
         if (url != null){
             setCurrentDirectory( URI_CLASSLOADER );

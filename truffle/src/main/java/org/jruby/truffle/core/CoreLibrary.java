@@ -503,7 +503,6 @@ public class CoreLibrary {
         defineModule(truffleModule, "Etc");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
-        Layouts.CLASS.setInstanceFactoryUnsafe(psychParserClass, Layouts.PSYCH_PARSER.createParserShape(psychParserClass, psychParserClass));
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
         final DynamicObject psychEmitterClass = defineClass(psychModule, psychHandlerClass, "Emitter");
         Layouts.CLASS.setInstanceFactoryUnsafe(psychEmitterClass, Layouts.PSYCH_EMITTER.createEmitterShape(psychEmitterClass, psychEmitterClass));
@@ -781,7 +780,7 @@ public class CoreLibrary {
             try {
                 final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
                 final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
-                deferredCall.getCallTarget().call(deferredCall.getArguments());
+                deferredCall.callWithoutCallNode();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1383,6 +1382,14 @@ public class CoreLibrary {
 
     public DynamicObject internalError(String message, Node currentNode) {
         return internalError(message, currentNode, null);
+    }
+
+    public DynamicObject internalErrorAssertConstantNotConstant(Node currentNode) {
+        return internalError("Value in Truffle::Primitive.assert_constant was not constant", currentNode);
+    }
+
+    public DynamicObject internalErrorAssertNotCompiledCompiled(Node currentNode) {
+        return internalError("Call to Truffle::Primitive.assert_not_compiled was compiled", currentNode);
     }
 
     public DynamicObject internalError(String message, Node currentNode, Throwable javaThrowable) {

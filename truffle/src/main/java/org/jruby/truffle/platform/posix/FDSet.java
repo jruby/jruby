@@ -8,11 +8,11 @@
  * GNU Lesser General Public License version 2.1
  */
 
-package org.jruby.truffle.stdlib.sockets;
+package org.jruby.truffle.platform.posix;
 
 import jnr.ffi.Pointer;
 
-public class LinuxFDSet implements FDSet {
+public class FDSet {
 
     private final static int MAX_FDS = 1024;
     private final static int FIELD_SIZE_IN_BYTES = 4;
@@ -20,11 +20,10 @@ public class LinuxFDSet implements FDSet {
 
     private final Pointer bitmap;
 
-    public LinuxFDSet() {
+    public FDSet() {
         bitmap = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().allocateDirect(MAX_FDS / 8);
     }
 
-    @Override
     public void set(int fd) {
         checkBounds(fd);
 
@@ -33,14 +32,12 @@ public class LinuxFDSet implements FDSet {
         bitmap.putInt(offset, bitmap.getInt(offset) | bitmapElementMask(fd));
     }
 
-    @Override
     public boolean isSet(int fd) {
         checkBounds(fd);
 
         return (bitmap.getInt(bitmapAddressOffset(fd)) & bitmapElementMask(fd)) != 0;
     }
 
-    @Override
     public Pointer getPointer() {
         return bitmap;
     }

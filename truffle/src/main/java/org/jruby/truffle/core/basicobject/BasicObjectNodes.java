@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.BinaryCoreMethodNode;
@@ -67,7 +68,8 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
         }
 
-        @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
+        @CreateCast("operand")
+        public RubyNode createCast(RubyNode operand) {
             return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
         }
 
@@ -104,16 +106,32 @@ public abstract class BasicObjectNodes {
 
         public abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
 
-        @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
-        @Specialization public boolean equal(int a, int b) { return a == b; }
-        @Specialization public boolean equal(long a, long b) { return a == b; }
-        @Specialization public boolean equal(double a, double b) { return Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b); }
-
-        @Specialization public boolean equal(DynamicObject a, DynamicObject b) {
+        @Specialization
+        public boolean equal(boolean a, boolean b) {
             return a == b;
         }
 
-        @Specialization(guards = {"isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)"})
+        @Specialization
+        public boolean equal(int a, int b) {
+            return a == b;
+        }
+
+        @Specialization
+        public boolean equal(long a, long b) {
+            return a == b;
+        }
+
+        @Specialization
+        public boolean equal(double a, double b) {
+            return Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b);
+        }
+
+        @Specialization
+        public boolean equal(DynamicObject a, DynamicObject b) {
+            return a == b;
+        }
+
+        @Specialization(guards = { "isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)" })
         public boolean equal(Object a, Object b) {
             return false;
         }
@@ -152,7 +170,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "instance_eval", needsBlock = true, optional = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "instance_eval", needsBlock = true, optional = 3, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class InstanceEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldNode yield;
@@ -162,17 +180,32 @@ public abstract class BasicObjectNodes {
             yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
-        @Specialization(guards = "isRubyString(string)")
-        public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, NotProvided block, @Cached("create()")IndirectCallNode callNode) {
+        @Specialization(guards = { "isRubyString(string)", "isRubyString(fileName)" })
+        public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, DynamicObject fileName, int line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
             final Rope code = StringOperations.rope(string);
-            final Source source = Source.fromText(code.toString(), "(eval)");
+
+            // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
+            final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
+            final Source source = Source.fromText(space + code.toString(), StringOperations.rope(fileName).toString());
+
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
             final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
-            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+            return deferredCall.call(frame, callNode);
+        }
+
+        @Specialization(guards = { "isRubyString(string)", "isRubyString(fileName)" })
+        public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, DynamicObject fileName, NotProvided line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
+            return instanceEval(frame, receiver, string, fileName, 1, block, callNode);
+        }
+
+        @Specialization(guards = { "isRubyString(string)" })
+        public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, NotProvided fileName, NotProvided line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
+            final DynamicObject eval = StringOperations.createString(getContext(), StringOperations.encodeRope("(eval)", ASCIIEncoding.INSTANCE));
+            return instanceEval(frame, receiver, string, eval, 1, block, callNode);
         }
 
         @Specialization
-        public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, DynamicObject block) {
+        public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, NotProvided fileName, NotProvided line, DynamicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, receiver, receiver);
         }
 

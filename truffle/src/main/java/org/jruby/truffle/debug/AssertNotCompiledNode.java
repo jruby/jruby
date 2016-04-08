@@ -28,13 +28,15 @@ public abstract class AssertNotCompiledNode extends RubyNode {
 
     @Specialization
     public DynamicObject assertNotCompiled() {
-        final boolean[] compiled = new boolean[]{CompilerDirectives.inCompiledCode()};
+        final boolean[] compiled = new boolean[]{ CompilerDirectives.inCompiledCode() };
+
+        // If we didn't cause the value to escape, the transfer would float above the isCompilationConstant
 
         sideEffect = compiled;
 
         if (compiled[0]) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new RaiseException(coreLibrary().internalError("Call to Truffle::Primitive.assert_not_compiled was compiled", this));
+            throw new RaiseException(coreLibrary().internalErrorAssertNotCompiledCompiled(this));
         }
 
         return nil();
