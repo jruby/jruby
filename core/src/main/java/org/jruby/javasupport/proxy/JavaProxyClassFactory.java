@@ -567,14 +567,18 @@ public class JavaProxyClassFactory {
 
         private StringBuilder scrambledSignature() {
             StringBuilder sb = new StringBuilder();
-            Class[] parms = getParameterTypes();
-            for (int i = 0; i < parms.length; i++) {
+            for ( Class param : getParameterTypes() ) {
                 sb.append('$');
-                String name = parms[i].getName();
-                name = name.replace('[', '1');
-                name = name.replace('.', '_');
-                name = name.replace(';', '2');
-                sb.append(name);
+                final char[] name = param.getName().toCharArray();
+                for (int i = 0; i < name.length; i++) {
+                    final char c;
+                    switch ( c = name[i] ) {
+                        case '.' : sb.append('_'); break;
+                        case '[' : sb.append('1'); break;
+                        case ';' : sb.append('2'); break;
+                        default : sb.append(c);
+                    }
+                }
             }
             return sb;
         }
