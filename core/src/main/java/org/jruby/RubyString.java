@@ -517,7 +517,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public static RubyString newUTF16String(Ruby runtime, CharSequence str) {
-        ByteList byteList = new ByteList(RubyEncoding.encodeUTF16(str.toString()), UTF16BEEncoding.INSTANCE, false);
+        ByteList byteList = new ByteList(RubyEncoding.encodeUTF16(str), UTF16BEEncoding.INSTANCE, false);
         return new RubyString(runtime, runtime.getString(), byteList);
     }
 
