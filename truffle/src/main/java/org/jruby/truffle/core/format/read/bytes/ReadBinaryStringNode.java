@@ -17,10 +17,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 
 import java.util.Arrays;
 
@@ -59,19 +61,24 @@ public abstract class ReadBinaryStringNode extends FormatNode {
 
     @Specialization
     public DynamicObject read(VirtualFrame frame, byte[] source) {
-        final int start = getSourcePosition(frame);
+        final long start = getSourcePosition(frame);
 
-        int length;
+        if (!CoreLibrary.fitsIntoInteger(start)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't work with positions larger than int range");
+        }
+
+        long length;
 
         if (readToEnd) {
             length = 0;
 
             while (start + length < getSourceLength(frame)
-                    && (!readToNull || (start + length < getSourceLength(frame) && source[start + length] != 0))) {
+                    && (!readToNull || (start + length < getSourceLength(frame) && source[(int) (start + length)] != 0))) {
                 length++;
             }
 
-            if (start + length < getSourceLength(frame) && source[start + length] == 0) {
+            if (start + length < getSourceLength(frame) && source[(int) (start + length)] == 0) {
                 length++;
             }
         } else if (readToNull) {
@@ -79,11 +86,11 @@ public abstract class ReadBinaryStringNode extends FormatNode {
 
             while (start + length < getSourceLength(frame)
                     && length < count
-                    && (!readToNull || (start + length < getSourceLength(frame) && source[start + length] != 0))) {
+                    && (!readToNull || (start + length < getSourceLength(frame) && source[(int) (start + length)] != 0))) {
                 length++;
             }
 
-            if (start + length < getSourceLength(frame) && source[start + length] == 0) {
+            if (start + length < getSourceLength(frame) && source[(int) (start + length)] == 0) {
                 length++;
             }
         } else {
@@ -94,15 +101,15 @@ public abstract class ReadBinaryStringNode extends FormatNode {
             }
         }
 
-        int usedLength = length;
+        long usedLength = length;
 
-        while (usedLength > 0 && ((trimTrailingSpaces && source[start + usedLength - 1] == ' ')
-                                    || (trimTrailingNulls && source[start + usedLength - 1] == 0))) {
+        while (usedLength > 0 && ((trimTrailingSpaces && source[(int) (start + usedLength - 1)] == ' ')
+                                    || (trimTrailingNulls && source[(int) (start + usedLength - 1)] == 0))) {
             usedLength--;
         }
 
         if (trimToFirstNull) {
-            final int firstNull = indexOfFirstNull(source, start, usedLength);
+            final int firstNull = indexOfFirstNull(source, (int) start, (int) usedLength);
 
             if (firstNull != -1 && trimTrailingNulls) {
                 usedLength = firstNull;
@@ -112,7 +119,7 @@ public abstract class ReadBinaryStringNode extends FormatNode {
         setSourcePosition(frame, start + length);
 
         return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                new AsciiOnlyLeafRope(Arrays.copyOfRange(source, start, start + usedLength), ASCIIEncoding.INSTANCE));
+                new AsciiOnlyLeafRope(Arrays.copyOfRange(source, (int) start, (int) (start + usedLength)), ASCIIEncoding.INSTANCE));
     }
 
     private int indexOfFirstNull(byte[] bytes, int start, int length) {

@@ -336,7 +336,7 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = { "isValid(codeRange)", "wasProvided(characterLength)" })
-        public LeafRope makeValidLeafRopeWithCharacterLength(byte[] bytes, Encoding encoding, CodeRange codeRange, int characterLength) {
+        public LeafRope makeValidLeafRopeWithCharacterLength(byte[] bytes, Encoding encoding, CodeRange codeRange, long characterLength) {
             return new ValidLeafRope(bytes, encoding, characterLength);
         }
 

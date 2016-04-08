@@ -16,10 +16,12 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.MissingValue;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.read.SourceNode;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
@@ -40,8 +42,8 @@ public abstract class ReadUTF8CharacterNode extends FormatNode {
 
     @Specialization
     public Object read(VirtualFrame frame, byte[] source) {
-        final int index = getSourcePosition(frame);
-        final int sourceLength = getSourceLength(frame);
+        final long index = getSourcePosition(frame);
+        final long sourceLength = getSourceLength(frame);
 
         assert index != -1;
 
@@ -49,7 +51,12 @@ public abstract class ReadUTF8CharacterNode extends FormatNode {
             return MissingValue.INSTANCE;
         }
 
-        long codepoint = source[index] & 0xff;
+        if (!CoreLibrary.fitsIntoInteger(index)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't work with indices larger than int range");
+        }
+
+        long codepoint = source[(int) index] & 0xff;
         final int length;
 
         if (codepoint >> 7 == 0) {
@@ -84,7 +91,7 @@ public abstract class ReadUTF8CharacterNode extends FormatNode {
 
         for (int n = 1; n < length; n++) {
             codepoint <<= 6;
-            codepoint |= source[index + n] & 0b00111111;
+            codepoint |= source[(int) (index + n)] & 0b00111111;
         }
 
         setSourcePosition(frame, index + length);

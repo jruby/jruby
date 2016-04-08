@@ -31,7 +31,7 @@ public class AdvanceSourcePositionNode extends FormatNode {
         if (toEnd) {
             setSourcePosition(frame, getSourceLength(frame));
         } else {
-            final int position = getSourcePosition(frame);
+            final long position = getSourcePosition(frame);
 
             if (rangeProfile.profile(position + 1 > getSourceLength(frame))) {
                 throw new OutsideOfStringException();

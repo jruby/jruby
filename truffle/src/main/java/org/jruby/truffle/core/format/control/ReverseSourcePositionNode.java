@@ -28,12 +28,12 @@ public class ReverseSourcePositionNode extends FormatNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final int position = getSourcePosition(frame);
+        final long position = getSourcePosition(frame);
 
         if (star) {
-            final int remaining = getSourceLength(frame) - position;
+            final long remaining = getSourceLength(frame) - position;
 
-            final int target = position - remaining;
+            final long target = position - remaining;
 
             if (rangeProfile.profile(target < 0)) {
                 throw new OutsideOfStringException();

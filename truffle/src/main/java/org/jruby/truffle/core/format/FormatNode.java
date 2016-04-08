@@ -17,9 +17,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 
 import java.util.Arrays;
 
@@ -39,24 +41,24 @@ public abstract class FormatNode extends Node {
 
     public abstract Object execute(VirtualFrame frame);
 
-    public int getSourceLength(VirtualFrame frame) {
+    public long getSourceLength(VirtualFrame frame) {
         try {
-            return frame.getInt(FormatFrameDescriptor.SOURCE_LENGTH_SLOT);
+            return frame.getLong(FormatFrameDescriptor.SOURCE_LENGTH_SLOT);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    protected int getSourcePosition(VirtualFrame frame) {
+    protected long getSourcePosition(VirtualFrame frame) {
         try {
-            return frame.getInt(FormatFrameDescriptor.SOURCE_POSITION_SLOT);
+            return frame.getLong(FormatFrameDescriptor.SOURCE_POSITION_SLOT);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    protected void setSourcePosition(VirtualFrame frame, int position) {
-        frame.setInt(FormatFrameDescriptor.SOURCE_POSITION_SLOT, position);
+    protected void setSourcePosition(VirtualFrame frame, long position) {
+        frame.setLong(FormatFrameDescriptor.SOURCE_POSITION_SLOT, position);
     }
 
     protected int advanceSourcePosition(VirtualFrame frame) {
@@ -64,7 +66,7 @@ public abstract class FormatNode extends Node {
     }
 
     protected int advanceSourcePosition(VirtualFrame frame, int count) {
-        final int sourcePosition = getSourcePosition(frame);
+        final long sourcePosition = getSourcePosition(frame);
 
         if (tooFewArgumentsProfile.profile(sourcePosition + count > getSourceLength(frame))) {
             throw new TooFewArgumentsException();
@@ -72,7 +74,12 @@ public abstract class FormatNode extends Node {
 
         setSourcePosition(frame, sourcePosition + count);
 
-        return sourcePosition;
+        if (!CoreLibrary.fitsIntoInteger(sourcePosition)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't work with positions larger than int range");
+        }
+
+        return (int) sourcePosition;
     }
 
     protected int advanceSourcePositionNoThrow(VirtualFrame frame) {
@@ -80,9 +87,9 @@ public abstract class FormatNode extends Node {
     }
 
     protected int advanceSourcePositionNoThrow(VirtualFrame frame, int count, boolean consumePartial) {
-        final int sourcePosition = getSourcePosition(frame);
+        final long sourcePosition = getSourcePosition(frame);
 
-        final int sourceLength = getSourceLength(frame);
+        final long sourceLength = getSourceLength(frame);
 
         if (sourceRangeProfile.profile(sourcePosition + count > sourceLength)) {
             if (consumePartial) {
@@ -94,7 +101,12 @@ public abstract class FormatNode extends Node {
 
         setSourcePosition(frame, sourcePosition + count);
 
-        return sourcePosition;
+        if (!CoreLibrary.fitsIntoInteger(sourcePosition)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't work with positions larger than int range");
+        }
+
+        return (int) sourcePosition;
     }
 
     protected Object getOutput(VirtualFrame frame) {

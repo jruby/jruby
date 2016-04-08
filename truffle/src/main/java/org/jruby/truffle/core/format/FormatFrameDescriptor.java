@@ -17,8 +17,8 @@ public class FormatFrameDescriptor {
 
     public static final FrameDescriptor FRAME_DESCRIPTOR = new FrameDescriptor();
     public static final FrameSlot SOURCE_SLOT = FRAME_DESCRIPTOR.addFrameSlot("source", FrameSlotKind.Object);
-    public static final FrameSlot SOURCE_LENGTH_SLOT = FRAME_DESCRIPTOR.addFrameSlot("source-length", FrameSlotKind.Int);
-    public static final FrameSlot SOURCE_POSITION_SLOT = FRAME_DESCRIPTOR.addFrameSlot("source-position", FrameSlotKind.Int);
+    public static final FrameSlot SOURCE_LENGTH_SLOT = FRAME_DESCRIPTOR.addFrameSlot("source-length", FrameSlotKind.Long);
+    public static final FrameSlot SOURCE_POSITION_SLOT = FRAME_DESCRIPTOR.addFrameSlot("source-position", FrameSlotKind.Long);
     public static final FrameSlot OUTPUT_SLOT = FRAME_DESCRIPTOR.addFrameSlot("output", FrameSlotKind.Object);
     public static final FrameSlot OUTPUT_POSITION_SLOT = FRAME_DESCRIPTOR.addFrameSlot("output-position", FrameSlotKind.Int);
     public static final FrameSlot STRING_LENGTH_SLOT = FRAME_DESCRIPTOR.addFrameSlot("string-length", FrameSlotKind.Int);

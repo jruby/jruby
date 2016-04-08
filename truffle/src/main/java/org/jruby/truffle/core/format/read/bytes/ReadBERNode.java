@@ -45,6 +45,7 @@
  */
 package org.jruby.truffle.core.format.read.bytes;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -52,9 +53,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -78,10 +81,20 @@ public abstract class ReadBERNode extends FormatNode {
 
     @Specialization
     protected Object encode(VirtualFrame frame, byte[] source) {
-        final int position = getSourcePosition(frame);
-        final int length = getSourceLength(frame);
+        final long position = getSourcePosition(frame);
+        final long length = getSourceLength(frame);
 
-        final ByteBuffer encode = ByteBuffer.wrap(source, position, length - position);
+        if (!CoreLibrary.fitsIntoInteger(position)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't work with positions larger than int range");
+        }
+
+        if (!CoreLibrary.fitsIntoInteger(length)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't work with strings larger than int range");
+        }
+
+        final ByteBuffer encode = ByteBuffer.wrap(source, (int) position, (int) (length - position));
         int pos = encode.position();
 
         final long ul = encode.get(pos) & 0x7f;

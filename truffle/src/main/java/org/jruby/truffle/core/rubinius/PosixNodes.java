@@ -711,7 +711,7 @@ public abstract class PosixNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(resultPath)")
-        public DynamicObject getcwd(DynamicObject resultPath, int maxSize) {
+        public DynamicObject getcwd(DynamicObject resultPath, long maxSize) {
             // We just ignore maxSize - I think this is ok
 
             final String path = getContext().getJRubyRuntime().getCurrentDirectory();

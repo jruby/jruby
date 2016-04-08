@@ -428,7 +428,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "!isSingleByteOptimizable(string)" })
-        public Object stringChrAt(DynamicObject string, int byteIndex,
+        public Object stringChrAt(DynamicObject string, long byteIndex,
                                   @Cached("create(getContext(), getSourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
             // Taken from Rubinius's Character::create_from.
 
@@ -439,8 +439,13 @@ public abstract class StringPrimitiveNodes {
                 throw new RopeTooLongException("Can't work out the length for subranges of ropes larger than the int range");
             }
 
+            if (!CoreLibrary.fitsIntoInteger(byteIndex)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't handle byte index larger than int range");
+            }
+
             final int end = (int) rope.byteLength();
-            final int c = preciseLength(rope, byteIndex, end);
+            final int c = preciseLength(rope, (int) byteIndex, end);
 
             if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
                 return nil();
@@ -1293,12 +1298,17 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringPreviousByteIndex(DynamicObject string, int index) {
+        public Object stringPreviousByteIndex(DynamicObject string, long index) {
             // Port of Rubinius's String::previous_byte_index.
 
             if (index < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentError("negative index given", this));
+            }
+
+            if (!CoreLibrary.fitsIntoInteger(index)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work with indices larger than int range");
             }
 
             final Rope rope = rope(string);
@@ -1310,7 +1320,7 @@ public abstract class StringPrimitiveNodes {
                 throw new RopeTooLongException("Can't index into rope larger than int range");
             }
 
-            final int b = rope.getEncoding().prevCharHead(rope.getBytes(), p, p + index, (int) end);
+            final int b = rope.getEncoding().prevCharHead(rope.getBytes(), p, (int) (p + index), (int) end);
 
             if (b == -1) {
                 return nil();

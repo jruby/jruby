@@ -46,11 +46,16 @@ public class UnpackRootNode extends RootNode implements InternalRootNode {
     @Override
     public Object execute(VirtualFrame frame) {
         frame.setObject(FormatFrameDescriptor.SOURCE_SLOT, frame.getArguments()[0]);
-        frame.setInt(FormatFrameDescriptor.SOURCE_LENGTH_SLOT, (int) frame.getArguments()[1]);
-        frame.setInt(FormatFrameDescriptor.SOURCE_POSITION_SLOT, 0);
+        frame.setLong(FormatFrameDescriptor.SOURCE_POSITION_SLOT, 0L);
         frame.setObject(FormatFrameDescriptor.OUTPUT_SLOT, new Object[expectedLength]);
         frame.setInt(FormatFrameDescriptor.OUTPUT_POSITION_SLOT, 0);
         frame.setBoolean(FormatFrameDescriptor.TAINT_SLOT, false);
+
+        if (frame.getArguments()[1] instanceof Integer) {
+            frame.setLong(FormatFrameDescriptor.SOURCE_LENGTH_SLOT, (long)(int) frame.getArguments()[1]);
+        } else {
+            frame.setLong(FormatFrameDescriptor.SOURCE_LENGTH_SLOT, (long) frame.getArguments()[1]);
+        }
 
         child.execute(frame);
 

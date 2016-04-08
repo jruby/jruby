@@ -45,6 +45,7 @@
  */
 package org.jruby.truffle.core.format.read.bytes;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -52,11 +53,13 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
+import org.jruby.truffle.core.rope.RopeTooLongException;
 import org.jruby.util.Pack;
 
 import java.nio.ByteBuffer;
@@ -73,10 +76,20 @@ public abstract class ReadBase64StringNode extends FormatNode {
 
     @Specialization
     public Object read(VirtualFrame frame, byte[] source) {
-        final int position = getSourcePosition(frame);
-        final int length = getSourceLength(frame);
+        final long position = getSourcePosition(frame);
+        final long length = getSourceLength(frame);
 
-        final ByteBuffer encode = ByteBuffer.wrap(source, position, length - position);
+        if (!CoreLibrary.fitsIntoInteger(position)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't work with positions larger than int range");
+        }
+
+        if (!CoreLibrary.fitsIntoInteger(length)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RopeTooLongException("Can't work with strings larger than int range");
+        }
+
+        final ByteBuffer encode = ByteBuffer.wrap(source, (int) position, (int) (length - position));
 
         final byte[] result = read(encode);
 
