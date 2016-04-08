@@ -49,10 +49,10 @@ import java.math.BigInteger;
 import java.security.AccessController;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -80,7 +80,6 @@ import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -116,7 +115,7 @@ public class JavaUtil {
     }
 
     public static IRubyObject[] convertJavaArrayToRuby(final Ruby runtime, final Object[] objects) {
-        if ( objects == null ) return IRubyObject.NULL_ARRAY;
+        if ( objects == null || objects.length == 0 ) return IRubyObject.NULL_ARRAY;
 
         IRubyObject[] rubyObjects = new IRubyObject[objects.length];
         for (int i = 0; i < objects.length; i++) {
@@ -525,10 +524,7 @@ public class JavaUtil {
     private static final JavaConverter JAVA_DEFAULT_CONVERTER = new JavaConverter(Object.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             IRubyObject result = trySimpleConversions(runtime, object);
-
-            if (result != null) return result;
-
-            return JavaObject.wrap(runtime, object);
+            return result == null ? JavaObject.wrap(runtime, object) : result;
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Object[]) array)[i]);
@@ -798,8 +794,7 @@ public class JavaUtil {
         }
     };
 
-    private static final Map<Class,JavaConverter> JAVA_CONVERTERS =
-        new HashMap<Class,JavaConverter>();
+    private static final Map<Class, JavaConverter> JAVA_CONVERTERS = new IdentityHashMap<>(24);
 
     static {
         JAVA_CONVERTERS.put(Byte.class, JAVA_BYTE_CONVERTER);
@@ -927,7 +922,7 @@ public class JavaUtil {
         return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
     }
 
-    private static final Map<Class, NumericConverter> NUMERIC_CONVERTERS = new HashMap<Class, NumericConverter>();
+    private static final Map<Class, NumericConverter> NUMERIC_CONVERTERS = new IdentityHashMap<>(24);
 
     static {
         NUMERIC_CONVERTERS.put(Byte.TYPE, NUMERIC_TO_BYTE);
@@ -957,7 +952,7 @@ public class JavaUtil {
 
     public static final Map<String,Class> PRIMITIVE_CLASSES;
     static {
-        Map<String, Class> primitiveClasses = new HashMap<String,Class>();
+        Map<String, Class> primitiveClasses = new HashMap<>(10, 1);
         primitiveClasses.put("boolean", Boolean.TYPE);
         primitiveClasses.put("byte", Byte.TYPE);
         primitiveClasses.put("char", Character.TYPE);
@@ -1193,7 +1188,7 @@ public class JavaUtil {
     };
 
     @Deprecated
-    public static final Map<Class, RubyConverter> RUBY_CONVERTERS = new HashMap<Class, RubyConverter>();
+    public static final Map<Class, RubyConverter> RUBY_CONVERTERS = new HashMap<>(16, 1);
     static {
         RUBY_CONVERTERS.put(Boolean.class, RUBY_BOOLEAN_CONVERTER);
         RUBY_CONVERTERS.put(Boolean.TYPE, RUBY_BOOLEAN_CONVERTER);
@@ -1316,7 +1311,7 @@ public class JavaUtil {
     };
 
     @Deprecated
-    public static final Map<Class, RubyConverter> ARRAY_CONVERTERS = new HashMap<Class, RubyConverter>();
+    public static final Map<Class, RubyConverter> ARRAY_CONVERTERS = new HashMap<>(24, 1);
     static {
         ARRAY_CONVERTERS.put(Boolean.class, ARRAY_BOOLEAN_CONVERTER);
         ARRAY_CONVERTERS.put(Boolean.TYPE, ARRAY_BOOLEAN_CONVERTER);
