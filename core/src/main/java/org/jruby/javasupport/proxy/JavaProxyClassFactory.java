@@ -167,8 +167,8 @@ public class JavaProxyClassFactory {
         GeneratorAdapter clazzInit = createClassInitializer(selfType, cw);
 
         generateConstructors(superClass, selfType, cw);
-        generateGetProxyClass(selfType, cw);
-        generateGetInvocationHandler(selfType, cw);
+        generate___getProxyClass(selfType, cw);
+        generate___getInvocationHandler(selfType, cw);
         generateProxyMethods(superClass, methods, selfType, cw, clazzInit);
 
         // finish class initializer
@@ -183,7 +183,7 @@ public class JavaProxyClassFactory {
         // trigger class initialization for the class
         try {
             Field proxy_class = clazz.getDeclaredField(PROXY_CLASS_FIELD_NAME);
-            proxy_class.setAccessible(true);
+            // proxy_class.setAccessible(true); // field is public
             return (JavaProxyClass) proxy_class.get(clazz);
         }
         catch (Exception ex) {
@@ -258,8 +258,8 @@ public class JavaProxyClassFactory {
                 INVOCATION_HANDLER_TYPE.getDescriptor(), null, null
         ).visitEnd();
 
-        // private static final JavaProxyClass __proxy_class;
-        cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+        // /* public */ static final JavaProxyClass __proxy_class;
+        cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
                 PROXY_CLASS_FIELD_NAME,
                 PROXY_CLASS_TYPE.getDescriptor(), null, null
         ).visitEnd();
@@ -291,7 +291,7 @@ public class JavaProxyClassFactory {
     /**
      * @see InternalJavaProxy
      */
-    private static void generateGetInvocationHandler(Type selfType, ClassVisitor cw) {
+    private static void generate___getInvocationHandler(Type selfType, ClassVisitor cw) {
         // public JavaProxyInvocationHandler ___getInvocationHandler() { return this.__handler; }
 
         // make getter for handler (due implements InternalJavaProxy)
@@ -309,8 +309,8 @@ public class JavaProxyClassFactory {
     /**
      * @see InternalJavaProxy
      */
-    private static void generateGetProxyClass(Type selfType, ClassVisitor cw) {
-        // public static JavaProxyClass __getProxyClass() { return __proxy_class; }
+    private static void generate___getProxyClass(Type selfType, ClassVisitor cw) {
+        // public JavaProxyClass __getProxyClass() { return /* static */ __proxy_class; }
 
         // make getter for proxy class (due implements InternalJavaProxy)
         GeneratorAdapter gpc = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
@@ -358,15 +358,17 @@ public class JavaProxyClassFactory {
 
         String field_name = "__mth$" + md.getName() + md.scrambledSignature();
 
-        // create static private method field
+        // private static JavaProxyMethod __mth$sort$java_util_Comparator;
         FieldVisitor fv = cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
                 field_name, PROXY_METHOD_TYPE.getDescriptor(), null, null);
         fv.visitEnd();
 
+        // static { ... } initializer block
         clazzInit.dup();
         clazzInit.push(m.getName());
         clazzInit.push(m.getDescriptor());
         clazzInit.push(md.isImplemented());
+        // JavaProxyMethod initProxyMethod(JavaProxyClass proxyClass, String name, String desc, boolean hasSuper)
         clazzInit.invokeStatic(INTERNAL_PROXY_HELPER_TYPE, initProxyMethod);
         clazzInit.putStatic(selfType, field_name, PROXY_METHOD_TYPE);
 
@@ -377,14 +379,12 @@ public class JavaProxyClassFactory {
         //
         // construct the proxy method
         //
-        GeneratorAdapter ga = new GeneratorAdapter(Opcodes.ACC_PUBLIC, m, null,
-                ex, cw);
+        GeneratorAdapter ga = new GeneratorAdapter(Opcodes.ACC_PUBLIC, m, null, ex, cw);
 
         ga.loadThis();
         ga.getField(selfType, INVOCATION_HANDLER_FIELD_NAME, INVOCATION_HANDLER_TYPE);
 
-        // if the method is extending something, then we have
-        // to test if the handler is initialized...
+        // if the method is extending something, then we have to test if the handler is initialized...
 
         if (md.isImplemented()) {
             ga.dup();
@@ -479,7 +479,7 @@ public class JavaProxyClassFactory {
 
         String[] exceptionNames = toInternalNames( superConstructorExceptions );
         MethodVisitor mv = cw.visitMethod(access, m.getName(), m.getDescriptor(), signature, exceptionNames);
-        // marking with @SafeVarargs so that we can correctly detect proxied var-arg consturctors :
+        // marking with @SafeVarargs so that we can correctly detect proxied var-arg constructors :
         if ( superConstructorVarArgs ) mv.visitAnnotation(Type.getDescriptor(VarArgs.class), true);
         GeneratorAdapter ga = new GeneratorAdapter(access, m, mv);
 
@@ -546,7 +546,7 @@ public class JavaProxyClassFactory {
         HashSet<Class> allClasses = new HashSet<>();
         addClass(allClasses, methods, superClass, names);
         addInterfaces(allClasses, methods, interfaces, names);
-        
+
         return methods;
     }
 
@@ -588,7 +588,7 @@ public class JavaProxyClassFactory {
                     .getType(getReturnType()), getType(getParameterTypes()));
         }
 
-        private Type[] getType(Class[] parameterTypes) {
+        private static Type[] getType(Class[] parameterTypes) {
             Type[] result = new Type[parameterTypes.length];
             for (int i = 0; i < parameterTypes.length; i++) {
                 result[i] = Type.getType(parameterTypes[i]);
