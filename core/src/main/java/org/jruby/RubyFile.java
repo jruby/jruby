@@ -723,7 +723,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (lastSlash == 0) return path.substring(0, 1); // '/' or '\'
         if (lastSlash == 2 && hasDriveLetter) return path.substring(0, 3); // 'C:[/\\]file'
 
-        if (normalizedPath.startsWith("//")) { // UNC path
+        if (Platform.IS_WINDOWS && normalizedPath.startsWith("//")) { // UNC path
             if (lastSlash == 1) return path.substring(0, normalizedPath.length());  // '//foo'
 
             if (!normalizedPath.substring(2, lastSlash - 2).contains("/")) { // '//foo/bar'
