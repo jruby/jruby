@@ -1627,18 +1627,26 @@ public class ShellLauncher {
         return RbConfigLibrary.jrubyShell();
     }
 
+    // This is more of a hack than not.  If we can detect any ENV logic at front of the
+    // command we will defer to invoking via shell.  We probably should be prarsing off the env
+    // and invoking this another way but I am leery to change this infrastructure on our
+    // maintenance branch (jruby-1_7) at this point.
+    private static boolean firstWordIsENV(String command) {
+        int space = command.indexOf(' ');
+
+        return space != -1 && command.substring(0, space).contains("=");
+    }
+
     public static boolean shouldUseShell(String command) {
         boolean useShell = false;
         for (char c : command.toCharArray()) {
             if (c != ' ' && !Character.isLetter(c) && "*?{}[]<>()~&|\\$;'`\"\n".indexOf(c) != -1) {
-                useShell = true;
+                return true;
             }
         }
-        if (Platform.IS_WINDOWS && command.length() >= 1 && command.charAt(0) == '@') {
-            // JRUBY-5522
-            useShell = true;
-        }
-        return useShell;
+        if (Platform.IS_WINDOWS && command.length() >= 1 && command.charAt(0) == '@') return true; // JRUBY-5522
+
+        return firstWordIsENV(command);
     }
 
     static void log(Ruby runtime, String msg) {
