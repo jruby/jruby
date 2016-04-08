@@ -282,11 +282,14 @@ public class CFG {
             } else if (iop.endsBasicBlock()) {
                 bbEnded = true;
                 currBB.addInstr(i);
-                Label tgt;
+                Label tgt = null;
                 nextBBIsFallThrough = false;
                 if (i instanceof BranchInstr) {
                     tgt = ((BranchInstr) i).getJumpTarget();
                     nextBBIsFallThrough = true;
+                } else if (i instanceof MultiBranchInstr) {
+                    Label[] tgts = ((MultiBranchInstr) i).getJumpTargets();
+                    for (Label l : tgts) addEdge(currBB, l, forwardRefs);
                 } else if (i instanceof JumpInstr) {
                     tgt = ((JumpInstr) i).getJumpTarget();
                 } else if (iop.isReturn()) { // BREAK, RETURN, CLOSURE_RETURN
