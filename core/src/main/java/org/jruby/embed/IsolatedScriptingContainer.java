@@ -10,16 +10,20 @@ import org.jruby.util.ClassesLoader;
 import org.jruby.util.UriLikePathHelper;
 
 /**
- * the IsolatedScriptingContainer does set GEM_HOME and GEM_PATH and JARS_HOME
+ * The IsolatedScriptingContainer does set GEM_HOME and GEM_PATH and JARS_HOME
  * in such a way that it uses only resources which can be reached with classloader.
  *
  * GEM_HOME is uri:classloader://META-INF/jruby.home/lib/ruby/gems/shared
  * GEM_PATH is uri:classloader://
  * JARS_HOME is uri:classloader://jars
  *
- * but whenever you want to set them via {@link #setEnvironment(Map)} this will be honored.
+ * But whenever you want to set them via {@link #setEnvironment(Map)} this will be honored.
  *
- * it also comes with OSGi support which allows to add a bundle to LOAD_PATH or GEM_PATH.
+ * It also allows to add a classloaders to LOAD_PATH or GEM_PATH.
+ *
+ * This container also sets option classloader.delegate to false, i.e. the JRubyClassloader 
+ * for each runtime will lookup classes first on itself before looking into the parent 
+ * classloader.
  */
 public class IsolatedScriptingContainer extends ScriptingContainer {
 
@@ -65,6 +69,9 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
 
         // setup the isolated GEM_PATH, i.e. without $HOME/.gem/**
         setEnvironment(null);
+
+	// give preference to jrubyClassloader over parent-classloader
+	getProvider().getRubyInstanceConfig().setClassloaderDelegate(false);
     }
 
     @Override
