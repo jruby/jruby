@@ -687,12 +687,12 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "offset < 0")
-        public Object stringFindCharacterNegativeOffset(DynamicObject string, int offset) {
+        public Object stringFindCharacterNegativeOffset(DynamicObject string, long offset) {
             return nil();
         }
 
         @Specialization(guards = { "offset >= 0", "isSingleByte(string)" })
-        public Object stringFindCharacterSingleByte(DynamicObject string, int offset,
+        public Object stringFindCharacterSingleByte(DynamicObject string, long offset,
                                                     @Cached("createBinaryProfile()") ConditionProfile offsetTooLargeProfile) {
             // Taken from Rubinius's String::find_character.
 
@@ -707,7 +707,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = { "offset >= 0", "!isSingleByte(string)" })
-        public Object stringFindCharacter(DynamicObject string, int offset,
+        public Object stringFindCharacter(DynamicObject string, long offset,
                                           @Cached("createBinaryProfile()") ConditionProfile offsetTooLargeProfile) {
             // Taken from Rubinius's String::find_character.
 

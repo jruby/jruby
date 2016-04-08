@@ -551,12 +551,17 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public DynamicObject sysread(VirtualFrame frame, DynamicObject file, int length) {
+        public DynamicObject sysread(VirtualFrame frame, DynamicObject file, long length) {
+            if (!CoreLibrary.fitsIntoInteger(length)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RopeTooLongException("Can't work with lengths larger than int range");
+            }
+
             final int fd = Layouts.IO.getDescriptor(file);
 
-            final ByteBuffer buffer = ByteBuffer.allocate(length);
+            final ByteBuffer buffer = ByteBuffer.allocate((int) length);
 
-            int toRead = length;
+            int toRead = (int) length;
 
             while (toRead > 0) {
                 getContext().getSafepointManager().poll(this);
