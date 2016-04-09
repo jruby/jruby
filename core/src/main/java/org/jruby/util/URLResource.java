@@ -162,39 +162,38 @@ public class URLResource extends AbstractFileResource {
           pathname = pathname.replaceAll("^[.]?/*", "");
       }
       final URL url = cl.getResource(pathname);
+
       String[] files = null;
       if (!asFile) {
           files = listClassLoaderFiles(cl, pathname);
-          if (files == null) {
-              // no .jrubydir found
-              boolean isDirectory = false;
-              // we do not want double entries
-              Set<String> list = new LinkedHashSet<String>();
-              list.add(".");
-              list.add("..");
-              try {
-                  // first look at the enum from the classloader
-                  // may or may not contain directory entries
-                  Enumeration<URL> urls = cl.getResources(pathname);
-                  while(urls.hasMoreElements()){
-                      isDirectory = addDirectoryEntries(list, urls.nextElement(), isDirectory);
-                  }
-                  if (runtime != null) {
-                      // we have a runtime, so look at the JRubyClassLoader
-                      // and its parent classloader
-                      isDirectory = addDirectoriesFromClassloader(cl, list, pathname, isDirectory);
-                      isDirectory = addDirectoriesFromClassloader(cl.getParent(), list, pathname, isDirectory);
-                  }
-                  else {
-                      // just look at what we have
-                      isDirectory = addDirectoriesFromClassloader(cl, list, pathname, isDirectory);
-                  }
-                  if (isDirectory) files = list.toArray(new String[list.size()]);
+	  // look for classloader resource which do not have .jrubydir
+	  boolean isDirectory = files != null;
+	  // we do not want double entries
+	  Set<String> list = files == null ? new LinkedHashSet<String>(): new LinkedHashSet<String>(Arrays.asList(files));
+	  list.add(".");
+	  list.add("..");
+	  try {
+	      // first look at the enum from the classloader
+	      // may or may not contain directory entries
+	      Enumeration<URL> urls = cl.getResources(pathname);
+	      while(urls.hasMoreElements()){
+		  isDirectory = addDirectoryEntries(list, urls.nextElement(), isDirectory);
+	      }
+	      if (runtime != null) {
+		  // we have a runtime, so look at the JRubyClassLoader
+		  // and its parent classloader
+		  isDirectory = addDirectoriesFromClassloader(cl, list, pathname, isDirectory);
+		  isDirectory = addDirectoriesFromClassloader(cl.getParent(), list, pathname, isDirectory);
+	      }
+	      else {
+		  // just look at what we have
+		  isDirectory = addDirectoriesFromClassloader(cl, list, pathname, isDirectory);
+	      }
+	      if (isDirectory) files = list.toArray(new String[list.size()]);
 
-              } catch (IOException e) {
-                  // we tried
-              }
-          }
+	  } catch (IOException e) {
+	      // we tried
+	  }
       }
       return new URLResource(URI_CLASSLOADER + '/' + pathname,
                              cl,
@@ -216,6 +215,7 @@ public class URLResource extends AbstractFileResource {
 
     private static boolean addDirectoryEntries(Set<String> entries, URL url,
             boolean isDirectory) {
+	if (url.getPath().endsWith(".jrubydir")) return isDirectory;
         switch (url.getProtocol()) {
         case "jar":
             // maybe the jar itself contains directory entries (which are actually optional)
@@ -223,6 +223,7 @@ public class URLResource extends AbstractFileResource {
             if (jar != null && jar.isDirectory()) {
                 if (!isDirectory) isDirectory = true;
                 entries.addAll(Arrays.asList(jar.list()));
+		entries.remove(".jrubydir");
             }
             break;
         case "file":
@@ -231,6 +232,7 @@ public class URLResource extends AbstractFileResource {
             if (file.isDirectory()) {
                 if (!isDirectory) isDirectory = true;
                 entries.addAll(Arrays.asList(file.list()));
+		entries.remove(".jrubydir");
             }
             break;
         default:
