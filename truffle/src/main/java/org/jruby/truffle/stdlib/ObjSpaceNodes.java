@@ -65,7 +65,7 @@ public abstract class ObjSpaceNodes {
             return 1 + object.getShape().getPropertyListInternal(false).size();
         }
 
-        @Fallback
+        @Specialization(guards = "!isDynamicObject(object)")
         public int memsize(Object object) {
             return 0;
         }
