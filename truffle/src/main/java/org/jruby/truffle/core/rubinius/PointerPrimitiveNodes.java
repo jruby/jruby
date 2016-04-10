@@ -20,7 +20,6 @@ import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.ffi.PointerGuards;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.string.StringOperations;
@@ -350,7 +349,6 @@ public abstract class PointerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "pointer_read_string_to_null", unsafe = UnsafeGroup.MEMORY)
-    @ImportStatic(PointerGuards.class)
     public static abstract class PointerReadStringToNullPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public PointerReadStringToNullPrimitiveNode(RubyContext context, SourceSection sourceSection) {
