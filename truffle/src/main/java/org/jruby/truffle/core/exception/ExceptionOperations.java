@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.core.exception;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
@@ -23,16 +23,20 @@ import java.util.List;
 
 public abstract class ExceptionOperations {
 
-    @CompilerDirectives.TruffleBoundary
+    private static final EnumSet<BacktraceFormatter.FormattingFlags> FORMAT_FLAGS = EnumSet.of(
+            BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX,
+            BacktraceFormatter.FormattingFlags.OMIT_EXCEPTION);
+
+    @TruffleBoundary
     public static DynamicObject backtraceAsRubyStringArray(RubyContext context, DynamicObject exception, Backtrace backtrace) {
-        final List<String> lines = new BacktraceFormatter(context,
-                EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX,
-                        BacktraceFormatter.FormattingFlags.OMIT_EXCEPTION)).formatBacktrace(context, exception, backtrace);
+        final BacktraceFormatter formatter = new BacktraceFormatter(context, FORMAT_FLAGS);
+        final List<String> lines = formatter.formatBacktrace(context, exception, backtrace);
 
         final Object[] array = new Object[lines.size()];
 
         for (int n = 0; n < lines.size(); n++) {
-            array[n] = StringOperations.createString(context, StringOperations.encodeRope(lines.get(n), UTF8Encoding.INSTANCE));
+            array[n] = StringOperations.createString(context,
+                    StringOperations.encodeRope(lines.get(n), UTF8Encoding.INSTANCE));
         }
 
         return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), array, array.length);
