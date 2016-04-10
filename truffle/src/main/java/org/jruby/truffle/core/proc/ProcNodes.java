@@ -26,6 +26,7 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
@@ -186,23 +187,20 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = {"call", "[]", "yield"}, rest = true, needsBlock = true)
-    public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private YieldNode yieldNode;
+    public abstract static class CallNode extends YieldingCoreMethodNode {
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yieldNode = new YieldNode(context);
         }
 
         @Specialization
         public Object call(VirtualFrame frame, DynamicObject proc, Object[] args, NotProvided block) {
-            return yieldNode.dispatch(frame, proc, args);
+            return yield(frame, proc, args);
         }
 
         @Specialization
         public Object call(VirtualFrame frame, DynamicObject proc, Object[] args, DynamicObject block) {
-            return yieldNode.dispatchWithModifiedBlock(frame, proc, block, args);
+            return yieldWithModifiedBlock(frame, proc, block, args);
         }
 
     }
