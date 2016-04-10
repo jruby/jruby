@@ -60,7 +60,6 @@ public abstract class ThreadNodes {
                 Status.RUN,
                 new ArrayList<Lock>(),
                 null,
-                null,
                 new CountDownLatch(1),
                 getGlobalAbortOnException(context),
                 null,
@@ -113,7 +112,6 @@ public abstract class ThreadNodes {
         assert RubyGuards.isRubyThread(thread);
 
         final String name = "Ruby Thread@" + info;
-        Layouts.THREAD.setNameUnsafe(thread, name);
         Thread.currentThread().setName(name);
         DynamicObject fiber = Layouts.THREAD.getFiberManager(thread).getRootFiber();
 

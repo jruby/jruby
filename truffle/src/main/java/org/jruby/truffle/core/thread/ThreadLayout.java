@@ -39,7 +39,6 @@ public interface ThreadLayout extends BasicObjectLayout {
             @Volatile RubyThread.Status status,
             List<Lock> ownedLocks,
             @Nullable FiberManager fiberManager,
-            @Nullable String name,
             CountDownLatch finishedLatch,
             boolean abortOnException,
             @Nullable @Volatile Thread thread,
@@ -53,9 +52,6 @@ public interface ThreadLayout extends BasicObjectLayout {
 
     FiberManager getFiberManager(DynamicObject object);
     void setFiberManagerUnsafe(DynamicObject object, FiberManager value);
-
-    String getName(DynamicObject object);
-    void setNameUnsafe(DynamicObject object, String value);
 
     CountDownLatch getFinishedLatch(DynamicObject object);
 

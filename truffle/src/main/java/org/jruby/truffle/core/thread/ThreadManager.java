@@ -28,22 +28,19 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Manages Ruby {@code Thread} objects.
- */
 public class ThreadManager {
 
     private final RubyContext context;
 
     private final DynamicObject rootThread;
-    private final ThreadLocal<DynamicObject> currentThread = new ThreadLocal<DynamicObject>();
+    private final ThreadLocal<DynamicObject> currentThread = new ThreadLocal<>();
 
-    private final Set<DynamicObject> runningRubyThreads = Collections.newSetFromMap(new ConcurrentHashMap<DynamicObject, Boolean>());
+    private final Set<DynamicObject> runningRubyThreads
+            = Collections.newSetFromMap(new ConcurrentHashMap<DynamicObject, Boolean>());
 
     public ThreadManager(RubyContext context) {
         this.context = context;
         this.rootThread = ThreadNodes.createRubyThread(context, context.getCoreLibrary().getThreadClass());
-        Layouts.THREAD.setNameUnsafe(rootThread, "main");
     }
 
     public void initialize() {
