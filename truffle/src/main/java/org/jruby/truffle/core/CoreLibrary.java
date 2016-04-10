@@ -949,7 +949,6 @@ public class CoreLibrary {
         return runtimeError(String.format("can't modify frozen %s", className), currentNode);
     }
 
-    @TruffleBoundary
     public DynamicObject argumentErrorOneHashRequired(Node currentNode) {
         return argumentError("one hash required", currentNode, null);
     }
@@ -974,7 +973,6 @@ public class CoreLibrary {
         return argumentError("can't compress negative numbers", currentNode, null);
     }
 
-    @TruffleBoundary
     public DynamicObject argumentErrorUnknownKeyword(Object name, Node currentNode) {
         return argumentError("unknown keyword: " + name, currentNode, null);
     }
@@ -985,12 +983,11 @@ public class CoreLibrary {
     }
 
     public DynamicObject argumentErrorOutOfRange(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return argumentError("out of range", currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject argumentErrorInvalidRadix(int radix, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return argumentError(String.format("invalid radix %d", radix), currentNode);
     }
 
@@ -1004,25 +1001,23 @@ public class CoreLibrary {
         return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject argumentError(int passed, int required, int optional, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return argumentError(String.format("wrong number of arguments (%d for %d..%d)", passed, required, required + optional), currentNode);
     }
 
     public DynamicObject argumentErrorEmptyVarargs(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return argumentError("wrong number of arguments (0 for 1+)", currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject argumentErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         String badClassName = Layouts.MODULE.getFields(getLogicalClass(object)).getName();
         return argumentError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject errnoError(int errno, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-
         Errno errnoObj = Errno.valueOf(errno);
         if (errnoObj == null) {
             return systemCallError(String.format("Unknown Error (%s)", errno), currentNode);
@@ -1031,9 +1026,8 @@ public class CoreLibrary {
         return ExceptionOperations.createRubyException(getErrnoClass(errnoObj), StringOperations.createString(context, StringOperations.encodeRope(errnoObj.description(), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject errnoError(int errno, String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-
         Errno errnoObj = Errno.valueOf(errno);
         if (errnoObj == null) {
             return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), currentNode);
@@ -1043,18 +1037,18 @@ public class CoreLibrary {
         return ExceptionOperations.createRubyException(getErrnoClass(errnoObj), errorMessage, context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject indexError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(indexErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject indexTooSmallError(String type, int index, int length, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return indexError(String.format("index %d too small for %s; minimum: -%d", index, type, length), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject localJumpError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(localJumpErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
@@ -1064,47 +1058,40 @@ public class CoreLibrary {
     }
 
     public DynamicObject breakFromProcClosure(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return localJumpError("break from proc-closure", currentNode);
     }
 
-    @TruffleBoundary
     public DynamicObject unexpectedReturn(Node currentNode) {
         return localJumpError("unexpected return", currentNode);
     }
 
     public DynamicObject noBlockToYieldTo(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return localJumpError("no block given (yield)", currentNode);
     }
 
-    @TruffleBoundary
     public DynamicObject typeErrorCantCreateInstanceOfSingletonClass(Node currentNode) {
         return typeError("can't create instance of singleton class", currentNode, null);
     }
 
-    @TruffleBoundary
     public DynamicObject superclassMismatch(String name, Node currentNode) {
         return typeError("superclass mismatch for class " + name, currentNode);
     }
 
-    @TruffleBoundary
     public DynamicObject typeError(String message, Node currentNode) {
         return typeError(message, currentNode, null);
     }
 
+    @TruffleBoundary
     public DynamicObject typeError(String message, Node currentNode, Throwable javaThrowable) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(typeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
+    @TruffleBoundary
     public DynamicObject typeErrorAllocatorUndefinedFor(DynamicObject rubyClass, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         String className = Layouts.MODULE.getFields(rubyClass).getName();
         return typeError(String.format("allocator undefined for %s", className), currentNode);
     }
 
-    @TruffleBoundary
     public DynamicObject typeErrorCantDefineSingleton(Node currentNode) {
         return typeError("can't define singleton", currentNode);
     }
@@ -1119,15 +1106,15 @@ public class CoreLibrary {
         return typeError(String.format("$stdout must have write method, %s given", Layouts.MODULE.getFields(getLogicalClass(object)).getName()), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject typeErrorCantConvertTo(Object from, String toClass, String methodUsed, Object result, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         String fromClass = Layouts.MODULE.getFields(getLogicalClass(from)).getName();
         return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
                 fromClass, toClass, fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject typeErrorCantConvertInto(Object from, String toClass, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("can't convert %s into %s", Layouts.MODULE.getFields(getLogicalClass(from)).getName(), toClass), currentNode);
     }
 
@@ -1151,8 +1138,8 @@ public class CoreLibrary {
         return typeError(String.format("value of %s must be %s", variable, type), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject typeErrorBadCoercion(Object from, String to, String coercionMethod, Object coercedTo, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         String badClassName = Layouts.MODULE.getFields(getLogicalClass(from)).getName();
         return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
                 badClassName,
@@ -1162,8 +1149,8 @@ public class CoreLibrary {
                 Layouts.MODULE.getFields(getLogicalClass(coercedTo)).getName()), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject typeErrorCantDump(Object object, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         String logicalClass = Layouts.MODULE.getFields(getLogicalClass(object)).getName();
         return typeError(String.format("can't dump %s", logicalClass), currentNode);
     }
@@ -1174,21 +1161,21 @@ public class CoreLibrary {
         return typeError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameError(String message, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         final DynamicObject nameString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
         DynamicObject nameError = ExceptionOperations.createRubyException(nameErrorClass, nameString, context.getCallStack().getBacktrace(currentNode));
         nameError.define("@name", context.getSymbolTable().getSymbol(name), 0);
         return nameError;
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorConstantNotDefined(DynamicObject module, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("constant %s::%s not defined", Layouts.MODULE.getFields(module).getName(), name), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorUninitializedConstant(DynamicObject module, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
         final String message;
         if (module == objectClass) {
@@ -1207,17 +1194,16 @@ public class CoreLibrary {
 
     @TruffleBoundary
     public DynamicObject nameErrorPrivateConstant(DynamicObject module, String name, Node currentNode) {
-        assert RubyGuards.isRubyModule(module);
         return nameError(String.format("private constant %s::%s referenced", Layouts.MODULE.getFields(module).getName(), name), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("`%s' is not allowable as an instance variable name", name), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorInstanceVariableNotDefined(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("instance variable %s not defined", name), name, currentNode);
     }
 
@@ -1226,63 +1212,63 @@ public class CoreLibrary {
         return nameError(String.format("%s is a read-only variable", name), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorUndefinedLocalVariableOrMethod(String name, Object receiver, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         // TODO: should not be just the class, but rather sth like name_err_mesg_to_str() in MRI error.c
         String className = Layouts.MODULE.getFields(getLogicalClass(receiver)).getName();
         return nameError(String.format("undefined local variable or method `%s' for %s", name, className), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorUndefinedMethod(String name, DynamicObject module, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
         return nameError(String.format("undefined method `%s' for %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorMethodNotDefinedIn(DynamicObject module, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("method `%s' not defined in %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorPrivateMethod(String name, DynamicObject module, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("method `%s' for %s is private", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorLocalVariableNotDefined(String name, DynamicObject binding, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyBinding(binding);
         return nameError(String.format("local variable `%s' not defined for %s", name, binding.toString()), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject nameErrorClassVariableNotDefined(String name, DynamicObject module, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
         return nameError(String.format("class variable `%s' not defined for %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject noMethodError(String message, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         final DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
         DynamicObject noMethodError = ExceptionOperations.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(), messageString, context.getCallStack().getBacktrace(currentNode));
         noMethodError.define("@name", context.getSymbolTable().getSymbol(name), 0);
         return noMethodError;
     }
 
+    @TruffleBoundary
     public DynamicObject noSuperMethodOutsideMethodError(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         DynamicObject noMethodError = noMethodError("super called outside of method", "<unknown>", currentNode);
         noMethodError.define("@name", nilObject, 0); // FIXME: the name of the method is not known in this case currently
         return noMethodError;
     }
 
+    @TruffleBoundary
     public DynamicObject noSuperMethodError(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return noMethodError(String.format("super: no superclass method `%s'", name), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         final DynamicObject logicalClass = getLogicalClass(receiver);
         final String moduleName = Layouts.MODULE.getFields(logicalClass).getName();
 
@@ -1293,22 +1279,22 @@ public class CoreLibrary {
         return noMethodError(String.format("undefined method `%s' for %s:%s", name, stringRepresentation, moduleName), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject privateMethodError(String name, Object self, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         String className = Layouts.MODULE.getFields(getLogicalClass(self)).getName();
         return noMethodError(String.format("private method `%s' called for %s", name, className), name, currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject loadError(String message, String path, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
         DynamicObject loadError = ExceptionOperations.createRubyException(context.getCoreLibrary().getLoadErrorClass(), messageString, context.getCallStack().getBacktrace(currentNode));
         loadError.define("@path", StringOperations.createString(context, StringOperations.encodeRope(path, UTF8Encoding.INSTANCE)), 0);
         return loadError;
     }
 
+    @TruffleBoundary
     public DynamicObject loadErrorCannotLoad(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return loadError(String.format("cannot load such file -- %s", name), name, currentNode);
     }
 
@@ -1316,13 +1302,13 @@ public class CoreLibrary {
         return zeroDivisionError(currentNode, null);
     }
 
+    @TruffleBoundary
     public DynamicObject zeroDivisionError(Node currentNode, ArithmeticException exception) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("divided by 0", UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, exception));
     }
 
+    @TruffleBoundary
     public DynamicObject notImplementedError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(notImplementedErrorClass, StringOperations.createString(context, StringOperations.encodeRope(String.format("Method %s not implemented", message), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
@@ -1336,34 +1322,34 @@ public class CoreLibrary {
         return ExceptionOperations.createRubyException(syntaxErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject floatDomainError(String value, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(floatDomainErrorClass, StringOperations.createString(context, StringOperations.encodeRope(value, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject mathDomainError(String method, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(getErrnoClass(Errno.EDOM), StringOperations.createString(context, StringOperations.encodeRope(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject ioError(String fileName, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(ioErrorClass, StringOperations.createString(context, StringOperations.encodeRope(String.format("Error reading file -  %s", fileName), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject rangeError(int code, DynamicObject encoding, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyEncoding(encoding);
         return rangeError(String.format("invalid codepoint %x in %s", code, EncodingOperations.getEncoding(encoding)), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject rangeError(String type, String value, String range, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return rangeError(String.format("%s %s out of range of %s", type, value, range), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject rangeError(DynamicObject range, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isIntegerFixnumRange(range);
         return rangeError(String.format("%d..%s%d out of range",
                 Layouts.INTEGER_FIXNUM_RANGE.getBegin(range),
@@ -1371,8 +1357,8 @@ public class CoreLibrary {
                 Layouts.INTEGER_FIXNUM_RANGE.getEnd(range)), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject rangeError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(rangeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
@@ -1392,43 +1378,41 @@ public class CoreLibrary {
         return internalError("Call to Truffle::Primitive.assert_not_compiled was compiled", currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject internalError(String message, Node currentNode, Throwable javaThrowable) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("internal implementation error - " + message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
+    @TruffleBoundary
     public DynamicObject regexpError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(regexpErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject encodingCompatibilityErrorIncompatible(String a, String b, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return encodingCompatibilityError(String.format("incompatible character encodings: %s and %s", a, b), currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject encodingCompatibilityError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(encodingCompatibilityErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject fiberError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(fiberErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
     public DynamicObject deadFiberCalledError(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return fiberError("dead fiber called", currentNode);
     }
 
     public DynamicObject yieldFromRootFiberError(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return fiberError("can't yield from root fiber", currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject threadError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(threadErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
@@ -1444,18 +1428,18 @@ public class CoreLibrary {
         return threadError("Attempt to unlock a mutex which is locked by another thread", currentNode);
     }
 
+    @TruffleBoundary
     public DynamicObject securityError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(securityErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject systemCallError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(systemCallErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @TruffleBoundary
     public DynamicObject systemExit(int exitStatus, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         final DynamicObject message = StringOperations.createString(context, StringOperations.encodeRope("exit", UTF8Encoding.INSTANCE));
         final DynamicObject systemExit = ExceptionOperations.createRubyException(systemExitClass, message, context.getCallStack().getBacktrace(currentNode));
         systemExit.define("@status", exitStatus, 0);
