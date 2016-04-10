@@ -15,6 +15,8 @@ import org.jruby.truffle.language.RubyGuards;
 
 public class ArrayGuards {
 
+    public static final int ARRAY_STRATEGIES = 4; // int[], long[], double[], Object[]
+
     // Storage strategies
 
     public static boolean isNullArray(DynamicObject array) {
