@@ -34,6 +34,7 @@ import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -233,7 +234,7 @@ public abstract class MethodNodes {
             final CallTarget callTarget = method2proc(methodObject);
             final InternalMethod method = Layouts.METHOD.getMethod(methodObject);
 
-            return ProcNodes.createRubyProc(
+            return ProcOperations.createRubyProc(
                     coreLibrary().getProcFactory(),
                     ProcNodes.Type.LAMBDA,
                     method.getSharedMethodInfo(),

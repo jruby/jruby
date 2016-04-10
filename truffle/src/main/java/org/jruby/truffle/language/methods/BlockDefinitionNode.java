@@ -14,8 +14,8 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.core.proc.ProcNodes.Type;
+import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.BreakID;
@@ -80,7 +80,7 @@ public class BlockDefinitionNode extends RubyNode {
             }
         }
 
-        return ProcNodes.createRubyProc(coreLibrary().getProcFactory(), type, sharedMethodInfo,
+        return ProcOperations.createRubyProc(coreLibrary().getProcFactory(), type, sharedMethodInfo,
                 callTargetForProcs, callTargetForLambdas, frame.materialize(),
                 RubyArguments.getMethod(frame),
                 RubyArguments.getSelf(frame),

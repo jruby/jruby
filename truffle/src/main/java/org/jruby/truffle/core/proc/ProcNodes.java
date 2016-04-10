@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.proc;
 
-import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -18,7 +17,6 @@ import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
@@ -32,50 +30,17 @@ import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.control.FrameOnStackMarker;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
-
-    public static Object[] packArguments(DynamicObject proc, Object... args) {
-        return RubyArguments.pack(
-                Layouts.PROC.getDeclarationFrame(proc), null, Layouts.PROC.getMethod(proc),
-                DeclarationContext.BLOCK, Layouts.PROC.getFrameOnStackMarker(proc), Layouts.PROC.getSelf(proc),
-                Layouts.PROC.getBlock(proc),
-                args);
-    }
-
-    public static Object rootCall(DynamicObject proc, Object... args) {
-        assert RubyGuards.isRubyProc(proc);
-
-        return Layouts.PROC.getCallTargetForType(proc).call(packArguments(proc, args));
-    }
-
-    public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
-                                               CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
-                                               Object self, DynamicObject block) {
-        return createRubyProc(instanceFactory, type, sharedMethodInfo, callTargetForProcs, callTargetForLambdas, declarationFrame, method, self, block, null);
-    }
-
-    public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
-                                          CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
-                                          Object self, DynamicObject block, FrameOnStackMarker frameOnStackMarker) {
-        assert block == null || RubyGuards.isRubyProc(block);
-        final CallTarget callTargetForType = (type == Type.PROC) ? callTargetForProcs : callTargetForLambdas;
-        return Layouts.PROC.createProc(instanceFactory, type, sharedMethodInfo, callTargetForType, callTargetForLambdas, declarationFrame, method, self, block, frameOnStackMarker);
-    }
 
     public enum Type {
         PROC, LAMBDA

@@ -74,6 +74,7 @@ import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.core.proc.ProcNodes.ProcNewNode;
 import org.jruby.truffle.core.proc.ProcNodesFactory.ProcNewNodeFactory;
+import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
@@ -1230,7 +1231,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public DynamicObject lambda(DynamicObject block) {
-            return ProcNodes.createRubyProc(
+            return ProcOperations.createRubyProc(
                     coreLibrary().getProcFactory(),
                     ProcNodes.Type.LAMBDA,
                     Layouts.PROC.getSharedMethodInfo(block),

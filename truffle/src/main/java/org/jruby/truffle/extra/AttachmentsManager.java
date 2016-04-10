@@ -32,11 +32,10 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.binding.BindingNodes;
-import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.language.RubyGuards;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class AttachmentsManager {
@@ -124,7 +123,7 @@ public class AttachmentsManager {
                 }
             }
 
-            callNode.call(frame, ProcNodes.packArguments(block, binding));
+            callNode.call(frame, ProcOperations.packArguments(block, binding));
 
             return null;
         }
