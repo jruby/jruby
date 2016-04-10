@@ -10,9 +10,15 @@
 
 package org.jruby.truffle.core.rope;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+
+import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RopeConstants {
 
@@ -46,6 +52,28 @@ public class RopeConstants {
             US_ASCII_SINGLE_BYTE_ROPES[i] = new InvalidLeafRope(bytes, USASCIIEncoding.INSTANCE);
             ASCII_8BIT_SINGLE_BYTE_ROPES[i] = new ValidLeafRope(bytes, ASCIIEncoding.INSTANCE, 1);
         }
+    }
+
+    private static final Map<Integer, WeakReference<LeafRope>> integerRopes = new ConcurrentHashMap<>();
+
+    @TruffleBoundary
+    public static LeafRope getIntegerRope(int value) {
+        WeakReference<LeafRope> ropeReference = integerRopes.get(value);
+
+        if (ropeReference != null && ropeReference.get() != null) {
+            return ropeReference.get();
+        }
+
+        // On misses we don't care too much about racing to populate the cache
+
+        final LeafRope rope = new AsciiOnlyLeafRope(
+                Integer.toString(value).getBytes(StandardCharsets.UTF_8), USASCIIEncoding.INSTANCE);
+
+        ropeReference = new WeakReference<>(rope);
+
+        integerRopes.put(value, ropeReference);
+
+        return rope;
     }
 
 }
