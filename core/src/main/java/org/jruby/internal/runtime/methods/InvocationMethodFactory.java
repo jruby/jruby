@@ -57,7 +57,6 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.List;
 
-import static java.lang.System.out;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.params;
@@ -201,13 +200,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         final JRubyMethod anno = desc1.anno;
         final String javaMethodName = desc1.name;
 
-        if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
+        if (DEBUG) LOG.debug("Binding multiple: " + desc1.declaringClassName + '.' + javaMethodName);
 
         try {
             Class c = getAnnotatedMethodClass(descs);
 
             DescriptorInfo info = new DescriptorInfo(descs);
-            if (DEBUG) out.println(" min: " + info.getMin() + ", max: " + info.getMax());
+            if (DEBUG) LOG.debug(" min: " + info.getMin() + ", max: " + info.getMax());
 
             JavaMethod ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility).newInstance(implementationClass, anno.visibility());
 
@@ -223,7 +222,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     desc1.getParameterClasses());
             return ic;
         } catch(Exception e) {
-            e.printStackTrace();
+            LOG.error(e);
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
@@ -238,16 +237,16 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         JavaMethodDescriptor desc1 = descs.get(0);
 
         if (!Modifier.isPublic(desc1.getDeclaringClass().getModifiers())) {
-            LOG.warn("warning: binding non-public class {}; reflected handles won't work", desc1.declaringClassName);
+            LOG.warn("binding non-public class {} reflected handles won't work", desc1.declaringClassName);
         }
 
         String javaMethodName = desc1.name;
 
         if (DEBUG) {
             if (descs.size() > 1) {
-                out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
+                LOG.debug("Binding multiple: " + desc1.declaringClassName + '.' + javaMethodName);
             } else {
-                out.println("Binding single: " + desc1.declaringClassName + "." + javaMethodName);
+                LOG.debug("Binding single: " + desc1.declaringClassName + '.' + javaMethodName);
             }
         }
 
@@ -268,7 +267,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 // try again
                 c = tryClass(generatedClassName, desc1.getDeclaringClass(), superclass);
                 if (c == null) {
-                    if (DEBUG) out.println("Generating " + generatedClassName + ", min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
+                    if (DEBUG) LOG.debug("Generating " + generatedClassName + ", min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
 
                     String superClassString = p(superclass);
 
@@ -339,7 +338,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     desc.getParameterClasses());
             return ic;
         } catch(Exception e) {
-            e.printStackTrace();
+            LOG.error(e);
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
@@ -601,14 +600,19 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     private Class tryClass(String name, Class targetClass, Class expectedSuperclass) {
-        Class c;
+        final Class c;
         try {
             if (classLoader == null) {
                 c = Class.forName(name, true, classLoader);
             } else {
                 c = classLoader.loadClass(name);
             }
-        } catch(Exception e) {
+        } catch (ClassNotFoundException e) {
+            if (DEBUG) LOG.debug(e);
+            seenUndefinedClasses = true;
+            return null;
+        } catch (Exception e) {
+            if (DEBUG) LOG.warn(e);
             seenUndefinedClasses = true;
             return null;
         }
@@ -630,9 +634,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     protected Class endClass(ClassWriter cw, String name) {
         cw.visitEnd();
-        byte[] code = cw.toByteArray();
-        if (DEBUG) CheckClassAdapter.verify(new ClassReader(code), false, new PrintWriter(System.err));
 
+        final byte[] code = cw.toByteArray();
+        if (DEBUG) CheckClassAdapter.verify(new ClassReader(code), classLoader, false, new PrintWriter(System.err));
         return classLoader.defineClass(name, code);
     }
 
