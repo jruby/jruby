@@ -84,7 +84,7 @@ public abstract class ProcNodes {
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
             if (parentBlock == null) {
-                throw new RaiseException(coreLibrary().argumentError("tried to create Proc object without a block", this));
+                throw new RaiseException(coreLibrary().argumentErrorProcWithoutBlock(this));
             }
 
             return executeProcNew(frame, procClass, args, parentBlock);

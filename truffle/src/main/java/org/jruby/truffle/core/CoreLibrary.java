@@ -957,6 +957,10 @@ public class CoreLibrary {
         return argumentError(message, currentNode, null);
     }
 
+    public DynamicObject argumentErrorProcWithoutBlock(Node currentNode) {
+        return argumentError("tried to create Proc object without a block", currentNode, null);
+    }
+
     public DynamicObject argumentErrorTooFewArguments(Node currentNode) {
         return argumentError("too few arguments", currentNode, null);
     }
