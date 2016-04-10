@@ -420,10 +420,9 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        // TODO (eregon, 13/10/2015): Thread is not allocatable in MRI
-        @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
+            // TODO (eregon, 13/10/2015): Thread is not allocatable in MRI but Rubinius's kernel uses it
             return ThreadManager.createRubyThread(getContext(), rubyClass);
         }
 
