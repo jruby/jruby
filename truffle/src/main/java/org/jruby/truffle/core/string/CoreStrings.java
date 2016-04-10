@@ -24,6 +24,7 @@ public class CoreStrings {
     public final CoreString LOCAL_VARIABLE;
     public final CoreString METHOD;
     public final CoreString NIL;
+    public final CoreString UNKNOWN;
     public final CoreString SELF;
     public final CoreString TRUE;
     public final CoreString YIELD;
@@ -40,6 +41,7 @@ public class CoreStrings {
         LOCAL_VARIABLE = new CoreString(context, "local-variable");
         METHOD = new CoreString(context, "method");
         NIL = new CoreString(context, "nil");
+        UNKNOWN = new CoreString(context, "(unknown)");
         SELF = new CoreString(context, "self");
         TRUE = new CoreString(context, "true");
         YIELD = new CoreString(context, "yield");
