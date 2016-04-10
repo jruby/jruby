@@ -27,7 +27,7 @@ import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RubiniusOnly;
 import org.jruby.truffle.core.YieldingCoreMethodNode;
-import org.jruby.truffle.core.exception.ExceptionNodes;
+import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.core.proc.ProcNodes;
@@ -207,7 +207,7 @@ public abstract class ThreadNodes {
                 @Override
                 public void run(DynamicObject thread, Node currentNode) {
                     final Backtrace backtrace = getContext().getCallStack().getBacktrace(currentNode);
-                    result[0] = ExceptionNodes.backtraceAsRubyStringArray(getContext(), null, backtrace);
+                    result[0] = ExceptionOperations.backtraceAsRubyStringArray(getContext(), null, backtrace);
                 }
             });
 

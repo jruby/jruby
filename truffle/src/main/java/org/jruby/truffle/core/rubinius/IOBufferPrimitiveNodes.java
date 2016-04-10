@@ -46,7 +46,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.exception.ExceptionNodes;
+import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
@@ -172,7 +172,7 @@ public abstract class IOBufferPrimitiveNodes {
                         continue;
                     } else {
                         CompilerDirectives.transferToInterpreter();
-                        throw new RaiseException(ExceptionNodes.createRubyException(coreLibrary().getErrnoClass(Errno.valueOf(errno))));
+                        throw new RaiseException(ExceptionOperations.createRubyException(coreLibrary().getErrnoClass(Errno.valueOf(errno))));
                     }
                 } else {
                     break;

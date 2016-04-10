@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIXHandler;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.exception.ExceptionNodes;
+import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.language.control.RaiseException;
 
 import java.io.File;
@@ -33,7 +33,7 @@ public class TrufflePosixHandler implements POSIXHandler {
     public void error(Errno errno, String methodName) {
         // TODO CS 17-Apr-15 - not specialised, no way to build a good stacktrace, missing content for error messages
 
-        throw new RaiseException(ExceptionNodes.createRubyException(context.getCoreLibrary().getErrnoClass(errno)));
+        throw new RaiseException(ExceptionOperations.createRubyException(context.getCoreLibrary().getErrnoClass(errno)));
     }
 
     @Override
