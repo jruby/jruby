@@ -931,12 +931,12 @@ public class RubyModule extends RubyObject {
         defineAnnotatedMethodsIndividually(clazz);
     }
 
-    public static class MethodClumper {
-        Map<String, List<JavaMethodDescriptor>> annotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
-        Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
-        Map<String, List<JavaMethodDescriptor>> allAnnotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
+    public static final class MethodClumper {
+        final HashMap<String, List<JavaMethodDescriptor>> annotatedMethods = new HashMap<>();
+        final HashMap<String, List<JavaMethodDescriptor>> staticAnnotatedMethods = new HashMap<>();
+        // final HashMap<String, List<JavaMethodDescriptor>> allAnnotatedMethods = new HashMap<>();
 
-        public void clump(Class cls) {
+        public void clump(final Class cls) {
             Method[] declaredMethods = Initializer.DECLARED_METHODS.get(cls);
             for (Method method: declaredMethods) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
@@ -961,7 +961,7 @@ public class RubyModule extends RubyObject {
                 // add to specific
                 methodDescs = methodsHash.get(name);
                 if (methodDescs == null) {
-                    methodDescs = new ArrayList<JavaMethodDescriptor>();
+                    methodDescs = new ArrayList<>();
                     methodsHash.put(name, methodDescs);
                 } else {
                     CompatVersion oldCompat = methodDescs.get(0).anno.compat();
@@ -970,7 +970,7 @@ public class RubyModule extends RubyObject {
                     int comparison = newCompat.compareTo(oldCompat);
                     if (comparison == 1) {
                         // new method's compat is higher than old method's, so we throw old one away
-                        methodDescs = new ArrayList<JavaMethodDescriptor>();
+                        methodDescs = new ArrayList<>();
                         methodsHash.put(name, methodDescs);
                     } else if (comparison == 0) {
                         // same compat version, proceed to adding additional method
@@ -979,22 +979,21 @@ public class RubyModule extends RubyObject {
                         continue;
                     }
                 }
-
                 methodDescs.add(desc);
 
                 // add to general
-                methodDescs = allAnnotatedMethods.get(name);
-                if (methodDescs == null) {
-                    methodDescs = new ArrayList<JavaMethodDescriptor>();
-                    allAnnotatedMethods.put(name, methodDescs);
-                }
-
-                methodDescs.add(desc);
+                //methodDescs = allAnnotatedMethods.get(name);
+                //if (methodDescs == null) {
+                //    methodDescs = new ArrayList<JavaMethodDescriptor>();
+                //    allAnnotatedMethods.put(name, methodDescs);
+                //}
+                //methodDescs.add(desc);
             }
         }
 
+        @Deprecated // no-longer used
         public Map<String, List<JavaMethodDescriptor>> getAllAnnotatedMethods() {
-            return allAnnotatedMethods;
+            return null; // return allAnnotatedMethods;
         }
 
         public Map<String, List<JavaMethodDescriptor>> getAnnotatedMethods() {
