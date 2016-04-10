@@ -1130,14 +1130,21 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(long n, NotProvided base) {
+            if (n >= Integer.MIN_VALUE && n <= Integer.MAX_VALUE) {
+                return toS((int) n, base);
+            }
+
             return create7BitString(Long.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(long n, int base) {
+            if (base == 10) {
+                return toS(n, NotProvided.INSTANCE);
+            }
+
             if (base < 2 || base > 36) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
