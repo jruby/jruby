@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.proc;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
@@ -49,7 +48,6 @@ public abstract class ProcNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
@@ -72,15 +70,20 @@ public abstract class ProcNodes {
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
-        public abstract DynamicObject executeProcNew(VirtualFrame frame, DynamicObject procClass, Object[] args, Object block);
+        public abstract DynamicObject executeProcNew(
+                VirtualFrame frame,
+                DynamicObject procClass,
+                Object[] args,
+                Object block);
 
         @Specialization
         public DynamicObject proc(VirtualFrame frame, DynamicObject procClass, Object[] args, NotProvided block) {
-            final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
+            final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend()
+                    .getFrame(FrameAccess.READ_ONLY, true);
+
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
             if (parentBlock == null) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentError("tried to create Proc object without a block", this));
             }
 
@@ -100,7 +103,8 @@ public abstract class ProcNodes {
         @Specialization(guards = "procClass != metaClass(block)")
         public DynamicObject procSpecial(VirtualFrame frame, DynamicObject procClass, Object[] args, DynamicObject block) {
             // Instantiate a new instance of procClass as classes do not correspond
-            DynamicObject proc = allocateObjectNode.allocate(
+
+            final DynamicObject proc = allocateObjectNode.allocate(
                     procClass,
                     Layouts.PROC.getType(block),
                     Layouts.PROC.getSharedMethodInfo(block),
@@ -111,7 +115,9 @@ public abstract class ProcNodes {
                     Layouts.PROC.getSelf(block),
                     Layouts.PROC.getBlock(block),
                     Layouts.PROC.getFrameOnStackMarker(block));
+
             initializeNode.call(frame, proc, "initialize", block, args);
+
             return proc;
         }
 
@@ -133,7 +139,7 @@ public abstract class ProcNodes {
 
         @Specialization
         public DynamicObject dup(DynamicObject proc) {
-            DynamicObject copy = allocateObjectNode.allocate(
+            final DynamicObject copy = allocateObjectNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(proc),
                     Layouts.PROC.getType(proc),
                     Layouts.PROC.getSharedMethodInfo(proc),
@@ -144,6 +150,7 @@ public abstract class ProcNodes {
                     Layouts.PROC.getSelf(proc),
                     Layouts.PROC.getBlock(proc),
                     Layouts.PROC.getFrameOnStackMarker(proc));
+
             return copy;
         }
 
@@ -225,8 +232,8 @@ public abstract class ProcNodes {
         @Specialization
         public DynamicObject parameters(DynamicObject proc) {
             final ArgumentDescriptor[] argsDesc = Layouts.PROC.getSharedMethodInfo(proc).getArgumentDescriptors();
-
-            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, Layouts.PROC.getType(proc) == ProcType.LAMBDA);
+            final boolean isLambda = Layouts.PROC.getType(proc) == ProcType.LAMBDA;
+            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, isLambda);
         }
 
     }
@@ -246,8 +253,10 @@ public abstract class ProcNodes {
             if (sourceSection.getSource() == null) {
                 return nil();
             } else {
-                DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
-                Object[] objects = new Object[]{file, sourceSection.getStartLine()};
+                final DynamicObject file = createString(StringOperations.encodeRope(
+                        sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
+
+                final Object[] objects = new Object[]{file, sourceSection.getStartLine()};
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
             }
         }
