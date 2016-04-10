@@ -39,7 +39,7 @@ public class ThreadBacktraceLocationNodes {
             final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
 
             if (activation.getCallNode() == null) {
-                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED_LIMIT, UTF8Encoding.INSTANCE));
+                return coreStrings().BACKTRACE_OMITTED_LIMIT.createInstance();
             }
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -90,10 +90,11 @@ public class ThreadBacktraceLocationNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject threadBacktraceLocation) {
-            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
+            final Activation activation= ThreadBacktraceLocationLayoutImpl.INSTANCE
+                    .getActivation(threadBacktraceLocation);
 
             if (activation.getCallNode() == null) {
-                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED_LIMIT, UTF8Encoding.INSTANCE));
+                return coreStrings().BACKTRACE_OMITTED_LIMIT.createInstance();
             }
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();

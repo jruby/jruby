@@ -14,6 +14,8 @@ import org.jruby.truffle.RubyContext;
 public class CoreStrings {
 
     public final CoreString ASSIGNMENT;
+    public final CoreString BACKTRACE_OMITTED_LIMIT;
+    public final CoreString BACKTRACE_OMITTED_UNUSED;
     public final CoreString CLASS_VARIABLE;
     public final CoreString EXPRESSION;
     public final CoreString FALSE;
@@ -28,6 +30,8 @@ public class CoreStrings {
 
     public CoreStrings(RubyContext context) {
         ASSIGNMENT = new CoreString(context, "assignment");
+        BACKTRACE_OMITTED_LIMIT = new CoreString(context, "(omitted due to -Xtruffle.backtraces.limit)");
+        BACKTRACE_OMITTED_UNUSED = new CoreString(context, "(omitted as the rescue expression was pure; use -Xtruffle.backtraces.omit_for_unused=false to disable)");
         CLASS_VARIABLE = new CoreString(context, "class variable");
         EXPRESSION = new CoreString(context, "expression");
         FALSE = new CoreString(context, "false");
