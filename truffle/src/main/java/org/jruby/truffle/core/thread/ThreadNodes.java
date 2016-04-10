@@ -33,6 +33,7 @@ import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.UnsafeGroup;
+import org.jruby.util.Memo;
 
 import java.util.concurrent.TimeUnit;
 
@@ -61,23 +62,27 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject backtrace(DynamicObject rubyThread) {
             final Thread thread = Layouts.FIBER.getThread(Layouts.THREAD.getFiberManager(rubyThread).getCurrentFiber());
 
-            final DynamicObject[] result = new DynamicObject[1];
+            final Memo<DynamicObject> result = new Memo<>(null);
 
             getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new SafepointAction() {
+
                 @Override
                 public void run(DynamicObject thread, Node currentNode) {
                     final Backtrace backtrace = getContext().getCallStack().getBacktrace(currentNode);
-                    result[0] = ExceptionOperations.backtraceAsRubyStringArray(getContext(), null, backtrace);
+                    result.set(ExceptionOperations.backtraceAsRubyStringArray(getContext(), null, backtrace));
                 }
+
             });
 
-            // if the thread id dead or aborting the SafepointAction will not run
-            if (result[0] != null) {
-                return result[0];
+            // If the thread id dead or aborting the SafepointAction will not run
+
+            if (result.get() != null) {
+                return result.get();
             } else {
                 return nil();
             }
@@ -110,16 +115,19 @@ public abstract class ThreadNodes {
         @Specialization
         public DynamicObject kill(final DynamicObject rubyThread) {
             final Thread toKill = Layouts.THREAD.getThread(rubyThread);
+
             if (toKill == null) {
                 // Already dead
                 return rubyThread;
             }
 
             getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
+
                 @Override
                 public void run(DynamicObject currentThread, Node currentNode) {
                     ThreadManager.shutdown(getContext(), currentThread, currentNode);
                 }
+
             });
 
             return rubyThread;
@@ -223,11 +231,13 @@ public abstract class ThreadNodes {
         @TruffleBoundary
         public static void doJoin(RubyNode currentNode, final DynamicObject thread) {
             currentNode.getContext().getThreadManager().runUntilResult(currentNode, new ThreadManager.BlockingAction<Boolean>() {
+
                 @Override
                 public Boolean block() throws InterruptedException {
                     Layouts.THREAD.getFinishedLatch(thread).await();
                     return SUCCESS;
                 }
+
             });
 
             if (Layouts.THREAD.getException(thread) != null) {
@@ -238,7 +248,9 @@ public abstract class ThreadNodes {
         @TruffleBoundary
         private boolean doJoinMillis(final DynamicObject thread, final int timeoutInMillis) {
             final long start = System.currentTimeMillis();
+
             final boolean joined = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Boolean>() {
+
                 @Override
                 public Boolean block() throws InterruptedException {
                     long now = System.currentTimeMillis();
@@ -249,6 +261,7 @@ public abstract class ThreadNodes {
                     }
                     return Layouts.THREAD.getFinishedLatch(thread).await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
                 }
+
             });
 
             if (joined && Layouts.THREAD.getException(thread) != null) {
@@ -282,7 +295,7 @@ public abstract class ThreadNodes {
         }
 
         @Specialization
-        public DynamicObject pass(VirtualFrame frame) {
+        public DynamicObject pass() {
             Thread.yield();
             return nil();
         }
@@ -354,15 +367,16 @@ public abstract class ThreadNodes {
         @Specialization
         public DynamicObject wakeup(final DynamicObject thread) {
             if (Layouts.THREAD.getStatus(thread) == Status.DEAD) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().threadError("killed thread", this));
+                throw new RaiseException(coreLibrary().threadErrorKilledThread(this));
             }
 
-            // TODO: should only interrupt sleep
             Layouts.THREAD.getWakeUp(thread).set(true);
-            Thread t = Layouts.THREAD.getThread(thread);
-            if (t != null) {
-                t.interrupt();
+
+            final Thread toInterrupt = Layouts.THREAD.getThread(thread);
+
+            if (toInterrupt != null) {
+                // TODO: should only interrupt sleep
+                toInterrupt.interrupt();
             }
 
             return thread;

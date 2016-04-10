@@ -1420,6 +1420,10 @@ public class CoreLibrary {
         return ExceptionOperations.createRubyException(threadErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    public DynamicObject threadErrorKilledThread(Node currentNode) {
+        return threadError("killed thread", currentNode);
+    }
+
     public DynamicObject threadErrorRecursiveLocking(Node currentNode) {
         return threadError("deadlock; recursive locking", currentNode);
     }
