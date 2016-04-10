@@ -42,7 +42,8 @@ public abstract class FalseClassNodes {
             super(context, sourceSection);
         }
 
-        @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
+        @CreateCast("operand")
+        public RubyNode createCast(RubyNode operand) {
             return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
         }
 
