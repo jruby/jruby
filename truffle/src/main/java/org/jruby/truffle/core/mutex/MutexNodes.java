@@ -62,31 +62,8 @@ public abstract class MutexNodes {
         public DynamicObject lock(DynamicObject mutex) {
             final ReentrantLock lock = Layouts.MUTEX.getLock(mutex);
             final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
-
-            lock(lock, thread, this);
-
+            MutexOperations.lock(lock, thread, this);
             return mutex;
-        }
-
-        @TruffleBoundary
-        protected static void lock(final ReentrantLock lock, final DynamicObject thread, RubyNode currentNode) {
-            assert RubyGuards.isRubyThread(thread);
-
-            final RubyContext context = currentNode.getContext();
-
-            if (lock.isHeldByCurrentThread()) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(context.getCoreLibrary().threadErrorRecursiveLocking(currentNode));
-            }
-
-            context.getThreadManager().runUntilResult(currentNode, new BlockingAction<Boolean>() {
-                @Override
-                public Boolean block() throws InterruptedException {
-                    lock.lockInterruptibly();
-                    Layouts.THREAD.getOwnedLocks(thread).add(lock);
-                    return SUCCESS;
-                }
-            });
         }
 
     }
@@ -161,29 +138,8 @@ public abstract class MutexNodes {
         public DynamicObject unlock(DynamicObject mutex) {
             final ReentrantLock lock = Layouts.MUTEX.getLock(mutex);
             final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
-
-            unlock(lock, thread, this);
-
+            MutexOperations.unlock(lock, thread, this);
             return mutex;
-        }
-
-        @TruffleBoundary
-        protected static void unlock(ReentrantLock lock, DynamicObject thread, RubyNode currentNode) {
-            assert RubyGuards.isRubyThread(thread);
-
-            final RubyContext context = currentNode.getContext();
-
-            try {
-                lock.unlock();
-            } catch (IllegalMonitorStateException e) {
-                if (!lock.isLocked()) {
-                    throw new RaiseException(context.getCoreLibrary().threadErrorUnlockNotLocked(currentNode));
-                } else {
-                    throw new RaiseException(context.getCoreLibrary().threadErrorAlreadyLocked(currentNode));
-                }
-            }
-
-            Layouts.THREAD.getOwnedLocks(thread).remove(lock);
         }
 
     }
@@ -230,11 +186,11 @@ public abstract class MutexNodes {
             // thread2: mutex.synchronize { <ensured that thread1 is sleeping and thread1.wakeup will wake it up> }
             Layouts.THREAD.getWakeUp(thread).set(false);
 
-            UnlockNode.unlock(lock, thread, this);
+            MutexOperations.unlock(lock, thread, this);
             try {
                 return KernelNodes.SleepNode.sleepFor(this, getContext(), durationInMillis);
             } finally {
-                LockNode.lock(lock, thread, this);
+                MutexOperations.lock(lock, thread, this);
             }
         }
 
