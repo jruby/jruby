@@ -14,7 +14,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.thread.ThreadManager;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -31,19 +30,19 @@ public abstract class MutexOperations {
         }
 
         context.getThreadManager().runUntilResult(currentNode, new ThreadManager.BlockingAction<Boolean>() {
+
             @Override
             public Boolean block() throws InterruptedException {
                 lock.lockInterruptibly();
                 Layouts.THREAD.getOwnedLocks(thread).add(lock);
                 return SUCCESS;
             }
+
         });
     }
 
     @TruffleBoundary
     protected static void unlock(ReentrantLock lock, DynamicObject thread, RubyNode currentNode) {
-        assert RubyGuards.isRubyThread(thread);
-
         final RubyContext context = currentNode.getContext();
 
         try {
