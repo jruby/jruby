@@ -53,7 +53,7 @@ import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
-import org.jruby.truffle.core.proc.ProcNodes.Type;
+import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.range.RangeNodesFactory;
 import org.jruby.truffle.core.regexp.InterpolatedRegexpNode;
 import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
@@ -112,14 +112,12 @@ import org.jruby.truffle.language.globals.CheckOutputSeparatorVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckProgramNameVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckRecordSeparatorVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckStdoutVariableTypeNode;
-import org.jruby.truffle.language.globals.ReadGlobalVariableNode;
 import org.jruby.truffle.language.globals.ReadGlobalVariableNodeGen;
 import org.jruby.truffle.language.globals.ReadLastBacktraceNode;
 import org.jruby.truffle.language.globals.ReadMatchReferenceNode;
 import org.jruby.truffle.language.globals.ReadThreadLocalGlobalVariableNode;
 import org.jruby.truffle.language.globals.UpdateLastBacktraceNode;
 import org.jruby.truffle.language.globals.UpdateVerbosityNode;
-import org.jruby.truffle.language.globals.WriteGlobalVariableNode;
 import org.jruby.truffle.language.globals.WriteGlobalVariableNodeGen;
 import org.jruby.truffle.language.globals.WriteProgramNameNodeGen;
 import org.jruby.truffle.language.globals.WriteReadOnlyGlobalNode;
@@ -1952,7 +1950,7 @@ public class BodyTranslator extends Translator {
 
         methodCompiler.frameOnStackMarkerSlotStack = frameOnStackMarkerSlotStack;
 
-        final Type type = isLambda ? Type.LAMBDA : Type.PROC;
+        final ProcType type = isLambda ? ProcType.LAMBDA : ProcType.PROC;
 
         if (isLambda) {
             frameOnStackMarkerSlotStack.push(BAD_FRAME_SLOT);

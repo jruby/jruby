@@ -71,10 +71,10 @@ import org.jruby.truffle.core.kernel.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.jruby.truffle.core.method.MethodFilter;
-import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.core.proc.ProcNodes.ProcNewNode;
 import org.jruby.truffle.core.proc.ProcNodesFactory.ProcNewNodeFactory;
 import org.jruby.truffle.core.proc.ProcOperations;
+import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
@@ -1233,7 +1233,7 @@ public abstract class KernelNodes {
         public DynamicObject lambda(DynamicObject block) {
             return ProcOperations.createRubyProc(
                     coreLibrary().getProcFactory(),
-                    ProcNodes.Type.LAMBDA,
+                    ProcType.LAMBDA,
                     Layouts.PROC.getSharedMethodInfo(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getCallTargetForLambdas(block),

@@ -28,8 +28,8 @@ import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.encoding.EncodingNodes;
-import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.core.proc.ProcOperations;
+import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
@@ -142,7 +142,7 @@ public abstract class SymbolNodes {
 
             return ProcOperations.createRubyProc(
                     coreLibrary().getProcFactory(),
-                    ProcNodes.Type.PROC,
+                    ProcType.PROC,
                     sharedMethodInfo,
                     callTarget, callTarget, null,
                     method, coreLibrary().getNilObject(),

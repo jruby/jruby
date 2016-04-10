@@ -26,7 +26,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.cast.ArrayCastNodeGen;
-import org.jruby.truffle.core.proc.ProcNodes.Type;
+import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -71,7 +71,7 @@ public class MethodTranslator extends BodyTranslator {
         this.argsNode = argsNode;
     }
 
-    public BlockDefinitionNode compileBlockNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, Type type) {
+    public BlockDefinitionNode compileBlockNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, ProcType type) {
         declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
         final Arity arityForCheck;
@@ -89,7 +89,7 @@ public class MethodTranslator extends BodyTranslator {
             arityForCheck = arity;
         }
 
-        final boolean isProc = type == Type.PROC;
+        final boolean isProc = type == ProcType.PROC;
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isProc, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
 

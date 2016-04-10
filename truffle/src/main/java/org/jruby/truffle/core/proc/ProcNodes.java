@@ -42,10 +42,6 @@ import org.jruby.truffle.language.yield.YieldNode;
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
 
-    public enum Type {
-        PROC, LAMBDA
-    }
-
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
@@ -213,7 +209,7 @@ public abstract class ProcNodes {
 
         @Specialization
         public boolean lambda(DynamicObject proc) {
-            return Layouts.PROC.getType(proc) == Type.LAMBDA;
+            return Layouts.PROC.getType(proc) == ProcType.LAMBDA;
         }
 
     }
@@ -230,7 +226,7 @@ public abstract class ProcNodes {
         public DynamicObject parameters(DynamicObject proc) {
             final ArgumentDescriptor[] argsDesc = Layouts.PROC.getSharedMethodInfo(proc).getArgumentDescriptors();
 
-            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, Layouts.PROC.getType(proc) == Type.LAMBDA);
+            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, Layouts.PROC.getType(proc) == ProcType.LAMBDA);
         }
 
     }

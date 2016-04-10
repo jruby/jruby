@@ -33,8 +33,8 @@ import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
-import org.jruby.truffle.core.proc.ProcNodes;
 import org.jruby.truffle.core.proc.ProcOperations;
+import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -236,7 +236,7 @@ public abstract class MethodNodes {
 
             return ProcOperations.createRubyProc(
                     coreLibrary().getProcFactory(),
-                    ProcNodes.Type.LAMBDA,
+                    ProcType.LAMBDA,
                     method.getSharedMethodInfo(),
                     callTarget,
                     callTarget,

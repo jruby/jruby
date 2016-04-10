@@ -37,17 +37,17 @@ public abstract class ProcOperations {
         return Layouts.PROC.getCallTargetForType(proc).call(packArguments(proc, args));
     }
 
-    public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, ProcNodes.Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
+    public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, ProcType type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
                                                CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
                                                Object self, DynamicObject block) {
         return createRubyProc(instanceFactory, type, sharedMethodInfo, callTargetForProcs, callTargetForLambdas, declarationFrame, method, self, block, null);
     }
 
-    public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, ProcNodes.Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
+    public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, ProcType type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
                                                CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
                                                Object self, DynamicObject block, FrameOnStackMarker frameOnStackMarker) {
         assert block == null || RubyGuards.isRubyProc(block);
-        final CallTarget callTargetForType = (type == ProcNodes.Type.PROC) ? callTargetForProcs : callTargetForLambdas;
+        final CallTarget callTargetForType = (type == ProcType.PROC) ? callTargetForProcs : callTargetForLambdas;
         return Layouts.PROC.createProc(instanceFactory, type, sharedMethodInfo, callTargetForType, callTargetForLambdas, declarationFrame, method, self, block, frameOnStackMarker);
     }
 
