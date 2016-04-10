@@ -55,7 +55,7 @@ public class ThreadBacktraceLocationNodes {
             if (path == null) {
                 return coreStrings().UNKNOWN.createInstance();
             } else {
-                return createString(StringOperations.encodeRope(path, UTF8Encoding.INSTANCE));
+                return createString(getContext().getRopeTable().getRope(path));
             }
         }
 
