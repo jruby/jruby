@@ -961,25 +961,32 @@ public class RubyModule extends RubyObject {
                 // add to specific
                 methodDescs = methodsHash.get(name);
                 if (methodDescs == null) {
-                    methodDescs = new ArrayList<>();
-                    methodsHash.put(name, methodDescs);
-                } else {
+                    // optimize for most methods mapping to one method for a given name :
+                    methodsHash.put(name, Collections.singletonList(desc));
+                }
+                else {
                     CompatVersion oldCompat = methodDescs.get(0).anno.compat();
                     CompatVersion newCompat = desc.anno.compat();
 
                     int comparison = newCompat.compareTo(oldCompat);
                     if (comparison == 1) {
                         // new method's compat is higher than old method's, so we throw old one away
-                        methodDescs = new ArrayList<>();
-                        methodsHash.put(name, methodDescs);
+                        methodsHash.put(name, methodDescs = new ArrayList<>(2));
                     } else if (comparison == 0) {
                         // same compat version, proceed to adding additional method
                     } else {
                         // lower compat, skip this method
                         continue;
                     }
+
+                    if (methodDescs.getClass() != ArrayList.class) { // due singletonList
+                        ArrayList<JavaMethodDescriptor> newDescs = new ArrayList<>(4);
+                        newDescs.addAll(methodDescs);
+                        methodsHash.put(name, methodDescs = newDescs);
+                    }
+
+                    methodDescs.add(desc);
                 }
-                methodDescs.add(desc);
 
                 // add to general
                 //methodDescs = allAnnotatedMethods.get(name);

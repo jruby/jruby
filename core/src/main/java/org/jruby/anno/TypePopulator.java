@@ -74,7 +74,7 @@ public abstract class TypePopulator {
         }
     }
 
-    public static class ReflectiveTypePopulator extends TypePopulator {
+    public static final class ReflectiveTypePopulator extends TypePopulator {
         private final Class clazz;
         private final RubyModule.MethodClumper clumper;
 
@@ -88,20 +88,26 @@ public abstract class TypePopulator {
             assert clazz == this.clazz : "populator for " + this.clazz + " used for " + clazz;
 
             // fallback on non-pregenerated logic
-            MethodFactory methodFactory = MethodFactory.createFactory(clsmod.getRuntime().getJRubyClassLoader());
-            Ruby runtime = clsmod.getRuntime();
+            final Ruby runtime = clsmod.getRuntime();
+            final MethodFactory methodFactory = MethodFactory.createFactory(runtime.getJRubyClassLoader());
 
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
-                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, entry.getKey());
+                final String name = entry.getKey();
+                final List<JavaMethodDescriptor> methods = entry.getValue();
+                clsmod.defineAnnotatedMethod(name, methods, methodFactory);
+                for ( int i=0; i<methods.size(); i++ ) {
+                    final JavaMethodDescriptor desc = methods.get(i);
+                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, name);
                 }
             }
 
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
-                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, entry.getKey());
+                final String name = entry.getKey();
+                final List<JavaMethodDescriptor> methods = entry.getValue();
+                clsmod.defineAnnotatedMethod(name, methods, methodFactory);
+                for ( int i=0; i<methods.size(); i++ ) {
+                    final JavaMethodDescriptor desc = methods.get(i);
+                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, name);
                 }
             }
         }
