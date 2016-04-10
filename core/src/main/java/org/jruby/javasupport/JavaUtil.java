@@ -268,11 +268,28 @@ public class JavaUtil {
      * @return Java object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
-    public static Object unwrapJavaObject(final IRubyObject object) {
+    public static <T> T unwrapJavaObject(final IRubyObject object) {
+        if ( object instanceof JavaProxy ) {
+            return (T) ((JavaProxy) object).getObject();
+        }
+        return (T) ((JavaObject) object.dataGetStruct()).getValue();
+    }
+
+    /**
+     * Unwrap if the passed object is a Java object, otherwise return object.
+     * @param object
+     * @return java object or passed object
+     * @see JavaUtil#isJavaObject(IRubyObject)
+     */
+    public static Object unwrapIfJavaObject(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
             return ((JavaProxy) object).getObject();
         }
-        return ((JavaObject) object.dataGetStruct()).getValue();
+        final Object unwrap = object.dataGetStruct();
+        if ( unwrap instanceof JavaObject ) {
+            return ((JavaObject) unwrap).getValue();
+        }
+        return object;
     }
 
     @Deprecated // no longer used
