@@ -9,9 +9,12 @@
  */
 package org.jruby.truffle.core.exception;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
@@ -55,23 +58,39 @@ public abstract class ExceptionNodes {
     @CoreMethod(names = "backtrace")
     public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
 
-        @Child ReadObjectFieldNode readCustomBacktrace;
+        @Child private ReadObjectFieldNode readCustomBacktraceNode;
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readCustomBacktrace = ReadObjectFieldNodeGen.create(getContext(), "@custom_backtrace", null);
         }
 
         @Specialization
-        public Object backtrace(DynamicObject exception) {
-            final Object customBacktrace = readCustomBacktrace.execute(exception);
-            if (customBacktrace != null) {
+        public Object backtrace(
+                DynamicObject exception,
+                @Cached("createBinaryProfile()") ConditionProfile hasCustomBacktraceProfile,
+                @Cached("createBinaryProfile()") ConditionProfile hasBacktraceProfile) {
+            final Object customBacktrace = getReadCustomBacktraceNode().execute(exception);
+
+            if (hasCustomBacktraceProfile.profile(customBacktrace != null)) {
                 return customBacktrace;
-            } else if (Layouts.EXCEPTION.getBacktrace(exception) != null) {
-                return ExceptionOperations.backtraceAsRubyStringArray(getContext(), exception, Layouts.EXCEPTION.getBacktrace(exception));
+            } else if (hasBacktraceProfile.profile(Layouts.EXCEPTION.getBacktrace(exception) != null)) {
+                return ExceptionOperations.backtraceAsRubyStringArray(
+                        getContext(),
+                        exception,
+                        Layouts.EXCEPTION.getBacktrace(exception));
             } else {
                 return nil();
             }
+        }
+
+        private ReadObjectFieldNode getReadCustomBacktraceNode() {
+            if (readCustomBacktraceNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create(getContext(),
+                        "@custom_backtrace", null));
+            }
+
+            return readCustomBacktraceNode;
         }
 
     }
@@ -92,7 +111,7 @@ public abstract class ExceptionNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
-            Backtrace backtrace = getContext().getCallStack().getBacktrace(this, offset, exception);
+            final Backtrace backtrace = getContext().getCallStack().getBacktrace(this, offset, exception);
             Layouts.EXCEPTION.setBacktrace(exception, backtrace);
             return nil();
         }
@@ -107,10 +126,14 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public Object message(DynamicObject exception) {
+        public Object message(
+                DynamicObject exception,
+                @Cached("createBinaryProfile()") ConditionProfile messageProfile) {
             final Object message = Layouts.EXCEPTION.getMessage(exception);
-            if (message == null) {
-                final String className = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
+
+            if (messageProfile.profile(message == null)) {
+                final String className = Layouts.MODULE.getFields(
+                        Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
                 return createString(StringOperations.encodeRope(className, UTF8Encoding.INSTANCE));
             } else {
                 return message;
