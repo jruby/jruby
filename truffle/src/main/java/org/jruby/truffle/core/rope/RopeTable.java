@@ -13,6 +13,7 @@ package org.jruby.truffle.core.rope;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
@@ -57,19 +58,19 @@ public class RopeTable {
         lock.writeLock().lock();
 
         try {
+            final Rope rope = StringOperations.encodeRope(string, UTF8Encoding.INSTANCE);
+
             Key key = stringsTable.get(string);
 
             if (key == null) {
-                key = new Key(string.getBytes(StandardCharsets.UTF_8), UTF8Encoding.INSTANCE);
+                key = new Key(rope.getBytes(), UTF8Encoding.INSTANCE);
                 stringsTable.put(string, key);
             }
 
             WeakReference<Rope> ropeReference = ropesTable.get(key);
 
             if (ropeReference == null) {
-                final long packedLengthAndCodeRange = RopeOperations.calculateCodeRangeAndLength(key.encoding, key.bytes, 0, key.bytes.length);
-                final CodeRange codeRange = CodeRange.fromInt(StringSupport.unpackArg(packedLengthAndCodeRange));
-                ropeReference = new WeakReference<Rope>(RopeOperations.create(key.bytes, key.encoding, codeRange));
+                ropeReference = new WeakReference<>(rope);
                 ropesTable.put(key, ropeReference);
             }
 
