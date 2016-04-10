@@ -46,7 +46,7 @@ import org.jruby.truffle.core.cast.SplatCastNodeGen;
 import org.jruby.truffle.core.cast.StringToSymbolNodeGen;
 import org.jruby.truffle.core.cast.ToSNode;
 import org.jruby.truffle.core.cast.ToSNodeGen;
-import org.jruby.truffle.core.coerce.ToProcNodeGen;
+import org.jruby.truffle.core.cast.ToProcNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
