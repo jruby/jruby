@@ -25,30 +25,79 @@ public abstract class ProcOperations {
 
     public static Object[] packArguments(DynamicObject proc, Object... args) {
         return RubyArguments.pack(
-                Layouts.PROC.getDeclarationFrame(proc), null, Layouts.PROC.getMethod(proc),
-                DeclarationContext.BLOCK, Layouts.PROC.getFrameOnStackMarker(proc), Layouts.PROC.getSelf(proc),
+                Layouts.PROC.getDeclarationFrame(proc),
+                null,
+                Layouts.PROC.getMethod(proc),
+                DeclarationContext.BLOCK,
+                Layouts.PROC.getFrameOnStackMarker(proc),
+                Layouts.PROC.getSelf(proc),
                 Layouts.PROC.getBlock(proc),
                 args);
     }
 
     public static Object rootCall(DynamicObject proc, Object... args) {
-        assert RubyGuards.isRubyProc(proc);
-
         return Layouts.PROC.getCallTargetForType(proc).call(packArguments(proc, args));
     }
 
-    public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, ProcType type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
-                                               CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
-                                               Object self, DynamicObject block) {
-        return createRubyProc(instanceFactory, type, sharedMethodInfo, callTargetForProcs, callTargetForLambdas, declarationFrame, method, self, block, null);
+    public static DynamicObject createRubyProc(
+            DynamicObjectFactory instanceFactory,
+            ProcType type,
+            SharedMethodInfo sharedMethodInfo,
+            CallTarget callTargetForProcs,
+            CallTarget callTargetForLambdas,
+            MaterializedFrame declarationFrame,
+            InternalMethod method,
+            Object self,
+            DynamicObject block) {
+        return createRubyProc(
+                instanceFactory,
+                type,
+                sharedMethodInfo,
+                callTargetForProcs,
+                callTargetForLambdas,
+                declarationFrame,
+                method,
+                self,
+                block,
+                null);
     }
 
-    public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, ProcType type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
-                                               CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
-                                               Object self, DynamicObject block, FrameOnStackMarker frameOnStackMarker) {
+    public static DynamicObject createRubyProc(
+            DynamicObjectFactory instanceFactory,
+            ProcType type,
+            SharedMethodInfo sharedMethodInfo,
+            CallTarget callTargetForProcs,
+            CallTarget callTargetForLambdas,
+            MaterializedFrame declarationFrame,
+            InternalMethod method,
+            Object self, DynamicObject block,
+            FrameOnStackMarker frameOnStackMarker) {
         assert block == null || RubyGuards.isRubyProc(block);
-        final CallTarget callTargetForType = (type == ProcType.PROC) ? callTargetForProcs : callTargetForLambdas;
-        return Layouts.PROC.createProc(instanceFactory, type, sharedMethodInfo, callTargetForType, callTargetForLambdas, declarationFrame, method, self, block, frameOnStackMarker);
+
+        final CallTarget callTargetForType;
+
+        switch (type) {
+            case PROC:
+                callTargetForType = callTargetForProcs;
+                break;
+            case LAMBDA:
+                callTargetForType = callTargetForLambdas;
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+
+        return Layouts.PROC.createProc(
+                instanceFactory,
+                type,
+                sharedMethodInfo,
+                callTargetForType,
+                callTargetForLambdas,
+                declarationFrame,
+                method,
+                self,
+                block,
+                frameOnStackMarker);
     }
 
 }
