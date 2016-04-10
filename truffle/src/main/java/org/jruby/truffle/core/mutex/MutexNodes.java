@@ -76,7 +76,7 @@ public abstract class MutexNodes {
 
             if (lock.isHeldByCurrentThread()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(context.getCoreLibrary().threadError("deadlock; recursive locking", currentNode));
+                throw new RaiseException(context.getCoreLibrary().threadErrorRecursiveLocking(currentNode));
             }
 
             context.getThreadManager().runUntilResult(currentNode, new BlockingAction<Boolean>() {
@@ -177,9 +177,9 @@ public abstract class MutexNodes {
                 lock.unlock();
             } catch (IllegalMonitorStateException e) {
                 if (!lock.isLocked()) {
-                    throw new RaiseException(context.getCoreLibrary().threadError("Attempt to unlock a mutex which is not locked", currentNode));
+                    throw new RaiseException(context.getCoreLibrary().threadErrorUnlockNotLocked(currentNode));
                 } else {
-                    throw new RaiseException(context.getCoreLibrary().threadError("Attempt to unlock a mutex which is locked by another thread", currentNode));
+                    throw new RaiseException(context.getCoreLibrary().threadErrorAlreadyLocked(currentNode));
                 }
             }
 
@@ -217,7 +217,7 @@ public abstract class MutexNodes {
 
         public long doSleepMillis(DynamicObject mutex, long durationInMillis) {
             if (durationInMillis < 0) {
-                throw new RaiseException(coreLibrary().argumentError("time interval must be positive", this));
+                throw new RaiseException(coreLibrary().argumentErrorTimeItervalPositive(this));
             }
 
             final ReentrantLock lock = Layouts.MUTEX.getLock(mutex);

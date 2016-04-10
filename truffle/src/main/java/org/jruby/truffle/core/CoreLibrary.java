@@ -962,6 +962,10 @@ public class CoreLibrary {
         return argumentError("too few arguments", currentNode, null);
     }
 
+    public DynamicObject argumentErrorTimeItervalPositive(Node currentNode) {
+        return argumentError("time interval must be positive", currentNode, null);
+    }
+
     public DynamicObject argumentErrorXOutsideOfString(Node currentNode) {
         return argumentError("X outside of string", currentNode, null);
     }
@@ -1426,6 +1430,18 @@ public class CoreLibrary {
     public DynamicObject threadError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(threadErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+    }
+
+    public DynamicObject threadErrorRecursiveLocking(Node currentNode) {
+        return threadError("deadlock; recursive locking", currentNode);
+    }
+
+    public DynamicObject threadErrorUnlockNotLocked(Node currentNode) {
+        return threadError("Attempt to unlock a mutex which is not locked", currentNode);
+    }
+
+    public DynamicObject threadErrorAlreadyLocked(Node currentNode) {
+        return threadError("Attempt to unlock a mutex which is locked by another thread", currentNode);
     }
 
     public DynamicObject securityError(String message, Node currentNode) {
