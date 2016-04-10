@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core.proc;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
@@ -67,8 +68,6 @@ public abstract class ProcNodes {
 
         public ProcNewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         public abstract DynamicObject executeProcNew(
@@ -105,7 +104,7 @@ public abstract class ProcNodes {
         public DynamicObject procSpecial(VirtualFrame frame, DynamicObject procClass, Object[] args, DynamicObject block) {
             // Instantiate a new instance of procClass as classes do not correspond
 
-            final DynamicObject proc = allocateObjectNode.allocate(
+            final DynamicObject proc = getAllocateObjectNode().allocate(
                     procClass,
                     Layouts.PROC.getType(block),
                     Layouts.PROC.getSharedMethodInfo(block),
@@ -117,13 +116,31 @@ public abstract class ProcNodes {
                     Layouts.PROC.getBlock(block),
                     Layouts.PROC.getFrameOnStackMarker(block));
 
-            initializeNode.call(frame, proc, "initialize", block, args);
+            getInitializeNode().call(frame, proc, "initialize", block, args);
 
             return proc;
         }
 
         protected DynamicObject metaClass(DynamicObject object) {
             return Layouts.BASIC_OBJECT.getMetaClass(object);
+        }
+
+        private AllocateObjectNode getAllocateObjectNode() {
+            if (allocateObjectNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
+            }
+
+            return allocateObjectNode;
+        }
+
+        private CallDispatchHeadNode getInitializeNode() {
+            if (initializeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                initializeNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+            }
+
+            return initializeNode;
         }
 
     }
@@ -135,12 +152,11 @@ public abstract class ProcNodes {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject dup(DynamicObject proc) {
-            final DynamicObject copy = allocateObjectNode.allocate(
+            final DynamicObject copy = getAllocateObjectNode().allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(proc),
                     Layouts.PROC.getType(proc),
                     Layouts.PROC.getSharedMethodInfo(proc),
@@ -153,6 +169,15 @@ public abstract class ProcNodes {
                     Layouts.PROC.getFrameOnStackMarker(proc));
 
             return copy;
+        }
+
+        private AllocateObjectNode getAllocateObjectNode() {
+            if (allocateObjectNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
+            }
+
+            return allocateObjectNode;
         }
 
     }
