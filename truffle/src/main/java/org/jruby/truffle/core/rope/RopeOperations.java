@@ -23,12 +23,18 @@ package org.jruby.truffle.core.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
@@ -41,6 +47,7 @@ import java.util.Deque;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
+import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
 import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
 import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 
@@ -637,6 +644,71 @@ public class RopeOperations {
 
     public static ByteList toByteListCopy(Rope rope) {
         return new ByteList(rope.getBytes(), rope.getEncoding(), true);
+    }
+
+    @TruffleBoundary
+    public static Rope format(RubyContext context, Object... values) {
+        Rope rope = null;
+
+        for (Object value : values) {
+            final Rope valueRope;
+
+            if (value instanceof DynamicObject && RubyGuards.isRubyString(value)) {
+                final Rope stringRope = Layouts.STRING.getRope((DynamicObject) value);
+                final Encoding encoding = stringRope.getEncoding();
+
+                if (encoding == UTF8Encoding.INSTANCE
+                        || encoding == USASCIIEncoding.INSTANCE
+                        || encoding == ASCIIEncoding.INSTANCE) {
+                    valueRope = stringRope;
+                } else {
+                    valueRope = StringOperations.encodeRope(decodeRope(context.getJRubyRuntime(), stringRope), UTF8Encoding.INSTANCE);
+                }
+            } else if (value instanceof Integer) {
+                valueRope = RopeConstants.getIntegerRope((int) value);
+            } else if (value instanceof String) {
+                valueRope = context.getRopeTable().getRope((String) value);
+            } else {
+                throw new IllegalArgumentException();
+            }
+
+            if (rope == null) {
+                rope = valueRope;
+            } else {
+                if (valueRope == null) {
+                    throw new UnsupportedOperationException(value.getClass().toString());
+                }
+
+                rope = new ConcatRope(
+                        rope,
+                        valueRope,
+                        UTF8Encoding.INSTANCE,
+                        commonCodeRange(rope.getCodeRange(), valueRope.getCodeRange()),
+                        rope.isSingleByteOptimizable() && valueRope.isSingleByteOptimizable(),
+                        Math.max(rope.depth(), valueRope.depth()) + 1);
+
+            }
+        }
+
+        if (rope == null) {
+            rope = RopeConstants.EMPTY_UTF8_ROPE;
+        }
+
+        return rope;
+    }
+
+    private static CodeRange commonCodeRange(CodeRange first, CodeRange second) {
+        if (first == second) {
+            return first;
+        }
+
+        if ((first == CR_BROKEN) || (second == CR_BROKEN)) {
+            return CR_BROKEN;
+        }
+
+        // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
+
+        return CR_VALID;
     }
 
 }

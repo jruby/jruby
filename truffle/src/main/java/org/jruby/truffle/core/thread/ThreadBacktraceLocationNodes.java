@@ -18,6 +18,9 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.StringNodes;
+import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
@@ -87,7 +90,6 @@ public class ThreadBacktraceLocationNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject threadBacktraceLocation) {
             final Activation activation= ThreadBacktraceLocationLayoutImpl.INSTANCE
@@ -103,10 +105,13 @@ public class ThreadBacktraceLocationNodes {
                 return createString(StringOperations.encodeRope(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE));
             }
 
-            return createString(StringOperations.encodeRope(String.format("%s:%d:in `%s'",
+            return createString(RopeOperations.format(getContext(),
                     sourceSection.getSource().getName(),
+                    ":",
                     sourceSection.getStartLine(),
-                    sourceSection.getIdentifier()), UTF8Encoding.INSTANCE));
+                    ":in `",
+                    sourceSection.getIdentifier(),
+                    "'"));
         }
 
     }
