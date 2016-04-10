@@ -47,7 +47,7 @@ public class RopeTable {
             if (key != null) {
                 final WeakReference<Rope> ropeReference = ropesTable.get(key);
 
-                if (ropeReference != null) {
+                if (ropeReference != null && ropeReference.get() != null) {
                     return ropeReference.get();
                 }
             }
@@ -69,12 +69,12 @@ public class RopeTable {
 
             WeakReference<Rope> ropeReference = ropesTable.get(key);
 
-            if (ropeReference == null) {
+            if (ropeReference == null || ropeReference.get() == null) {
                 ropeReference = new WeakReference<>(rope);
                 ropesTable.put(key, ropeReference);
             }
 
-            return ropeReference.get();
+            return rope;
         } finally {
             lock.writeLock().unlock();
         }
