@@ -75,7 +75,7 @@ public class URLResourceTest extends TestCase {
         assertTrue(resource.exists());
         assertEquals(Arrays.asList(resource.list()),
                 Arrays.asList(new String[]{".", "dir_without_listing",
-                        "dir_with_listing"}));
+                       "dir_with_listing", "..", ".jrubydir"}));
     }
 
     public void testDirectoryWithTrailingClassloader()
@@ -89,7 +89,7 @@ public class URLResourceTest extends TestCase {
         assertTrue(resource.exists());
         assertEquals(Arrays.asList(resource.list()),
                 Arrays.asList(new String[]{".", "dir_without_listing",
-                        "dir_with_listing"}));
+                       "dir_with_listing", "..", ".jrubydir"}));
     }
 
     public void testNoneDirectoryClassloader()
