@@ -1199,7 +1199,7 @@ public class RubyModule extends RubyObject {
 
         testFrozen("class/module");
 
-        if(name.equals("object_id") || name.equals("__send__") || name.equals("initialize")) {
+        if (name.equals("object_id") || name.equals("__send__") || name.equals("initialize")) {
             runtime.getWarnings().warn(ID.UNDEFINING_BAD, "removing `" + name + "' may cause serious problems");
         }
 
@@ -2243,12 +2243,8 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr
      *
      */
-    public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
-        return attr19(context, args);
-    }
-
     @JRubyMethod(name = "attr", rest = true, visibility = PRIVATE, reads = VISIBILITY)
-    public IRubyObject attr19(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
         if (args.length == 2 && (args[1] == runtime.getTrue() || args[1] == runtime.getFalse())) {
@@ -2258,6 +2254,11 @@ public class RubyModule extends RubyObject {
         }
 
         return attr_reader(context, args);
+    }
+
+    @Deprecated
+    public IRubyObject attr19(ThreadContext context, IRubyObject[] args) {
+        return attr(context, args);
     }
 
     @Deprecated
