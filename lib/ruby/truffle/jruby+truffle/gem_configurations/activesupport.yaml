@@ -42,12 +42,9 @@
     # mock method_source gem
     method_source.rb: nil
     exclude_tests.rb: |
-                      silences_io = {
-                          KernelTest:    [:test_silence_stream,
-                                          :test_quietly,
-                                          :test_capture] }
-
-                      failures = { InflectorTest:            [:test_titleize_mixture_to_title_case_13,
+                      failures = { KernelTest:               [:test_silence_stream,
+                                                              :test_quietly],
+                                   InflectorTest:            [:test_titleize_mixture_to_title_case_13,
                                                               :test_titleize_mixture_to_title_case_14],
                                    LoadPathsTest:            [:test_uniq_load_paths],
                                    LoggerTest:               [:test_buffer_multibyte],
@@ -64,9 +61,9 @@
 
 
                       undefine = if ENV['CI']
-                                   silences_io.merge(failures)
+                                   failures
                                  else
-                                   silences_io
+                                   {}
                                  end
 
                       undefine.each do |mod_name, tests|
