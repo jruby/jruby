@@ -71,22 +71,19 @@ class Java::java::lang::Throwable
     stack_trace.map(&:to_s)
   end
 
+  # @note Noop as Java exceptions can not change trace.
   def set_backtrace(trace)
-    # ignored; Java exceptions can't be set to Ruby trace
-    trace
   end
 
+  # Always a non-nil to follow Ruby's {Exception#message} conventions.
+  # @note getMessage still returns nil, when no message was given for the Java exception!
+  # @return [String]
   def message
-    msg = getLocalizedMessage
-    msg ? msg : ""
+    getLocalizedMessage || ''
   end
 
   def to_s
     message
-  end
-
-  def to_str
-    to_s
   end
 
   def inspect
