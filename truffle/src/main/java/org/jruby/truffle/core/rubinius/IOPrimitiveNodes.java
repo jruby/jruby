@@ -163,7 +163,6 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-
     @RubiniusPrimitive(name = "io_truncate", needsSelf = false, unsafe = UnsafeGroup.IO)
     public static abstract class IOTruncatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
@@ -206,7 +205,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubyString(pattern)", "isRubyString(path)"})
+        @Specialization(guards = { "isRubyString(pattern)", "isRubyString(path)" })
         public boolean fnmatch(DynamicObject pattern, DynamicObject path, int flags) {
             final Rope patternRope = rope(pattern);
             final Rope pathRope = rope(path);
@@ -235,10 +234,10 @@ public abstract class IOPrimitiveNodes {
             final int fd = Layouts.IO.getDescriptor(file);
             if (fd == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().ioError("closed stream",this));
+                throw new RaiseException(coreLibrary().ioError("closed stream", this));
             } else if (fd == -2) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().ioError("shutdown stream",this));
+                throw new RaiseException(coreLibrary().ioError("shutdown stream", this));
             }
             return nil();
         }
@@ -267,7 +266,7 @@ public abstract class IOPrimitiveNodes {
             fdSet.set(fd);
 
             final Timeval timeoutObject = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
-            timeoutObject.setTime(new long[] { 0, 0 });
+            timeoutObject.setTime(new long[]{ 0, 0 });
 
             final int res = nativeSockets().select(fd + 1, fdSet.getPointer(),
                     PointerPrimitiveNodes.NULL_POINTER, PointerPrimitiveNodes.NULL_POINTER, timeoutObject);
@@ -477,7 +476,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_seek", lowerFixnumParameters = {0, 1}, unsafe = UnsafeGroup.IO)
+    @RubiniusPrimitive(name = "io_seek", lowerFixnumParameters = { 0, 1 }, unsafe = UnsafeGroup.IO)
     public static abstract class IOSeekPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public IOSeekPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -505,7 +504,7 @@ public abstract class IOPrimitiveNodes {
         public int accept(DynamicObject io) {
             final int fd = Layouts.IO.getDescriptor(io);
 
-            final int[] addressLength = {16};
+            final int[] addressLength = { 16 };
             final long address = UnsafeHolder.U.allocateMemory(addressLength[0]);
 
             final int newFd;
@@ -584,7 +583,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubyArray(readables)", "isNil(writables)", "isNil(errorables)"})
+        @Specialization(guards = { "isRubyArray(readables)", "isNil(writables)", "isNil(errorables)" })
         public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
             final Object[] readableObjects = ArrayOperations.toObjectArray(readables);
             final int[] readableFds = getFileDescriptors(readables);
@@ -631,10 +630,10 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] {
-                    getSetObjects(readableObjects, readableFds, readableSet),
-                    Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
-                    Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) },
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
+                            getSetObjects(readableObjects, readableFds, readableSet),
+                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
+                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) },
                     3);
         }
 
@@ -678,7 +677,7 @@ public abstract class IOPrimitiveNodes {
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
                             Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
                             getSetObjects(writableObjects, writableFds, writableSet),
-                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0)},
+                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) },
                     3);
         }
 
