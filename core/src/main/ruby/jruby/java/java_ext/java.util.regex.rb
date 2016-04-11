@@ -1,4 +1,4 @@
-class java::util::regex::Pattern
+class Java::java::util::regex::Pattern
   def =~(str)
     m = self.matcher(str)
     m.find ? m.start : nil
@@ -15,7 +15,7 @@ class java::util::regex::Pattern
   end
 end
 
-class java::util::regex::Matcher
+class Java::java::util::regex::Matcher
   attr_accessor :str
   
   def captures

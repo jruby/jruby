@@ -1,29 +1,39 @@
 # TODO java.util.Comparator support?
-module java::util::Collection
-  include Enumerable
+
+# *java.util.Collection* is enhanced (not just) to act like Ruby's `Enumerable`.
+# @see http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html
+module Java::java::util::Collection
+  include ::Enumerable
+
   def each
     i = iterator
     while i.hasNext
       yield i.next
     end
   end
-  def <<(a); add(a); self; end
+
+  def <<(a); add(a); self end
+
   def +(oth)
     nw = self.dup
     nw.addAll(oth)
     nw
   end
+
   def -(oth)
     nw = self.dup
     nw.removeAll(oth)
     nw
   end
+
   def length
     size
   end
+
   def join(*args)
     to_a.join(*args)
   end
+
   def to_a
     # JRUBY-3910: conversion is faster by going directly to java array
     # first
@@ -32,8 +42,10 @@ module java::util::Collection
   alias_method :to_ary, :to_a
 end
 
-module java::util::Enumeration
-  include Enumerable
+# A *java.util.Enumeration* instance might be iterated Ruby style.
+# @see http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html
+module Java::java::util::Enumeration
+  include ::Enumerable
 
   def each
     while has_more_elements
@@ -42,8 +54,10 @@ module java::util::Enumeration
   end
 end
 
-module java::util::Iterator
-  include Enumerable
+# A *java.util.Iterator* acts like an `Enumerable`.
+# @see http://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html
+module Java::java::util::Iterator
+  include ::Enumerable
 
   def each
     while has_next
@@ -52,7 +66,11 @@ module java::util::Iterator
   end
 end
 
-module java::util::List
+# Ruby extensions for *java.util.List* instances.
+# @see Java::java::util::Collection
+# @see http://docs.oracle.com/javase/8/docs/api/java/util/List.html
+module Java::java::util::List
+  # @private
   module RubyComparators
     class BlockComparator
       include java::util::Comparator
@@ -65,7 +83,6 @@ module java::util::List
         @block.call(o1, o2)
       end
     end
-
     class SpaceshipComparator
       include java::util::Comparator
       def compare(o1, o2)
@@ -73,6 +90,7 @@ module java::util::List
       end
     end
   end
+  private_constant :RubyComparators
 
   def [](ix1, ix2 = nil)
     if (ix2)
@@ -156,4 +174,5 @@ module java::util::List
     java::util::Collections.sort(self, comparator)
     self
   end
+
 end
