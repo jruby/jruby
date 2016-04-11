@@ -884,24 +884,18 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public void defineAnnotatedConstants(Class clazz) {
-        Field[] declaredFields = clazz.getDeclaredFields();
-        for (Field field : declaredFields) {
+    public final void defineAnnotatedConstants(Class clazz) {
+        for (Field field : clazz.getDeclaredFields()) {
             if (Modifier.isStatic(field.getModifiers())) {
                 defineAnnotatedConstant(field);
             }
         }
     }
 
-    public boolean defineAnnotatedConstant(Field field) {
+    public final boolean defineAnnotatedConstant(Field field) {
         JRubyConstant jrubyConstant = field.getAnnotation(JRubyConstant.class);
 
         if (jrubyConstant == null) return false;
-
-        String[] names = jrubyConstant.value();
-        if(names.length == 0) {
-            names = new String[]{field.getName()};
-        }
 
         Class tp = field.getType();
         IRubyObject realVal;
@@ -918,9 +912,12 @@ public class RubyModule extends RubyObject {
             realVal = getRuntime().getNil();
         }
 
-
-        for(String name : names) {
-            this.setConstant(name, realVal);
+        String[] names = jrubyConstant.value();
+        if (names.length == 0) {
+            setConstant(field.getName(), realVal);
+        }
+        else {
+            for (String name : names) setConstant(name, realVal);
         }
 
         return true;
