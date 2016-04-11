@@ -1245,6 +1245,21 @@ CLASSDEF
     assert ! org.jruby.test.smallLetterClass.is_a?(Java::JavaPackage)
   end
 
+  Module.send :remove_method, :attr
+
+  module SmallLetter
+    java_import 'org.jruby.test.smallLetterClass$ClassWithAttr'
+  end
+
+  def test_inner_class_starting_with_small_letter
+    assert SmallLetter::ClassWithAttr
+    assert SmallLetter::ClassWithAttr.java_class
+    assert_equal 42, SmallLetter::ClassWithAttr.id.value
+    # we need to undef Module#attr :
+    # Module.send :remove_method, :attr
+    assert_equal 42, SmallLetter::ClassWithAttr.attr.value
+  end
+
   # JRUBY-1076
   def test_package_module_aliased_methods
     assert java.lang.respond_to?(:__constants__)
