@@ -16,6 +16,7 @@ package org.jruby.truffle.core.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -30,6 +31,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -241,6 +243,13 @@ public abstract class RopeNodes {
         @Specialization(guards = "isMutableRope(left)")
         public Rope concatMutableRope(MutableRope left, Rope right, Encoding encoding,
                                       @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
+            try {
+                ExactMath.addExact(left.byteLength(), right.byteLength());
+            } catch(ArithmeticException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("Result of string concatenation exceeds the system maximum string length", this));
+            }
+
             final ByteList byteList = left.getByteList();
 
             byteList.append(right.getBytes());
@@ -257,6 +266,13 @@ public abstract class RopeNodes {
                            @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
                            @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
                            @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile) {
+            try {
+                ExactMath.addExact(left.byteLength(), right.byteLength());
+            } catch(ArithmeticException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("Result of string concatenation exceeds the system maximum string length", this));
+            }
+
             int depth = depth(left, right);
             /*if (depth >= 10) {
                 System.out.println("ConcatRope depth: " + depth);
