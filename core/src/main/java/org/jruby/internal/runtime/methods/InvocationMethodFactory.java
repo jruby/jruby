@@ -350,9 +350,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * @param method The code generator for the handle being created
      */
     private static void checkArity(JRubyMethod jrubyMethod, SkinnyMethodAdapter method, int specificArity) {
-        Label arityError = new Label();
-        Label noArityError = new Label();
-
         switch (specificArity) {
         case 0:
         case 1:
@@ -361,6 +358,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             // for zero, one, two, three arities, JavaMethod.JavaMethod*.call(...IRubyObject[] args...) will check
             return;
         default:
+            final Label arityError = new Label();
+            final Label noArityError = new Label();
             boolean checkArity = false;
             if (jrubyMethod.rest()) {
                 if (jrubyMethod.required() > 0) {
@@ -692,7 +691,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
 
             boolean hasBlock = desc.hasBlock;
-            SkinnyMethodAdapter mv = null;
+            SkinnyMethodAdapter mv;
 
             mv = beginMethod(cw, callName, specificArity, hasBlock);
             mv.visitCode();
