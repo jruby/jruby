@@ -310,7 +310,7 @@ public abstract class IOPrimitiveNodes {
             final int fd = Layouts.IO.getDescriptor(file);
             final int fdOther = Layouts.IO.getDescriptor(io);
 
-            final int result = posix().dup2(fd, fdOther);
+            final int result = posix().dup2(fdOther, fd);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
