@@ -14,6 +14,7 @@
 *.zip
 *~
 *.tokens
+*.su
 
 .DS_Store
 .debug.properties
