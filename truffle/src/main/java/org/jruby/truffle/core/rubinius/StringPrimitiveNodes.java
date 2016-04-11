@@ -107,7 +107,6 @@ import org.jruby.util.StringSupport;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.jruby.truffle.core.string.StringOperations.encoding;
@@ -1364,16 +1363,18 @@ public abstract class StringPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
+        @Child private RopeNodes.MakeRepeatingNode makeRepeatingNode;
 
         public StringPatternPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null, null);
+            makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create(context, sourceSection);
+            makeRepeatingNode = RopeNodes.MakeRepeatingNode.create(context, sourceSection);
         }
 
         @Specialization(guards = "value >= 0")
         public DynamicObject stringPatternZero(DynamicObject stringClass, int size, int value) {
-            final Rope repeatingRope = new RepeatingRope(RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[value], size);
+            final Rope repeatingRope = makeRepeatingNode.executeMake(RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[value], size);
 
             return allocateObjectNode.allocate(stringClass, repeatingRope, null);
         }
@@ -1381,7 +1382,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = { "isRubyString(string)", "patternFitsEvenly(string, size)" })
         public DynamicObject stringPatternFitsEvenly(DynamicObject stringClass, int size, DynamicObject string) {
             final Rope rope = rope(string);
-            final Rope repeatingRope = new RepeatingRope(rope, size / rope.byteLength());
+            final Rope repeatingRope = makeRepeatingNode.executeMake(rope, size / rope.byteLength());
 
             return allocateObjectNode.allocate(stringClass, repeatingRope, null);
         }

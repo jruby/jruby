@@ -69,11 +69,11 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.RepeatingRope;
 import org.jruby.truffle.core.rope.MutableRope;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodes.MakeRepeatingNode;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
@@ -184,36 +184,12 @@ public abstract class StringNodes {
             throw new RaiseException(coreLibrary().argumentError("negative argument", this));
         }
 
-        @Specialization(guards = "times == 0")
-        public DynamicObject multiplyTimesZero(DynamicObject string, int times) {
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), EMPTY_UTF8_ROPE, null);
-        }
+        @Specialization(guards = "times >= 0")
+        public DynamicObject multiply(DynamicObject string, int times,
+                                      @Cached("create(getContext(), getSourceSection())") MakeRepeatingNode makeRepeatingNode) {
+            final Rope repeated = makeRepeatingNode.executeMake(rope(string), times);
 
-        @Specialization(guards = "times == 1")
-        public DynamicObject multiplyTimesOne(DynamicObject string, int times) {
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), rope(string), null);
-        }
-
-        @Specialization(guards = { "isSingleByteString(string)", "times > 1" })
-        public DynamicObject multiplySingleByteString(DynamicObject string, int times) {
-            if (makeLeafRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), getSourceSection(), null, null, null, null));
-            }
-
-            final Rope baseRope = rope(string);
-            final byte filler = baseRope.getBytes()[0];
-
-            byte[] buffer = new byte[times];
-            Arrays.fill(buffer, filler);
-            final Rope multipliedRope = makeLeafRopeNode.executeMake(buffer, baseRope.getEncoding(), baseRope.getCodeRange(), times);
-
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), multipliedRope, null);
-        }
-
-        @Specialization(guards = { "!isSingleByteString(string)", "times > 1" })
-        public DynamicObject multiply(DynamicObject string, int times) {
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new RepeatingRope(rope(string), times), null);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), repeated, null);
         }
 
         @Specialization(guards = "isRubyBignum(times)")

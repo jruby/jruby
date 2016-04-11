@@ -35,6 +35,8 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
+import java.util.Arrays;
+
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
 import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
 import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
@@ -505,6 +507,65 @@ public abstract class RopeNodes {
     }
 
     @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "base"),
+            @NodeChild(type = RubyNode.class, value = "times")
+    })
+    public abstract static class MakeRepeatingNode extends RubyNode {
+
+        public static MakeRepeatingNode create(RubyContext context, SourceSection sourceSection) {
+            return RopeNodesFactory.MakeRepeatingNodeGen.create(context, sourceSection, null, null);
+        }
+
+        public MakeRepeatingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract Rope executeMake(Rope base, int times);
+
+        @Specialization(guards = "times == 0")
+        public Rope repeatZero(Rope base, int times,
+                               @Cached("create(getContext(), getSourceSection())") WithEncodingNode withEncodingNode) {
+            return withEncodingNode.executeWithEncoding(RopeConstants.EMPTY_UTF8_ROPE, base.getEncoding(), CodeRange.CR_7BIT);
+        }
+
+        @Specialization(guards = "times == 1")
+        public Rope repeatOne(Rope base, int times,
+                               @Cached("create(getContext(), getSourceSection())") WithEncodingNode withEncodingNode) {
+            return base;
+        }
+
+        @Specialization(guards = { "isSingleByteString(base)", "times > 1" })
+        @TruffleBoundary
+        public Rope multiplySingleByteString(Rope base, int times,
+                                                      @Cached("create(getContext(), getSourceSection())") MakeLeafRopeNode makeLeafRopeNode) {
+            final byte filler = base.getBytes()[0];
+
+            byte[] buffer = new byte[times];
+            Arrays.fill(buffer, filler);
+
+            return makeLeafRopeNode.executeMake(buffer, base.getEncoding(), base.getCodeRange(), times);
+        }
+
+        @Specialization(guards = { "!isSingleByteString(base)", "times > 1" })
+        public Rope repeat(Rope base, int times) {
+            try {
+                ExactMath.multiplyExact(base.byteLength(), times);
+            } catch (ArithmeticException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("Result of repeating string exceeds the system maximum string length", this));
+            }
+
+            return new RepeatingRope(base, times);
+        }
+
+        protected static boolean isSingleByteString(Rope rope) {
+            return rope.byteLength() == 1;
+        }
+
+    }
+
+
+    @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "rope"),
             @NodeChild(type = RubyNode.class, value = "currentLevel"),
             @NodeChild(type = RubyNode.class, value = "printString")
@@ -601,6 +662,10 @@ public abstract class RopeNodes {
             @NodeChild(type = RubyNode.class, value = "codeRange")
     })
     public abstract static class WithEncodingNode extends RubyNode {
+
+        public static WithEncodingNode create(RubyContext context, SourceSection sourceSection) {
+            return RopeNodesFactory.WithEncodingNodeGen.create(context, sourceSection, null, null, null);
+        }
 
         public WithEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
