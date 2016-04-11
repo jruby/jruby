@@ -61,6 +61,12 @@ module Utilities
     raise "couldn't find trufflejs.jar - download GraalVM as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and find it in there"
   end
 
+  def self.find_sulong
+    jar = ENV['SULONG_JAR']
+    return jar if jar
+    raise "couldn't find sulong.jar - you need to build it from source"
+  end
+
   def self.jruby_eclipse?
     # tool/jruby_eclipse only works on release currently
     ENV["JRUBY_ECLIPSE"] == "true" && Utilities.git_branch == "master"
@@ -258,6 +264,7 @@ module Commands
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
+    puts '    --sulong        add Sulong to the classpath (set SULONG_JAR)'
     puts '    --asm           show assembly (implies --graal)'
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
@@ -305,6 +312,7 @@ module Commands
     puts '  GRAAL_BIN_...git_branch_name...              GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
+    puts '  SULONG_JAR                                   The location of sulong.jar'
   end
 
   def checkout(branch)
@@ -358,6 +366,11 @@ module Commands
     if args.delete('--js')
       jruby_args << '-J-classpath'
       jruby_args << Utilities.find_graal_js
+    end
+
+    if args.delete('--sulong')
+      jruby_args << '-J-classpath'
+      jruby_args << Utilities.find_sulong
     end
 
     if args.delete('--asm')
