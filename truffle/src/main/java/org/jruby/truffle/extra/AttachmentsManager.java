@@ -25,7 +25,7 @@ import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.binding.BindingNodes;
-import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.language.RubyGuards;
 
 public class AttachmentsManager {
@@ -80,7 +80,7 @@ public class AttachmentsManager {
 
         @Override
         public void onEnter(VirtualFrame frame) {
-            callNode.call(frame, ProcNodes.packArguments(block, new Object[] {  BindingNodes.createBinding(context, frame.materialize())}));
+            callNode.call(frame, ProcOperations.packArguments(block, new Object[] {  BindingNodes.createBinding(context, frame.materialize())}));
         }
     }
 

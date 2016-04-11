@@ -19,12 +19,14 @@ import com.oracle.truffle.api.object.dsl.Nullable;
 @Layout
 public interface ExceptionLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createExceptionShape(DynamicObject logicalClass,
-                                              DynamicObject metaClass);
+    DynamicObjectFactory createExceptionShape(
+            DynamicObject logicalClass,
+            DynamicObject metaClass);
 
-    DynamicObject createException(DynamicObjectFactory factory,
-                                  @Nullable Object message,
-                                  @Nullable Backtrace backtrace);
+    DynamicObject createException(
+            DynamicObjectFactory factory,
+            @Nullable Object message,
+            @Nullable Backtrace backtrace);
 
     boolean isException(DynamicObject object);
 

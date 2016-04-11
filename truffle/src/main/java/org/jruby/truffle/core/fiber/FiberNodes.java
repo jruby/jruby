@@ -27,7 +27,7 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.SingleValueCastNode;
 import org.jruby.truffle.core.cast.SingleValueCastNodeGen;
-import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -99,7 +99,7 @@ public abstract class FiberNodes {
                     final Object[] args = waitForResume(context, fiber);
                     final Object result;
                     try {
-                        result = ProcNodes.rootCall(block, args);
+                        result = ProcOperations.rootCall(block, args);
                     } finally {
                         // Make sure that other fibers notice we are dead before they gain control back
                         Layouts.FIBER.setAlive(fiber, false);

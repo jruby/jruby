@@ -30,7 +30,8 @@ public abstract class TrueClassNodes {
             super(context, sourceSection);
         }
 
-        @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
+        @CreateCast("operand")
+        public RubyNode createCast(RubyNode operand) {
             return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
         }
 
@@ -60,7 +61,8 @@ public abstract class TrueClassNodes {
             super(context, sourceSection);
         }
 
-        @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
+        @CreateCast("operand")
+        public RubyNode createCast(RubyNode operand) {
             return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
         }
 

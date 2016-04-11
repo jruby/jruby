@@ -7,9 +7,10 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.coerce;
+package org.jruby.truffle.core.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -23,45 +24,51 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
+/**
+ * Casts an object to a Ruby Proc object.
+ */
+@NodeChild("child")
+public abstract class ToProcNode extends RubyNode {
 
-@NodeChild(value = "child", type = RubyNode.class)
-public abstract class ToAryNode extends RubyNode {
-
-    @Child private CallDispatchHeadNode toAryNode;
-
-    public ToAryNode(RubyContext context, SourceSection sourceSection) {
+    public ToProcNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    @Specialization(guards = "isRubyArray(array)")
-    public DynamicObject coerceRubyArray(DynamicObject array) {
-        return array;
+    @Specialization(guards = "isNil(nil)")
+    public DynamicObject doNil(Object nil) {
+        return nil();
     }
 
-    @Specialization(guards = "!isRubyArray(object)")
-    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
-        if (toAryNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-        }
+    @Specialization(guards = "isRubyProc(proc)")
+    public DynamicObject doRubyProc(DynamicObject proc) {
+        return proc;
+    }
 
+    @Specialization(guards = "!isRubyProc(object)")
+    public DynamicObject doObject(VirtualFrame frame, Object object,
+            @Cached("createCallNode()") CallDispatchHeadNode toProc) {
         final Object coerced;
         try {
-            coerced = toAryNode.call(frame, object, "to_ary", null);
+            coerced = toProc.call(frame, object, "to_proc", null);
         } catch (RaiseException e) {
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(object, "Array", this));
+                throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(object, "Proc", this));
             } else {
                 throw e;
             }
         }
 
-        if (RubyGuards.isRubyArray(coerced)) {
+        if (RubyGuards.isRubyProc(coerced)) {
             return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().typeErrorBadCoercion(object, "Array", "to_ary", coerced, this));
+            throw new RaiseException(coreLibrary().typeErrorBadCoercion(object, "Proc", "to_proc", coerced, this));
         }
     }
+
+    protected CallDispatchHeadNode createCallNode() {
+        return DispatchHeadNodeFactory.createMethodCall(getContext());
+    }
+
 }

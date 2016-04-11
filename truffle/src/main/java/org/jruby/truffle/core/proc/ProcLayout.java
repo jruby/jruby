@@ -36,7 +36,7 @@ public interface ProcLayout extends BasicObjectLayout {
 
     DynamicObject createProc(
             DynamicObjectFactory factory,
-            ProcNodes.Type type,
+            ProcType type,
             SharedMethodInfo sharedMethodInfo,
             CallTarget callTargetForType,
             CallTarget callTargetForLambdas,
@@ -50,7 +50,7 @@ public interface ProcLayout extends BasicObjectLayout {
     boolean isProc(DynamicObject object);
     boolean isProc(Object object);
 
-    ProcNodes.Type getType(DynamicObject object);
+    ProcType getType(DynamicObject object);
 
     SharedMethodInfo getSharedMethodInfo(DynamicObject object);
 

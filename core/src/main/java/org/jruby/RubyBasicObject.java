@@ -1075,7 +1075,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return to_s();
     }
 
-    public IRubyObject hashyInspect() {
+    public final IRubyObject hashyInspect() {
         final Ruby runtime = getRuntime();
         String cname = getMetaClass().getRealClass().getName();
         StringBuilder part = new StringBuilder(2 + cname.length() + 3 + 8 + 1); // #<Object:0x5a1c0542>

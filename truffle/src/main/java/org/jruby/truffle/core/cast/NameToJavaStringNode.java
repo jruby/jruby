@@ -8,7 +8,7 @@
  * GNU Lesser General Public License version 2.1
  */
 
-package org.jruby.truffle.core.coerce;
+package org.jruby.truffle.core.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -26,32 +26,32 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
 /**
  * Take a Symbol or some object accepting #to_str
- * and convert it to a RubySymbol or a RubyString.
+ * and convert it to a Java String.
  */
 @NodeChild(value = "child", type = RubyNode.class)
-public abstract class NameToSymbolOrStringNode extends RubyNode {
+public abstract class NameToJavaStringNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toStr;
 
-    public NameToSymbolOrStringNode(RubyContext context, SourceSection sourceSection) {
+    public NameToJavaStringNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         toStr = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public abstract DynamicObject executeToSymbolOrString(VirtualFrame frame, Object name);
+    public abstract String executeToJavaString(VirtualFrame frame, Object name);
 
     @Specialization(guards = "isRubySymbol(symbol)")
-    public DynamicObject coerceRubySymbol(DynamicObject symbol) {
-        return symbol;
+    public String coerceRubySymbol(DynamicObject symbol) {
+        return Layouts.SYMBOL.getString(symbol);
     }
 
     @Specialization(guards = "isRubyString(string)")
-    public DynamicObject coerceRubyString(DynamicObject string) {
-        return string;
+    public String coerceRubyString(DynamicObject string) {
+        return string.toString();
     }
 
     @Specialization(guards = { "!isRubySymbol(object)", "!isRubyString(object)" })
-    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
+    public String coerceObject(VirtualFrame frame, Object object) {
         final Object coerced;
         try {
             coerced = toStr.call(frame, object, "to_str", null);
@@ -65,7 +65,7 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
         }
 
         if (RubyGuards.isRubyString(coerced)) {
-            return (DynamicObject) coerced;
+            return coerced.toString();
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));

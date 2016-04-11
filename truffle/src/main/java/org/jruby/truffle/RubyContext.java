@@ -109,9 +109,23 @@ public class RubyContext extends ExecutionContext {
 
         // Stuff that needs to be loaded before we load any code
 
+        /*
+         * The Graal option TimeThreshold sets how long a method has to become hot after it has started running, in ms.
+         * This is designed to not try to compile cold methods that just happen to be called enough times during a
+         * very long running program. We haven't worked out the best value of this for Ruby yet, and the default value
+         * produces poor benchmark results. Here we just set it to a very high value, to effectively disable it.
+         */
+
         if (compilerOptions.supportsOption("MinTimeThreshold")) {
             compilerOptions.setOption("MinTimeThreshold", 100000000);
         }
+
+        /*
+         * The Graal option InliningMaxCallerSize sets the maximum size of a method for where we consider to inline
+         * calls from that method. So it's the caller method we're talking about, not the called method. The default
+         * value doesn't produce good results for Ruby programs, but we aren't sure why yet. Perhaps it prevents a few
+         * key methods from the core library from inlining other methods.
+         */
 
         if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
             compilerOptions.setOption("MinInliningMaxCallerSize", 5000);

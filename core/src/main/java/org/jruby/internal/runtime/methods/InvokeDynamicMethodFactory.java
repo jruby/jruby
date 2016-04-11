@@ -32,17 +32,14 @@ import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
 import org.jruby.RubyModule;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,8 +51,6 @@ import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-
-import static org.jruby.runtime.Helpers.arrayOf;
 
 /**
  * This invoker uses MethodHandle for all bindings to Java code, rather than generating
@@ -327,7 +322,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
      */
     @Override
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
-        return getAnnotatedMethod(implementationClass, Arrays.asList(desc));
+        return getAnnotatedMethod(implementationClass, Collections.singletonList(desc));
     }
     
     public static final Signature VARIABLE_ARITY_SIGNATURE = Signature

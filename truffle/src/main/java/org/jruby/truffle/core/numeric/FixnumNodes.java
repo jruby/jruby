@@ -27,6 +27,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -1121,23 +1122,29 @@ public abstract class FixnumNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject toS(int n, NotProvided base) {
-            return create7BitString(Integer.toString(n), USASCIIEncoding.INSTANCE);
+            return createString(RopeConstants.getIntegerRope(n));
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(long n, NotProvided base) {
+            if (n >= Integer.MIN_VALUE && n <= Integer.MAX_VALUE) {
+                return toS((int) n, base);
+            }
+
             return create7BitString(Long.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(long n, int base) {
+            if (base == 10) {
+                return toS(n, NotProvided.INSTANCE);
+            }
+
             if (base < 2 || base > 36) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentErrorInvalidRadix(base, this));
             }
 

@@ -40,6 +40,10 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
         return dispatchNode.dispatch(frame, block, arguments);
     }
 
+    public Object yieldWithModifiedBlock(VirtualFrame frame, DynamicObject block, DynamicObject modifiedBlock, Object... arguments) {
+        return dispatchNode.dispatchWithModifiedBlock(frame, block, modifiedBlock, arguments);
+    }
+
     public boolean yieldIsTruthy(VirtualFrame frame, DynamicObject block, Object... arguments) {
         return booleanCast(frame, yield(frame, block, arguments));
     }

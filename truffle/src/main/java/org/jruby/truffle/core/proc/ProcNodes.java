@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.proc;
 
-import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -18,7 +17,6 @@ import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
@@ -29,57 +27,21 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.control.FrameOnStackMarker;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
-
-    public static Object[] packArguments(DynamicObject proc, Object... args) {
-        return RubyArguments.pack(
-                Layouts.PROC.getDeclarationFrame(proc), null, Layouts.PROC.getMethod(proc),
-                DeclarationContext.BLOCK, Layouts.PROC.getFrameOnStackMarker(proc), Layouts.PROC.getSelf(proc),
-                Layouts.PROC.getBlock(proc),
-                args);
-    }
-
-    public static Object rootCall(DynamicObject proc, Object... args) {
-        assert RubyGuards.isRubyProc(proc);
-
-        return Layouts.PROC.getCallTargetForType(proc).call(packArguments(proc, args));
-    }
-
-    public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
-                                               CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
-                                               Object self, DynamicObject block) {
-        return createRubyProc(instanceFactory, type, sharedMethodInfo, callTargetForProcs, callTargetForLambdas, declarationFrame, method, self, block, null);
-    }
-
-    public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
-                                          CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
-                                          Object self, DynamicObject block, FrameOnStackMarker frameOnStackMarker) {
-        assert block == null || RubyGuards.isRubyProc(block);
-        final CallTarget callTargetForType = (type == Type.PROC) ? callTargetForProcs : callTargetForLambdas;
-        return Layouts.PROC.createProc(instanceFactory, type, sharedMethodInfo, callTargetForType, callTargetForLambdas, declarationFrame, method, self, block, frameOnStackMarker);
-    }
-
-    public enum Type {
-        PROC, LAMBDA
-    }
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
@@ -88,7 +50,6 @@ public abstract class ProcNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
@@ -107,20 +68,23 @@ public abstract class ProcNodes {
 
         public ProcNewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
-        public abstract DynamicObject executeProcNew(VirtualFrame frame, DynamicObject procClass, Object[] args, Object block);
+        public abstract DynamicObject executeProcNew(
+                VirtualFrame frame,
+                DynamicObject procClass,
+                Object[] args,
+                Object block);
 
         @Specialization
         public DynamicObject proc(VirtualFrame frame, DynamicObject procClass, Object[] args, NotProvided block) {
-            final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
+            final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend()
+                    .getFrame(FrameAccess.READ_ONLY, true);
+
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
             if (parentBlock == null) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("tried to create Proc object without a block", this));
+                throw new RaiseException(coreLibrary().argumentErrorProcWithoutBlock(this));
             }
 
             return executeProcNew(frame, procClass, args, parentBlock);
@@ -139,7 +103,8 @@ public abstract class ProcNodes {
         @Specialization(guards = "procClass != metaClass(block)")
         public DynamicObject procSpecial(VirtualFrame frame, DynamicObject procClass, Object[] args, DynamicObject block) {
             // Instantiate a new instance of procClass as classes do not correspond
-            DynamicObject proc = allocateObjectNode.allocate(
+
+            final DynamicObject proc = getAllocateObjectNode().allocate(
                     procClass,
                     Layouts.PROC.getType(block),
                     Layouts.PROC.getSharedMethodInfo(block),
@@ -150,12 +115,32 @@ public abstract class ProcNodes {
                     Layouts.PROC.getSelf(block),
                     Layouts.PROC.getBlock(block),
                     Layouts.PROC.getFrameOnStackMarker(block));
-            initializeNode.call(frame, proc, "initialize", block, args);
+
+            getInitializeNode().call(frame, proc, "initialize", block, args);
+
             return proc;
         }
 
         protected DynamicObject metaClass(DynamicObject object) {
             return Layouts.BASIC_OBJECT.getMetaClass(object);
+        }
+
+        private AllocateObjectNode getAllocateObjectNode() {
+            if (allocateObjectNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
+            }
+
+            return allocateObjectNode;
+        }
+
+        private CallDispatchHeadNode getInitializeNode() {
+            if (initializeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                initializeNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+            }
+
+            return initializeNode;
         }
 
     }
@@ -167,12 +152,11 @@ public abstract class ProcNodes {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject dup(DynamicObject proc) {
-            DynamicObject copy = allocateObjectNode.allocate(
+            final DynamicObject copy = getAllocateObjectNode().allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(proc),
                     Layouts.PROC.getType(proc),
                     Layouts.PROC.getSharedMethodInfo(proc),
@@ -183,7 +167,17 @@ public abstract class ProcNodes {
                     Layouts.PROC.getSelf(proc),
                     Layouts.PROC.getBlock(proc),
                     Layouts.PROC.getFrameOnStackMarker(proc));
+
             return copy;
+        }
+
+        private AllocateObjectNode getAllocateObjectNode() {
+            if (allocateObjectNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
+            }
+
+            return allocateObjectNode;
         }
 
     }
@@ -218,23 +212,20 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = {"call", "[]", "yield"}, rest = true, needsBlock = true)
-    public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private YieldNode yieldNode;
+    public abstract static class CallNode extends YieldingCoreMethodNode {
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yieldNode = new YieldNode(context);
         }
 
         @Specialization
         public Object call(VirtualFrame frame, DynamicObject proc, Object[] args, NotProvided block) {
-            return yieldNode.dispatch(frame, proc, args);
+            return yield(frame, proc, args);
         }
 
         @Specialization
         public Object call(VirtualFrame frame, DynamicObject proc, Object[] args, DynamicObject block) {
-            return yieldNode.dispatchWithModifiedBlock(frame, proc, block, args);
+            return yieldWithModifiedBlock(frame, proc, block, args);
         }
 
     }
@@ -248,7 +239,7 @@ public abstract class ProcNodes {
 
         @Specialization
         public boolean lambda(DynamicObject proc) {
-            return Layouts.PROC.getType(proc) == Type.LAMBDA;
+            return Layouts.PROC.getType(proc) == ProcType.LAMBDA;
         }
 
     }
@@ -264,8 +255,8 @@ public abstract class ProcNodes {
         @Specialization
         public DynamicObject parameters(DynamicObject proc) {
             final ArgumentDescriptor[] argsDesc = Layouts.PROC.getSharedMethodInfo(proc).getArgumentDescriptors();
-
-            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, Layouts.PROC.getType(proc) == Type.LAMBDA);
+            final boolean isLambda = Layouts.PROC.getType(proc) == ProcType.LAMBDA;
+            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, isLambda);
         }
 
     }
@@ -285,8 +276,10 @@ public abstract class ProcNodes {
             if (sourceSection.getSource() == null) {
                 return nil();
             } else {
-                DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
-                Object[] objects = new Object[]{file, sourceSection.getStartLine()};
+                final DynamicObject file = createString(StringOperations.encodeRope(
+                        sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
+
+                final Object[] objects = new Object[]{file, sourceSection.getStartLine()};
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
             }
         }

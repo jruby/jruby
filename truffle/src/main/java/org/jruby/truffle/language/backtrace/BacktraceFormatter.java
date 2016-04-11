@@ -28,9 +28,6 @@ import java.util.List;
 
 public class BacktraceFormatter {
 
-    public static final String OMITTED_LIMIT = "(omitted due to -Xtruffle.backtraces.limit)";
-    public static final String OMITTED_UNUSED = "(omitted as the rescue expression was pure; use -Xtruffle.backtraces.omit_for_unused=false to disable)";
-
     public enum FormattingFlags {
         OMIT_EXCEPTION,
         OMIT_FROM_PREFIX,
@@ -118,11 +115,11 @@ public class BacktraceFormatter {
         final Activation activation = activations.get(n);
 
         if (activation == Activation.OMITTED_LIMIT) {
-            return OMITTED_LIMIT;
+            return context.getCoreStrings().BACKTRACE_OMITTED_LIMIT.toString();
         }
 
         if (activation == Activation.OMITTED_UNUSED) {
-            return OMITTED_UNUSED;
+            return context.getCoreStrings().BACKTRACE_OMITTED_UNUSED.toString();
         }
 
         final StringBuilder builder = new StringBuilder();

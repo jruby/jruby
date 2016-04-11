@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -7,8 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-
-package org.jruby.truffle.core.coerce;
+package org.jruby.truffle.core.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -24,51 +23,45 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
-/**
- * Take a Symbol or some object accepting #to_str
- * and convert it to a Java String.
- */
+
 @NodeChild(value = "child", type = RubyNode.class)
-public abstract class NameToJavaStringNode extends RubyNode {
+public abstract class ToAryNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode toStr;
+    @Child private CallDispatchHeadNode toAryNode;
 
-    public NameToJavaStringNode(RubyContext context, SourceSection sourceSection) {
+    public ToAryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toStr = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public abstract String executeToJavaString(VirtualFrame frame, Object name);
-
-    @Specialization(guards = "isRubySymbol(symbol)")
-    public String coerceRubySymbol(DynamicObject symbol) {
-        return Layouts.SYMBOL.getString(symbol);
+    @Specialization(guards = "isRubyArray(array)")
+    public DynamicObject coerceRubyArray(DynamicObject array) {
+        return array;
     }
 
-    @Specialization(guards = "isRubyString(string)")
-    public String coerceRubyString(DynamicObject string) {
-        return string.toString();
-    }
+    @Specialization(guards = "!isRubyArray(object)")
+    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
+        if (toAryNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+        }
 
-    @Specialization(guards = { "!isRubySymbol(object)", "!isRubyString(object)" })
-    public String coerceObject(VirtualFrame frame, Object object) {
         final Object coerced;
         try {
-            coerced = toStr.call(frame, object, "to_str", null);
+            coerced = toAryNode.call(frame, object, "to_ary", null);
         } catch (RaiseException e) {
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(object, "String", this));
+                throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(object, "Array", this));
             } else {
                 throw e;
             }
         }
 
-        if (RubyGuards.isRubyString(coerced)) {
-            return coerced.toString();
+        if (RubyGuards.isRubyArray(coerced)) {
+            return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
+            throw new RaiseException(coreLibrary().typeErrorBadCoercion(object, "Array", "to_ary", coerced, this));
         }
     }
 }

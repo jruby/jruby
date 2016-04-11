@@ -10,10 +10,12 @@
 
 package org.jruby.truffle.core.rope;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +30,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class RopeTable {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final WeakHashMap<String, Key> stringsTable = new WeakHashMap<>();
     private final WeakHashMap<Key, WeakReference<Rope>> ropesTable = new WeakHashMap<>();
     private final Set<Key> keys = new HashSet<>();
 
@@ -35,15 +38,54 @@ public class RopeTable {
     private int ropesReusedCount;
     private int ropeBytesSaved;
 
-    @CompilerDirectives.TruffleBoundary
     public Rope getRopeUTF8(String string) {
-        return getRope(
-                string.getBytes(StandardCharsets.UTF_8),
-                UTF8Encoding.INSTANCE,
-                CodeRange.CR_VALID);
+        return getRope(string);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
+    public Rope getRope(String string) {
+        lock.readLock().lock();
+
+        try {
+            final Key key = stringsTable.get(string);
+
+            if (key != null) {
+                final WeakReference<Rope> ropeReference = ropesTable.get(key);
+
+                if (ropeReference != null && ropeReference.get() != null) {
+                    return ropeReference.get();
+                }
+            }
+        } finally {
+            lock.readLock().unlock();
+        }
+
+        lock.writeLock().lock();
+
+        try {
+            final Rope rope = StringOperations.encodeRope(string, UTF8Encoding.INSTANCE);
+
+            Key key = stringsTable.get(string);
+
+            if (key == null) {
+                key = new Key(rope.getBytes(), UTF8Encoding.INSTANCE);
+                stringsTable.put(string, key);
+            }
+
+            WeakReference<Rope> ropeReference = ropesTable.get(key);
+
+            if (ropeReference == null || ropeReference.get() == null) {
+                ropeReference = new WeakReference<>(rope);
+                ropesTable.put(key, ropeReference);
+            }
+
+            return rope;
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @TruffleBoundary
     public Rope getRope(byte[] bytes, Encoding encoding, CodeRange codeRange) {
         final Key key = new Key(bytes, encoding);
 

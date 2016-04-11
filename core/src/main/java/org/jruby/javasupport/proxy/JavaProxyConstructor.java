@@ -192,7 +192,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         }
     }
 
-    private static class MethodInvocationHandler implements JavaProxyInvocationHandler {
+    private static final class MethodInvocationHandler implements JavaProxyInvocationHandler {
 
         private final Ruby runtime;
         private final IRubyObject self;
@@ -202,6 +202,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         }
 
         public IRubyObject getOrig() { return self; }
+        public final Ruby getRuntime() { return runtime; }
 
         public Object invoke(Object proxy, JavaProxyMethod proxyMethod, Object[] nargs) throws Throwable {
             final RubyClass metaClass = self.getMetaClass();
@@ -264,7 +265,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         }
     }
 
-    private static class ProcInvocationHandler implements JavaProxyInvocationHandler {
+    private static final class ProcInvocationHandler implements JavaProxyInvocationHandler {
 
         private final Ruby runtime;
         private final RubyProc proc;
@@ -274,6 +275,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         }
 
         public IRubyObject getOrig() { return null; }
+        public final Ruby getRuntime() { return runtime; }
 
         public Object invoke(Object proxy, JavaProxyMethod method, Object[] nargs) throws Throwable {
             final int length = nargs == null ? 0 : nargs.length;
@@ -296,8 +298,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         final Class<?>[] parameterTypes = getParameterTypes();
 
         for ( int i = 0; i < argsSize; i++ ) {
-            // TODO: call ruby array [] method?
-            args[i] = arguments.entry(i).toJava( parameterTypes[i] );
+            args[i] = arguments.eltInternal(i).toJava( parameterTypes[i] );
         }
         return args;
     }

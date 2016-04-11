@@ -84,9 +84,9 @@ public class DescriptorInfo {
             }
 
             if (frame && !desc.anno.frame())
-                throw new RuntimeException("Unbalanced frame property on method " + desc.declaringClassName + "." + desc.name);
+                throw new RuntimeException("Unbalanced frame property on method " + desc.declaringClassName + '.' + desc.name);
             if (scope && !desc.anno.scope())
-                throw new RuntimeException("Unbalanced scope property on method " + desc.declaringClassName + "." + desc.name);
+                throw new RuntimeException("Unbalanced scope property on method " + desc.declaringClassName + '.' + desc.name);
             frame |= desc.anno.frame();
             scope |= desc.anno.scope();
             block |= desc.hasBlock;
@@ -104,27 +104,27 @@ public class DescriptorInfo {
             int i = 0;
             for (; i < min; i++) {
                 if (i > 0) descBuilder.append(';');
-                descBuilder.append("n");
+                descBuilder.append('n');
             }
             // variable arity
         } else if (RICH_NATIVE_METHOD_PARAMETERS) {
             int i = 0;
             for (; i < min; i++) {
                 if (i > 0) descBuilder.append(';');
-                descBuilder.append("n");
+                descBuilder.append('n');
             }
 
             for (; i < max; i++) {
                 if (i > 0) descBuilder.append(';');
-                descBuilder.append("O");
+                descBuilder.append('O');
             }
 
             if (rest) {
                 if (i > 0) descBuilder.append(';');
-                descBuilder.append("R");
+                descBuilder.append('R');
             }
         } else {
-            descBuilder.append("R");
+            descBuilder.append('R');
         }
 
         parameterDesc = descBuilder.toString();

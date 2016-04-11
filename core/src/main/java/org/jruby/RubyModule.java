@@ -884,24 +884,18 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public void defineAnnotatedConstants(Class clazz) {
-        Field[] declaredFields = clazz.getDeclaredFields();
-        for (Field field : declaredFields) {
+    public final void defineAnnotatedConstants(Class clazz) {
+        for (Field field : clazz.getDeclaredFields()) {
             if (Modifier.isStatic(field.getModifiers())) {
                 defineAnnotatedConstant(field);
             }
         }
     }
 
-    public boolean defineAnnotatedConstant(Field field) {
+    public final boolean defineAnnotatedConstant(Field field) {
         JRubyConstant jrubyConstant = field.getAnnotation(JRubyConstant.class);
 
         if (jrubyConstant == null) return false;
-
-        String[] names = jrubyConstant.value();
-        if(names.length == 0) {
-            names = new String[]{field.getName()};
-        }
 
         Class tp = field.getType();
         IRubyObject realVal;
@@ -918,9 +912,12 @@ public class RubyModule extends RubyObject {
             realVal = getRuntime().getNil();
         }
 
-
-        for(String name : names) {
-            this.setConstant(name, realVal);
+        String[] names = jrubyConstant.value();
+        if (names.length == 0) {
+            setConstant(field.getName(), realVal);
+        }
+        else {
+            for (String name : names) setConstant(name, realVal);
         }
 
         return true;
@@ -931,12 +928,12 @@ public class RubyModule extends RubyObject {
         defineAnnotatedMethodsIndividually(clazz);
     }
 
-    public static class MethodClumper {
-        Map<String, List<JavaMethodDescriptor>> annotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
-        Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
-        Map<String, List<JavaMethodDescriptor>> allAnnotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
+    public static final class MethodClumper {
+        private HashMap<String, List<JavaMethodDescriptor>> annotatedMethods;
+        private HashMap<String, List<JavaMethodDescriptor>> staticAnnotatedMethods;
+        // final HashMap<String, List<JavaMethodDescriptor>> allAnnotatedMethods = new HashMap<>();
 
-        public void clump(Class cls) {
+        public void clump(final Class cls) {
             Method[] declaredMethods = Initializer.DECLARED_METHODS.get(cls);
             for (Method method: declaredMethods) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
@@ -953,56 +950,66 @@ public class RubyModule extends RubyObject {
                 List<JavaMethodDescriptor> methodDescs;
                 Map<String, List<JavaMethodDescriptor>> methodsHash;
                 if (desc.isStatic) {
-                    methodsHash = staticAnnotatedMethods;
+                    if ( (methodsHash = staticAnnotatedMethods) == null ) {
+                        methodsHash = staticAnnotatedMethods = new HashMap<>();
+                    }
                 } else {
-                    methodsHash = annotatedMethods;
+                    if ( (methodsHash = annotatedMethods) == null ) {
+                        methodsHash = annotatedMethods = new HashMap<>();
+                    }
                 }
 
                 // add to specific
                 methodDescs = methodsHash.get(name);
                 if (methodDescs == null) {
-                    methodDescs = new ArrayList<JavaMethodDescriptor>();
-                    methodsHash.put(name, methodDescs);
-                } else {
+                    // optimize for most methods mapping to one method for a given name :
+                    methodsHash.put(name, Collections.singletonList(desc));
+                }
+                else {
                     CompatVersion oldCompat = methodDescs.get(0).anno.compat();
                     CompatVersion newCompat = desc.anno.compat();
 
                     int comparison = newCompat.compareTo(oldCompat);
                     if (comparison == 1) {
                         // new method's compat is higher than old method's, so we throw old one away
-                        methodDescs = new ArrayList<JavaMethodDescriptor>();
-                        methodsHash.put(name, methodDescs);
+                        methodsHash.put(name, methodDescs = new ArrayList<>(2));
                     } else if (comparison == 0) {
                         // same compat version, proceed to adding additional method
                     } else {
                         // lower compat, skip this method
                         continue;
                     }
-                }
 
-                methodDescs.add(desc);
+                    if (methodDescs.getClass() != ArrayList.class) { // due singletonList
+                        ArrayList<JavaMethodDescriptor> newDescs = new ArrayList<>(4);
+                        newDescs.addAll(methodDescs);
+                        methodsHash.put(name, methodDescs = newDescs);
+                    }
+
+                    methodDescs.add(desc);
+                }
 
                 // add to general
-                methodDescs = allAnnotatedMethods.get(name);
-                if (methodDescs == null) {
-                    methodDescs = new ArrayList<JavaMethodDescriptor>();
-                    allAnnotatedMethods.put(name, methodDescs);
-                }
-
-                methodDescs.add(desc);
+                //methodDescs = allAnnotatedMethods.get(name);
+                //if (methodDescs == null) {
+                //    methodDescs = new ArrayList<JavaMethodDescriptor>();
+                //    allAnnotatedMethods.put(name, methodDescs);
+                //}
+                //methodDescs.add(desc);
             }
         }
 
+        @Deprecated // no-longer used
         public Map<String, List<JavaMethodDescriptor>> getAllAnnotatedMethods() {
-            return allAnnotatedMethods;
+            return null; // return allAnnotatedMethods;
         }
 
-        public Map<String, List<JavaMethodDescriptor>> getAnnotatedMethods() {
-            return annotatedMethods;
+        public final Map<String, List<JavaMethodDescriptor>> getAnnotatedMethods() {
+            return annotatedMethods == null ? Collections.EMPTY_MAP : annotatedMethods;
         }
 
-        public Map<String, List<JavaMethodDescriptor>> getStaticAnnotatedMethods() {
-            return staticAnnotatedMethods;
+        public final Map<String, List<JavaMethodDescriptor>> getStaticAnnotatedMethods() {
+            return staticAnnotatedMethods == null ? Collections.EMPTY_MAP : staticAnnotatedMethods;
         }
     }
 
@@ -1032,23 +1039,23 @@ public class RubyModule extends RubyObject {
         return new TypePopulator.ReflectiveTypePopulator(type);
     }
 
-    public void defineAnnotatedMethodsIndividually(Class clazz) {
+    public final void defineAnnotatedMethodsIndividually(Class clazz) {
         getRuntime().POPULATORS.get(clazz).populate(this, clazz);
     }
 
-    public boolean defineAnnotatedMethod(String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {
+    public final boolean defineAnnotatedMethod(String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {
         JavaMethodDescriptor desc = methods.get(0);
         if (methods.size() == 1) {
             return defineAnnotatedMethod(name, desc, methodFactory);
-        } else {
-            DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods);
-            define(this, desc, name, dynamicMethod);
-
-            return true;
         }
+
+        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods);
+        define(this, desc, name, dynamicMethod);
+
+        return true;
     }
 
-    public boolean defineAnnotatedMethod(Method method, MethodFactory methodFactory) {
+    public final boolean defineAnnotatedMethod(Method method, MethodFactory methodFactory) {
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
 
         if (jrubyMethod == null) return false;
@@ -1060,7 +1067,7 @@ public class RubyModule extends RubyObject {
         return true;
     }
 
-    public boolean defineAnnotatedMethod(String name, JavaMethodDescriptor desc, MethodFactory methodFactory) {
+    public final boolean defineAnnotatedMethod(String name, JavaMethodDescriptor desc, MethodFactory methodFactory) {
         JRubyMethod jrubyMethod = desc.anno;
 
         if (jrubyMethod == null) return false;

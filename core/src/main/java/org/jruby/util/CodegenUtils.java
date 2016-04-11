@@ -278,13 +278,19 @@ public class CodegenUtils {
     }
 
     public static String getAnnotatedBindingClassName(String javaMethodName, CharSequence typeName, boolean isStatic, int required, int optional, boolean multi, boolean framed) {
-        String commonClassSuffix = "$INVOKER" + (isStatic ? "$s$" : "$i$" );
         if (multi) {
-            commonClassSuffix += javaMethodName;
-        } else {
-            commonClassSuffix += required + '$' + optional + '$' + javaMethodName;
+            return new StringBuilder(typeName.length() + 8 + 3 + javaMethodName.length())
+                    .append(typeName)
+                    .append("$INVOKER").append(isStatic ? "$s$" : "$i$")
+                    .append(javaMethodName)
+                    .toString();
         }
-        return typeName + commonClassSuffix;
+        return new StringBuilder(typeName.length() + 8 + 3 + 4 + javaMethodName.length())
+                .append(typeName)
+                .append("$INVOKER").append(isStatic ? "$s$" : "$i$")
+                .append(required).append('$').append(optional).append('$')
+                .append(javaMethodName)
+                .toString();
     }
 
     public static void visitAnnotationFields(AnnotationVisitor visitor, Map<String, Object> fields) {

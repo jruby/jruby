@@ -89,7 +89,7 @@ public class JavaProxy extends RubyObject {
         this.object = javaObject.getValue();
     }
 
-    public Object getObject() {
+    public final Object getObject() {
         // FIXME: Added this because marshal_spec seemed to reconstitute objects without calling dataWrapStruct
         // this resulted in object being null after unmarshalling...
         if (object == null) {

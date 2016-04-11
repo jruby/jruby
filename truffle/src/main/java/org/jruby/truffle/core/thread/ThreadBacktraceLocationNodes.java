@@ -18,6 +18,9 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.StringNodes;
+import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
@@ -39,7 +42,7 @@ public class ThreadBacktraceLocationNodes {
             final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
 
             if (activation.getCallNode() == null) {
-                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED_LIMIT, UTF8Encoding.INSTANCE));
+                return coreStrings().BACKTRACE_OMITTED_LIMIT.createInstance();
             }
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -50,13 +53,13 @@ public class ThreadBacktraceLocationNodes {
 
             // TODO CS 30-Apr-15: not absolute - not sure how to solve that
 
-            String path = sourceSection.getSource().getPath();
+            final String path = sourceSection.getSource().getPath();
 
             if (path == null) {
-                path = "(unknown)";
+                return coreStrings().UNKNOWN.createInstance();
+            } else {
+                return createString(getContext().getRopeTable().getRope(path));
             }
-
-            return createString(StringOperations.encodeRope(path, UTF8Encoding.INSTANCE));
         }
 
     }
@@ -87,13 +90,13 @@ public class ThreadBacktraceLocationNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject threadBacktraceLocation) {
-            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
+            final Activation activation= ThreadBacktraceLocationLayoutImpl.INSTANCE
+                    .getActivation(threadBacktraceLocation);
 
             if (activation.getCallNode() == null) {
-                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED_LIMIT, UTF8Encoding.INSTANCE));
+                return coreStrings().BACKTRACE_OMITTED_LIMIT.createInstance();
             }
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -102,10 +105,13 @@ public class ThreadBacktraceLocationNodes {
                 return createString(StringOperations.encodeRope(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE));
             }
 
-            return createString(StringOperations.encodeRope(String.format("%s:%d:in `%s'",
+            return createString(RopeOperations.format(getContext(),
                     sourceSection.getSource().getName(),
+                    ":",
                     sourceSection.getStartLine(),
-                    sourceSection.getIdentifier()), UTF8Encoding.INSTANCE));
+                    ":in `",
+                    sourceSection.getIdentifier(),
+                    "'"));
         }
 
     }

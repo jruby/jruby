@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.coerce;
+package org.jruby.truffle.core.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -19,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.cast.ToIntNodeGen;
 import org.jruby.truffle.core.numeric.FloatNodes;
 import org.jruby.truffle.core.numeric.FloatNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
