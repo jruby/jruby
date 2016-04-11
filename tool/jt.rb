@@ -410,7 +410,7 @@ module Commands
       test_tck
       test_specs('run')
       # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled
-      test_integration({'CI' => true, 'HAS_REDIS' => true}, 'all')
+      test_integration({'CI' => 'true', 'HAS_REDIS' => 'true'}, 'all')
       test_compiler
     when 'compiler' then test_compiler(*rest)
     when 'integration' then test_integration({}, *rest)
