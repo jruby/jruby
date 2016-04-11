@@ -14,7 +14,7 @@ then
 
 else
 
-    $JRUBY_BIN/gem install bundler
+    $JRUBY $JRUBY_BIN/gem install bundler
 
     $JTR setup
     $JTR run -r rubygems -- bin/rails server &
