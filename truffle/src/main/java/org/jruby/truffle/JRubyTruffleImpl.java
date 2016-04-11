@@ -28,6 +28,12 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
     // Created by reflection from Ruby#loadTruffle
 
     public JRubyTruffleImpl(Ruby runtime) {
+        try {
+            Class.forName("com.oracle.truffle.llvm.LLVM", true, ClassLoader.getSystemClassLoader());
+        } catch (ClassNotFoundException e) {
+            // Sulong may not be on the classpath, or if it genuinely failed we'll be happy with the exception later on
+        }
+
         engine = PolyglotEngine.newBuilder()
                 .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new JRubyContextWrapper(runtime))
                 .build();

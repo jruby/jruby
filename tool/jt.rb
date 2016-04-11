@@ -61,10 +61,10 @@ module Utilities
     raise "couldn't find trufflejs.jar - download GraalVM as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and find it in there"
   end
 
-  def self.find_sulong
-    jar = ENV['SULONG_JAR']
-    return jar if jar
-    raise "couldn't find sulong.jar - you need to build it from source"
+  def self.find_sulong_dir
+    dir = ENV['SULONG_DIR']
+    return dir if dir
+    raise "couldn't find the Sulong repository - you need to check it out and build it"
   end
 
   def self.jruby_eclipse?
@@ -312,7 +312,7 @@ module Commands
     puts '  GRAAL_BIN_...git_branch_name...              GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
-    puts '  SULONG_JAR                                   The location of sulong.jar'
+    puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
   end
 
   def checkout(branch)
@@ -369,8 +369,11 @@ module Commands
     end
 
     if args.delete('--sulong')
+      dir = Utilities.find_sulong_dir
       jruby_args << '-J-classpath'
-      jruby_args << Utilities.find_sulong
+      jruby_args << File.join(dir, 'lib', '*')
+      jruby_args << '-J-classpath'
+      jruby_args << File.join(dir, 'build', 'sulong.jar')
     end
 
     if args.delete('--asm')

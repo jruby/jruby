@@ -15,14 +15,14 @@ require 'yaml'
 MX_DIR = ENV['MX_DIR']
 
 if MX_DIR.nil?
-  $stderr.puts 'You need to set MX_DIR so I can find mx'
+  $stderr.puts 'You need to set MX_DIR to a checkout of the mx repository'
   exit 1
 end
 
 SULONG_DIR = ENV['SULONG_DIR']
 
 if SULONG_DIR.nil?
-  $stderr.puts 'You need to set SULONG_DIR so I can find Sulong'
+  $stderr.puts 'You need to set SULONG_DIR to the location of a built checkout of the Sulong repository'
   exit 1
 end
 
