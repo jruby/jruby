@@ -1,0 +1,60 @@
+#!/usr/bin/env jruby
+
+# Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved.
+# This code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
+# A compiler for JRuby+Truffle C extensions
+
+require 'yaml'
+
+MX_DIR = ENV['MX_DIR']
+
+if MX_DIR.nil?
+  $stderr.puts 'You need to set MX_DIR so I can find mx'
+  exit 1
+end
+
+SULONG_DIR = ENV['SULONG_DIR']
+
+if SULONG_DIR.nil?
+  $stderr.puts 'You need to set SULONG_DIR so I can find Sulong'
+  exit 1
+end
+
+def mx(command, *args)
+  `#{MX_DIR}/mx.py -p #{SULONG_DIR} --vm server #{command} #{args.join(' ')}`
+end
+
+CEXT_DIR = ARGV[0]
+
+if CEXT_DIR.nil?
+  $stderr.puts 'You need to pass the directory of a C extension so I can build it'
+  exit 1
+end
+
+CONFIG_FILE = File.join(CEXT_DIR, '.jruby-cext-build.yml')
+
+unless File.exist?(CONFIG_FILE)
+  $stderr.puts "There is no .jruby-cext-build.yml in this C extension at the moment - I don't know how to build it"
+  exit 1
+end
+
+CONFIG = YAML.load_file(CONFIG_FILE)
+
+SRC = Dir[File.join(CEXT_DIR, CONFIG['src'])]
+OUT = File.join(CEXT_DIR, CONFIG['out'])
+
+LL = []
+
+SRC.each do |src|
+  ll = File.join(File.dirname(src), File.basename(src, '.*') + '.ll')
+  mx 'su-clang', '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', src, '-o', ll
+  LL.push ll
+end
+
+mx 'su-link', OUT, *LL
