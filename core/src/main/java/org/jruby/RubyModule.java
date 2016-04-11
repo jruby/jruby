@@ -932,8 +932,8 @@ public class RubyModule extends RubyObject {
     }
 
     public static final class MethodClumper {
-        final HashMap<String, List<JavaMethodDescriptor>> annotatedMethods = new HashMap<>();
-        final HashMap<String, List<JavaMethodDescriptor>> staticAnnotatedMethods = new HashMap<>();
+        private HashMap<String, List<JavaMethodDescriptor>> annotatedMethods;
+        private HashMap<String, List<JavaMethodDescriptor>> staticAnnotatedMethods;
         // final HashMap<String, List<JavaMethodDescriptor>> allAnnotatedMethods = new HashMap<>();
 
         public void clump(final Class cls) {
@@ -953,9 +953,13 @@ public class RubyModule extends RubyObject {
                 List<JavaMethodDescriptor> methodDescs;
                 Map<String, List<JavaMethodDescriptor>> methodsHash;
                 if (desc.isStatic) {
-                    methodsHash = staticAnnotatedMethods;
+                    if ( (methodsHash = staticAnnotatedMethods) == null ) {
+                        methodsHash = staticAnnotatedMethods = new HashMap<>();
+                    }
                 } else {
-                    methodsHash = annotatedMethods;
+                    if ( (methodsHash = annotatedMethods) == null ) {
+                        methodsHash = annotatedMethods = new HashMap<>();
+                    }
                 }
 
                 // add to specific
@@ -1003,12 +1007,12 @@ public class RubyModule extends RubyObject {
             return null; // return allAnnotatedMethods;
         }
 
-        public Map<String, List<JavaMethodDescriptor>> getAnnotatedMethods() {
-            return annotatedMethods;
+        public final Map<String, List<JavaMethodDescriptor>> getAnnotatedMethods() {
+            return annotatedMethods == null ? Collections.EMPTY_MAP : annotatedMethods;
         }
 
-        public Map<String, List<JavaMethodDescriptor>> getStaticAnnotatedMethods() {
-            return staticAnnotatedMethods;
+        public final Map<String, List<JavaMethodDescriptor>> getStaticAnnotatedMethods() {
+            return staticAnnotatedMethods == null ? Collections.EMPTY_MAP : staticAnnotatedMethods;
         }
     }
 
