@@ -2,7 +2,7 @@
 
 set -e
 
-cd test/truffle/integration/rails
+cd test/truffle/integration/rails-app
 
 JRUBY_BIN=../../../../bin
 JRUBY=$JRUBY_BIN/jruby
