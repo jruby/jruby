@@ -306,22 +306,22 @@ public abstract class IOPrimitiveNodes {
         }
 
         @TruffleBoundary
-        private void performReopen(DynamicObject file, DynamicObject io) {
-            final int fd = Layouts.IO.getDescriptor(file);
-            final int fdOther = Layouts.IO.getDescriptor(io);
+        private void performReopen(DynamicObject self, DynamicObject target) {
+            final int fdSelf = Layouts.IO.getDescriptor(self);
+            final int fdTarget = Layouts.IO.getDescriptor(target);
 
-            final int result = posix().dup2(fdOther, fd);
-            if (result == -1) {
+            ensureSuccessful(posix().dup2(fdTarget, fdSelf));
+
+            final int newSelfMode = ensureSuccessful(posix().fcntl(fdSelf, Fcntl.F_GETFL));
+            Layouts.IO.setMode(self, newSelfMode);
+        }
+
+        private int ensureSuccessful(int result) {
+            if (result < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
-
-            final int mode = posix().fcntl(fd, Fcntl.F_GETFL);
-            if (mode < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-            }
-            Layouts.IO.setMode(file, mode);
+            return result;
         }
 
         @Specialization
