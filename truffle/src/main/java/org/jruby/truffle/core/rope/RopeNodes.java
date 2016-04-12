@@ -243,7 +243,7 @@ public abstract class RopeNodes {
         public abstract Rope executeMake(Rope left, Rope right, Encoding encoding);
 
         @Specialization(guards = "isMutableRope(left)")
-        public Rope concatMutableRope(MutableRope left, Rope right, Encoding encoding,
+        public Rope concatMutableRope(RopeBuffer left, Rope right, Encoding encoding,
                                       @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
             try {
                 ExactMath.addExact(left.byteLength(), right.byteLength());
@@ -314,7 +314,7 @@ public abstract class RopeNodes {
         }
 
         protected static boolean isMutableRope(Rope rope) {
-            return rope instanceof MutableRope;
+            return rope instanceof RopeBuffer;
         }
     }
 

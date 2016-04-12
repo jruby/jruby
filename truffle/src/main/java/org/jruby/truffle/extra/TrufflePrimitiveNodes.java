@@ -43,7 +43,7 @@ import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.hash.BucketsStrategy;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.MutableRope;
+import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
@@ -456,8 +456,8 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject convertToMutableRope(DynamicObject string) {
-            final MutableRope mutableRope = new MutableRope(StringOperations.rope(string));
-            StringOperations.setRope(string, mutableRope);
+            final RopeBuffer ropeBuffer = new RopeBuffer(StringOperations.rope(string));
+            StringOperations.setRope(string, ropeBuffer);
 
             return string;
         }

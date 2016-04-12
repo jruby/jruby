@@ -69,7 +69,7 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.MutableRope;
+import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
@@ -1138,8 +1138,8 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
 
             if (differentEncodingProfile.profile(rope.getEncoding() != encoding)) {
-                if (mutableRopeProfile.profile(rope instanceof MutableRope)) {
-                    ((MutableRope) rope).getByteList().setEncoding(encoding);
+                if (mutableRopeProfile.profile(rope instanceof RopeBuffer)) {
+                    ((RopeBuffer) rope).getByteList().setEncoding(encoding);
                 } else {
                     final Rope newRope = withEncodingNode.executeWithEncoding(rope, encoding, CodeRange.CR_UNKNOWN);
                     StringOperations.setRope(string, newRope);
@@ -1815,9 +1815,9 @@ public abstract class StringNodes {
                         @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
             final Rope rope = rope(string);
 
-            if (mutableRopeProfile.profile(rope instanceof MutableRope)) {
+            if (mutableRopeProfile.profile(rope instanceof RopeBuffer)) {
                 // TODO (nirvdrum 11-Mar-16): This response is only correct for CR_7BIT. Mutable ropes have not been updated for multi-byte characters.
-                return ((MutableRope) rope).getByteList().realSize();
+                return ((RopeBuffer) rope).getByteList().realSize();
             } else {
                 return rope.characterLength();
             }
