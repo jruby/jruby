@@ -16,6 +16,12 @@ class String
     end
   end
 
+  def capitalize
+    s = dup
+    s.capitalize!
+    s
+  end
+
   def downcase
     s = dup
     s.downcase!

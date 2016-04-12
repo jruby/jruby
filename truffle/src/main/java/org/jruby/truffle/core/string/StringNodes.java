@@ -2487,28 +2487,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "capitalize", taintFromSelf = true)
-    public abstract static class CapitalizeNode extends CoreMethodArrayArgumentsNode {
-
-        @Child CallDispatchHeadNode capitalizeBangNode;
-        @Child CallDispatchHeadNode dupNode;
-
-        public CapitalizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            capitalizeBangNode = DispatchHeadNodeFactory.createMethodCall(context);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization
-        public Object capitalize(VirtualFrame frame, DynamicObject string) {
-            final Object duped = dupNode.call(frame, string, "dup", null);
-            capitalizeBangNode.call(frame, duped, "capitalize!", null);
-
-            return duped;
-        }
-
-    }
-
     @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
