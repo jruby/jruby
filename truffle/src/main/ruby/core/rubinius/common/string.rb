@@ -945,9 +945,6 @@ class String
 
     self.num_bytes = bytes
 
-    # We do not need to dup the data, so don't use #modify!
-    @hash_value = nil
-
     self
   end
 
@@ -1012,8 +1009,6 @@ class String
       bytes = bytesize - size
     end
 
-    # We do not need to dup the data, so don't use #modify!
-    @hash_value = nil
     self.num_bytes = bytes
 
     self
