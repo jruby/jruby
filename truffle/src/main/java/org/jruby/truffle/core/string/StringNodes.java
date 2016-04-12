@@ -77,6 +77,7 @@ import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodes.MakeRepeatingNode;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rope.SubstringRope;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.language.NotProvided;
@@ -2490,32 +2491,16 @@ public abstract class StringNodes {
     @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.WithEncodingNode withEncodingNode;
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            withEncodingNode = RopeNodes.WithEncodingNode.create(context, sourceSection);
+            makeSubstringNode = RopeNodes.MakeSubstringNode.create(context, sourceSection);
         }
 
         @Specialization
-        public DynamicObject clear(DynamicObject string,
-                                   @Cached("createBinaryProfile()") ConditionProfile isUTF8,
-                                   @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
-                                   @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit) {
-            final Rope rope = rope(string);
-            final Rope emptyRope;
-
-            if (isUTF8.profile(rope.getEncoding() == UTF8Encoding.INSTANCE)) {
-                emptyRope = RopeConstants.EMPTY_UTF8_ROPE;
-            } else if (isUSAscii.profile(rope.getEncoding() == USASCIIEncoding.INSTANCE)) {
-                emptyRope = RopeConstants.EMPTY_US_ASCII_ROPE;
-            } else if (isAscii8Bit.profile(rope.getEncoding() == ASCIIEncoding.INSTANCE)) {
-                emptyRope = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-            } else {
-                emptyRope = withEncodingNode.executeWithEncoding(RopeConstants.EMPTY_ASCII_8BIT_ROPE, rope.getEncoding(), CodeRange.CR_7BIT);
-            }
-
-            StringOperations.setRope(string, emptyRope);
+        public DynamicObject clear(DynamicObject string) {
+            StringOperations.setRope(string, makeSubstringNode.executeMake(rope(string), 0, 0));
 
             return string;
         }
