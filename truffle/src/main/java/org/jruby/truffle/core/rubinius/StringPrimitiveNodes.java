@@ -1192,22 +1192,51 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
+    // Port of Rubinius's String::previous_byte_index.
     @RubiniusPrimitive(name = "string_previous_byte_index")
+    @ImportStatic(StringGuards.class)
     public static abstract class StringPreviousByteIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringPreviousByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object stringPreviousByteIndex(DynamicObject string, int index) {
-            // Port of Rubinius's String::previous_byte_index.
+        @Specialization(guards = "index < 0")
+        @TruffleBoundary
+        public Object stringPreviousByteIndexNegativeIndex(DynamicObject string, int index) {
+            throw new RaiseException(coreLibrary().argumentError("negative index given", this));
+        }
 
-            if (index < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("negative index given", this));
+        @Specialization(guards = "index == 0")
+        public Object stringPreviousByteIndexZeroIndex(DynamicObject string, int index) {
+            return nil();
+        }
+
+        @Specialization(guards = { "index > 0", "isSingleByteOptimizable(string)" })
+        public int stringPreviousByteIndexSingleByteOptimizable(DynamicObject string, int index) {
+            return index - 1;
+        }
+
+        @Specialization(guards = { "index > 0", "!isSingleByteOptimizable(string)", "isFixedWidthEncoding(string)" })
+        public int stringPreviousByteIndexFixedWidthEncoding(DynamicObject string, int index,
+                                                             @Cached("createBinaryProfile()") ConditionProfile firstCharacterProfile) {
+            final Encoding encoding = encoding(string);
+
+            // TODO (nirvdrum 11-Apr-16) Determine whether we need to be bug-for-bug compatible with Rubinius.
+            // Implement a bug in Rubinius. We already special-case the index == 0 by returning nil. For all indices
+            // corresponding to a given character, we treat them uniformly. However, for the first character, we only
+            // return nil if the index is 0. If any other index into the first character is encountered, we return 0.
+            // It seems unlikely this will ever be encountered in practice, but it's here for completeness.
+            if (firstCharacterProfile.profile(index < encoding.maxLength())) {
+                return 0;
             }
 
+            return (index / encoding.maxLength() - 1) * encoding.maxLength();
+        }
+
+        @Specialization(guards = { "index > 0", "!isSingleByteOptimizable(string)", "!isFixedWidthEncoding(string)" })
+        @TruffleBoundary
+        public Object stringPreviousByteIndex(DynamicObject string, int index) {
             final Rope rope = rope(string);
             final int p = rope.begin();
             final int end = p + rope.byteLength();
