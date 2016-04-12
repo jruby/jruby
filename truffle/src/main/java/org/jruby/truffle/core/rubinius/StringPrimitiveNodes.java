@@ -89,6 +89,7 @@ import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.RepeatingRope;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
@@ -1655,7 +1656,8 @@ public abstract class StringPrimitiveNodes {
                                                            @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile stillNegativeBeginProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile tooLargeTotalProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile) {
+                                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
             // Taken from org.jruby.RubyString#substr19.
             final Rope rope = rope(string);
             if (emptyStringProfile.profile(rope.isEmpty())) {
@@ -1682,6 +1684,10 @@ public abstract class StringPrimitiveNodes {
             if (negativeLengthProfile.profile(len <= 0)) {
                 len = 0;
                 beg = 0;
+            }
+
+            if (mutableRopeProfile.profile(rope instanceof RopeBuffer)) {
+                return makeBuffer(string, beg, len);
             }
 
             return makeRope(string, beg, len);
@@ -1783,6 +1789,34 @@ public abstract class StringPrimitiveNodes {
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
                     makeSubstringNode.executeMake(rope(string), beg, len),
+                    null);
+
+            taintResultNode.maybeTaint(string, ret);
+
+            return ret;
+        }
+
+        private DynamicObject makeBuffer(DynamicObject string, int beg, int len) {
+            assert RubyGuards.isRubyString(string);
+
+            final RopeBuffer buffer = (RopeBuffer) rope(string);
+
+            if (allocateNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
+            }
+
+            if (taintResultNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
+            }
+
+            // NB: This is only valid for the single-byte case. If multi-byte, the code range must be recalculated.
+            // This is not intended to be a 100% correct implementation, since you should normally be using the
+            // immutable rope variant.
+            final DynamicObject ret = allocateNode.allocate(
+                    Layouts.BASIC_OBJECT.getLogicalClass(string),
+                    new RopeBuffer(new ByteList(buffer.getByteList(), beg, len), buffer.getCodeRange(), buffer.isSingleByteOptimizable(), len),
                     null);
 
             taintResultNode.maybeTaint(string, ret);
