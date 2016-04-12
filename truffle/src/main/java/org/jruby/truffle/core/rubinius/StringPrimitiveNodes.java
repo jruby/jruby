@@ -1193,6 +1193,9 @@ public abstract class StringPrimitiveNodes {
     }
 
     // Port of Rubinius's String::previous_byte_index.
+    //
+    // This method takes a byte index, finds the corresponding character the byte index belongs to, and then returns
+    // the byte index marking the start of the previous character in the string.
     @RubiniusPrimitive(name = "string_previous_byte_index")
     @ImportStatic(StringGuards.class)
     public static abstract class StringPreviousByteIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
