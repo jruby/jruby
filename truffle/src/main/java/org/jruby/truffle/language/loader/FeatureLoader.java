@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.loader;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -78,6 +79,12 @@ public class FeatureLoader {
     }
 
     private String findFeatureWithAndWithoutExtension(String path) {
+        final String asCExt = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
+
+        if (asCExt != null) {
+            return asCExt;
+        }
+
         final String withExtension = findFeatureWithExactPath(path + RubyLanguage.EXTENSION);
 
         if (withExtension != null) {
@@ -158,24 +165,45 @@ public class FeatureLoader {
                 return false;
             }
 
+            final String mimeType = source.getMimeType();
+
+            switch (mimeType) {
+                case RubyLanguage.MIME_TYPE: {
+                    final RubyRootNode rootNode = context.getCodeLoader().parse(
+                            source,
+                            UTF8Encoding.INSTANCE,
+                            ParserContext.TOP_LEVEL,
+                            null,
+                            true,
+                            callNode);
+
+                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
+                            ParserContext.TOP_LEVEL,
+                            DeclarationContext.TOP_LEVEL,
+                            rootNode, null,
+                            context.getCoreLibrary().getMainObject());
+
+                    deferredCall.call(frame, callNode);
+                } break;
+
+                case RubyLanguage.CEXT_MIME_TYPE: {
+                    final CallTarget callTarget;
+
+                    try {
+                        callTarget = context.getEnv().parse(source);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    callNode.call(frame, callTarget, new Object[]{});
+                } break;
+
+                default:
+                    throw new RaiseException(context.getCoreLibrary().internalError("unknown language " + mimeType, callNode));
+            }
+
             final DynamicObject pathString = StringOperations.createString(context,
                     StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
-
-            final RubyRootNode rootNode = context.getCodeLoader().parse(
-                    source,
-                    UTF8Encoding.INSTANCE,
-                    ParserContext.TOP_LEVEL,
-                    null,
-                    true,
-                    callNode);
-
-            final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
-                    ParserContext.TOP_LEVEL,
-                    DeclarationContext.TOP_LEVEL,
-                    rootNode, null,
-                    context.getCoreLibrary().getMainObject());
-
-            deferredCall.call(frame, callNode);
 
             addToLoadedFeatures(pathString);
 
