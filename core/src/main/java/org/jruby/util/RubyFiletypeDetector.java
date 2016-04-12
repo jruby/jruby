@@ -43,6 +43,9 @@ public final class RubyFiletypeDetector extends FileTypeDetector {
             if (firstLine != null && SHEBANG_REGEXP.matcher(firstLine).matches()) {
                 return RUBY_MIME;
             }
+        } catch (Exception e) {
+            // Reading random files as UTF-8 could cause all sorts of errors
+            return null;
         }
 
         return null;
