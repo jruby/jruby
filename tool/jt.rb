@@ -29,9 +29,9 @@ trap(:INT) {}
 
 module Utilities
 
-  def self.graal_version
+  def self.truffle_version
     File.foreach("#{JRUBY_DIR}/truffle/pom.rb") do |line|
-      if /jar 'com.oracle:truffle:(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
+      if /\btruffle_version = '(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
         break $1
       end
     end
@@ -63,7 +63,7 @@ module Utilities
 
   def self.jruby_eclipse?
     # tool/jruby_eclipse only works on release currently
-    ENV["JRUBY_ECLIPSE"] == "true" && Utilities.git_branch == "master"
+    ENV["JRUBY_ECLIPSE"] == "true" and !truffle_version.end_with?('SNAPSHOT')
   end
 
   def self.find_ruby
