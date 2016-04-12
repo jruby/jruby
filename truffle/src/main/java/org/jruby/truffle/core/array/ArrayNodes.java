@@ -206,92 +206,32 @@ public abstract class ArrayNodes {
             return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public DynamicObject mulIntegerFixnum(DynamicObject array, int count) {
+        @Specialization(guards = { "strategy.matches(array)", "!isNullArray(array)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject mulIntegerFixnum(DynamicObject array, int count,
+                @Cached("of(array)") ArrayStrategy strategy) {
             if (count < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentError("negative argument", this));
             }
-            final int[] store = (int[]) getStore(array);
-            final int storeLength = store.length;
-            final int newStoreLength = storeLength * count;
-            final int[] newStore = new int[newStoreLength];
 
+            final int size = getSize(array);
+            final int newSize = size * count;
+            final ArrayMirror store = strategy.newMirror(array);
+            final ArrayMirror newStore = strategy.newArray(newSize);
             for (int n = 0; n < count; n++) {
-                System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
+                store.copyTo(newStore, 0, n * size, size);
             }
-
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
-        }
-
-        @Specialization(guards = "isLongArray(array)")
-        public DynamicObject mulLongFixnum(DynamicObject array, int count) {
-            if (count < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("negative argument", this));
-            }
-            final long[] store = (long[]) getStore(array);
-            final int storeLength = store.length;
-            final int newStoreLength = storeLength * count;
-            final long[] newStore = new long[newStoreLength];
-
-            for (int n = 0; n < count; n++) {
-                System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
-            }
-
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public DynamicObject mulFloat(DynamicObject array, int count) {
-            if (count < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("negative argument", this));
-            }
-            final double[] store = (double[]) getStore(array);
-            final int storeLength = store.length;
-            final int newStoreLength = storeLength * count;
-            final double[] newStore = new double[newStoreLength];
-
-            for (int n = 0; n < count; n++) {
-                System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
-            }
-
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public DynamicObject mulObject(DynamicObject array, int count) {
-            if (count < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("negative argument", this));
-            }
-            final Object[] store = (Object[]) getStore(array);
-            final int storeLength = getSize(array);
-            final int newStoreLength = storeLength * count;
-            final Object[] newStore = new Object[newStoreLength];
-
-            for (int n = 0; n < count; n++) {
-                System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
-            }
-
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore.getArray(), newSize);
         }
 
         @Specialization(guards = "isRubyString(string)")
         public Object mulObject(VirtualFrame frame, DynamicObject array, DynamicObject string) {
-            CompilerDirectives.transferToInterpreter();
             return ruby("join(sep)", "sep", string);
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isRubyString(object)" })
         public Object mulObjectCount(VirtualFrame frame, DynamicObject array, Object object) {
-            CompilerDirectives.transferToInterpreter();
-            if (respondToToStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
-            }
-            if (respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
+            if (respondToToStr(frame, object)) {
                 return ruby("join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
@@ -301,6 +241,14 @@ public abstract class ArrayNodes {
                 final int count = toIntNode.doInt(frame, object);
                 return executeMul(frame, array, count);
             }
+        }
+
+        public boolean respondToToStr(VirtualFrame frame, Object object) {
+            if (respondToToStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+            }
+            return respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false);
         }
 
     }
