@@ -127,8 +127,13 @@ public abstract class JavaLang {
 
             final java.lang.Object otherComp = unwrapIfJavaObject(other);
 
-            @SuppressWarnings("unchecked")
-            final int cmp = comparable.compareTo(otherComp);
+            final int cmp;
+            try {
+                cmp = comparable.compareTo(otherComp);
+            }
+            catch (ClassCastException ex) {
+                throw context.runtime.newTypeError(ex.getMessage());
+            }
             return RubyFixnum.newFixnum(context.runtime, cmp);
         }
 

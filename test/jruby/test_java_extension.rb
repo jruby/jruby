@@ -43,8 +43,22 @@ class TestJavaExtension < Test::Unit::TestCase
     two = short.new(2)
     three = short.new(3)
     list = [three, two, one]
-    list = list.sort
-    assert_equal([one, two, three], list)
+    list.sort!
+    assert_equal [one, two, three], list
+
+    assert_equal ['a'.to_java, 'b'.to_java], [java.lang.String.new('b'), java.lang.String.new('a')].sort
+  end
+
+  def test_comparable_error
+    list = [3.to_java(:int), java.lang.Byte.new(2), 1, 0]
+    assert_raise(TypeError) { list.sort }
+
+    begin
+      [ java.lang.Short.new(1), java.lang.Integer.new(0) ].sort!
+    rescue => e
+      assert_instance_of TypeError, e
+      assert_equal 'java.lang.Short cannot be cast to java.lang.Integer', e.message
+    end
   end
 
   def test_map
