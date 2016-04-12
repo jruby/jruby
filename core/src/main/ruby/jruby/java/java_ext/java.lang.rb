@@ -1,3 +1,8 @@
+# NOTE: these Ruby extensions were moved to native code!
+# @see org.jruby.javasupport.ext.JavaLang.java
+# @see org.jruby.javasupport.ext.JavaLangReflect.java
+# this file is no longer loaded but is kept to provide doc stubs
+
 # @private internal helper
 module JavaUtilities::ModifierShortcuts
   # @private
