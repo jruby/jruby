@@ -680,38 +680,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "chop!", raiseIfFrozenSelf = true)
-    @ImportStatic(StringGuards.class)
-    public abstract static class ChopBangNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public ChopBangNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
-        }
-
-        @Specialization(guards = "isEmpty(string)")
-        public DynamicObject chopBangEmpty(DynamicObject string) {
-            return nil();
-        }
-
-        @Specialization(guards = "!isEmpty(string)")
-        public Object chopBang( DynamicObject string) {
-            final int newLength = choppedLength(string);
-
-            StringOperations.setRope(string, makeSubstringNode.executeMake(rope(string), 0, newLength));
-
-            return string;
-        }
-
-        @TruffleBoundary
-        private int choppedLength(DynamicObject string) {
-            assert RubyGuards.isRubyString(string);
-            return StringSupport.choppedLength19(StringOperations.getCodeRangeableReadOnly(string), getContext().getJRubyRuntime());
-        }
-    }
-
     @CoreMethod(names = "count", rest = true)
     @ImportStatic(StringGuards.class)
     public abstract static class CountNode extends CoreMethodArrayArgumentsNode {
