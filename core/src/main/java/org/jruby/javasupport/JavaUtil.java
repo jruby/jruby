@@ -507,6 +507,18 @@ public class JavaUtil {
         }
     }
 
+    public static Object[] convertArguments(final IRubyObject[] args, final Class<?>[] types) {
+        return convertArguments(args, types, 0);
+    }
+
+    public static Object[] convertArguments(final IRubyObject[] args, final Class<?>[] types, int offset) {
+        final Object[] arguments = new Object[ args.length - offset ];
+        for ( int i = arguments.length; --i >= 0; ) {
+            arguments[i] = args[ i + offset ].toJava( types[i] );
+        }
+        return arguments;
+    }
+
     public static abstract class JavaConverter {
         private final Class type;
         public JavaConverter(Class type) {this.type = type;}

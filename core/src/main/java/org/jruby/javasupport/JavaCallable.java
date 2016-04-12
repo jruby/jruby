@@ -139,16 +139,11 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     }
 
     final Object[] convertArguments(final IRubyObject[] args) {
-        return convertArguments(args, 0);
+        return JavaUtil.convertArguments(args, parameterTypes, 0);
     }
 
     final Object[] convertArguments(final IRubyObject[] args, int offset) {
-        final Object[] arguments = new Object[ args.length - offset ];
-        final Class<?>[] types = parameterTypes;
-        for ( int i = arguments.length; --i >= 0; ) {
-            arguments[i] = args[ i + offset ].toJava( types[i] );
-        }
-        return arguments;
+        return JavaUtil.convertArguments(args, parameterTypes, offset);
     }
 
     protected final IRubyObject handleThrowable(ThreadContext context, final Throwable ex) {
