@@ -2116,8 +2116,8 @@ public abstract class StringNodes {
 
         public static boolean reverseIsEqualToSelf(DynamicObject string) {
             assert RubyGuards.isRubyString(string);
-            // TODO (nirvdrum 08-Jan-16) I suspect this invariant holds for multi-byte characters as well. If we have the logical string length calculated already, we can use it here as well.
-            return rope(string).byteLength() <= 1;
+
+            return rope(string).characterLength() <= 1;
         }
     }
 
