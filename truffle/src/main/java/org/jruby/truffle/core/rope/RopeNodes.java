@@ -66,7 +66,8 @@ public abstract class RopeNodes {
         public Rope substringZeroBytes(Rope base, int offset, int byteLength,
                                         @Cached("createBinaryProfile()") ConditionProfile isUTF8,
                                         @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
-                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit) {
+                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit,
+                                        @Cached("create(getContext(), getSourceSection())") WithEncodingNode withEncodingNode) {
             if (isUTF8.profile(base.getEncoding() == UTF8Encoding.INSTANCE)) {
                 return RopeConstants.EMPTY_UTF8_ROPE;
             }
@@ -79,7 +80,7 @@ public abstract class RopeNodes {
                 return RopeConstants.EMPTY_ASCII_8BIT_ROPE;
             }
 
-            return RopeOperations.withEncodingVerySlow(RopeConstants.EMPTY_UTF8_ROPE, base.getEncoding());
+            return withEncodingNode.executeWithEncoding(RopeConstants.EMPTY_ASCII_8BIT_ROPE, base.getEncoding(), CR_7BIT);
         }
 
         @Specialization(guards = "byteLength == 1")
