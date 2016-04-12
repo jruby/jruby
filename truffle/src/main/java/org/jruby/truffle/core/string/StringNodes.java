@@ -42,6 +42,7 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
@@ -2511,13 +2512,32 @@ public abstract class StringNodes {
     @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.WithEncodingNode withEncodingNode;
+
         public ClearNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            withEncodingNode = RopeNodes.WithEncodingNode.create(context, sourceSection);
         }
 
         @Specialization
-        public DynamicObject clear(DynamicObject string) {
-            StringOperations.setRope(string, RopeOperations.withEncodingVerySlow(EMPTY_UTF8_ROPE, encoding(string)));
+        public DynamicObject clear(DynamicObject string,
+                                   @Cached("createBinaryProfile()") ConditionProfile isUTF8,
+                                   @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
+                                   @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit) {
+            final Rope rope = rope(string);
+            final Rope emptyRope;
+
+            if (isUTF8.profile(rope.getEncoding() == UTF8Encoding.INSTANCE)) {
+                emptyRope = RopeConstants.EMPTY_UTF8_ROPE;
+            } else if (isUSAscii.profile(rope.getEncoding() == USASCIIEncoding.INSTANCE)) {
+                emptyRope = RopeConstants.EMPTY_US_ASCII_ROPE;
+            } else if (isAscii8Bit.profile(rope.getEncoding() == ASCIIEncoding.INSTANCE)) {
+                emptyRope = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+            } else {
+                emptyRope = withEncodingNode.executeWithEncoding(RopeConstants.EMPTY_ASCII_8BIT_ROPE, rope.getEncoding(), CodeRange.CR_7BIT);
+            }
+
+            StringOperations.setRope(string, emptyRope);
 
             return string;
         }
