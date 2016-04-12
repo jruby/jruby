@@ -11,9 +11,12 @@ package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.UnsupportedMessageException;
+import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -210,23 +213,32 @@ public class FeatureLoader {
                         moduleName = fileName.substring(0, dotIndex);
                     }
 
-                    final Object init = context.getEnv().importSymbol("@Init_" + moduleName);
+                    final Object initFunction = context.getEnv().importSymbol("@Init_" + moduleName);
 
-                    if (!(init instanceof TruffleObject)) {
+                    if (!(initFunction instanceof TruffleObject)) {
                         throw new UnsupportedOperationException();
                     }
 
-                    final TruffleObject initObject = (TruffleObject) init;
+                    final TruffleObject initFunctionObject = (TruffleObject) initFunction;
 
                     final Node isExecutableNode = Message.IS_EXECUTABLE.createNode();
 
-                    if (!ForeignAccess.sendIsExecutable(isExecutableNode, frame, initObject)) {
+                    if (!ForeignAccess.sendIsExecutable(isExecutableNode, frame, initFunctionObject)) {
                         throw new UnsupportedOperationException();
+                    }
+
+                    final Node executeNode = Message.createExecute(0).createNode();
+
+                    try {
+                        ForeignAccess.sendExecute(executeNode, frame, initFunctionObject);
+                    } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
+                        throw new RuntimeException(e);
                     }
                 } break;
 
                 default:
-                    throw new RaiseException(context.getCoreLibrary().internalError("unknown language " + mimeType, callNode));
+                    throw new RaiseException(
+                            context.getCoreLibrary().internalError("unknown language " + expandedPath, callNode));
             }
 
             final DynamicObject pathString = StringOperations.createString(context,
