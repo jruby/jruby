@@ -765,21 +765,16 @@ public abstract class ArrayNodes {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendManyNode = ArrayAppendManyNodeGen.create(context, sourceSection, null, null, null);
+            appendManyNode = ArrayAppendManyNodeGen.create(context, sourceSection, null, null);
         }
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization(guards = {"isRubyArray(other)", "isNullArray(other)"})
-        public DynamicObject concatNull(DynamicObject array, DynamicObject other) {
-            return array;
-        }
-
-        @Specialization(guards = {"isRubyArray(other)", "!isNullArray(other)"})
+        @Specialization
         public DynamicObject concat(DynamicObject array, DynamicObject other) {
-            appendManyNode.executeAppendMany(array, getSize(other), getStore(other));
+            appendManyNode.executeAppendMany(array, other);
             return array;
         }
 
