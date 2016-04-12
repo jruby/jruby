@@ -204,16 +204,7 @@ public class FeatureLoader {
 
                     callNode.call(frame, callTarget, new Object[]{});
 
-                    final String fileName = new File(expandedPath).getName();
-                    final String moduleName;
-                    final int dotIndex = fileName.indexOf('.');
-                    if (dotIndex == -1) {
-                        moduleName = fileName;
-                    } else {
-                        moduleName = fileName.substring(0, dotIndex);
-                    }
-
-                    final Object initFunction = context.getEnv().importSymbol("@Init_" + moduleName);
+                    final Object initFunction = context.getEnv().importSymbol("@Init_" + getBaseName(expandedPath));
 
                     if (!(initFunction instanceof TruffleObject)) {
                         throw new UnsupportedOperationException();
@@ -251,6 +242,18 @@ public class FeatureLoader {
             lock.unlock();
         }
 
+    }
+
+    private String getBaseName(String path) {
+        final String name = new File(path).getName();
+
+        final int firstDot = name.indexOf('.');
+
+        if (firstDot == -1) {
+            return name;
+        } else {
+            return name.substring(0, firstDot);
+        }
     }
 
     // TODO (pitr-ch 16-Mar-2016): this protects the $LOADED_FEATURES only in this class,
