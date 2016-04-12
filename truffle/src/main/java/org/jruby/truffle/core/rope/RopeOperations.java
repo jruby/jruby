@@ -465,7 +465,7 @@ public class RopeOperations {
             } else if (current instanceof RepeatingRope) {
                 final RepeatingRope repeatingRope = (RepeatingRope) current;
 
-                // In the absence of any SubstringRopes, we always take the full contents of the MultiplyRope.
+                // In the absence of any SubstringRopes, we always take the full contents of the RepeatingRope.
                 if (substringLengths.isEmpty()) {
                     // TODO (nirvdrum 06-Apr-16) Rather than process the same child over and over, there may be opportunity to re-use the results from a single pass.
                     for (int i = 0; i < repeatingRope.getTimes(); i++) {
