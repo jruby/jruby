@@ -43,7 +43,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Modifier;
 
-import static org.jruby.javasupport.JavaUtil.*;
+import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
+import static org.jruby.javasupport.JavaUtil.isJavaObject;
+import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
+import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
 /**

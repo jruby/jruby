@@ -37,7 +37,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.InvocationTargetException;
 
-import static org.jruby.javasupport.JavaUtil.*;
+import static org.jruby.javasupport.JavaUtil.convertArguments;
+import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
+import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
 
 /**
  * Java::JavaLangReflect package extensions.
