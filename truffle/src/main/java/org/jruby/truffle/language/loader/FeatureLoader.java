@@ -11,7 +11,11 @@ package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.Message;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
@@ -196,6 +200,29 @@ public class FeatureLoader {
                     }
 
                     callNode.call(frame, callTarget, new Object[]{});
+
+                    final String fileName = new File(expandedPath).getName();
+                    final String moduleName;
+                    final int dotIndex = fileName.indexOf('.');
+                    if (dotIndex == -1) {
+                        moduleName = fileName;
+                    } else {
+                        moduleName = fileName.substring(0, dotIndex);
+                    }
+
+                    final Object init = context.getEnv().importSymbol("@Init_" + moduleName);
+
+                    if (!(init instanceof TruffleObject)) {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    final TruffleObject initObject = (TruffleObject) init;
+
+                    final Node isExecutableNode = Message.IS_EXECUTABLE.createNode();
+
+                    if (!ForeignAccess.sendIsExecutable(isExecutableNode, frame, initObject)) {
+                        throw new UnsupportedOperationException();
+                    }
                 } break;
 
                 default:
