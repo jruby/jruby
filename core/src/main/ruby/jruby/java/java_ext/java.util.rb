@@ -39,7 +39,7 @@ module Java::java::util::Collection
     # first
     toArray.to_a
   end
-  alias_method :to_ary, :to_a
+
 end
 
 # A *java.util.Enumeration* instance might be iterated Ruby style.
@@ -174,5 +174,7 @@ module Java::java::util::List
     java::util::Collections.sort(self, comparator)
     self
   end
+
+  alias_method :to_ary, :to_a
 
 end
