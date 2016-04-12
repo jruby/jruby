@@ -2,7 +2,6 @@ require 'java'
 require 'rbconfig'
 require 'test/unit'
 require 'test/jruby/test_helper'
-require 'jruby/core_ext'
 
 TopLevelConstantExistsProc = Proc.new do
   java_import 'java.lang.String'
@@ -28,6 +27,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   class JRUBY5564; end
   def test_reified_class_in_jruby_class_loader
+    require 'jruby/core_ext'
     a_class = JRUBY5564.become_java!(false)
 
     # load the java class from the classloader
@@ -37,6 +37,21 @@ class TestHigherJavasupport < Test::Unit::TestCase
     else
       assert_raise { cl.load_class(a_class.get_name) }
     end
+  end
+
+  class Klass1 < Object
+    def method1(arg); arg end
+  end
+  class Klass2 < Klass1
+    def self.method2; end
+  end
+
+  def test_passing_a_java_class_auto_reifies
+    assert_nil Klass2.to_java.getReifiedClass
+    # previously TestHelper.getClassName(Klass2) returned 'org.jruby.RubyObject'
+    assert_equal 'rubyobj.TestHigherJavasupport.Klass2', TestHelper.getClassName(Klass2)
+    assert_not_nil Klass2.to_java.getReifiedClass
+    assert_not_nil Klass1.to_java.getReifiedClass
   end
 
   def test_java_passing_class

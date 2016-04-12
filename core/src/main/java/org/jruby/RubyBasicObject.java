@@ -825,6 +825,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public Object toJava(Class target) {
+        return defaultToJava(target);
+    }
+
+    final <T> T defaultToJava(Class<T> target) {
         // for callers that unconditionally pass null retval type (JRUBY-4737)
         if (target == void.class) return null;
 
@@ -838,7 +842,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             if (target.isAssignableFrom(value.getClass())) {
                 getRuntime().getJavaSupport().getObjectProxyCache().put(value, this);
 
-                return value;
+                return (T) value;
             }
         }
         else if (JavaUtil.isDuckTypeConvertable(getClass(), target)) {
@@ -847,7 +851,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             }
         }
         else if (target.isAssignableFrom(getClass())) {
-            return this;
+            return (T) this;
         }
 
         throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + target);

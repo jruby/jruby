@@ -728,15 +728,17 @@ describe "Class\#to_java" do
       end
     end
 
-    it "provides nearest reified class for unreified user classes" do
-      rubycls = Class.new
-      expect(rubycls.to_java(cls)).to eq(cls.forName('org.jruby.RubyObject'));
+    class UserKlass < Object; end
+
+    it "reifies user class on-demand" do
+      expect(klass = UserKlass.to_java(cls)).to be_a java.lang.Class
+      expect( klass.getSuperclass ).to be cls.forName('org.jruby.RubyObject')
     end
 
     it "returns reified class for reified used classes" do
       rubycls = Class.new; require 'jruby/core_ext'
       rubycls.become_java!
-      expect(rubycls.to_java(cls)).to eq(JRuby.reference(rubycls).reified_class)
+      expect(rubycls.to_java(cls)).to be JRuby.reference(rubycls).getReifiedClass
     end
 
     it "converts Java proxy classes to their JavaClass/java.lang.Class equivalent" do
