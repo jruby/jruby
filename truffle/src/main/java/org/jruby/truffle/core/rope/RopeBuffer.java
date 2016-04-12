@@ -30,6 +30,11 @@ public class RopeBuffer extends LeafRope {
                 original.characterLength());
     }
 
+    public RopeBuffer(ByteList byteList, CodeRange codeRange, boolean singleByteOptimizable, int characterLength) {
+        super(byteList.unsafeBytes(), byteList.getEncoding(), codeRange, singleByteOptimizable, characterLength);
+        this.byteList =  byteList;
+    }
+
     @Override
     public Rope withEncoding(Encoding newEncoding, CodeRange newCodeRange) {
         byteList.setEncoding(newEncoding);

@@ -531,14 +531,28 @@ public abstract class RopeNodes {
 
         @Specialization(guards = "times == 1")
         public Rope repeatOne(Rope base, int times,
-                               @Cached("create(getContext(), getSourceSection())") WithEncodingNode withEncodingNode) {
+                              @Cached("create(getContext(), getSourceSection())") WithEncodingNode withEncodingNode) {
             return base;
         }
 
-        @Specialization(guards = { "isSingleByteString(base)", "times > 1" })
+        @Specialization(guards = "times > 1")
+        public Rope multiplyBuffer(RopeBuffer base, int times) {
+            final ByteList inputBytes = base.getByteList();
+            final ByteList outputBytes = new ByteList(inputBytes.realSize() * times);
+
+            for (int i = 0; i < times; i++) {
+                outputBytes.append(inputBytes);
+            }
+
+            outputBytes.setEncoding(inputBytes.getEncoding());
+
+            return new RopeBuffer(outputBytes, base.getCodeRange(), base.isSingleByteOptimizable(), base.characterLength() * times);
+        }
+
+        @Specialization(guards = { "!isRopeBuffer(base)", "isSingleByteString(base)", "times > 1" })
         @TruffleBoundary
         public Rope multiplySingleByteString(Rope base, int times,
-                                                      @Cached("create(getContext(), getSourceSection())") MakeLeafRopeNode makeLeafRopeNode) {
+                                             @Cached("create(getContext(), getSourceSection())") MakeLeafRopeNode makeLeafRopeNode) {
             final byte filler = base.getBytes()[0];
 
             byte[] buffer = new byte[times];
@@ -547,7 +561,7 @@ public abstract class RopeNodes {
             return makeLeafRopeNode.executeMake(buffer, base.getEncoding(), base.getCodeRange(), times);
         }
 
-        @Specialization(guards = { "!isSingleByteString(base)", "times > 1" })
+        @Specialization(guards = { "!isRopeBuffer(base)", "!isSingleByteString(base)", "times > 1" })
         public Rope repeat(Rope base, int times) {
             try {
                 ExactMath.multiplyExact(base.byteLength(), times);
@@ -563,6 +577,9 @@ public abstract class RopeNodes {
             return rope.byteLength() == 1;
         }
 
+        protected static boolean isRopeBuffer(Rope rope) {
+            return rope instanceof RopeBuffer;
+        }
     }
 
 
