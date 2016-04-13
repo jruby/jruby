@@ -91,18 +91,30 @@ describe "Collection Ruby extensions" do
     expect( arr.dup ).to be_a java.util.ArrayList
     arr.dup.set(0, 1)
     expect( arr.to_a ).to eql [0]
+
+    # a non java.lang.Cloneable collection :
+    arr = java.util.concurrent.LinkedBlockingQueue.new; arr.add 42
+    expect( arr.dup ).to be_a java.util.concurrent.LinkedBlockingQueue
+    expect( arr.dup.poll ).to eq 42
+    expect( arr.to_a ).to eql [42]
   end
 
   it 'clones' do
-    set = java.util.concurrent.CopyOnWriteArrayList.new ['0']
-    expect( set.clone ).to be_a java.util.concurrent.CopyOnWriteArrayList
-    set.clone.add '1'
-    expect( set.to_a ).to eql ['0']
+    arr = java.util.concurrent.CopyOnWriteArrayList.new ['0']
+    expect( arr.clone ).to be_a java.util.concurrent.CopyOnWriteArrayList
+    arr.clone.add '1'
+    expect( arr.to_a ).to eql ['0']
 
     arr = java.util.LinkedList.new [0]
     expect( arr.clone ).to be_a java.util.LinkedList
     arr.clone.set(0, 1)
     expect( arr.to_a ).to eql [0]
+
+    # a non java.lang.Cloneable collection :
+    set = java.util.concurrent.CopyOnWriteArraySet.new ['0']
+    expect( set.clone ).to be_a java.util.concurrent.CopyOnWriteArraySet
+    set.clone.add '1'
+    expect( set.to_a ).to eql ['0']
   end
 
   it "should respect to_ary objects defined on iteration" do

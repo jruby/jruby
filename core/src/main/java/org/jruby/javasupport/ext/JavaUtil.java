@@ -34,9 +34,14 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
+import static org.jruby.javasupport.JavaUtil.CAN_SET_ACCESSIBLE;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
@@ -173,12 +178,25 @@ public abstract class JavaUtil {
             return dup;
         }
 
-        //@JRubyMethod
-        //public static IRubyObject dup(final ThreadContext context, final IRubyObject self) {
-        //    java.util.Collection coll = unwrapJavaObject(self);
-        //    JavaProxy dup = (JavaProxy) ((JavaProxy) self).dup();
-        //    return dup;
-        //}
+        @JRubyMethod
+        public static IRubyObject dup(final ThreadContext context, final IRubyObject self) {
+            java.util.Collection coll = unwrapJavaObject(self);
+            final JavaProxy dup = (JavaProxy) self.dup();
+            if ( coll == dup.getObject() ) { // not Cloneable
+                dup.setObject( tryNewEqualInstance(coll) );
+            }
+            return dup;
+        }
+
+        @JRubyMethod
+        public static IRubyObject clone(final ThreadContext context, final IRubyObject self) {
+            java.util.Collection coll = unwrapJavaObject(self);
+            final JavaProxy dup = (JavaProxy) self.rbClone();
+            if ( coll == dup.getObject() ) { // not Cloneable
+                dup.setObject( tryNewEqualInstance(coll) );
+            }
+            return dup;
+        }
 
         // NOTE: join could be implemented natively iterating (without to_a) - but is it actually used much?!?
 
@@ -488,4 +506,51 @@ public abstract class JavaUtil {
         }
 
     }
+
+    private static java.util.Collection tryNewEqualInstance(final java.util.Collection coll) {
+        final Class<? extends java.util.Collection> klass = coll.getClass();
+        // most collections provide a <init>(Collection<? extends E> coll)
+        try {
+            // most collections provide a <init>(Collection<? extends E> coll)
+            // look for it or any matching e.g. <init>(List<? extends E> coll)
+            Constructor best = null;
+            for ( Constructor ctor : klass.getDeclaredConstructors() ) {
+                final Class[] params = ctor.getParameterTypes();
+                if ( params.length == 1 && params[0].isAssignableFrom(klass) ) {
+                    if ( best == null ) best = ctor;
+                    else {
+                        // prefer (List param) over (Collection param)
+                        if ( best.getParameterTypes()[0].isAssignableFrom(params[0]) ) {
+                            best = ctor;
+                        }
+                    }
+                }
+            }
+            if ( CAN_SET_ACCESSIBLE ) best.setAccessible(true);
+            return (java.util.Collection) best.newInstance(coll);
+        }
+        catch (IllegalAccessException e) {
+            // fallback on getConstructor();
+        }
+        catch (InstantiationException e) {
+            Helpers.throwException(e); return null; // should not happen
+        }
+        catch (InvocationTargetException e) {
+            Helpers.throwException(e.getTargetException()); return null;
+        }
+
+        try {
+            java.util.Collection clone = klass.newInstance();
+            clone.addAll(coll);
+            return clone;
+        }
+        catch (IllegalAccessException e) {
+            // can not clone - most of Collections. returned types (e.g. EMPTY_LIST)
+            return coll;
+        }
+        catch (InstantiationException e) {
+            return coll;
+        }
+    }
+
 }
