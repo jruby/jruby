@@ -1,3 +1,7 @@
+# NOTE: these Ruby extensions were moved to native code!
+# @see org.jruby.javasupport.ext.JavaUtilRegex.java
+# this file is no longer loaded but is kept to provide doc stubs
+
 class Java::java::util::regex::Pattern
   def =~(str)
     m = self.matcher(str)
@@ -16,13 +20,14 @@ class Java::java::util::regex::Pattern
 end
 
 class Java::java::util::regex::Matcher
+  # @private
   attr_accessor :str
   
   def captures
     g = self.group_count
     capt = []
     count.times do |i|
-      capt << self.group(i+1)
+      capt << group(i+1)
     end
     capt
   end
@@ -54,11 +59,10 @@ class Java::java::util::regex::Matcher
   def size
     self.group_count
   end
-  
   alias length size
   
   def values_at(*args)
-    self.to_a.values_at(*args)
+    to_a.values_at(*args)
   end
 
   def select
@@ -78,6 +82,6 @@ class Java::java::util::regex::Matcher
   end
   
   def string
-    self.group(0)
+    group(0)
   end
 end

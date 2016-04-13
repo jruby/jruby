@@ -121,6 +121,7 @@ public class Java implements Library {
         org.jruby.javasupport.ext.JavaLang.define(runtime);
         org.jruby.javasupport.ext.JavaLangReflect.define(runtime);
         org.jruby.javasupport.ext.JavaUtil.define(runtime);
+        org.jruby.javasupport.ext.JavaUtilRegex.define(runtime);
         org.jruby.javasupport.ext.JavaIo.define(runtime);
         org.jruby.javasupport.ext.JavaNet.define(runtime);
 
