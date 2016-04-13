@@ -1,3 +1,7 @@
+# NOTE: these Ruby extensions were moved to native code!
+# @see org.jruby.javasupport.ext.JavaUtil.java
+# this file is no longer loaded but is kept to provide doc stubs
+
 # TODO java.util.Comparator support?
 
 # *java.util.Collection* is enhanced (not just) to act like Ruby's `Enumerable`.

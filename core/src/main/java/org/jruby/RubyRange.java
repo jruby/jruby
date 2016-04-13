@@ -760,6 +760,8 @@ public class RubyRange extends RubyObject {
         return context.nil;
     }
 
+    public final boolean isExcludeEnd() { return isExclusive; }
+
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
         @Override
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
