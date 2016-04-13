@@ -552,10 +552,10 @@ public class LoadArgumentsTranslator extends Translator {
 
                 if (node.getPreCount() == 0 && node.getPostCount() == 0) {
                     nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
-                            .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{new NilLiteralNode(context, sourceSection, true)})));
+                            .makeWriteNode(ArrayLiteralNode.create(context, sourceSection, new RubyNode[] { new NilLiteralNode(context, sourceSection, true) })));
                 } else {
                     nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
-                            .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{})));
+                            .makeWriteNode(ArrayLiteralNode.create(context, sourceSection, new RubyNode[] {})));
                 }
             } else if (node.getRest() instanceof StarNode) {
                 // Don't think we need to do anything

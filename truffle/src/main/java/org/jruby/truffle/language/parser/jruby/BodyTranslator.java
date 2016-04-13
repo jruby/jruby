@@ -311,7 +311,7 @@ public class BodyTranslator extends Translator {
             translatedValues[n] = values[n].accept(this);
         }
 
-        final RubyNode ret = new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, translate(node.getPosition()), translatedValues);
+        final RubyNode ret = ArrayLiteralNode.create(context, translate(node.getPosition()), translatedValues);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2185,7 +2185,7 @@ public class BodyTranslator extends Translator {
 
             final RubyNode blockNode = sequence(context, sourceSection, Arrays.asList(sequence));
 
-            final ArrayLiteralNode.UninitialisedArrayLiteralNode arrayNode = new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, tempValues);
+            final ArrayLiteralNode arrayNode = ArrayLiteralNode.create(context, sourceSection, tempValues);
 
             final ElidableResultNode elidableResult = new ElidableResultNode(context, sourceSection, blockNode, arrayNode);
 
@@ -3062,7 +3062,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitZArrayNode(org.jruby.ast.ZArrayNode node) {
         final RubyNode[] values = new RubyNode[0];
 
-        final RubyNode ret = new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, translate(node.getPosition()), values);
+        final RubyNode ret = ArrayLiteralNode.create(context, translate(node.getPosition()), values);
         return addNewlineIfNeeded(node, ret);
     }
 
