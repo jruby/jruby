@@ -9,7 +9,7 @@ import java.nio.file.spi.FileTypeDetector;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-public final class RubyFiletypeDetector extends FileTypeDetector {
+public final class RubyFileTypeDetector extends FileTypeDetector {
 
     private static final String[] KNOWN_RUBY_FILES = new String[]{ "Gemfile", "Rakefile", "Mavenfile" };
     private static final String[] KNOWN_RUBY_SUFFIXES = new String[]{ ".rb", ".rake", ".gemspec" };
