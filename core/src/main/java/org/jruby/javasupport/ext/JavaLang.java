@@ -56,7 +56,7 @@ import static org.jruby.runtime.Visibility.PUBLIC;
  */
 public abstract class JavaLang {
 
-    public static void definePackage(final Ruby runtime) {
+    public static void define(final Ruby runtime) {
         Iterable.define(runtime);
         Comparable.define(runtime);
         Throwable.define(runtime);

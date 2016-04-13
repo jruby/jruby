@@ -48,7 +48,7 @@ import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
  */
 public abstract class JavaLangReflect {
 
-    public static void definePackage(final Ruby runtime) {
+    public static void define(final Ruby runtime) {
         Constructor.define(runtime);
         Field.define(runtime);
         Method.define(runtime);

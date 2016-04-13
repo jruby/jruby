@@ -28,6 +28,7 @@
 package org.jruby.javasupport.ext;
 
 import org.jruby.*;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.java.proxies.JavaProxy;
@@ -55,7 +56,7 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
  */
 public abstract class JavaUtil {
 
-    public static void definePackage(final Ruby runtime) {
+    public static void define(final Ruby runtime) {
         Enumeration.define(runtime);
         Iterator.define(runtime);
         Collection.define(runtime);
