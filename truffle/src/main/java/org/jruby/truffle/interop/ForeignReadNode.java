@@ -43,8 +43,8 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
     @Child private StringCachingHelperNode helperNode;
 
     @Override
-    public Object access(VirtualFrame frame, DynamicObject object, Object label) {
-        return getHelperNode().executeStringCachingHelper(frame, object, label);
+    public Object access(VirtualFrame frame, DynamicObject object, Object name) {
+        return getHelperNode().executeStringCachingHelper(frame, object, name);
     }
 
     private StringCachingHelperNode getHelperNode() {
@@ -61,7 +61,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
     @ImportStatic(StringCachingGuards.class)
     @NodeChildren({
             @NodeChild("receiver"),
-            @NodeChild("label")
+            @NodeChild("name")
     })
     protected static abstract class StringCachingHelperNode extends RubyNode {
 
@@ -69,91 +69,91 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             super(context, sourceSection);
         }
 
-        public abstract Object executeStringCachingHelper(VirtualFrame frame, DynamicObject receiver, Object label);
+        public abstract Object executeStringCachingHelper(VirtualFrame frame, DynamicObject receiver, Object name);
 
         @Specialization(
                 guards = {
-                        "isRubyString(label)",
-                        "ropesEqual(label, cachedRope)"
+                        "isRubyString(name)",
+                        "ropesEqual(name, cachedRope)"
                 },
                 limit = "getCacheLimit()"
         )
         public Object cacheStringAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                DynamicObject label,
-                @Cached("privatizeRope(label)") Rope cachedRope,
+                DynamicObject name,
+                @Cached("privatizeRope(name)") Rope cachedRope,
                 @Cached("ropeToString(cachedRope)") String cachedString,
                 @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            return nextHelper.executeStringCachedHelper(frame, receiver, label, cachedString, cachedStartsWithAt);
+            return nextHelper.executeStringCachedHelper(frame, receiver, name, cachedString, cachedStartsWithAt);
         }
 
         @Specialization(
-                guards = "isRubyString(label)",
+                guards = "isRubyString(name)",
                 contains = "cacheStringAndForward"
         )
         public Object uncachedStringAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                DynamicObject label,
+                DynamicObject name,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            final String labelString = objectToString(label);
-            return nextHelper.executeStringCachedHelper(frame, receiver, label, labelString, startsWithAt(labelString));
+            final String nameString = objectToString(name);
+            return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString, startsWithAt(nameString));
         }
 
         @Specialization(
                 guards = {
-                        "isRubySymbol(label)",
-                        "label == cachedLabel"
+                        "isRubySymbol(name)",
+                        "name == cachedName"
                 },
                 limit = "getCacheLimit()"
         )
         public Object cacheSymbolAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                DynamicObject label,
-                @Cached("label") DynamicObject cachedLabel,
-                @Cached("objectToString(cachedLabel)") String cachedString,
+                DynamicObject name,
+                @Cached("name") DynamicObject cachedName,
+                @Cached("objectToString(cachedName)") String cachedString,
                 @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            return nextHelper.executeStringCachedHelper(frame, receiver, cachedLabel, cachedString, cachedStartsWithAt);
+            return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedString, cachedStartsWithAt);
         }
 
         @Specialization(
-                guards = "isRubySymbol(label)",
+                guards = "isRubySymbol(name)",
                 contains = "cacheSymbolAndForward"
         )
         public Object uncachedSymbolAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                DynamicObject label,
+                DynamicObject name,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            final String labelString = objectToString(label);
-            return nextHelper.executeStringCachedHelper(frame, receiver, label, labelString, startsWithAt(labelString));
+            final String nameString = objectToString(name);
+            return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString, startsWithAt(nameString));
         }
 
         @Specialization(
-                guards = "label == cachedLabel",
+                guards = "name == cachedName",
                 limit = "getCacheLimit()"
         )
         public Object cacheJavaStringAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                String label,
-                @Cached("label") String cachedLabel,
-                @Cached("startsWithAt(cachedLabel)") boolean cachedStartsWithAt,
+                String name,
+                @Cached("name") String cachedName,
+                @Cached("startsWithAt(cachedName)") boolean cachedStartsWithAt,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            return nextHelper.executeStringCachedHelper(frame, receiver, cachedLabel, cachedLabel, cachedStartsWithAt);
+            return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedName, cachedStartsWithAt);
         }
 
         @Specialization(contains = "cacheJavaStringAndForward")
         public Object uncachedJavaStringAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                String label,
+                String name,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            return nextHelper.executeStringCachedHelper(frame, receiver, label, label, startsWithAt(label));
+            return nextHelper.executeStringCachedHelper(frame, receiver, name, name, startsWithAt(name));
         }
 
         protected StringCachedHelperNode createNextHelper() {
@@ -170,8 +170,8 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
         }
 
         @TruffleBoundary
-        protected boolean startsWithAt(String label) {
-            return !label.isEmpty() && label.charAt(0) == '@';
+        protected boolean startsWithAt(String name) {
+            return !name.isEmpty() && name.charAt(0) == '@';
         }
 
         @Specialization(guards = {
@@ -212,8 +212,8 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
 
     @NodeChildren({
             @NodeChild("receiver"),
-            @NodeChild("label"),
-            @NodeChild("stringLabel"),
+            @NodeChild("name"),
+            @NodeChild("stringName"),
             @NodeChild("startsAt")
     })
     protected static abstract class StringCachedHelperNode extends RubyNode {
@@ -228,16 +228,16 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             super(context, sourceSection);
         }
 
-        public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object label,
-                                                         String stringLabel, boolean startsAt);
+        public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object name,
+                                                         String stringName, boolean startsAt);
 
         @Specialization(guards = "startsAt(startsAt)")
         public Object readInstanceVariable(
                 DynamicObject receiver,
-                Object label,
-                String stringLabel,
+                Object name,
+                String stringName,
                 boolean startsAt,
-                @Cached("createReadObjectFieldNode(stringLabel)") ReadObjectFieldNode readObjectFieldNode) {
+                @Cached("createReadObjectFieldNode(stringName)") ReadObjectFieldNode readObjectFieldNode) {
             return readObjectFieldNode.execute(receiver);
         }
 
@@ -245,39 +245,39 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             return startsAt;
         }
 
-        protected ReadObjectFieldNode createReadObjectFieldNode(String label) {
-            return ReadObjectFieldNodeGen.create(getContext(), label, nil());
+        protected ReadObjectFieldNode createReadObjectFieldNode(String name) {
+            return ReadObjectFieldNodeGen.create(getContext(), name, nil());
         }
 
         @Specialization(
                 guards = {
                         "notStartsAt(startsAt)",
-                        "methodDefined(frame, receiver, stringLabel, getDefinedNode())"
+                        "methodDefined(frame, receiver, stringName, getDefinedNode())"
                 }
         )
         public Object callMethod(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                Object label,
-                String stringLabel,
+                Object name,
+                String stringName,
                 boolean startsAt) {
-            return getCallNode().call(frame, receiver, stringLabel, null);
+            return getCallNode().call(frame, receiver, stringName, null);
         }
 
         @Specialization(
                 guards = {
                         "notStartsAt(startsAt)",
-                        "!methodDefined(frame, receiver, stringLabel, getDefinedNode())",
+                        "!methodDefined(frame, receiver, stringName, getDefinedNode())",
                         "methodDefined(frame, receiver, INDEX_METHOD_NAME, getIndexDefinedNode())"
                 }
         )
         public Object index(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                Object label,
-                String stringLabel,
+                Object name,
+                String stringName,
                 boolean startsAt) {
-            return getCallNode().call(frame, receiver, "[]", null, label);
+            return getCallNode().call(frame, receiver, "[]", null, name);
         }
 
         protected boolean notStartsAt(boolean startsAt) {
@@ -302,9 +302,9 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             return indexDefinedNode;
         }
 
-        protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, String stringLabel,
+        protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, String stringName,
                                         DoesRespondDispatchHeadNode definedNode) {
-            return definedNode.doesRespondTo(frame, stringLabel, receiver);
+            return definedNode.doesRespondTo(frame, stringName, receiver);
         }
 
         protected CallDispatchHeadNode getCallNode() {
