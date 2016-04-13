@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core.array;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -40,29 +41,11 @@ public abstract class ArrayPopOneNode extends RubyNode {
 
     // Pop from a non-empty array
 
-    @Specialization(guards = { "!isEmptyArray(array)", "isIntArray(array)" })
-    public Object popOneInteger(DynamicObject array) {
-        return popOneGeneric(array, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)));
-    }
-
-    @Specialization(guards = { "!isEmptyArray(array)", "isLongArray(array)" })
-    public Object popOneLong(DynamicObject array) {
-        return popOneGeneric(array, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)));
-    }
-
-    @Specialization(guards = { "!isEmptyArray(array)", "isDoubleArray(array)" })
-    public Object popOneDouble(DynamicObject array) {
-        return popOneGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)));
-    }
-
-    @Specialization(guards = { "!isEmptyArray(array)", "isObjectArray(array)" })
-    public Object popOneObject(DynamicObject array) {
-        return popOneGeneric(array, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)));
-    }
-
-    private Object popOneGeneric(DynamicObject array, ArrayMirror storeMirror) {
+    @Specialization(guards = { "strategy.matches(array)", "!isEmptyArray(array)" }, limit = "ARRAY_STRATEGIES")
+    public Object popOne(DynamicObject array,
+            @Cached("of(array)") ArrayStrategy strategy) {
         final int size = Layouts.ARRAY.getSize(array);
-        final Object value = storeMirror.get(size - 1);
+        final Object value = strategy.newMirror(array).get(size - 1);
         Layouts.ARRAY.setSize(array, size - 1);
         return value;
     }
