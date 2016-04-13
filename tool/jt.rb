@@ -264,7 +264,7 @@ module Commands
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
-    puts '    --sulong        add Sulong to the classpath (set SULONG_JAR)'
+    puts '    --sulong        add Sulong to the classpath (set SULONG_JAR, implies --graal)'
     puts '    --asm           show assembly (implies --graal)'
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
@@ -354,7 +354,11 @@ module Commands
       '-Xtruffle.graal.warn_unless=false'
     ]
 
-    { '--asm' => '--graal', '--igv' => '--graal' }.each_pair do |arg, dep|
+    {
+        '--asm' => '--graal',
+        '--igv' => '--graal',
+        '--sulong' => '--graal'
+    }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
     end
 
@@ -374,6 +378,9 @@ module Commands
       jruby_args << File.join(dir, 'lib', '*')
       jruby_args << '-J-classpath'
       jruby_args << File.join(dir, 'build', 'sulong.jar')
+      jruby_args << '-J-classpath'
+      jruby_args << File.join(dir, '..', 'graal-core', 'mxbuild', 'graal', 'com.oracle.nfi', 'bin')
+      jruby_args << '-J-XX:-UseJVMCIClassLoader'
     end
 
     if args.delete('--asm')
