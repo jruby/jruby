@@ -1554,11 +1554,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList byteList = new ByteList(source.byteLength() + insert.byteLength() - byteCountToReplace);
 
             byteList.append(source.getByteList(), 0, spliceByteIndex);
-
-            for (int i = 0; i < insert.byteLength(); i++) {
-                byteList.append(insert.getBytes()[i]);
-            }
-
+            byteList.append(insert.getBytes());
             byteList.append(source.getByteList(), rightSideStartingIndex, source.byteLength() - rightSideStartingIndex);
             byteList.setEncoding(encoding);
 
