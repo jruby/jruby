@@ -53,6 +53,58 @@ describe "Collection Ruby extensions" do
     expect( java.util.Collections.emptySet.length ).to eq 0
   end
 
+  it 'adds collections' do
+    set = java.util.LinkedHashSet.new ['foo', 'baz', 'bar', '']
+    vec = java.util.Vector.new ['', 'baz', 'zzz', 1]
+    expect( coll = set + vec ).to be_a java.util.LinkedHashSet
+    expect( coll.to_a ).to eql ['foo', 'baz', 'bar', '', 'zzz', 1]
+
+    vec = java.util.ArrayList.new ['', 'baz', 'zzz', 1]
+    expect( coll = vec + set ).to be_a java.util.ArrayList
+    expect( coll.to_a ).to eql ['', 'baz', 'zzz', 1, 'foo', 'baz', 'bar', '']
+
+    expect( vec.to_a ).to eql ['', 'baz', 'zzz', 1] # not affected!
+    expect( set.to_a ).to eql ['foo', 'baz', 'bar', ''] # not affected!
+  end
+
+  it 'distracts collections' do
+    set = java.util.LinkedHashSet.new ['foo', 'baz', 'bar', '']
+    vec = java.util.ArrayList.new ['', 'baz', 'zzz', 1]
+    expect( coll = set - vec ).to be_a java.util.LinkedHashSet
+    expect( coll.to_a ).to eql ['foo', 'bar']
+
+    vec = java.util.Vector.new ['', 'baz', 'zzz', 1]
+    expect( coll = vec - set ).to be_a java.util.Vector
+    expect( coll.to_a ).to eql ['zzz', 1]
+
+    expect( vec.to_a ).to eql ['', 'baz', 'zzz', 1] # not affected!
+    expect( set.to_a ).to eql ['foo', 'baz', 'bar', ''] # not affected!
+  end
+
+  it 'dups' do
+    set = java.util.HashSet.new ['0']
+    expect( set.dup ).to be_a java.util.HashSet
+    set.dup.add '1'
+    expect( set.to_a ).to eql ['0']
+
+    arr = java.util.ArrayList.new [0]
+    expect( arr.dup ).to be_a java.util.ArrayList
+    arr.dup.set(0, 1)
+    expect( arr.to_a ).to eql [0]
+  end
+
+  it 'clones' do
+    set = java.util.concurrent.CopyOnWriteArrayList.new ['0']
+    expect( set.clone ).to be_a java.util.concurrent.CopyOnWriteArrayList
+    set.clone.add '1'
+    expect( set.to_a ).to eql ['0']
+
+    arr = java.util.LinkedList.new [0]
+    expect( arr.clone ).to be_a java.util.LinkedList
+    arr.clone.set(0, 1)
+    expect( arr.to_a ).to eql [0]
+  end
+
   it "should respect to_ary objects defined on iteration" do
     class Pair
       def initialize(a, b)

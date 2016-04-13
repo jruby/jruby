@@ -36,6 +36,7 @@ package org.jruby.javasupport;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
@@ -517,6 +518,29 @@ public class JavaUtil {
             arguments[i] = args[ i + offset ].toJava( types[i] );
         }
         return arguments;
+    }
+
+    /**
+     * Clone a Java object, assuming its class has an accessible <code>clone</code> method.
+     * @param object
+     * @return cloned object or null (if method is not found or inaccessible)
+     */
+    public static <T> T clone(final Object object) {
+        return (T) clone(object, false);
+    }
+
+    static Object clone(final Object object, final boolean silent) {
+        try {
+            final Method clone = object.getClass().getMethod("clone");
+            return clone.invoke(object);
+        }
+        catch (NoSuchMethodException|IllegalAccessException e) {
+            return null;
+        }
+        catch (InvocationTargetException e) {
+            if ( ! silent ) Helpers.throwException(e.getTargetException());
+            return null;
+        }
     }
 
     public static abstract class JavaConverter {
