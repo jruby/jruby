@@ -21,6 +21,10 @@ module Truffle
     def graal?
       Primitive.graal?
     end
+    
+    def cext?
+      Interop.mime_type_supported?('application/x-sulong-library')
+    end
 
     # Tests if this VM is a SubstrateVM build.
     def substrate?

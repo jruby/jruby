@@ -61,6 +61,12 @@ module Utilities
     raise "couldn't find trufflejs.jar - download GraalVM as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and find it in there"
   end
 
+  def self.find_sulong_dir
+    dir = ENV['SULONG_DIR']
+    return dir if dir
+    raise "couldn't find the Sulong repository - you need to check it out and build it"
+  end
+
   def self.jruby_eclipse?
     # tool/jruby_eclipse only works on release currently
     ENV["JRUBY_ECLIPSE"] == "true" && Utilities.git_branch == "master"
@@ -258,6 +264,7 @@ module Commands
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
+    puts '    --sulong        add Sulong to the classpath (set SULONG_JAR, implies --graal)'
     puts '    --asm           show assembly (implies --graal)'
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
@@ -305,6 +312,7 @@ module Commands
     puts '  GRAAL_BIN_...git_branch_name...              GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
+    puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
   end
 
   def checkout(branch)
@@ -346,7 +354,11 @@ module Commands
       '-Xtruffle.graal.warn_unless=false'
     ]
 
-    { '--asm' => '--graal', '--igv' => '--graal' }.each_pair do |arg, dep|
+    {
+        '--asm' => '--graal',
+        '--igv' => '--graal',
+        '--sulong' => '--graal'
+    }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
     end
 
@@ -358,6 +370,17 @@ module Commands
     if args.delete('--js')
       jruby_args << '-J-classpath'
       jruby_args << Utilities.find_graal_js
+    end
+
+    if args.delete('--sulong')
+      dir = Utilities.find_sulong_dir
+      jruby_args << '-J-classpath'
+      jruby_args << File.join(dir, 'lib', '*')
+      jruby_args << '-J-classpath'
+      jruby_args << File.join(dir, 'build', 'sulong.jar')
+      jruby_args << '-J-classpath'
+      jruby_args << File.join(dir, '..', 'graal-core', 'mxbuild', 'graal', 'com.oracle.nfi', 'bin')
+      jruby_args << '-J-XX:-UseJVMCIClassLoader'
     end
 
     if args.delete('--asm')
