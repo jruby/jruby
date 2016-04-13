@@ -31,7 +31,10 @@ public abstract class ArrayStrategy {
     public abstract String toString();
 
     public ArrayStrategy generalize(ArrayStrategy other) {
-        generalizeCheck(other);
+        CompilerAsserts.neverPartOfCompilation();
+        if (other == this) {
+            return this;
+        }
         for (ArrayStrategy generalized : TYPE_STRATEGIES) {
             if (generalized.canStore(type()) && generalized.canStore(other.type())) {
                 return generalized;
@@ -45,12 +48,6 @@ public abstract class ArrayStrategy {
     }
 
     // Helpers
-
-    protected void generalizeCheck(ArrayStrategy other) {
-        CompilerAsserts.neverPartOfCompilation();
-        assert other != this;
-        assert !canStore(other.type());
-    }
 
     protected static RuntimeException unsupported() {
         return new UnsupportedOperationException();
@@ -137,8 +134,10 @@ public abstract class ArrayStrategy {
 
         @Override
         public ArrayStrategy generalize(ArrayStrategy other) {
-            generalizeCheck(other);
-            if (other == LongArrayStrategy.INSTANCE) {
+            CompilerAsserts.neverPartOfCompilation();
+            if (other == this) {
+                return this;
+            } else if (other == LongArrayStrategy.INSTANCE) {
                 return LongArrayStrategy.INSTANCE;
             } else {
                 return IntToObjectGeneralizationArrayStrategy.INSTANCE;
