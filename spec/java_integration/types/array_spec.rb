@@ -179,6 +179,16 @@ describe "A Java primitive Array of type" do
     it "makes an ascii 8 bit string on to_s" do
       expect([86, 87].to_java(:byte).to_s).to eq("VW")
     end
+
+    it "clones" do
+      arr = Java::byte[10].new
+      arr[1] = 1
+
+      dup = arr.clone
+      expect( dup.object_id ).to_not eql arr.object_id
+      dup[1] = 11
+      expect(arr[1]).to eq(1)
+    end
   end
 
   describe "char" do
@@ -636,6 +646,16 @@ describe "A Java primitive Array of type" do
       arr = [13, 42, 120].to_java :long
       expect(arr.inspect).to match(/^long\[13, 42, 120\]@[0-9a-f]+$/)
     end
+
+    it "clones" do
+      arr = Java::long[5].new
+      arr[1] = 1
+
+      dup = arr.clone
+      expect( dup.object_id ).to_not eql arr.object_id
+      dup[1] = 11
+      expect(arr[1]).to eq(1)
+    end
   end
 
   describe "short" do
@@ -708,6 +728,16 @@ describe "A Java primitive Array of type" do
       arr = [13, 42, 120].to_java :short
       expect(arr.inspect).to match(/^short\[13, 42, 120\]@[0-9a-f]+$/)
     end
+
+    it "dups" do
+      arr = Java::short[5].new
+      arr[1] = 1
+
+      dup = arr.dup
+      expect( dup.object_id ).to_not eql arr.object_id
+      dup[1] = 11
+      expect(arr[1]).to eq(1)
+    end
   end
 
   describe "string" do
@@ -779,6 +809,16 @@ describe "A Java primitive Array of type" do
     it "inspects to show type and contents" do
       arr = ['foo', 'bar', 'baz'].to_java :string
       expect(arr.inspect).to match(/^java.lang.String\[foo, bar, baz\]@[0-9a-f]+$/)
+    end
+
+    it "dups" do
+      arr = java.lang.String[3].new
+      arr[1] = '000'
+
+      dup = arr.dup
+      expect( dup.object_id ).to_not eql arr.object_id
+      dup[1] = 'DUP'
+      expect(arr[1]).to eq('000')
     end
   end
 
