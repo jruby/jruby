@@ -14,13 +14,13 @@ require 'yaml'
 
 MX_DIR = ENV['MX_DIR']
 
-if MX_DIR.nil?
+unless MX_DIR
   abort 'You need to set MX_DIR to a checkout of the mx repository'
 end
 
 SULONG_DIR = ENV['SULONG_DIR']
 
-if SULONG_DIR.nil?
+unless SULONG_DIR
   abort 'You need to set SULONG_DIR to the location of a built checkout of the Sulong repository'
 end
 
@@ -32,7 +32,7 @@ end
 
 CEXT_DIR = ARGV[0]
 
-if CEXT_DIR.nil?
+unless CEXT_DIR
   abort 'You need to pass the directory of a C extension so I can build it'
 end
 
