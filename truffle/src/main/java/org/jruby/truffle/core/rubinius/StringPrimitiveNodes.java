@@ -1453,6 +1453,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_splice", needsSelf = false, lowerFixnumParameters = {2, 3})
+    @ImportStatic(StringGuards.class)
     public static abstract class StringSplicePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeConcatNode appendMakeConcatNode;
@@ -1542,7 +1543,7 @@ public abstract class StringPrimitiveNodes {
             return string;
         }
 
-        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)", "isRopeBuffer(string)" })
+        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)", "isRopeBuffer(string)", "isSingleByteOptimizable(string)" })
         public DynamicObject spliceBuffer(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding,
                                           @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
                                           @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile) {
@@ -1558,9 +1559,6 @@ public abstract class StringPrimitiveNodes {
             byteList.append(source.getByteList(), rightSideStartingIndex, source.byteLength() - rightSideStartingIndex);
             byteList.setEncoding(encoding);
 
-            // NB: The character count is only accurate for single byte-optimizable strings. Rope buffers are not supported
-            // in general use. If we want to allow for wide characters we would need to recalculate the length doing a
-            // full scan.
             final Rope buffer = new RopeBuffer(byteList,
                     RopeNodes.MakeConcatNode.commonCodeRange(source.getCodeRange(), insert.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile),
                     source.isSingleByteOptimizable() && insert.isSingleByteOptimizable(),
@@ -1834,6 +1832,11 @@ public abstract class StringPrimitiveNodes {
         private DynamicObject makeBuffer(DynamicObject string, int beg, int len) {
             assert RubyGuards.isRubyString(string);
 
+            if (!StringGuards.isSingleByteOptimizable(string)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().internalError("Taking the substring of MBC rope buffer is not currently supported", this));
+            }
+
             final RopeBuffer buffer = (RopeBuffer) rope(string);
 
             if (allocateNode == null) {
@@ -1846,9 +1849,6 @@ public abstract class StringPrimitiveNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            // NB: This is only valid for the single-byte case. If multi-byte, the code range must be recalculated.
-            // This is not intended to be a 100% correct implementation, since you should normally be using the
-            // immutable rope variant.
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
                     new RopeBuffer(new ByteList(buffer.getByteList(), beg, len), buffer.getCodeRange(), buffer.isSingleByteOptimizable(), len),
