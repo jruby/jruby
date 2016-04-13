@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core.array;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -42,40 +43,12 @@ public abstract class ArrayDupNode extends RubyNode {
         return allocateNode.allocateArray(coreLibrary().getArrayClass(), null, 0);
     }
 
-    @Specialization(guards = "isIntArray(from)")
-    public DynamicObject dupIntegerFixnum(DynamicObject from) {
-        final int[] store = (int[]) Layouts.ARRAY.getStore(from);
-        return allocateNode.allocateArray(
-                coreLibrary().getArrayClass(),
-                store.clone(),
-                Layouts.ARRAY.getSize(from));
-    }
-
-    @Specialization(guards = "isLongArray(from)")
-    public DynamicObject dupLongFixnum(DynamicObject from) {
-        final long[] store = (long[]) Layouts.ARRAY.getStore(from);
-        return allocateNode.allocateArray(
-                coreLibrary().getArrayClass(),
-                store.clone(),
-                Layouts.ARRAY.getSize(from));
-    }
-
-    @Specialization(guards = "isDoubleArray(from)")
-    public DynamicObject dupFloat(DynamicObject from) {
-        final double[] store = (double[]) Layouts.ARRAY.getStore(from);
-        return allocateNode.allocateArray(
-                coreLibrary().getArrayClass(),
-                store.clone(),
-                Layouts.ARRAY.getSize(from));
-    }
-
-    @Specialization(guards = "isObjectArray(from)")
-    public DynamicObject dupObject(DynamicObject from) {
-        final Object[] store = (Object[]) Layouts.ARRAY.getStore(from);
-        return allocateNode.allocateArray(
-                coreLibrary().getArrayClass(),
-                ArrayUtils.copy(store),
-                Layouts.ARRAY.getSize(from));
+    @Specialization(guards = "strategy.matches(from)")
+    public DynamicObject dupOther(DynamicObject from,
+            @Cached("of(from)") ArrayStrategy strategy) {
+        final int size = Layouts.ARRAY.getSize(from);
+        Object store = strategy.newMirror(from).copyArrayAndMirror().getArray();
+        return allocateNode.allocateArray(coreLibrary().getArrayClass(), store, size);
     }
 
 }
