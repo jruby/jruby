@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>1.7.25-SNAPSHOT</version>
+    <version>1.7.25</version>
   </parent>
   <groupId>rubygems</groupId>
   <artifactId>jruby-jars</artifactId>
@@ -67,7 +67,7 @@ freezing to) a specific jruby-complete jar version.</description>
       </extension>
     </extensions>
     <directory>${basedir}/pkg</directory>
-    <finalName>${project.artifactId}-1.7.25.dev</finalName>
+    <finalName>${project.artifactId}-1.7.25</finalName>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
@@ -114,7 +114,7 @@ freezing to) a specific jruby-complete jar version.</description>
         <artifactId>maven-invoker-plugin</artifactId>
         <configuration>
           <properties>
-            <ruby.version>1.7.25.dev</ruby.version>
+            <ruby.version>1.7.25</ruby.version>
             <gem.home>${project.build.directory}/rubygems</gem.home>
             <gem.path>${project.build.directory}/rubygems</gem.path>
           </properties>
