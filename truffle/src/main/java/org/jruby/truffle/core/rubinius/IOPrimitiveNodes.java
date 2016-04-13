@@ -160,7 +160,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(path)")
         public int open(DynamicObject path, int mode, int permission) {
-            return posix().open(StringOperations.getString(getContext(), path), mode, permission);
+            return ensureSuccessful(posix().open(StringOperations.getString(getContext(), path), mode, permission));
         }
 
     }
@@ -189,7 +189,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public int ftruncate(VirtualFrame frame, DynamicObject io, long length) {
             final int fd = Layouts.IO.getDescriptor(io);
-            return posix().ftruncate(fd, length);
+            return ensureSuccessful(posix().ftruncate(fd, length));
         }
 
     }
@@ -265,15 +265,12 @@ public abstract class IOPrimitiveNodes {
             final Timeval timeoutObject = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
             timeoutObject.setTime(new long[]{ 0, 0 });
 
-            final int res = nativeSockets().select(fd + 1, fdSet.getPointer(),
-                    PointerPrimitiveNodes.NULL_POINTER, PointerPrimitiveNodes.NULL_POINTER, timeoutObject);
+            final int res = ensureSuccessful(nativeSockets().select(fd + 1, fdSet.getPointer(),
+                    PointerPrimitiveNodes.NULL_POINTER, PointerPrimitiveNodes.NULL_POINTER, timeoutObject));
 
             if (res == 0) {
                 CompilerDirectives.transferToInterpreter();
                 ruby("raise IO::EAGAINWaitReadable");
-            } else if (res < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
             }
 
             final byte[] bytes = new byte[numberOfBytes];
@@ -345,14 +342,14 @@ public abstract class IOPrimitiveNodes {
                     fd = otherFd;
                 } else {
                     if (otherFd > 0) {
-                        posix().close(otherFd);
+                        ensureSuccessful(posix().close(otherFd));
                     }
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(coreExceptions().errnoError(errno, this));
                 }
 
             } else {
-                posix().close(otherFd);
+                ensureSuccessful(posix().close(otherFd));
             }
 
 
@@ -452,7 +449,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public int seek(VirtualFrame frame, DynamicObject io, int amount, int whence) {
             final int fd = Layouts.IO.getDescriptor(io);
-            return posix().lseek(fd, amount, whence);
+            return ensureSuccessful(posix().lseek(fd, amount, whence));
         }
 
     }
