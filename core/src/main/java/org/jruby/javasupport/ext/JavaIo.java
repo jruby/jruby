@@ -66,20 +66,20 @@ public abstract class JavaIo {
 
         @Override
         public RubyIO call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            return to_io(context, self, null);
+            return to_io(context, (java.io.InputStream) unwrapJavaObject(self), null);
         }
 
         @Override
         public RubyIO call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject opts) {
-            return to_io(context, self, opts);
+            return to_io(context, (java.io.InputStream) unwrapJavaObject(self), opts);
         }
 
-        private static RubyIO to_io(final ThreadContext context, final IRubyObject self, final IRubyObject opts) {
-            final RubyIO io = new RubyIO(context.runtime, (java.io.InputStream) unwrapJavaObject(self));
-            setAutoclose(context, io, opts);
-            return io;
-        }
+    }
 
+    static RubyIO to_io(final ThreadContext context, final java.io.InputStream stream, final IRubyObject opts) {
+        final RubyIO io = new RubyIO(context.runtime, stream);
+        setAutoclose(context, io, opts);
+        return io;
     }
 
     private static final class OutputStreamToIO extends JavaMethod.JavaMethodZeroOrOne {
@@ -90,20 +90,20 @@ public abstract class JavaIo {
 
         @Override
         public RubyIO call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            return to_io(context, self, null);
+            return to_io(context, (java.io.OutputStream) unwrapJavaObject(self), null);
         }
 
         @Override
         public RubyIO call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject opts) {
-            return to_io(context, self, opts);
+            return to_io(context, (java.io.OutputStream) unwrapJavaObject(self), opts);
         }
 
-        private static RubyIO to_io(final ThreadContext context, final IRubyObject self, final IRubyObject opts) {
-            final RubyIO io = new RubyIO(context.runtime, (java.io.OutputStream) unwrapJavaObject(self));
-            setAutoclose(context, io, opts);
-            return io;
-        }
+    }
 
+    static RubyIO to_io(final ThreadContext context, final java.io.OutputStream stream, final IRubyObject opts) {
+        final RubyIO io = new RubyIO(context.runtime, stream);
+        setAutoclose(context, io, opts);
+        return io;
     }
 
     private static final class ChannelToIO extends JavaMethod.JavaMethodZeroOrOne {

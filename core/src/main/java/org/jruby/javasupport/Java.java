@@ -122,6 +122,7 @@ public class Java implements Library {
         org.jruby.javasupport.ext.JavaLangReflect.define(runtime);
         org.jruby.javasupport.ext.JavaUtil.define(runtime);
         org.jruby.javasupport.ext.JavaIo.define(runtime);
+        org.jruby.javasupport.ext.JavaNet.define(runtime);
 
         // load Ruby parts of the 'java' library
         runtime.getLoadService().load("jruby/java.rb", false);
