@@ -263,6 +263,12 @@ public abstract class JavaLangReflect {
             return RubyString.newString(context.runtime, thiz.toString());
         }
 
+        @JRubyMethod(name = "abstract?")
+        public static IRubyObject abstract_p(final IRubyObject self) {
+            final java.lang.reflect.Field thiz = unwrapJavaObject(self);
+            return isAbstract(self, thiz.getModifiers());
+        }
+
         // JavaUtilities::ModifiedShortcuts :
 
         @JRubyMethod(name = "public?")
@@ -295,6 +301,10 @@ public abstract class JavaLangReflect {
             return isStatic(self, thiz.getModifiers());
         }
 
+    }
+
+    static RubyBoolean isAbstract(final IRubyObject self, final int mod) {
+        return self.getRuntime().newBoolean(java.lang.reflect.Modifier.isAbstract(mod));
     }
 
     static RubyBoolean isPublic(final IRubyObject self, final int mod) {

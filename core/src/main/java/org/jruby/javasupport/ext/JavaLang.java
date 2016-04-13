@@ -393,6 +393,18 @@ public abstract class JavaLang {
             return context.nil;
         }
 
+        @JRubyMethod(name = "anonymous?")
+        public static IRubyObject anonymous_p(final IRubyObject self) {
+            final java.lang.Class klass = unwrapJavaObject(self);
+            return self.getRuntime().newBoolean( klass.isAnonymousClass() );
+        }
+
+        @JRubyMethod(name = "abstract?")
+        public static IRubyObject abstract_p(final IRubyObject self) {
+            final java.lang.Class klass = unwrapJavaObject(self);
+            return JavaLangReflect.isAbstract( self, klass.getModifiers() );
+        }
+
         // JavaUtilities::ModifiedShortcuts :
 
         @JRubyMethod(name = "public?")
