@@ -287,9 +287,9 @@ public abstract class RopeNodes {
                     depth);
         }
 
-        private CodeRange commonCodeRange(CodeRange first, CodeRange second,
-                                    ConditionProfile sameCodeRangeProfile,
-                                    ConditionProfile brokenCodeRangeProfile) {
+        public static CodeRange commonCodeRange(CodeRange first, CodeRange second,
+                                                ConditionProfile sameCodeRangeProfile,
+                                                ConditionProfile brokenCodeRangeProfile) {
             if (sameCodeRangeProfile.profile(first == second)) {
                 return first;
             }

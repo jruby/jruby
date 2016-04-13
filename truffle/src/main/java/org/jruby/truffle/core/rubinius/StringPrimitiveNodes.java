@@ -1505,7 +1505,7 @@ public abstract class StringPrimitiveNodes {
             return string;
         }
 
-        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)" })
+        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)", "!isRopeBuffer(string)" })
         public DynamicObject splice(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding) {
             if (leftMakeSubstringNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1542,6 +1542,39 @@ public abstract class StringPrimitiveNodes {
             return string;
         }
 
+        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)", "isRopeBuffer(string)" })
+        public DynamicObject spliceBuffer(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding,
+                                          @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile) {
+            final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
+            final RopeBuffer source = (RopeBuffer) rope(string);
+            final Rope insert = rope(other);
+            final int rightSideStartingIndex = spliceByteIndex + byteCountToReplace;
+
+            final ByteList byteList = new ByteList(source.byteLength() + insert.byteLength() - byteCountToReplace);
+
+            byteList.append(source.getByteList(), 0, spliceByteIndex);
+
+            for (int i = 0; i < insert.byteLength(); i++) {
+                byteList.append(insert.getBytes()[i]);
+            }
+
+            byteList.append(source.getByteList(), rightSideStartingIndex, source.byteLength() - rightSideStartingIndex);
+            byteList.setEncoding(encoding);
+
+            // NB: The character count is only accurate for single byte-optimizable strings. Rope buffers are not supported
+            // in general use. If we want to allow for wide characters we would need to recalculate the length doing a
+            // full scan.
+            final Rope buffer = new RopeBuffer(byteList,
+                    RopeNodes.MakeConcatNode.commonCodeRange(source.getCodeRange(), insert.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile),
+                    source.isSingleByteOptimizable() && insert.isSingleByteOptimizable(),
+                    source.characterLength() + insert.characterLength() - byteCountToReplace);
+
+            StringOperations.setRope(string, buffer);
+
+            return string;
+        }
+
         protected  boolean indexAtStartBound(int index) {
             return index == 0;
         }
@@ -1556,6 +1589,12 @@ public abstract class StringPrimitiveNodes {
             assert RubyGuards.isRubyString(string);
 
             return indexAtStartBound(index) || indexAtEndBound(string, index);
+        }
+
+        protected boolean isRopeBuffer(DynamicObject string) {
+            assert RubyGuards.isRubyString(string);
+
+            return rope(string) instanceof RopeBuffer;
         }
     }
 
