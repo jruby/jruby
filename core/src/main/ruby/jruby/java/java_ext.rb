@@ -4,5 +4,5 @@
 # load 'jruby/java/java_ext/java.lang.rb' - moved to native
 # load 'jruby/java/java_ext/java.util.rb' - moved to native
 load 'jruby/java/java_ext/java.util.regex.rb'
-load 'jruby/java/java_ext/java.io.rb'
+# load 'jruby/java/java_ext/java.io.rb'  - moved to native
 load 'jruby/java/java_ext/java.net.rb'

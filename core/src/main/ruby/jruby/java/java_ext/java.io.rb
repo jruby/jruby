@@ -1,3 +1,7 @@
+# NOTE: these Ruby extensions were moved to native code!
+# @see org.jruby.javasupport.ext.JavaIo.java
+# this file is no longer loaded but is kept to provide doc stubs
+
 class Java::java::io::InputStream
   def to_io(opts = nil)
     ruby_io = org.jruby.RubyIO.new(JRuby.runtime, self)
