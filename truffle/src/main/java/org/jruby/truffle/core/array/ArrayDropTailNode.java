@@ -47,9 +47,8 @@ public abstract class ArrayDropTailNode extends RubyNode {
             return createArray(getContext(), null, 0);
         } else {
             final int newSize = size - index;
-            ArrayMirror newStore = strategy.newArray(newSize);
-            strategy.newMirror(array).copyTo(newStore, 0, 0, newSize);
-            return createArray(getContext(), newStore.getArray(), newSize);
+            final Object newStore = strategy.newMirror(array).extractRange(0, newSize).getArray();
+            return createArray(getContext(), newStore, newSize);
         }
     }
 

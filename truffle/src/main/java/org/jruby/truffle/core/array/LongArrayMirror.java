@@ -54,6 +54,11 @@ class LongArrayMirror extends BasicArrayMirror {
     }
 
     @Override
+    public ArrayMirror extractRange(int start, int end) {
+        return new LongArrayMirror(ArrayUtils.extractRange(array, start, end));
+    }
+
+    @Override
     public Object getArray() {
         return array;
     }

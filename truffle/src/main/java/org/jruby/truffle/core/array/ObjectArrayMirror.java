@@ -50,6 +50,11 @@ class ObjectArrayMirror extends BasicArrayMirror {
     }
 
     @Override
+    public ArrayMirror extractRange(int start, int end) {
+        return new ObjectArrayMirror(ArrayUtils.extractRange(array, start, end));
+    }
+
+    @Override
     public Object getArray() {
         return array;
     }

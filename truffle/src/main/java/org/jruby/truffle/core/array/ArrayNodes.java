@@ -137,8 +137,7 @@ public abstract class ArrayNodes {
         public DynamicObject addNullOther(DynamicObject a, DynamicObject b,
                 @Cached("of(b)") ArrayStrategy strategy) {
             final int size = getSize(b);
-            final ArrayMirror mirror = strategy.newArray(size);
-            strategy.newMirror(b).copyTo(mirror, 0, 0, size);
+            final ArrayMirror mirror = strategy.newMirror(b).extractRange(0, size);
             return createArray(getContext(), mirror.getArray(), size);
         }
 
@@ -146,8 +145,7 @@ public abstract class ArrayNodes {
         public DynamicObject addOtherNull(DynamicObject a, DynamicObject b,
                 @Cached("of(a)") ArrayStrategy strategy) {
             final int size = getSize(a);
-            final ArrayMirror mirror = strategy.newArray(size);
-            strategy.newMirror(a).copyTo(mirror, 0, 0, size);
+            final ArrayMirror mirror = strategy.newMirror(a).extractRange(0, size);
             return createArray(getContext(), mirror.getArray(), size);
         }
 

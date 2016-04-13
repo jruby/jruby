@@ -54,6 +54,11 @@ class DoubleArrayMirror extends BasicArrayMirror {
     }
 
     @Override
+    public ArrayMirror extractRange(int start, int end) {
+        return new DoubleArrayMirror(ArrayUtils.extractRange(array, start, end));
+    }
+
+    @Override
     public Object getArray() {
         return array;
     }
