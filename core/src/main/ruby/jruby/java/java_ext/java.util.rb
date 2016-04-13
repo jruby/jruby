@@ -2,8 +2,6 @@
 # @see org.jruby.javasupport.ext.JavaUtil.java
 # this file is no longer loaded but is kept to provide doc stubs
 
-# TODO java.util.Comparator support?
-
 # *java.util.Collection* is enhanced (not just) to act like Ruby's `Enumerable`.
 # @see http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html
 module Java::java::util::Collection
