@@ -10,7 +10,6 @@
 package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -22,8 +21,6 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-
-import java.util.Arrays;
 
 public abstract class ArrayLiteralNode extends RubyNode {
 
@@ -51,7 +48,11 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
         }
 
-        return allocateObjectNode.allocate(coreLibrary().getArrayClass(), executedValues, executedValues.length);
+        return createArray(executedValues, executedValues.length);
+    }
+
+    protected DynamicObject createArray(Object store, int size) {
+        return allocateObjectNode.allocate(coreLibrary().getArrayClass(), store, size);
     }
 
     @Override
@@ -77,9 +78,15 @@ public abstract class ArrayLiteralNode extends RubyNode {
         return super.isDefined(frame);
     }
 
-    // TODO(CS): remove this - shouldn't be fiddling with nodes from the outside
-    public RubyNode[] getValues() {
-        return Arrays.copyOf(values, values.length);
+    public int getSize() {
+        return values.length;
+    }
+
+    public RubyNode stealNode(int index) {
+        final RubyNode node = values[index];
+        // Nullify it here so we make sure it's only referenced by the caller.
+        values[index] = null;
+        return node;
     }
 
     public static class EmptyArrayLiteralNode extends ArrayLiteralNode {
@@ -90,7 +97,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return allocateObjectNode.allocate(coreLibrary().getArrayClass(), null, 0);
+            return createArray(null, 0);
         }
 
     }
@@ -114,11 +121,10 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return allocateObjectNode.allocate(coreLibrary().getArrayClass(), executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
-        private DynamicObject makeGeneric(VirtualFrame frame,
-                final double[] executedValues, int n) {
+        private DynamicObject makeGeneric(VirtualFrame frame, final double[] executedValues, int n) {
             final Object[] executedObjects = new Object[n];
 
             for (int i = 0; i < n; i++) {
@@ -149,11 +155,10 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return allocateObjectNode.allocate(coreLibrary().getArrayClass(), executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
-        private DynamicObject makeGeneric(VirtualFrame frame,
-                final int[] executedValues, int n) {
+        private DynamicObject makeGeneric(VirtualFrame frame, final int[] executedValues, int n) {
             final Object[] executedObjects = new Object[n];
 
             for (int i = 0; i < n; i++) {
@@ -184,11 +189,10 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return allocateObjectNode.allocate(coreLibrary().getArrayClass(), executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
-        private DynamicObject makeGeneric(VirtualFrame frame,
-                final long[] executedValues, int n) {
+        private DynamicObject makeGeneric(VirtualFrame frame, final long[] executedValues, int n) {
             final Object[] executedObjects = new Object[n];
 
             for (int i = 0; i < n; i++) {
@@ -215,7 +219,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            return allocateObjectNode.allocate(coreLibrary().getArrayClass(), executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
     }
@@ -226,10 +230,9 @@ public abstract class ArrayLiteralNode extends RubyNode {
             super(context, sourceSection, values);
         }
 
-        @ExplodeLoop
         @Override
         public Object execute(VirtualFrame frame) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerAsserts.neverPartOfCompilation();
 
             final Object[] executedValues = new Object[values.length];
 
@@ -237,7 +240,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            final DynamicObject array = allocateObjectNode.allocate(coreLibrary().getArrayClass(), storeSpecialisedFromObjects(executedValues), executedValues.length);
+            final DynamicObject array = createArray(storeSpecialisedFromObjects(executedValues), executedValues.length);
             final Object store = Layouts.ARRAY.getStore(array);
 
             if (store == null) {

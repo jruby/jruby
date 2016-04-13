@@ -2143,8 +2143,8 @@ public class BodyTranslator extends Translator {
         if (preArray != null
                 && node.getPost() == null
                 && node.getRest() == null
-                && rhsTranslated instanceof ArrayLiteralNode.UninitialisedArrayLiteralNode
-                && ((ArrayLiteralNode.UninitialisedArrayLiteralNode) rhsTranslated).getValues().length == preArray.size()) {
+                && rhsTranslated instanceof ArrayLiteralNode
+                && ((ArrayLiteralNode) rhsTranslated).getSize() == preArray.size()) {
             /*
              * We can deal with this common case be rewriting
              *
@@ -2164,7 +2164,7 @@ public class BodyTranslator extends Translator {
              * executed if it isn't actually demanded.
              */
 
-            final RubyNode[] rhsValues = ((ArrayLiteralNode.UninitialisedArrayLiteralNode) rhsTranslated).getValues();
+            final ArrayLiteralNode rhsArrayLiteral = (ArrayLiteralNode) rhsTranslated;
             final int assignedValuesCount = preArray.size();
 
             final RubyNode[] sequence = new RubyNode[assignedValuesCount * 2];
@@ -2174,7 +2174,7 @@ public class BodyTranslator extends Translator {
             for (int n = 0; n < assignedValuesCount; n++) {
                 final String tempName = environment.allocateLocalTemp("multi");
                 final ReadLocalNode readTemp = environment.findLocalVarNode(tempName, sourceSection);
-                final RubyNode assignTemp = readTemp.makeWriteNode(rhsValues[n]);
+                final RubyNode assignTemp = readTemp.makeWriteNode(rhsArrayLiteral.stealNode(n));
                 final RubyNode assignFinalValue = translateDummyAssignment(preArray.get(n), NodeUtil.cloneNode(readTemp));
 
                 sequence[n] = assignTemp;
