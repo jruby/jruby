@@ -101,7 +101,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     }
 
     protected static boolean endInBounds(DynamicObject array, int index, int length) {
-        return index + length < getSize(array);
+        return index + length <= getSize(array);
     }
 
 }
