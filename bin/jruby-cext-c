@@ -27,7 +27,9 @@ if SULONG_DIR.nil?
 end
 
 def mx(command, *args)
-  `#{MX_DIR}/mx.py -p #{SULONG_DIR} --vm server #{command} #{args.join(' ')}`
+  command = "#{MX_DIR}/mx.py -p #{SULONG_DIR} --vm server #{command} #{args.join(' ')}"
+  puts "$ #{command}"
+  `#{command}`
 end
 
 CEXT_DIR = ARGV[0]
@@ -57,4 +59,4 @@ SRC.each do |src|
   LL.push ll
 end
 
-mx 'su-link', OUT, *LL
+mx 'su-link', '-o', OUT, *LL
