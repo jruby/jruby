@@ -15,15 +15,13 @@ require 'yaml'
 MX_DIR = ENV['MX_DIR']
 
 if MX_DIR.nil?
-  $stderr.puts 'You need to set MX_DIR to a checkout of the mx repository'
-  exit 1
+  abort 'You need to set MX_DIR to a checkout of the mx repository'
 end
 
 SULONG_DIR = ENV['SULONG_DIR']
 
 if SULONG_DIR.nil?
-  $stderr.puts 'You need to set SULONG_DIR to the location of a built checkout of the Sulong repository'
-  exit 1
+  abort 'You need to set SULONG_DIR to the location of a built checkout of the Sulong repository'
 end
 
 def mx(command, *args)
@@ -35,15 +33,13 @@ end
 CEXT_DIR = ARGV[0]
 
 if CEXT_DIR.nil?
-  $stderr.puts 'You need to pass the directory of a C extension so I can build it'
-  exit 1
+  abort 'You need to pass the directory of a C extension so I can build it'
 end
 
 CONFIG_FILE = File.join(CEXT_DIR, '.jruby-cext-build.yml')
 
 unless File.exist?(CONFIG_FILE)
-  $stderr.puts "There is no .jruby-cext-build.yml in this C extension at the moment - I don't know how to build it"
-  exit 1
+  abort "There is no .jruby-cext-build.yml in this C extension at the moment - I don't know how to build it"
 end
 
 CONFIG = YAML.load_file(CONFIG_FILE)
