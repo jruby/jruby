@@ -87,8 +87,8 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     @Override
     public String getDataFlowVarsForOutput() {
         StringBuilder buf = new StringBuilder();
-        for (Variable v : dfVarMap.keySet()) {
-            buf.append("DF Var ").append(dfVarMap.get(v)).append(" = ").append(v).append("\n");
+        for (Map.Entry<Variable, Integer> entry : dfVarMap.entrySet()) {
+            buf.append("DF Var ").append(entry.getValue()).append(" = ").append(entry.getKey()).append('\n');
         }
 
         return buf.toString();

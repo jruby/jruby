@@ -58,16 +58,21 @@ class String
     raise ArgumentError, "String#chr_at primitive failed"
   end
 
+  def append(str)
+    Rubinius.primitive :string_append
+    raise TypeError, "String#append primitive only accepts Strings"
+  end
+
   def byteslice(index_or_range, length=undefined)
     Rubinius.primitive :string_byte_substring
 
     if index_or_range.kind_of? Range
       index = Rubinius::Type.coerce_to index_or_range.begin, Fixnum, :to_int
-      index += @num_bytes if index < 0
-      return if index < 0 or index > @num_bytes
+      index += bytesize if index < 0
+      return if index < 0 or index > bytesize
 
       finish = Rubinius::Type.coerce_to index_or_range.end, Fixnum, :to_int
-      finish += @num_bytes if finish < 0
+      finish += bytesize if finish < 0
 
       finish += 1 unless index_or_range.exclude_end?
       length = finish - index
@@ -75,17 +80,17 @@ class String
       return byteslice 0, 0 if length < 0
     else
       index = Rubinius::Type.coerce_to index_or_range, Fixnum, :to_int
-      index += @num_bytes if index < 0
+      index += bytesize if index < 0
 
       if undefined.equal?(length)
-        return if index == @num_bytes
+        return if index == bytesize
         length = 1
       else
         length = Rubinius::Type.coerce_to length, Fixnum, :to_int
         return if length < 0
       end
 
-      return if index < 0 or index > @num_bytes
+      return if index < 0 or index > bytesize
     end
 
     byteslice index, length
@@ -97,9 +102,9 @@ class String
   end
 
   def num_bytes
-    @num_bytes
+    bytesize
   end
-  
+
   def byte_append(str)
     Rubinius.primitive :string_byte_append
     raise TypeError, "String#byte_append primitive only accepts Strings"

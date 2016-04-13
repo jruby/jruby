@@ -1,12 +1,5 @@
 require "test/unit"
-require "fileutils"
 require 'test/jruby/test_helper'
-require 'rbconfig'
-
-# Necessary because of http://jira.codehaus.org/browse/JRUBY-1579
-require "jruby"
-
-require 'jruby/compiler'
 
 class TestLoadCompiledRubyClassFromClasspath < Test::Unit::TestCase
   include TestHelper
@@ -20,9 +13,18 @@ class TestLoadCompiledRubyClassFromClasspath < Test::Unit::TestCase
   StarterClass = "#{StarterName}.class"
   Manifest = "manifest.txt"
 
+  def self.startup
+    require 'rbconfig'
+    require 'fileutils'
+    # Necessary because of http://jira.codehaus.org/browse/JRUBY-1579
+    require 'jruby'
+    require 'jruby/compiler'
+  end
+
   if java.lang.System.getProperty("basedir") # FIXME: disabling this test under maven
     def test_truth; end
   else
+
   def setup
     remove_test_artifacts
     @original_classpath = ENV["CLASSPATH"]
@@ -72,15 +74,19 @@ public class #{StarterName} {
     end
 
     javac = ENV['JAVA_HOME'] ? "#{ENV['JAVA_HOME']}/bin/javac" : "javac"
-
-    `#{javac} -cp #{jruby_jar} #{StarterSource}`
+    javac_cmd = "#{javac} -cp #{jruby_jar} #{StarterSource}"
+    puts javac_cmd if $VERBOSE; `#{javac_cmd}`
     assert_equal 0, $?.exitstatus, "javac failed to compile #{StarterSource}"
-    `jar cvfm #{JarFile} #{Manifest} #{StarterClass} #{RubyClass}`
+
+    jar = ENV['JAVA_HOME'] ? "#{ENV['JAVA_HOME']}/bin/jar" : "jar"
+    `#{jar} cvfm #{JarFile} #{Manifest} #{StarterClass} #{RubyClass}`
     assert_equal 0, $?.exitstatus, "jar failed to build #{JarFile} from #{RubyClass}"
 
     remove_ruby_source_files
 
-    result = `java -jar -Djruby.aot.loadClasses=true #{JarFile}`
+    java = ENV['JAVA_HOME'] ? "#{ENV['JAVA_HOME']}/bin/java" : "java"
+    java_cmd = "#{java} -jar -Djruby.aot.loadClasses=true #{JarFile}"
+    puts java_cmd if $VERBOSE; result = `#{java_cmd}`
     assert_equal 0, $?.exitstatus, "did not get 0 for exit status from running java against the jar"
     assert_equal "hello from runner", result, "wrong text from runner"
   end
@@ -99,7 +105,7 @@ public class #{StarterName} {
     File.open(RubySource, "w") { |f| f << "print 'hello from runner'" }
     JRuby::Compiler::compile_argv([RubySource])
   rescue Exception => e
-    raise "jrubyc failed to compile #{RubySource} into #{RubyClass}:\n#{e.message}\n#{e.backtrace}"
+    raise "jrubyc failed to compile #{RubySource} into #{RubyClass}:\n #{e.inspect}\n  #{e.backtrace.join("\n  ")}"
   ensure
     # just in case, remove the rb file
     FileUtils.rm_rf RubySource
@@ -113,5 +119,6 @@ public class #{StarterName} {
     current_classpath = ENV["CLASSPATH"].nil? ? "" : ENV["CLASSPATH"]
     ENV["CLASSPATH"] = "#{current_classpath}#{File::PATH_SEPARATOR}#{paths.join(File::PATH_SEPARATOR)}"
   end
+  
   end # end FIXME
 end

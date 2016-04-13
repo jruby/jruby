@@ -1,4 +1,0 @@
-#!/usr/bin/env ruby
-
-require_relative '../lib/jruby+truffle_runner.rb'
-JRubyTruffleRunner.new

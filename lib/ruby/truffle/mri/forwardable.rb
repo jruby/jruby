@@ -1,1 +1,1 @@
-require_relative '../../stdlib/forwardable'
+require_relative '../stdlib/forwardable'

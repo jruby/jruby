@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 #
 # test_scanner_events.rb
 #
@@ -535,6 +536,8 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
                  scan('op', ':[]')
     assert_equal ['[]='],
                  scan('op', ':[]=')
+    assert_equal ['&.'],
+                 scan('op', 'a&.f')
     assert_equal [],
                  scan('op', %q[`make all`])
   end

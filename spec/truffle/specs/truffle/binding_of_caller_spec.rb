@@ -9,19 +9,26 @@
 require_relative '../../../ruby/spec_helper'
 
 describe "Truffle.binding_of_caller" do
+
+  def binding_of_caller
+    Truffle.binding_of_caller
+  end
+
+  #it "returns nil if there is no caller"
+  #end
   
   it "returns a Binding" do
-    Truffle.binding_of_caller.should be_kind_of(Binding)
+    binding_of_caller.should be_kind_of(Binding)
   end
   
   it "gives read access to local variables at the call site" do
     x = 14
-    Truffle.binding_of_caller.local_variable_get(:x).should == 14
+    binding_of_caller.local_variable_get(:x).should == 14
   end
   
   it "gives write access to local variables at the call site" do
     x = 2
-    Truffle.binding_of_caller.local_variable_set(:x, 14)
+    binding_of_caller.local_variable_set(:x, 14)
     x.should == 14
   end
   

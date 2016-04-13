@@ -1,5 +1,5 @@
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 
 class TestFloat < Test::Unit::TestCase
   include EnvUtil
@@ -357,6 +357,30 @@ class TestFloat < Test::Unit::TestCase
     assert_not_predicate(1.0, :zero?)
   end
 
+  def test_positive_p
+    assert_predicate(+1.0, :positive?)
+    assert_not_predicate(+0.0, :positive?)
+    assert_not_predicate(-0.0, :positive?)
+    assert_not_predicate(-1.0, :positive?)
+    assert_predicate(+(0.0.next_float), :positive?)
+    assert_not_predicate(-(0.0.next_float), :positive?)
+    assert_predicate(Float::INFINITY, :positive?)
+    assert_not_predicate(-Float::INFINITY, :positive?)
+    assert_not_predicate(Float::NAN, :positive?)
+  end
+
+  def test_negative_p
+    assert_predicate(-1.0, :negative?)
+    assert_not_predicate(-0.0, :negative?)
+    assert_not_predicate(+0.0, :negative?)
+    assert_not_predicate(+1.0, :negative?)
+    assert_predicate(-(0.0.next_float), :negative?)
+    assert_not_predicate(+(0.0.next_float), :negative?)
+    assert_predicate(-Float::INFINITY, :negative?)
+    assert_not_predicate(Float::INFINITY, :negative?)
+    assert_not_predicate(Float::NAN, :negative?)
+  end
+
   def test_infinite_p
     inf = Float::INFINITY
     assert_equal(1, inf.infinite?)
@@ -672,5 +696,13 @@ class TestFloat < Test::Unit::TestCase
     z = 0.0.prev_float.next_float
     assert_equal(0.0, z)
     assert_equal(-Float::INFINITY, 1.0/z)
+  end
+
+  def test_hash_0
+    bug10979 = '[ruby-core:68541] [Bug #10979]'
+    assert_equal(+0.0.hash, -0.0.hash)
+    assert_operator(+0.0, :eql?, -0.0)
+    h = {0.0 => bug10979}
+    assert_equal(bug10979, h[-0.0])
   end
 end

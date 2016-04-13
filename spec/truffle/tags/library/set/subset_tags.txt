@@ -1,0 +1,1 @@
+fails:Set#subset? returns true if passed a Set that is equal to self or self is a subset of

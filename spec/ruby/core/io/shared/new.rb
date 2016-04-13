@@ -309,38 +309,36 @@ describe :io_new_errors, shared: true do
     }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is "2.1" do
-    it "raises an error if passed matching binary/text mode two ways" do
-      lambda {
-        @io = IO.send(@method, @fd, "wb", binmode: true)
-      }.should raise_error(ArgumentError)
-      lambda {
-        @io = IO.send(@method, @fd, "wt", textmode: true)
-      }.should raise_error(ArgumentError)
+  it "raises an error if passed matching binary/text mode two ways" do
+    lambda {
+      @io = IO.send(@method, @fd, "wb", binmode: true)
+    }.should raise_error(ArgumentError)
+    lambda {
+      @io = IO.send(@method, @fd, "wt", textmode: true)
+    }.should raise_error(ArgumentError)
 
-      lambda {
-        @io = IO.send(@method, @fd, "wb", textmode: false)
-      }.should raise_error(ArgumentError)
-      lambda {
-        @io = IO.send(@method, @fd, "wt", binmode: false)
-      }.should raise_error(ArgumentError)
-    end
+    lambda {
+      @io = IO.send(@method, @fd, "wb", textmode: false)
+    }.should raise_error(ArgumentError)
+    lambda {
+      @io = IO.send(@method, @fd, "wt", binmode: false)
+    }.should raise_error(ArgumentError)
+  end
 
-    it "raises an error if passed conflicting binary/text mode two ways" do
-      lambda {
-        @io = IO.send(@method, @fd, "wb", binmode: false)
-      }.should raise_error(ArgumentError)
-      lambda {
-        @io = IO.send(@method, @fd, "wt", textmode: false)
-      }.should raise_error(ArgumentError)
+  it "raises an error if passed conflicting binary/text mode two ways" do
+    lambda {
+      @io = IO.send(@method, @fd, "wb", binmode: false)
+    }.should raise_error(ArgumentError)
+    lambda {
+      @io = IO.send(@method, @fd, "wt", textmode: false)
+    }.should raise_error(ArgumentError)
 
-      lambda {
-        @io = IO.send(@method, @fd, "wb", textmode: true)
-      }.should raise_error(ArgumentError)
-      lambda {
-        @io = IO.send(@method, @fd, "wt", binmode: true)
-      }.should raise_error(ArgumentError)
-    end
+    lambda {
+      @io = IO.send(@method, @fd, "wb", textmode: true)
+    }.should raise_error(ArgumentError)
+    lambda {
+      @io = IO.send(@method, @fd, "wt", binmode: true)
+    }.should raise_error(ArgumentError)
   end
 
   it "raises an error when trying to set both binmode and textmode" do

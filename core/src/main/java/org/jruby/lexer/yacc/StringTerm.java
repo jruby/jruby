@@ -58,6 +58,10 @@ public class StringTerm extends StrTerm {
         this.nest  = 0;
     }
 
+    public int getFlags() {
+        return flags;
+    }
+
     protected ByteList createByteList(RubyLexer lexer) {
         ByteList bytelist = new ByteList(15);
         bytelist.setEncoding(lexer.getEncoding());
@@ -263,6 +267,10 @@ public class StringTerm extends StrTerm {
         int c;
 
         while ((c = lexer.nextc()) != EOF) {
+            if (lexer.getHeredocIndent() > 0) {
+                lexer.update_heredoc_indent(c);
+            }
+
             if (begin != '\0' && c == begin) {
                 nest++;
             } else if (c == end) {

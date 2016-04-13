@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 require File.expand_path('../shared/pwd', __FILE__)
@@ -12,19 +13,27 @@ describe "Dir.pwd" do
   end
 
   it_behaves_like :dir_pwd, :pwd
+end
 
-  it "correctly displays dirs with unicode characters in them" do
-    DirSpecs.clear_dirs
+describe "Dir.pwd" do
+  before :each do
+    @name = tmp("あ").force_encoding('binary')
+    @fs_encoding = Encoding.find('filesystem')
+  end
 
-    begin
-      str = [0xe9].pack 'U' # Unicode é
-      Dir.mkdir str
-      File.exist?(str).should == true
+  after :each do
+    rm_r @name
+  end
 
-      old_pwd = Dir.pwd
-      Dir.chdir(str) { Dir.pwd.force_encoding('UTF-8').should == File.join(old_pwd, str) }
-    ensure
-      DirSpecs.clear_dirs
+  platform_is_not :windows do
+    it "correctly handles dirs with unicode characters in them" do
+      Dir.mkdir @name
+      Dir.chdir @name do
+        if @fs_encoding == Encoding::UTF_8
+          Dir.pwd.encoding.should == Encoding::UTF_8
+        end
+        Dir.pwd.force_encoding('binary').should == @name
+      end
     end
   end
 end

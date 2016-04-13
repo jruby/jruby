@@ -1,5 +1,5 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
-require 'net/ftp'
+require File.expand_path('../spec_helper', __FILE__)
 require File.expand_path('../fixtures/server', __FILE__)
 require File.expand_path('../shared/putbinaryfile', __FILE__)
 

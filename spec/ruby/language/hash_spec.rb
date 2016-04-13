@@ -1,4 +1,7 @@
 require File.expand_path('../../spec_helper', __FILE__)
+require File.expand_path('../fixtures/hash_strings_ascii8bit', __FILE__)
+require File.expand_path('../fixtures/hash_strings_utf8', __FILE__)
+require File.expand_path('../fixtures/hash_strings_usascii', __FILE__)
 
 describe "Hash literal" do
   it "{} should return an empty hash" do
@@ -132,4 +135,15 @@ describe "Hash literal" do
     lambda { {**obj} }.should raise_error(TypeError)
   end
 
+  it "does not change encoding of literal string keys during creation" do
+    ascii8bit_hash = HashStringsASCII8BIT.literal_hash
+    utf8_hash = HashStringsUTF8.literal_hash
+    usascii_hash = HashStringsUSASCII.literal_hash
+
+    ascii8bit_hash.keys.first.encoding.should == Encoding::ASCII_8BIT
+    ascii8bit_hash.keys.first.should == utf8_hash.keys.first
+    utf8_hash.keys.first.encoding.should == Encoding::UTF_8
+    utf8_hash.keys.first.should == usascii_hash.keys.first
+    usascii_hash.keys.first.encoding.should == Encoding::US_ASCII
+  end
 end

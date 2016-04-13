@@ -1,1 +1,1 @@
-require_relative '../../stdlib/getoptlong'
+require_relative '../stdlib/getoptlong'

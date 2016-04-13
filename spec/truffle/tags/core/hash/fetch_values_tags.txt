@@ -1,0 +1,4 @@
+fails:Hash#fetch_values with matched keys returns the values for keys
+fails:Hash#fetch_values with unmatched keys raises a KeyError
+fails:Hash#fetch_values with unmatched keys returns the default value from block
+fails:Hash#fetch_values without keys returns an empty Array

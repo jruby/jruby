@@ -1,5 +1,5 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
-require 'net/ftp'
+require File.expand_path('../spec_helper', __FILE__)
 require File.expand_path('../fixtures/server', __FILE__)
 
 describe "Net::FTP#voidcmd" do
@@ -8,7 +8,7 @@ describe "Net::FTP#voidcmd" do
     @server.serve_once
 
     @ftp = Net::FTP.new
-    @ftp.connect("localhost", 9921)
+    @ftp.connect(@server.hostname, @server.server_port)
   end
 
   after :each do

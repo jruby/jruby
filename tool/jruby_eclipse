@@ -1,11 +1,24 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 # A JRuby launcher, in Ruby, and using the class files from Eclipse
 # Currently needs the core and stdlib jar, so build them again when they change.
 
-TRUFFLEJAR = "#{Dir.home}/.m2/repository/com/oracle/truffle/0.7/truffle-0.7.jar"
-SNAKEYAMLJAR = "#{Dir.home}/.m2/repository/org/yaml/snakeyaml/1.14/snakeyaml-1.14.jar"
+M2REPO = "#{Dir.home}/.m2/repository"
+
+TRUFFLE_VERSION = "0.11"
+
+TRUFFLEJARS = %W[
+  com/oracle/truffle/truffle-api/#{TRUFFLE_VERSION}/truffle-api-#{TRUFFLE_VERSION}.jar
+  com/oracle/truffle/truffle-debug/#{TRUFFLE_VERSION}/truffle-debug-#{TRUFFLE_VERSION}.jar
+].map { |jar| "#{M2REPO}/#{jar}" }
+
+SNAKEYAMLJAR = "#{M2REPO}/org/yaml/snakeyaml/1.14/snakeyaml-1.14.jar"
+ANTLR4JAR = "#{M2REPO}/org/antlr/antlr4-runtime/4.5/antlr4-runtime-4.5.jar"
+
+GRAAL_OPTIONS_PREFIX = "graal."
 
 JRUBY = File.expand_path('../..', __FILE__)
+
+VERIFY_JRUBY = false
 
 java = ENV["JAVACMD"] || "java"
 
@@ -14,11 +27,18 @@ rest = []
 
 ARGV.concat ENV["JRUBY_OPTS"].to_s.split(' ')
 ARGV.each { |arg|
-  if arg.start_with?("-Xmx") or arg == "-ea"
+  case arg
+  when /^-Xmx/, "-ea"
     java_flags << arg
-  elsif arg.start_with?("-J")
+  when /^-J-G:\+/
+    java_flags << "-D#{GRAAL_OPTIONS_PREFIX}#{$'}=true"
+  when /^-J-G:-/
+    java_flags << "-D#{GRAAL_OPTIONS_PREFIX}#{$'}=false"
+  when /^-J-G:/
+    java_flags << "-D#{GRAAL_OPTIONS_PREFIX}#{$'}"
+  when /^-J/
     java_flags << arg[2..-1]
-  elsif arg.start_with?("-Xtruffle.")
+  when /^-Xtruffle./
     java_flags << "-Djruby.#{arg[2..-1]}"
   else
     rest << arg
@@ -29,15 +49,30 @@ bootclasspath = []
 classpath = []
 
 bootclasspath << "#{JRUBY}/lib/jruby.jar"
-classpath << "#{JRUBY}/lib/jruby-stdlib-9.0.0.0-SNAPSHOT.jar"
+# add other jars in lib to classpath for command-line execution
+ignore = %w[jruby.jar jruby-truffle.jar jruby-complete.jar]
+Dir.glob("#{JRUBY}/lib/*.jar") { |jar|
+  basename = File.basename(jar)
+  unless ignore.include?(basename)
+    classpath << jar
+  end
+}
+
 if rest.include?('-X+T')
-  bootclasspath << TRUFFLEJAR
+  bootclasspath += TRUFFLEJARS
   classpath << SNAKEYAMLJAR
+  classpath << ANTLR4JAR
   classpath << "#{JRUBY}/truffle/build.eclipse"
   java_flags << "-Djruby.truffle.core.load_path=#{JRUBY}/truffle/src/main/ruby"
 end
 
+unless VERIFY_JRUBY
+  bootclasspath += classpath
+  classpath.clear
+end
+
 args = [java]
+args << "-Xss2048k"
 args << "-Djffi.boot.library.path=#{JRUBY}/lib/jni"
 args << "-Xbootclasspath/a:" + bootclasspath.join(':')
 args << "-classpath" << classpath.join(':') unless classpath.empty?
@@ -50,5 +85,9 @@ args << "-Djruby.shell=/bin/sh"
 args += java_flags
 args << "org.jruby.Main"
 args += rest
+
+if args.include?('-d')
+  puts args.join(' ')
+end
 
 exec(*args)

@@ -252,7 +252,7 @@ public class JavaObject extends RubyObject {
     }
 
     @JRubyMethod(name = "synchronized")
-    public IRubyObject ruby_synchronized(ThreadContext context, Block block) {
+    public final IRubyObject ruby_synchronized(ThreadContext context, Block block) {
         Object lock = getValue();
         synchronized (lock != null ? lock : NULL_LOCK) {
             return block.yield(context, null);

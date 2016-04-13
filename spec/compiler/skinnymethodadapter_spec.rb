@@ -13,8 +13,8 @@ end
 describe "SkinnyMethodAdapter" do
   let(:instance_methods) { SkinnyMethodAdapter.instance_methods.map(&:to_s) }
   let(:insn_opcodes) do
-    insn_opcodes = Opcodes.constants.select do |c|
-      case c.to_s # for 1.9's symbols
+    Opcodes.constants.map(&:to_s).select do |c|
+      case c
 
       when /ACC_/, # access modifiers
            /V1_/, # version identifiers
@@ -36,8 +36,7 @@ describe "SkinnyMethodAdapter" do
       else
         true
       end
-    end.map(&:to_s).map(&:downcase)
-    # 1.9 makes them symbols, so to_s the lot
+    end.map(&:downcase)
   end
 
   it "supports all JVM opcodes" do

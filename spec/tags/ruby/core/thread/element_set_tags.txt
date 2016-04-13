@@ -1,2 +1,1 @@
 fails:Thread#[]= raises exceptions on the wrong type of keys
-fails:Thread#[]= raises a RuntimeError if the thread is frozen

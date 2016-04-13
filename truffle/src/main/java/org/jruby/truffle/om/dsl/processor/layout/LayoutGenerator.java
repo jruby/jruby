@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -64,7 +64,7 @@ public class LayoutGenerator {
             typeSuperclass = layout.getSuperLayout().getName() + "LayoutImpl." + layout.getSuperLayout().getName() + "Type";
         }
 
-        stream.printf("    protected static class %sType extends %s {%n", layout.getName(), typeSuperclass);
+        stream.printf("    public static class %sType extends %s {%n", layout.getName(), typeSuperclass);
 
         if (layout.hasShapeProperties()) {
             stream.println("        ");
@@ -173,7 +173,7 @@ public class LayoutGenerator {
         }
 
         if (layout.getSuperLayout() == null) {
-            stream.println("    protected static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);");
+            stream.println("    protected static final Layout LAYOUT = Layout.newLayout().addAllowedImplicitCast(Layout.ImplicitCast.IntToLong).build();");
             stream.printf("    protected static final Shape.Allocator %S_ALLOCATOR = LAYOUT.createAllocator();%n", NameUtils.identifierToConstant(layout.getName()));
         } else {
             stream.printf("    protected static final Shape.Allocator %S_ALLOCATOR = LAYOUT.createAllocator();%n", NameUtils.identifierToConstant(layout.getName()));
@@ -611,14 +611,14 @@ public class LayoutGenerator {
 
                     if (property.isVolatile()) {
                         if (property.getType().getKind() == TypeKind.INT) {
-                            stream.printf("        return ((AtomicInteger) %s_PROPERTY.get(object, true)).get();%n", NameUtils.identifierToConstant(property.getName()));
+                            stream.printf("        return ((AtomicInteger) %s_PROPERTY.get(object, is%s(object))).get();%n", NameUtils.identifierToConstant(property.getName()), layout.getName());
                         } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
-                            stream.printf("        return ((AtomicBoolean) %s_PROPERTY.get(object, true)).get();%n", NameUtils.identifierToConstant(property.getName()));
+                            stream.printf("        return ((AtomicBoolean) %s_PROPERTY.get(object, is%s(object))).get();%n", NameUtils.identifierToConstant(property.getName()), layout.getName());
                         } else {
-                            stream.printf("        return ((AtomicReference<%s>) %s_PROPERTY.get(object, true)).get();%n", property.getType(), NameUtils.identifierToConstant(property.getName()));
+                            stream.printf("        return ((AtomicReference<%s>) %s_PROPERTY.get(object, is%s(object))).get();%n", property.getType(), NameUtils.identifierToConstant(property.getName()), layout.getName());
                         }
                     } else {
-                        stream.printf("        return (%s) %s_PROPERTY.get(object, true);%n", property.getType(), NameUtils.identifierToConstant(property.getName()));
+                        stream.printf("        return (%s) %s_PROPERTY.get(object, is%s(object));%n", property.getType(), NameUtils.identifierToConstant(property.getName()), layout.getName());
                     }
                 }
 
@@ -637,7 +637,7 @@ public class LayoutGenerator {
                 stream.println("    ");
             }
 
-            assert !(property.hasSetter() && property.hasUnsafeSetter());
+            // assert !(property.hasSetter() && property.hasUnsafeSetter());
 
             if (property.hasSetter() || property.hasUnsafeSetter()) {
                 addUncheckedCastWarning(stream, property);
@@ -675,11 +675,11 @@ public class LayoutGenerator {
                         stream.printf("        %s_PROPERTY.setInternal(object, value);%n", NameUtils.identifierToConstant(property.getName()));
                     } else if (property.isVolatile()) {
                         if (property.getType().getKind() == TypeKind.INT) {
-                            stream.printf("        ((AtomicInteger) %s_PROPERTY.get(object, true)).set(value);%n", NameUtils.identifierToConstant(property.getName()));
+                            stream.printf("        ((AtomicInteger) %s_PROPERTY.get(object, is%s(object))).set(value);%n", NameUtils.identifierToConstant(property.getName()), layout.getName());
                         } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
-                            stream.printf("        ((AtomicBoolean) %s_PROPERTY.get(object, true)).set(value);%n", NameUtils.identifierToConstant(property.getName()));
+                            stream.printf("        ((AtomicBoolean) %s_PROPERTY.get(object, is%s(object))).set(value);%n", NameUtils.identifierToConstant(property.getName()), layout.getName());
                         } else {
-                            stream.printf("        ((AtomicReference<%s>) %s_PROPERTY.get(object, true)).set(value);%n", property.getType(), NameUtils.identifierToConstant(property.getName()));
+                            stream.printf("        ((AtomicReference<%s>) %s_PROPERTY.get(object, is%s(object))).set(value);%n", property.getType(), NameUtils.identifierToConstant(property.getName()), layout.getName());
                         }
                     } else {
                         stream.printf("        try {%n");
@@ -712,17 +712,17 @@ public class LayoutGenerator {
 
                 if (property.getType().getKind() == TypeKind.INT) {
                     stream.printf(
-                            "        return ((AtomicInteger) %s_PROPERTY.get(object, true)).compareAndSet(expected_value, value);%n",
-                            NameUtils.identifierToConstant(property.getName()));
+                            "        return ((AtomicInteger) %s_PROPERTY.get(object, is%s(object))).compareAndSet(expected_value, value);%n",
+                            NameUtils.identifierToConstant(property.getName()), layout.getName());
                 } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
                     stream.printf(
-                            "        return ((AtomicBoolean) %s_PROPERTY.get(object, true)).compareAndSet(expected_value, value);%n",
-                            NameUtils.identifierToConstant(property.getName()));
+                            "        return ((AtomicBoolean) %s_PROPERTY.get(object, is%s(object))).compareAndSet(expected_value, value);%n",
+                            NameUtils.identifierToConstant(property.getName()), layout.getName());
                 } else {
                     stream.printf(
-                            "        return ((AtomicReference<%s>) %s_PROPERTY.get(object, true)).compareAndSet(expected_value, value);%n",
+                            "        return ((AtomicReference<%s>) %s_PROPERTY.get(object, is%s(object))).compareAndSet(expected_value, value);%n",
                             property.getType(),
-                            NameUtils.identifierToConstant(property.getName()));
+                            NameUtils.identifierToConstant(property.getName()), layout.getName());
                 }
 
                 stream.println("    }");
@@ -747,17 +747,17 @@ public class LayoutGenerator {
 
                 if (property.getType().getKind() == TypeKind.INT) {
                     stream.printf(
-                            "        return ((AtomicInteger) %s_PROPERTY.get(object, true)).getAndSet(value);%n",
-                            NameUtils.identifierToConstant(property.getName()));
+                            "        return ((AtomicInteger) %s_PROPERTY.get(object, is%s(object))).getAndSet(value);%n",
+                            NameUtils.identifierToConstant(property.getName()), layout.getName());
                 } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
                     stream.printf(
-                            "        return ((AtomicBoolean) %s_PROPERTY.get(object, true)).getAndSet(value);%n",
-                            NameUtils.identifierToConstant(property.getName()));
+                            "        return ((AtomicBoolean) %s_PROPERTY.get(object, is%s(object))).getAndSet(value);%n",
+                            NameUtils.identifierToConstant(property.getName()), layout.getName());
                 } else {
                     stream.printf(
-                            "        return ((AtomicReference<%s>) %s_PROPERTY.get(object, true)).getAndSet(value);%n",
+                            "        return ((AtomicReference<%s>) %s_PROPERTY.get(object, is%s(object))).getAndSet(value);%n",
                             property.getType(),
-                            NameUtils.identifierToConstant(property.getName()));
+                            NameUtils.identifierToConstant(property.getName()), layout.getName());
                 }
 
                 stream.println("    }");

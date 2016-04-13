@@ -82,6 +82,33 @@ public class InvocationLinker {
         return nativeTarget;
     }
 
+    public static MethodHandle wrapWithFrameOnly(Signature signature, RubyModule implClass, String name, MethodHandle nativeTarget, StaticScope scope) {
+        MethodHandle framePre = getFramePre(signature, CallConfiguration.FrameFullScopeNone, implClass, name, scope);
+
+        MethodHandle framePost = getFramePost(signature, CallConfiguration.FrameFullScopeNone);
+
+        // post logic for frame
+        nativeTarget = Binder
+                .from(nativeTarget.type())
+                .tryFinally(framePost)
+                .invoke(nativeTarget);
+
+        // pre logic for frame
+        nativeTarget = foldArguments(nativeTarget, framePre);
+
+
+        // call polling and call number increment
+        nativeTarget = Binder
+                .from(nativeTarget.type())
+                .fold(Binder
+                        .from(nativeTarget.type().changeReturnType(void.class))
+                        .permute(0)
+                        .invokeStaticQuiet(lookup(), ThreadContext.class, "callThreadPoll"))
+                .invoke(nativeTarget);
+
+        return nativeTarget;
+    }
+
     public static MethodHandle getFramePre(Signature signature, CallConfiguration callConfig, RubyModule implClass, String name, StaticScope scope) {
         Signature inbound = signature.asFold(void.class);
         SmartBinder binder = SmartBinder

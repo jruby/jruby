@@ -3,6 +3,7 @@ packaging 'war'
 
 # default versions will be overwritten by pom.rb from root directory
 properties( 'jruby.plugins.version' => '1.0.10',
+            'wildfly.version' => '9.0.2.Final',
             'project.build.sourceEncoding' => 'utf-8' )
 
 pom( 'org.jruby:jruby', '${jruby.version}' )
@@ -15,7 +16,7 @@ repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/
 
 jruby_plugin :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0' do
   execute_goal :initialize
-end 
+end
 
 plugin( 'org.wildfly.plugins:wildfly-maven-plugin:1.0.2.Final' ) do
   execute_goals( :start,
@@ -71,6 +72,10 @@ execute 'check download', :phase => :verify do
       raise "missed expected string in download: #{expected}"
     end
     expected = 'uri:classloader:/gems/backports-'
+    unless result.match( /#{expected}/ )
+      raise "missed expected string in download: #{expected}"
+    end
+    expected = 'snakeyaml-1.14.0'
     unless result.match( /#{expected}/ )
       raise "missed expected string in download: #{expected}"
     end

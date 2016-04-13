@@ -1,6 +1,0 @@
-fails:Kernel#load loads from the current working directory
-fails:Kernel.load loads from the current working directory
-fails:Kernel#load when passed true for 'wrap' with top-level methods allows calling top-level methods
-fails:Kernel#load when passed true for 'wrap' with top-level methods does not pollute the receiver
-fails:Kernel.load when passed true for 'wrap' with top-level methods allows calling top-level methods
-fails:Kernel.load when passed true for 'wrap' with top-level methods does not pollute the receiver

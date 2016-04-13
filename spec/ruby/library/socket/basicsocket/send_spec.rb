@@ -37,26 +37,28 @@ describe "BasicSocket#send" do
      data.should == 'hello'
    end
 
-   it "accepts flags to specify unusual sending behaviour" do
-     data = nil
-     peek_data = nil
-     t = Thread.new do
-       client = @server.accept
-       peek_data = client.recv(6, Socket::MSG_PEEK)
-       data = client.recv(6)
-       client.recv(10) # this recv is important
-       client.close
-     end
-     Thread.pass while t.status and t.status != "sleep"
-     t.status.should_not be_nil
+  platform_is_not :solaris do
+    it "accepts flags to specify unusual sending behaviour" do
+      data = nil
+      peek_data = nil
+      t = Thread.new do
+        client = @server.accept
+        peek_data = client.recv(6, Socket::MSG_PEEK)
+        data = client.recv(6)
+        client.recv(10) # this recv is important
+        client.close
+      end
+      Thread.pass while t.status and t.status != "sleep"
+      t.status.should_not be_nil
 
-     @socket.send('helloU', Socket::MSG_PEEK | Socket::MSG_OOB).should == 6
-     @socket.shutdown # indicate, that we are done sending
+      @socket.send('helloU', Socket::MSG_PEEK | Socket::MSG_OOB).should == 6
+      @socket.shutdown # indicate, that we are done sending
 
-     t.join
-     peek_data.should == "hello"
-     data.should == 'hello'
-   end
+      t.join
+      peek_data.should == "hello"
+      data.should == 'hello'
+    end
+  end
 
   it "accepts a sockaddr as recipient address" do
      data = ""

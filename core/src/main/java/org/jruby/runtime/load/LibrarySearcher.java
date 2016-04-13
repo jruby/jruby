@@ -12,7 +12,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
-import org.jruby.ast.executable.Script;
 import org.jruby.ir.IRScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService.SuffixType;
@@ -297,8 +296,9 @@ class LibrarySearcher {
                     }
                 }
                 runtime.getJRubyClassLoader().addURL(url);
-            } catch (MalformedURLException badUrl) {
-                runtime.newIOErrorFromException(badUrl);
+            }
+            catch (MalformedURLException badUrl) {
+                throw runtime.newIOErrorFromException(badUrl);
             }
 
             // If an associated Service library exists, load it as well

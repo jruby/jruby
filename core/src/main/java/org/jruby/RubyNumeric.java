@@ -51,6 +51,7 @@ import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
+import org.jruby.util.TypeConverter;
 
 import java.math.BigInteger;
 
@@ -61,6 +62,7 @@ import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_arg;
 import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negative_p;
+import static org.jruby.util.Numeric.f_to_f;
 
 /**
  * Base class for all numerical types in ruby.
@@ -173,8 +175,6 @@ public class RubyNumeric extends RubyObject {
             tooSmall(arg, num);
         } else if (num > Integer.MAX_VALUE) {
             tooBig(arg, num);
-        } else {
-            return;
         }
     }
 
@@ -191,7 +191,7 @@ public class RubyNumeric extends RubyObject {
      */
     public static byte num2chr(IRubyObject arg) {
         if (arg instanceof RubyString) {
-            String value = ((RubyString) arg).toString();
+            String value = arg.toString();
 
             if (value != null && value.length() > 0) return (byte) value.charAt(0);
         }
@@ -248,14 +248,34 @@ public class RubyNumeric extends RubyObject {
      *
      */
     public static double num2dbl(IRubyObject arg) {
+        Ruby runtime = arg.getRuntime();
+
+        if (arg instanceof RubyBoolean || arg instanceof RubyNil) {
+            throw runtime.newTypeError("can't convert " + arg.inspect() + " into Float");
+        }
+
         if (arg instanceof RubyFloat) {
             return ((RubyFloat) arg).getDoubleValue();
-        } else if (arg instanceof RubyString) {
-            throw arg.getRuntime().newTypeError("no implicit conversion to float from string");
-        } else if (arg == arg.getRuntime().getNil()) {
-            throw arg.getRuntime().newTypeError("no implicit conversion to float from nil");
+        } else if (arg instanceof RubyBignum) {
+            if (runtime.getBignum().searchMethod("to_f").isBuiltin()) {
+                return ((RubyBignum) arg).getDoubleValue();
+            }
+        } else if (arg instanceof RubyRational) {
+            if (runtime.getRational().searchMethod("to_f").isBuiltin()) {
+                return ((RubyRational) arg).getDoubleValue();
+            }
         }
-        return RubyKernel.new_float(arg, arg).getDoubleValue();
+
+        IRubyObject val = numericToFloat(runtime, arg);
+        return ((RubyFloat) val).getDoubleValue();
+    }
+
+    private static IRubyObject numericToFloat(Ruby runtime, IRubyObject num) {
+        if (!(num instanceof RubyNumeric)) {
+            throw runtime.newTypeError("can't convert " + num.getType() + " into Float");
+        }
+
+        return TypeConverter.convertToType(num, runtime.getFloat(), "to_f");
     }
 
     /** rb_dbl_cmp (numeric.c)
@@ -371,39 +391,25 @@ public class RubyNumeric extends RubyObject {
      *          will be 0.0 if the conversion failed.
      */
     public static RubyFloat str2fnum(Ruby runtime, RubyString arg, boolean strict) {
-        return str2fnumCommon(runtime, arg, strict, biteListCaller19);
-    }
-
-    private static RubyFloat str2fnumCommon(Ruby runtime, RubyString arg, boolean strict, ByteListCaller caller) {
-        final double ZERO = 0.0;
         try {
-            return new RubyFloat(runtime, caller.yield(arg, strict));
-        } catch (NumberFormatException e) {
+            double value = ConvertDouble.byteListToDouble19(arg.getByteList(), strict);
+            return RubyFloat.newFloat(runtime, value);
+        }
+        catch (NumberFormatException e) {
             if (strict) {
                 throw runtime.newArgumentError("invalid value for Float(): "
                         + arg.callMethod(runtime.getCurrentContext(), "inspect").toString());
             }
-            return new RubyFloat(runtime,ZERO);
+            return RubyFloat.newFloat(runtime, 0.0);
         }
     }
-
-    private interface ByteListCaller {
-        double yield(RubyString arg, boolean strict);
-    }
-
-    private static class ByteListCaller19 implements ByteListCaller {
-        public double yield(RubyString arg, boolean strict) {
-            return ConvertDouble.byteListToDouble19(arg.getByteList(),strict);
-        }
-    }
-    private static final ByteListCaller19 biteListCaller19 = new ByteListCaller19();
 
 
     /** Numeric methods. (num_*)
      *
      */
 
-    protected IRubyObject[] getCoerced(ThreadContext context, IRubyObject other, boolean error) {
+    protected final IRubyObject[] getCoerced(ThreadContext context, IRubyObject other, boolean error) {
         final Ruby runtime = context.runtime;
         final IRubyObject $ex = context.getErrorInfo();
         final IRubyObject result;
@@ -420,7 +426,7 @@ public class RubyNumeric extends RubyObject {
             return null;
         }
 
-        return coerceResult(runtime, result, true).toJavaArray();
+        return coerceResult(runtime, result, true).toJavaArrayMaybeUnsafe();
     }
 
     protected IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other, boolean err) {
@@ -458,14 +464,13 @@ public class RubyNumeric extends RubyObject {
             }
             return null;
         }
-        final Ruby runtime = context.runtime;
         final IRubyObject $ex = context.getErrorInfo();
         final IRubyObject result;
         try {
             result = coerceBody(context, other);
         }
         catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
-            if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
+            if (context.runtime.getStandardError().isInstance( e.getException() )) {
                 context.setErrorInfo($ex); // restore $!
                 RubyWarnings warnings = context.runtime.getWarnings();
                 warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
@@ -474,12 +479,11 @@ public class RubyNumeric extends RubyObject {
                     coerceFailed(context, other);
                 }
                 return null;
-            } else {
-                throw e;
             }
+            throw e;
         }
 
-        return coerceResult(runtime, result, err);
+        return coerceResult(context.runtime, result, err);
     }
 
     private static RubyArray coerceResult(final Ruby runtime, final IRubyObject result, final boolean err) {
@@ -502,7 +506,7 @@ public class RubyNumeric extends RubyObject {
      */
     protected final IRubyObject coerceRescue(ThreadContext context, IRubyObject other) {
         coerceFailed(context, other);
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     /** coerce_failed
@@ -861,7 +865,7 @@ public class RubyNumeric extends RubyObject {
      */
 
     private IRubyObject[] scanStepArgs(ThreadContext context, IRubyObject[] args) {
-        IRubyObject to = context.runtime.getNil();
+        IRubyObject to = context.nil;
         IRubyObject step = context.runtime.newFixnum(1);
 
         if (args.length >= 1) to = args[0];
@@ -1239,6 +1243,24 @@ public class RubyNumeric extends RubyObject {
 
     @Deprecated
     public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
-        return str2fnumCommon(runtime, arg, strict, biteListCaller19);
+        return str2fnum(runtime, arg, strict);
+    }
+
+    /** num_negative_p
+     *
+     */
+    @JRubyMethod(name = "negative?")
+    public IRubyObject isNegative(ThreadContext context) {
+        IRubyObject zero = convertToNum(0, context.runtime);
+        return callMethod(context, "<", zero);
+
+    }
+    /** num_positive_p
+     *
+     */
+    @JRubyMethod(name = "positive?")
+    public IRubyObject isPositive(ThreadContext context) {
+        IRubyObject zero = convertToNum(0, context.runtime);
+        return callMethod(context, ">", zero);
     }
 }

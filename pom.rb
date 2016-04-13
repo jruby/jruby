@@ -51,36 +51,40 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   properties( 'its.j2ee' => 'j2ee*/pom.xml',
               'its.osgi' => 'osgi*/pom.xml',
-              'rspec-core.version' => '3.3.2',
               'jruby.basedir' => '${project.basedir}',
-              'minitest.version' => '5.4.1',
-              'ant.version' => '1.9.2',
-              'diff-lcs.version' => '1.1.3',
-              'jffi.version' => '1.2.10',
-              'rake.version' => '10.1.0',
-              'project.build.sourceEncoding' => 'utf-8',
-              'jruby-launcher.version' => '1.1.1',
-              'asm.version' => '5.0.3',
-              'rspec-expectations.version' => '3.3.1',
-              'base.javac.version' => '1.7',
-              'krypt.version' => '0.0.2.rc1',
-              'rdoc.version' => '4.1.0',
-              'polyglot.dump.pom' => 'pom.xml',
-              'rspec.version' => '3.3.0',
-              'base.java.version' => '1.7',
-              'polyglot.dump.readonly' => 'true',
-              'rspec-mocks.version' => '3.3.2',
-              'jruby.plugins.version' => '1.0.10',
-              'invoker.skip' => 'true',
-              'json.version' => '1.8.0',
-              'version.jruby' => '${project.version}',
-              'bouncy-castle.version' => '1.47',
-              'github.global.server' => 'github',
               'main.basedir' => '${project.basedir}',
-              'joda.time.version' => '2.8.2',
-              'test-unit.version' => '3.0.3',
+              'project.build.sourceEncoding' => 'utf-8',
+              'base.java.version' => '1.7',
+              'base.javac.version' => '1.7',
+              'invoker.skip' => 'true',
+              'version.jruby' => '${project.version}',
+              'github.global.server' => 'github',
+              'polyglot.dump.pom' => 'pom.xml',
+              'polyglot.dump.readonly' => 'true',
+              'jruby.plugins.version' => '1.0.10',
+
+              'json.version' => '1.8.3',
+              'rspec.version' => '3.3.0',
+              'rspec-core.version' => '3.3.2',
+              'rspec-expectations.version' => '3.3.1',
+              'rspec-mocks.version' => '3.3.2',
+              'minitest.version' => '5.4.1',
+              'test-unit.version' => '3.1.1',
               'power_assert.version' => '0.2.3',
-              'racc.version' => '1.4.13' )
+              'diff-lcs.version' => '1.1.3',
+              'racc.version' => '1.4.13',
+              # versions for default gems with bin executables
+              # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
+              'rdoc.version' => '4.2.0',
+              'rake.version' => '10.4.2',
+              'jar-dependencies.version' => '0.3.2',
+
+              'jruby-launcher.version' => '1.1.1',
+              'ant.version' => '1.9.2',
+              'asm.version' => '5.0.4',
+              'jffi.version' => '1.2.12-SNAPSHOT',
+              'bouncy-castle.version' => '1.47',
+              'joda.time.version' => '2.8.2' )
 
   modules [ 'truffle', 'core', 'lib' ]
 
@@ -114,20 +118,18 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :clean, '2.5'
     plugin :dependency, '2.8'
     plugin :release, '2.4.1'
-    plugin :jar, '2.4' do
-      jar 'org.codehaus.plexus:plexus-io:2.0.5'
-    end
+    plugin :jar, '2.6'
 
     rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
     unless model.version =~ /-SNAPSHOT/
-       rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
+       #rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
     end
     plugin :enforcer, '1.4' do
       execute_goal :enforce, :rules => rules
     end
 
-    plugin :compiler, '3.1'
-    plugin :shade, '2.1'
+    plugin :compiler, '3.3'
+    plugin :shade, '2.4.3'
     plugin :surefire, '2.15'
     plugin :plugin, '3.2'
     plugin( :invoker, '1.8',
@@ -227,10 +229,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     profile name do
 
       modules [ 'maven' ]
-    
+
       properties( 'invoker.skip' => false,
                   "its.#{name}" => 'no-excludes/pom.xml' )
-      
+
       build do
         default_goal 'install'
         plugin :invoker, 'pomIncludes' => [ "#{name}*/pom.xml" ]
@@ -245,7 +247,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       default_goal 'install'
     end
   end
-  
+
   profile 'jruby_complete_jar_extended' do
 
     modules [ 'test', 'maven' ]

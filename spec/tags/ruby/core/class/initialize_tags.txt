@@ -1,1 +1,0 @@
-fails:Class#initialize when given the Class raises a TypeError

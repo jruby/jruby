@@ -42,20 +42,17 @@ public class NativeException extends RubyException {
 
     private final Throwable cause;
     public static final String CLASS_NAME = "NativeException";
-    private final Ruby runtime;
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
         super(runtime, rubyClass);
-        this.runtime = runtime;
         this.cause = cause;
         this.message = runtime.newString(cause.getClass().getName() + ": " + searchStackMessage(cause));
     }
     
     private NativeException(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
-        this.runtime = runtime;
         this.cause   = new Throwable();
-        this.message = runtime.newString();
+        this.message = RubyString.newEmptyString(runtime);
     }
     
     private static ObjectAllocator NATIVE_EXCEPTION_ALLOCATOR = new ObjectAllocator() {
@@ -75,34 +72,46 @@ public class NativeException extends RubyException {
     }
 
     @JRubyMethod
-    public IRubyObject cause(Block unusedBlock) {
-        return Java.getInstance(getRuntime(), cause);
+    public final IRubyObject cause() {
+        return Java.getInstance(getRuntime(), getCause());
     }
 
-    public IRubyObject backtrace() {
+    @Deprecated
+    public IRubyObject cause(Block unusedBlock) {
+        return cause();
+    }
+
+    @Override
+    public final IRubyObject backtrace() {
         IRubyObject rubyTrace = super.backtrace();
-        if (rubyTrace.isNil()) {
-            return rubyTrace;
-        }
-        RubyArray array = (RubyArray) rubyTrace.dup();
-        StackTraceElement[] stackTrace = cause.getStackTrace();
-        for (int i = stackTrace.length - 1; i >= 0; i--) {
-            StackTraceElement element = stackTrace[i];
+        if ( rubyTrace.isNil() ) return rubyTrace;
+
+        final Ruby runtime = getRuntime();
+        final RubyArray rTrace = (RubyArray) rubyTrace;
+        StackTraceElement[] jTrace = cause.getStackTrace();
+        final IRubyObject[] trace = new IRubyObject[jTrace.length + rTrace.size()];
+        final StringBuilder line = new StringBuilder(32);
+        for ( int i = 0; i < jTrace.length; i++ ) {
+            StackTraceElement element = jTrace[i];
             final String className = element.getClassName();
-            final String line;
+            line.setLength(0);
             if (element.getFileName() == null) {
-                line = className + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + '\'';
+                line.append(className).append(':').append(element.getLineNumber()).append(":in `").append(element.getMethodName()).append('\'');
             } else {
                 final int index = className.lastIndexOf('.');
-                final String packageName = index == -1 ? "" : className.substring(0, index) + '/';
-                line = packageName.replace('.', '/') + element.getFileName() + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + '\'';
+                if ( index > - 1 ) {
+                    line.append(className.substring(0, index).replace('.', '/'));
+                    line.append('/');
+                }
+                line.append(element.getFileName()).append(':').append(element.getLineNumber()).append(":in `").append(element.getMethodName()).append('\'');
             }
-            RubyString string = runtime.newString(line);
-            array.unshift(string);
+            trace[i] = RubyString.newString(runtime, line.toString());
         }
-        return array;
+        System.arraycopy(rTrace.toJavaArrayMaybeUnsafe(), 0, trace, jTrace.length, rTrace.size());
+        return RubyArray.newArrayNoCopy(runtime, trace);
     }
 
+    @Deprecated // not used
     public void trimStackTrace(Member target) {
         Throwable t = new Throwable();
         StackTraceElement[] origStackTrace = cause.getStackTrace();
@@ -141,26 +150,17 @@ public class NativeException extends RubyException {
         }
     }
 
-    public void printBacktrace(PrintStream errorStream) {
-        super.printBacktrace(errorStream);
-        if (getRuntime().getDebug().isTrue()) {
-            errorStream.println("Complete Java stackTrace");
-            cause.printStackTrace(errorStream);
-        }
-    }
-
-    public Throwable getCause() {
+    public final Throwable getCause() {
         return cause;
     }
 
-    private String searchStackMessage(Throwable cause) {
-        String message = null;
-
+    private static String searchStackMessage(Throwable cause) {
+        String message;
         do {
             message = cause.getMessage();
+            if ( message != null ) return message;
             cause = cause.getCause();
-        } while (message == null && cause != null);
-
-        return message;
+        } while ( cause != null );
+        return null;
     }
 }

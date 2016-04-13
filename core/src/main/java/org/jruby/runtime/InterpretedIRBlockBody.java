@@ -1,19 +1,20 @@
 package org.jruby.runtime;
 
-import org.jruby.EvalType;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.EvalType;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
 
 public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRBlockBody");
@@ -22,6 +23,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private int callCount = 0;
     private InterpreterContext interpreterContext;
+    private InterpreterContext fullInterpreterContext;
 
     public InterpretedIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
@@ -42,7 +44,10 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
     @Override
     public void completeBuild(InterpreterContext interpreterContext) {
-        this.interpreterContext = interpreterContext;
+        this.fullInterpreterContext = interpreterContext;
+        // This enables IR & CFG to be dumped in debug mode
+        // when this updated code starts executing.
+        this.displayedCFG = false;
     }
 
     @Override
@@ -63,7 +68,14 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         }
 
         if (interpreterContext == null) {
+            if (Options.IR_PRINT.load()) {
+                ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
+
+                LOG.info("Printing simple IR for " + closure.getName(), "\n" + new String(baos.toByteArray()));
+            }
+
             interpreterContext = closure.getInterpreterContext();
+            fullInterpreterContext = interpreterContext;
         }
         return interpreterContext;
     }
@@ -78,44 +90,55 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         return null;
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {
+    @Override
+    public boolean canCallDirect() {
+        return interpreterContext != null && interpreterContext.hasExplicitCallProtocol();
+    }
+
+    @Override
+    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        context.setCurrentBlockType(Block.Type.PROC);
+        InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
+        return Interpreter.INTERPRET_BLOCK(context, block, null, ic, args, block.getBinding().getMethod(), blockArg);
+    }
+
+    @Override
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        context.setCurrentBlockType(Block.Type.NORMAL);
+        InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
+        return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
+    }
+
+    @Override
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
         if (callCount >= 0) promoteToFullBuild(context);
 
-        // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
-        // Do not use 'closure.getStaticScope()' -- that returns the original copy of the static scope.
-        // This matters because blocks created for Thread bodies modify the static-scope field of the block-body
-        // that records additional state about the block body.
-        //
-        // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
-        // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
+        InterpreterContext ic = ensureInstrsReady();
+
+        // Update interpreter context for next time this block is executed
+        // This ensures that if we had determined canCallDirect() is false
+        // based on the old IC, we continue to execute with it.
+        interpreterContext = fullInterpreterContext;
+
+        Binding binding = block.getBinding();
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame prevFrame = context.preYieldNoScope(binding);
-
-        // SSS FIXME: Why is self null in non-binding-eval contexts?
-        if (self == null || this.evalType.get() == EvalType.BINDING_EVAL) {
-            self = useBindingSelf(binding);
-        }
 
         // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
         // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
         // is just wasteful allocation since the scope is not used at all.
-
-        InterpreterContext ic = ensureInstrsReady();
-
-        // Pass on eval state info to the dynamic scope and clear it on the block-body
         DynamicScope actualScope = binding.getDynamicScope();
         if (ic.pushNewDynScope()) {
-            actualScope = DynamicScope.newDynamicScope(getStaticScope(), actualScope, this.evalType.get());
-            if (type == Type.LAMBDA) actualScope.setLambda(true);
-            context.pushScope(actualScope);
+            context.pushScope(block.allocScope(actualScope));
         } else if (ic.reuseParentDynScope()) {
             // Reuse! We can avoid the push only if surrounding vars aren't referenced!
             context.pushScope(actualScope);
         }
-        this.evalType.set(EvalType.NONE);
+
+        self = IRRuntimeHelpers.updateBlockState(block, self);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, self, ic, args, binding.getMethod(), block, type);
+            return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
         }
         finally {
             // IMPORTANT: Do not clear eval-type in case this is reused in bindings!
@@ -133,7 +156,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
     // and replace interpreterContext asynchronously.
     protected void promoteToFullBuild(ThreadContext context) {
-        if (context.runtime.isBooting()) return; // don't Promote to full build during runtime boot
+        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't Promote to full build during runtime boot
 
         if (callCount++ >= Options.JIT_THRESHOLD.load()) context.runtime.getJITCompiler().buildThresholdReached(context, this);
     }

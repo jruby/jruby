@@ -33,11 +33,3 @@ load 'jruby/kernel/time.rb'
 load 'jruby/kernel/gc.rb'
 load 'jruby/kernel/range.rb'
 load 'jruby/kernel/load_error.rb'
-
-# From enc/prelude.rb in MRI
-begin
-  require 'unicode_normalize'
-rescue LoadError
-end
-
-load 'jruby/kernel/rubygems.rb' unless JRuby::CONFIG.rubygems_disabled?

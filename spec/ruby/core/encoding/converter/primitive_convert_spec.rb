@@ -86,8 +86,7 @@ with_feature :encoding do
     end
 
     it "accepts an options hash" do
-      @ec.primitive_convert("","",nil,nil, {after_output: true})\
-        .should_not raise_error(ArgumentError)
+      @ec.primitive_convert("","",nil,nil, {after_output: true}).should == :finished
     end
 
     it "sets the destination buffer's encoding to the destination encoding if the conversion suceeded" do

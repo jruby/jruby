@@ -2,10 +2,8 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Module#prepend" do
-  ruby_version_is "2.1" do
-    it "is a public method" do
-      Module.should have_public_instance_method(:prepend, false)
-    end
+  it "is a public method" do
+    Module.should have_public_instance_method(:prepend, false)
   end
 
   it "does not affect the superclass" do
@@ -39,11 +37,11 @@ describe "Module#prepend" do
   end
 
   it "raises a TypeError when the argument is not a Module" do
-    lambda { ModuleSpecs::Basic.send(:prepend, Class.new) }.should raise_error(TypeError)
+    lambda { ModuleSpecs::Basic.prepend(Class.new) }.should raise_error(TypeError)
   end
 
   it "does not raise a TypeError when the argument is an instance of a subclass of Module" do
-    lambda { ModuleSpecs::SubclassSpec.send(:prepend, ModuleSpecs::Subclass.new) }.should_not raise_error(TypeError)
+    lambda { ModuleSpecs::SubclassSpec.prepend(ModuleSpecs::Subclass.new) }.should_not raise_error(TypeError)
   end
 
   it "does not import constants" do
@@ -63,7 +61,7 @@ describe "Module#prepend" do
   it "allows wrapping methods" do
     m = Module.new { def calc(x) super + 3 end }
     c = Class.new { def calc(x) x*2 end }
-    c.send(:prepend, m)
+    c.prepend(m)
     c.new.calc(1).should == 5
   end
 
@@ -139,7 +137,7 @@ describe "Module#prepend" do
     parent = Class.new { def chain; [:parent]; end }
     child = Class.new(parent) { def chain; super << :child; end }
     mod = Module.new { def chain; super << :mod; end }
-    parent.send(:prepend, mod)
+    parent.prepend(mod)
     parent.ancestors[0,2].should == [mod, parent]
     child.ancestors[0,3].should == [child, mod, parent]
 
@@ -153,7 +151,7 @@ describe "Module#prepend" do
     c1 = Class.new { def chain; [:c1]; end; prepend m1 }
     c2 = Class.new(c1) { def chain; super << :c2; end }
     c2.new.chain.should == [:c1, :m1, :c2]
-    c1.send(:prepend, m2)
+    c1.prepend(m2)
     c2.new.chain.should == [:c1, :m1, :m2, :c2]
   end
 
@@ -278,7 +276,7 @@ describe "Module#prepend" do
     end
 
     module_with_singleton_class_prepend = Module.new do
-      singleton_class.send(:prepend, mod)
+      singleton_class.prepend(mod)
     end
 
     klass = Class.new(ModuleSpecs::RecordIncludedModules) do
@@ -298,9 +296,37 @@ describe "Module#prepend" do
     end
 
     prepended_module = Module.new
-    base_class.singleton_class.send(:prepend, prepended_module)
+    base_class.singleton_class.prepend(prepended_module)
 
     child_class = Class.new(base_class)
     ScratchPad.recorded.should == child_class
+  end
+
+  it "does not interfere with a define_method super in the original class" do
+    base_class = Class.new do
+      def foo(ary)
+        ary << 1
+      end
+    end
+
+    child_class = Class.new(base_class) do
+      define_method :foo do |ary|
+        ary << 2
+        super(ary)
+      end
+    end
+
+    prep_mod = Module.new do
+      def foo(ary)
+        ary << 3
+        super(ary)
+      end
+    end
+
+    child_class.prepend(prep_mod)
+
+    ary = []
+    child_class.new.foo(ary)
+    ary.should == [3, 2, 1]
   end
 end

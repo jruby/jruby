@@ -167,3 +167,5 @@ fails:Kernel.spawn when passed close_others: false does not close STDOUT
 fails:Kernel.spawn when passed close_others: false does not close STDERR
 fails:Kernel#spawn redirects STDOUT to the given file if out: [String name, String mode]
 fails:Kernel.spawn redirects STDOUT to the given file if out: [String name, String mode]
+fails:Kernel#spawn redirects STDERR to child STDOUT if :err => [:child, :out]
+fails:Kernel.spawn redirects STDERR to child STDOUT if :err => [:child, :out]

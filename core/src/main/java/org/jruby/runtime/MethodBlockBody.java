@@ -47,28 +47,27 @@ public class MethodBlockBody extends ContextAwareBlockBody {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        args = prepareArgumentsForCall(context, args, type);
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
+        args = prepareArgumentsForCall(context, args, block.type);
 
         return method.call(context, receiver, originModule, originName, args);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
-                            Block.Type type, Block block) {
-        args = prepareArgumentsForCall(context, args, type);
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        args = prepareArgumentsForCall(context, args, block.type);
 
-        return method.call(context, receiver, originModule, originName, args, block);
+        return method.call(context, receiver, originModule, originName, args, blockArg);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
-        IRubyObject[] realArgs = Helpers.restructureBlockArgs19(value, getSignature(), type, false, false);
+    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
+        IRubyObject[] realArgs = Helpers.restructureBlockArgs19(value, getSignature(), block.type, false, false);
         return method.call(context, receiver, originModule, originName, realArgs, Block.NULL_BLOCK);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Block.Type type) {
+    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         return method.call(context, receiver, originModule, originName, args, Block.NULL_BLOCK);
     }
 

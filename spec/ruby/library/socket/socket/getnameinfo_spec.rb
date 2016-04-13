@@ -27,12 +27,12 @@ describe "Socket.getnameinfo" do
   end
 
   it "gets the name information and resolves the service" do
-    sockaddr = Socket.sockaddr_in 80, '127.0.0.1'
+    sockaddr = Socket.sockaddr_in 9, '127.0.0.1'
     name_info = Socket.getnameinfo(sockaddr)
     name_info.size.should == 2
     name_info[0].should be_valid_DNS_name
     # see http://www.iana.org/assignments/port-numbers
-    name_info[1].should =~ /^(www|http|www-http)$/
+    name_info[1].should == 'discard'
   end
 
   it "gets a 3-element array and doesn't resolve hostname" do
@@ -41,8 +41,8 @@ describe "Socket.getnameinfo" do
   end
 
   it "gets a 3-element array and resolves the service" do
-    name_info = Socket.getnameinfo ["AF_INET", 80, '127.0.0.1']
-    name_info[1].should =~ /^(www|http|www-http)$/
+    name_info = Socket.getnameinfo ["AF_INET", 9, '127.0.0.1']
+    name_info[1].should == 'discard'
   end
 
   it "gets a 4-element array and doesn't resolve hostname" do
@@ -51,8 +51,8 @@ describe "Socket.getnameinfo" do
   end
 
   it "gets a 4-element array and resolves the service" do
-    name_info = Socket.getnameinfo ["AF_INET", 80, 'foo', '127.0.0.1']
-    name_info[1].should =~ /^(www|http|www-http)$/
+    name_info = Socket.getnameinfo ["AF_INET", 9, 'foo', '127.0.0.1']
+    name_info[1].should == 'discard'
   end
 
 end

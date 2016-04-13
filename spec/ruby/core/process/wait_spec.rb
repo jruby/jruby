@@ -3,7 +3,8 @@ require File.expand_path('../../../spec_helper', __FILE__)
 describe "Process.wait" do
   before :all do
     begin
-      Process.waitall
+      leaked = Process.waitall
+      puts "leaked before wait specs: #{leaked}" unless leaked.empty?
     rescue NotImplementedError
     end
   end
@@ -76,17 +77,22 @@ describe "Process.wait" do
 
     # This spec is probably system-dependent.
     it "doesn't block if no child is available when WNOHANG is used" do
+      read, write = IO.pipe
       pid = Process.fork do
+        read.close
         Signal.trap("TERM") { Process.exit! }
-        10.times { sleep(1) }
-        Process.exit!
+        write << 1
+        write.close
+        sleep
       end
 
       Process.wait(pid, Process::WNOHANG).should be_nil
 
-      # sleep slightly to allow the child to at least start up and
-      # setup it's TERM handler
-      sleep 0.25
+      # wait for the child to setup its TERM handler
+      write.close
+      read.read(1)
+      read.close
+
       Process.kill("TERM", pid)
       Process.wait.should == pid
     end

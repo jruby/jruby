@@ -1,60 +1,82 @@
 package org.jruby.runtime.backtrace;
 
-public class RubyStackTraceElement {
+public class RubyStackTraceElement implements java.io.Serializable {
     public static final RubyStackTraceElement[] EMPTY_ARRAY = new RubyStackTraceElement[0];
-    private final StackTraceElement element;
+
+    private final String className;
+    private final String methodName;
+    private final String fileName;
+    private final int    lineNumber;
     private final boolean binding;
     private final FrameType frameType;
 
     public RubyStackTraceElement(StackTraceElement element) {
-        this.element = element;
+        this.className = element.getClassName();
+        this.methodName = element.getMethodName();
+        this.fileName = element.getFileName();
+        this.lineNumber = element.getLineNumber();
         this.binding = false;
         this.frameType = FrameType.METHOD;
+
+        this.element = element;
     }
 
-    public RubyStackTraceElement(String cls, String method, String file, int line, boolean binding) {
-        this(cls, method, file, line, binding, FrameType.METHOD);
+    public RubyStackTraceElement(String klass, String method, String file, int line, boolean binding) {
+        this(klass, method, file, line, binding, FrameType.METHOD);
     }
 
-    public RubyStackTraceElement(String cls, String method, String file, int line, boolean binding, FrameType frameType) {
-        this.element = new StackTraceElement(cls, method, file, line);
+    public RubyStackTraceElement(String klass, String method, String file, int line, boolean binding, FrameType frameType) {
+        this.className = klass;
+        this.methodName = method;
+        this.fileName = file;
+        this.lineNumber = line;
         this.binding = binding;
         this.frameType = frameType;
     }
 
-    public StackTraceElement getElement() {
-        return element;
-    }
-
-    public boolean isBinding() {
+    public final boolean isBinding() {
         return binding;
     }
 
-    public String getClassName() {
-        return element.getClassName();
+    public final String getClassName() {
+        return className;
     }
 
-    public String getFileName() {
-        return element.getFileName();
+    public final String getFileName() {
+        return fileName;
     }
 
-    public int getLineNumber() {
-        return element.getLineNumber();
+    public final int getLineNumber() {
+        return lineNumber;
     }
 
-    public String getMethodName() {
-        return element.getMethodName();
+    public final String getMethodName() {
+        return methodName;
     }
 
-    public FrameType getFrameType() {
+    public final FrameType getFrameType() {
         return frameType;
     }
 
-    public String toString() {
-        return element.toString();
+    private transient StackTraceElement element;
+
+    public final StackTraceElement asStackTraceElement() {
+        if ( element != null ) return element;
+        return element = new StackTraceElement(className, methodName, fileName, lineNumber);
     }
 
-    public String mriStyleString() {
-        return element.getFileName() + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + '\'';
+    @Deprecated
+    public StackTraceElement getElement() { return asStackTraceElement(); }
+
+    public String toString() {
+        return asStackTraceElement().toString();
     }
+
+    public final CharSequence mriStyleString() {
+        // return fileName + ':' + lineNumber + ":in `" + methodName + '\'';
+        return new StringBuilder(fileName.length() + methodName.length() + 12).
+                append(fileName).append(':').append(lineNumber).
+                append(":in `").append(methodName).append('\'');
+    }
+
 }

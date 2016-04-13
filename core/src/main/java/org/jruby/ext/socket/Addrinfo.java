@@ -468,8 +468,7 @@ public class Addrinfo extends RubyObject {
         }
         return hw;
       } catch (IOException e) {
-        byte[] ehw = new byte[0];  // if bad things happened return empty address rather than null or raising exception
-        return ehw;   
+        return ByteList.NULL_ARRAY; // if bad things happened return empty address rather than null or raising exception
       }
     }
 

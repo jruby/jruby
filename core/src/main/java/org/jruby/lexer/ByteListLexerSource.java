@@ -6,8 +6,14 @@ package org.jruby.lexer;
 
 import org.jcodings.Encoding;
 import org.jruby.RubyArray;
+import org.jruby.RubyIO;
 import org.jruby.RubyString;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.ChannelHelper;
+
+import java.io.ByteArrayInputStream;
+import java.nio.channels.Channel;
 
 /**
  *  Lexer source for ripper when we have all bytes available to us.
@@ -59,5 +65,18 @@ public class ByteListLexerSource extends LexerSource {
     @Override
     public int getOffset() {
         return offset;
+    }
+
+    @Override
+    public Channel getRemainingAsChannel() {
+        ByteArrayInputStream bais = new ByteArrayInputStream(completeSource.unsafeBytes(), completeSource.begin(), completeSource.realSize());
+        bais.skip(offset);
+        return ChannelHelper.readableChannel(bais);
+    }
+
+    @Override
+    public IRubyObject getRemainingAsIO() {
+        if (scriptLines == null) return null;
+        return new RubyIO(scriptLines.getRuntime(), getRemainingAsChannel());
     }
 }

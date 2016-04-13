@@ -14,9 +14,12 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IdUtil;
+import org.jruby.util.collections.*;
+import org.jruby.util.collections.ClassValue;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -49,19 +52,23 @@ public abstract class Initializer {
     private static final Map<String, String> SCALA_OPERATORS;
 
     // TODO: other reserved names?
-    private static final Map<String, AssignedName> RESERVED_NAMES = new HashMap<String, AssignedName>();
-    static {
+    private static Map<String, AssignedName> newReservedNamesMap(final int size) {
+        HashMap<String, AssignedName> RESERVED_NAMES = new HashMap<>(size + 4, 1);
         RESERVED_NAMES.put("__id__", new AssignedName("__id__", Priority.RESERVED));
         RESERVED_NAMES.put("__send__", new AssignedName("__send__", Priority.RESERVED));
         // JRUBY-5132: java.awt.Component.instance_of?() expects 2 args
         RESERVED_NAMES.put("instance_of?", new AssignedName("instance_of?", Priority.RESERVED));
+        return RESERVED_NAMES;
     }
-    protected static final Map<String, AssignedName> STATIC_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
+
+    protected static final Map<String, AssignedName> STATIC_RESERVED_NAMES;
     static {
+        STATIC_RESERVED_NAMES = newReservedNamesMap(1);
         STATIC_RESERVED_NAMES.put("new", new AssignedName("new", Priority.RESERVED));
     }
-    protected static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
+    protected static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES;
     static {
+        INSTANCE_RESERVED_NAMES = newReservedNamesMap(2);
         // only possible for "getClass" to be an instance method in Java
         INSTANCE_RESERVED_NAMES.put("class", new AssignedName("class", Priority.RESERVED));
         // "initialize" has meaning only for an instance (as opposed to a class)
@@ -182,9 +189,7 @@ public abstract class Initializer {
             if (javaPropertyName != null) {
                 if (rubyCasedName.startsWith("get_")) {
                     rubyPropertyName = rubyCasedName.substring(4);
-                    if (argCount == 0 ||                                // getFoo      => foo
-                            argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
-
+                    if (argCount == 0) {                                // getFoo      => foo
                         addUnassignedAlias(javaPropertyName, assignedNames, installer);
                         addUnassignedAlias(rubyPropertyName, assignedNames, installer);
                     }
@@ -207,8 +212,7 @@ public abstract class Initializer {
             if (resultType == boolean.class) {
                 // is_something?, contains_thing?
                 addUnassignedAlias(rubyCasedName + '?', assignedNames, installer);
-                if (rubyPropertyName != null) {
-                    // something?
+                if (rubyPropertyName != null) { // something?
                     addUnassignedAlias(rubyPropertyName + '?', assignedNames, installer);
                 }
             }
@@ -266,47 +270,56 @@ public abstract class Initializer {
             final ClassLoader loader = javaClass.getClassLoader();
             if ( loader == null ) return; //this is a core class, bail
 
+            // scan annotations for "scala" packages; if none present, it's not scala
+            Annotation[] annotations = javaClass.getAnnotations();
+            boolean foundScala = false;
+            for (int i = 0; i < annotations.length; i++) {
+                if (annotations[i].annotationType().getPackage().getName().startsWith("scala.")) foundScala = true;
+            }
+            if (!foundScala) return;
+
             Class<?> companionClass = loader.loadClass(javaClass.getName() + '$');
             final Field field = companionClass.getField("MODULE$");
             final Object singleton = field.get(null);
             if ( singleton == null ) return;
 
-            final List<Method> scalaMethods = getMethods(companionClass);
-            for ( int j = scalaMethods.size() - 1; j >= 0; j-- ) {
-                final Method method = scalaMethods.get(j);
-                String name = method.getName();
+            final Map<String, List<Method>> scalaMethods = getMethods(companionClass);
+            for (List<Method> methods : scalaMethods.values()) {
+                for (int j = 0; j < methods.size(); j++) {
+                    final Method method = methods.get(j);
+                    String name = method.getName();
 
-                if (DEBUG_SCALA) LOG.debug("Companion object method {} for {}", name, companionClass);
+                    if (DEBUG_SCALA) LOG.debug("Companion object method {} for {}", name, companionClass);
 
-                if ( name.indexOf('$') >= 0 ) name = fixScalaNames(name);
+                    if (name.indexOf('$') >= 0) name = fixScalaNames(name);
 
-                if ( ! Modifier.isStatic(method.getModifiers()) ) {
-                    AssignedName assignedName = state.staticNames.get(name);
-                    // For JRUBY-4505, restore __method methods for reserved names
-                    if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
-                        if (DEBUG_SCALA) LOG.debug("in reserved " + name);
-                        setupSingletonMethods(state.staticInstallers, javaClass, singleton, method, name + METHOD_MANGLE);
-                        continue;
-                    }
-                    if (assignedName == null) {
-                        state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-                        if (DEBUG_SCALA) LOG.debug("Assigned name is null");
-                    } else {
-                        if (Priority.METHOD.lessImportantThan(assignedName)) {
-                            if (DEBUG_SCALA) LOG.debug("Less important");
+                    if (!Modifier.isStatic(method.getModifiers())) {
+                        AssignedName assignedName = state.staticNames.get(name);
+                        // For JRUBY-4505, restore __method methods for reserved names
+                        if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
+                            if (DEBUG_SCALA) LOG.debug("in reserved " + name);
+                            setupSingletonMethods(state.staticInstallers, javaClass, singleton, method, name + METHOD_MANGLE);
                             continue;
                         }
-                        if (!Priority.METHOD.asImportantAs(assignedName)) {
-                            state.staticInstallers.remove(name);
-                            state.staticInstallers.remove(name + '=');
+                        if (assignedName == null) {
                             state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
+                            if (DEBUG_SCALA) LOG.debug("Assigned name is null");
+                        } else {
+                            if (Priority.METHOD.lessImportantThan(assignedName)) {
+                                if (DEBUG_SCALA) LOG.debug("Less important");
+                                continue;
+                            }
+                            if (!Priority.METHOD.asImportantAs(assignedName)) {
+                                state.staticInstallers.remove(name);
+                                state.staticInstallers.remove(name + '=');
+                                state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
+                            }
                         }
+                        if (DEBUG_SCALA) LOG.debug("Installing {} {} {}", name, method, singleton);
+                        setupSingletonMethods(state.staticInstallers, javaClass, singleton, method, name);
+                    } else {
+                        if (DEBUG_SCALA) LOG.debug("Method {} is sadly static", method);
                     }
-                    if (DEBUG_SCALA) LOG.debug("Installing {} {} {}", name, method, singleton);
-                    setupSingletonMethods(state.staticInstallers, javaClass, singleton, method, name);
-                }
-                else {
-                    if (DEBUG_SCALA) LOG.debug("Method {} is sadly static", method);
                 }
             }
         }
@@ -408,8 +421,29 @@ public abstract class Initializer {
 
     }
 
-    static List<Method> getMethods(final Class<?> javaClass) {
-        HashMap<String, List<Method>> nameMethods = new HashMap<String, List<Method>>(32);
+    public static final java.lang.ClassValue<Method[]> DECLARED_METHODS = new java.lang.ClassValue<Method[]>() {
+        @Override
+        public Method[] computeValue(Class cls) {
+            return cls.getDeclaredMethods();
+        }
+    };
+
+    public static final java.lang.ClassValue<Method[]> METHODS = new java.lang.ClassValue<Method[]>() {
+        @Override
+        public Method[] computeValue(Class cls) {
+            return cls.getMethods();
+        }
+    };
+
+    public static final java.lang.ClassValue<Class<?>[]> INTERFACES = new java.lang.ClassValue<Class<?>[]>() {
+        @Override
+        public Class<?>[] computeValue(Class cls) {
+            return cls.getInterfaces();
+        }
+    };
+
+    static Map<String, List<Method>> getMethods(final Class<?> javaClass) {
+        HashMap<String, List<Method>> nameMethods = new HashMap<>(32);
 
         // to better size the final ArrayList below
         int totalMethods = 0;
@@ -424,40 +458,35 @@ public abstract class Initializer {
                 try {
                     // add methods, including static if this is the actual class,
                     // and replacing child methods with equivalent parent methods
-                    totalMethods += addNewMethods(nameMethods, klass.getDeclaredMethods(), klass == javaClass, true);
+                    totalMethods += addNewMethods(nameMethods, DECLARED_METHODS.get(klass), klass == javaClass, true);
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
 
             // then do the same for each interface
-            for ( Class iface : klass.getInterfaces() ) {
+            for ( Class iface : INTERFACES.get(klass) ) {
                 try {
                     // add methods, not including static (should be none on
                     // interfaces anyway) and not replacing child methods with
                     // parent methods
-                    totalMethods += addNewMethods(nameMethods, iface.getMethods(), false, false);
+                    totalMethods += addNewMethods(nameMethods, METHODS.get(iface), false, false);
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
         }
 
-        // now only bind the ones that remain
-        ArrayList<Method> finalList = new ArrayList<Method>(totalMethods);
-
-        for ( Map.Entry<String, List<Method>> entry : nameMethods.entrySet() ) {
-            finalList.addAll( entry.getValue() );
-        }
-
-        return finalList;
+        return nameMethods;
     }
 
     private static boolean methodsAreEquivalent(Method child, Method parent) {
+        int childModifiers, parentModifiers;
+
         return parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass())
                 && child.getReturnType() == parent.getReturnType()
                 && child.isVarArgs() == parent.isVarArgs()
-                && Modifier.isPublic(child.getModifiers()) == Modifier.isPublic(parent.getModifiers())
-                && Modifier.isProtected(child.getModifiers()) == Modifier.isProtected(parent.getModifiers())
-                && Modifier.isStatic(child.getModifiers()) == Modifier.isStatic(parent.getModifiers())
+                && Modifier.isPublic(childModifiers = child.getModifiers()) == Modifier.isPublic(parentModifiers = parent.getModifiers())
+                && Modifier.isProtected(childModifiers) == Modifier.isProtected(parentModifiers)
+                && Modifier.isStatic(childModifiers) == Modifier.isStatic(parentModifiers)
                 && Arrays.equals(child.getParameterTypes(), parent.getParameterTypes());
     }
 
@@ -488,22 +517,21 @@ public abstract class Initializer {
             List<Method> childMethods = nameMethods.get(method.getName());
             if (childMethods == null) {
                 // first method of this name, add a collection for it
-                childMethods = new ArrayList<Method>(4);
+                childMethods = new ArrayList<>(4);
                 childMethods.add(method); added++;
                 nameMethods.put(method.getName(), childMethods);
             }
             else {
                 // we have seen other methods; check if we already have an equivalent one
-                final ListIterator<Method> childMethodsIterator = childMethods.listIterator();
-                while ( childMethodsIterator.hasNext() ) {
-                    final Method current = childMethodsIterator.next();
+                for (int i = 0; i < childMethods.size(); i++) {
+                    final Method current = childMethods.get(i);
                     if ( methodsAreEquivalent(current, method) ) {
                         if (removeDuplicate) {
                             // Replace the existing method, since the super call is more general
                             // and virtual dispatch will call the subclass impl anyway.
                             // Used for instance methods, for which we usually want to use the highest-up
                             // callable implementation.
-                            childMethodsIterator.set(method);
+                            childMethods.set(i, method);
                         } else {
                             // just skip the new method, since we don't need it (already found one)
                             // used for interface methods, which we want to add unconditionally

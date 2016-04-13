@@ -7,9 +7,9 @@ describe JRuby::Profiler, "::JsonProfilePrinter" do
     before do
       @profile_data = JRuby::Profiler.profile {}
     end
-    
+
     it 'contains only the top invocation' do
-      json_output['methods'].size.should == 1
+      json_output['methods'].length.should equal(1)
       json_output['methods'].first['name'].should == '(top)'
     end
 
@@ -53,7 +53,7 @@ describe JRuby::Profiler, "::JsonProfilePrinter" do
       end
 
       it 'contains data on the calls from parents, including calls, total, self and child time' do
-        method_invocation['parents'].size.should == 1
+        method_invocation['parents'].length.should equal(1)
         call_data = method_invocation['parents'].find { |c| c['id'] == top_invocation['id'] }
         call_data.should include('total_calls' => 1, 'total_time' => anything, 'self_time' => anything, 'child_time' => anything)
       end

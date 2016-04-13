@@ -1,0 +1,1 @@
+fails:Open3.capture3 needs to be reviewed for spec completeness

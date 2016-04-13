@@ -1,11 +1,12 @@
 package org.jruby.ir.passes;
 
 import org.jruby.ir.*;
-import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.*;
+import org.jruby.runtime.Signature;
 import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
@@ -20,7 +21,9 @@ public class AddCallProtocolInstructions extends CompilerPass {
     }
 
     private boolean explicitCallProtocolSupported(IRScope scope) {
-        return scope instanceof IRMethod || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
+        return scope instanceof IRMethod
+            || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
+            || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
     }
 
     /*
@@ -41,6 +44,22 @@ public class AddCallProtocolInstructions extends CompilerPass {
         }
     }
 
+    private void popSavedState(IRScope scope, boolean isGEB, boolean requireBinding, boolean requireFrame, Variable savedViz, Variable savedFrame, ListIterator<Instr> instrs) {
+        if (scope instanceof IRClosure && isGEB) {
+            // Add before RethrowSavedExcInLambdaInstr
+            instrs.previous();
+        }
+        if (requireBinding) instrs.add(new PopBindingInstr());
+        if (scope instanceof IRClosure) {
+            if (scope.needsFrame()) {
+                instrs.add(new RestoreBindingVisibilityInstr(savedViz));
+                instrs.add(new PopBlockFrameInstr(savedFrame));
+            }
+        } else {
+            if (requireFrame) instrs.add(new PopMethodFrameInstr());
+        }
+    }
+
     @Override
     public Object execute(IRScope scope, Object... data) {
         // IRScriptBody do not get explicit call protocol instructions right now.
@@ -50,119 +69,124 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // Add explicit frame and binding push/pop instrs ONLY for methods -- we cannot handle this in closures and evals yet
         // If the scope uses $_ or $~ family of vars, has local load/stores, or if its binding has escaped, we have
         // to allocate a dynamic scope for it and add binding push/pop instructions.
-        if (explicitCallProtocolSupported(scope)) {
-            StoreLocalVarPlacementProblem slvpp = scope.getStoreLocalVarPlacementProblem();
-            boolean scopeHasLocalVarStores = false;
-            boolean bindingHasEscaped      = scope.bindingHasEscaped();
+        if (!explicitCallProtocolSupported(scope)) return null;
 
-            CFG cfg = scope.getCFG();
+        CFG cfg = scope.getCFG();
 
-            if (slvpp != null && bindingHasEscaped) {
-                scopeHasLocalVarStores = slvpp.scopeHasLocalVarStores();
+        // For now, we always require frame for closures
+        boolean requireFrame = scope.needsFrame();
+        boolean requireBinding = scope.needsBinding();
+
+        if (scope instanceof IRClosure || requireBinding || requireFrame) {
+            BasicBlock entryBB = cfg.getEntryBB();
+            Variable savedViz = null, savedFrame = null;
+            if (scope instanceof IRClosure) {
+                savedViz = scope.createTemporaryVariable();
+                savedFrame = scope.createTemporaryVariable();
+
+                // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
+                int insertIndex = 0;
+
+                if (scope.needsFrame()) {
+                    entryBB.insertInstr(insertIndex++, new SaveBindingVisibilityInstr(savedViz));
+                    entryBB.insertInstr(insertIndex++, new PushBlockFrameInstr(savedFrame, scope.getName()));
+                }
+
+                // NOTE: Order of these next two is important, since UBESI resets state PBBI needs.
+                if (requireBinding) {
+                    entryBB.insertInstr(insertIndex++, new PushBlockBindingInstr());
+                }
+
+                entryBB.insertInstr(insertIndex++, new UpdateBlockExecutionStateInstr(Self.SELF));
+
+                Signature sig = ((IRClosure)scope).getSignature();
+
+                // Add the right kind of arg preparation instruction
+                int arityValue = sig.arityValue();
+                if (arityValue == 0) {
+                    entryBB.addInstr(PrepareNoBlockArgsInstr.INSTANCE);
+                } else {
+                    if (sig.isFixed()) {
+                        if (arityValue == 1) {
+                            entryBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
+                        } else {
+                            entryBB.addInstr(PrepareFixedBlockArgsInstr.INSTANCE);
+                        }
+                    } else {
+                        entryBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
+                    }
+                }
             } else {
-                // We dont require local-var load/stores to have been run.
-                // If it is not run, we go conservative and add push/pop binding instrs. everywhere
-                scopeHasLocalVarStores = bindingHasEscaped;
+                if (requireFrame) entryBB.addInstr(new PushMethodFrameInstr(scope.getName()));
+                if (requireBinding) entryBB.addInstr(new PushMethodBindingInstr());
             }
 
-            boolean requireFrame = doesItRequireFrame(scope, bindingHasEscaped);
-            boolean requireBinding = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
-
-            if (requireBinding || requireFrame) {
-                BasicBlock entryBB = cfg.getEntryBB();
-                // Push
-                if (requireFrame) entryBB.addInstr(new PushFrameInstr(scope.getName()));
-                if (requireBinding) entryBB.addInstr(new PushBindingInstr());
-
-                // SSS FIXME: We are doing this conservatively.
-                // Only scopes that have unrescued exceptions need a GEB.
-                //
-                // Allocate GEB if necessary for popping
-                BasicBlock geb = cfg.getGlobalEnsureBB();
-                if (geb == null) {
-                    Variable exc = scope.createTemporaryVariable();
-                    geb = new BasicBlock(cfg, Label.getGlobalEnsureBlockLabel());
-                    geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby Implementation exception handling
-                    geb.addInstr(new ThrowExceptionInstr(exc));
-                    cfg.addGlobalEnsureBB(geb);
-                }
-
-                // Pop on all scope-exit paths
-                for (BasicBlock bb: cfg.getBasicBlocks()) {
-                    Instr i = null;
-                    ListIterator<Instr> instrs = bb.getInstrs().listIterator();
-                    while (instrs.hasNext()) {
-                        i = instrs.next();
-                        // Right now, we only support explicit call protocol on methods.
-                        // So, non-local returns and breaks don't get here.
-                        // Non-local-returns and breaks are tricky since they almost always
-                        // throw an exception and we don't multiple pops (once before the
-                        // return/break, and once when the exception is caught).
-                        if (!bb.isExitBB() && i instanceof ReturnBase) {
-                            if (requireBinding || requireFrame) {
-                                fixReturn(scope, (ReturnBase)i, instrs);
-                            }
-                            // Add before the break/return
-                            instrs.previous();
-                            if (requireBinding) instrs.add(new PopBindingInstr());
-                            if (requireFrame) instrs.add(new PopFrameInstr());
-                            break;
-                        }
-                    }
-
-                    if (bb.isExitBB() && !bb.isEmpty()) {
-                        // Last instr could be a return -- so, move iterator one position back
-                        if (i != null && i instanceof ReturnBase) {
-                            if (requireBinding || requireFrame) {
-                                fixReturn(scope, (ReturnBase)i, instrs);
-                            }
-                            instrs.previous();
-                        }
-                        if (requireBinding) instrs.add(new PopBindingInstr());
-                        if (requireFrame) instrs.add(new PopFrameInstr());
-                    }
-
-                    if (bb == geb) {
-                        // Add before throw-exception-instr which would be the last instr
-                        if (i != null) {
-                            // Assumption: Last instr should always be a control-transfer instruction
-                            assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + scope + " is " + i + ", not a control-xfer instruction";
-                            instrs.previous();
-                        }
-                        if (requireBinding) instrs.add(new PopBindingInstr());
-                        if (requireFrame) instrs.add(new PopFrameInstr());
-                    }
-                }
+            // SSS FIXME: We are doing this conservatively.
+            // Only scopes that have unrescued exceptions need a GEB.
+            //
+            // Allocate GEB if necessary for popping
+            BasicBlock geb = cfg.getGlobalEnsureBB();
+            boolean gebProcessed = false;
+            if (geb == null) {
+                Variable exc = scope.createTemporaryVariable();
+                geb = new BasicBlock(cfg, Label.getGlobalEnsureBlockLabel());
+                geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby Implementation exception handling
+                geb.addInstr(new ThrowExceptionInstr(exc));
+                cfg.addGlobalEnsureBB(geb);
             }
 
-            // This scope has an explicit call protocol flag now
-            scope.setExplicitCallProtocolFlag();
+            // Pop on all scope-exit paths
+            for (BasicBlock bb: cfg.getBasicBlocks()) {
+                Instr i = null;
+                ListIterator<Instr> instrs = bb.getInstrs().listIterator();
+                while (instrs.hasNext()) {
+                    i = instrs.next();
+                    // Breaks & non-local returns in blocks will throw exceptions
+                    // and pops for them will be handled in the GEB
+                    if (!bb.isExitBB() && i instanceof ReturnInstr) {
+                        if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
+                        // Add before the break/return
+                        i = instrs.previous();
+                        popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                        if (bb == geb) gebProcessed = true;
+                        break;
+                    }
+                }
+
+                if (bb.isExitBB() && !bb.isEmpty()) {
+                    // Last instr could be a return -- so, move iterator one position back
+                    if (i != null && i instanceof ReturnInstr) {
+                        if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
+                        instrs.previous();
+                    }
+                    popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                    if (bb == geb) gebProcessed = true;
+                } else if (!gebProcessed && bb == geb) {
+                    // Add before throw-exception-instr which would be the last instr
+                    if (i != null) {
+                        // Assumption: Last instr should always be a control-transfer instruction
+                        assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + scope + " is " + i + ", not a control-xfer instruction";
+                        instrs.previous();
+                    }
+                    popSavedState(scope, true, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                }
+            }
         }
+
+/*
+        if (scope instanceof IRClosure) {
+            System.out.println(scope + " after acp: " + cfg.toStringInstrs());
+        }
+*/
+
+        // This scope has an explicit call protocol flag now
+        scope.setExplicitCallProtocolFlag();
 
         // LVA information is no longer valid after the pass
         // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
         (new LiveVariableAnalysis()).invalidate(scope);
 
         return null;
-    }
-
-    private boolean doesItRequireFrame(IRScope scope, boolean bindingHasEscaped) {
-        boolean requireFrame = bindingHasEscaped || scope.usesEval();
-
-        for (IRFlags flag : scope.getFlags()) {
-            switch (flag) {
-                case BINDING_HAS_ESCAPED:
-                case CAN_CAPTURE_CALLERS_BINDING:
-                case REQUIRES_FRAME:
-                case REQUIRES_VISIBILITY:
-                case USES_BACKREF_OR_LASTLINE:
-                case USES_EVAL:
-                case USES_ZSUPER:
-                    requireFrame = true;
-            }
-        }
-
-        return requireFrame;
     }
 
     @Override

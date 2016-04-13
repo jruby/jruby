@@ -12,18 +12,23 @@ module JRuby::Compiler
 
     def generate_javac(files, options)
       files_string = files.join(' ')
-      jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
-        File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
+      jruby_home = ENV_JAVA['jruby.home']
+      jruby_jar = ['jruby.jar', 'jruby-complete.jar'].find do |jar|
+        File.exist? File.join(jruby_home, 'lib', jar)
       end
-      separator = File::PATH_SEPARATOR
-      classpath_string = options[:classpath].size > 0 ? options[:classpath].join(separator) : "."
+      classpath = [ File.join(jruby_home, 'lib', jruby_jar) ]
+      if options[:classpath].size > 0
+        classpath += options[:classpath]
+      else
+        classpath << '.'
+      end
+      classpath.map! { |path| "\"#{path.gsub('"', '\\"')}\"" }
+      classpath = classpath.join(File::PATH_SEPARATOR)
+
       javac_opts = options[:javac_options].join(' ')
       target = options[:target]
-      java_home = ENV_JAVA['jruby.home']
 
-      compile_string = "javac #{javac_opts} -d #{target} -cp #{java_home}/lib/#{jruby_jar}#{separator}#{classpath_string} #{files_string}"
-
-      compile_string
+      "javac #{javac_opts} -d #{target} -cp #{classpath} #{files_string}"
     end
   end
 
@@ -236,12 +241,14 @@ module JRuby::Compiler
     end
 
     visit :defn do
+      next if @class_stack.empty?
       new_method(node.name)
       node.args_node.accept(self)
       pop_method
     end
 
     visit :defs do
+      next if @class_stack.empty?
       new_static_method(node.name)
       node.args_node.accept(self)
       pop_method

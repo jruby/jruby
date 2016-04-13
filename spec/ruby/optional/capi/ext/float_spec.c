@@ -1,7 +1,7 @@
-#include <math.h>
-
 #include "ruby.h"
 #include "rubyspec.h"
+
+#include <math.h>
 
 #ifdef __cplusplus
 extern "C" {

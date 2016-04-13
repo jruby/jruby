@@ -40,9 +40,11 @@ import java.util.HashMap;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.transcode.EConv;
+import org.jcodings.transcode.EConvFlags;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 
@@ -54,15 +56,16 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.Pack;
+import org.jruby.util.io.EncodingUtils;
 
 @JRubyModule(name="NKF")
 public class RubyNKF {
     public static enum NKFCharset {
         AUTO(0, "x-JISAutoDetect"),
         // no ISO-2022-JP in jcodings
-        JIS(1, "iso-2022-jp"),
+        JIS(1, "ISO-2022-JP"),
         EUC(2, "EUC-JP"),
-        SJIS(3, "Windows-31J"),
+        SJIS(3, "Shift_JIS"),
         BINARY(4, null),
         NOCONV(4, null),
         UNKNOWN(0, null),
@@ -96,32 +99,34 @@ public class RubyNKF {
     private static final ByteList END_MIME_STRING = new ByteList(ByteList.plain("?="));
     private static final ByteList PACK_BASE64 = new ByteList(ByteList.plain("m"));
     private static final ByteList PACK_QENCODE = new ByteList(ByteList.plain("M"));
-    
-    public static Map<Integer, String> NKFCharsetMap = new HashMap();
+
+    public static final Map<Integer, String> NKFCharsetMap = new HashMap<Integer, String>(20, 1);
 
     public static void createNKF(Ruby runtime) {
-        RubyModule nkfModule = runtime.defineModule("NKF");
+        final RubyModule NKF = runtime.defineModule("NKF");
+        final String version = "2.1.2";
+        final String relDate = "2011-09-08";
 
-        for (NKFCharset nkf : NKFCharset.values()) {
-            nkfModule.defineConstant(nkf.name(), RubyFixnum.newFixnum(runtime, nkf.getValue()));
-            NKFCharsetMap.put(nkf.getValue(), nkf.name());
+        NKF.defineConstant("NKF_VERSION", runtime.newString(version));
+        NKF.defineConstant("NKF_RELEASE_DATE", runtime.newString(relDate));
+        NKF.defineConstant("VERSION", runtime.newString(version + ' ' + '(' + "JRuby" + '_' + relDate + ')'));
+
+        for ( NKFCharset charset : NKFCharset.values() ) {
+            NKFCharsetMap.put(charset.value, charset.name());
+
+            if (charset.value > 12 ) continue;
+            NKF.defineConstant(charset.name(), charsetMappedValue(runtime, charset));
         }
 
-        RubyString version = runtime.newString("2.0.7 (JRuby 2007-05-11)");
-        RubyString nkfVersion = runtime.newString("2.0.7");
-        RubyString nkfDate = runtime.newString("2007-05-11");
-
-        ThreadContext context = runtime.getCurrentContext();
-
-        version.freeze(context);
-        nkfVersion.freeze(context);
-        nkfDate.freeze(context);
-
-        nkfModule.defineAnnotatedMethods(RubyNKF.class);
+        NKF.defineAnnotatedMethods(RubyNKF.class);
     }
 
     @JRubyMethod(name = "guess", required = 1, module = true)
     public static IRubyObject guess(ThreadContext context, IRubyObject recv, IRubyObject s) {
+        return charsetMappedValue(context.runtime, guess(context, s));
+    }
+
+    public static NKFCharset guess(ThreadContext context, IRubyObject s) {
         // TODO: Fix charset usage for JRUBY-4553
         Ruby runtime = context.runtime;
         if (!s.respondsTo("to_str")) {
@@ -137,26 +142,52 @@ public class RubyNKF {
         }
         try {
             decoder.decode(buf);
-        } catch (CharacterCodingException e) {
-            return runtime.newFixnum(UNKNOWN.getValue());
+
+            if ( ! decoder.isCharsetDetected() ) {
+                return NKFCharset.UNKNOWN;
+            }
+            Charset charset = decoder.detectedCharset();
+            String name = charset.name();
+            if ("Shift_JIS".equals(name)) {
+                return NKFCharset.SJIS;
+            }
+            if ("Windows-31j".equalsIgnoreCase(name)) {
+                return NKFCharset.JIS;
+            }
+            if ("EUC-JP".equals(name)) {
+                return NKFCharset.EUC;
+            }
+            if ("ISO-2022-JP".equals(name)) {
+                return NKFCharset.JIS;
+            }
         }
-        if (!decoder.isCharsetDetected()) {
-            return runtime.newFixnum(UNKNOWN.getValue());
+        catch (CharacterCodingException e) {
+            // fall through and try direct encoding
         }
-        Charset charset = decoder.detectedCharset();
-        String name = charset.name();
-        if ("Shift_JIS".equals(name)) {
-            return runtime.newFixnum(SJIS.getValue());
+
+        if (bytes.getEncoding() == UTF8Encoding.INSTANCE) {
+            return NKFCharset.UTF8;
         }
-        if ("windows-31j".equals(name)) {
-            return runtime.newFixnum(SJIS.getValue());
-        } else if ("EUC-JP".equals(name)) {
-            return runtime.newFixnum(EUC.getValue());
-        } else if ("ISO-2022-JP".equals(name)) {
-            return runtime.newFixnum(JIS.getValue());
-        } else {
-            return runtime.newFixnum(UNKNOWN.getValue());
+        if (bytes.getEncoding().toString().startsWith("UTF-16")) {
+            return NKFCharset.UTF16;
         }
+        if (bytes.getEncoding().toString().startsWith("UTF-32")) {
+            return NKFCharset.UTF32;
+        }
+        return NKFCharset.UNKNOWN;
+    }
+
+    private static IRubyObject charsetMappedValue(final Ruby runtime, final NKFCharset charset) {
+        final Encoding encoding;
+        switch (charset) {
+            case AUTO: case NOCONV: case UNKNOWN: return runtime.getNil();
+            case BINARY:
+                encoding = runtime.getEncodingService().getAscii8bitEncoding();
+                return runtime.getEncodingService().convertEncodingToRubyEncoding(encoding);
+        }
+
+        encoding = runtime.getEncodingService().getEncodingFromString(charset.getCharset());
+        return runtime.getEncodingService().convertEncodingToRubyEncoding(encoding);
     }
 
     @JRubyMethod(name = "guess1", required = 1, module = true)
@@ -183,19 +214,12 @@ public class RubyNKF {
 
         Map<String, NKFCharset> options = parseOpt(opt.convertToString().toString());
 
-        if (options.get("input").getValue() == AUTO.getValue()) {
-            KCode kcode = runtime.getKCode();
-            if (kcode == KCode.SJIS) {
-                options.put("input", SJIS);
-            } else if (kcode == KCode.EUC) {
-                options.put("input", EUC);
-            } else if (kcode == KCode.UTF8) {
-                options.put("input", UTF8);
-            }
+        if (options.get("input").getValue() == NKFCharset.AUTO.getValue()) {
+            options.put("input", guess(context, str));
         }
 
         ByteList bstr = str.convertToString().getByteList();
-        Converter converter = null;
+        final Converter converter;
         if (Converter.isMimeText(bstr, options)) {
             converter = new MimeConverter(context, options);
         } else {
@@ -204,9 +228,9 @@ public class RubyNKF {
 
         RubyString result = converter.convert(bstr);
 
-        if (options.get("mime-encode") == BASE64) {
+        if (options.get("mime-encode") == NKFCharset.BASE64) {
             result = Converter.encodeMimeString(runtime, result, PACK_BASE64);
-        } else if (options.get("mime-encode") == QENCODE) {
+        } else if (options.get("mime-encode") == NKFCharset.QENCODE) {
             result = Converter.encodeMimeString(runtime, result, PACK_QENCODE);
         }
 
@@ -278,123 +302,127 @@ public class RubyNKF {
         Map<String, NKFCharset> options = new HashMap<String, NKFCharset>();
 
         // default options
-        options.put("input", AUTO);
-        options.put("output", JIS);
-        options.put("mime-decode", MIME_DETECT);
-        options.put("mime-encode", NOCONV);
+        options.put("input", NKFCharset.AUTO);
+        options.put("output", NKFCharset.JIS);
+        options.put("mime-decode", NKFCharset.MIME_DETECT);
+        options.put("mime-encode", NKFCharset.NOCONV);
 
         Command cmd = parseOption(s);
         if (cmd.hasOption("j")) {
-            options.put("output", JIS);
+            options.put("output", NKFCharset.JIS);
         }
         if (cmd.hasOption("s")) {
-            options.put("output", SJIS);
+            options.put("output", NKFCharset.SJIS);
         }
         if (cmd.hasOption("e")) {
-            options.put("output", EUC);
+            options.put("output", NKFCharset.EUC);
         }
         if (cmd.hasOption("w")) {
             Option opt = cmd.getOption("w");
             if ("32".equals(opt.getValue())) {
-                options.put("output", UTF32);
+                options.put("output", NKFCharset.UTF32);
             } else if("16".equals(opt.getValue())) {
-                options.put("output", UTF16);
+                options.put("output", NKFCharset.UTF16);
             } else {
-                options.put("output", UTF8);
+                options.put("output", NKFCharset.UTF8);
             }
         }
         if (cmd.hasOption("J")) {
-            options.put("input", JIS);
+            options.put("input", NKFCharset.JIS);
         }
         if (cmd.hasOption("S")) {
-            options.put("input", SJIS);
+            options.put("input", NKFCharset.SJIS);
         }
         if (cmd.hasOption("E")) {
-            options.put("input", EUC);
+            options.put("input", NKFCharset.EUC);
         }
         if (cmd.hasOption("W")) {
             Option opt = cmd.getOption("W");
             if ("32".equals(opt.getValue())) {
-                options.put("input", UTF32);
+                options.put("input", NKFCharset.UTF32);
             } else if("16".equals(opt.getValue())) {
-                options.put("input", UTF16);
+                options.put("input", NKFCharset.UTF16);
             } else {
-                options.put("input", UTF8);
+                options.put("input", NKFCharset.UTF8);
             }
         }
         if (cmd.hasOption("m")) {
             Option opt = cmd.getOption("m");
             if (opt.getValue() == null) {
-                options.put("mime-decode", MIME_DETECT);
+                options.put("mime-decode", NKFCharset.MIME_DETECT);
             } else if ("B".equals(opt.getValue())) {
-                options.put("mime-decode", BASE64);
+                options.put("mime-decode", NKFCharset.BASE64);
             } else if ("Q".equals(opt.getValue())) {
-                options.put("mime-decode", QENCODE);
+                options.put("mime-decode", NKFCharset.QENCODE);
             } else if ("N".equals(opt.getValue())) {
                 // TODO: non-strict option
             } else if ("0".equals(opt.getValue())) {
-                options.put("mime-decode", NOCONV);
+                options.put("mime-decode", NKFCharset.NOCONV);
             }
         }
         if (cmd.hasOption("M")) {
             Option opt = cmd.getOption("M");
             if (opt.getValue() == null) {
-                options.put("mime-encode", NOCONV);
+                options.put("mime-encode", NKFCharset.NOCONV);
             } else if ("B".equals(opt.getValue())) {
-                options.put("mime-encode", BASE64);
+                options.put("mime-encode", NKFCharset.BASE64);
             } else if ("Q".equals(opt.getValue())) {
-                options.put("mime-encode", QENCODE);
+                options.put("mime-encode", NKFCharset.QENCODE);
             }
         }
         if (cmd.hasOption("base64")) {
-            options.put("mime-encode", BASE64);
+            options.put("mime-encode", NKFCharset.BASE64);
         }
         if (cmd.hasOption("oc")) {
             Option opt = cmd.getOption("oc");
             if ("ISO-2022-JP".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("output", JIS);
+                options.put("output", NKFCharset.JIS);
             } else if ("EUC-JP".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("output", EUC);
+                options.put("output", NKFCharset.EUC);
             } else if ("CP932".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("output", SJIS);
+                options.put("output", NKFCharset.SJIS);
             } else if ("Shift_JIS".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("output", SJIS);
+                options.put("output", NKFCharset.SJIS);
+            } else if ("Windows-31J".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("output", NKFCharset.JIS);
             } else if ("UTF-8".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("output", UTF8);
+                options.put("output", NKFCharset.UTF8);
             } else if ("UTF-8N".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("output", UTF8);
+                options.put("output", NKFCharset.UTF8);
             } else if ("UTF-16".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("output", UTF16);
+                options.put("output", NKFCharset.UTF16);
             } else if ("UTF-16BE-BOM".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("output", UTF16);
+                options.put("output", NKFCharset.UTF16);
             } else if ("UTF-32".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("output", UTF32);
+                options.put("output", NKFCharset.UTF32);
             } else if ("UTF-32BE-BOM".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("output", UTF32);
+                options.put("output", NKFCharset.UTF32);
             }
         }
         if (cmd.hasOption("ic")) {
             Option opt = cmd.getOption("ic");
             if ("ISO-2022-JP".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("input", JIS);
+                options.put("input", NKFCharset.JIS);
             } else if ("EUC-JP".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("input", EUC);
+                options.put("input", NKFCharset.EUC);
             } else if ("CP932".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("input", SJIS);
+                options.put("input", NKFCharset.SJIS);
             } else if ("Shift_JIS".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("input", SJIS);
+                options.put("input", NKFCharset.SJIS);
+            } else if ("Windows-31J".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("input", NKFCharset.SJIS);
             } else if ("UTF-8".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("input", UTF8);
+                options.put("input", NKFCharset.UTF8);
             } else if ("UTF-8N".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("input", UTF8);
+                options.put("input", NKFCharset.UTF8);
             } else if ("UTF-16".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("input", UTF16);
+                options.put("input", NKFCharset.UTF16);
             } else if ("UTF-16BE-BOM".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("input", UTF16);
+                options.put("input", NKFCharset.UTF16);
             } else if ("UTF-32".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("input", UTF32);
+                options.put("input", NKFCharset.UTF32);
             } else if ("UTF-32BE-BOM".compareToIgnoreCase(opt.getValue()) == 0) {
-                options.put("input", UTF32);
+                options.put("input", NKFCharset.UTF32);
             }
         }
 
@@ -415,7 +443,7 @@ public class RubyNKF {
             if (str.length() <= 6) {
                 return false;
             }
-            if (options.get("mime-decode") == NOCONV) {
+            if (options.get("mime-decode") == NKFCharset.NOCONV) {
                 return false;
             }
             if (str.indexOf(BEGIN_MIME_STRING) < 0) {
@@ -436,36 +464,28 @@ public class RubyNKF {
 
         ByteList convert_byte(ByteList str, String inputCharset, NKFCharset output) {
             String outputCharset = output.getCharset();
-            CharsetDecoder decoder;
-            CharsetEncoder encoder;
 
-            try {
-                decoder = Charset.forName(inputCharset).newDecoder();
-                encoder = Charset.forName(outputCharset).newEncoder();
-            } catch (UnsupportedCharsetException e) {
-                throw context.runtime.newArgumentError("invalid charset");
+            if (inputCharset == null) {
+                inputCharset = str.getEncoding().toString();
             }
 
-            ByteBuffer buf = ByteBuffer.wrap(str.getUnsafeBytes(), str.begin(), str.length());
-
-            try {
-                CharBuffer cbuf = decoder.decode(buf);
-                encoder.onUnmappableCharacter(java.nio.charset.CodingErrorAction.IGNORE);
-                buf = encoder.encode(cbuf);
-            } catch (CharacterCodingException e) {
-                throw context.runtime.newArgumentError("invalid encoding");
-            }
-            byte[] arr = buf.array();
-            ByteList r = new ByteList(arr, 0, buf.limit());
-            if (outputCharset.equalsIgnoreCase("Windows-31J")) outputCharset = "Shift_JIS";
-            if (outputCharset.equalsIgnoreCase("UTF-16")) outputCharset = "UTF-16BE";
-            Ruby ruby = context.runtime;
-            Encoding enc = ruby.getEncodingService().findEncoding(ruby.newString(outputCharset));
-            if (enc != null) {
-                r.setEncoding(enc);
+            if (outputCharset.equals(inputCharset)) {
+                return str.dup();
             }
 
-            return r;
+            byte[] outCharsetBytes = outputCharset.getBytes();
+
+            EConv ec = EncodingUtils.econvOpenOpts(context, inputCharset.getBytes(), outCharsetBytes, 0, context.nil);
+
+            if (ec == null) {
+                throw context.runtime.newArgumentError("invalid encoding pair: " + inputCharset + " to " + outputCharset);
+            }
+
+            ByteList converted = EncodingUtils.econvStrConvert(context, ec, str, EConvFlags.INVALID_REPLACE);
+
+            converted.setEncoding(context.runtime.getEncodingService().findEncodingOrAliasEntry(outCharsetBytes).getEncoding());
+
+            return converted;
         }
     }
 
@@ -492,14 +512,14 @@ public class RubyNKF {
         }
 
         private String detectCharset(String charset) {
-            if (charset.compareToIgnoreCase(UTF8.getCharset()) == 0) {
-                return UTF8.getCharset();
-            } else if (charset.compareToIgnoreCase(JIS.getCharset()) == 0) {
-                return JIS.getCharset();
-            } else if (charset.compareToIgnoreCase(EUC.getCharset()) == 0) {
-                return EUC.getCharset();
+            if (charset.compareToIgnoreCase(NKFCharset.UTF8.getCharset()) == 0) {
+                return NKFCharset.UTF8.getCharset();
+            } else if (charset.compareToIgnoreCase(NKFCharset.JIS.getCharset()) == 0) {
+                return NKFCharset.JIS.getCharset();
+            } else if (charset.compareToIgnoreCase(NKFCharset.EUC.getCharset()) == 0) {
+                return NKFCharset.EUC.getCharset();
             } else {
-                return ASCII.getCharset();
+                return NKFCharset.ASCII.getCharset();
             }
         }
 
@@ -509,7 +529,7 @@ public class RubyNKF {
             int encode = mime[2].charAt(0);
             ByteList body = new ByteList(mime[3].getBytes(), ASCIIEncoding.INSTANCE);
 
-            RubyArray array = null;
+            final RubyArray array;
             if ('B' == encode || 'b' == encode) { // BASE64
                 array = Pack.unpack(context.runtime, body, PACK_BASE64);
             } else { // Qencode

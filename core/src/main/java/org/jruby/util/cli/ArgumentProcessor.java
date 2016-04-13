@@ -36,13 +36,15 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.FileResource;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
-
+import org.jruby.util.func.Function2;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.regex.Pattern;
@@ -58,6 +60,9 @@ import java.util.regex.Pattern;
  * script or by a native executable.
  */
 public class ArgumentProcessor {
+
+    public static final String SEPARATOR = "(?<!jar:file|jar|file|classpath|uri:classloader|uri|http|https):";
+
     private static final class Argument {
         public final String originalValue;
         public final String dashedValue;
@@ -120,17 +125,18 @@ public class ArgumentProcessor {
     }
 
     private void processArgv() {
-        List<String> arglist = new ArrayList<String>();
+        ArrayList<String> arglist = new ArrayList<String>();
         for (; argumentIndex < arguments.size(); argumentIndex++) {
             String arg = arguments.get(argumentIndex).originalValue;
             if (config.isArgvGlobalsOn() && arg.startsWith("-")) {
                 arg = arg.substring(1);
-                if (arg.indexOf('=') > 0) {
-                    String[] keyvalue = arg.split("=", 2);
-
+                int split = arg.indexOf('=');
+                if (split > 0) {
+                    final String key = arg.substring(0, split);
+                    final String val = arg.substring(split + 1);
                     // argv globals getService their dashes replaced with underscores
-                    String globalName = keyvalue[0].replace('-', '_');
-                    config.getOptionGlobals().put(globalName, keyvalue[1]);
+                    String globalName = key.replace('-', '_');
+                    config.getOptionGlobals().put(globalName, val);
                 } else {
                     config.getOptionGlobals().put(arg, null);
                 }
@@ -209,12 +215,10 @@ public class ArgumentProcessor {
                             config.setCurrentDirectory(new File(base, newDir.getPath()).getCanonicalPath());
                         }
                         if (!(new File(config.getCurrentDirectory()).isDirectory()) && !config.getCurrentDirectory().startsWith("uri:classloader:")) {
-                            MainExitException mee = new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
-                            throw mee;
+                            throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
                         }
                     } catch (IOException e) {
-                        MainExitException mee = new MainExitException(1, getArgumentError(" -C must be followed by a valid directory"));
-                        throw mee;
+                        throw new MainExitException(1, getArgumentError(" -C must be followed by a valid directory"));
                     }
                     break FOR;
                 case 'd':
@@ -248,7 +252,11 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'I':
                     String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
-                    String[] ls = s.split(java.io.File.pathSeparator);
+                    String separator = java.io.File.pathSeparator;
+                    if (":".equals(separator)) {
+                        separator = SEPARATOR;
+                    }
+                    String[] ls = s.split(separator);
                     config.getLoadPaths().addAll(Arrays.asList(ls));
                     break FOR;
                 case 'J':
@@ -307,7 +315,7 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'T':
                     {
-                        String temp = grabOptionalValue();
+                        grabOptionalValue();
                         break FOR;
                     }
                 case 'U':
@@ -355,14 +363,12 @@ public class ArgumentProcessor {
                                 config.setCurrentDirectory(new File(base, newDir.getPath()).getCanonicalPath());
                             }
                             if (!(new File(config.getCurrentDirectory()).isDirectory()) && !config.getCurrentDirectory().startsWith("uri:classloader:")) {
-                                MainExitException mee = new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
-                                throw mee;
+                                throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
                             }
                         }
                         config.setXFlag(true);
                     } catch (IOException e) {
-                        MainExitException mee = new MainExitException(1, getArgumentError(" -x must be followed by a valid directory"));
-                        throw mee;
+                        throw new MainExitException(1, getArgumentError(" -x must be followed by a valid directory"));
                     }
                     break FOR;
                 case 'X':
@@ -384,11 +390,13 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("-T")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+                        Options.COMPILE_MODE.unforce();
                         config.setDisableGems(false);
                     } else if (extendedOption.equals("+T")) {
-                        checkGraalVersion();
                         Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
+                        // Make the static option consistent with the compile mode.
+                        Options.COMPILE_MODE.force("TRUFFLE");
                         config.setDisableGems(true);
                     } else if (extendedOption.endsWith("...")) {
                         Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));
@@ -425,7 +433,18 @@ public class ArgumentProcessor {
                         disallowedInRubyOpts(argument);
                         Options.DEBUG_FULLTRACE.force("true");
                         RubyInstanceConfig.FULL_TRACE_ENABLED = true;
-                        config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+                        config.setDebuggingFrozenStringLiteral(true);
+                        break FOR;
+                    } else if (argument.startsWith("--debug=")) {
+                        for (String debug : valueListFor(argument, "debug")) {
+                            boolean all = debug.equals("all");
+                            if (debug.equals("frozen-string-literal") || all) {
+                                config.setDebuggingFrozenStringLiteral(true);
+                                continue;
+                            }
+
+                            config.getError().println("warning: unknown argument for --debug: `" + debug + "'");
+                        }
                         break FOR;
                     } else if (argument.equals("--jdb")) {
                         config.setDebug(true);
@@ -453,7 +472,7 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.startsWith("--profile")) {
                         characterIndex = argument.length();
-                        int dotIndex = argument.indexOf(".");
+                        int dotIndex = argument.indexOf('.');
 
                         if (dotIndex == -1) {
                             config.setProfilingMode(RubyInstanceConfig.ProfilingMode.FLAT);
@@ -491,29 +510,27 @@ public class ArgumentProcessor {
                     } else if (VERSION_FLAG.matcher(argument).matches()) {
                         config.getError().println("warning: " + argument + " ignored");
                         break FOR;
-                    } else if (argument.equals("--disable-gems")) {
-                        config.setDisableGems(true);
+                    } else if (argument.equals("--debug-frozen-string-literal")) {
+                        config.setDebuggingFrozenStringLiteral(true);
                         break FOR;
-                    } else if (argument.equals("--disable")) {
-                        errorMissingDisable();
-                    } else if (argument.startsWith("--disable=")) {
-                        String disablesStr = argument.substring("--disable=".length());
-                        String[] disables = disablesStr.split(",");
-
-                        if (disables.length == 0) errorMissingDisable();
-
-                        for (String disable : disables) {
-                            boolean all = disable.equals("all");
-                            if (disable.equals("gems") || all) {
-                                config.setDisableGems(true);
-                                continue;
-                            }
-                            if (disable.equals("rubyopt") || all) {
-                                config.setDisableRUBYOPT(true);
-                                continue;
-                            }
-
-                            config.getError().println("warning: unknown argument for --disable: `" + disable + "'");
+                    } else if (argument.startsWith("--disable")) {
+                        if (argument.equals("--disable")) {
+                            characterIndex = argument.length();
+                            String feature = grabValue(getArgumentError("missing argument for --disable"), false);
+                            argument = "--disable=" + feature;
+                        }
+                        for (String disable : valueListFor(argument, "disable")) {
+                            enableDisableFeature(disable, false);
+                        }
+                        break FOR;
+                    } else if (argument.startsWith("--enable")) {
+                        if (argument.equals("--enable")) {
+                            characterIndex = argument.length();
+                            String feature = grabValue(getArgumentError("missing argument for --enable"), false);
+                            argument = "--enable=" + feature;
+                        }
+                        for (String enable : valueListFor(argument, "enable")) {
+                            enableDisableFeature(enable, true);
                         }
                         break FOR;
                     } else if (argument.equals("--gemfile")) {
@@ -562,6 +579,9 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--yydebug")) {
                         disallowedInRubyOpts(argument);
                         config.setParserDebug(true);
+                    } else if (argument.equals("--verbose")) {
+                        config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                        break FOR;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
@@ -576,15 +596,34 @@ public class ArgumentProcessor {
         }
     }
 
+    private void enableDisableFeature(String name, boolean enable) {
+        Function2<Boolean, ArgumentProcessor, Boolean> feature = FEATURES.get(name);
+
+        if (feature == null) {
+            config.getError().println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": `" + name + "'");
+        } else {
+            feature.apply(this, enable);
+        }
+    }
+
+    private String[] valueListFor(String argument, String key) {
+        int length = key.length() + 3; // 3 is from -- and = (e.g. --disable=)
+        String[] values = argument.substring(length).split(",");
+
+        if (values.length == 0) errorMissingEquals(key);
+
+        return values;
+    }
+
     private void disallowedInRubyOpts(String option) {
         if (rubyOpts) {
             throw new MainExitException(1, "jruby: invalid switch in RUBYOPT: " + option + " (RuntimeError)");
         }
     }
 
-    private void errorMissingDisable() {
+    private void errorMissingEquals(String label) {
         MainExitException mee;
-        mee = new MainExitException(1, "missing argument for --disable\n");
+        mee = new MainExitException(1, "missing argument for --" + label + "\n");
         mee.setUsageError(true);
         throw mee;
     }
@@ -644,7 +683,7 @@ public class ArgumentProcessor {
         // JRubyFile.create.
         String result = resolve(config.getCurrentDirectory(), scriptName);
         if (result != null) return scriptName;// use relative filename
-                result = resolve(config.getJRubyHome() + "/bin", scriptName);
+        result = resolve(config.getJRubyHome() + "/bin", scriptName);
         if (result != null) return result;
         // since the current directory is also on the classpath we
         // want to find it on filesystem first
@@ -678,6 +717,10 @@ public class ArgumentProcessor {
     }
 
     private String grabValue(String errorMessage) {
+        return grabValue(errorMessage, true);
+    }
+
+    private String grabValue(String errorMessage, boolean usageError) {
         String optValue = grabOptionalValue();
         if (optValue != null) {
             return optValue;
@@ -687,7 +730,7 @@ public class ArgumentProcessor {
             return arguments.get(argumentIndex).originalValue;
         }
         MainExitException mee = new MainExitException(1, errorMessage);
-        mee.setUsageError(true);
+        if (usageError) mee.setUsageError(true);
         throw mee;
     }
 
@@ -709,18 +752,6 @@ public class ArgumentProcessor {
     private void logScriptResolutionFailure(String path) {
         if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
             config.getError().println("Searched: " + path);
-        }
-    }
-
-    public static void checkGraalVersion() {
-        final String graalVersion = System.getProperty("graal.version", "unknown");
-        final String expectedGraalVersion = "0.7";
-
-        if (graalVersion.equals("unknown")) {
-            return;
-        } else if (!graalVersion.equals(expectedGraalVersion)) {
-            throw new RuntimeException("This version of JRuby is built against Graal " + expectedGraalVersion +
-                    " but you are using it with version " + graalVersion + " - either update Graal or use with (-J)-original to disable Graal and ignore this error");
         }
     }
 
@@ -771,4 +802,58 @@ public class ArgumentProcessor {
         return false;
     }
 
+    private static final Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> FEATURES;
+
+    static {
+        Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> features = new HashMap<>();
+
+        features.put("all", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                // disable all features
+                for (Map.Entry<String, Function2<Boolean, ArgumentProcessor, Boolean>> entry : FEATURES.entrySet()) {
+                    if (entry.getKey().equals("all")) continue; // skip self
+                    entry.getValue().apply(processor, enable);
+                }
+                return true;
+            }
+        });
+        features.put("gems", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setDisableGems(!enable);
+                return true;
+            }
+        });
+        features.put("did-you-mean", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setDisableDidYouMean(!enable);
+                return true;
+            }
+        });
+        features.put("did_you_mean", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setDisableDidYouMean(!enable);
+                return true;
+            }
+        });
+        features.put("rubyopt", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setDisableRUBYOPT(!enable);
+                return true;
+            }
+        });
+        features.put("frozen-string-literal", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setFrozenStringLiteral(enable);
+                return true;
+            }
+        });
+        features.put("frozen_string_literal", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setFrozenStringLiteral(enable);
+                return true;
+            }
+        });
+
+        FEATURES = features;
+    }
 }

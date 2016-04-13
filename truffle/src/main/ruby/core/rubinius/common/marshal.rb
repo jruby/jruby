@@ -471,11 +471,15 @@ module Marshal
 
       parts = String(name).split '::'
       parts.each do |part|
-        unless Rubinius::Type.const_exists?(mod, part)
-          raise ArgumentError, "undefined class/module #{name}"
-        end
-
-        mod = Rubinius::Type.const_get(mod, part, false)
+        mod = if Rubinius::Type.const_exists?(mod, part)
+                Rubinius::Type.const_get(mod, part, false)
+              else
+                begin
+                  mod.const_missing(part)
+                rescue NameError
+                  raise ArgumentError, "undefined class/module #{name}"
+                end
+              end
       end
 
       if type and not mod.instance_of? type
@@ -701,8 +705,11 @@ module Marshal
       store_unique_object obj
 
       construct_integer.times do
+        original_modules = @modules
+        @modules = nil
         key = construct
         val = construct
+        @modules = original_modules
 
         # Use __store__ (an alias for []=) to get around subclass overrides
         obj.__store__ key, val
@@ -1159,7 +1166,7 @@ module Marshal
       super stream, depth, prc
 
       if @stream
-        @byte_array = stream.data
+        @byte_array = stream.bytes
       end
 
     end
@@ -1173,7 +1180,7 @@ module Marshal
 
     def consume_byte
       raise ArgumentError, "marshal data too short" if @consumed >= @stream.bytesize
-      data = @byte_array.get_byte @consumed
+      data = @byte_array[@consumed]
       @consumed += 1
       return data
     end

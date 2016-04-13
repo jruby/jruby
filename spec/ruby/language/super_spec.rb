@@ -147,22 +147,16 @@ describe "The super keyword" do
 
   # Rubinius ticket github#157
   it "calls method_missing when a superclass method is not found" do
-    lambda {
-      Super::MM_B.new.is_a?(Hash).should == false
-    }.should_not raise_error(NoMethodError)
+    Super::MM_B.new.is_a?(Hash).should == false
   end
 
   # Rubinius ticket github#180
   it "respects the original module a method is aliased from" do
-    lambda {
-      Super::Alias3.new.name3.should == [:alias2, :alias1]
-    }.should_not raise_error(RuntimeError)
+    Super::Alias3.new.name3.should == [:alias2, :alias1]
   end
 
   it "sees the included version of a module a method is alias from" do
-    lambda {
-      Super::AliasWithSuper::Trigger.foo.should == [:b, :a]
-    }.should_not raise_error(NoMethodError)
+    Super::AliasWithSuper::Trigger.foo.should == [:b, :a]
   end
 
   it "passes along modified rest args when they weren't originally empty" do
@@ -179,6 +173,14 @@ describe "The super keyword" do
 
   it "without explicit arguments can accept a block but still pass the original arguments" do
     Super::ZSuperWithBlock::B.new.a.should == 14
+  end
+
+  it "passes along block via reference to method expecting a reference" do
+    Super::ZSuperWithBlock::B.new.b.should == [14, 15]
+  end
+
+  it "passes along a block via reference to a method that yields" do
+    Super::ZSuperWithBlock::B.new.c.should == 16
   end
 
   it "without explicit arguments passes optional arguments that have a default value" do
@@ -213,4 +215,28 @@ describe "The super keyword" do
     Super::ZSuperWithRestAndOthers::B.new.m_modified(1, 2, 3, 4, 5).should == [3, 14, 5]
   end
 
+  describe 'when using keyword arguments' do
+    it 'passes any given keyword arguments to the parent' do
+      b = Super::KeywordArguments::B.new
+      b.foo(:number => 10).should == {:number => 10}
+    end
+
+    it "passes any given keyword arguments including optional and required ones to the parent" do
+      class Super::KeywordArguments::C
+        eval <<-RUBY
+        def foo(a:, b: 'b', **)
+          super
+        end
+        RUBY
+      end
+      c = Super::KeywordArguments::C.new
+
+      c.foo(a: 'a', c: 'c').should == {a: 'a', b: 'b', c: 'c'}
+    end
+
+    it 'does not pass any keyword arguments to the parent when none are given' do
+      b = Super::KeywordArguments::B.new
+      b.foo.should == {}
+    end
+  end
 end

@@ -1,14 +1,24 @@
+require 'rbconfig'
+
 class MSpecScript
 
   def self.windows?
     ENV.key?('WINDIR') || ENV.key?('windir')
   end
 
+  def self.linux?
+    RbConfig::CONFIG['host_os'] == 'linux'
+  end
+
   set :target, File.expand_path("../../../bin/jruby#{windows? ? '.bat' : ''}", __FILE__)
 
   if ARGV[-2..-1] != %w[-t ruby] # No flags for MRI
-    set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G]
+    set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G -Xtruffle.coverage=true]
   end
+
+  set :command_line, [
+    "spec/ruby/command_line"
+  ]
 
   set :language, [
     "spec/ruby/language"
@@ -20,6 +30,10 @@ class MSpecScript
 
   set :library, [
     "spec/ruby/library",
+    
+    # Since 2.3
+    "^spec/ruby/library/resolv",
+    "^spec/ruby/library/drb",
 
     # Not yet explored
     "^spec/ruby/library/continuation",
@@ -34,12 +48,20 @@ class MSpecScript
     "^spec/ruby/library/etc",
 
     # Hangs
-    "^spec/ruby/library/net/http",
-    "^spec/ruby/library/net/ftp",
+    "^spec/ruby/library/net",
 
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
     "^spec/ruby/library/delegate/delegator/protected_methods_spec.rb",
+
+    # Openssl not yet supported
+    "^spec/ruby/library/openssl/cipher_spec.rb",
+    "^spec/ruby/library/openssl/config/freeze_spec.rb",
+    "^spec/ruby/library/openssl/hmac/digest_spec.rb",
+    "^spec/ruby/library/openssl/hmac/hexdigest_spec.rb",
+    "^spec/ruby/library/openssl/random/pseudo_bytes_spec.rb",
+    "^spec/ruby/library/openssl/random/random_bytes_spec.rb",
+    "^spec/ruby/library/openssl/x509/name/parse_spec.rb"
   ]
 
   set :truffle, [
@@ -49,6 +71,7 @@ class MSpecScript
   set :backtrace_filter, /mspec\//
 
   set :tags_patterns, [
+    [%r(^.*/command_line/),             'spec/truffle/tags/command_line/'],
     [%r(^.*/language/),                 'spec/truffle/tags/language/'],
     [%r(^.*/core/),                     'spec/truffle/tags/core/'],
     [%r(^.*/library/),                  'spec/truffle/tags/library/'],
@@ -59,6 +82,11 @@ class MSpecScript
   if windows?
     # exclude specs tagged with 'windows'
     set :xtags, (get(:xtags) || []) + ['windows']
+  end
+
+  if linux?
+    # exclude specs tagged with 'linux'
+    set :xtags, (get(:xtags) || []) + ['linux']
   end
 
   # Enable features

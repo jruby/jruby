@@ -18,6 +18,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +38,9 @@ import java.util.Map;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[0];
 
-    private int ipc; // Interpreter-only: instruction pointer
-    private int rpc; // Interpreter-only: rescue pointer
-    private final Operation operation;
+    private transient int ipc; // Interpreter-only: instruction pointer
+    private transient int rpc; // Interpreter-only: rescue pointer
+    private transient final Operation operation;
     // Is this instruction live or dead?  During optimization passes, if this instruction
     // causes no side-effects and the result of the instruction is not needed by anyone else,
     // we can remove this instruction altogether without affecting program correctness.
@@ -87,6 +89,45 @@ public abstract class Instr {
         buf.append(')');
 
         return buf.toString();
+    }
+
+    private static final Field[] EMPTY_FIELD_ARRAY = new Field[0];
+
+    /**
+     * A ClassValue wrapping an array of dumpable Field references for a given Instr type.
+     */
+    private static final ClassValue<Field[]> dumpableFields = new ClassValue<Field[]>() {
+        @Override
+        protected Field[] computeValue(Class type) {
+            try {
+                Class cls = type;
+                ArrayList<Field> list = new ArrayList<>();
+                while (cls != Instr.class) {
+                    for (Field f : cls.getDeclaredFields()) {
+                        if (Modifier.isTransient(f.getModifiers())) continue;
+                        if (Modifier.isStatic(f.getModifiers())) continue;
+                        if (f.getName().startsWith("$")) continue;
+
+                        try {
+                            f.setAccessible(true);
+                        } catch (SecurityException se) {
+                            continue;
+                        }
+
+                        list.add(f);
+                    }
+                    cls = cls.getSuperclass();
+                }
+
+                return list.toArray(new Field[list.size()]);
+            } catch (Exception e) {
+                return EMPTY_FIELD_ARRAY;
+            }
+        }
+    };
+
+    public Field[] dumpableFields() {
+        return dumpableFields.get(getClass());
     }
 
     private StringBuilder toArgList(StringBuilder buf, Object[] args) {

@@ -1,1 +1,2 @@
-fails:The super keyword calls method_missing when a superclass method is not found
+fails:The super keyword when using keyword arguments passes any given keyword arguments to the parent
+fails:The super keyword when using keyword arguments passes any given keyword arguments including optional and required ones to the parent

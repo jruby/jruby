@@ -73,18 +73,9 @@ describe "Defining a 'respond_to_missing?' method" do
 end
 
 describe "Defining a method" do
-  ruby_version_is ""..."2.1" do
-    it "returns a symbol of the method name" do
-      method_name = def some_method; end
-      method_name.should == nil
-    end
-  end
-
-  ruby_version_is "2.1" do
-    it "returns a symbol of the method name" do
-      method_name = def some_method; end
-      method_name.should == :some_method
-    end
+  it "returns a symbol of the method name" do
+    method_name = def some_method; end
+    method_name.should == :some_method
   end
 end
 
@@ -560,7 +551,7 @@ describe "A method definition inside an instance_eval" do
     DefSpecNested.an_instance_eval_class_method.should == DefSpecNested
     lambda { Object.an_instance_eval_class_method }.should raise_error(NoMethodError)
   end
-  
+
   it "creates a class method when the receiver is an anonymous class" do
     m = Class.new
     m.instance_eval do
@@ -568,20 +559,20 @@ describe "A method definition inside an instance_eval" do
         :test
       end
     end
-    
+
     m.klass_method.should == :test
     lambda { Object.klass_method }.should raise_error(NoMethodError)
   end
-  
+
   it "creates a class method when instance_eval is within class" do
     m = Class.new do
       instance_eval do
         def klass_method
           :test
-        end          
+        end
       end
     end
-    
+
     m.klass_method.should == :test
     lambda { Object.klass_method }.should raise_error(NoMethodError)
   end
@@ -591,39 +582,39 @@ describe "A method definition inside an instance_exec" do
   it "creates a class method when the receiver is a class" do
     DefSpecNested.instance_exec(1) do |param|
       @stuff = param
-      
+
       def an_instance_exec_class_method; @stuff; end
     end
 
     DefSpecNested.an_instance_exec_class_method.should == 1
     lambda { Object.an_instance_exec_class_method }.should raise_error(NoMethodError)
   end
-  
-  it "creates a class method when the receiver is an anonymous class" do    
+
+  it "creates a class method when the receiver is an anonymous class" do
     m = Class.new
     m.instance_exec(1) do |param|
       @stuff = param
-      
+
       def klass_method
         @stuff
       end
     end
-    
+
     m.klass_method.should == 1
     lambda { Object.klass_method }.should raise_error(NoMethodError)
   end
-  
+
   it "creates a class method when instance_exec is within class" do
     m = Class.new do
       instance_exec(2) do |param|
         @stuff = param
-        
+
         def klass_method
           @stuff
-        end          
+        end
       end
     end
-    
+
     m.klass_method.should == 2
     lambda { Object.klass_method }.should raise_error(NoMethodError)
   end

@@ -20,7 +20,7 @@ describe "Enumerator::Lazy#reject" do
     ret.should_not equal(@yieldsmixed)
   end
 
-  it "sets nil to size" do
+  it "sets #size to nil" do
     enumerator_class::Lazy.new(Object.new, 100) {}.reject {}.size.should == nil
   end
 
@@ -44,7 +44,7 @@ describe "Enumerator::Lazy#reject" do
   end
 
   describe "on a nested Lazy" do
-    it "sets nil to size" do
+    it "sets #size to nil" do
       enumerator_class::Lazy.new(Object.new, 100) {}.take(20).reject {}.size.should == nil
     end
 

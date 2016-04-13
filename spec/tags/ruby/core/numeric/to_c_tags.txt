@@ -1,1 +1,0 @@
-fails:Numeric#to_c returns a Complex object

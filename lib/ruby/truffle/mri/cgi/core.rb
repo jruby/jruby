@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/cgi/core'
+require_relative '../../stdlib/cgi/core'

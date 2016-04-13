@@ -62,3 +62,23 @@ describe "A class variable defined in a module" do
     ClassVariablesSpec::ModuleO.class_variable_defined?(:@@cvar_n).should be_false
   end
 end
+
+describe 'A class variable definition' do
+  it "is created in a module if any of the parents do not define it" do
+    a = Class.new
+    b = Class.new(a)
+    c = Class.new(b)
+    b.class_variable_set(:@@cv, :value)
+
+    lambda { a.class_variable_get(:@@cv) }.should raise_error(NameError)
+    b.class_variable_get(:@@cv).should == :value
+    c.class_variable_get(:@@cv).should == :value
+
+    # updates the same variable
+    c.class_variable_set(:@@cv, :next)
+
+    lambda { a.class_variable_get(:@@cv) }.should raise_error(NameError)
+    b.class_variable_get(:@@cv).should == :next
+    c.class_variable_get(:@@cv).should == :next
+  end
+end

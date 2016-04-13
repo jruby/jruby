@@ -57,7 +57,7 @@ public abstract class TypePopulator {
         javaMethod.setNativeCall(nativeTarget, nativeName, nativeReturn, nativeArguments, isStatic, false);
     }
     
-    public static DynamicMethod populateModuleMethod(RubyModule cls, JavaMethod javaMethod) {
+    public static DynamicMethod populateModuleMethod(RubyModule cls, DynamicMethod javaMethod) {
         DynamicMethod moduleMethod = javaMethod.dup();
         moduleMethod.setImplementationClass(cls.getSingletonClass());
         moduleMethod.setVisibility(Visibility.PUBLIC);
@@ -69,24 +69,45 @@ public abstract class TypePopulator {
     public static final TypePopulator DEFAULT = new DefaultTypePopulator();
     public static class DefaultTypePopulator extends TypePopulator {
         public void populate(RubyModule clsmod, Class clazz) {
-            // fallback on non-pregenerated logic
-            MethodFactory methodFactory = MethodFactory.createFactory(clsmod.getRuntime().getJRubyClassLoader());
-            Ruby runtime = clsmod.getRuntime();
-            
-            RubyModule.MethodClumper clumper = new RubyModule.MethodClumper();
+            ReflectiveTypePopulator populator = new ReflectiveTypePopulator(clazz);
+            populator.populate(clsmod, clazz);
+        }
+    }
+
+    public static final class ReflectiveTypePopulator extends TypePopulator {
+        private final Class clazz;
+        private final RubyModule.MethodClumper clumper;
+
+        public ReflectiveTypePopulator(Class clazz) {
+            this.clazz = clazz;
+            this.clumper = new RubyModule.MethodClumper();
             clumper.clump(clazz);
-            
+        }
+
+        public void populate(RubyModule clsmod, Class clazz) {
+            assert clazz == this.clazz : "populator for " + this.clazz + " used for " + clazz;
+
+            // fallback on non-pregenerated logic
+            final Ruby runtime = clsmod.getRuntime();
+            final MethodFactory methodFactory = MethodFactory.createFactory(runtime.getJRubyClassLoader());
+
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
-                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, entry.getKey());
+                final String name = entry.getKey();
+                final List<JavaMethodDescriptor> methods = entry.getValue();
+                clsmod.defineAnnotatedMethod(name, methods, methodFactory);
+                for ( int i=0; i<methods.size(); i++ ) {
+                    final JavaMethodDescriptor desc = methods.get(i);
+                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, name);
                 }
             }
-            
+
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
-                clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, entry.getKey());
+                final String name = entry.getKey();
+                final List<JavaMethodDescriptor> methods = entry.getValue();
+                clsmod.defineAnnotatedMethod(name, methods, methodFactory);
+                for ( int i=0; i<methods.size(); i++ ) {
+                    final JavaMethodDescriptor desc = methods.get(i);
+                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, name);
                 }
             }
         }

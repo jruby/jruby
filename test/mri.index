@@ -189,7 +189,7 @@ fileutils/test_verbose.rb
 
 io/wait/test_io_wait.rb
 io/nonblock/test_flush.rb
-io/console/test_io_console.rb
+#io/console/test_io_console.rb
 
 json/test_json.rb
 json/test_json_addition.rb
@@ -209,7 +209,9 @@ matrix/test_vector.rb
 
 monitor/test_monitor.rb
 
+net/ftp/test_buffered_socket.rb
 net/ftp/test_ftp.rb
+net/ftp/test_mlsx_entry.rb
 net/http/test_buffered_io.rb
 net/http/test_http.rb
 net/http/test_http_request.rb
@@ -218,8 +220,7 @@ net/http/test_httpresponse.rb
 net/http/test_httpresponses.rb
 net/http/test_https.rb
 net/http/test_https_proxy.rb
-# hangs and mostly fails.rb
-#net/imap/test_imap.rb
+net/imap/test_imap.rb
 net/imap/test_imap_response_parser.rb
 net/pop/test_pop.rb
 net/protocol/test_protocol.rb

@@ -7,7 +7,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
-import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -23,6 +22,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
+import org.jruby.util.collections.NonBlockingHashMapLong;
 
 import static org.jruby.util.CodegenUtils.prettyParams;
 
@@ -140,7 +140,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             }
 
             if (varArgs != null /* && varargsMethods.size() > 0 */) {
-                varargsCallables = varArgs.toArray( createCallableArray(varArgs.size()) );
+                varargsCallables = (T[]) varArgs.toArray( createCallableArray(varArgs.size()) );
             }
             // NOTE: tested (4, false); with opt_for_space: false but does not
             // seem to give  the promised ~10% improvement in map's speed ...

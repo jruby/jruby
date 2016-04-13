@@ -1,0 +1,10 @@
+fails:Hash#>= returns false when receiver size is smaller than argument
+fails:Hash#>= returns false when argument is not a subset or not equals to receiver
+fails:Hash#>= returns true when argument is a subset of receiver or equals to receiver
+fails:Hash#>= returns false when keys match but values don't
+fails:Hash#>= raises a TypeError if the right operand is not a hash
+fails:Hash#>= returns false if both hashes have the same keys but different values
+fails:Hash#>= returns true if the other hash is a subset of self
+fails:Hash#>= returns false if the other hash is not a subset of self
+fails:Hash#>= converts the right operand to a hash before comparing
+fails:Hash#>= returns true if both hashes are identical

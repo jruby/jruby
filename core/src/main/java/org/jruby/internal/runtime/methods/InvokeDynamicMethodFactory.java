@@ -32,17 +32,17 @@ import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
 import org.jruby.RubyModule;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import org.jruby.Ruby;
@@ -52,22 +52,12 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import static java.lang.invoke.MethodHandles.foldArguments;
-import static java.lang.invoke.MethodHandles.insertArguments;
-import static org.jruby.runtime.Helpers.arrayOf;
-
 /**
- * In order to avoid the overhead with reflection-based method handles, this
- * MethodFactory uses ASM to generate tiny invoker classes. This allows for
- * better performance and more specialization per-handle than can be supported
- * via reflection. It also allows optimizing away many conditionals that can
- * be determined once ahead of time.
- * 
- * When running in secured environments, this factory may not function. When
- * this can be detected, MethodFactory will fall back on the reflection-based
- * factory instead.
+ * This invoker uses MethodHandle for all bindings to Java code, rather than generating
+ * stubs or using reflection.
  * 
  * @see org.jruby.runtime.MethodFactory
+ * @see HandleMethod
  */
 public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
@@ -84,6 +74,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
     @Override
     public DynamicMethod getAnnotatedMethod(final RubyModule implementationClass, final List<JavaMethodDescriptor> descs) {
         JavaMethodDescriptor desc1 = descs.get(0);
+        DescriptorInfo info = new DescriptorInfo(desc1);
         
         if (desc1.anno.frame()) {
             // super logic does not work yet because we need to take impl class
@@ -124,29 +115,27 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             notImplemented = notImplemented || desc.anno.notImplemented();
         }
 
-        DescriptorInfo info = new DescriptorInfo(descs);
-        Callable<MethodHandle[]> targetsGenerator = new Callable<MethodHandle[]>() {
-            @Override
-            public MethodHandle[] call() throws Exception {
-                return buildAnnotatedMethodHandles(implementationClass.getRuntime(), descs, implementationClass);
-            }
-        };
+        Callable<MethodHandle>[] generators = buildAnnotatedMethodHandles(implementationClass.getRuntime(), descs, implementationClass);
         
         return new HandleMethod(
                 implementationClass,
                 desc1.anno.visibility(),
-                targetsGenerator,
                 (min == max) ?
-                        org.jruby.runtime.Signature.from(min, 0, 0, 0, 0, org.jruby.runtime.Signature.Rest.NONE, false) :
-                        org.jruby.runtime.Signature.OPTIONAL,
+                        org.jruby.runtime.Signature.from(min, 0, 0, 0, 0, org.jruby.runtime.Signature.Rest.NONE, false).encode() :
+                        org.jruby.runtime.Signature.OPTIONAL.encode(),
                 true,
                 notImplemented,
-                info.getParameterDesc());
+                info.getParameterDesc(),
+                min,
+                max,
+                generators[0],
+                generators[1],
+                generators[2],
+                generators[3],
+                generators[4]);
     }
 
-    private MethodHandle[] buildAnnotatedMethodHandles(Ruby runtime, List<JavaMethodDescriptor> descs, RubyModule implementationClass) {
-        MethodHandle[] targets = new MethodHandle[5];
-
+    private Callable<MethodHandle>[] buildAnnotatedMethodHandles(Ruby runtime, List<JavaMethodDescriptor> descs, RubyModule implementationClass) {
         int min = Integer.MAX_VALUE;
         int max = 0;
 
@@ -159,10 +148,21 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
         } else {
             rubyName = desc1.name;
         }
+
+        Callable<MethodHandle>[] targets = new Callable[5];
         
         for (JavaMethodDescriptor desc: descs) {
+            MethodHandle method;
+
+            if (desc.isStatic) {
+                method = Binder.from(desc.returnClass, desc.parameters).invokeStaticQuiet(LOOKUP, desc.declaringClass, desc.name);
+            } else {
+                method = Binder.from(desc.returnClass, desc.declaringClass, desc.parameters).invokeVirtualQuiet(LOOKUP, desc.name);
+            }
+
+            Callable<MethodHandle> target = adaptHandle(method, runtime, desc.actualRequired, desc.required, desc.optional, desc.rest, rubyName, desc.declaringClass, desc.isStatic, desc.hasContext, desc.hasBlock, desc.anno.frame(), implementationClass);
             int specificArity = -1;
-            if (desc.optional == 0 && !desc.rest) {
+            if (desc.required < 4 && desc.optional == 0 && !desc.rest) {
                 if (desc.required == 0) {
                     if (desc.actualRequired <= 3) {
                         specificArity = desc.actualRequired;
@@ -181,179 +181,137 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 if (desc.required + desc.optional > max) max = desc.required + desc.optional;
             }
 
-            String javaMethodName = desc.name;
-
-            SmartBinder targetBinder;
-            SmartHandle target;
-            Signature baseSignature;
             if (specificArity >= 0) {
-                baseSignature = SPECIFIC_ARITY_SIGNATURES[specificArity];
+                targets[specificArity] = target;
             } else {
-                baseSignature = VARIABLE_ARITY_SIGNATURE;
-            }
-            
-            targetBinder = SmartBinder.from(baseSignature);
-
-            // unused by Java-based methods
-            targetBinder = targetBinder
-                    .exclude("class", "name");
-            
-            MethodHandle returnFilter = null;
-            boolean castReturn = false;
-            if (desc.returnClass != IRubyObject.class) {
-                if (desc.returnClass == void.class) {
-                    returnFilter = MethodHandles.constant(IRubyObject.class, runtime.getNil());
-                } else {
-                    castReturn = true;
-                }
-            }
-            
-            if (desc.isStatic) {
-                if (desc.hasContext) {
-                    if (desc.hasBlock) {
-                        // straight through with no permutation necessary
-                    } else {
-                        targetBinder = targetBinder.exclude("block");
-                    }
-                } else {
-                    if (desc.hasBlock) {
-                        targetBinder = targetBinder.exclude("context");
-                    } else {
-                        targetBinder = targetBinder.exclude("context", "block");
-                    }
-                }
-                
-                if (returnFilter != null) {
-                    targetBinder = targetBinder
-                            .filterReturn(returnFilter);
-                } else if (castReturn) {
-                    targetBinder = targetBinder
-                            .castReturn(desc.returnClass);
-                }
-            } else {
-                if (desc.hasContext) {
-                    if (desc.hasBlock) {
-                        targetBinder = targetBinder.permute("self", "context", "arg*", "block");
-                    } else {
-                        targetBinder = targetBinder.permute("self", "context", "arg*");
-                    }
-                } else {
-                    if (desc.hasBlock) {
-                        targetBinder = targetBinder.permute("self", "arg*", "block");
-                    } else {
-                        targetBinder = targetBinder.permute("self", "arg*");
-                    }
-                }
-                
-                if (returnFilter != null) {
-                    targetBinder = targetBinder
-                            .filterReturn(returnFilter);
-                } else if (castReturn) {
-                    targetBinder = targetBinder
-                            .castReturn(desc.returnClass);
-                }
-                targetBinder = targetBinder
-                        .castArg("self", desc.getDeclaringClass());
-            }
-            
-            if (desc.isStatic) {
-                target = targetBinder
-                        .invokeStaticQuiet(LOOKUP, desc.getDeclaringClass(), javaMethodName);
-            } else {
-                target = targetBinder
-                        .invokeVirtualQuiet(LOOKUP, javaMethodName);
-            }
-
-            CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(desc.anno);
-            if (!callConfig.isNoop()) {
-                target = SmartHandle
-                        .from(target.signature(), InvocationLinker.wrapWithFraming(baseSignature, callConfig, implementationClass, rubyName, target.handle(), null));
-            }
-            
-            if (specificArity >= 0) {
-                targets[specificArity] = target.handle();
-            } else {
-                targets[4] = target.handle();
-            }
-        }
-
-        if (targets[4] == null) {
-            // provide a variable-arity path for all specific-arity targets, or error path
-
-            MethodHandle[] varargsTargets = new MethodHandle[4];
-            for (int i = 0; i < 4; i++) {
-                if (targets[i] == null) continue; // will never be retrieved; arity check will error first
-
-                if (i == 0) {
-                    varargsTargets[i] = MethodHandles.dropArguments(targets[i], 4, IRubyObject[].class);
-                } else {
-                    varargsTargets[i] = SmartBinder
-                            .from(VARIABLE_ARITY_SIGNATURE)
-                            .permute("context", "self", "class", "name", "block", "args")
-                            .spread("arg", i)
-                            .permute("context", "self", "class", "name", "arg*", "block")
-                            .invoke(targets[i]).handle();
-                }
-            }
-            
-            SmartHandle HANDLE_GETTER = SmartBinder
-                    .from(Signature.returning(MethodHandle.class).appendArg("targets", MethodHandle[].class).appendArg("arity", int.class))
-                    .arrayGet();
-            
-            SmartHandle handleLookup = SmartBinder
-                    .from(Signature.returning(MethodHandle.class).appendArg("args", IRubyObject[].class))
-                    .filterReturn(HANDLE_GETTER.bindTo(varargsTargets))
-                    .cast(int.class, Object.class)
-                    .invokeStaticQuiet(LOOKUP, Array.class, "getLength");
-
-            SmartHandle variableCall = SmartBinder
-                    .from(VARIABLE_ARITY_SIGNATURE)
-                    .fold("handle", handleLookup)
-                    .invoker();
-            
-            targets[4] = variableCall.handle();
-        }
-
-        // Add arity check of varargs path
-        targets[4] = SmartBinder
-                .from(VARIABLE_ARITY_SIGNATURE)
-                .foldVoid(SmartBinder
-                        .from(VARIABLE_ARITY_SIGNATURE.changeReturn(int.class))
-                        .permute("context", "name", "args")
-                        .append(arrayOf("min", "max"), arrayOf(int.class, int.class), min, max)
-                        .invokeStaticQuiet(LOOKUP, Arity.class, "checkArgumentCount")
-                        .handle())
-                .invoke(targets[4])
-                .handle();
-
-        // Add tracing of "C" call/return
-        if (Options.DEBUG_FULLTRACE.load()) {
-            for (int i = 0; i < targets.length; i++) {
-                MethodHandle target = targets[i];
-
-                if (target == null) continue;
-
-                MethodHandle traceCall = Binder
-                        .from(target.type().changeReturnType(void.class))
-                        .permute(0, 3, 2) // context, name, class
-                        .insert(1, RubyEvent.C_CALL)
-                        .invokeVirtualQuiet(LOOKUP, "trace");
-
-                MethodHandle traceReturn = Binder
-                        .from(target.type().changeReturnType(void.class))
-                        .permute(0, 3, 2) // context, name, class
-                        .insert(1, RubyEvent.C_RETURN)
-                        .invokeVirtualQuiet(LOOKUP, "trace");
-
-                targets[i] = Binder
-                        .from(target.type())
-                        .foldVoid(traceCall)
-                        .tryFinally(traceReturn)
-                        .invoke(target);
+                targets[4] = target;
             }
         }
         
         return targets;
+    }
+
+    public static SmartBinder preAdaptHandle(int specificArity, final boolean isStatic, final boolean hasContext, final boolean hasBlock) {
+        SmartBinder targetBinder;
+
+        Signature baseSignature;
+        if (specificArity >= 0) {
+            baseSignature = SPECIFIC_ARITY_SIGNATURES[specificArity];
+        } else {
+            baseSignature = VARIABLE_ARITY_SIGNATURE;
+        }
+
+        targetBinder = SmartBinder.from(baseSignature);
+
+        // unused by Java-based methods
+        targetBinder = targetBinder
+                .exclude("class", "name");
+
+        if (isStatic) {
+            if (hasContext) {
+                if (hasBlock) {
+                    // straight through with no permutation necessary
+                } else {
+                    targetBinder = targetBinder.exclude("block");
+                }
+            } else {
+                if (hasBlock) {
+                    targetBinder = targetBinder.exclude("context");
+                } else {
+                    targetBinder = targetBinder.exclude("context", "block");
+                }
+            }
+        } else {
+            if (hasContext) {
+                if (hasBlock) {
+                    targetBinder = targetBinder.permute("self", "context", "arg*", "block");
+                } else {
+                    targetBinder = targetBinder.permute("self", "context", "arg*");
+                }
+            } else {
+                if (hasBlock) {
+                    targetBinder = targetBinder.permute("self", "arg*", "block");
+                } else {
+                    targetBinder = targetBinder.permute("self", "arg*");
+                }
+            }
+        }
+
+        return targetBinder;
+    }
+
+    public static MethodHandle finishAdapting(final SmartBinder binder, final RubyModule implementationClass, String rubyName, final MethodHandle method, final Class declaringClass, final Ruby runtime, boolean isStatic, boolean frame) {
+        Class returnClass = method.type().returnType();
+        SmartBinder targetBinder = binder;
+
+        if (returnClass != IRubyObject.class) {
+            if (returnClass == void.class) {
+                targetBinder = targetBinder.filterReturn(MethodHandles.constant(IRubyObject.class, runtime.getNil()));
+            } else {
+                targetBinder = targetBinder
+                        .castReturn(returnClass);
+            }
+        }
+
+        if (!isStatic) {
+            targetBinder = targetBinder
+                    .castArg("self", declaringClass);
+        }
+
+        SmartHandle smartTarget = targetBinder.invoke(method);
+        if (frame) {
+            smartTarget = SmartHandle
+                    .from(smartTarget.signature(), InvocationLinker.wrapWithFrameOnly(binder.baseSignature(), implementationClass, rubyName, smartTarget.handle(), null));
+        }
+
+        MethodHandle target = smartTarget.handle();
+
+        // Add tracing of "C" call/return
+        if (Options.DEBUG_FULLTRACE.load()) {
+            MethodHandle traceCall = Binder
+                    .from(target.type().changeReturnType(void.class))
+                    .permute(0, 3, 2) // context, name, class
+                    .insert(1, RubyEvent.C_CALL)
+                    .invokeVirtualQuiet(LOOKUP, "trace");
+
+            MethodHandle traceReturn = Binder
+                    .from(target.type().changeReturnType(void.class))
+                    .permute(0, 3, 2) // context, name, class
+                    .insert(1, RubyEvent.C_RETURN)
+                    .invokeVirtualQuiet(LOOKUP, "trace");
+
+            target = Binder
+                    .from(target.type())
+                    .foldVoid(traceCall)
+                    .tryFinally(traceReturn)
+                    .invoke(target);
+        }
+
+        return target;
+    }
+
+    public static Callable<MethodHandle> adaptHandle(final MethodHandle method, final Ruby runtime, final int actualRequired, final int required, final int optional, final boolean rest, final String rubyName, final Class declaringClass, final boolean isStatic, final boolean hasContext, final boolean hasBlock, final boolean frame, final RubyModule implementationClass) {
+        return new Callable<MethodHandle>() {
+            @Override
+            public MethodHandle call() throws Exception {
+                //Class returnClass = method.type().returnType();
+
+                int specificArity = -1;
+                if (optional == 0 && !rest) {
+                    if (required == 0) {
+                        if (actualRequired <= 3) {
+                            specificArity = actualRequired;
+                        }
+                    } else if (required >= 0 && required <= 3) {
+                        specificArity = required;
+                    }
+                }
+
+                SmartBinder targetBinder = getBinder(specificArity, isStatic, hasContext, hasBlock);
+
+                return finishAdapting(targetBinder, implementationClass, rubyName, method, declaringClass, runtime, isStatic, frame);
+            }
+        };
     }
 
     /**
@@ -364,7 +322,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
      */
     @Override
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
-        return getAnnotatedMethod(implementationClass, Arrays.asList(desc));
+        return getAnnotatedMethod(implementationClass, Collections.singletonList(desc));
     }
     
     public static final Signature VARIABLE_ARITY_SIGNATURE = Signature
@@ -405,5 +363,23 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                     .spread("arg", i)
                     .permute("context", "self", "arg*", "block");
         }
+    }
+
+    private static final Map<String, SmartBinder> BINDERS;
+    public static SmartBinder getBinder(int specific, final boolean b1, final boolean b2, final boolean b3) {
+        return BINDERS.get("" + specific + b1 + b2 + b3);
+    }
+    static {
+        Map<String, SmartBinder> binders = new HashMap<>(40);
+        for (int specific = -1; specific <= 3; specific++) {
+            for (boolean b1 : new boolean[] {false, true}) {
+                for (boolean b2 : new boolean[] {false, true}) {
+                    for (boolean b3 : new boolean[]{false, true}) {
+                        binders.put("" + specific + b1 + b2 + b3, preAdaptHandle(specific, b1, b2, b3));
+                    }
+                }
+            }
+        }
+        BINDERS = binders;
     }
 }

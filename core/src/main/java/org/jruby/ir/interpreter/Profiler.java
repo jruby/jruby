@@ -76,7 +76,7 @@ public class Profiler {
 
         final HashMap<IRScope, Long> scopeCounts = new HashMap<IRScope, Long>();
         final ArrayList<IRCallSite> callSites = new ArrayList<IRCallSite>();
-        HashMap<IRCallSite, Long> callSiteCounts = new HashMap<IRCallSite, Long>();
+        //HashMap<IRCallSite, Long> callSiteCounts = new HashMap<IRCallSite, Long>();
         // System.out.println("# call sites: " + callProfile.keySet().size());
         long total = 0;
         for (Long id: callProfile.keySet()) {

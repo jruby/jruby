@@ -1,3 +1,4 @@
+sudo: false
 language: ruby
 script:
   - bundle exec rspec

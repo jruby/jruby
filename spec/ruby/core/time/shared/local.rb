@@ -6,21 +6,7 @@ describe :time_local, shared: true do
     end
   end
 
-  it "respects rare old timezones" do
-    with_timezone("Europe/Amsterdam") do
-      Time.send(@method, 1910, 1, 1).to_a.should ==
-        [0, 0, 0, 1, 1, 1910, 6, 1, false, "AMT"]
-    end
-  end
-
   describe "timezone changes" do
-    it "correctly adjusts the timezone change to 'EET' on 'Europe/Istanbul'" do
-      with_timezone("Europe/Istanbul") do
-        Time.send(@method, 1910, 10, 1).to_a.should ==
-          [4, 3, 0, 1, 10, 1910, 6, 274, false, "EET"]
-      end
-    end
-
     it "correctly adjusts the timezone change to 'CEST' on 'Europe/Amsterdam'" do
       with_timezone("Europe/Amsterdam") do
         Time.send(@method, 1940, 5, 16).to_a.should ==

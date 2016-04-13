@@ -1,5 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures', __FILE__)
+require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "ObjectSpace.each_object" do
   it "calls the block once for each living, non-immediate object in the Ruby process" do
@@ -81,6 +81,10 @@ describe "ObjectSpace.each_object" do
     ObjectSpaceFixtures.to_be_found_symbols.should include(:local_in_block_implicit)
   end
 
+  it "finds an object stored in a local variable captured in by a method defined with a block" do
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:captured_by_define_method)
+  end
+
   it "finds an object stored in a local variable captured in a Proc#binding" do
     binding = Proc.new {
       local_in_proc_binding = ObjectSpaceFixtures::ObjectToBeFound.new(:local_in_proc_binding)
@@ -125,14 +129,6 @@ describe "ObjectSpace.each_object" do
     ObjectSpaceFixtures.to_be_found_symbols.should include(:instance_variable)
   end
 
-  it "doesn't find an object stored in a WeakRef that should have been cleared" do
-    require 'weakref'
-
-    weak_ref = WeakRef.new(ObjectSpaceFixtures::ObjectToBeFound.new(:weakref))
-    ObjectSpaceFixtures.wait_for_weakref_cleared(weak_ref)
-    ObjectSpaceFixtures.to_be_found_symbols.should_not include(:weakref)
-  end
-
   it "finds an object stored in a thread local" do
     Thread.current.thread_variable_set(:object_space_thread_local, ObjectSpaceFixtures::ObjectToBeFound.new(:thread_local))
     ObjectSpaceFixtures.to_be_found_symbols.should include(:thread_local)
@@ -169,5 +165,59 @@ describe "ObjectSpace.each_object" do
     ObjectSpaceFixtures.to_be_found_symbols.should include(:finalizer)
 
     alive.should_not be_nil
+  end
+
+  describe "on singleton classes" do
+    before :each do
+      @klass = Class.new
+      instance = @klass.new
+      @sclass = instance.singleton_class
+      @meta = @klass.singleton_class
+    end
+
+    it "does not walk hidden metaclasses" do
+      klass = Class.new.singleton_class
+      ancestors = ObjectSpace.each_object(Class).select { |c| klass.is_a? c }
+      hidden = ancestors.find { |h| h.inspect.include? klass.inspect }
+      hidden.should == nil
+    end
+
+    ruby_version_is ""..."2.3" do
+      it "does not walk singleton classes" do
+        @sclass.should be_kind_of(@meta)
+        ObjectSpace.each_object(@meta).to_a.should_not include(@sclass)
+      end
+    end
+
+    ruby_version_is "2.3" do
+      it "walks singleton classes" do
+        @sclass.should be_kind_of(@meta)
+        ObjectSpace.each_object(@meta).to_a.should include(@sclass)
+      end
+    end
+  end
+
+  it "walks a class and its normal descendants when passed the class's singleton class" do
+    a = Class.new
+    b = Class.new(a)
+    c = Class.new(a)
+    d = Class.new(b)
+
+    c_instance = c.new
+    c_sclass = c_instance.singleton_class
+
+    expected = [ a, b, c, d ]
+
+    # singleton classes should be walked only on >= 2.3
+    ruby_version_is "2.3" do
+      expected << c_sclass
+      c_sclass.should be_kind_of(a.singleton_class)
+    end
+
+    b.extend Enumerable # included modules should not be walked
+
+    classes = ObjectSpace.each_object(a.singleton_class).to_a
+
+    classes.sort_by(&:object_id).should == expected.sort_by(&:object_id)
   end
 end

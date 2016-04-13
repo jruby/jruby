@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'rubygems/package/tar_test_case'
 require 'rubygems/package'
 
@@ -92,6 +93,14 @@ class TestGemPackageTarReaderEntry < Gem::Package::TarTestCase
     close_util_entry(dir_ent) if dir_ent
   end
 
+  def test_symlink_eh
+    assert_equal false, @entry.symlink?
+    symlink_ent = util_symlink_entry
+    assert_equal true, symlink_ent.symlink?
+  ensure
+    close_util_entry(symlink_ent) if symlink_ent
+  end
+
   def test_file_eh
     assert_equal true, @entry.file?
     dir_ent = util_dir_entry
@@ -131,4 +140,3 @@ class TestGemPackageTarReaderEntry < Gem::Package::TarTestCase
   end
 
 end
-

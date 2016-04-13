@@ -1,4 +1,4 @@
-class java::io::InputStream
+class Java::java::io::InputStream
   def to_io(opts = nil)
     ruby_io = org.jruby.RubyIO.new(JRuby.runtime, self)
     if opts && !opts[:autoclose]
@@ -8,7 +8,7 @@ class java::io::InputStream
   end
 end
 
-class java::io::OutputStream
+class Java::java::io::OutputStream
   def to_io(opts = nil)
     ruby_io = org.jruby.RubyIO.new(JRuby.runtime, self)
     if opts && !opts[:autoclose]
@@ -18,7 +18,7 @@ class java::io::OutputStream
   end
 end
 
-module java::nio::channels::Channel
+module Java::java::nio::channels::Channel
   def to_io(opts = nil)
     ruby_io = org.jruby.RubyIO.new(JRuby.runtime, self)
     if opts && !opts[:autoclose]

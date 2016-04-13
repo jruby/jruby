@@ -1,0 +1,3 @@
+fails:Socket::BasicSocket#getsockname returns the sockaddr associacted with the socket
+fails:Socket::BasicSocket#getsockname works on sockets listening in ipaddr_any
+fails:Socket::BasicSocket#getsockname returns empty sockaddr for unbinded sockets

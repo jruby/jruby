@@ -37,8 +37,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
 
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -76,22 +74,20 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             if (dir.mkdirs()) {
                 dir.deleteOnExit();
             }
-            ;
             tempdir = dir;
         }
         return tempdir;
     }
 
     // Change visibility so others can see it
-    @Override    
+    @Override
     public void addURL(URL url) {
         // if we have such embedded jar within a jar, we copy it to temp file and use the
         // the temp file with the super URLClassLoader
-        if ( url.toString().contains( "!/" )) {
-            InputStream in = null;
-            OutputStream out = null;
-            try
-            {
+        if (url.toString().contains( "!/" ) ||
+            !(url.getProtocol().equals("file") || url.getProtocol().equals("http") || url.getProtocol().equals("https"))) {
+            InputStream in = null; OutputStream out = null;
+            try {
                 File f = File.createTempFile("jruby", new File(url.getFile()).getName(), getTempDir());
                 f.deleteOnExit();
                 out = new BufferedOutputStream( new FileOutputStream( f ) );
@@ -105,29 +101,22 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
                 in.close();
                 url = f.toURI().toURL();
             }
-            catch (IOException e)
-            {
+            catch (IOException e) {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
             }
             finally {
                 // make sure we close everything
                 if ( out != null ) {
-                    try
-                    {
+                    try {
                         out.close();
                     }
-                    catch (IOException e)
-                    {
-                    }
+                    catch (IOException ex) { LOG.debug(ex); }
                 }
                 if ( in != null ) {
-                    try
-                    {
+                    try {
                         in.close();
                     }
-                    catch (IOException e)
-                    {
-                    }
+                    catch (IOException ex) { LOG.debug(ex); }
                 }
             }
         }

@@ -33,12 +33,16 @@
 
 package org.jruby.runtime;
 
+import com.headius.invokebinder.Binder;
 import org.jruby.EvalType;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 
 /**
  * The executable body portion of a closure.
@@ -48,6 +52,7 @@ public abstract class BlockBody {
     public static final String[] EMPTY_PARAMETER_LIST = org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
     protected final Signature signature;
+    protected volatile MethodHandle testBlockBody;
 
     public BlockBody(Signature signature) {
         this.signature = signature;
@@ -58,118 +63,169 @@ public abstract class BlockBody {
     }
 
     public void setEvalType(EvalType evalType) {
-        System.err.println("setEvalType unimplemented in " + this.getClass().getName());
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        args = prepareArgumentsForCall(context, args, type);
-
-        return yield(context, args, null, binding, type);
+    public boolean canCallDirect() {
+        return false;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
-            Block.Type type, Block block) {
-        args = prepareArgumentsForCall(context, args, type);
+    public MethodHandle getTestBlockBody() {
+        if (testBlockBody != null) return testBlockBody;
 
-        return yield(context, args, null, binding, type, block);
+        return testBlockBody = Binder.from(boolean.class, ThreadContext.class, Block.class).drop(0).append(this).invoke(TEST_BLOCK_BODY);
     }
 
-    public final IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
-        return doYield(context, value, binding, type);
+    private static final MethodHandle TEST_BLOCK_BODY = Binder.from(boolean.class, Block.class, BlockBody.class).invokeStaticQuiet(MethodHandles.lookup(), BlockBody.class, "testBlockBody");
+
+    public static boolean testBlockBody(Block block, BlockBody body) {
+        return block.getBody() == body;
     }
 
-    public final IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                                   Binding binding, Block.Type type) {
-        IRubyObject[] preppedValue = RubyProc.prepareArgs(context, type, this, args);
-        return doYield(context, preppedValue, self, binding, type);
+    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        throw new RuntimeException("callDirect not implemented in base class. We should never get here.");
+    }
+
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        throw new RuntimeException("yieldDirect not implemented in base class. We should never get here.");
+    }
+
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
+        if (canCallDirect()) {
+            return callDirect(context, block, args, Block.NULL_BLOCK);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+        }
+    }
+
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        if (canCallDirect()) {
+            return callDirect(context, block, args, blockArg);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
+        }
+    }
+
+    public final IRubyObject yield(ThreadContext context, Block block, IRubyObject value) {
+        if (canCallDirect()) {
+            return yieldDirect(context, block, new IRubyObject[] { value }, null);
+        } else {
+            return doYield(context, block, value);
+        }
+    }
+
+    public final IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        if (canCallDirect()) {
+            return yieldDirect(context, block, args, self);
+        } else {
+            IRubyObject[] preppedValue = RubyProc.prepareArgs(context, block.type, this, args);
+            return doYield(context, block, preppedValue, self);
+        }
     }
 
     /**
      * Subclass specific yield implementation.
      * <p>
-     * Should not be called directly. Gets called by {@link #yield(ThreadContext, IRubyObject, Binding, Block.Type)}
+     * Should not be called directly. Gets called by {@link #yield(ThreadContext, Block, org.jruby.runtime.builtin.IRubyObject)}
      * after ensuring that any common yield logic is taken care of.
      */
-    protected abstract IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type);
+    protected abstract IRubyObject doYield(ThreadContext context, Block block, IRubyObject value);
 
     /**
      * Subclass specific yield implementation.
      * <p>
-     * Should not be called directly. Gets called by {@link #yield(ThreadContext, org.jruby.runtime.builtin.IRubyObject[], org.jruby.runtime.builtin.IRubyObject, Binding, org.jruby.runtime.Block.Type)}
+     * Should not be called directly. Gets called by {@link #yield(ThreadContext, Block, org.jruby.runtime.builtin.IRubyObject[], org.jruby.runtime.builtin.IRubyObject)}
      * after ensuring that all common yield logic is taken care of.
      */
-    protected abstract IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                                           Binding binding, Block.Type type);
+    protected abstract IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self);
 
     // FIXME: This should be unified with the final versions above
     // Here to allow incremental replacement. Overriden by subclasses which support it.
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                             Binding binding, Block.Type type, Block block) {
-        return yield(context, args, self, binding, type);
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+        return yield(context, block, args, self);
     }
 
     // FIXME: This should be unified with the final versions above
     // Here to allow incremental replacement. Overriden by subclasses which support it.
-    public IRubyObject yield(ThreadContext context, IRubyObject value,
-            Binding binding, Block.Type type, Block block) {
-        return yield(context, value, binding, type);
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, Block blockArg) {
+        return yield(context, block, value);
     }
 
-    public IRubyObject call(ThreadContext context, Binding binding, Block.Type type) {
+    public IRubyObject call(ThreadContext context, Block block) {
         IRubyObject[] args = IRubyObject.NULL_ARRAY;
-        args = prepareArgumentsForCall(context, args, type);
-
-        return yield(context, args, null, binding, type);
-    }
-    public IRubyObject call(ThreadContext context, Binding binding,
-            Block.Type type, Block unusedBlock) {
-        return call(context, binding, type);
+        if (canCallDirect()) {
+            return callDirect(context, block, args, Block.NULL_BLOCK);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+        }
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
-        return yield(context, null, binding, type);
+    public IRubyObject call(ThreadContext context, Block block, Block unusedBlock) {
+        return call(context, block);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
+
+    public IRubyObject yieldSpecific(ThreadContext context, Block block) {
+        if (canCallDirect()) {
+            return yieldDirect(context, block, null, null);
+        } else {
+            return yield(context, block, null);
+        }
+    }
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0) {
         IRubyObject[] args = new IRubyObject[] {arg0};
-        args = prepareArgumentsForCall(context, args, type);
+        if (canCallDirect()) {
+            return callDirect(context, block, args, Block.NULL_BLOCK);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+        }
+    }
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, Block unusedBlock) {
+        return call(context, block, arg0);
+    }
 
-        return yield(context, args, null, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
+        if (canCallDirect()) {
+            return yieldDirect(context, block, new IRubyObject[] { arg0 }, null);
+        } else {
+            return yield(context, block, arg0);
+        }
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding,
-            Block.Type type, Block unusedBlock) {
-        return call(context, arg0, binding, type);
-    }
-
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
-        return yield(context, arg0, binding, type);
-    }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1};
-        args = prepareArgumentsForCall(context, args, type);
+        if (canCallDirect()) {
+            return callDirect(context, block, args, Block.NULL_BLOCK);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+        }
+    }
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block unusedBlock) {
+        return call(context, block, arg0, arg1);
+    }
 
-        return yield(context, args, null, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
+        if (canCallDirect()) {
+            return yieldDirect(context, block, new IRubyObject[] { arg0, arg1 }, null);
+        } else {
+            return yield(context, block, new IRubyObject[] { arg0, arg1 }, null);
+        }
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding,
-            Block.Type type, Block unusedBlock) {
-        return call(context, arg0, arg1, binding, type);
-    }
-
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1 }, null, binding, type);
-    }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
-        args = prepareArgumentsForCall(context, args, type);
-
-        return yield(context, args, null, binding, type);
+        if (canCallDirect()) {
+            return callDirect(context, block, args, Block.NULL_BLOCK);
+        } else {
+            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
+        }
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding,
-            Block.Type type, Block unusedBlock) {
-        return call(context, arg0, arg1, arg2, binding, type);
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block unusedBlock) {
+        return call(context, block, arg0, arg1, arg2);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        if (canCallDirect()) {
+            return yieldDirect(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null);
+        } else {
+            return yield(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null);
+        }
     }
 
 

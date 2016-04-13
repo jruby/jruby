@@ -1,35 +1,5 @@
 version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
-def truffle_spec_config(spec_type, generate_report)
-  '<target>' +
-    '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
-    '<arg value="-X+T" />' +
-    '<arg value="-Xparser.warn.useless_use_of=false" />' +
-    '<arg value="-Xparser.warn.not_reached=false" />' +
-    '<arg value="-Xparser.warn.grouped_expressions=false" />' +
-    '<arg value="-Xparser.warn.shadowing_local=false" />' +
-    '<arg value="-Xparser.warn.regex_condition=false" />' +
-    '<arg value="-Xparser.warn.argument_prefix=false" />' +
-    '<arg value="-Xparser.warn.ambiguous_argument=false" />' +
-    '<arg value="-Xparser.warn.flags_ignored=false" />' +
-    '<arg value="-J-ea" />' +
-    '<arg value="-J-Xmx1G" />' +
-    '<arg value="spec/mspec/bin/mspec" />' +
-    '<arg value="run" />' +
-    '<arg value="--config" />' +
-    '<arg value="spec/truffle/truffle.mspec" />' +
-    '<arg value="--excl-tag" />' +
-    '<arg value="fails" />' +
-    (if generate_report
-      '<arg value="--format" /><arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />'
-    else
-      '<arg value="--format" /><arg value="specdoc" />' # Need lots of output to keep Travis happy
-    end) +
-    "<arg value=\":#{spec_type}\" />" +
-    '</exec>' +
-  '</target>'
-end
-
 project 'JRuby Integration Tests' do
 
   model_version '4.0.0'
@@ -37,16 +7,16 @@ project 'JRuby Integration Tests' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-tests'
 
-  repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
-              :id => 'rubygems-releases' )
+  extension 'org.torquebox.mojo:mavengem-wagon:0.2.0'
+
+  repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
+  plugin_repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
 
   plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
                      :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
   end
-  plugin_repository( :id => 'rubygems-releases',
-                     :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'jruby.home' => '${basedir}/..',
@@ -106,7 +76,8 @@ project 'JRuby Integration Tests' do
           'showWarnings' =>  'true',
           'showDeprecation' =>  'true',
           'source' =>  '${base.java.version}',
-          'target' =>  '${base.java.version}' )
+          'target' =>  '${base.java.version}',
+          'testExcludes' => ['truffle/**/*.java'] )
   plugin :dependency do
     execute_goals( 'copy',
                    :id => 'copy jars for testing',
@@ -167,7 +138,7 @@ project 'JRuby Integration Tests' do
     jar 'org.jruby:jruby-complete', '${project.version}', :scope => :provided
 
     plugin :antrun do
-      [ 'mri', 'jruby','objectspace', 'slow' ].each do |index|
+      [ 'jruby','objectspace', 'slow' ].each do |index|
         files = ""
         File.open(File.join(basedir, index + '.index')) do |f|
           f.each_line.each do |line|
@@ -187,153 +158,6 @@ project 'JRuby Integration Tests' do
                        :phase => 'test',
                        :configuration => [ xml( "<target><exec dir='${jruby.home}' executable='java' failonerror='true'><arg value='-cp'/><arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/><arg value='-Djruby.aot.loadClasses=true'/><arg value='org.jruby.Main'/><arg value='-I.'/><arg value='-Itest/mri/ruby'/><arg value='-Itest/mri'/><arg value='-Itest'/><arg value='-rtest/mri_test_env'/><arg value='lib/ruby/stdlib/rake/rake_test_loader.rb'/>#{files}<arg value='-v'/></exec></target>" ) ] )
       end
-    end
-
-  end
-
-  profile 'truffle-specs-language' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:language, false) ) ] )
-    end
-
-  end
-
-  profile 'truffle-specs-core' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:core, false) ) ] )
-    end
-
-  end
-
-  profile 'truffle-specs-library' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:library, false) ) ] )
-    end
-
-  end
-
-  profile 'truffle-specs-truffle' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:truffle, false) ) ] )
-    end
-
-  end
-
-  profile 'truffle-specs-language-report' do
-
-    plugin :antrun do
-      dependency 'org.apache.ant', 'ant-junit', '${ant.version}'
-
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:language, true) ) ] )
-
-      execute_goals( 'run',
-                     :id => 'junit-report-generation',
-                     :phase => 'test',
-                     :configuration => [ xml(
-                       '<target>' +
-                         '<property name="reportTitle" value="Language Specs Report" />' +
-                         '<ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />' +
-                       '</target>' ) ] )
-    end
-
-  end
-
-  profile 'truffle-specs-core-report' do
-
-    plugin :antrun do
-      dependency 'org.apache.ant', 'ant-junit', '${ant.version}'
-
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:core, true) ) ] )
-
-      execute_goals( 'run',
-                     :id => 'junit-report-generation',
-                     :phase => 'test',
-                     :configuration => [ xml(
-                       '<target>' +
-                         '<property name="reportTitle" value="Core Specs Report" />' +
-                         '<ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />' +
-                       '</target>' ) ] )
-    end
-
-  end
-
-  profile 'truffle-specs-library-report' do
-
-    plugin :antrun do
-      dependency 'org.apache.ant', 'ant-junit', '${ant.version}'
-
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:library, true) ) ] )
-
-      execute_goals( 'run',
-                     :id => 'junit-report-generation',
-                     :phase => 'test',
-                     :configuration => [ xml(
-                       '<target>' +
-                         '<property name="reportTitle" value="Stdlib Specs Report" />' +
-                         '<ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />' +
-                       '</target>' ) ] )
-    end
-
-  end
-
-  profile 'truffle-test-pe' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml(
-                      '<target>' +
-                        '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
-                          '<arg value="-J-server" />' +
-                          '<arg value="-X+T" />' +
-                          '<arg value="test/truffle/pe/pe.rb" />' +
-                        '</exec>' +
-                      '</target>' ) ] )
-    end
-
-  end
-
-
-  profile 'truffle-mri-tests' do
-
-    plugin :antrun do
-      execute_goals('run',
-                    :id => 'rake',
-                    :phase => 'test',
-                    :configuration => [xml(
-                                           '<target>' +
-                                               '<exec dir="${jruby.home}" executable="ruby" failonerror="true">' +
-                                               '<arg value="tool/jt.rb" />' +
-                                               '<arg value="test" />' +
-                                               '<arg value="mri" />' +
-                                               '</exec>' +
-                                               '</target>')])
     end
 
   end

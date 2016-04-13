@@ -404,14 +404,14 @@ describe "String#sub with pattern and Hash" do
   end
 
   it "uses the hash's default value for missing keys" do
-    hsh = new_hash
+    hsh = {}
     hsh.default='?'
     hsh['o'] = '0'
     "food".sub(/./, hsh).should == "?ood"
   end
 
   it "coerces the hash values with #to_s" do
-    hsh = new_hash
+    hsh = {}
     hsh.default=[]
     hsh['o'] = 0
     obj = mock('!')
@@ -421,7 +421,7 @@ describe "String#sub with pattern and Hash" do
   end
 
   it "uses the hash's value set from default_proc for missing keys" do
-    hsh = new_hash
+    hsh = {}
     hsh.default_proc = lambda { |k,v| 'lamb' }
     "food!".sub(/./, hsh).should == "lambood!"
   end
@@ -489,14 +489,14 @@ describe "String#sub! with pattern and Hash" do
   end
 
   it "uses the hash's default value for missing keys" do
-    hsh = new_hash
+    hsh = {}
     hsh.default='?'
     hsh['o'] = '0'
     "food".sub!(/./, hsh).should == "?ood"
   end
 
   it "coerces the hash values with #to_s" do
-    hsh = new_hash
+    hsh = {}
     hsh.default=[]
     hsh['o'] = 0
     obj = mock('!')
@@ -506,7 +506,7 @@ describe "String#sub! with pattern and Hash" do
   end
 
   it "uses the hash's value set from default_proc for missing keys" do
-    hsh = new_hash
+    hsh = {}
     hsh.default_proc = lambda { |k,v| 'lamb' }
     "food!".sub!(/./, hsh).should == "lambood!"
   end

@@ -303,7 +303,7 @@ class Complex < Numeric
   def to_s
     result = real.to_s
 
-    if imag.kind_of?(Float) ? !imag.nan? && imag.negative? : imag < 0
+    if imag.kind_of?(Float) ? !imag.nan? && imag.signbit? : imag < 0
       result << "-"
     else
       result << "+"

@@ -1,9 +1,9 @@
 # coding: US-ASCII
+# frozen_string_literal: false
 require 'test/unit'
 require 'logger'
 require 'tempfile'
 require 'tmpdir'
-require_relative '../ruby/envutil'
 
 class TestLogDevice < Test::Unit::TestCase
   class LogExcnRaiser
@@ -38,7 +38,7 @@ class TestLogDevice < Test::Unit::TestCase
     logdev = d(STDERR)
     assert_equal(STDERR, logdev.dev)
     assert_nil(logdev.filename)
-    assert_raises(TypeError) do
+    assert_raise(TypeError) do
       d(nil)
     end
     #
@@ -98,6 +98,78 @@ class TestLogDevice < Test::Unit::TestCase
     logdev.close
     assert(w.closed?)
     r.close
+  end
+
+  def test_reopen_io
+    logdev  = d(STDERR)
+    old_dev = logdev.dev
+    logdev.reopen
+    assert_equal(STDERR, logdev.dev)
+    assert(!old_dev.closed?)
+  end
+
+  def test_reopen_io_by_io
+    logdev  = d(STDERR)
+    old_dev = logdev.dev
+    logdev.reopen(STDOUT)
+    assert_equal(STDOUT, logdev.dev)
+    assert(!old_dev.closed?)
+  end
+
+  def test_reopen_io_by_file
+    logdev  = d(STDERR)
+    old_dev = logdev.dev
+    logdev.reopen(@filename)
+    begin
+      assert(File.exist?(@filename))
+      assert_equal(@filename, logdev.filename)
+      assert(!old_dev.closed?)
+    ensure
+      logdev.close
+    end
+  end
+
+  def test_reopen_file
+    logdev = d(@filename)
+    old_dev = logdev.dev
+
+    logdev.reopen
+    begin
+      assert(File.exist?(@filename))
+      assert_equal(@filename, logdev.filename)
+      assert(old_dev.closed?)
+    ensure
+      logdev.close
+    end
+  end
+
+  def test_reopen_file_by_io
+    logdev = d(@filename)
+    old_dev = logdev.dev
+    logdev.reopen(STDOUT)
+    assert_equal(STDOUT, logdev.dev)
+    assert_nil(logdev.filename)
+    assert(old_dev.closed?)
+  end
+
+  def test_reopen_file_by_file
+    logdev = d(@filename)
+    old_dev = logdev.dev
+
+    tempfile2 = Tempfile.new("logger")
+    tempfile2.close
+    filename2 = tempfile2.path
+    File.unlink(filename2)
+
+    logdev.reopen(filename2)
+    begin
+      assert(File.exist?(filename2))
+      assert_equal(filename2, logdev.filename)
+      assert(old_dev.closed?)
+    ensure
+      logdev.close
+      tempfile2.close(true)
+    end
   end
 
   def test_shifting_size
@@ -366,6 +438,51 @@ class TestLogDevice < Test::Unit::TestCase
     end
   end
 
+  env_tz_works = /linux|darwin|freebsd/ =~ RUBY_PLATFORM # borrow from test/ruby/test_time_tz.rb
+
+  def test_shifting_weekly
+    Dir.mktmpdir do |tmpdir|
+      assert_in_out_err([{"TZ"=>"UTC"}, *%W"-rlogger -C#{tmpdir} -"], <<-'end;')
+        begin
+          module FakeTime
+            attr_accessor :now
+          end
+
+          class << Time
+            prepend FakeTime
+          end
+
+          log = "log"
+          File.open(log, "w") {}
+
+          Time.now = Time.utc(2015, 12, 14, 0, 1, 1)
+          dev = Logger::LogDevice.new("log", shift_age: 'weekly')
+
+          Time.now = Time.utc(2015, 12, 19, 12, 34, 56)
+          dev.write("#{Time.now} hello-1\n")
+          File.utime(Time.now, Time.now, log)
+
+          Time.now = Time.utc(2015, 12, 20, 0, 1, 1)
+          File.utime(Time.now, Time.now, log)
+          dev.write("#{Time.now} hello-2\n")
+        ensure
+          dev.close if dev
+        end
+      end;
+      log = File.join(tmpdir, "log")
+      cont = File.read(log)
+      assert_match(/hello-2/, cont)
+      assert_not_match(/hello-1/, cont)
+      log = Dir.glob(log+".*")
+      assert_equal(1, log.size)
+      log, = *log
+      cont = File.read(log)
+      assert_match(/hello-1/, cont)
+      assert_equal("2015-12-19", cont[/^[-\d]+/])
+      assert_equal("20151219", log[/\d+\z/])
+    end
+  end if env_tz_works
+
   def test_shifting_dst_change
     Dir.mktmpdir do |tmpdir|
       assert_in_out_err([{"TZ"=>"Europe/London"}, *%W"--disable=gems -rlogger -C#{tmpdir} -"], <<-'end;')
@@ -402,7 +519,35 @@ class TestLogDevice < Test::Unit::TestCase
       assert_not_match(/hello-1/, cont)
       assert_file.exist?(log+".20140330")
     end
-  end if /linux|darwin|freebsd/ =~ RUBY_PLATFORM # borrow from test/ruby/test_time_tz.rb
+  end if env_tz_works
+
+  def test_shifting_weekly_dst_change
+    Dir.mktmpdir do |tmpdir|
+      assert_separately([{"TZ"=>"Europe/London"}, *%W"-rlogger -C#{tmpdir} -"], <<-'end;')
+        begin
+          module FakeTime
+            attr_accessor :now
+          end
+
+          class << Time
+            prepend FakeTime
+          end
+
+          log = "log"
+          File.open(log, "w") {}
+
+          Time.now = Time.mktime(2015, 10, 25, 0, 1, 1)
+          dev = Logger::LogDevice.new("log", shift_age: 'weekly')
+          dev.write("#{Time.now} hello-1\n")
+        ensure
+          dev.close if dev
+        end
+      end;
+      log = File.join(tmpdir, "log")
+      cont = File.read(log)
+      assert_match(/hello-1/, cont)
+    end
+  end if env_tz_works
 
   private
 

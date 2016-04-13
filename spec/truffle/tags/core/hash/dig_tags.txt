@@ -1,0 +1,11 @@
+fails:Hash#dig returns [] with one arg
+fails:Hash#dig does recurse
+fails:Hash#dig raises without args
+fails:Hash#dig handles type-mixed deep digging
+fails:Hash#dig returns #[] with one arg
+fails:Hash#dig raises TypeError if an intermediate element does not respond to #dig
+fails:Hash#dig calls #dig on the result of #[] with the remaining arguments
+fails:Hash#dig returns the nested value specified by the sequence of keys
+fails:Hash#dig returns the nested value specified if the sequence includes an index
+fails:Hash#dig returns nil if any intermediate step is nil
+fails:Hash#dig raises an ArgumentError if no arguments provided

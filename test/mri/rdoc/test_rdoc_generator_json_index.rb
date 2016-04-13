@@ -1,4 +1,5 @@
 # coding: US-ASCII
+# frozen_string_literal: false
 
 require 'rdoc/test_case'
 
@@ -95,6 +96,66 @@ class TestRDocGeneratorJsonIndex < RDoc::TestCase
     assert_file 'js/search_index.js'
 
     json = File.read 'js/search_index.js'
+
+    json =~ /\Avar search_data = /
+
+    assignment = $&
+    index = $'
+
+    refute_empty assignment
+
+    index = JSON.parse index
+
+    info = [
+      @klass.search_record[2..-1],
+      @nest_klass.search_record[2..-1],
+      @meth.search_record[2..-1],
+      @nest_meth.search_record[2..-1],
+      @page.search_record[2..-1],
+    ]
+
+    expected = {
+      'index' => {
+        'searchIndex' => [
+          'c',
+          'd',
+          'meth()',
+          'meth()',
+          'page',
+        ],
+        'longSearchIndex' => [
+          'c',
+          'c::d',
+          'c#meth()',
+          'c::d#meth()',
+          '',
+        ],
+        'info' => info,
+      },
+    }
+
+    assert_equal expected, index
+  end
+
+  def test_generate_gzipped
+    begin
+      require 'zlib'
+    rescue LoadError
+      skip "no zlib"
+    end
+    @g.generate
+    @g.generate_gzipped
+
+    assert_file 'js/searcher.js'
+    assert_file 'js/searcher.js.gz'
+    assert_file 'js/navigation.js'
+    assert_file 'js/navigation.js.gz'
+    assert_file 'js/search_index.js'
+    assert_file 'js/search_index.js.gz'
+
+    json = File.open('js/search_index.js.gz', 'rb') {|gzip|
+      Zlib::GzipReader.new(gzip).read
+    }
 
     json =~ /\Avar search_data = /
 

@@ -93,4 +93,21 @@ class TestObjectSpace < Test::Unit::TestCase
       assert_equal "finalizing #{results[0]}", results[1]
     end
   end
+
+  # See rails/rails#22376.
+  def test_each_object_singleton_class
+    # disable objectspace; we want this to always work
+    old_objectspace = JRuby.objectspace
+    JRuby.objectspace = false
+
+    a = Class.new
+    b = Class.new(a)
+    c = Class.new(a)
+    d = Class.new(b)
+
+    classes = ObjectSpace.each_object(a.singleton_class).to_a
+    assert_equal(classes.sort_by(&:object_id), [a, b, c, d].sort_by(&:object_id))
+  ensure
+    JRuby.objectspace = old_objectspace
+  end
 end

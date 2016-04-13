@@ -3,8 +3,15 @@ module NetFTPSpecs
     attr_accessor :connect_message
     attr_reader :login_user, :login_pass, :login_acct
 
-    def initialize(port = 9921)
-      @server = TCPServer.new("localhost", port)
+    # hostname or IP address
+    attr_reader :hostname
+    # port number
+    attr_reader :server_port
+
+    def initialize(hostname = "localhost", server_port = 0)
+      @hostname = hostname
+      @server = TCPServer.new(@hostname, server_port)
+      @server_port = @server.addr[1]
 
       @handlers = {}
       @commands = []
@@ -14,6 +21,7 @@ module NetFTPSpecs
     def serve_once
       @thread = Thread.new do
         @socket = @server.accept
+        @socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, 1)
         begin
           handle_request
         ensure

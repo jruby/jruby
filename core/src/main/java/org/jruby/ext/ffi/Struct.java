@@ -123,11 +123,10 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         }
     }
 
+    @Override
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
-
         memory = MemoryPointer.allocate(context.runtime, layout.getSize(), 1, true);
-
         return this;
     }
 

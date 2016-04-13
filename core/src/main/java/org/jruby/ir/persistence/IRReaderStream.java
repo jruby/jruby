@@ -188,6 +188,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         switch (operation) {
             case ALIAS: return AliasInstr.decode(this);
             case ARG_SCOPE_DEPTH: return ArgScopeDepthInstr.decode(this);
+            case ARRAY_DEREF: return ArrayDerefInstr.decode(this);
             case ATTR_ASSIGN: return AttrAssignInstr.decode(this);
             case B_FALSE: return BFalseInstr.decode(this);
             case B_NIL: return BNilInstr.decode(this);
@@ -200,6 +201,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case BLOCK_GIVEN: return BlockGivenInstr.decode(this);
             case BNE: return BNEInstr.decode(this);
             case BREAK: return BreakInstr.decode(this);
+            case BUILD_BACKREF: return BuildBackrefInstr.decode(this);
             case BUILD_COMPOUND_ARRAY: return BuildCompoundArrayInstr.decode(this);
             case BUILD_COMPOUND_STRING: return BuildCompoundStringInstr.decode(this);
             case BUILD_DREGEXP: return BuildDynRegExpInstr.decode(this);
@@ -250,10 +252,10 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case NORESULT_CALL:
             case NORESULT_CALL_1O: return NoResultCallInstr.decode(this);
             case POP_BINDING: return PopBindingInstr.decode(this);
-            case POP_FRAME: return PopFrameInstr.decode(this);
+            case POP_METHOD_FRAME: return PopMethodFrameInstr.decode(this);
             case PROCESS_MODULE_BODY: return ProcessModuleBodyInstr.decode(this);
-            case PUSH_BINDING: return PushBindingInstr.decode(this);
-            case PUSH_FRAME: return PushFrameInstr.decode(this);
+            case PUSH_METHOD_BINDING: return PushMethodBindingInstr.decode(this);
+            case PUSH_METHOD_FRAME: return PushMethodFrameInstr.decode(this);
             case PUT_CONST: return PutConstInstr.decode(this);
             case PUT_CVAR: return PutClassVariableInstr.decode(this);
             case PUT_FIELD: return PutFieldInstr.decode(this);
@@ -274,8 +276,10 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case RESCUE_EQQ: return RescueEQQInstr.decode(this);
             case RESTORE_ERROR_INFO: return RestoreErrorInfoInstr.decode(this);
             case RETURN: return ReturnInstr.decode(this);
+            case RETURN_OR_RETHROW_SAVED_EXC: return ReturnOrRethrowSavedExcInstr.decode(this);
             case RUNTIME_HELPER: return RuntimeHelperCall.decode(this);
             case SEARCH_CONST: return SearchConstInstr.decode(this);
+            case SEARCH_MODULE_FOR_CONST: return SearchModuleForConstInstr.decode(this);
             case SET_CAPTURED_VAR: return SetCapturedVarInstr.decode(this);
             case TRACE: return TraceInstr.decode(this);
             case THREAD_POLL: return ThreadPollInstr.decode(this);
@@ -429,7 +433,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         switch (type) {
             case ARRAY: return Array.decode(this);
             case AS_STRING: return AsString.decode(this);
-            case BACKREF: return Backref.decode(this);
             case BIGNUM: return Bignum.decode(this);
             case BOOLEAN: return org.jruby.ir.operands.Boolean.decode(this);
             case CURRENT_SCOPE: return CurrentScope.decode(this);
@@ -455,6 +458,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case STRING_LITERAL: return StringLiteral.decode(this);
             case SVALUE: return SValue.decode(this);
             case SYMBOL: return Symbol.decode(this);
+            case SYMBOL_PROC: return SymbolProc.decode(this);
             case TEMPORARY_VARIABLE: return TemporaryLocalVariable.decode(this);
             case UNBOXED_BOOLEAN: return new UnboxedBoolean(decodeBoolean());
             case UNBOXED_FIXNUM: return new UnboxedFixnum(decodeLong());

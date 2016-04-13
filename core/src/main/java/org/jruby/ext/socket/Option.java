@@ -89,35 +89,36 @@ public class Option extends RubyObject {
     // rb_sockopt_inspect
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        StringBuffer buf = new StringBuffer("#<");
+        StringBuilder buf = new StringBuilder(32);
+        buf.append("#<");
 
         buf
-                .append(metaClass.getRealClass().getName())
-                .append(" ")
-                .append(noPrefix(family));
+            .append(metaClass.getRealClass().getName())
+            .append(' ')
+            .append(noPrefix(family));
 
         if (level == SocketLevel.SOL_SOCKET) {
             buf
-                    .append(" SOCKET ")
-                    .append(noPrefix(option));
+                .append(" SOCKET ")
+                .append(noPrefix(option));
         } else if (family == ProtocolFamily.PF_UNIX) {
             buf
-                    .append(" level:")
-                    .append(level.longValue())
-                    .append(" ")
-                    .append(noPrefix(option));
+                .append(" level:")
+                .append(level.longValue())
+                .append(' ')
+                .append(noPrefix(option));
         } else {
             buf
-                    .append(" level:")
-                    .append(level.description())
-                    .append(" ")
-                    .append(noPrefix(option));
+                .append(" level:")
+                .append(level.description())
+                .append(' ')
+                .append(noPrefix(option));
         }
 
         buf
-                .append(" ")
-                .append(optionValue())
-                .append(">");
+            .append(' ')
+            .append(optionValue())
+            .append('>');
 
         return context.runtime.newString(buf.toString());
     }

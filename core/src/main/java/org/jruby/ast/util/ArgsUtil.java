@@ -55,7 +55,7 @@ public final class ArgsUtil {
         if (value instanceof RubyArray) {
             return ((RubyArray)value).toJavaArrayMaybeUnsafe();
         }
-        
+
         return new IRubyObject[] { value };
     }
 
@@ -152,6 +152,10 @@ public final class ArgsUtil {
         return runtime.getNil();
     }
 
+    public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject arg) {
+        return TypeConverter.checkHashType(runtime, arg);
+    }
+
     /**
      * Check that the given kwargs hash doesn't contain any keys other than those which are given as valid.
      * @param context The context to execute in
@@ -193,5 +197,26 @@ public final class ArgsUtil {
         } else {
             return null;
         }
+    }
+
+    public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, IRubyObject arg) {
+        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
+
+        if (!opts.isNil()) return ((RubyHash) opts).op_aref(context, context.runtime.newSymbol(keyword));
+
+        return context.nil;
+    }
+
+    public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, IRubyObject... args) {
+        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
+
+        if (!opts.isNil()) return ((RubyHash) opts).op_aref(context, context.runtime.newSymbol(keyword));
+
+        return context.nil;
+    }
+
+    public static IRubyObject extractArg(int index, IRubyObject _default, IRubyObject... args) {
+        if (index < args.length) return args[index];
+        return _default;
     }
 }

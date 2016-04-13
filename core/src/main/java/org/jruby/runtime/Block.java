@@ -17,7 +17,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2004-2007 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -41,44 +41,45 @@
 
 package org.jruby.runtime;
 
+import java.util.Objects;
 import org.jruby.EvalType;
-import org.jruby.RubyArray;
 import org.jruby.RubyProc;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public final class Block {
+public class Block {
     public enum Type {
         NORMAL(false), PROC(false), LAMBDA(true), THREAD(false);
-        
+
         Type(boolean checkArity) {
             this.checkArity = checkArity;
         }
-        
+
         public final boolean checkArity;
     }
-    
+
     /**
      * The Proc that this block is associated with.  When we reference blocks via variable
      * reference they are converted to Proc objects.  We store a reference of the associated
-     * Proc object for easy conversion.  
+     * Proc object for easy conversion.
      */
     private RubyProc proc = null;
-    
+
     public Type type = Type.NORMAL;
-    
+
     private final Binding binding;
-    
+
     private final BlockBody body;
-    
+
     /** Whether this block and any clones of it should be considered "escaped" */
     private boolean escaped;
-    
+
     /** What block to use for determining escape; defaults to this */
     private Block escapeBlock = this;
-    
+
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
@@ -94,76 +95,97 @@ public final class Block {
         this.binding = null;
     }
 
+    public DynamicScope allocScope(DynamicScope parentScope) {
+        // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
+        // Do not use 'closure.getStaticScope()' -- that returns the original copy of the static scope.
+        // This matters because blocks created for Thread bodies modify the static-scope field of the block-body
+        // that records additional state about the block body.
+        //
+        // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
+        // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
+        EvalType evalType = ((IRBlockBody)body).getEvalType();
+        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, evalType);
+        if (type == Block.Type.LAMBDA) newScope.setLambda(true);
+        return newScope;
+    }
+
+    public EvalType getEvalType() {
+        // SSS FIXME: This is smelly
+        return body instanceof IRBlockBody ? ((IRBlockBody)body).getEvalType() : null;
+    }
+
     public void setEvalType(EvalType evalType) {
         body.setEvalType(evalType);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return body.call(context, args, binding, type);
+        return body.call(context, this, args);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        return body.call(context, args, binding, type, block);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockArg) {
+        return body.call(context, this, args, blockArg);
     }
 
     public IRubyObject call(ThreadContext context) {
-        return body.call(context, binding, type);
+        return body.call(context, this);
     }
-    public IRubyObject call(ThreadContext context, Block block) {
-        return body.call(context, binding, type, block);
+    public IRubyObject call(ThreadContext context, Block blockArg) {
+        return body.call(context, this, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context) {
-        return body.yieldSpecific(context, binding, type);
+        return body.yieldSpecific(context, this);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0) {
-        return body.call(context, arg0, binding, type);
+        return body.call(context, this, arg0);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, Block block) {
-        return body.call(context, arg0, binding, type, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, Block blockArg) {
+        return body.call(context, this, arg0, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0) {
-        return body.yieldSpecific(context, arg0, binding, type);
+        return body.yieldSpecific(context, this, arg0);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return body.call(context, arg0, arg1, binding, type);
+        return body.call(context, this, arg0, arg1);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return body.call(context, arg0, arg1, binding, type, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block blockArg) {
+        return body.call(context, this, arg0, arg1, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return body.yieldSpecific(context, arg0, arg1, binding, type);
+        return body.yieldSpecific(context, this, arg0, arg1);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return body.call(context, arg0, arg1, arg2, binding, type);
+        return body.call(context, this, arg0, arg1, arg2);
     }
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return body.call(context, arg0, arg1, arg2, binding, type, block);
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
+        return body.call(context, this, arg0, arg1, arg2, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return body.yieldSpecific(context, arg0, arg1, arg2, binding, type);
+        return body.yieldSpecific(context, this, arg0, arg1, arg2);
     }
 
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return body.yield(context, value, binding, type);
+        return body.yield(context, this, value);
     }
 
     public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-        return body.yield(context, new IRubyObject[] { value }, self, binding, type);
+        return body.yield(context, this, new IRubyObject[] { value }, self);
     }
 
     public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-        IRubyObject[] args;
-        if (!(value instanceof RubyArray)) {
-            args = new IRubyObject[] { value };
-        } else {
-            args = value.convertToArray().toJavaArray();
-        }
-        return body.yield(context, args, self, binding, type);
+        // SSS FIXME: Later on, we can move this code into IR insructions or
+        // introduce a specialized entry-point when we know that this block has
+        // explicit call protocol IR instructions.
+        IRubyObject[] args = IRRuntimeHelpers.singleBlockArgToArray(value);
+        return body.yield(context, this, args, self);
+    }
+
+    public IRubyObject yieldValues(ThreadContext context, IRubyObject[] args) {
+        return body.yield(context, this, args, null);
     }
 
     public Block cloneBlock() {
         Block newBlock = new Block(body, binding);
-        
+
         newBlock.type = type;
         newBlock.escapeBlock = this;
 
@@ -180,9 +202,9 @@ public final class Block {
                 oldBinding.getMethod(),
                 oldBinding.getFile(),
                 oldBinding.getLine());
-        
+
         Block newBlock = new Block(body, binding);
-        
+
         newBlock.type = type;
         newBlock.escapeBlock = this;
 
@@ -201,12 +223,12 @@ public final class Block {
 
     /**
      * What is the arity of this block?
-     * 
+     *
      * @return the arity
      */
     @Deprecated
     public Arity arity() {
-        return body.getSignature().arity();
+        return getSignature().arity();
     }
 
     public Signature getSignature() {
@@ -215,69 +237,72 @@ public final class Block {
 
     /**
      * Retrieve the proc object associated with this block
-     * 
+     *
      * @return the proc or null if this has no proc associated with it
      */
     public RubyProc getProcObject() {
     	return proc;
     }
-    
+
     /**
      * Set the proc object associated with this block
-     * 
+     *
      * @param procObject
      */
     public void setProcObject(RubyProc procObject) {
     	this.proc = procObject;
     }
-    
+
     /**
      * Is the current block a real yield'able block instead a null one
-     * 
+     *
      * @return true if this is a valid block or false otherwise
      */
-    final public boolean isGiven() {
+    public final boolean isGiven() {
         return this != NULL_BLOCK;
     }
-    
+
     public Binding getBinding() {
         return binding;
     }
-    
+
     public BlockBody getBody() {
         return body;
     }
 
     /**
      * Gets the frame.
-     * 
+     *
      * @return Returns a RubyFrame
      */
     public Frame getFrame() {
         return binding.getFrame();
     }
-    
+
     public boolean isEscaped() {
         return escapeBlock.escaped;
     }
-    
+
     public void escape() {
         escapeBlock.escaped = true;
     }
 
     @Override
     public boolean equals(Object other) {
-        if(this == other) {
-            return true;
-        }
+        if ( this == other ) return true;
+        if ( ! ( other instanceof Block ) ) return false;
 
-        if(!(other instanceof Block)) {
-            return false;
-        }
+        final Block that = (Block) other;
 
-        Block bOther = (Block)other;
-
-        return this.binding.equals(bOther.binding) &&
-            this.body == bOther.body;
+        return this.binding.equals(that.binding) && this.body == that.body;
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 11;
+        hash = 13 * hash + Objects.hashCode(this.binding);
+        hash = 17 * hash + Objects.hashCode(this.body);
+        return hash;
+    }
+
 }

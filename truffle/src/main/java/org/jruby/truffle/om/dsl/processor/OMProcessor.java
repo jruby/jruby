@@ -20,7 +20,6 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 import java.io.FileOutputStream;
@@ -35,8 +34,15 @@ public class OMProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
         for (Element element : roundEnvironment.getElementsAnnotatedWith(Layout.class)) {
-            assert element.getKind() == ElementKind.INTERFACE : element.getKind();
-            processLayout((TypeElement) element);
+            // assert element.getKind() == ElementKind.INTERFACE : element.getKind();
+
+            if (!(element instanceof TypeElement)) {
+                throw new UnsupportedOperationException(element.toString());
+            }
+
+            if (element instanceof TypeElement) {
+                processLayout((TypeElement) element);
+            }
         }
 
         return true;

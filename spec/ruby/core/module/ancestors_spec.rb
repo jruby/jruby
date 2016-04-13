@@ -11,7 +11,7 @@ describe "Module#ancestors" do
       [ModuleSpecs::Parent, Object, Kernel, BasicObject]
     ModuleSpecs.without_test_modules(ModuleSpecs::Child.ancestors).should ==
       [ModuleSpecs::Child, ModuleSpecs::Super, ModuleSpecs::Basic, ModuleSpecs::Parent, Object, Kernel, BasicObject]
-  end  
+  end
 
   it "returns only modules and classes" do
     class << ModuleSpecs::Child; self; end.ancestors.should include(ModuleSpecs::Internal, Class, Module, Object, Kernel)
@@ -22,23 +22,21 @@ describe "Module#ancestors" do
   end
 
   describe "when called on a singleton class" do
-    ruby_version_is "2.1" do
-      it "includes the singleton classes of ancestors" do
-        Parent  = Class.new
-        Child   = Class.new(Parent)
-        SChild  = Child.singleton_class
+    it "includes the singleton classes of ancestors" do
+      Parent  = Class.new
+      Child   = Class.new(Parent)
+      SChild  = Child.singleton_class
 
-        SChild.ancestors.should include(SChild,
-                                        Parent.singleton_class,
-                                        Object.singleton_class,
-                                        BasicObject.singleton_class,
-                                        Class,
-                                        Module,
-                                        Object,
-                                        Kernel,
-                                        BasicObject)
+      SChild.ancestors.should include(SChild,
+                                      Parent.singleton_class,
+                                      Object.singleton_class,
+                                      BasicObject.singleton_class,
+                                      Class,
+                                      Module,
+                                      Object,
+                                      Kernel,
+                                      BasicObject)
 
-      end
     end
   end
 end

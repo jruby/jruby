@@ -1,0 +1,6 @@
+fails:Hash#to_proc returns an instance of Proc
+fails:Hash#to_proc the returned proc with a stored key returns the paired value
+fails:Hash#to_proc the returned proc with no stored key returns nil
+fails:Hash#to_proc the returned proc with no stored key when the hash has a default value returns the default value
+fails:Hash#to_proc the returned proc with no stored key when the hash has a default proc returns an evaluated value from the default proc
+fails:Hash#to_proc the returned proc raises an ArgumentError when calling #call on the Proc with no arguments

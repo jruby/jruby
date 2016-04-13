@@ -107,8 +107,7 @@ class TestKernel < Test::Unit::TestCase
     catch :fred do throw :fred; fail("shouldn't get here") end
     assert(!been_where_it_shouldnt)
 
-    ex = ArgumentError
-    assert_raises (ex) do
+    assert_raises(UncaughtThrowError) do
       catch :fred do throw :wilma end
     end
   end
@@ -133,8 +132,7 @@ class TestKernel < Test::Unit::TestCase
   def test_invalid_throw_after_inner_catch_should_unwind_the_stack_all_the_way_to_the_top
     been_at_fred1 = false
     been_at_fred2 = false
-    ex = ArgumentError
-    assert_raises(ex) do
+    assert_raises(UncaughtThrowError, "uncaught throw :wilma") do
       catch :fred1 do
         catch :fred2 do
           catch :fred3 do
@@ -157,8 +155,7 @@ class TestKernel < Test::Unit::TestCase
   end
 
   def test_catch_stack_should_be_cleaned_up
-    ex = ArgumentError
-    assert_raises(ex) do
+    assert_raises(UncaughtThrowError) do
       catch :fred1 do
         catch :fred2 do
           catch :fred3 do

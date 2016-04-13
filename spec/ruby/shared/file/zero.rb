@@ -32,9 +32,9 @@ describe :file_zero, shared: true do
     end
   end
 
-  platform_is_not :windows, :solaris do
+  platform_is_not :windows do
     it "returns true for /dev/null" do
-      @object.send(@method, '/dev/null').should == true
+      @object.send(@method, File.realpath('/dev/null')).should == true
     end
   end
 

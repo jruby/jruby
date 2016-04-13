@@ -1,0 +1,95 @@
+---
+:global:
+  :graal_path: '../../graalvm-jdk1.8.0/bin/java'
+:setup:
+  :file:
+    shims.rb: |
+              require 'minitest'
+              # mock load_plugins as it loads rubygems
+              def Minitest.load_plugins
+              end
+
+              require 'active_support/testing/isolation'
+
+              module ActiveSupport
+                module Testing
+                  module Isolation
+
+                    def run
+                      with_info_handler do
+                        time_it do
+                          capture_exceptions do
+                            before_setup; setup; after_setup
+
+                            skip 'isolation not supported'
+                          end
+
+                          %w{ before_teardown teardown after_teardown }.each do |hook|
+                            capture_exceptions do
+                              self.send hook
+                            end
+                          end
+                        end
+                      end
+
+                      return self # per contract
+                    end
+                  end
+                end
+              end
+
+    bundler.rb: "module Bundler; def self.setup; end; end"
+    # mock method_source gem
+    method_source.rb: nil
+    exclude_tests.rb: |
+                      failures = { KernelTest:               [:test_silence_stream,
+                                                              :test_quietly],
+                                   InflectorTest:            [:test_titleize_mixture_to_title_case_13,
+                                                              :test_titleize_mixture_to_title_case_14],
+                                   LoadPathsTest:            [:test_uniq_load_paths],
+                                   LoggerTest:               [:test_buffer_multibyte],
+                                   MultibyteCharsExtrasTest: [:test_titleize_should_be_unicode_aware,
+                                                              :test_titleize_should_not_affect_characters_that_do_not_case_fold],
+                                   TransliterateTest:        [:test_transliterate_should_allow_a_custom_replacement_char,
+                                                              :test_transliterate_should_approximate_ascii,
+                                                              :test_transliterate_should_work_with_custom_i18n_rules_and_uncomposed_utf8],
+                                   StringInflectionsTest:    [:test_string_parameterized_no_separator,
+                                                              :test_string_parameterized_normal,
+                                                              :test_string_parameterized_underscore,
+                                                              :test_titleize],
+                                   TimeZoneTest:              :test_map_srednekolymsk_to_tzinfo }
+
+
+                      undefine = if ENV['CI']
+                                   failures
+                                 else
+                                   {}
+                                 end
+
+                      undefine.each do |mod_name, tests|
+                        unless Object.const_defined? mod_name
+                          warn "#{mod_name} not found"
+                          next
+                        end
+                        mod = Object.const_get mod_name
+                        Array(tests).each do |test|
+                          begin
+                            puts "Undefining: #{mod}##{test}"
+                            mod.send :undef_method, test
+                          rescue NoMethodError => e
+                            p e
+                          end
+                        end
+                      end
+
+  # do not let bundler to install db gem group
+  :without:
+    - db
+:run:
+  :require:
+    - rubygems
+    - shims
+    - date
+    - bigdecimal
+    - pathname
+    - openssl-stubs

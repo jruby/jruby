@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/uri/ldaps'
+require_relative '../../stdlib/uri/ldaps'

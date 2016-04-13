@@ -1,7 +1,7 @@
-#include <string.h>
-
 #include "ruby.h"
 #include "rubyspec.h"
+
+#include <string.h>
 
 #ifdef HAVE_RUBY_ENCODING_H
 #include "ruby/encoding.h"
@@ -167,12 +167,6 @@ VALUE string_spec_rb_str_inspect(VALUE self, VALUE str) {
 #ifdef HAVE_RB_STR_INTERN
 VALUE string_spec_rb_str_intern(VALUE self, VALUE str) {
   return rb_str_intern(str);
-}
-#endif
-
-#ifdef HAVE_RB_STR_LEN
-VALUE string_spec_rb_str_len(VALUE self, VALUE str) {
-  return INT2FIX(rb_str_len(str));
 }
 #endif
 
@@ -574,10 +568,6 @@ void Init_string_spec() {
 
 #ifdef HAVE_RB_STR_INTERN
   rb_define_method(cls, "rb_str_intern", string_spec_rb_str_intern, 1);
-#endif
-
-#ifdef HAVE_RB_STR_LEN
-  rb_define_method(cls, "rb_str_len", string_spec_rb_str_len, 1);
 #endif
 
 #ifdef HAVE_RB_STR_LENGTH

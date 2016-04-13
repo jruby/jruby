@@ -1,4 +1,5 @@
-fails:Module#autoload does not load the file when refering to the constant in defined?
+fails:Module#autoload does not load the file when referring to the constant in defined?
 fails:Module#autoload shares the autoload request across dup'ed copies of modules
-fails:Module#autoload returns 'constant' on refering the constant with defined?()
-fails(ruby-10741):Module#autoload does not load the file when accessing the constants table of the module
+fails:Module#autoload returns 'constant' on referring the constant with defined?()
+fails:Module#autoload does not load the file when referring to the constant in defined?
+fails:Module#autoload returns 'constant' on referring the constant with defined?()

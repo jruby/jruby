@@ -35,6 +35,7 @@ module ObjectSpace
     if find_object([:object_id, Integer(id)], ary) > 0
       return ary.first
     end
+
     return nil
   end
 

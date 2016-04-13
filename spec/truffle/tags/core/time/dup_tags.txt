@@ -1,2 +1,0 @@
-fails:Time#dup returns a subclass instance
-fails(travis):Time#dup returns an independent Time object

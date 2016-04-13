@@ -99,6 +99,10 @@ public class PosixShim {
                 // pretend the channel is nonblocking.
             }
 
+            if (fd.chWrite == null) {
+                errno = Errno.EACCES;
+                return -1;
+            }
             int written = fd.chWrite.write(tmp);
 
             if (written == 0 && length > 0) {

@@ -9,17 +9,26 @@ class RaiseErrorMatcher
     @result = proc.call
     return false
   rescue Exception => @actual
-    return false unless @exception === @actual
+    if matching_exception?(@actual)
+      return true
+    else
+      raise @actual
+    end
+  end
+
+  def matching_exception?(exc)
+    return false unless @exception === exc
     if @message then
       case @message
-      when String then
-        return false if @message != @actual.message
-      when Regexp then
-        return false if @message !~ @actual.message
+      when String
+        return false if @message != exc.message
+      when Regexp
+        return false if @message !~ exc.message
       end
     end
 
-    @block[@actual] if @block
+    # The block has its own expectations and will throw an exception if it fails
+    @block[exc] if @block
 
     return true
   end

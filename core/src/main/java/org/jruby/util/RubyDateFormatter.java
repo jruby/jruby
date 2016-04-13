@@ -51,6 +51,7 @@ import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
+import org.jruby.RubyTime;
 import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -488,7 +489,7 @@ public class RubyDateFormatter {
                     output = formatZone(colons, (int) value, formatter);
                     break;
                 case FORMAT_ZONE_ID:
-                    output = dt.getZone().getShortName(dt.getMillis());
+                    output = RubyTime.getRubyTimeZoneName(context.runtime, dt);
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;

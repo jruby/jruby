@@ -157,7 +157,25 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         try {
             // the 15+16 here is copied from a Deflater default constructor
             Deflater deflater = new Deflater(level, 15+16, false);
-            io = new GZIPOutputStream(new IOOutputStream(realIo, false, false), deflater, 512, false);
+            final IOOutputStream ioOutputStream = new IOOutputStream(realIo, false, false) {
+                /**
+                 * Customize IOOutputStream#write(byte[], int, int) to create a defensive copy of the byte array
+                 * that GZIPOutputStream hands us.
+                 *
+                 * That byte array is a reference to one of GZIPOutputStream's internal byte buffers.
+                 * The base IOOutputStream#write(byte[], int, int) uses the bytes it is handed to back a
+                 * copy-on-write ByteList.  So, without this defensive copy, those two classes overwrite each
+                 * other's bytes, corrupting our output.
+                 */
+                @Override
+                public void write(byte[] bytes, int off, int len) throws IOException {
+                    byte[] bytesCopy = new byte[len];
+                    System.arraycopy(bytes, off, bytesCopy, 0, len);
+                    super.write(bytesCopy, 0, len);
+                }
+            };
+
+            io = new GZIPOutputStream(ioOutputStream, deflater, 512, false);
             return this;
         } catch (IOException ioe) {
             throw getRuntime().newIOErrorFromException(ioe);
@@ -255,7 +273,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         String str = obj.toString();
         
         if (str.indexOf('\0') >= 0) {
-            String trim = str.substring(0, str.toString().indexOf('\0'));
+            String trim = str.substring(0, str.indexOf('\0'));
             obj.setValue(new ByteList(trim.getBytes()));
         }
     }

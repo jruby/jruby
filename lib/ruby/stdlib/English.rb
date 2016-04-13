@@ -1,7 +1,9 @@
-# Modified for JRuby
-# In JRuby, we define these aliases by default, so this file
-# does nothing.
-
+# frozen_string_literal: false
+#
+#  Modified for JRuby
+#  In JRuby, we define these aliases by default, so this file
+#  does nothing.
+#
 #  Include the English library file in a Ruby script, and you can
 #  reference the global variables such as \VAR{\$\_} using less
 #  cryptic names, listed in the following table.% \vref{tab:english}.

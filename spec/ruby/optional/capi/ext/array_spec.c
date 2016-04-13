@@ -41,6 +41,12 @@ static VALUE array_spec_RARRAY_LEN(VALUE self, VALUE array) {
 }
 #endif
 
+#ifdef HAVE_RARRAY_AREF
+static VALUE array_spec_RARRAY_AREF(VALUE self, VALUE array, VALUE index) {
+  return RARRAY_AREF(array, FIX2INT(index));
+}
+#endif
+
 #ifdef HAVE_RB_ARY_AREF
 static VALUE array_spec_rb_ary_aref(int argc, VALUE *argv, VALUE self) {
   VALUE ary, args;
@@ -283,6 +289,10 @@ void Init_array_spec() {
   rb_define_method(cls, "RARRAY_LEN", array_spec_RARRAY_LEN, 1);
   rb_define_method(cls, "RARRAY_PTR_iterate", array_spec_RARRAY_PTR_iterate, 1);
   rb_define_method(cls, "RARRAY_PTR_assign", array_spec_RARRAY_PTR_assign, 2);
+#endif
+
+#ifdef HAVE_RARRAY_AREF
+  rb_define_method(cls, "RARRAY_AREF", array_spec_RARRAY_AREF, 2);
 #endif
 
 #ifdef HAVE_RB_ARY_AREF

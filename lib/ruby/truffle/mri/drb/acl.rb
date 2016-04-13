@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/drb/acl'
+require_relative '../../stdlib/drb/acl'

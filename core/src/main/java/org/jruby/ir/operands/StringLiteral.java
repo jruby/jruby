@@ -23,48 +23,28 @@ import java.util.List;
  * for example, and modify the contents of the string.
  * This is not like a Java string.
  */
-public class StringLiteral extends Operand {
+public class StringLiteral extends Operand implements Stringable {
     public static final StringLiteral EMPTY_STRING = new StringLiteral("");
 
-    // SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
+    public final FrozenString frozenString;
 
-    final public ByteList bytelist;
-    final public String   string;
-    final public int      coderange;
-
-    public StringLiteral(ByteList val, int coderange) {
-        this(internedStringFromByteList(val), val, coderange);
+    public StringLiteral(ByteList val, int coderange, String file, int line) {
+        this.frozenString = new FrozenString(val, coderange, file, line);
     }
 
-    protected StringLiteral(String string, ByteList bytelist, int coderange) {
+    protected StringLiteral(String string, ByteList bytelist, int coderange, String file, int line) {
         super();
 
-        this.bytelist = bytelist;
-        this.coderange = coderange;
-        this.string = string;
-    }
-
-    // If Encoding has an instance of a Charset can it ever raise unsupportedcharsetexception? because this
-    // helper called copes with charset == null...
-    private static String internedStringFromByteList(ByteList val) {
-        try {
-            return Helpers.byteListToString(val).intern();
-        } catch (UnsupportedCharsetException e) {
-            return val.toString().intern();
-        }
+        this.frozenString = new FrozenString(string, bytelist, coderange, file, line);
     }
 
     public StringLiteral(String s) {
-        this(s, ByteList.create(s));
+        this.frozenString = new FrozenString(s);
     }
 
-    private StringLiteral(String string, ByteList byteList) {
-        super();
-
-        this.bytelist = byteList;
-        this.string = string;
-        this.coderange = StringSupport.CR_7BIT;
-     }
+    private StringLiteral(FrozenString frozenString) {
+        this.frozenString = frozenString;
+    }
 
     @Override
     public OperandType getOperandType() {
@@ -83,17 +63,17 @@ public class StringLiteral extends Operand {
 
     @Override
     public int hashCode() {
-        return bytelist.hashCode();
+        return frozenString.hashCode();
     }
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof StringLiteral && bytelist.equals(((StringLiteral) other).bytelist) && coderange == ((StringLiteral) other).coderange;
+        return other instanceof StringLiteral && frozenString.equals(((StringLiteral) other).frozenString);
     }
 
     @Override
     public String toString() {
-        return "\"" + string + "\"";
+        return "strdup(" + frozenString.toString() + ")";
     }
 
     @Override
@@ -103,8 +83,8 @@ public class StringLiteral extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        // SSS FIXME: AST interpreter passes in a coderange argument.
-        return RubyString.newStringShared(context.runtime, bytelist, coderange);
+        RubyString string = (RubyString) frozenString.retrieve(context, self, currScope, currDynScope, temp);
+        return string.strDup(context.runtime);
     }
 
     @Override
@@ -113,23 +93,24 @@ public class StringLiteral extends Operand {
     }
 
     public ByteList getByteList() {
-        return bytelist;
+        return frozenString.getByteList();
     }
 
     public String getString() {
-        return string;
+        return frozenString.getString();
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(bytelist);
-        e.encode(coderange);
+        e.encode(frozenString);
     }
 
     public static StringLiteral decode(IRReaderDecoder d) {
-        return new StringLiteral(d.decodeByteList(), d.decodeInt());
+        return new StringLiteral((FrozenString)d.decodeOperand());
     }
 
-    public int getCodeRange() { return coderange; }
+    public int getCodeRange() {
+        return frozenString.getCodeRange();
+    }
 }

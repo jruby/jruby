@@ -6,6 +6,25 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+ARGV.push *Truffle::Primitive.original_argv
+
+$LOAD_PATH.push *Truffle::Primitive.original_load_path
+
+home = Truffle::Primitive.jruby_home_directory_protocol
+$LOAD_PATH.push home + '/lib/ruby/truffle/mri'
+$LOAD_PATH.push home + '/lib/ruby/truffle/truffle'
+$LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-strscan/lib'
+$LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-stringio/lib'
+$LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-complex/lib'
+$LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-date/lib'
+$LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-pathname/lib'
+$LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-tempfile/lib'
+$LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-socket/lib'
+$LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-securerandom/lib'
+$LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-timeout/lib'
+$LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-webrick/lib'
+$LOAD_PATH.push home + '/lib/ruby/truffle/shims'
+
 # We defined Psych at the top level becuase several things depend on its name.
 # Here we fix that up and put it back into Truffle.
 

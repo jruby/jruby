@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #
 # = open3.rb: Popen, but with stderr, too
 #
@@ -27,14 +29,7 @@
 # - Open3.pipeline : run a pipeline and wait for its completion
 #
 
-# Because spawn does not yet work on Windows, we fall back on the older open3 there.
-real_open3 = true
-if defined?(org) && org.jruby.platform.Platform::IS_WINDOWS
-  require 'jruby/open3_windows'
-  real_open3 = false
-end
-
-real_open3 && module Open3
+module Open3
 
   # Open stdin, stdout, and stderr streams and start external executable.
   # In addition, a thread to wait for the started process is created.
@@ -197,6 +192,10 @@ real_open3 && module Open3
   module_function :popen2e
 
   def popen_run(cmd, opts, child_io, parent_io) # :nodoc:
+    if last = Hash.try_convert(cmd.last)
+      opts = opts.merge(last)
+      cmd.pop
+    end
     pid = spawn(*cmd, opts)
     wait_thr = Process.detach(pid)
     child_io.each {|io| io.close }

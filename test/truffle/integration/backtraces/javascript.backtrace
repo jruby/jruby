@@ -1,0 +1,5 @@
+/javascript.rb:55:in `execute'
+/javascript.rb:55:in `bob'
+/javascript.rb:55:in `block in <main>'
+/backtraces.rb:17:in `check'
+/javascript.rb:54:in `<main>'

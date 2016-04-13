@@ -66,6 +66,8 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 import org.jruby.util.CodegenUtils;
 
+import static org.jruby.RubyModule.undefinedMethodMessage;
+
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
 
@@ -552,7 +554,7 @@ public class JavaClass extends JavaObject {
             return new JavaMethod(runtime, method);
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass().getName() + "'", methodName);
+            throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass().getName(), false), methodName);
         }
     }
 
@@ -569,7 +571,7 @@ public class JavaClass extends JavaObject {
             return new JavaMethod(runtime, method);
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass().getName() + "'", methodName);
+            throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass().getName(), false), methodName);
         }
     }
 
@@ -586,7 +588,7 @@ public class JavaClass extends JavaObject {
 
         if ( callable != null ) return callable;
 
-        throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass().getName() + "'", methodName);
+        throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass().getName(), false), methodName);
     }
 
     public static JavaCallable getMatchingCallable(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
@@ -990,6 +992,4 @@ public class JavaClass extends JavaObject {
         catch (SecurityException e) { return new Field[0]; }
     }
 
-    @Deprecated
-    public static final boolean CAN_SET_ACCESSIBLE = JavaUtil.CAN_SET_ACCESSIBLE;
 }

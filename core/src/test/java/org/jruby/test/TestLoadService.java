@@ -28,10 +28,9 @@
 
 package org.jruby.test;
 
-import java.util.ArrayList;
-
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.load.ClassExtensionLibrary;
 import org.jruby.runtime.load.LoadService;
 
 
@@ -91,5 +90,26 @@ public class TestLoadService extends TestRubyBase {
         } catch (Exception e) {
             // ok
         }
+    }
+
+    public void testClassExtensionLeftmostIdentifierSearch() {
+        String path = "foo/bar/boo-baz/quux/widget";
+        String[] elts = path.split("/");
+
+        int leftmost = ClassExtensionLibrary.findLeftmostIdentifier(elts);
+
+        assertEquals(3, leftmost);
+
+        path = "foo/bar/baz/quux/widget";
+        elts = path.split("/");
+        leftmost = ClassExtensionLibrary.findLeftmostIdentifier(elts);
+
+        assertEquals(0, leftmost);
+
+        path = "foo//baz/quux/widget";
+        elts = path.split("/");
+        leftmost = ClassExtensionLibrary.findLeftmostIdentifier(elts);
+
+        assertEquals(2, leftmost);
     }
 }

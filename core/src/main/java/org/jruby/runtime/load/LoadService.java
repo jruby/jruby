@@ -33,10 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import org.jruby.util.FileResource;
-import org.jruby.util.collections.StringArraySet;
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -44,7 +41,6 @@ import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
 import java.security.AccessControlException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,18 +54,23 @@ import java.util.zip.ZipException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyContinuation;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -207,7 +208,7 @@ public class LoadService {
      *
      * @param prependDirectories
      */
-    public void init(List prependDirectories) {
+    public void init(List<String> prependDirectories) {
         loadPath = RubyArray.newArray(runtime);
 
         String jrubyHome = runtime.getJRubyHome();
@@ -281,7 +282,7 @@ public class LoadService {
         addBuiltinLibrary(library, Library.DUMMY);
         addLoadedFeature(library, library);
     }
-    
+
     protected boolean isFeatureInIndex(String shortName) {
         return loadedFeaturesIndex.containsKey(shortName);
     }
@@ -292,11 +293,11 @@ public class LoadService {
     }
 
     protected void addLoadedFeature(String shortName, String name) {
-        loadedFeatures.append(RubyString.newString(runtime, name));
-        
+        loadedFeatures.appendString(runtime, name);
+
         addFeatureToIndex(shortName, name);
     }
-    
+
     protected void addFeatureToIndex(String shortName, String name) {
         loadedFeaturesDup = (RubyArray)loadedFeatures.dup();
         loadedFeaturesIndex.put(shortName, name);
@@ -305,7 +306,7 @@ public class LoadService {
     protected void addPath(String path) {
         // Empty paths do not need to be added
         if (path == null || path.length() == 0) return;
-
+        final RubyArray loadPath = this.loadPath;
         synchronized(loadPath) {
             loadPath.append(runtime.newString(path.replace('\\', '/')));
         }
@@ -335,7 +336,7 @@ public class LoadService {
             try {
                 library.load(runtime, wrap);
             } catch (IOException e) {
-                if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+                debugLoadException(runtime, e);
                 throw newLoadErrorFromThrowable(runtime, file, e);
             }
         } finally {
@@ -361,7 +362,7 @@ public class LoadService {
             try {
                 library.load(runtime, wrap);
             } catch (IOException e) {
-                if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+                debugLoadException(runtime, e);
                 throw newLoadErrorFromThrowable(runtime, file, e);
             }
         } finally {
@@ -377,7 +378,7 @@ public class LoadService {
         // Replace it with .jar to look for a java extension
         // JRUBY-5033: The ExtensionSearcher will locate C exts, too, this way.
         if (file.endsWith(".so")) {
-            file = file.replaceAll(".so$", ".jar");
+            file = file.substring(0, file.length() - 3) + ".jar";
         }
 
         SearchState state = new SearchState(file);
@@ -398,7 +399,7 @@ public class LoadService {
 
     private enum RequireState {
         LOADED, ALREADY_LOADED, CIRCULAR
-    };
+    }
 
     private RequireState requireCommon(String file, boolean circularRequireWarning) {
         checkEmptyLoad(file);
@@ -426,16 +427,16 @@ public class LoadService {
         return smartLoadInternal(file, circularRequireWarning);
     }
 
-    protected final RequireLocks requireLocks = new RequireLocks();
+    private final RequireLocks requireLocks = new RequireLocks();
 
     private static final class RequireLocks {
         private final ConcurrentHashMap<String, ReentrantLock> pool;
         // global lock for require must be fair
-        private final ReentrantLock globalLock;
+        //private final ReentrantLock globalLock;
 
         private RequireLocks() {
             this.pool = new ConcurrentHashMap<>(8, 0.75f, 2);
-            this.globalLock = new ReentrantLock(true);
+            //this.globalLock = new ReentrantLock(true);
         }
 
         /**
@@ -459,9 +460,7 @@ public class LoadService {
 
             if (lock.isHeldByCurrentThread()) return false;
 
-            lock.lock();
-
-            return true;
+            return lock.tryLock();
         }
 
         /**
@@ -554,22 +553,25 @@ public class LoadService {
         public void endLoad(String file, long startTime) {}
     }
 
-    private static class TracingLoadTimer extends LoadTimer {
+    private static final class TracingLoadTimer extends LoadTimer {
         private final AtomicInteger indent = new AtomicInteger(0);
-        private String getIndentString() {
-            StringBuilder buf = new StringBuilder();
-            int i = indent.get();
+
+        private StringBuilder getIndentString() {
+            final int i = indent.get();
+            StringBuilder buf = new StringBuilder(i * 2);
             for (int j = 0; j < i; j++) {
-                buf.append("  ");
+                buf.append(' ').append(' ');
             }
-            return buf.toString();
+            return buf;
         }
+
         @Override
         public long startLoad(String file) {
             indent.incrementAndGet();
             LOG.info(getIndentString() + "-> " + file);
             return System.currentTimeMillis();
         }
+
         @Override
         public void endLoad(String file, long startTime) {
             LOG.info(getIndentString() + "<- " + file + " - "
@@ -610,9 +612,13 @@ public class LoadService {
         } catch (RaiseException re) {
             throw re;
         } catch (Throwable e) {
-            if (runtime.getDebug().isTrue()) e.printStackTrace();
+            debugLoadException(runtime, e);
             throw runtime.newLoadError("library `" + libraryName + "' could not be loaded: " + e, libraryName);
         }
+    }
+
+    private static void debugLoadException(final Ruby runtime, final Throwable ex) {
+        if (runtime.isDebug()) ex.printStackTrace(runtime.getErr());
     }
 
     public IRubyObject getLoadPath() {
@@ -632,10 +638,9 @@ public class LoadService {
     }
 
     public void removeInternalLoadedFeature(String name) {
-        RubyString nameRubyString = runtime.newString(name);
-        loadedFeatures.delete(runtime.getCurrentContext(), nameRubyString, Block.NULL_BLOCK);
+        loadedFeatures.deleteString(runtime.getCurrentContext(), name);
     }
-    
+
     private boolean isFeaturesIndexUpToDate() {
         // disable tracing during index check
         runtime.getCurrentContext().preTrace();
@@ -646,15 +651,15 @@ public class LoadService {
         }
     }
 
-    protected boolean featureAlreadyLoaded(String name) {
+    public boolean featureAlreadyLoaded(String name) {
         if (loadedFeatures.containsString(name)) return true;
-        
+
         // Bail if our features index fell out of date.
-        if (!isFeaturesIndexUpToDate()) { 
+        if (!isFeaturesIndexUpToDate()) {
             loadedFeaturesIndex.clear();
             return false;
         }
-        
+
         return isFeatureInIndex(name);
     }
 
@@ -793,9 +798,9 @@ public class LoadService {
             int lastSlashIndex = className.lastIndexOf('/');
             if (lastSlashIndex > -1 && lastSlashIndex < className.length() - 1 && !Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
                 if (lastSlashIndex == -1) {
-                    className = "_" + className;
+                    className = '_' + className;
                 } else {
-                    className = className.substring(0, lastSlashIndex + 1) + "_" + className.substring(lastSlashIndex + 1);
+                    className = className.substring(0, lastSlashIndex + 1) + '_' + className.substring(lastSlashIndex + 1);
                 }
             }
             className = className.replace('/', '.');
@@ -823,7 +828,7 @@ public class LoadService {
         public void prepareRequireSearch(final String file) {
             // if an extension is specified, try more targetted searches
             if (file.lastIndexOf('.') > file.lastIndexOf('/')) {
-                Matcher matcher = null;
+                Matcher matcher;
                 if ((matcher = sourcePattern.matcher(file)).find()) {
                     // source extensions
                     suffixType = SuffixType.Source;
@@ -855,7 +860,7 @@ public class LoadService {
         public void prepareLoadSearch(final String file) {
             // if a source extension is specified, try all source extensions
             if (file.lastIndexOf('.') > file.lastIndexOf('/')) {
-                Matcher matcher = null;
+                Matcher matcher;
                 if ((matcher = sourcePattern.matcher(file)).find()) {
                     // source extensions
                     suffixType = SuffixType.Source;
@@ -895,19 +900,30 @@ public class LoadService {
         try {
             state.library.load(runtime, false);
             return true;
-        } catch (MainExitException mee) {
+        }
+        catch (MainExitException ex) {
             // allow MainExitException to propagate out for exec and friends
-            throw mee;
-        } catch (Throwable e) {
-            if(isJarfileLibrary(state, state.searchFile)) {
-                return true;
-            }
-            reraiseRaiseExceptions(e);
+            throw ex;
+        }
+        catch (RaiseException ex) {
+            if ( ex instanceof Unrescuable ) Helpers.throwException(ex);
+            if ( isJarfileLibrary(state, state.searchFile) ) return true;
+            throw ex;
+        }
+        catch (JumpException ex) {
+            throw ex;
+        }
+        catch (RubyContinuation.Continuation ex) {
+            throw ex;
+        }
+        catch (Throwable ex) {
+            if ( ex instanceof Unrescuable ) Helpers.throwException(ex);
+            if ( isJarfileLibrary(state, state.searchFile) ) return true;
 
-            if(runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+            debugLoadException(runtime, ex);
 
-            RaiseException re = newLoadErrorFromThrowable(runtime, state.searchFile, e);
-            re.initCause(e);
+            RaiseException re = newLoadErrorFromThrowable(runtime, state.searchFile, ex);
+            re.initCause(ex);
             throw re;
         }
     }
@@ -918,50 +934,40 @@ public class LoadService {
         return runtime.newLoadError(String.format("load error: %s -- %s: %s", file, t.getClass().getName(), t.getMessage()), file);
     }
 
-    // Using the BailoutSearch twice, once only for source files and once for state suffixes,
-    // in order to adhere to Rubyspec
-    protected final List<LoadSearcher> searchers = new ArrayList<LoadSearcher>();
-    {
-        searchers.add(new SourceBailoutSearcher());
-        searchers.add(new NormalSearcher());
-        searchers.add(new ClassLoaderSearcher());
-        searchers.add(new BailoutSearcher());
-        searchers.add(new ExtensionSearcher());
-        searchers.add(new ScriptClassSearcher());
-    }
-
+    @Deprecated // no longer used
     protected String buildClassName(String className) {
         // Remove any relative prefix, e.g. "./foo/bar" becomes "foo/bar".
         className = className.replaceFirst("^\\.\\/", "");
-        if (className.lastIndexOf(".") != -1) {
-            className = className.substring(0, className.lastIndexOf("."));
+        final int lastDot = className.lastIndexOf('.');
+        if (lastDot != -1) {
+            className = className.substring(0, lastDot);
         }
         className = className.replace("-", "_minus_").replace('.', '_');
         return className;
     }
 
     protected void checkEmptyLoad(String file) throws RaiseException {
-        if (file.equals("")) {
+        if (file.isEmpty()) {
             throw runtime.newLoadError("no such file to load -- " + file, file);
         }
     }
 
     @Deprecated
-    protected void debugLogTry(String what, String msg) {
+    protected final void debugLogTry(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             LOG.info( "trying " + what + ": " + msg );
         }
     }
 
     @Deprecated
-    protected void debugLogFound(String what, String msg) {
+    protected final void debugLogFound(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             LOG.info( "found " + what + ": " + msg );
         }
     }
 
     @Deprecated
-    protected void debugLogFound( LoadServiceResource resource ) {
+    protected final void debugLogFound( LoadServiceResource resource ) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             String resourceUrl;
             try {
@@ -1097,9 +1103,9 @@ public class LoadService {
 
         for (String suffix : suffixType.getSuffixes()) {
             String namePlusSuffix = baseName + suffix;
-            
+
             foundResource = tryResourceAsIs(namePlusSuffix, "resourceFromDotSlash");
-            
+
             if (foundResource != null) break;
         }
 
@@ -1178,7 +1184,7 @@ public class LoadService {
                     JarFile file = new JarFile(jarFile);
                     String expandedFilename = expandRelativeJarPath(namePlusSuffix.substring(namePlusSuffix.indexOf("!/") + 2));
 
-                    debugLogTry("resourceFromJarURL", expandedFilename.toString());
+                    debugLogTry("resourceFromJarURL", expandedFilename);
                     if(file.getJarEntry(expandedFilename) != null) {
                         URI resourceUri = new URI("jar", "file:" + jarFile + "!/" + expandedFilename, null);
                         foundResource = new LoadServiceResource(resourceUri.toURL(), namePlusSuffix);
@@ -1286,7 +1292,7 @@ public class LoadService {
 
         return foundResource;
     }
-    
+
     protected String getLoadPathEntry(IRubyObject entry) {
         return RubyFile.get_path(entry.getRuntime().getCurrentContext(), entry).asJavaString();
     }
@@ -1345,7 +1351,7 @@ public class LoadService {
     protected boolean loadPathLooksLikeClasspathURL(String loadPathEntry) {
         return loadPathEntry.startsWith("classpath:");
     }
-    
+
     private String[] splitJarUrl(String loadPathEntry) {
         String unescaped = loadPathEntry;
 
@@ -1355,7 +1361,7 @@ public class LoadService {
             // Fall back to using the original string
         }
 
-        int idx = unescaped.indexOf("!");
+        int idx = unescaped.indexOf('!');
         if (idx == -1) {
             return new String[]{unescaped, ""};
         }
@@ -1363,14 +1369,14 @@ public class LoadService {
         String filename = unescaped.substring(0, idx);
         String entry = idx + 2 < unescaped.length() ? unescaped.substring(idx + 2) : "";
 
-        if(filename.startsWith("jar:")) {
+        if (filename.startsWith("jar:")) {
             filename = filename.substring(4);
         }
-        
-        if(filename.startsWith("file:")) {
+
+        if (filename.startsWith("file:")) {
             filename = filename.substring(5);
         }
-        
+
         return new String[]{filename, entry};
     }
 
@@ -1419,7 +1425,7 @@ public class LoadService {
             if (!Ruby.isSecurityRestricted()) {
                 String reportedPath = namePlusSuffix;
                 File actualPath;
-                
+
                 if (new File(reportedPath).isAbsolute()) {
                     // it's an absolute path, use it as-is
                     actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
@@ -1431,9 +1437,9 @@ public class LoadService {
 
                     actualPath = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 }
-                
+
                 debugLogTry(debugName, actualPath.toString());
-                
+
                 if (reportedPath.contains("..")) {
                     // try to canonicalize if path contains ..
                     try {
@@ -1441,7 +1447,7 @@ public class LoadService {
                     } catch (IOException ioe) {
                     }
                 }
-                
+
                 if (actualPath.isFile() && actualPath.canRead()) {
                     foundResource = new LoadServiceResource(actualPath, reportedPath);
                     debugLogFound(foundResource);

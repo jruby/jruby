@@ -1,0 +1,5 @@
+fails:Numeric#positive? on positive numbers returns true
+fails:Numeric#positive? on zero returns false
+fails:Numeric#positive? on negative numbers returns false
+fails:Numeric#positive? returns true if self is greater than 0
+fails:Numeric#positive? returns false if self is less than 0

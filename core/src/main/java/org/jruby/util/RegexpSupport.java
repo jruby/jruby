@@ -119,10 +119,13 @@ public class RegexpSupport {
                             p -= 2;
                             if (enc == USASCIIEncoding.INSTANCE) {
                                 if (buf == null) buf = new byte[1];
+                                int pbeg = p;
                                 p = readEscapedByte(runtime, buf, 0, bytes, p, end, str, mode);
                                 c = buf[0];
                                 if (c == (char)-1) return false;
-                                if (to != null) to.append(c);
+                                if (to != null) {
+                                    to.append(bytes, pbeg, p - pbeg);
+                                }
                             }
                             else {
                                 p = unescapeEscapedNonAscii(runtime, to, bytes, p, end, enc, encp, str, mode);
@@ -477,7 +480,7 @@ public class RegexpSupport {
             }
             if (enc[0] == null) {
                 enc[0] = UTF8Encoding.INSTANCE;
-            } else if (!(enc[0] instanceof UTF8Encoding)) { // do not load the class if not used
+            } else if (!(enc[0].isUTF8())) {
                 raisePreprocessError(runtime, str, "UTF-8 character in non UTF-8 regexp", mode);
             }
         }

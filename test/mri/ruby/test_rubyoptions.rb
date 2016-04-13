@@ -4,8 +4,6 @@ require 'test/unit'
 require 'tmpdir'
 require 'tempfile'
 
-require_relative 'envutil'
-
 class TestRubyOptions < Test::Unit::TestCase
   def write_file(filename, content)
     File.open(filename, "w") {|f|
@@ -85,10 +83,19 @@ class TestRubyOptions < Test::Unit::TestCase
                       "", %w(true), [])
   end
 
+  private def version_match
+    case RUBY_ENGINE
+    when 'jruby'
+      /^jruby #{RUBY_ENGINE_VERSION} \(#{RUBY_VERSION}\).*? \[#{RbConfig::CONFIG["host_os"]}-#{RbConfig::CONFIG["host_cpu"]}\]$/
+    else
+      /^ruby #{RUBY_VERSION}(?:[p ]|dev|rc).*? \[#{RUBY_PLATFORM}\]$/
+    end
+  end
+
   def test_verbose
     assert_in_out_err(["-vve", ""]) do |r, e|
-      assert_match(/^ruby #{RUBY_VERSION}(?:[p ]|dev).*? \[#{RUBY_PLATFORM}\]$/, r.join)
-      assert_equal RUBY_DESCRIPTION, r.join.chomp
+      assert_match(version_match, r[0])
+      assert_equal(RUBY_DESCRIPTION, r[0])
       assert_equal([], e)
     end
 
@@ -120,6 +127,8 @@ class TestRubyOptions < Test::Unit::TestCase
     assert_in_out_err(%w(--disable foobarbazqux -e) + [""], "", [],
                       /unknown argument for --disable: `foobarbazqux'/)
     assert_in_out_err(%w(--disable), "", [], /missing argument for --disable/)
+    assert_in_out_err(%w(--disable-gems -e) + ['p defined? Gem'], "", ["nil"], [])
+    assert_in_out_err(%w(--disable-did_you_mean -e) + ['p defined? DidYouMean'], "", ["nil"], [])
   end
 
   def test_kanji
@@ -141,8 +150,8 @@ class TestRubyOptions < Test::Unit::TestCase
 
   def test_version
     assert_in_out_err(%w(--version)) do |r, e|
-      assert_match(/^ruby #{RUBY_VERSION}(?:[p ]|dev).*? \[#{RUBY_PLATFORM}\]$/, r.join)
-      assert_equal RUBY_DESCRIPTION, r.join.chomp
+      assert_match(version_match, r[0])
+      assert_equal(RUBY_DESCRIPTION, r[0])
       assert_equal([], e)
     end
   end
@@ -193,13 +202,13 @@ class TestRubyOptions < Test::Unit::TestCase
 
   def test_yydebug
     assert_in_out_err(["-ye", ""]) do |r, e|
-      assert_equal([], r)
-      assert_not_equal([], e)
+      assert_not_equal([], r)
+      assert_equal([], e)
     end
 
     assert_in_out_err(%w(--yydebug -e) + [""]) do |r, e|
-      assert_equal([], r)
-      assert_not_equal([], e)
+      assert_not_equal([], r)
+      assert_equal([], e)
     end
   end
 
@@ -439,10 +448,14 @@ class TestRubyOptions < Test::Unit::TestCase
       }
       if File.respond_to? :symlink
         n2 = File.join(d, 't2')
-        File.symlink(n1, n2)
-        IO.popen([ruby, n2]) {|f|
-          assert_equal(n2, f.read)
-        }
+        begin
+          File.symlink(n1, n2)
+        rescue Errno::EACCES
+        else
+          IO.popen([ruby, n2]) {|f|
+            assert_equal(n2, f.read)
+          }
+        end
       end
       Dir.chdir(d) {
         n3 = '-e'
@@ -554,18 +567,9 @@ class TestRubyOptions < Test::Unit::TestCase
   def assert_segv(args, message=nil)
     test_stdin = ""
     opt = SEGVTest::ExecOptions.dup
+    list = SEGVTest::ExpectedStderrList
 
-    _, stderr, status = EnvUtil.invoke_ruby(args, test_stdin, false, true, **opt)
-    stderr.force_encoding("ASCII-8BIT")
-
-    if signo = status.termsig
-      sleep 0.1
-      EnvUtil.diagnostic_reports(Signal.signame(signo), EnvUtil.rubybin, status.pid, Time.now)
-    end
-
-    assert_pattern_list(SEGVTest::ExpectedStderrList, stderr, message)
-
-    status
+    assert_in_out_err(args, test_stdin, //, list, encoding: "ASCII-8BIT", **opt)
   end
 
   def test_segv_test
@@ -573,22 +577,14 @@ class TestRubyOptions < Test::Unit::TestCase
   end
 
   def test_segv_loaded_features
-    opts = SEGVTest::ExecOptions.dup
-
     bug7402 = '[ruby-core:49573]'
 
-    status = Dir.mktmpdir("segv_test") do |tmpdir|
-      assert_in_out_err(['-e', 'class Bogus; def to_str; exit true; end; end',
-                         '-e', '$".clear',
-                         '-e', '$".unshift Bogus.new',
-                         '-e', '(p $"; abort) unless $".size == 1',
-                         '-e', 'Process.kill :SEGV, $$',
-                         '-C', tmpdir,
-                        ],
-                        "", [], //,
-                        nil,
-                        opts)
-    end
+    status = assert_segv(['-e', 'END {Process.kill :SEGV, $$}',
+                          '-e', 'class Bogus; def to_str; exit true; end; end',
+                          '-e', '$".clear',
+                          '-e', '$".unshift Bogus.new',
+                          '-e', '(p $"; abort) unless $".size == 1',
+                         ])
     assert_not_predicate(status, :success?, "segv but success #{bug7402}")
   end
 
@@ -696,6 +692,57 @@ class TestRubyOptions < Test::Unit::TestCase
     end
   end
 
+  if /mswin|mingw/ =~ RUBY_PLATFORM
+    def test_command_line_glob_nonascii
+      bug10555 = '[ruby-dev:48752] [Bug #10555]'
+      name = "\u{3042}.txt"
+      expected = name.encode("locale") rescue "?.txt"
+      with_tmpchdir do |dir|
+        open(name, "w") {}
+        assert_in_out_err(["-e", "puts ARGV", "?.txt"], "", [expected], [],
+                          bug10555, encoding: "locale")
+      end
+    end
+
+    def test_command_line_progname_nonascii
+      bug10555 = '[ruby-dev:48752] [Bug #10555]'
+      name = expected = nil
+      unless (0x80..0x10000).any? {|c|
+               name = c.chr(Encoding::UTF_8)
+               expected = name.encode("locale") rescue nil
+             }
+        skip "can't make locale name"
+      end
+      name << ".rb"
+      expected << ".rb"
+      with_tmpchdir do |dir|
+        open(name, "w") {|f| f.puts "puts File.basename($0)"}
+        assert_in_out_err([name], "", [expected], [],
+                          bug10555, encoding: "locale")
+      end
+    end
+
+    def test_command_line_glob_with_dir
+      bug10941 = '[ruby-core:68430] [Bug #10941]'
+      with_tmpchdir do |dir|
+        Dir.mkdir('test')
+        assert_in_out_err(["-e", "", "test/*"], "", [], [], bug10941)
+      end
+    end
+  end
+
+  if /mswin|mingw/ =~ RUBY_PLATFORM
+    Ougai = %W[\u{68ee}O\u{5916}.txt \u{68ee 9d0e 5916}.txt \u{68ee 9dd7 5916}.txt]
+    def test_command_line_glob_noncodepage
+      with_tmpchdir do |dir|
+        Ougai.each {|f| open(f, "w") {}}
+        assert_in_out_err(["-Eutf-8", "-e", "puts ARGV", "*"], "", Ougai, encoding: "utf-8")
+        ougai = Ougai.map {|f| f.encode("locale", replace: "?")}
+        assert_in_out_err(["-e", "puts ARGV", "*.txt"], "", ougai)
+      end
+    end
+  end
+
   def test_script_is_directory
     feature2408 = '[ruby-core:26925]'
     assert_in_out_err(%w[.], "", [], /Is a directory -- \./, feature2408)
@@ -746,5 +793,51 @@ class TestRubyOptions < Test::Unit::TestCase
 
   def test_dump_insns_with_rflag
     assert_norun_with_rflag('--dump=insns')
+  end
+
+  def test_frozen_string_literal
+    all_assertions do |a|
+      [["disable", "false"], ["enable", "true"]].each do |opt, exp|
+        %W[frozen_string_literal frozen-string-literal].each do |arg|
+          key = "#{opt}=#{arg}"
+          a.for(key) do
+            assert_in_out_err(["--disable=gems", "--#{key}"], 'p("foo".frozen?)', [exp])
+          end
+        end
+      end
+      %W"disable enable".product(%W[false true]) do |opt, exp|
+        a.for("#{opt}=>#{exp}") do
+          assert_in_out_err(["-w", "--disable=gems", "--#{opt}=frozen-string-literal"], <<-"end;", [exp])
+            #-*- frozen-string-literal: #{exp} -*-
+            p("foo".frozen?)
+          end;
+        end
+      end
+    end
+  end
+
+  def test_frozen_string_literal_debug
+    with_debug_pat = /created at/
+    wo_debug_pat = /can\'t modify frozen String \(RuntimeError\)/
+    frozen = [
+      ["--enable-frozen-string-literal", true],
+      ["--disable-frozen-string-literal", false],
+      [nil, false],
+    ]
+    debug = [
+      ["--debug-frozen-string-literal", true],
+      ["--debug=frozen-string-literal", true],
+      ["--debug", true],
+      [nil, false],
+    ]
+    opts = ["--disable=gems"]
+    frozen.product(debug) do |(opt1, freeze), (opt2, debug)|
+      opt = opts + [opt1, opt2].compact
+      err = !freeze ? [] : debug ? with_debug_pat : wo_debug_pat
+      assert_in_out_err(opt, '"foo" << "bar"', [], err)
+      if freeze
+        assert_in_out_err(opt, '"foo#{123}bar" << "bar"', [], err)
+      end
+    end
   end
 end

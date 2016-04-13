@@ -1,14 +1,4 @@
 module JRuby
-  def self.init_asm
-    begin
-      JRuby.const_set(:TraceClassVisitor, org.jruby.org.objectweb.asm.util.TraceClassVisitor)
-      JRuby.const_set(:ClassReader, org.jruby.org.objectweb.asm.ClassReader)
-    rescue
-      JRuby.const_set(:TraceClassVisitor, org.objectweb.asm.util.TraceClassVisitor)
-      JRuby.const_set(:ClassReader, org.objectweb.asm.ClassReader)
-    end
-  end
-  
   class << self
     # Get a Java integration reference to the given object
     def reference(obj); end
@@ -27,7 +17,7 @@ module JRuby
     # current runtime, for libraries that expect to operate against the global
     # runtime.
     def with_current_runtime_as_global
-      current = runtime
+      current = JRuby.runtime
       global = org.jruby.Ruby.global_runtime
 
       begin
@@ -48,8 +38,10 @@ module JRuby
       java.lang.Thread.currentThread.setContextClassLoader loader
     end
 
+    DEFAULT_FILENAME = '-'.dup; private_constant :DEFAULT_FILENAME
+
     # Parse the given block or the provided content, returning a JRuby AST node.
-    def parse(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, lineno = 0, &block)
+    def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
       if block
         block_r = reference0(block)
         body = block_r.body
@@ -61,22 +53,23 @@ module JRuby
         body.body_node
       else
         content = content.to_str
-        filename = filename.to_str unless default_filename
+        filename = filename.to_str unless filename.equal?(DEFAULT_FILENAME)
 
-        runtime.java_send :parse, [org.jruby.util.ByteList, java.lang.String, org.jruby.runtime.DynamicScope, Java::int, Java::boolean], reference0(content).byte_list, filename, nil, lineno, extra_position_info
+        signature = [org.jruby.util.ByteList, java.lang.String, org.jruby.runtime.DynamicScope, Java::int, Java::boolean]
+        runtime.java_send :parse, signature, reference0(content).byte_list, filename, nil, lineno, extra_position_info
       end
     end
     alias ast_for parse
 
-    def compile_ir(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, &block)
+    def compile_ir(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
       runtime = JRuby.runtime
       manager = org.jruby.ir.IRManager.new(runtime.instance_config)
       manager.dry_run = true
-      node = if default_filename
-               parse(content, &block)
-             else
-               parse(content, filename, extra_position_info, &block)
-             end
+      if filename.equal?(DEFAULT_FILENAME)
+        node = parse(content, &block)
+      else
+        node = parse(content, filename, extra_position_info, &block)
+      end
 
       scope = org.jruby.ir.IRBuilder.build_root(manager, node).scope
       scope.top_level_binding_scope = node.scope
@@ -86,27 +79,22 @@ module JRuby
 
     # Parse and compile the given block or provided content, returning a new
     # CompiledScript instance.
-    def compile(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, &block)
-      irscope = compile_ir(content, filename)
+    def compile(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
+      irscope = compile_ir(content, filename, extra_position_info, &block)
 
       visitor = org.jruby.ir.targets.JVMVisitor.new
       context = org.jruby.ir.targets.JVMVisitorMethodContext.new
       bytes = visitor.compile_to_bytecode(irscope, context)
       static_scope = irscope.static_scope;
-      top_self = runtime.top_self
+      top_self = JRuby.runtime.top_self
       static_scope.module = top_self.class
 
-      script = CompiledScript.new
-      script.name = filename
-      script.class_name = irscope.name
-      script.original_script = content
-      script.code = bytes
-
-      script
+      CompiledScript.new(filename, irscope.name, content, bytes)
     end
   end
 
   # NOTE: This is not a public API and is subject to change at our whim
+  # @private
   module IR
     def self.debug=(value)
       org.jruby.RubyInstanceConfig.IR_DEBUG = !!value
@@ -132,27 +120,51 @@ module JRuby
       org.jruby.RubyInstanceConfig.IR_VISUALIZER
     end
   end
-  
+
   class CompiledScript
-    attr_accessor :name, :class_name, :original_script, :code
-    
+
+    attr_reader :name, :class_name, :original_script, :code
+
+    # @private
+    def initialize(filename, class_name, content, bytes)
+      @name = filename
+      @class_name = class_name
+      @original_script = content
+      @code = bytes
+    end
+
     def to_s
       @original_script
     end
-    
+
     def inspect
       "\#<JRuby::CompiledScript #{@name}>"
     end
-    
+
     def inspect_bytecode
       JRuby.init_asm
+
       writer = java.io.StringWriter.new
       reader = ClassReader.new(@code)
       tracer = TraceClassVisitor.new(java.io.PrintWriter.new(writer))
-      
+
       reader.accept(tracer, ClassReader::SKIP_DEBUG)
-      
+
       writer.to_s
     end
+
   end
+
+  # @private
+  def self.init_asm
+    return if const_defined? :TraceClassVisitor
+    begin
+      const_set(:TraceClassVisitor, org.jruby.org.objectweb.asm.util.TraceClassVisitor)
+      const_set(:ClassReader, org.jruby.org.objectweb.asm.ClassReader)
+    rescue
+      const_set(:TraceClassVisitor, org.objectweb.asm.util.TraceClassVisitor)
+      const_set(:ClassReader, org.objectweb.asm.ClassReader)
+    end
+  end
+
 end

@@ -22,25 +22,25 @@ import static org.jruby.ir.IRFlags.*;
 public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr {
     private static long callSiteCounter = 1;
 
-    public final long callSiteId;
+    public transient final long callSiteId;
     private final CallType callType;
     protected String name;
-    protected CallSite callSite;
-    protected int argsCount;
-    protected boolean hasClosure;
+    protected transient CallSite callSite;
+    protected transient int argsCount;
+    protected transient boolean hasClosure;
 
-    private boolean flagsComputed;
-    private boolean canBeEval;
-    private boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
-    private boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
-    private boolean dontInline;
-    private boolean containsArgSplat;
-    private boolean procNew;
+    private transient boolean flagsComputed;
+    private transient boolean canBeEval;
+    private transient boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
+    private transient boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
+    private transient boolean dontInline;
+    private transient boolean containsArgSplat;
+    private transient boolean procNew;
     private boolean potentiallyRefined;
 
     protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure,
                        boolean potentiallyRefined) {
-        super(op, getOperands(receiver, args, closure));
+        super(op, arrayifyOperands(receiver, args, closure));
 
         this.callSiteId = callSiteCounter++;
         argsCount = args.length;
@@ -79,10 +79,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
     private int calculateArity() {
         return hasClosure ? -1*(argsCount + 1) : argsCount;
-    }
-
-    private static Operand[] getOperands(Operand receiver, Operand[] arguments, Operand closure) {
-        return buildAllArgs(receiver, arguments, closure);
     }
 
     public String getName() {
@@ -264,7 +260,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             Operand meth = getArg1();
             if (!(meth instanceof StringLiteral)) return true; // We don't know
 
-            String name = ((StringLiteral) meth).string;
+            String name = ((StringLiteral) meth).getString();
             // FIXME: ENEBO - Half of these are name and half mname?
             return name.equals("call") || name.equals("eval") || mname.equals("module_eval") ||
                     mname.equals("class_eval") || mname.equals("instance_eval") || name.equals("send") ||
@@ -392,11 +388,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     private final static int REQUIRED_OPERANDS = 1;
-    private static Operand[] buildAllArgs(Operand receiver, Operand[] callArgs, Operand closure) {
+    private static Operand[] arrayifyOperands(Operand receiver, Operand[] callArgs, Operand closure) {
         Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + (closure != null ? 1 : 0)];
 
         assert receiver != null : "RECEIVER is null";
-
 
         allArgs[0] = receiver;
         for (int i = 0; i < callArgs.length; i++) {

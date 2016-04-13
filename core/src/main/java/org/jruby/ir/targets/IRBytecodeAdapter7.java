@@ -15,15 +15,18 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 
@@ -58,9 +61,9 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr);
     }
 
-    public void pushFrozenString(ByteList bl, int cr) {
+    public void pushFrozenString(ByteList bl, int cr, String file, int line) {
         loadContext();
-        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr);
+        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.fstring(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr, file, line);
     }
 
     public void pushByteList(ByteList bl) {
@@ -90,7 +93,8 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             adapter.pop();
         }
 
-        // call synthetic method if we still need to build dregexp
+        // We may evaluate these operands multiple times or the upstream instrs that created them, which is a bug (jruby/jruby#2798).
+        // However, only one dregexp will ever come out of the indy call.
         callback.run();
         adapter.invokedynamic("dregexp", sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity)), DRegexpObjectSite.BOOTSTRAP, options.toEmbeddedOptions());
 
@@ -140,6 +144,11 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), NormalInvokeSite.BOOTSTRAP);
             }
         }
+    }
+
+    @Override
+    public void invokeArrayDeref() {
+        adapter.invokedynamic("aref", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, 1)), ArrayDerefInvokeSite.BOOTSTRAP);
     }
 
     public void invokeOtherOneFixnum(String name, long fixnum) {
@@ -233,18 +242,6 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
-    public void searchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("searchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), noPrivateConsts?1:0);
-    }
-
-    public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("inheritanceSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), Bootstrap.searchConst(), noPrivateConsts?1:0);
-    }
-
-    public void lexicalSearchConst(String name) {
-        adapter.invokedynamic("lexicalSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), 0);
-    }
-
     public void pushNil() {
         loadContext();
         adapter.invokedynamic("nil", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
@@ -295,5 +292,12 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 "checkpoint",
                 sig(void.class, ThreadContext.class),
                 Bootstrap.checkpointHandle());
+    }
+
+    @Override
+    public void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className) {
+        Handle scopeHandle = new Handle(Opcodes.H_GETSTATIC, getClassData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
+        long encodedSignature = signature.encode();
+        adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class), Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature);
     }
 }

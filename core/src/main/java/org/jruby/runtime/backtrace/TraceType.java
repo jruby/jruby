@@ -63,31 +63,63 @@ public class TraceType {
     }
 
     public static void logBacktrace(RubyStackTraceElement[] trace) {
-        LOG.info("Backtrace generated:");
-        for (RubyStackTraceElement element : trace) {
-            LOG.info("  " + element.getFileName() + ":" + element.getLineNumber() + " in " + element.getMethodName());
+        if (trace == null) trace = RubyStackTraceElement.EMPTY_ARRAY;
+        final StringBuilder buffer = new StringBuilder(128);
+        renderBacktraceJRuby(trace, buffer, false);
+        final int len = buffer.length();
+        if ( len > 0 && buffer.charAt(len - 1) == '\n' ) {
+            buffer.setLength(len - 1); // remove last '\n'
         }
+        LOG.info("Backtrace generated:\n{}", buffer);
     }
 
-    public static void dumpException(RubyException exception) {
+    public static void logException(RubyException exception) {
         LOG.info("Exception raised: {} : {}", exception.getMetaClass(), exception);
+    }
+
+    /**
+     * @deprecated use {@link #logException(org.jruby.RubyException)}
+     */
+    public static void dumpException(RubyException exception) {
+        logException(exception);
     }
 
     public static void dumpBacktrace(RubyException exception) {
         Ruby runtime = exception.getRuntime();
-        System.err.println("Backtrace generated:\n" + Format.JRUBY.printBacktrace(exception, runtime.getPosix().isatty(FileDescriptor.err)));
+        System.err.println("Backtrace generated:\n" + printBacktraceJRuby(exception, runtime.getPosix().isatty(FileDescriptor.err)));
     }
 
+    public static void logCaller(RubyArray trace) {
+        LOG.info("Caller backtrace generated:\n{}", trace);
+    }
+
+    /**
+     * @deprecated use {@link #logCaller(org.jruby.RubyArray)}
+     */
     public static void dumpCaller(RubyArray trace) {
-        LOG.info("Caller backtrace generated:\n" + trace);
+        logCaller(trace);
     }
 
+    public static void logCaller(RubyStackTraceElement[] trace) {
+        LOG.info("Caller backtrace generated:\n{}", Arrays.toString(trace));
+    }
+
+    /**
+     * @deprecated use {@link #logCaller(org.jruby.runtime.backtrace.RubyStackTraceElement[]) }
+     */
     public static void dumpCaller(RubyStackTraceElement[] trace) {
-        LOG.info("Caller backtrace generated:\n" + Arrays.toString(trace));
+        logCaller(trace);
     }
 
+    public static void logWarning(RubyStackTraceElement[] trace) {
+        LOG.info("Warning backtrace generated:\n{}", Arrays.toString(trace));
+    }
+
+    /**
+     * @deprecated use {@link #logWarning(org.jruby.runtime.backtrace.RubyStackTraceElement[])
+     */
     public static void dumpWarning(RubyStackTraceElement[] trace) {
-        LOG.info("Warning backtrace generated:\n" + Arrays.toString(trace));
+        logWarning(trace);
     }
 
     public static TraceType traceTypeFor(String style) {
@@ -109,7 +141,7 @@ public class TraceType {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
                         javaTrace,
-                        new BacktraceElement[0],
+                        BacktraceElement.EMPTY_ARRAY,
                         true,
                         false,
                         false);
@@ -123,7 +155,7 @@ public class TraceType {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
                         javaTrace,
-                        context.createBacktrace2(0, nativeException),
+                        context.getBacktrace(),
                         true,
                         false,
                         false);
@@ -137,7 +169,7 @@ public class TraceType {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
                         javaTrace,
-                        context.createBacktrace2(0, nativeException),
+                        context.getBacktrace(),
                         false,
                         false,
                         true);
@@ -151,7 +183,7 @@ public class TraceType {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
                         javaTrace,
-                        context.createBacktrace2(0, nativeException),
+                        context.getBacktrace(),
                         false,
                         context.runtime.getInstanceConfig().getBacktraceMask(),
                         false);
@@ -165,7 +197,7 @@ public class TraceType {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
                         javaTrace,
-                        context.createBacktrace2(0, nativeException),
+                        context.getBacktrace(),
                         false,
                         true,
                         false);
@@ -302,6 +334,8 @@ public class TraceType {
 
                 if (path != null) {
                     errorStream.print(" (" + path + ")\n");
+                } else {
+                    errorStream.print('\n');
                 }
 
                 if (tail != null) {
@@ -415,20 +449,25 @@ public class TraceType {
     }
 
     public static IRubyObject generateMRIBacktrace(Ruby runtime, RubyStackTraceElement[] trace) {
-        if (trace == null) {
-            return runtime.getNil();
-        }
+        if (trace == null) return runtime.getNil();
 
-        RubyArray traceArray = RubyArray.newArray(runtime);
+        final RubyClass stringClass = runtime.getString();
+        final IRubyObject[] traceArray = new IRubyObject[trace.length];
+        final StringBuilder line = new StringBuilder();
 
         for (int i = 0; i < trace.length; i++) {
             RubyStackTraceElement element = trace[i];
-
-            RubyString str = RubyString.newString(runtime, element.getFileName() + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + "'");
-            traceArray.append(str);
+            line.setLength(0);
+            line.append( element.getFileName() )
+                .append(':')
+                .append( element.getLineNumber() )
+                .append(":in `")
+                .append( element.getMethodName() )
+                .append('\'');
+            traceArray[i] = new RubyString(runtime, stringClass, line.toString()); // must toString
         }
 
-        return traceArray;
+        return RubyArray.newArrayNoCopy(runtime, traceArray);
     }
 
     private static void printErrorPos(ThreadContext context, PrintStream errorStream) {

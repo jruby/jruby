@@ -156,7 +156,7 @@ describe "Module#autoload" do
     ModuleSpecs::Autoload.use_ex1.should == :good
   end
 
-  it "does not load the file when refering to the constant in defined?" do
+  it "does not load the file when referring to the constant in defined?" do
     module ModuleSpecs::Autoload::Q
       autoload :R, fixture(__FILE__, "autoload.rb")
       defined?(R).should == "constant"
@@ -180,7 +180,7 @@ describe "Module#autoload" do
     ModuleSpecs::Autoload.should have_constant(:O)
   end
 
-  it "returns 'constant' on refering the constant with defined?()" do
+  it "returns 'constant' on referring the constant with defined?()" do
     module ModuleSpecs::Autoload::Q
       autoload :R, fixture(__FILE__, "autoload.rb")
       defined?(R).should == 'constant'
@@ -440,5 +440,11 @@ describe "Module#autoload" do
         ScratchPad.recorded.get.should == mod_count
       end
     end
+  end
+
+  it "loads the registered constant even if the constant was already loaded by another thread" do
+    Thread.new {
+      ModuleSpecs::Autoload::FromThread::D.foo
+    }.value.should == :foo
   end
 end

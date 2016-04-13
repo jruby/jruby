@@ -37,7 +37,7 @@ public class PropertyBuilder {
     }
 
     public PropertyModel build() {
-        assert type != null;
+        // assert type != null;
 
         return new PropertyModel(name, hasObjectTypeGetter, hasFactoryGetter, hasFactorySetter,
                 hasGetter, hasSetter, hasUnsafeSetter, type,
@@ -85,12 +85,12 @@ public class PropertyBuilder {
     }
 
     public void setHasCompareAndSet(boolean hasCompareAndSet) {
-        assert !hasCompareAndSet || volatileSemantics;
+        // assert !hasCompareAndSet || volatileSemantics;
         this.hasCompareAndSet = hasCompareAndSet;
     }
 
     public void setHasGetAndSet(boolean hasGetAndSet) {
-        assert !hasGetAndSet || volatileSemantics;
+        // assert !hasGetAndSet || volatileSemantics;
         this.hasGetAndSet = hasGetAndSet;
     }
 

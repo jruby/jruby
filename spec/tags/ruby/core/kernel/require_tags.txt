@@ -4,7 +4,9 @@ fails:Kernel#require (concurrently) blocks a second thread from returning while 
 fails:Kernel#require (concurrently) blocks based on the path
 fails:Kernel#require (concurrently) allows a 2nd require if the 1st raised an exception
 fails:Kernel#require (concurrently) blocks a 3rd require if the 1st raises an exception and the 2nd is still running
+fails:Kernel#require (path resolution) does not load a relative path unless the current working directory is in $LOAD_PATH
 fails:Kernel#require (path resolution) does not load a bare filename unless the current working directory is in $LOAD_PATH
 fails:Kernel.require (path resolution) does not load a bare filename unless the current working directory is in $LOAD_PATH
-fails:Kernel#require (path resolution) does not load a relative path unless the current working directory is in $LOAD_PATH
 fails:Kernel.require (path resolution) does not load a relative path unless the current working directory is in $LOAD_PATH
+fails:Kernel.require (concurrently) allows a 2nd require if the 1st raised an exception
+fails:Kernel.require (concurrently) blocks a second thread from returning while the 1st is still requiring

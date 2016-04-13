@@ -1,4 +1,4 @@
-class java::net::URL
+class Java::java::net::URL
   def open(*rest, &block)
     stream = openStream
     io = stream.to_io

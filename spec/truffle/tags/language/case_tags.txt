@@ -1,1 +1,0 @@
-fails:The 'case'-construct expands arrays from variables before a single additional listed value

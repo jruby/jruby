@@ -17,6 +17,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyProcess;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -46,7 +47,7 @@ public class PopenExecutor {
     public static IRubyObject checkPipeCommand(ThreadContext context, IRubyObject filenameOrCommand) {
         RubyString filenameStr = filenameOrCommand.convertToString();
         ByteList filenameByteList = filenameStr.getByteList();
-        int[] chlen = {0};
+        final int[] chlen = {0};
 
         if (EncodingUtils.encAscget(
                 filenameByteList.getUnsafeBytes(),
@@ -364,9 +365,23 @@ public class PopenExecutor {
 
             if (execargAddopt(context, runtime, eargp, key, val) != ST_CONTINUE) {
                 if (raise) {
-                    if (key instanceof RubySymbol)
-                        throw runtime.newArgumentError("wrong exec option symbol: " + key);
-                    throw runtime.newArgumentError("wrong exec option");
+                    if (key instanceof RubySymbol) {
+                        switch (key.toString()) {
+                            case "gid" :
+                                //runtime.getWarnings().warn(IRubyWarnings.ID.UNSUPPORTED_SUBPROCESS_OPTION, "popen does not support :gid option in JRuby");
+                                //break;
+                                throw runtime.newNotImplementedError("popen does not support :gid option in JRuby");
+                            case "uid" :
+                                //runtime.getWarnings().warn(IRubyWarnings.ID.UNSUPPORTED_SUBPROCESS_OPTION, "popen does not support :uid option in JRuby");
+                                //break;
+                                throw runtime.newNotImplementedError("popen does not support :uid option in JRuby");
+                            default :
+                                throw runtime.newArgumentError("wrong exec option symbol: " + key);
+                        }
+                    }
+                    else {
+                        throw runtime.newArgumentError("wrong exec option");
+                    }
                 }
 
                 if (nonopts == null) nonopts = RubyHash.newHash(runtime);
@@ -779,13 +794,11 @@ public class PopenExecutor {
         for (i = 0; i < n; i++) {
             int newfd = pairs[i].newfd;
             run_exec_dup2_fd_pair key = new run_exec_dup2_fd_pair();
-            int found;
             key.oldfd = newfd;
-            found = Arrays.binarySearch(pairs, key, intcmp); /* hopefully async-signal-safe */
+            int found = Arrays.binarySearch(pairs, key, intcmp); /* hopefully async-signal-safe */
             pairs[i].num_newer = 0;
-            if (found != -1) {
-                while (found > 0 && pairs[found-1].oldfd == newfd)
-                    found--;
+            if (found >= 0) {
+                while (found > 0 && pairs[found-1].oldfd == newfd) found--;
                 while (found < n && pairs[found].oldfd == newfd) {
                     pairs[i].num_newer++;
                     pairs[found].older_index = i;
@@ -804,9 +817,8 @@ public class PopenExecutor {
                 // This always succeeds because we just defer it to posix_spawn.
                 redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
                 pairs[j].oldfd = -1;
-                j = (int)pairs[j].older_index;
-                if (j != -1)
-                    pairs[j].num_newer--;
+                j = (int) pairs[j].older_index;
+                if (j != -1) pairs[j].num_newer--;
             }
         }
 
@@ -1840,14 +1852,7 @@ public class PopenExecutor {
                 if (!has_meta && first.getUnsafeBytes() != DUMMY_ARRAY) {
                     if (first.length() == 0) first.setRealSize(p - first.getBegin());
                     if (first.length() > 0 && first.length() <= posix_sh_cmds[0].length() &&
-                            Arrays.binarySearch(posix_sh_cmds, first.toString(), new Comparator<String>() {
-                                @Override
-                                public int compare(String o1, String o2) {
-                                    int ret = o1.compareTo(o2);
-                                    if (ret == 0 && o1.length() > o2.length()) return -1;
-                                    return ret;
-                                }
-                            }) != -1)
+                        Arrays.binarySearch(posix_sh_cmds, first.toString(), StringComparator.INSTANCE) >= 0)
                         has_meta = true;
                 }
                 if (!has_meta && !eargp.chdir_given()) {
@@ -1890,8 +1895,7 @@ public class PopenExecutor {
 
         if (!eargp.use_shell && eargp.argv_buf == null) {
             int i;
-            List<byte[]> argv_buf;
-            argv_buf = new ArrayList();
+            ArrayList<byte[]> argv_buf = new ArrayList<>(argc);
             for (i = 0; i < argc; i++) {
                 IRubyObject arg = argv[i];
                 RubyString argStr = StringSupport.checkEmbeddedNulls(runtime, arg);
@@ -1910,6 +1914,18 @@ public class PopenExecutor {
             }
             eargp.argv_str = argv_str;
         }
+    }
+
+    private static final class StringComparator implements Comparator<String> {
+
+        static final StringComparator INSTANCE = new StringComparator();
+
+        public int compare(String o1, String o2) {
+            int ret = o1.compareTo(o2);
+            if (ret == 0 && o1.length() > o2.length()) return -1;
+            return ret;
+        }
+
     }
 
     private static String dlnFindExeR(Ruby runtime, String fname, String path) {

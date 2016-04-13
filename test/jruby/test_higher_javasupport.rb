@@ -2,7 +2,6 @@ require 'java'
 require 'rbconfig'
 require 'test/unit'
 require 'test/jruby/test_helper'
-require 'jruby/core_ext'
 
 TopLevelConstantExistsProc = Proc.new do
   java_import 'java.lang.String'
@@ -28,6 +27,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   class JRUBY5564; end
   def test_reified_class_in_jruby_class_loader
+    require 'jruby/core_ext'
     a_class = JRUBY5564.become_java!(false)
 
     # load the java class from the classloader
@@ -37,6 +37,21 @@ class TestHigherJavasupport < Test::Unit::TestCase
     else
       assert_raise { cl.load_class(a_class.get_name) }
     end
+  end
+
+  class Klass1 < Object
+    def method1(arg); arg end
+  end
+  class Klass2 < Klass1
+    def self.method2; end
+  end
+
+  def test_passing_a_java_class_auto_reifies
+    assert_nil Klass2.to_java.getReifiedClass
+    # previously TestHelper.getClassName(Klass2) returned 'org.jruby.RubyObject'
+    assert_equal 'rubyobj.TestHigherJavasupport.Klass2', TestHelper.getClassName(Klass2)
+    assert_not_nil Klass2.to_java.getReifiedClass
+    assert_not_nil Klass1.to_java.getReifiedClass
   end
 
   def test_java_passing_class
@@ -446,7 +461,13 @@ class TestHigherJavasupport < Test::Unit::TestCase
       Java::void[1].new
       fail "expected to raise"
     rescue ArgumentError => e
-      assert_equal "Java package `void' does not have a method `[]'", e.message
+      assert_equal "Java package 'void' does not have a method `[]' with 1 argument", e.message
+    end
+    assert Java::Void == Java::void
+    assert Java::void.equal? Java::Void
+    quiet do
+      p Java
+      p Java::void
     end
   end
 
@@ -800,7 +821,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
       java_class.declared_method 'indexOf'
       fail('not failed')
     rescue NameError => e
-      assert e.message.index "undefined method 'indexOf'"
+      assert e.message.index "undefined method `indexOf'"
     end
   end
 
@@ -844,8 +865,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_that_subpackages_havent_leaked_into_other_packages
-    assert_equal(false, Java::java.respond_to?(:zip))
-    assert_equal(false, Java::com.respond_to?(:util))
+    assert ! Java::java.respond_to?(:zip)
+    assert ! Java::com.respond_to?(:util)
+
+    assert Java::java.respond_to_missing?(:zip)
+    assert Java::comx.respond_to_missing?(:foo)
   end
 
   def test_that_sub_packages_called_java_javax_com_org_arent_short_circuited
@@ -869,6 +893,61 @@ class TestHigherJavasupport < Test::Unit::TestCase
     # Java::OrgJrubyJavasupportTestApp::UpperClass
     # Java::OrgJrubyJavasupportTestApp::lowerClass
   end if ALLOW_UPPERCASE_PACKAGE_NAMES
+
+  def test_package_class
+    assert org.jruby.class.is_a?(Class)
+    assert_equal org.jruby.class, Java::JavaPackage
+    assert_equal Java::OrgJrubyJavasupport.class, Java::JavaPackage
+
+    assert org.jruby.singleton_class.is_a?(Class)
+    assert_not_equal org.jruby.singleton_class, org.jruby.class
+    assert_not_equal org.jruby.singleton_class, org.jruby.javasupport.singleton_class
+  end
+
+  def test_package_name_colliding_with_name_method
+    assert_equal 'Java::OrgJrubyJavasupport', org.jruby.javasupport.name
+    assert_equal true, org.jruby.javasupport.respond_to?(:name)
+    assert org.jruby.javasupport.test.is_a?(Java::JavaPackage)
+
+    assert_equal 'Java::OrgJrubyJavasupportTest', org.jruby.javasupport.test.name
+    # we can use :: to access the name package :
+    assert Java::OrgJrubyJavasupportTestName.is_a?(Java::JavaPackage)
+    assert Java::OrgJrubyJavasupportTestName::Sample
+  end
+
+  def test_package_object_id
+    assert org.jruby.object_id.is_a?(Fixnum)
+    assert Java::java::lang.object_id.is_a?(Fixnum)
+  end
+
+  def test_package_singleton_method_hooks
+    assert org.respond_to?(:singleton_method_added, true)
+    assert java.lang.respond_to?(:singleton_method_removed, true)
+
+    assert_nil org.__send__(:singleton_method_added, :sym)
+    assert_nil java.lang.__send__(:singleton_method_removed, :sym)
+  end
+
+  def test_package_does_not_respond_to_hidden_methods
+    assert Kernel.respond_to?(:test)
+    assert ! org.respond_to?(:test)
+    assert ! java.lang.respond_to?(:test, true)
+  end
+
+  def test_package_does_respond_to_missing
+    assert org.respond_to_missing?(:test)
+    assert java.lang.respond_to_missing?(:test)
+    assert java.lang.respond_to_missing?(:test, true)
+  end
+
+  def test_package_to_s_returns_name
+    assert_equal 'org.jruby', org.jruby.to_s
+    assert_equal 'java.lang.reflect', Java::JavaLangReflect.to_s
+  end
+
+  def test_package_inspect
+    assert_equal 'Java::JavaLangReflect', java.lang.reflect.inspect
+  end
 
   @@include_proc = Proc.new do
     Thread.stop
@@ -909,27 +988,13 @@ class TestHigherJavasupport < Test::Unit::TestCase
     end
   end
 
-  if javax.xml.namespace.NamespaceContext.instance_of?(Module)
-
-    class NSCT
-      include javax.xml.namespace.NamespaceContext
-      # JRUBY-66: No super here...make sure we still work.
-      def initialize(arg); end
-      def getNamespaceURI(prefix)
-        'ape:sex'
-      end
+  class NSCT
+    include javax.xml.namespace.NamespaceContext
+    # JRUBY-66: No super here...make sure we still work.
+    def initialize(arg); end
+    def getNamespaceURI(prefix)
+      'ape:sex'
     end
-
-  else
-
-    class NSCT < javax.xml.namespace.NamespaceContext
-      # JRUBY-66: No super here...make sure we still work.
-      def initialize(arg); end
-      def getNamespaceURI(prefix)
-        'ape:sex'
-      end
-    end
-
   end
 
   def test_no_need_to_call_super_in_initialize_when_implementing_java_interfaces
@@ -950,23 +1015,13 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert(java.lang.System.respond_to?("current_time_millis"))
   end
 
-  if Java::java.lang.Runnable.instance_of?(Module)
-    class TestInitBlock
-      include Java::java.lang.Runnable
-      def initialize(&block)
-        raise if !block
-        @bar = block.call
-      end
-      def bar; @bar; end
+  class TestInitBlock
+    include Java::java.lang.Runnable
+    def initialize(&block)
+      raise if !block
+      @bar = block.call
     end
-  else
-    class TestInitBlock < Java::java.lang.Runnable
-      def initialize(&block)
-        raise if !block
-        @bar = block.call
-      end
-      def bar; @bar; end
-    end
+    def bar; @bar; end
   end
 
   def test_that_blocks_are_passed_through_to_the_constructor_for_an_interface_impl
@@ -1197,16 +1252,36 @@ CLASSDEF
 
   # JRUBY-781
   def test_that_classes_beginning_with_small_letter_can_be_referenced
-    assert_equal Module, org.jruby.test.smallLetterClazz.class
+    assert_equal Java::JavaPackage, org.jruby.test.smallLetterClazz.class
+    assert org.jruby.test.smallLetterClazz.is_a?(Module)
+    assert ! org.jruby.test.smallLetterClazz.is_a?(Class)
+    
     assert_equal Class, org.jruby.test.smallLetterClass.class
+    assert ! org.jruby.test.smallLetterClass.is_a?(Java::JavaPackage)
+  end
+
+  Module.send :remove_method, :attr
+
+  module SmallLetter
+    java_import 'org.jruby.test.smallLetterClass$ClassWithAttr'
+  end
+
+  def test_inner_class_starting_with_small_letter
+    assert SmallLetter::ClassWithAttr
+    assert SmallLetter::ClassWithAttr.java_class
+    assert_equal 42, SmallLetter::ClassWithAttr.id.value
+    # we need to undef Module#attr :
+    # Module.send :remove_method, :attr
+    assert_equal 42, SmallLetter::ClassWithAttr.attr.value
   end
 
   # JRUBY-1076
   def test_package_module_aliased_methods
     assert java.lang.respond_to?(:__constants__)
-    assert java.lang.respond_to?(:__methods__)
+    assert java.lang.respond_to?(:__methods__, true)
 
-    java.lang.String # ensure java.lang.String has been loaded
+    java.lang.String # ensure java.lang.
+    # String has been loaded
     assert java.lang.__constants__.include?(:String)
   end
 
@@ -1359,6 +1434,16 @@ CLASSDEF
     end
   end
 
+  # GH-3262
+  def test_indexed_bean_style_accessors_are_not_aliased
+    # ArgumentError: wrong number of arguments (0 for 1)
+    assert java.lang.Character.name
+    java.lang.Character.getName(42) # nothing raised
+    assert_raises(ArgumentError) do
+      java.lang.Character.name(42) # `getName(int)' NOT mapped to `name(i)'
+    end
+  end
+
   def test_no_warnings_on_concurrent_package_const_initialization
     output = with_stderr_captured do
       threads = (0..10).map do # smt not yet initialized :
@@ -1408,7 +1493,7 @@ CLASSDEF
 
   # reproducing https://github.com/jruby/jruby/issues/1621
   def test_concurrent_proxy_class_initialization_dead_lock
-    timeout = 0.5; threads_to_kill = []
+    timeout = (ENV['TEST_CONCURRENT_TIMEOUT'] || 0.5).to_f; threads_to_kill = []
     begin
       threads = %w{ A B C D E F G H }.map do |sym|
         Thread.new { Java::Default.const_get "Bug1621#{sym}" }
@@ -1422,6 +1507,18 @@ CLASSDEF
     ensure
       threads_to_kill.each { |thread| thread.exit rescue nil }
     end
+  end
+
+  def test_java_proxy_coerce_into_ruby_object; require 'jruby' # @see GH-1925
+    proxied_java_object = java.util.concurrent.atomic.AtomicReference.new '42'
+    # defineReadonlyVariable expects an IRubyObject
+    JRuby.runtime.defineReadonlyVariable('$an_answer', proxied_java_object, org.jruby.internal.runtime.GlobalVariable::Scope::GLOBAL)
+    assert $an_answer
+    assert_equal 42.to_s, $an_answer.get
+
+    proxied_java_object = Java::int[1].new; proxied_java_object[0] = 42
+    JRuby.runtime.defineReadonlyVariable('$an_answer', proxied_java_object, org.jruby.internal.runtime.GlobalVariable::Scope::GLOBAL)
+    assert_equal 42, $an_answer[0]
   end
 
   def test_callable_no_match_raised_errors

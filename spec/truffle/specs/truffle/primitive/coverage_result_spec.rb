@@ -10,8 +10,8 @@ require_relative '../../../../ruby/spec_helper'
 
 describe "Truffle::Primitive.coverage_result" do
   
-  it "returns nil" do
-    Truffle::Primitive.coverage_result.should be_nil
+  it "returns an empty hash" do
+    Truffle::Primitive.coverage_result.should == {}
   end
   
   it "needs to be reviewed for spec completeness"

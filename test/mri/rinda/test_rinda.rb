@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'test/unit'
 
 require 'drb/drb'
@@ -488,8 +489,7 @@ class TupleSpaceProxyTest < Test::Unit::TestCase
   end
 
   def test_take_bug_8215
-    require_relative '../ruby/envutil'
-    service = DRb.start_service(nil, @ts_base)
+    service = DRb.start_service("druby://localhost:0", @ts_base)
 
     uri = service.uri
 
@@ -497,7 +497,7 @@ class TupleSpaceProxyTest < Test::Unit::TestCase
 
     take = spawn(*args, <<-'end;', uri)
       uri = ARGV[0]
-      DRb.start_service
+      DRb.start_service("druby://localhost:0")
       ro = DRbObject.new_with_uri(uri)
       ts = Rinda::TupleSpaceProxy.new(ro)
       th = Thread.new do
@@ -513,7 +513,7 @@ class TupleSpaceProxyTest < Test::Unit::TestCase
 
     write = spawn(*args, <<-'end;', uri)
       uri = ARGV[0]
-      DRb.start_service
+      DRb.start_service("druby://localhost:0")
       ro = DRbObject.new_with_uri(uri)
       ts = Rinda::TupleSpaceProxy.new(ro)
       ts.write([:test_take, 42])
@@ -532,7 +532,7 @@ class TupleSpaceProxyTest < Test::Unit::TestCase
     Process.wait(take)  if take
   end
 
-  @server = DRb.primary_server || DRb.start_service
+  @server = DRb.primary_server || DRb.start_service("druby://localhost:0")
 end
 
 module RingIPv6
@@ -548,7 +548,7 @@ module RingIPv6
     rescue NotImplementedError
       # ifindex() function may not be implemented on Windows.
       return if
-        Socket.ip_address_list.any? { |addrinfo| addrinfo.ipv6? }
+        Socket.ip_address_list.any? { |addrinfo| addrinfo.ipv6? && !addrinfo.ipv6_loopback? }
     end
     skip 'IPv6 not available'
   end
@@ -637,7 +637,7 @@ class TestRingServer < Test::Unit::TestCase
 
   def test_make_socket_ipv6_multicast
     skip 'IPv6 not available' unless
-      Socket.ip_address_list.any? { |addrinfo| addrinfo.ipv6? }
+      Socket.ip_address_list.any? { |addrinfo| addrinfo.ipv6? && !addrinfo.ipv6_loopback? }
 
     begin
       v6mc = @rs.make_socket('ff02::1')
@@ -672,7 +672,7 @@ class TestRingServer < Test::Unit::TestCase
 
   def test_ring_server_ipv6_multicast
     skip 'IPv6 not available' unless
-      Socket.ip_address_list.any? { |addrinfo| addrinfo.ipv6? }
+      Socket.ip_address_list.any? { |addrinfo| addrinfo.ipv6? && !addrinfo.ipv6_loopback? }
 
     @rs.shutdown
     begin

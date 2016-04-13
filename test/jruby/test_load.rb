@@ -1,12 +1,10 @@
 require 'test/unit'
 require 'test/jruby/test_helper'
 require 'rbconfig'
-require 'jruby/path_helper'
-
 
 def load_behavior_block(&block)
   eval("__FILE__", block.binding)
-end
+end # used in test_loading_behavior
 
 class TestLoad < Test::Unit::TestCase
   include TestHelper
@@ -319,4 +317,10 @@ DEPS
       end
     end
   end
+
+  def test_load_wrapped
+    pend 'TODO: fix load module wrapping'
+    load(File.expand_path('hello_dummy.rb', File.dirname(__FILE__)), true)
+  end
+
 end

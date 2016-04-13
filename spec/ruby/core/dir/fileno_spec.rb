@@ -1,6 +1,18 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 
+has_dir_fileno = begin
+  dir = Dir.new('.')
+  dir.fileno
+  true
+rescue NotImplementedError
+  false
+rescue Exception
+  true
+ensure
+  dir.close
+end
+
 ruby_version_is "2.2" do
   describe "Dir#fileno" do
     before :each do
@@ -14,15 +26,13 @@ ruby_version_is "2.2" do
       rm_r @name
     end
 
-    platform_is_not :windows do
+    if has_dir_fileno
       it "returns the file descriptor of the dir" do
-        @dir.fileno.should.be_kind_of(Fixnum)
+        @dir.fileno.should be_kind_of(Fixnum)
       end
-    end
-
-    platform_is :windows do
-      it "raises an error on Windows" do
-        lambda { @dir.fileno }.to raise_error(NotImplementedError)
+    else
+      it "raises an error when not implemented on the platform" do
+        lambda { @dir.fileno }.should raise_error(NotImplementedError)
       end
     end
   end

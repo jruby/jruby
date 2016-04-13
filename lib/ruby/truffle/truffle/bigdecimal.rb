@@ -94,7 +94,7 @@ class Truffle::BigDecimal < Numeric
   alias_method :===, :==
 
   def coerce(other)
-    [BigDecimal(other), self]
+    [BigDecimal(other, 20), self]
   end
 
   # TODO (pitr 28-may-2015): compare with pure Java versions

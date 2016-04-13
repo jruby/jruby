@@ -1,1 +1,1 @@
-exclude :test_sz, "produces incorrect dates near epoch? (#2149)"
+exclude :test_sz, "Fix from MRI r45822 did not appear to work"

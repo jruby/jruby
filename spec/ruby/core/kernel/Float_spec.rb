@@ -198,6 +198,63 @@ describe :kernel_float, shared: true do
     end
   end
 
+  describe "for hexadecimal literals with binary exponent" do
+    %w(p P).each do |p|
+      it "interprets the fractional part (on the left side of '#{p}') in hexadecimal" do
+        @object.send(:Float, "0x10#{p}0").should == 16.0
+      end
+
+      it "interprets the exponent (on the right of '#{p}') in decimal" do
+        @object.send(:Float, "0x1#{p}10").should == 1024.0
+      end
+
+      it "raises an ArgumentError if #{p} is the trailing character" do
+        lambda { @object.send(:Float, "0x1#{p}") }.should raise_error(ArgumentError)
+      end
+
+      it "raises an ArgumentError if #{p} is the leading character" do
+        lambda { @object.send(:Float, "0x#{p}1") }.should raise_error(ArgumentError)
+      end
+
+      it "returns Infinity for '0x1#{p}10000'" do
+        @object.send(:Float, "0x1#{p}10000").should == Float::INFINITY
+      end
+
+      it "returns 0 for '0x1#{p}-10000'" do
+        @object.send(:Float, "0x1#{p}-10000").should == 0
+      end
+
+      it "allows embedded _ in a number on either side of the #{p}" do
+        @object.send(:Float, "0x1_0#{p}10").should == 16384.0
+        @object.send(:Float, "0x10#{p}1_0").should == 16384.0
+        @object.send(:Float, "0x1_0#{p}1_0").should == 16384.0
+      end
+
+      it "raises an exception if a space is embedded on either side of the '#{p}'" do
+        lambda { @object.send(:Float, "0x1 0#{p}10") }.should raise_error(ArgumentError)
+        lambda { @object.send(:Float, "0x10#{p}1 0") }.should raise_error(ArgumentError)
+      end
+
+      it "raises an exception if there's a leading _ on either side of the '#{p}'" do
+        lambda { @object.send(:Float, "0x_10#{p}10") }.should raise_error(ArgumentError)
+        lambda { @object.send(:Float, "0x10#{p}_10") }.should raise_error(ArgumentError)
+      end
+
+      it "raises an exception if there's a trailing _ on either side of the '#{p}'" do
+        lambda { @object.send(:Float, "0x10_#{p}10") }.should raise_error(ArgumentError)
+        lambda { @object.send(:Float, "0x10#{p}10_") }.should raise_error(ArgumentError)
+      end
+
+      it "allows hexadecimal points on the left side of the '#{p}'" do
+        @object.send(:Float, "0x1.8#{p}0").should == 1.5
+      end
+
+      it "raises an ArgumentError if there's a decimal point on the right side of the '#{p}'" do
+        lambda { @object.send(:Float, "0x1#{p}1.0") }.should raise_error(ArgumentError)
+      end
+    end
+  end
+
   it "returns a Float that can be a parameter to #Float again" do
     float = @object.send(:Float, "10")
     @object.send(:Float, float).should == 10.0

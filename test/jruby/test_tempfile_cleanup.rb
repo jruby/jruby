@@ -29,7 +29,7 @@ class TestTempfilesCleanUp < Test::Unit::TestCase
       else
         GC.start
       end
-      break if Time.now - t > 10 || Dir["#{@tmpdir}/*"].size == 0
+      break if Time.now - t > 20 || Dir["#{@tmpdir}/*"].size == 0
       sleep(0.1)
     end
 

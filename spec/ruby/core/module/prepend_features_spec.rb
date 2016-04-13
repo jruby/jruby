@@ -40,6 +40,28 @@ describe "Module#prepend_features" do
     other.untrusted?.should be_true
   end
 
+  it "clears caches of the given module" do
+    parent = Class.new do
+      def bar; :bar; end
+    end
+
+    child = Class.new(parent) do
+      def foo; :foo; end
+      def bar; super; end
+    end
+
+    mod = Module.new do
+      def foo; :fooo; end
+    end
+
+    child.new.foo
+    child.new.bar
+
+    child.prepend(mod)
+
+    child.new.bar.should == :bar
+  end
+
   describe "on Class" do
     it "is undefined" do
       Class.should_not have_private_instance_method(:prepend_features, true)

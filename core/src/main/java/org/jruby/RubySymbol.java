@@ -42,12 +42,10 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.Constantizable;
-import org.jruby.RubyEncoding;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -57,25 +55,28 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
+import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.Arrays;
 
+import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
+import static org.jruby.util.StringSupport.codeRangeScan;
 
 /**
  * Represents a Ruby symbol (e.g. :bar)
  */
 @JRubyClass(name="Symbol")
-public class RubySymbol extends RubyObject implements MarshalEncoding, Constantizable {
+public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable {
     public static final long symbolHashSeedK0 = 5238926673095087190l;
 
     private final String symbol;
@@ -97,6 +98,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         //        assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
 
         this.symbol = internedSymbol;
+        if (codeRangeScan(symbolBytes.getEncoding(), symbolBytes) == CR_7BIT) {
+            symbolBytes = symbolBytes.dup();
+            symbolBytes.setEncoding(USASCIIEncoding.INSTANCE);
+        }
         this.symbolBytes = symbolBytes;
         this.id = runtime.allocSymbolId();
 
@@ -186,7 +191,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     /* Symbol class methods.
      *
      */
-
+    @Deprecated
     public static RubySymbol newSymbol(Ruby runtime, IRubyObject name) {
         if (name instanceof RubySymbol) {
             return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), false);
@@ -198,13 +203,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     }
 
     public static RubySymbol newHardSymbol(Ruby runtime, IRubyObject name) {
-        if (name instanceof RubySymbol) {
-            return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), true);
-        } else if (name instanceof RubyString) {
-            return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList(), true);
-        } else {
-            return newSymbol(runtime, name.asJavaString());
+        if (name instanceof RubySymbol || name instanceof RubyString) {
+            return runtime.getSymbolTable().getSymbol(name.asJavaString(), true);
         }
+
+        return newSymbol(runtime, name.asJavaString());
     }
 
     public static RubySymbol newSymbol(Ruby runtime, String name) {
@@ -466,70 +469,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
-        final CallSite site = new FunctionalCachingCallSite(symbol);
-        BlockBody body = new ContextAwareBlockBody(scope, Signature.OPTIONAL) {
-            private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block block) {
-                if (array.isEmpty()) {
-                    throw context.runtime.newArgumentError("no receiver given");
-                }
-
-                IRubyObject self = array.shift(context);
-
-                return site.call(context, self, self, array.toJavaArray(), block);
-            }
-
-            @Override
-            public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                                     Binding binding, Type type, Block block) {
-                RubyProc.prepareArgs(context, type, block.getBody(), args);
-                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), block);
-            }
-
-            @Override
-            public IRubyObject yield(ThreadContext context, IRubyObject value,
-                    Binding binding, Block.Type type, Block block) {
-                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), block);
-            }
-
-            @Override
-            protected IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
-            }
-
-            @Override
-            protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type) {
-                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), Block.NULL_BLOCK);
-            }
-
-            @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
-                return site.call(context, arg0, arg0);
-            }
-
-            @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-                return site.call(context, arg0, arg0, arg1);
-            }
-
-            @Override
-            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-                return site.call(context, arg0, arg0, arg1, arg2);
-            }
-
-            @Override
-            public String getFile() {
-                return symbol;
-            }
-
-            @Override
-            public int getLine() {
-                return -1;
-            }
-        };
+        BlockBody body = new SymbolProcBody(context.runtime, symbol);
 
         return RubyProc.newProc(context.runtime,
-                                new Block(body, context.currentBinding()),
+                                new Block(body, Binding.DUMMY),
                                 Block.Type.PROC);
     }
 
@@ -689,6 +632,16 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
     public static ByteList symbolBytesFromString(Ruby runtime, String internedSymbol) {
         return new ByteList(ByteList.plain(internedSymbol), USASCIIEncoding.INSTANCE, false);
+    }
+
+    @Override
+    public Encoding getEncoding() {
+        return symbolBytes.getEncoding();
+    }
+
+    @Override
+    public void setEncoding(Encoding e) {
+        symbolBytes.setEncoding(e);
     }
 
     public static final class SymbolTable {
@@ -1070,6 +1023,76 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             return ((RubyString)object).getByteList().toString();
         } else {
             return object.convertToString().getByteList().toString();
+        }
+    }
+
+    private static class SymbolProcBody extends ContextAwareBlockBody {
+        private final CallSite site;
+
+        public SymbolProcBody(Ruby runtime, String symbol) {
+            super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
+            this.site = new FunctionalCachingCallSite(symbol);
+        }
+
+        private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
+            if (array.isEmpty()) {
+                throw context.runtime.newArgumentError("no receiver given");
+            }
+
+            IRubyObject self = array.shift(context);
+
+            return site.call(context, self, self, array.toJavaArray(), blockArg);
+        }
+
+        @Override
+        public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+            RubyProc.prepareArgs(context, block.type, blockArg.getBody(), args);
+            return yieldInner(context, context.runtime.newArrayNoCopyLight(args), blockArg);
+        }
+
+        @Override
+        public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, Block blockArg) {
+            return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), blockArg);
+        }
+
+        @Override
+        protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
+            return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
+        }
+
+        @Override
+        protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+            return yieldInner(context, context.runtime.newArrayNoCopyLight(args), Block.NULL_BLOCK);
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
+            return site.call(context, arg0, arg0);
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
+            return site.call(context, arg0, arg0, arg1);
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            return site.call(context, arg0, arg0, arg1, arg2);
+        }
+
+        @Override
+        public String getFile() {
+            return site.methodName;
+        }
+
+        @Override
+        public int getLine() {
+            return -1;
+        }
+
+        @Override
+        public ArgumentDescriptor[] getArgumentDescriptors() {
+            return ArgumentDescriptor.ANON_REST;
         }
     }
 }

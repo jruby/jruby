@@ -1,0 +1,5 @@
+fails:BasicSocket#getsockopt gets a socket option Socket::SO_TYPE
+fails:BasicSocket#getsockopt gets a socket option Socket::SO_OOBINLINE
+fails:BasicSocket#getsockopt gets a socket option Socket::SO_LINGER
+fails:BasicSocket#getsockopt gets a socket option Socket::SO_SNDBUF
+fails:BasicSocket#getsockopt raises a SystemCallError with an invalid socket option

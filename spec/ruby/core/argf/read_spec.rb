@@ -1,6 +1,9 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../shared/read', __FILE__)
 
 describe "ARGF.read" do
+  it_behaves_like :argf_read, :read
+
   before :each do
     @file1_name = fixture __FILE__, "file1.txt"
     @file2_name = fixture __FILE__, "file2.txt"
@@ -20,34 +23,6 @@ describe "ARGF.read" do
   it "treats first nil argument as no length limit" do
     argf [@file1_name] do
       @argf.read(nil).should == @file1
-    end
-  end
-
-  it "treats second nil argument as no output buffer" do
-    argf [@file1_name] do
-      @argf.read(nil, nil).should == @file1
-    end
-  end
-
-  it "treats second argument as an output buffer" do
-    argf [@file1_name] do
-      buffer = ""
-      @argf.read(nil, buffer)
-      buffer.should == @file1
-    end
-  end
-
-  it "reads a number of bytes from the first file" do
-    argf [@file1_name] do
-      @argf.read(5).should == @file1[0,5]
-    end
-  end
-
-  it "reads from a single file consecutively" do
-    argf [@file1_name] do
-      @argf.read(1).should == @file1[0,1]
-      @argf.read(2).should == @file1[1,2]
-      @argf.read(3).should == @file1[3,3]
     end
   end
 
@@ -76,11 +51,6 @@ describe "ARGF.read" do
     stdin.should == @stdin
   end
 
-  it "reads a number of bytes from stdin" do
-    stdin = ruby_exe("print ARGF.read(10)", args: "< #{@stdin_name}")
-    stdin.should == @stdin[0,10]
-  end
-
   it "reads the contents of one file and stdin" do
     stdin = ruby_exe("print ARGF.read", args: "#{@file1_name} - < #{@stdin_name}")
     stdin.should == @file1 + @stdin
@@ -89,14 +59,6 @@ describe "ARGF.read" do
   it "reads the contents of the same file twice" do
     argf [@file1_name, @file1_name] do
       @argf.read.should == @file1 + @file1
-    end
-  end
-
-  platform_is_not :windows do
-    it "reads the contents of a special device file" do
-      argf ['/dev/zero'] do
-        @argf.read(100).should == "\000" * 100
-      end
     end
   end
 

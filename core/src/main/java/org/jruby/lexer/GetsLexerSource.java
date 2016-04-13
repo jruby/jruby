@@ -7,9 +7,15 @@ package org.jruby.lexer;
 import org.jcodings.Encoding;
 import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.IOInputStream;
+import org.jruby.util.io.ChannelHelper;
+
+import java.nio.channels.Channel;
+import java.nio.channels.Channels;
 
 /**
  *  Lexer source from ripper getting a line at a time via 'gets' calls.
@@ -75,5 +81,16 @@ public class GetsLexerSource extends LexerSource {
     @Override
     public int getOffset() {
         return offset;
+    }
+
+    @Override
+    public Channel getRemainingAsChannel() {
+        if (io instanceof RubyIO) return ((RubyIO) io).getChannel();
+        return ChannelHelper.readableChannel(new IOInputStream(io));
+    }
+
+    @Override
+    public IRubyObject getRemainingAsIO() {
+        return io;
     }
 }

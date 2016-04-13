@@ -89,7 +89,7 @@ public class JavaProxy extends RubyObject {
         this.object = javaObject.getValue();
     }
 
-    public Object getObject() {
+    public final Object getObject() {
         // FIXME: Added this because marshal_spec seemed to reconstitute objects without calling dataWrapStruct
         // this resulted in object being null after unmarshalling...
         if (object == null) {
@@ -451,6 +451,7 @@ public class JavaProxy extends RubyObject {
         final Class<?> clazz = object.getClass();
 
         if ( type.isAssignableFrom(clazz) ) return object;
+        if ( type.isAssignableFrom(getClass()) ) return this; // e.g. IRubyObject.class
 
         throw getRuntime().newTypeError("failed to coerce " + clazz.getName() + " to " + type.getName());
     }
@@ -501,7 +502,7 @@ public class JavaProxy extends RubyObject {
     public static class ClassMethods {
 
         // handling non-public inner classes retrieval ... like private constants
-        @JRubyMethod(name = "const_missing", required = 1, meta = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "const_missing", required = 1, meta = true, visibility = Visibility.PRIVATE, frame = true)
         public static IRubyObject const_missing(ThreadContext context, IRubyObject self, IRubyObject name) {
             return Java.get_inner_class(context, (RubyModule) self, name);
         }

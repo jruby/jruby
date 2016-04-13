@@ -20,7 +20,11 @@ import org.jruby.truffle.om.dsl.processor.layout.model.NameUtils;
 import org.jruby.truffle.om.dsl.processor.layout.model.PropertyBuilder;
 import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
 
-import javax.lang.model.element.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
@@ -58,7 +62,7 @@ public class LayoutParser {
                 if (simpleName.endsWith("_IDENTIFIER")) {
                     parseIdentifier((VariableElement) element);
                 } else {
-                    throw new AssertionError("Unknown field in layout interface");
+                    // throw new AssertionError("Unknown field in layout interface");
                 }
             } else if (element.getKind() == ElementKind.METHOD) {
                 final String simpleName = element.getSimpleName().toString();
@@ -78,18 +82,18 @@ public class LayoutParser {
                 } else if (simpleName.startsWith("set")) {
                     parseSetter((ExecutableElement) element);
                 } else {
-                    throw new AssertionError("Unknown method '" + simpleName + "' in layout interface " + interfaceFullName);
+                    // throw new AssertionError("Unknown method '" + simpleName + "' in layout interface " + interfaceFullName);
                 }
             }
         }
 
-        assert constructorProperties.size() == properties.size();
-        assert constructorProperties.containsAll(properties.keySet());
+        // assert constructorProperties.size() == properties.size();
+        // assert constructorProperties.containsAll(properties.keySet());
     }
 
     private void parseIdentifier(VariableElement fieldElement) {
         final String name = fieldElement.getSimpleName().toString();
-        assert name.endsWith("_IDENTIFIER");
+        // assert name.endsWith("_IDENTIFIER");
 
         final String propertyName = NameUtils.constantToIdentifier(name.substring(0, name.length() - "_IDENTIFIER".length()));
 
@@ -109,7 +113,7 @@ public class LayoutParser {
         interfaceFullName = layoutElement.getQualifiedName().toString();
 
         final String nameString = layoutElement.getSimpleName().toString();
-        assert nameString.endsWith("Layout");
+        // assert nameString.endsWith("Layout");
         name = nameString.substring(0, nameString.length() - "Layout".length());
     }
 
@@ -117,7 +121,7 @@ public class LayoutParser {
         List<? extends VariableElement> parameters = methodElement.getParameters();
 
         if (superLayout != null) {
-            assert parameters.size() >= superLayout.getAllShapeProperties().size();
+            // assert parameters.size() >= superLayout.getAllShapeProperties().size();
             parameters = parameters.subList(superLayout.getAllShapeProperties().size(), parameters.size());
         }
 
@@ -137,12 +141,12 @@ public class LayoutParser {
         List<? extends VariableElement> parameters = methodElement.getParameters();
 
         if (hasShapeProperties || (superLayout != null && superLayout.hasShapeProperties())) {
-            assert parameters.get(0).asType().toString().equals(DynamicObjectFactory.class.getName()) : parameters.get(0).asType();
+            // assert parameters.get(0).asType().toString().equals(DynamicObjectFactory.class.getName()) : parameters.get(0).asType();
             parameters = parameters.subList(1, parameters.size());
         }
 
         if (superLayout != null) {
-            assert parameters.size() >= superLayout.getAllNonShapeProperties().size();
+            // assert parameters.size() >= superLayout.getAllNonShapeProperties().size();
             parameters = parameters.subList(superLayout.getAllNonShapeProperties().size(), parameters.size());
         }
 
@@ -177,41 +181,41 @@ public class LayoutParser {
     }
 
     private void parseGuard(ExecutableElement methodElement) {
-        assert methodElement.getParameters().size() == 1;
+        // assert methodElement.getParameters().size() == 1;
 
         final String type = methodElement.getParameters().get(0).asType().toString();
 
         if (type.equals(DynamicObject.class.getName())) {
-            assert !hasDynamicObjectGuard;
+            // assert !hasDynamicObjectGuard;
             hasDynamicObjectGuard = true;
         } else if (type.equals(ObjectType.class.getName())) {
-            assert !hasObjectTypeGuard;
+            // assert !hasObjectTypeGuard;
             hasObjectTypeGuard = true;
         } else if (type.equals(Object.class.getName())) {
-            assert !hasObjectGuard;
+            // assert !hasObjectGuard;
             hasObjectGuard = true;
         } else {
-            assert false : "Unknown type for the first guard parameter: " + type;
+            // assert false : "Unknown type for the first guard parameter: " + type;
         }
     }
 
     private void parseGetter(ExecutableElement methodElement) {
-        assert methodElement.getSimpleName().toString().startsWith("get");
-        assert methodElement.getParameters().size() == 1;
+        // assert methodElement.getSimpleName().toString().startsWith("get");
+        // assert methodElement.getParameters().size() == 1;
 
         final boolean isFactoryGetter = methodElement.getParameters().get(0).asType().toString().equals(DynamicObjectFactory.class.getName());
         final boolean isObjectTypeGetter = methodElement.getParameters().get(0).asType().toString().equals(ObjectType.class.getName());
 
-        assert !(isFactoryGetter & isObjectTypeGetter);
+        // assert !(isFactoryGetter & isObjectTypeGetter);
 
-        if (isFactoryGetter) {
-            assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
-        } else if (isObjectTypeGetter) {
-            assert methodElement.getParameters().get(0).getSimpleName().toString().equals("objectType");
-        } else {
-            assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
-            assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
-        }
+        //if (isFactoryGetter) {
+        //     assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
+        //} else if (isObjectTypeGetter) {
+        //     assert methodElement.getParameters().get(0).getSimpleName().toString().equals("objectType");
+        //} else {
+        //     assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
+        //     assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+        //}
 
         final String name = titleToCamel(methodElement.getSimpleName().toString().substring("get".length()));
         final PropertyBuilder property = getProperty(name);
@@ -228,20 +232,20 @@ public class LayoutParser {
     }
 
     private void parseSetter(ExecutableElement methodElement) {
-        assert methodElement.getSimpleName().toString().startsWith("set");
-        assert methodElement.getParameters().size() == 2;
+        // assert methodElement.getSimpleName().toString().startsWith("set");
+        // assert methodElement.getParameters().size() == 2;
 
         final boolean isFactorySetter = methodElement.getParameters().get(0).asType().toString().equals(DynamicObjectFactory.class.getName());
         final boolean isUnsafeSetter = methodElement.getSimpleName().toString().endsWith("Unsafe");
 
-        assert !(isFactorySetter && isUnsafeSetter);
+        // assert !(isFactorySetter && isUnsafeSetter);
 
-        if (isFactorySetter) {
-            assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
-        } else {
-            assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
-            assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
-        }
+        //if (isFactorySetter) {
+        //    assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
+        //} else {
+        //    assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
+        //    assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+        //}
 
         String name = titleToCamel(methodElement.getSimpleName().toString().substring("set".length()));
 
@@ -265,10 +269,10 @@ public class LayoutParser {
     }
 
     private void parseCompareAndSet(ExecutableElement methodElement) {
-        assert methodElement.getSimpleName().toString().startsWith("compareAndSet");
-        assert methodElement.getParameters().size() == 3;
-        assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
-        assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+        // assert methodElement.getSimpleName().toString().startsWith("compareAndSet");
+        // assert methodElement.getParameters().size() == 3;
+        // assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
+        // assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
 
         String name = titleToCamel(methodElement.getSimpleName().toString().substring("compareAndSet".length()));
         final PropertyBuilder property = getProperty(name);
@@ -280,10 +284,10 @@ public class LayoutParser {
     }
 
     private void parseGetAndSet(ExecutableElement methodElement) {
-        assert methodElement.getSimpleName().toString().startsWith("getAndSet");
-        assert methodElement.getParameters().size() == 2;
-        assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
-        assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+        // assert methodElement.getSimpleName().toString().startsWith("getAndSet");
+        // assert methodElement.getParameters().size() == 2;
+        // assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
+        // assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
 
         String name = titleToCamel(methodElement.getSimpleName().toString().substring("getAndSet".length()));
         final PropertyBuilder property = getProperty(name);
@@ -312,7 +316,7 @@ public class LayoutParser {
         if (builder.getType() == null) {
             builder.setType(type);
         } else {
-            assert builder.getType().toString().equals(type.toString());
+            // assert builder.getType().toString().equals(type.toString());
         }
     }
 

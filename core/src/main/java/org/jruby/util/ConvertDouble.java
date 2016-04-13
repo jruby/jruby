@@ -156,7 +156,7 @@ public class ConvertDouble {
             return SafeDoubleParser.parseDouble(new String(chars, 0, charsIndex));
         }
 
-        class LightweightNumberFormatException extends NumberFormatException {
+        static class LightweightNumberFormatException extends NumberFormatException {
             public LightweightNumberFormatException(String message) {
                 super(message);
             }

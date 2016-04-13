@@ -7,12 +7,14 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
 
 public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRBlockBody");
@@ -30,15 +32,21 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
         // JIT currently JITs blocks along with their method and no on-demand by themselves.  We only
         // promote to full build here if we are -X-C.
-        if (!closure.getManager().getInstanceConfig().getCompileMode().shouldJIT()) {
+        if (!closure.getManager().getInstanceConfig().getCompileMode().shouldJIT() ||
+                Options.JIT_THRESHOLD.load() < 0) {
             callCount = -1;
         }
     }
 
     @Override
     public void setEvalType(EvalType evalType) {
-        this.evalType.set(evalType);
-        if (jittedBody != null) jittedBody.setEvalType(evalType);
+        if (jittedBody == null) this.evalType.set(evalType);
+        else jittedBody.setEvalType(evalType);
+    }
+
+    @Override
+    public boolean canCallDirect() {
+        return jittedBody != null || (interpreterContext != null && interpreterContext.hasExplicitCallProtocol());
     }
 
     @Override
@@ -75,6 +83,12 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         }
 
         if (interpreterContext == null) {
+            if (Options.IR_PRINT.load()) {
+                ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
+
+                LOG.info("Printing simple IR for " + closure.getName(), "\n" + new String(baos.toByteArray()));
+            }
+
             interpreterContext = closure.getInterpreterContext();
         }
         return interpreterContext;
@@ -90,50 +104,48 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         return closure.getName();
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {
+    @Override
+    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        // We should never get here if jittedBody is null
+        assert jittedBody != null : "direct call in MixedModeIRBlockBody without jitted body";
+
+        context.setCurrentBlockType(Block.Type.PROC);
+        return jittedBody.callDirect(context, block, args, blockArg);
+    }
+
+    @Override
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        // We should never get here if jittedBody is null
+        assert jittedBody != null : "direct yield in MixedModeIRBlockBody without jitted body";
+
+        context.setCurrentBlockType(Block.Type.NORMAL);
+        return jittedBody.yieldDirect(context, block, args, self);
+    }
+
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
         if (callCount >= 0) promoteToFullBuild(context);
 
-        CompiledIRBlockBody jittedBody = this.jittedBody;
+        InterpreterContext ic = ensureInstrsReady();
 
-        if (jittedBody != null) {
-            return jittedBody.commonYieldPath(context, args, self, binding, type, block);
-        }
-
-        // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
-        // Do not use 'closure.getStaticScope()' -- that returns the original copy of the static scope.
-        // This matters because blocks created for Thread bodies modify the static-scope field of the block-body
-        // that records additional state about the block body.
-        //
-        // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
-        // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
+        Binding binding = block.getBinding();
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame prevFrame = context.preYieldNoScope(binding);
-
-        // SSS FIXME: Why is self null in non-binding-eval contexts?
-        if (self == null || this.evalType.get() == EvalType.BINDING_EVAL) {
-            self = useBindingSelf(binding);
-        }
 
         // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
         // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
         // is just wasteful allocation since the scope is not used at all.
-
-        InterpreterContext ic = ensureInstrsReady();
-
-        // Pass on eval state info to the dynamic scope and clear it on the block-body
         DynamicScope actualScope = binding.getDynamicScope();
         if (ic.pushNewDynScope()) {
-            actualScope = DynamicScope.newDynamicScope(getStaticScope(), actualScope, this.evalType.get());
-            if (type == Type.LAMBDA) actualScope.setLambda(true);
-            context.pushScope(actualScope);
+            context.pushScope(block.allocScope(actualScope));
         } else if (ic.reuseParentDynScope()) {
             // Reuse! We can avoid the push only if surrounding vars aren't referenced!
             context.pushScope(actualScope);
         }
-        this.evalType.set(EvalType.NONE);
+
+        self = IRRuntimeHelpers.updateBlockState(block, self);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, self, ic, args, binding.getMethod(), block, type);
+            return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
         }
         finally {
             // IMPORTANT: Do not clear eval-type in case this is reused in bindings!
@@ -149,10 +161,23 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     protected void promoteToFullBuild(ThreadContext context) {
-        if (context.runtime.isBooting()) return; // don't JIT during runtime boot
+        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
-        synchronized (this) {
-            if (callCount >= 0) {
+        if (callCount >= 0) {
+            // ensure we've got code ready for JIT
+            ensureInstrsReady();
+            closure.prepareForCompilation();
+
+            // if we don't have an explicit protocol, disable JIT
+            if (!closure.hasExplicitCallProtocol()) {
+                if (Options.JIT_LOGGING.load()) {
+                    LOG.info("JIT failed; no protocol found in block: " + closure);
+                }
+                callCount = -1;
+                return;
+            }
+
+            synchronized (this) {
                 if (callCount++ >= Options.JIT_THRESHOLD.load()) {
                     callCount = -1;
                     context.runtime.getJITCompiler().buildThresholdReached(context, this);

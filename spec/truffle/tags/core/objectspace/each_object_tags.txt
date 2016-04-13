@@ -1,0 +1,3 @@
+fails:ObjectSpace.each_object doesn't find an object stored in a WeakRef that should have been cleared
+fails:ObjectSpace.each_object walks a class and its normal descendants when passed the class's singleton class
+fails:ObjectSpace.each_object on singleton classes walks singleton classes

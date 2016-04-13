@@ -32,6 +32,11 @@ module Rubinius
     raise PrimitiveFailure, "Rubinius.vm_watch_signal primitive failed" # Truffle: simplified failure
   end
 
+  def self.extended_modules(obj)
+    Rubinius.primitive :vm_extended_modules
+    raise PrimitiveFailure, "Rubinius.extended_modules primitive failed"
+  end
+
   def self.raise_exception(exc)
     Rubinius.primitive :vm_raise_exception
     raise PrimitiveFailure, "Rubinius.vm_raise_exception primitive failed"

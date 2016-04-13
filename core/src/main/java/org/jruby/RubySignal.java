@@ -143,7 +143,7 @@ public class RubySignal {
     public static String signo2signm(long no) {
         for (Signal s : Signal.values()) {
             if (s.intValue() == no) {
-                return s.name();
+                return s.name().substring(3);
             }
         }
         return null;

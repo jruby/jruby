@@ -129,7 +129,7 @@ public class RubyRational extends RubyNumeric {
     /** rb_rational_raw
      * 
      */
-    static RubyRational newRationalRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
+    public static RubyRational newRationalRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
         return new RubyRational(runtime, runtime.getRational(), x, y);
     }
 
@@ -150,8 +150,13 @@ public class RubyRational extends RubyNumeric {
     /** rb_rational_new
      * 
      */
-    private static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
+    public static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
         return canonicalizeInternal(context, context.runtime.getRational(), x, y);
+    }
+
+    public static IRubyObject newRationalCanonicalize(ThreadContext context, long x, long y) {
+        Ruby runtime = context.runtime;
+        return canonicalizeInternal(context, runtime.getRational(), runtime.newFixnum(x), runtime.newFixnum(y));
     }
     
     /** f_rational_new2
@@ -183,6 +188,11 @@ public class RubyRational extends RubyNumeric {
      */
     private static RubyRational newRationalBang(ThreadContext context, IRubyObject clazz, IRubyObject x) {
         return newRationalBang(context, clazz, x, RubyFixnum.one(context.runtime));
+    }
+
+    @Override
+    public ClassIndex getNativeClassIndex() {
+        return ClassIndex.RATIONAL;
     }
     
     private IRubyObject num;
@@ -227,7 +237,7 @@ public class RubyRational extends RubyNumeric {
             num = f_negate(context, num);
             den = f_negate(context, den);
         } else if (res == RubyFixnum.zero(runtime)) {
-            throw runtime.newZeroDivisionError();            
+            throw runtime.newZeroDivisionError();
         }
 
         IRubyObject gcd = f_gcd(context, num, den);
@@ -240,7 +250,7 @@ public class RubyRational extends RubyNumeric {
 
         return new RubyRational(context.runtime, clazz, num, den);
     }
-    
+
     /** nurat_s_canonicalize_internal_no_reduce
      * 
      */
@@ -397,6 +407,14 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "denominator")
     @Override
     public IRubyObject denominator(ThreadContext context) {
+        return den;
+    }
+
+    public IRubyObject getNumerator() {
+        return num;
+    }
+
+    public IRubyObject getDenominator() {
         return den;
     }
 

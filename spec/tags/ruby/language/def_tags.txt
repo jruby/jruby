@@ -1,3 +1,1 @@
-fails:An instance method with a default argument does not call a method with the same name as the local
-fails:An instance method with a default argument shadows an existing method with the same name as the local
 fails:A nested method definition creates a method in the surrounding context when evaluated in a def expr.method

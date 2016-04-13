@@ -9,6 +9,7 @@ import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -22,11 +23,17 @@ import org.jruby.util.StringSupport;
 //     - "Hi #{name}"
 public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     final private Encoding encoding;
+    final private boolean frozen;
+    final private String file;
+    final private int line;
 
-    public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding) {
+    public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding, boolean frozen, String file, int line) {
         super(Operation.BUILD_COMPOUND_STRING, result, pieces);
 
         this.encoding = encoding;
+        this.frozen = frozen;
+        this.file = file;
+        this.line = line;
     }
 
     public Operand[] getPieces() {
@@ -39,11 +46,11 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding);
+        return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding, frozen, file, line);
     }
 
     public boolean isSameEncodingAndCodeRange(RubyString str, StringLiteral newStr) {
-        return newStr.bytelist.getEncoding() == encoding && newStr.getCodeRange() == str.getCodeRange();
+        return newStr.getByteList().getEncoding() == encoding && newStr.getCodeRange() == str.getCodeRange();
     }
 
     @Override
@@ -51,10 +58,13 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         super.encode(e);
         e.encode(getPieces());
         e.encode(encoding);
+        e.encode(frozen);
+        e.encode(file);
+        e.encode(line);
     }
 
     public static BuildCompoundStringInstr decode(IRReaderDecoder d) {
-        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding());
+        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding(), d.decodeBoolean(), d.decodeString(), d.decodeInt());
     }
 
     @Override
@@ -64,7 +74,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         RubyString str = RubyString.newStringShared(context.runtime, bytes, StringSupport.CR_7BIT);
         for (Operand p : getOperands()) {
             if ((p instanceof StringLiteral) && (isSameEncodingAndCodeRange(str, (StringLiteral)p))) {
-                str.getByteList().append(((StringLiteral)p).bytelist);
+                str.getByteList().append(((StringLiteral)p).getByteList());
                 str.setCodeRange(((StringLiteral)p).getCodeRange());
             } else {
                 IRubyObject pval = (IRubyObject)p.retrieve(context, self, currScope, currDynScope, temp);
@@ -72,11 +82,23 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
             }
         }
 
-        return str;
+        return frozen ? IRRuntimeHelpers.freezeLiteralString(context, str, file, line) : str;
     }
 
     @Override
     public void visit(IRVisitor visitor) {
         visitor.BuildCompoundStringInstr(this);
+    }
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public int getLine() {
+        return line;
     }
 }

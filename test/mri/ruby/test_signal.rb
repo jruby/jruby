@@ -1,7 +1,7 @@
+# frozen_string_literal: false
 require 'test/unit'
 require 'timeout'
 require 'tempfile'
-require_relative 'envutil'
 
 class TestSignal < Test::Unit::TestCase
   def test_signal
@@ -219,6 +219,15 @@ class TestSignal < Test::Unit::TestCase
   end
 
   def test_signame
+    Signal.list.each do |name, num|
+      assert_equal(num, Signal.list[Signal.signame(num)], name)
+    end
+    assert_nil(Signal.signame(-1))
+    signums = Signal.list.invert
+    assert_nil(Signal.signame((1..1000).find {|num| !signums[num]}))
+  end
+
+  def test_signame_delivered
     10.times do
       IO.popen([EnvUtil.rubybin, "-e", <<EOS, :err => File::NULL]) do |child|
         Signal.trap("INT") do |signo|

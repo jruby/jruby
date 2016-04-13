@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'rubygems/command'
 require 'rubygems/install_update_options'
 require 'rubygems/dependency_installer'
@@ -185,6 +186,7 @@ to write the specification by hand.  For example:
   end
 
   def execute
+
     if options.include? :gemdeps then
       install_from_gemdeps
       return # not reached
@@ -275,7 +277,7 @@ to write the specification by hand.  For example:
       gem = fetcher.download_to_cache dependency
     end
 
-    inst = Gem::Installer.new gem, options
+    inst = Gem::Installer.at gem, options
     inst.install
 
     require 'rubygems/dependency_installer'

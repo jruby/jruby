@@ -1,0 +1,3 @@
+graalvm:FileTest.grpowned? accepts an object that has a #to_path method
+graalvm:FileTest.grpowned? takes non primary groups into account
+graalvm:FileTest.grpowned? returns true if the file exist

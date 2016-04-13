@@ -1,8 +1,12 @@
 ScratchPad.recorded << :con_pre
 Thread.current[:in_concurrent_rb] = true
-sleep 0.5
+
+if t = Thread.current[:wait_for]
+  Thread.pass until t.backtrace && t.backtrace.any? { |call| call.include? 'require' }
+end
+
 if Thread.current[:con_raise]
   raise "con1"
 end
-sleep 0.5
+
 ScratchPad.recorded << :con_post

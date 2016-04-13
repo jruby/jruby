@@ -31,8 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
-import java.io.BufferedInputStream;
-import java.io.FilterInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -48,7 +47,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
-import org.jruby.util.ShellLauncher;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -95,7 +93,12 @@ public class Parser {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
             RubyArray list = getLines(configuration, runtime, file);
-            RubyIO io = RubyIO.newIO(runtime, Channels.newChannel(content));
+            RubyIO io;
+            if (content instanceof FileInputStream) {
+                io = new RubyFile(runtime, file, ((FileInputStream) content).getChannel());
+            } else {
+                io = RubyIO.newIO(runtime, Channels.newChannel(content));
+            }
             LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io, list, configuration.getDefaultEncoding());
             return parse(file, lexerSource, blockScope, configuration);
         }
@@ -112,22 +115,15 @@ public class Parser {
         }
 
         long startTime = System.nanoTime();
-        RubyParser parser = new RubyParser(lexerSource);
-        RubyParserResult result = null;
-        parser.setWarnings(runtime.getWarnings());
+        RubyParser parser = new RubyParser(lexerSource, runtime.getWarnings());
+        RubyParserResult result;
         try {
             result = parser.parse(configuration);
-            if (result.getEndOffset() >= 0 && configuration.isSaveData()) {
+            if (parser.lexer.isEndSeen() && configuration.isSaveData()) {
                 IRubyObject verbose = runtime.getVerbose();
                 runtime.setVerbose(runtime.getNil());
-                //try {
-                    // FIXME: impl
-                    //runtime.defineGlobalConstant("DATA", new RubyFile(runtime, file, lexerSource.getRemainingAsStream()));
-                //} catch (IOException e) { // Not sure how to handle suddenly closed IO here?
-                    runtime.defineGlobalConstant("DATA", runtime.getNil());
-                //}
+                runtime.defineGlobalConstant("DATA", lexerSource.getRemainingAsIO());
                 runtime.setVerbose(verbose);
-            	result.setEndOffset(-1);
             }
         } catch (IOException e) {
             // Enebo: We may want to change this error to be more specific,
@@ -162,11 +158,6 @@ public class Parser {
         totalTime += System.nanoTime() - startTime;
         totalBytes += lexerSource.getOffset();
 
-        // set coverage baseline into coverage data
-        if (runtime.getCoverageData().isCoverageEnabled()) {
-            runtime.getCoverageData().prepareCoverage(file, configuration.getCoverage());
-        }
-
         return ast;
     }
 
@@ -175,11 +166,8 @@ public class Parser {
         IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
         if (!configuration.isEvalParse() && scriptLines != null) {
             if (scriptLines instanceof RubyHash) {
-                RubyString filename = runtime.newString(file);
-                ThreadContext context = runtime.getCurrentContext();
-                IRubyObject object = ((RubyHash) scriptLines).op_aref(context, filename);
-                list = (RubyArray) (object instanceof RubyArray ? object : runtime.newArray());
-                ((RubyHash) scriptLines).op_aset(context, filename, list);
+                list = runtime.newArray();
+                ((RubyHash) scriptLines).op_aset(runtime.getCurrentContext(), runtime.newString(file), list);
             }
         }
         return list;

@@ -1,8 +1,8 @@
-#include <stdio.h>
-#include <string.h>
-
 #include "ruby.h"
 #include "rubyspec.h"
+
+#include <stdio.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,16 +46,6 @@ static VALUE class_spec_rb_path2class(VALUE self, VALUE path) {
 #ifdef HAVE_RB_PATH_TO_CLASS
 static VALUE class_spec_rb_path_to_class(VALUE self, VALUE path) {
   return rb_path_to_class(path);
-}
-#endif
-
-#ifdef HAVE_RB_CLASS_INHERITED
-static VALUE class_spec_rb_class_inherited(VALUE self, VALUE super, VALUE klass) {
-  if(super == Qfalse) {
-    return rb_class_inherited((VALUE)(0), klass);
-  } else {
-    return rb_class_inherited(super, klass);
-  }
 }
 #endif
 
@@ -148,6 +138,14 @@ static VALUE class_spec_rb_define_class_under(VALUE self, VALUE outer,
 }
 #endif
 
+#ifdef HAVE_RB_DEFINE_CLASS_ID_UNDER
+static VALUE class_spec_rb_define_class_id_under(VALUE self, VALUE outer,
+                                                 VALUE name, VALUE super) {
+  if(NIL_P(super)) super = 0;
+  return rb_define_class_id_under(outer, SYM2ID(name), super);
+}
+#endif
+
 #ifdef HAVE_RB_DEFINE_CLASS_VARIABLE
 static VALUE class_spec_define_class_variable(VALUE self, VALUE klass, VALUE name, VALUE val) {
   rb_define_class_variable(klass, StringValuePtr(name), val);
@@ -188,10 +186,6 @@ void Init_class_spec() {
 
 #ifdef HAVE_RB_PATH_TO_CLASS
   rb_define_method(cls, "rb_path_to_class", class_spec_rb_path_to_class, 1);
-#endif
-
-#ifdef HAVE_RB_CLASS_INHERITED
-  rb_define_method(cls, "rb_class_inherited", class_spec_rb_class_inherited, 2);
 #endif
 
 #ifdef HAVE_RB_CLASS_NEW
@@ -236,6 +230,10 @@ void Init_class_spec() {
 
 #ifdef HAVE_RB_DEFINE_CLASS_UNDER
   rb_define_method(cls, "rb_define_class_under", class_spec_rb_define_class_under, 3);
+#endif
+
+#ifdef HAVE_RB_DEFINE_CLASS_ID_UNDER
+  rb_define_method(cls, "rb_define_class_id_under", class_spec_rb_define_class_id_under, 3);
 #endif
 
 #ifdef HAVE_RB_DEFINE_CLASS_VARIABLE

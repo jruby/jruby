@@ -706,6 +706,10 @@ public class OpenFile implements Finalizable {
         return (mode & WRITABLE) != 0;
     }
 
+    public boolean isDuplex() {
+        return (mode & DUPLEX) != 0;
+    }
+
     public boolean isReadBuffered() {
         return READ_DATA_BUFFERED();
     }
@@ -916,10 +920,6 @@ public class OpenFile implements Finalizable {
             IRubyObject ecopts;
             byte[] sname, dname;
             ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
-            if (isTextMode() && Platform.IS_WINDOWS) {
-                // we can't do O_TEXT so we always do CRLF translation on Windows
-                ecflags = ecflags | EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
-            }
             ecopts = encs.ecopts;
             if (encs.enc2 != null) {
                 sname = encs.enc2.getName();

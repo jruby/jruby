@@ -1,7 +1,6 @@
 # -*- coding: us-ascii -*-
 require "open3"
 require "timeout"
-require "test/unit"
 require_relative "find_executable"
 
 module EnvUtil
@@ -69,8 +68,14 @@ module EnvUtil
         stderr = th_stderr.value if capture_stderr && capture_stderr != :merge_to_stdout
       else
         signal = /mswin|mingw/ =~ RUBY_PLATFORM ? :KILL : :TERM
+        case pgroup = opt[:pgroup]
+        when 0, true
+          pgroup = -pid
+        when nil, false
+          pgroup = pid
+        end
         begin
-          Process.kill signal, pid
+          Process.kill signal, pgroup
           Timeout.timeout((reprieve unless signal == :KILL)) do
             Process.wait(pid)
           end
@@ -357,10 +362,8 @@ module Test
         line -= 5 # lines until src
         src = <<eom
 # -*- coding: #{src.encoding}; -*-
-  require #{__dir__.dump}'/envutil';include Test::Unit::Assertions
-  END {
-    puts [Marshal.dump($!)].pack('m'), "assertions=\#{self._assertions}"
-  }
+  require #{__dir__.dump}'/envutil'; require 'test/unit'; include Test::Unit::Assertions
+  END { puts [Marshal.dump($!)].pack('m'), "assertions=\#{self._assertions}" }
 #{src}
   class Test::Unit::Runner
     @@stop_auto_run = true
@@ -467,6 +470,8 @@ eom
           next unless a > 0 and b > 0
           assert_operator(a.fdiv(b), :<, limit, message(message) {"#{n}: #{b} => #{a}"})
         end
+      rescue LoadError
+        skip
       end
 
       def assert_is_minus_zero(f)
@@ -518,6 +523,38 @@ eom
         if anchored
           assert_equal("", rest)
         end
+      end
+
+      # threads should respond to shift method.
+      # Array can be used.
+      def assert_join_threads(threads, message = nil)
+        errs = []
+        values = []
+        while th = threads.shift
+          begin
+            values << th.value
+          rescue Exception
+            errs << [th, $!]
+          end
+        end
+        if !errs.empty?
+          msg = "exceptions on #{errs.length} threads:\n" +
+            errs.map {|t, err|
+            "#{t.inspect}:\n" +
+            err.backtrace.map.with_index {|line, i|
+              if i == 0
+                "#{line}: #{err.message} (#{err.class})"
+              else
+                "\tfrom #{line}"
+              end
+            }.join("\n")
+          }.join("\n---\n")
+          if message
+            msg = "#{message}\n#{msg}"
+          end
+          raise MiniTest::Assertion, msg
+        end
+        values
       end
 
       class << (AssertFile = Struct.new(:failure_message).new)

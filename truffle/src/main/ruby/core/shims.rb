@@ -1,4 +1,4 @@
-# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -20,9 +20,15 @@ class IO
 
 end
 
-STDIN = File.new(0)
-STDOUT = File.new(1)
-STDERR = File.new(2)
+if Truffle::Primitive.io_safe?
+  STDIN = File.new(0)
+  STDOUT = File.new(1)
+  STDERR = File.new(2)
+else
+  STDIN = nil
+  STDOUT = nil
+  STDERR = nil
+end
 
 $stdin = STDIN
 $stdout = STDOUT
@@ -34,19 +40,21 @@ class << STDIN
   end
 end
 
-if STDOUT.tty?
-  STDOUT.sync = true
-else
-  Truffle::Primitive.at_exit true do
-    STDOUT.flush
+if Truffle::Primitive.io_safe?
+  if STDOUT.tty?
+    STDOUT.sync = true
+  else
+    Truffle::Primitive.at_exit true do
+      STDOUT.flush
+    end
   end
-end
 
-if STDERR.tty?
-  STDERR.sync = true
-else
-  Truffle::Primitive.at_exit true do
-    STDERR.flush
+  if STDERR.tty?
+    STDERR.sync = true
+  else
+    Truffle::Primitive.at_exit true do
+      STDERR.flush
+    end
   end
 end
 
@@ -63,56 +71,13 @@ end
 
 module Rubinius
   L64 = true
-
-  def extended_modules(object)
-    []
-  end
-end
-
-class Module
-  def extended_modules(object)
-    []
-  end
-end
-
-class String
-  def append(other)
-    self << other
-  end
 end
 
 class Rational
   alias :__slash__ :/
 end
 
-# Wrapper class for Rubinius's exposure of @data within String.
-#
-# We can't use Array directly because we don't currently guarantee that we'll always return the same
-# exact underlying byte array.  Rubinius calls #equal? rather than #== throughout its code, making a tighter
-# assumption than we provide.  This wrapper provides the semantics we need in the interim.
 module Rubinius
-  class StringData
-    attr_accessor :array
-
-    def initialize(array)
-      @array = array
-    end
-
-    def equal?(other)
-      @array == other.array
-    end
-
-    alias_method :==, :equal?
-
-    def size
-      @array.size
-    end
-
-    def [](index)
-      @array[index]
-    end
-  end
-
   class Mirror
     module Process
       def self.set_status_global(status)
@@ -168,7 +133,7 @@ module Rubinius
   end
 
   def self.memory_barrier
-    Truffle::Primitive.memory_barrier
+    Truffle::Primitive.full_memory_barrier
   end
 
 end
@@ -199,15 +164,15 @@ end
 
 # Windows probably doesn't have a HOME env var, but Rubinius requires it in places, so we need
 # to construct the value and place it in the hash.
-unless ENV['HOME']
-  if ENV['HOMEDRIVE']
-    ENV['HOME'] = if ENV['HOMEPATH']
-                    ENV['HOMEDRIVE'] + ENV['HOMEPATH']
-                  else
-                    ENV['USERPROFILE']
-                  end
-  end
-end
+#unless ENV['HOME']
+#  if ENV['HOMEDRIVE']
+#    ENV['HOME'] = if ENV['HOMEPATH']
+#                    ENV['HOMEDRIVE'] + ENV['HOMEPATH']
+#                  else
+#                    ENV['USERPROFILE']
+#                  end
+#  end
+#end
 
 class Exception
 
@@ -251,6 +216,81 @@ class Rubinius::ARGFClass
 
 end
 
+module Enumerable
+
+  alias_method :min_internal, :min
+  alias_method :max_internal, :max
+
+end
+
 # JRuby uses this for example to make proxy settings visible to stdlib/uri/common.rb
 
 ENV_JAVA = {}
+
+# Truffle::Primitive.get_data is used by RubyContext#execute to prepare the DATA constant
+
+module Truffle::Primitive
+  def self.get_data(path, offset)
+    file = File.open(path)
+    file.seek(offset)
+
+    # I think if the file can't be locked then we just silently ignore
+    file.flock(File::LOCK_EX | File::LOCK_NB)
+
+    Truffle::Primitive.at_exit true do
+      file.flock(File::LOCK_UN)
+    end
+
+    file
+  end
+end
+
+module Truffle::Primitive
+  def self.load_arguments_from_array_kw_helper(array, kwrest_name, binding)
+    array = array.dup
+
+    last_arg = array.pop
+
+    if last_arg.respond_to?(:to_hash)
+      kwargs = last_arg.to_hash
+
+      if kwargs.nil?
+        array.push last_arg
+        return array
+      end
+
+      raise TypeError.new("can't convert #{last_arg.class} to Hash (#{last_arg.class}#to_hash gives #{kwargs.class})") unless kwargs.is_a?(Hash)
+
+      return array + [kwargs] unless kwargs.keys.any? { |k| k.is_a? Symbol }
+
+      kwargs.select! do |key, value|
+        symbol = key.is_a? Symbol
+        array.push({key => value}) unless symbol
+        symbol
+      end
+    else
+      kwargs = {}
+    end
+
+    binding.local_variable_set(kwrest_name, kwargs) if kwrest_name
+    array
+  end
+
+  def self.add_rejected_kwargs_to_rest(rest, kwargs)
+    return if kwargs.nil?
+
+    rejected = kwargs.select { |key, value|
+      not key.is_a?(Symbol)
+    }
+
+    unless rejected.empty?
+      rest.push rejected
+    end
+  end
+end
+
+def when_splat(cases, expression)
+  cases.any? do |c|
+    c === expression
+  end
+end

@@ -1,0 +1,6 @@
+fails:Struct#dig returns the nested value specified by the sequence of keys
+fails:Struct#dig returns the nested value specified if the sequence includes an index
+fails:Struct#dig returns nil if any intermediate step is nil
+fails:Struct#dig raises a TypeError if any intermediate step does not respond to #dig
+fails:Struct#dig raises an ArgumentError if no arguments provided
+fails:Struct#dig calls #dig on any intermediate step with the rest of the sequence as arguments

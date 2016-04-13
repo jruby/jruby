@@ -109,6 +109,11 @@ describe "Java instance method names" do
                                     "myvalue=")
   end
 
+  it "with colliding is/get property - ruby name does get" do
+    expect( MethodNames.new.foo? ).to be false
+    expect( MethodNames.new.foo ).to eql 42
+  end
+
   it "keeps all caps in a name together as a single downcased word" do
     expect(members).to have_strings_or_symbols("value_obj",
                                 "value_obj=",

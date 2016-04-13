@@ -125,15 +125,15 @@ public class Sockaddr {
         }
     }
 
-    public static IRubyObject pack_sockaddr_in(ThreadContext context, int iport, String host) {
+    public static IRubyObject pack_sockaddr_in(ThreadContext context, int port, String host) {
         ByteArrayOutputStream bufS = new ByteArrayOutputStream();
         try {
             DataOutputStream ds = new DataOutputStream(bufS);
 
             try {
-                if(host != null && "".equals(host)) {
+                if ( host != null && host.length() == 0 ) {
                     writeSockaddrHeader(AddressFamily.AF_INET, ds);
-                    writeSockaddrPort(ds, iport);
+                    writeSockaddrPort(ds, port);
                     ds.writeInt(0);
                 } else {
                     InetAddress[] addrs = InetAddress.getAllByName(host);
@@ -145,16 +145,18 @@ public class Sockaddr {
                         writeSockaddrHeader(AddressFamily.AF_INET6, ds);
                     }
 
-                    writeSockaddrPort(ds, iport);
+                    writeSockaddrPort(ds, port);
 
                     ds.write(addr, 0, addr.length);
                 }
-            } catch (UnknownHostException e) {
+            }
+            catch (UnknownHostException e) {
                 throw sockerr(context.runtime, "getaddrinfo: No address associated with nodename");
             }
 
             writeSockaddrFooter(ds);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw sockerr(context.runtime, "pack_sockaddr_in: internal error");
         }
 

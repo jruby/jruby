@@ -193,4 +193,10 @@ describe "BigDecimal#round" do
     lambda { BigDecimal('Infinity').round }.should raise_error(FloatDomainError)
     lambda { BigDecimal('-Infinity').round }.should raise_error(FloatDomainError)
   end
+
+  it 'do not raise exception, if self is special value and precision is given' do
+    lambda { BigDecimal('NaN').round(2) }.should_not raise_error(FloatDomainError)
+    lambda { BigDecimal('Infinity').round(2) }.should_not raise_error(FloatDomainError)
+    lambda { BigDecimal('-Infinity').round(2) }.should_not raise_error(FloatDomainError)
+  end
 end

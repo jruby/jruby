@@ -70,6 +70,10 @@ public class HeredocTerm extends StrTerm {
         this.line = line;
         this.lastLine = lastLine;
     }
+
+    public int getFlags() {
+        return flags;
+    }
     
     protected int error(RipperLexer lexer, int len, ByteList str, ByteList eos) {
         lexer.compile_error("can't find string \"" + eos.toString() + "\" anywhere before EOF");
@@ -135,6 +139,12 @@ public class HeredocTerm extends StrTerm {
                             break;
                     }
                 }
+
+                if (lexer.getHeredocIndent() > 0) {
+                    for (long i = 0; p + i < pend && lexer.update_heredoc_indent(lexer.p(p)); i++) {}
+                    lexer.setHeredocLineIndent(0);
+                }
+
                 if (str != null) {
                     str.append(lbuf.makeShared(p, pend - p));
                 } else {
@@ -143,6 +153,11 @@ public class HeredocTerm extends StrTerm {
                 
                 if (pend < lexer.lex_pend) str.append('\n');
                 lexer.lex_goto_eol();
+
+                if (lexer.getHeredocIndent() > 0) {
+                    lexer.setValue(str);
+                    return Tokens.tSTRING_CONTENT;
+                }
                 // MRI null checks str in this case but it is unconditionally non-null?
                 if (lexer.nextc() == -1) return error(lexer, len, null, eos);
             } while(!lexer.whole_match_p(eos, indent));

@@ -36,27 +36,57 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class CoverageData {
+    public static final String STARTED = "";        // no load/require ruby file can be "" so we
+    private static final int[] SVALUE = new int[0];  // use it as a holder to know if start occurs
     private volatile Map<String, int[]> coverage;
 
     public boolean isCoverageEnabled() {
-        return coverage != null;
+        return coverage != null && coverage.get(STARTED) != null;
+    }
+
+    public Map<String, int[]> getCoverage() {
+      return coverage;
     }
 
     public synchronized void setCoverageEnabled(Ruby runtime, boolean enabled) {
+        Map<String, int[]> coverage = this.coverage;
+
+        if (coverage == null) coverage = new HashMap<String, int[]>();
+
         if (enabled) {
-            coverage = new HashMap<String, int[]>();
+            coverage.put(STARTED, SVALUE);
             runtime.addEventHook(COVERAGE_HOOK);
         } else {
-            coverage = null;
+            coverage.remove(STARTED);
         }
+
+        this.coverage = coverage;
     }
 
     public synchronized Map<String, int[]> resetCoverage(Ruby runtime) {
         Map<String, int[]> coverage = this.coverage;
         runtime.removeEventHook(COVERAGE_HOOK);
-        this.coverage = null;
-        
+        coverage.remove(STARTED);
+
+
+        for (Map.Entry<String, int[]> entry : coverage.entrySet()) {
+            String key = entry.getKey();
+            if (key.equals(CoverageData.STARTED)) continue; // ignore our hidden marker
+
+            // on reset we do not reset files where no execution ever happened but we do reset
+            // any files visited to be an empty array.  Why?  I don't know.  Matching MRI.
+            if (hasCodeBeenPartiallyCovered(entry.getValue())) coverage.put(key, SVALUE);
+        }
+
         return coverage;
+    }
+
+    private boolean hasCodeBeenPartiallyCovered(int[] lines) {
+        for (int i = 0; i < lines.length; i++) {
+            if (lines[i] > 0) return true;
+        }
+
+        return false;
     }
 
     public synchronized Map<String, int[]> prepareCoverage(String filename, int[] lines) {
@@ -74,36 +104,18 @@ public class CoverageData {
     private final EventHook COVERAGE_HOOK = new EventHook() {
         @Override
         public synchronized void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
-            if (coverage == null || line <= 0) {
-                return;
-            }
-            
-            // make sure we have a lines array of acceptable length for the given file
+            if (coverage == null || line <= 0) return; // Should not be needed but I predict serialization of IR might hit this.
+
             int[] lines = coverage.get(file);
-            if (lines == null) {
-                // loaded before coverage; skip
-                return;
-            } else if (lines.length < line) {
-                // can this happen? shouldn't all coverable lines be here already (from parse time)?
-                int[] newLines = new int[line];
-                Arrays.fill(newLines, lines.length, line, -1); // mark unknown lines as -1
-                System.arraycopy(lines, 0, newLines, 0, lines.length);
-                lines = newLines;
-                coverage.put(file, lines);
-            }
-            
-            // increment the line's count or set it to 1
-            int count = lines[line - 1];
-            if (count == -1) {
-                lines[line - 1] = 1;
-            } else {
-                lines[line - 1] = count + 1;
-            }
+            if (lines == null) return;           // no coverage lines for this record.  bail out (should never happen)
+            if (lines.length == 0) return;       // coverage is dead for this record.  result() has been called once
+                                                 // and we marked it as such as an empty list.
+            lines[line - 1] += 1;                // increment usage count by one.
         }
 
         @Override
         public boolean isInterestedInEvent(RubyEvent event) {
-            return event == RubyEvent.LINE;
+            return event == RubyEvent.COVERAGE;
         }
     };
     

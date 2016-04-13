@@ -181,6 +181,13 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(BigDecimal("2"), BigDecimal("2.5").round(0, BigDecimal::ROUND_HALF_EVEN))
   end
 
+  def test_round_nan
+    nan = BigDecimal.new('NaN')
+    assert nan.round.nan? # nothing raised
+    assert nan.round(0).nan?
+    assert nan.round(2).nan?
+  end
+
   def test_big_decimal_power
     require 'bigdecimal/math'
 
@@ -217,6 +224,12 @@ class TestBigDecimal < Test::Unit::TestCase
     res = BigDecimal(1.2, 2) ** 2.0
     assert_equal BigDecimal('0.144E1'), res
 
+  end
+
+  def teardown
+    BigDecimal.mode(BigDecimal::EXCEPTION_OVERFLOW, false) rescue nil
+    BigDecimal.mode(BigDecimal::EXCEPTION_NaN, false) rescue nil
+    BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY, false) rescue nil
   end
 
   def test_big_decimal_mode
@@ -335,6 +348,14 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(BigDecimal.new("10.9", 2).to_f, 10.9)
   end
 
+  # GH-3527
+  def test_tail_junk
+    b = BigDecimal.new("5-6")
+    assert_equal BigDecimal('5'), b
+    b = BigDecimal.new("100+42")
+    assert_equal 100, b.to_i
+  end
+  
   class BigDeci < BigDecimal
 
     # MRI does not invoke initialize on 1.8./1.9

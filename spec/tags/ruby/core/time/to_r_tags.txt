@@ -1,1 +1,0 @@
-fails:Time#to_r returns the a Rational representing seconds and subseconds since the epoch

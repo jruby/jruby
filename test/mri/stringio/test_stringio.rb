@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'test/unit'
 require 'stringio'
 require_relative '../ruby/ut_eof'
@@ -147,6 +148,13 @@ class TestStringIO < Test::Unit::TestCase
       f.write(s)
     }
     assert_equal(Encoding::ASCII_8BIT, f.string.encoding, bug10285)
+
+    bug11827 = '[ruby-core:72189] [Bug #11827]'
+    f = StringIO.new("foo\x83".freeze)
+    assert_nothing_raised(RuntimeError, bug11827) {
+      f.set_encoding(Encoding::ASCII_8BIT)
+    }
+    assert_equal("foo\x83".b, f.gets)
   end
 
   def test_mode_error
@@ -193,12 +201,12 @@ class TestStringIO < Test::Unit::TestCase
   def test_close
     f = StringIO.new("")
     f.close
-    assert_raise(IOError) { f.close }
+    assert_nil(f.close)
 
     f = StringIO.new("")
     f.close_read
     f.close_write
-    assert_raise(IOError) { f.close }
+    assert_nil(f.close)
   ensure
     f.close unless f.closed?
   end
@@ -207,7 +215,7 @@ class TestStringIO < Test::Unit::TestCase
     f = StringIO.new("")
     f.close_read
     assert_raise(IOError) { f.read }
-    assert_raise(IOError) { f.close_read }
+    assert_nothing_raised(IOError) {f.close_read}
     f.close
 
     f = StringIO.new("", "w")
@@ -221,7 +229,7 @@ class TestStringIO < Test::Unit::TestCase
     f = StringIO.new("")
     f.close_write
     assert_raise(IOError) { f.write("foo") }
-    assert_raise(IOError) { f.close_write }
+    assert_nothing_raised(IOError) {f.close_write}
     f.close
 
     f = StringIO.new("", "r")
@@ -361,6 +369,11 @@ class TestStringIO < Test::Unit::TestCase
     t.ungetbyte("\xe7")
     t.ungetbyte("\xe7\xb4\x85")
     assert_equal("\u7d05\u7389bar\n", t.gets)
+    assert_equal("q\u7d05\u7389bar\n", s)
+    t.pos = 1
+    t.ungetbyte("\u{30eb 30d3 30fc}")
+    assert_equal(0, t.pos)
+    assert_equal("\u{30eb 30d3 30fc}\u7d05\u7389bar\n", s)
   end
 
   def test_ungetc
@@ -470,6 +483,7 @@ class TestStringIO < Test::Unit::TestCase
     assert_raise(ArgumentError) { f.read(-1) }
     assert_raise(ArgumentError) { f.read(1, 2, 3) }
     assert_equal("\u3042\u3044", f.read)
+    assert_nil(f.read(1))
     f.rewind
     assert_equal("\u3042\u3044".force_encoding(Encoding::ASCII_8BIT), f.read(f.size))
 
@@ -525,6 +539,15 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal("\u3042\u3044".force_encoding(Encoding::ASCII_8BIT), f.read_nonblock(f.size, s))
   end
 
+  def test_sysread
+    f = StringIO.new("sysread \u{30c6 30b9 30c8}")
+    assert_equal "sysread \u{30c6 30b9 30c8}", f.sysread
+    assert_equal "", f.sysread
+    assert_raise(EOFError) { f.sysread(1) }
+    f.rewind
+    assert_equal Encoding::ASCII_8BIT, f.sysread(3).encoding
+  end
+
   def test_size
     f = StringIO.new("1234")
     assert_equal(4, f.size)
@@ -559,6 +582,41 @@ class TestStringIO < Test::Unit::TestCase
 
       expected_pos += 1
     end
+  end
+
+  def test_ungetc_padding
+    s = StringIO.new()
+    s.pos = 2
+    s.ungetc("a")
+    assert_equal("\0""a", s.string)
+    s.pos = 0
+    s.ungetc("b")
+    assert_equal("b""\0""a", s.string)
+  end
+
+  def test_ungetbyte_pos
+    b = '\\b00010001 \\B00010001 \\b1 \\B1 \\b000100011'
+    s = StringIO.new( b )
+    expected_pos = 0
+    while n = s.getbyte
+      assert_equal( expected_pos + 1, s.pos )
+
+      s.ungetbyte( n )
+      assert_equal( expected_pos, s.pos )
+      assert_equal( n, s.getbyte )
+
+      expected_pos += 1
+    end
+  end
+
+  def test_ungetbyte_padding
+    s = StringIO.new()
+    s.pos = 2
+    s.ungetbyte("a".ord)
+    assert_equal("\0""a", s.string)
+    s.pos = 0
+    s.ungetbyte("b".ord)
+    assert_equal("b""\0""a", s.string)
   end
 
   def test_frozen

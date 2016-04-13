@@ -209,7 +209,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(Operation value) {
-        encode((byte) value.ordinal());
+        encode(value.ordinal());
     }
 
     @Override

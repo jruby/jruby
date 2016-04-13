@@ -156,6 +156,26 @@ describe "A Java primitive Array of type" do
       expect(arr.inspect).to match(/^byte\[1, 2, 3\]@[0-9a-f]+$/)
     end
 
+    it 'handles equality to another array' do
+      arr1 = [ 1, -123, 127 ].to_java :byte
+      arr2 = Java::byte[3].new
+      arr2[0] = 1; arr2[2] = 127; arr2[1] = -123
+      expect( arr1 == arr2 ).to be true
+      expect( arr1.eql? arr2 ).to be true
+      expect( [ 1, -123, 127 ].to_java(:int).eql? arr2 ).to be false
+      expect( [ 1, -123, -127 ].to_java(:byte) == arr2 ).to be false
+
+      expect( arr1 === arr1 ).to be true
+      expect( arr2 === arr1 ).to be true
+      expect( arr1.class === arr2 ).to be true
+
+      expect( arr1 == [ 1, -123 ] ).to be false
+      expect( arr1 == [ 1, -123, 127 ] ).to be true
+      expect( [ 1, -123, 127 ] == arr2 ).to be true
+      expect( arr1.eql? [ 1, -123, 127 ] ).to be false
+      expect( arr2 === [ 1, -123, 127 ] ).to be true
+    end
+
     it "makes an ascii 8 bit string on to_s" do
       expect([86, 87].to_java(:byte).to_s).to eq("VW")
     end
@@ -232,6 +252,23 @@ describe "A Java primitive Array of type" do
       expect(arr.inspect).to match(/^char\[d, e, f\]@[0-9a-f]+$/)
     end
 
+    it 'handles equality to another array' do
+      arr1 = [ 0, 111 ].to_java :char
+      arr2 = Java::char[2].new
+      arr2[0] = 0; arr2[1] = 111
+      expect( arr1 == arr2 ).to be true
+      expect( arr1.eql? arr2 ).to be true
+      expect( [ 0, 111 ].to_java(:int).eql? arr2 ).to be false
+      expect( [ 111 ].to_java(:char) == arr2 ).to be false
+      expect( [ 1, 111 ].to_java(:char) == arr2 ).to be false
+
+      expect( arr1 == [ 0 ] ).to be false
+      expect( arr1 == [ 0, 111 ] ).to be true
+      expect( [ 0, 111 ] == arr2 ).to be true
+      expect( arr1.eql? [ 0, 111 ] ).to be false
+      expect( arr2 === [ 0, 111 ] ).to be true
+    end
+
     it "uses toString on to_s" do
       arr = [100, 101, 102].to_java :char
       expect(arr.to_s).to match(/\[C@[0-9a-f]+$/)
@@ -302,6 +339,22 @@ describe "A Java primitive Array of type" do
       arr = [13.2, 42.3, 120.4].to_java :double
       ret = ArrayReceiver::call_with_double(arr)
       expect(ret.to_a).to eq([13.2, 42.3, 120.4])
+    end
+
+    it 'handles equality to another array' do
+      arr1 = [-111, 101010.99].to_java :double
+      arr2 = Java::double[2].new
+      arr2[0] = -111; arr2[1] = 101010.99
+      expect( arr1 == arr2 ).to be true
+      expect( arr1.eql? arr2 ).to be true
+      expect( [-111, 101010.99].to_java(:float).eql? arr2 ).to be false
+      expect( [ -111 ].to_java(:double) == arr2 ).to be false
+
+      expect( arr1 == [ -111 ] ).to be false
+      expect( arr1 == [ -111, 101010.99 ] ).to be true
+      expect( [ -111, 101010.99 ] == arr2 ).to be true
+      expect( arr1.eql? [ -111, 101010.99 ] ).to be false
+      expect( arr2 === [ -111, 101010.99 ] ).to be true
     end
 
     it "inspects to show type and contents" do
@@ -380,6 +433,27 @@ describe "A Java primitive Array of type" do
       expect(ret[2]).to be_within(0.00001).of(120.4)
     end
 
+    it 'handles equality to another array' do
+      arr1 = [-111, 101010.99].to_java :float
+      arr2 = Java::float[2].new
+      arr2[0] = -111; arr2[1] = 101010.99
+      expect( arr1 == arr2 ).to be true
+      expect( arr1.eql? arr2 ).to be true
+      expect( [-111, 101010.99].to_java(:double).eql? arr2 ).to be false
+      expect( arr1 == [ -111.1, 101010.99 ] ).to be false
+      expect( [ -111 ].to_java(:float) == arr2 ).to be false
+
+      expect( arr1 === arr1 ).to be true
+      expect( arr2 === arr1 ).to be true
+      expect( arr1.class === arr2 ).to be true
+
+      expect( arr1 == [ -111 ] ).to be false
+      expect( arr1 == [ -111, 101010.99 ] ).to be true
+      expect( [ -111, 101010.99 ] == arr2 ).to be true
+      expect( arr1.eql? [ -111, 101010.99 ] ).to be false
+      expect( arr1 === [ -111, 101010.99 ] ).to be true
+    end
+
     it "inspects to show type and contents" do
       arr = [1.0, 1.1, 1.2].to_java :float
       expect(arr.inspect).to match(/^float\[1\.0, 1\.1, 1\.2\]@[0-9a-f]+$/)
@@ -452,6 +526,26 @@ describe "A Java primitive Array of type" do
       expect(ret.to_a).to eq([13, 42, 120])
     end
 
+    it 'handles equality to another array' do
+      arr1 = [-111, 12345678].to_java :int
+      arr2 = Java::int[2].new
+      arr2[0] = 111; arr2[1] = 12345678
+      arr2[0] = arr2[0] * -1
+      expect( arr1 == arr2 ).to be true
+      expect( arr1.eql? arr2 ).to be true
+      expect( [-111, 12345678].to_java(:long).eql? arr2 ).to be false
+      expect( [ -111 ].to_java(:int) == arr2 ).to be false
+
+      expect( arr1 == [ -111 ] ).to be false
+      expect( arr1 == [ -111, 12345678 ] ).to be true
+      expect( [ -111, 12345678 ] == arr2 ).to be true
+      expect( arr1.eql? [ -111, 12345678 ] ).to be false
+
+      expect( arr1 === arr1 ).to be true
+      expect( arr2 === arr1 ).to be true
+      expect( arr1.class === arr2 ).to be true
+    end
+
     it "inspects to show type and contents" do
       arr = [13, 42, 120].to_java :int
       expect(arr.inspect).to match(/^int\[13, 42, 120\]@[0-9a-f]+$/)
@@ -522,6 +616,20 @@ describe "A Java primitive Array of type" do
       arr = [13, 42, 120].to_java :long
       ret = ArrayReceiver::call_with_long(arr)
       expect(ret.to_a).to eq([13, 42, 120])
+    end
+
+    it 'handles equality to another array' do
+      arr1 = [111, 2222222222].to_java :long
+      arr2 = Java::long[2].new
+      arr2[0] = 111; arr2[1] = 2222222222
+      expect( arr1 == arr2 ).to be true
+      expect( arr1.eql? arr2 ).to be true
+      expect( [ 111 ].to_java(:long) == arr2 ).to be false
+
+      expect( arr1 == [ 111 ] ).to be false
+      expect( arr1 == [ 111, 2222222222 ] ).to be true
+      expect( [ 111, 2222222222 ] == arr2 ).to be true
+      expect( arr1.eql? [ 111, 2222222222 ] ).to be false
     end
 
     it "inspects to show type and contents" do
@@ -952,6 +1060,42 @@ describe "ArrayJavaProxy" do
     r_arr = j_arr.to_ary
     j_arr[0] = 3
     expect( r_arr[0] ).to eql 1
+  end
+
+  describe "#dig" do
+
+    it 'returns #at with one arg' do
+      expect( [1].to_java.dig(0) ).to eql 1
+      expect( [1].to_java(:byte).dig(0) ).to eql 1
+      expect( [1].to_java.dig(1) ).to be nil
+
+      expect( Java::long[2].new.dig(1) ).to be 0
+      expect( Java::long[2].new.dig(2) ).to be nil
+      expect( java.lang.String[1].new.dig(1) ).to be nil
+    end
+
+    it 'recurses array elements' do
+      arr = Java::int[2].new ; arr[0] = 2; arr[1] = 3
+      a = [ [ 1, arr ] ].to_java
+      expect( a.dig(0, 0) ).to eql 1
+      expect( a.dig(0, 1, 1) ).to eql 3
+      expect( a.dig(0, -1, 0) ).to eql 2
+    end
+
+    it 'returns the nested value specified if the sequence includes a key' do
+      a = [42, { foo: :bar }].to_java :Object
+      expect( a.dig(1, :foo) ).to eql :bar
+    end
+
+    it 'raises a TypeError for a non-numeric index' do
+      expect {  ['a'].dig(:first) }.to raise_error(TypeError)
+    end
+
+    it 'raises a TypeError if any intermediate step does not respond to #dig' do
+      a = [1, 2].to_java(:int)
+      expect { a.dig(0, 1) }.to raise_error(TypeError)
+    end
+
   end
 
 end

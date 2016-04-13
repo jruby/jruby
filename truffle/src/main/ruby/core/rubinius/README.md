@@ -1,6 +1,6 @@
 `bootstrap`, `common`, `delta` and `platform` contains the Ruby component of the
 Rubinius kernel (core library) implementation, in some cases modified. We have
-taken files from version 2.5.6 of Rubinius. This code was written by Evan
+taken files from version 2.11 of Rubinius. This code was written by Evan
 Phoenix, Brian Shirai, et al.
 
 https://github.com/rubinius/rubinius

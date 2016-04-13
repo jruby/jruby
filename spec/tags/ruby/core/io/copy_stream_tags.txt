@@ -3,3 +3,22 @@ fails:IO.copy_stream from a file name to an IO starts writing at the destination
 fails:IO.copy_stream from a pipe IO raises an error when an offset is specified
 fails:IO.copy_stream from a pipe IO to an IO starts writing at the destination IO's current position
 fails:IO.copy_stream with non-IO Objects calls #readpartial on the source Object if defined
+windows:IO.copy_stream from an IO does change the IO offset when an offset is not specified
+windows:IO.copy_stream from an IO to a file name copies the entire IO contents to the file
+windows:IO.copy_stream from an IO to a file name returns the number of bytes copied
+windows:IO.copy_stream from an IO to a file name calls #to_path to convert on object to a file name
+windows:IO.copy_stream from an IO to a file name copies only length bytes from the offset
+windows:IO.copy_stream from an IO to an IO copies the entire IO contents to the IO
+windows:IO.copy_stream from an IO to an IO returns the number of bytes copied
+windows:IO.copy_stream from an IO to an IO leaves the destination IO position at the last write
+windows:IO.copy_stream from an IO to an IO copies only length bytes from the offset
+windows:IO.copy_stream from a file name calls #to_path to convert on object to a file name
+windows:IO.copy_stream from a file name to a file name copies the entire IO contents to the file
+windows:IO.copy_stream from a file name to a file name returns the number of bytes copied
+windows:IO.copy_stream from a file name to a file name calls #to_path to convert on object to a file name
+windows:IO.copy_stream from a file name to a file name copies only length bytes from the offset
+windows:IO.copy_stream from a file name to an IO copies the entire IO contents to the IO
+windows:IO.copy_stream from a file name to an IO returns the number of bytes copied
+windows:IO.copy_stream from a file name to an IO leaves the destination IO position at the last write
+windows:IO.copy_stream from a file name to an IO copies only length bytes from the offset
+windows:IO.copy_stream with non-IO Objects calls #read on the source Object

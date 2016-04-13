@@ -1,13 +1,6 @@
-fails(inherited):The DATA constant succeeds in locking the file DATA came from
-fails:The DATA constant does not change when an included files also has a __END__
-fails:The DATA constant is included in an otherwise empty file
 slow:The DATA constant exists when the main script contains __END__
 slow:The DATA constant does not exist when the main script contains no __END__
 slow:The DATA constant does not exist when an included file has a __END__
 slow:The DATA constant does not change when an included files also has a __END__
 slow:The DATA constant is included in an otherwise empty file
-windows:The DATA constant exists when the main script contains __END__
-windows:The DATA constant does not exist when the main script contains no __END__
-windows:The DATA constant does not change when an included files also has a __END__
-fails:The DATA constant exists when the main script contains __END__
-fails:The DATA constant does not exist when the main script contains no __END__
+slow:The DATA constant succeeds in locking the file DATA came from

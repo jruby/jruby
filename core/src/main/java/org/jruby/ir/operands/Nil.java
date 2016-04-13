@@ -18,7 +18,7 @@ public class Nil extends ImmutableLiteral {
 
     @Override
     public OperandType getOperandType() {
-        return OperandType.LOCAL_VARIABLE;
+        return OperandType.NIL;
     }
 
     @Override

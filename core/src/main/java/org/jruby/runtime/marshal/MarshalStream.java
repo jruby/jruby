@@ -43,6 +43,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -268,9 +269,9 @@ public class MarshalStream extends FilterOutputStream {
             case HASH: {
                 RubyHash hash = (RubyHash)value;
 
-                if(hash.getIfNone().isNil()){
+                if(hash.getIfNone() == RubyBasicObject.UNDEF){
                     write('{');
-                }else if (hash.hasDefaultProc()) {
+                } else if (hash.hasDefaultProc()) {
                     throw hash.getRuntime().newTypeError("can't dump hash with default proc");
                 } else {
                     write('}');

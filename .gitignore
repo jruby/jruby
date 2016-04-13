@@ -13,6 +13,7 @@
 *.versionsBackup
 *.zip
 *~
+*.tokens
 
 .DS_Store
 .debug.properties
@@ -70,6 +71,7 @@ test/prawn
 test/rails
 test/testapp/testapp
 test/truffle/*.methods
+test/truffle/integration/gem-testing
 tool/nailgun/Makefile
 tool/nailgun/config.log
 tool/nailgun/config.status

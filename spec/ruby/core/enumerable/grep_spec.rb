@@ -29,11 +29,24 @@ describe "Enumerable#grep" do
     ary.grep(/a(b)a/) { $1 }.should == ["b", "b"]
   end
 
-  it "calls the block with an array when yielded with multiple arguments" do
-    yields = []
-    EnumerableSpecs::YieldsMixed.new.grep(Object){ |v| yields << v }
-    yields.should == [1, [2], [3, 4], [5, 6, 7], [8, 9], nil, []]
+  describe "with a block" do
+    before :each do
+      @numerous = EnumerableSpecs::Numerous.new(*(0..9).to_a)
+      def (@odd_matcher = BasicObject.new).===(obj)
+        obj.odd?
+      end
+    end
 
-    EnumerableSpecs::YieldsMixed.new.grep(Object).should == yields
+    it "returns an Array of matched elements that mapped by the block" do
+      @numerous.grep(@odd_matcher) { |n| n * 2 }.should == [2, 6, 10, 14, 18]
+    end
+
+    it "calls the block with gathered array when yielded with multiple arguments" do
+      EnumerableSpecs::YieldsMixed2.new.grep(Object){ |e| e }.should == EnumerableSpecs::YieldsMixed2.gathered_yields
+    end
+
+    it "raises an ArgumentError when not given a pattern" do
+      -> { @numerous.grep { |e| e } }.should raise_error(ArgumentError)
+    end
   end
 end
