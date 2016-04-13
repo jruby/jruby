@@ -38,7 +38,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
         return createArray(getContext(), null, 0);
     }
 
-    @Specialization(guards = "strategy.matches(array)")
+    @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
     public DynamicObject dropTail(DynamicObject array,
             @Cached("of(array)") ArrayStrategy strategy,
             @Cached("createBinaryProfile()") ConditionProfile indexLargerThanSize) {
