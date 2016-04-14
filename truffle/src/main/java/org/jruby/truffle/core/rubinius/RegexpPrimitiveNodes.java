@@ -145,15 +145,15 @@ public abstract class RegexpPrimitiveNodes {
             final Encoding enc = RegexpNodes.checkEncoding(regexp, stringRope, true);
             ByteList preprocessed = RegexpSupport.preprocess(getContext().getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
             Rope preprocessedRope = RegexpNodes.shimModifiers(StringOperations.ropeFromByteList(preprocessed));
-            final Regex r = new Regex(preprocessedRope.getBytes(), preprocessedRope.begin(), preprocessedRope.begin() + preprocessedRope.byteLength(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, stringRope, true));
-            final Matcher matcher = r.matcher(stringRope.getBytes(), stringRope.begin(), stringRope.begin() + stringRope.byteLength());
+            final Regex r = new Regex(preprocessedRope.getBytes(), 0, preprocessedRope.byteLength(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, stringRope, true));
+            final Matcher matcher = r.matcher(stringRope.getBytes(), 0, stringRope.byteLength());
 
             if (forward) {
                 // Search forward through the string.
-                return RegexpNodes.matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, matcher, start + stringRope.begin(), end + stringRope.begin());
+                return RegexpNodes.matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, matcher, start, end);
             } else {
                 // Search backward through the string.
-                return RegexpNodes.matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, matcher, end + stringRope.begin(), start + stringRope.begin());
+                return RegexpNodes.matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, matcher, end, start);
             }
         }
 

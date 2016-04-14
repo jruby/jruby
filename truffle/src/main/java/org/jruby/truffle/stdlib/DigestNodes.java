@@ -25,7 +25,6 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.util.ByteList;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -236,7 +235,7 @@ public abstract class DigestNodes {
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject bubblebabble(DynamicObject message) {
             final Rope rope = StringOperations.rope(message);
-            return createString(BubbleBabble.bubblebabble(rope.getBytes(), rope.begin(), rope.byteLength()));
+            return createString(BubbleBabble.bubblebabble(rope.getBytes(), 0, rope.byteLength()));
         }
 
     }

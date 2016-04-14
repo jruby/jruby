@@ -42,7 +42,6 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
@@ -77,7 +76,6 @@ import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodes.MakeRepeatingNode;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.core.rope.SubstringRope;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.language.NotProvided;
@@ -102,7 +100,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_UTF8_ROPE;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
@@ -1381,7 +1378,7 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#singleByteLStrip.
 
             final Rope rope = rope(string);
-            final int s = rope.begin();
+            final int s = 0;
             final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytes();
 
@@ -1403,7 +1400,7 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
             final Encoding enc = RopeOperations.STR_ENC_GET(rope);
-            final int s = rope.begin();
+            final int s = 0;
             final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytes();
 
@@ -1499,7 +1496,7 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
 
             try {
-                return codePoint(rope.getEncoding(), rope.getBytes(), rope.begin(), rope.begin() + rope.byteLength());
+                return codePoint(rope.getEncoding(), rope.getBytes(), 0, rope.byteLength());
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
@@ -1646,7 +1643,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            final int s = rope.begin();
+            final int s = 0;
             final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytesCopy();
 
@@ -1976,7 +1973,7 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
             final byte[] bytes = rope.getBytes();
-            int p = rope.begin();
+            int p = 0;
             final int len = rope.byteLength();
             final int end = p + len;
 

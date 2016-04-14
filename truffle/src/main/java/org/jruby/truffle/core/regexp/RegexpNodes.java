@@ -86,10 +86,10 @@ public abstract class RegexpNodes {
         final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
 
         final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, sourceRope, true));
-        final Matcher matcher = r.matcher(sourceRope.getBytes(), sourceRope.begin(), sourceRope.begin() + sourceRope.byteLength());
-        int range = sourceRope.begin() + sourceRope.byteLength();
+        final Matcher matcher = r.matcher(sourceRope.getBytes(), 0, sourceRope.byteLength());
+        int range = sourceRope.byteLength();
 
-        return matchCommon(context, makeSubstringNode, regexp, source, operator, setNamedCaptures, matcher, sourceRope.begin() + startPos, range);
+        return matchCommon(context, makeSubstringNode, regexp, source, operator, setNamedCaptures, matcher, startPos, range);
     }
 
     @TruffleBoundary

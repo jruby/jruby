@@ -117,7 +117,7 @@ public class SymbolTable {
 
             final DynamicObject symbolClass = context.getCoreLibrary().getSymbolClass();
             final Rope flattenedRope = RopeOperations.flatten(rope);
-            final String string = ByteList.decode(flattenedRope.getBytes(), flattenedRope.begin(), flattenedRope.byteLength(), "ISO-8859-1");
+            final String string = ByteList.decode(flattenedRope.getBytes(), 0, flattenedRope.byteLength(), "ISO-8859-1");
 
             final DynamicObject newSymbol = Layouts.SYMBOL.createSymbol(
                     Layouts.CLASS.getInstanceFactory(symbolClass),

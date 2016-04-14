@@ -211,11 +211,11 @@ public abstract class IOPrimitiveNodes {
             final Rope pathRope = rope(path);
 
             return Dir.fnmatch(patternRope.getBytes(),
-                    patternRope.begin(),
-                    patternRope.begin() + patternRope.byteLength(),
+                    0,
+                    patternRope.byteLength(),
                     pathRope.getBytes(),
-                    pathRope.begin(),
-                    pathRope.begin() + pathRope.byteLength(),
+                    0,
+                    pathRope.byteLength(),
                     flags) != Dir.FNM_NOMATCH;
         }
 
@@ -408,12 +408,12 @@ public abstract class IOPrimitiveNodes {
             final Rope rope = rope(string);
 
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
-                getContext().getDebugStandardOut().write(rope.getBytes(), rope.begin(), rope.byteLength());
+                getContext().getDebugStandardOut().write(rope.getBytes(), 0, rope.byteLength());
                 return rope.byteLength();
             }
 
             // TODO (eregon, 11 May 2015): review consistency under concurrent modification
-            final ByteBuffer buffer = ByteBuffer.wrap(rope.getBytes(), rope.begin(), rope.byteLength());
+            final ByteBuffer buffer = ByteBuffer.wrap(rope.getBytes(), 0, rope.byteLength());
 
             int total = 0;
 

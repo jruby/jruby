@@ -82,10 +82,6 @@ public abstract class Rope {
         return ropeDepth;
     }
 
-    public int begin() {
-        return 0;
-    }
-
     @Override
     public int hashCode() {
         if (hashCode == 0) {
