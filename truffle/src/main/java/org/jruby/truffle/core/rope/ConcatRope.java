@@ -30,7 +30,7 @@ public class ConcatRope extends Rope {
                 left.byteLength() + right.byteLength(),
                 left.characterLength() + right.characterLength(),
                 depth,
-                null);
+                bytes);
 
         this.left = left;
         this.right = right;
