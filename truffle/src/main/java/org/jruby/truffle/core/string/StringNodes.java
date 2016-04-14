@@ -186,7 +186,7 @@ public abstract class StringNodes {
                 return false;
             }
 
-            return stringEncoding == USASCIIEncoding.INSTANCE && otherEncoding == USASCIIEncoding.INSTANCE;
+            return stringEncoding == USASCIIEncoding.INSTANCE || otherEncoding == USASCIIEncoding.INSTANCE;
         }
 
     }
