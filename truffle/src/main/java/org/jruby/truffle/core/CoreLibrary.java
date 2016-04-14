@@ -172,7 +172,6 @@ public class CoreLibrary {
     private final DynamicObject standardErrorClass;
     private final DynamicObject stringClass;
     private final DynamicObjectFactory stringFactory;
-    private final DynamicObject stringDataClass;
     private final DynamicObject symbolClass;
     private final DynamicObject syntaxErrorClass;
     private final DynamicObject systemCallErrorClass;
@@ -194,7 +193,6 @@ public class CoreLibrary {
     private final DynamicObject rubiniusChannelClass;
     private final DynamicObject rubiniusFFIModule;
     private final DynamicObject rubiniusFFIPointerClass;
-    private final DynamicObject rubiniusMirrorClass;
     private final DynamicObject signalModule;
     private final DynamicObject truffleModule;
     private final DynamicObject bigDecimalClass;
@@ -520,14 +518,14 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(rubiniusFFIPointerClass, Layouts.POINTER.createPointerShape(rubiniusFFIPointerClass, rubiniusFFIPointerClass));
 
         rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
-        rubiniusMirrorClass = defineClass(rubiniusModule, objectClass, "Mirror");
+        defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
         byteArrayFactory = Layouts.BYTE_ARRAY.createByteArrayShape(byteArrayClass, byteArrayClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(byteArrayClass, byteArrayFactory);
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
-        stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
+        defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
         tupleClass = defineClass(rubiniusModule, arrayClass, "Tuple");
         randomizerClass = defineClass(rubiniusModule, objectClass, "Randomizer");
