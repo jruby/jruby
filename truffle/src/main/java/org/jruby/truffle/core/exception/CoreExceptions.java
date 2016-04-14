@@ -31,8 +31,8 @@ public class CoreExceptions {
         this.context = context;
     }
 
+    @CompilerDirectives.TruffleBoundary
     public DynamicObject runtimeError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return ExceptionOperations.createRubyException(context.getCoreLibrary().getRuntimeErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
@@ -74,6 +74,7 @@ public class CoreExceptions {
         return argumentError("can't compress negative numbers", currentNode, null);
     }
 
+    @CompilerDirectives.TruffleBoundary
     public DynamicObject argumentErrorUnknownKeyword(Object name, Node currentNode) {
         return argumentError("unknown keyword: " + name, currentNode, null);
     }
@@ -154,7 +155,6 @@ public class CoreExceptions {
     }
 
     public DynamicObject noBlockGiven(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return localJumpError("no block given", currentNode);
     }
 
@@ -174,6 +174,7 @@ public class CoreExceptions {
         return typeError("can't create instance of singleton class", currentNode, null);
     }
 
+    @CompilerDirectives.TruffleBoundary
     public DynamicObject superclassMismatch(String name, Node currentNode) {
         return typeError("superclass mismatch for class " + name, currentNode);
     }
@@ -197,8 +198,8 @@ public class CoreExceptions {
         return typeError("can't define singleton", currentNode);
     }
 
+    @CompilerDirectives.TruffleBoundary
     public DynamicObject typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
     }
 
