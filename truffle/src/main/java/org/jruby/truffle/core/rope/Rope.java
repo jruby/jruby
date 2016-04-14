@@ -22,7 +22,7 @@ public abstract class Rope {
     private final int characterLength;
     private final int ropeDepth;
     private int hashCode = 0;
-    private byte[] bytes;
+    protected byte[] bytes;
 
     protected Rope(Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth, byte[] bytes) {
         this.encoding = encoding;
@@ -54,7 +54,7 @@ public abstract class Rope {
         return bytes;
     }
 
-    public final byte[] getBytes() {
+    public byte[] getBytes() {
         if (bytes == null) {
             bytes = RopeOperations.flattenBytes(this);
         }
