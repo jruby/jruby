@@ -198,11 +198,6 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
-    public DynamicObject typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
-        return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
-    }
-
-    @TruffleBoundary
     public DynamicObject typeErrorMustHaveWriteMethod(Object object, Node currentNode) {
         return typeError(String.format("$stdout must have write method, %s given", Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(object)).getName()), currentNode);
     }
