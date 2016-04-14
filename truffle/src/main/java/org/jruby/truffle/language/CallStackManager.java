@@ -105,13 +105,12 @@ public class CallStackManager {
         return getBacktrace(currentNode, omit, filterNullSourceSection, exception, null);
     }
 
+    @TruffleBoundary
     public Backtrace getBacktrace(Node currentNode,
                                   final int omit,
                                   final boolean filterNullSourceSection,
                                   DynamicObject exception,
                                   Throwable javaThrowable) {
-        CompilerAsserts.neverPartOfCompilation();
-
         if (exception != null
                 && context.getOptions().BACKTRACES_OMIT_UNUSED
                 && DisablingBacktracesNode.areBacktracesDisabled()

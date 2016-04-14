@@ -19,6 +19,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.module.ModuleOperations;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 
@@ -33,7 +35,7 @@ public class CoreExceptions {
     // ArgumentError
 
     public DynamicObject argumentErrorOneHashRequired(Node currentNode) {
-        return argumentError("one hash required", currentNode, null);
+        return argumentError(coreStrings().ONE_HASH_REQUIRED.getRope(), currentNode, null);
     }
 
     public DynamicObject argumentError(String message, Node currentNode) {
@@ -41,32 +43,32 @@ public class CoreExceptions {
     }
 
     public DynamicObject argumentErrorProcWithoutBlock(Node currentNode) {
-        return argumentError("tried to create Proc object without a block", currentNode, null);
+        return argumentError(coreStrings().PROC_WITHOUT_BLOCK.getRope(), currentNode, null);
     }
 
     public DynamicObject argumentErrorTooFewArguments(Node currentNode) {
-        return argumentError("too few arguments", currentNode, null);
+        return argumentError(coreStrings().TOO_FEW_ARGUMENTS.getRope(), currentNode, null);
     }
 
     public DynamicObject argumentErrorTimeItervalPositive(Node currentNode) {
-        return argumentError("time interval must be positive", currentNode, null);
+        return argumentError(coreStrings().TIME_INTERVAL_MUST_BE_POS.getRope(), currentNode, null);
     }
 
     public DynamicObject argumentErrorXOutsideOfString(Node currentNode) {
-        return argumentError("X outside of string", currentNode, null);
+        return argumentError(coreStrings().X_OUTSIDE_OF_STRING.getRope(), currentNode, null);
     }
 
     public DynamicObject argumentErrorCantCompressNegativeNumbers(Node currentNode) {
-        return argumentError("can't compress negative numbers", currentNode, null);
+        return argumentError(coreStrings().CANT_COMPRESS_NEGATIVE.getRope(), currentNode, null);
     }
 
     public DynamicObject argumentErrorOutOfRange(Node currentNode) {
-        return argumentError("out of range", currentNode);
+        return argumentError(coreStrings().OUT_OF_RANGE.getRope(), currentNode, null);
     }
 
     @TruffleBoundary
     public DynamicObject argumentErrorUnknownKeyword(Object name, Node currentNode) {
-        return argumentError("unknown keyword: " + name, currentNode, null);
+        return argumentError("unknown keyword: " + name, currentNode);
     }
 
     @TruffleBoundary
@@ -90,7 +92,7 @@ public class CoreExceptions {
     }
 
     public DynamicObject argumentErrorEmptyVarargs(Node currentNode) {
-        return argumentError("wrong number of arguments (0 for 1+)", currentNode);
+        return argumentError(coreStrings().WRONG_ARGS_ZERO_PLUS_ONE.getRope(), currentNode, null);
     }
 
     @TruffleBoundary
@@ -101,9 +103,13 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject argumentError(String message, Node currentNode, Throwable javaThrowable) {
+        return argumentError(StringOperations.encodeRope(message, UTF8Encoding.INSTANCE), currentNode, javaThrowable);
+    }
+
+    public DynamicObject argumentError(Rope message, Node currentNode, Throwable javaThrowable) {
         return ExceptionOperations.createRubyException(
                 context.getCoreLibrary().getArgumentErrorClass(),
-                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                StringOperations.createString(context, message),
                 context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
@@ -659,6 +665,12 @@ public class CoreExceptions {
         final DynamicObject systemExit = ExceptionOperations.createRubyException(context.getCoreLibrary().getSystemExitClass(), message, context.getCallStack().getBacktrace(currentNode));
         systemExit.define("@status", exitStatus, 0);
         return systemExit;
+    }
+
+    // Helpers
+
+    private CoreStrings coreStrings() {
+        return context.getCoreStrings();
     }
 
 }
