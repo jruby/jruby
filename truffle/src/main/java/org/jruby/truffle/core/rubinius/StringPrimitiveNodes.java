@@ -89,6 +89,7 @@ import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.RepeatingRope;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
@@ -107,7 +108,6 @@ import org.jruby.util.StringSupport;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.jruby.truffle.core.string.StringOperations.encoding;
@@ -1193,22 +1193,54 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
+    // Port of Rubinius's String::previous_byte_index.
+    //
+    // This method takes a byte index, finds the corresponding character the byte index belongs to, and then returns
+    // the byte index marking the start of the previous character in the string.
     @RubiniusPrimitive(name = "string_previous_byte_index")
+    @ImportStatic(StringGuards.class)
     public static abstract class StringPreviousByteIndexPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         public StringPreviousByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object stringPreviousByteIndex(DynamicObject string, int index) {
-            // Port of Rubinius's String::previous_byte_index.
+        @Specialization(guards = "index < 0")
+        @TruffleBoundary
+        public Object stringPreviousByteIndexNegativeIndex(DynamicObject string, int index) {
+            throw new RaiseException(coreLibrary().argumentError("negative index given", this));
+        }
 
-            if (index < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("negative index given", this));
+        @Specialization(guards = "index == 0")
+        public Object stringPreviousByteIndexZeroIndex(DynamicObject string, int index) {
+            return nil();
+        }
+
+        @Specialization(guards = { "index > 0", "isSingleByteOptimizable(string)" })
+        public int stringPreviousByteIndexSingleByteOptimizable(DynamicObject string, int index) {
+            return index - 1;
+        }
+
+        @Specialization(guards = { "index > 0", "!isSingleByteOptimizable(string)", "isFixedWidthEncoding(string)" })
+        public int stringPreviousByteIndexFixedWidthEncoding(DynamicObject string, int index,
+                                                             @Cached("createBinaryProfile()") ConditionProfile firstCharacterProfile) {
+            final Encoding encoding = encoding(string);
+
+            // TODO (nirvdrum 11-Apr-16) Determine whether we need to be bug-for-bug compatible with Rubinius.
+            // Implement a bug in Rubinius. We already special-case the index == 0 by returning nil. For all indices
+            // corresponding to a given character, we treat them uniformly. However, for the first character, we only
+            // return nil if the index is 0. If any other index into the first character is encountered, we return 0.
+            // It seems unlikely this will ever be encountered in practice, but it's here for completeness.
+            if (firstCharacterProfile.profile(index < encoding.maxLength())) {
+                return 0;
             }
 
+            return (index / encoding.maxLength() - 1) * encoding.maxLength();
+        }
+
+        @Specialization(guards = { "index > 0", "!isSingleByteOptimizable(string)", "!isFixedWidthEncoding(string)" })
+        @TruffleBoundary
+        public Object stringPreviousByteIndex(DynamicObject string, int index) {
             final Rope rope = rope(string);
             final int p = rope.begin();
             final int end = p + rope.byteLength();
@@ -1364,16 +1396,18 @@ public abstract class StringPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
+        @Child private RopeNodes.MakeRepeatingNode makeRepeatingNode;
 
         public StringPatternPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null, null);
+            makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create(context, sourceSection);
+            makeRepeatingNode = RopeNodes.MakeRepeatingNode.create(context, sourceSection);
         }
 
         @Specialization(guards = "value >= 0")
         public DynamicObject stringPatternZero(DynamicObject stringClass, int size, int value) {
-            final Rope repeatingRope = new RepeatingRope(RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[value], size);
+            final Rope repeatingRope = makeRepeatingNode.executeMake(RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[value], size);
 
             return allocateObjectNode.allocate(stringClass, repeatingRope, null);
         }
@@ -1381,7 +1415,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = { "isRubyString(string)", "patternFitsEvenly(string, size)" })
         public DynamicObject stringPatternFitsEvenly(DynamicObject stringClass, int size, DynamicObject string) {
             final Rope rope = rope(string);
-            final Rope repeatingRope = new RepeatingRope(rope, size / rope.byteLength());
+            final Rope repeatingRope = makeRepeatingNode.executeMake(rope, size / rope.byteLength());
 
             return allocateObjectNode.allocate(stringClass, repeatingRope, null);
         }
@@ -1419,6 +1453,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_splice", needsSelf = false, lowerFixnumParameters = {2, 3})
+    @ImportStatic(StringGuards.class)
     public static abstract class StringSplicePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeConcatNode appendMakeConcatNode;
@@ -1471,7 +1506,7 @@ public abstract class StringPrimitiveNodes {
             return string;
         }
 
-        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)" })
+        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)", "!isRopeBuffer(string)" })
         public DynamicObject splice(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding) {
             if (leftMakeSubstringNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1508,6 +1543,32 @@ public abstract class StringPrimitiveNodes {
             return string;
         }
 
+        @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)", "isRopeBuffer(string)", "isSingleByteOptimizable(string)" })
+        public DynamicObject spliceBuffer(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding,
+                                          @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile) {
+            final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
+            final RopeBuffer source = (RopeBuffer) rope(string);
+            final Rope insert = rope(other);
+            final int rightSideStartingIndex = spliceByteIndex + byteCountToReplace;
+
+            final ByteList byteList = new ByteList(source.byteLength() + insert.byteLength() - byteCountToReplace);
+
+            byteList.append(source.getByteList(), 0, spliceByteIndex);
+            byteList.append(insert.getBytes());
+            byteList.append(source.getByteList(), rightSideStartingIndex, source.byteLength() - rightSideStartingIndex);
+            byteList.setEncoding(encoding);
+
+            final Rope buffer = new RopeBuffer(byteList,
+                    RopeNodes.MakeConcatNode.commonCodeRange(source.getCodeRange(), insert.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile),
+                    source.isSingleByteOptimizable() && insert.isSingleByteOptimizable(),
+                    source.characterLength() + insert.characterLength() - byteCountToReplace);
+
+            StringOperations.setRope(string, buffer);
+
+            return string;
+        }
+
         protected  boolean indexAtStartBound(int index) {
             return index == 0;
         }
@@ -1522,6 +1583,12 @@ public abstract class StringPrimitiveNodes {
             assert RubyGuards.isRubyString(string);
 
             return indexAtStartBound(index) || indexAtEndBound(string, index);
+        }
+
+        protected boolean isRopeBuffer(DynamicObject string) {
+            assert RubyGuards.isRubyString(string);
+
+            return rope(string) instanceof RopeBuffer;
         }
     }
 
@@ -1622,7 +1689,8 @@ public abstract class StringPrimitiveNodes {
                                                            @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile stillNegativeBeginProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile tooLargeTotalProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile) {
+                                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
             // Taken from org.jruby.RubyString#substr19.
             final Rope rope = rope(string);
             if (emptyStringProfile.profile(rope.isEmpty())) {
@@ -1649,6 +1717,10 @@ public abstract class StringPrimitiveNodes {
             if (negativeLengthProfile.profile(len <= 0)) {
                 len = 0;
                 beg = 0;
+            }
+
+            if (mutableRopeProfile.profile(rope instanceof RopeBuffer)) {
+                return makeBuffer(string, beg, len);
             }
 
             return makeRope(string, beg, len);
@@ -1750,6 +1822,36 @@ public abstract class StringPrimitiveNodes {
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
                     makeSubstringNode.executeMake(rope(string), beg, len),
+                    null);
+
+            taintResultNode.maybeTaint(string, ret);
+
+            return ret;
+        }
+
+        private DynamicObject makeBuffer(DynamicObject string, int beg, int len) {
+            assert RubyGuards.isRubyString(string);
+
+            if (!StringGuards.isSingleByteOptimizable(string)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().internalError("Taking the substring of MBC rope buffer is not currently supported", this));
+            }
+
+            final RopeBuffer buffer = (RopeBuffer) rope(string);
+
+            if (allocateNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
+            }
+
+            if (taintResultNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
+            }
+
+            final DynamicObject ret = allocateNode.allocate(
+                    Layouts.BASIC_OBJECT.getLogicalClass(string),
+                    new RopeBuffer(new ByteList(buffer.getByteList(), beg, len), buffer.getCodeRange(), buffer.isSingleByteOptimizable(), len),
                     null);
 
             taintResultNode.maybeTaint(string, ret);

@@ -52,19 +52,23 @@ public abstract class Initializer {
     private static final Map<String, String> SCALA_OPERATORS;
 
     // TODO: other reserved names?
-    private static final Map<String, AssignedName> RESERVED_NAMES = new HashMap<String, AssignedName>();
-    static {
+    private static Map<String, AssignedName> newReservedNamesMap(final int size) {
+        HashMap<String, AssignedName> RESERVED_NAMES = new HashMap<>(size + 4, 1);
         RESERVED_NAMES.put("__id__", new AssignedName("__id__", Priority.RESERVED));
         RESERVED_NAMES.put("__send__", new AssignedName("__send__", Priority.RESERVED));
         // JRUBY-5132: java.awt.Component.instance_of?() expects 2 args
         RESERVED_NAMES.put("instance_of?", new AssignedName("instance_of?", Priority.RESERVED));
+        return RESERVED_NAMES;
     }
-    protected static final Map<String, AssignedName> STATIC_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
+
+    protected static final Map<String, AssignedName> STATIC_RESERVED_NAMES;
     static {
+        STATIC_RESERVED_NAMES = newReservedNamesMap(1);
         STATIC_RESERVED_NAMES.put("new", new AssignedName("new", Priority.RESERVED));
     }
-    protected static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
+    protected static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES;
     static {
+        INSTANCE_RESERVED_NAMES = newReservedNamesMap(2);
         // only possible for "getClass" to be an instance method in Java
         INSTANCE_RESERVED_NAMES.put("class", new AssignedName("class", Priority.RESERVED));
         // "initialize" has meaning only for an instance (as opposed to a class)

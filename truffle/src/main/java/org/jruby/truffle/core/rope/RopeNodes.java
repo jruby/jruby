@@ -16,6 +16,7 @@ package org.jruby.truffle.core.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -30,8 +31,11 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+
+import java.util.Arrays;
 
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
 import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
@@ -62,7 +66,8 @@ public abstract class RopeNodes {
         public Rope substringZeroBytes(Rope base, int offset, int byteLength,
                                         @Cached("createBinaryProfile()") ConditionProfile isUTF8,
                                         @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
-                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit) {
+                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit,
+                                        @Cached("create(getContext(), getSourceSection())") WithEncodingNode withEncodingNode) {
             if (isUTF8.profile(base.getEncoding() == UTF8Encoding.INSTANCE)) {
                 return RopeConstants.EMPTY_UTF8_ROPE;
             }
@@ -75,7 +80,7 @@ public abstract class RopeNodes {
                 return RopeConstants.EMPTY_ASCII_8BIT_ROPE;
             }
 
-            return RopeOperations.withEncodingVerySlow(RopeConstants.EMPTY_UTF8_ROPE, base.getEncoding());
+            return withEncodingNode.executeWithEncoding(RopeConstants.EMPTY_ASCII_8BIT_ROPE, base.getEncoding(), CR_7BIT);
         }
 
         @Specialization(guards = "byteLength == 1")
@@ -121,7 +126,7 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = { "byteLength > 1", "!sameAsBase(base, offset, byteLength)" })
-        public Rope substringMultiplyRope(RepeatingRope base, int offset, int byteLength,
+        public Rope substringRepeatingRope(RepeatingRope base, int offset, int byteLength,
                                           @Cached("createBinaryProfile()") ConditionProfile is7BitProfile,
                                           @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile,
                                           @Cached("createBinaryProfile()") ConditionProfile matchesChildProfile) {
@@ -239,8 +244,15 @@ public abstract class RopeNodes {
         public abstract Rope executeMake(Rope left, Rope right, Encoding encoding);
 
         @Specialization(guards = "isMutableRope(left)")
-        public Rope concatMutableRope(MutableRope left, Rope right, Encoding encoding,
+        public Rope concatMutableRope(RopeBuffer left, Rope right, Encoding encoding,
                                       @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
+            try {
+                ExactMath.addExact(left.byteLength(), right.byteLength());
+            } catch(ArithmeticException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("Result of string concatenation exceeds the system maximum string length", this));
+            }
+
             final ByteList byteList = left.getByteList();
 
             byteList.append(right.getBytes());
@@ -257,6 +269,13 @@ public abstract class RopeNodes {
                            @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
                            @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
                            @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile) {
+            try {
+                ExactMath.addExact(left.byteLength(), right.byteLength());
+            } catch(ArithmeticException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("Result of string concatenation exceeds the system maximum string length", this));
+            }
+
             int depth = depth(left, right);
             /*if (depth >= 10) {
                 System.out.println("ConcatRope depth: " + depth);
@@ -268,9 +287,9 @@ public abstract class RopeNodes {
                     depth);
         }
 
-        private CodeRange commonCodeRange(CodeRange first, CodeRange second,
-                                    ConditionProfile sameCodeRangeProfile,
-                                    ConditionProfile brokenCodeRangeProfile) {
+        public static CodeRange commonCodeRange(CodeRange first, CodeRange second,
+                                                ConditionProfile sameCodeRangeProfile,
+                                                ConditionProfile brokenCodeRangeProfile) {
             if (sameCodeRangeProfile.profile(first == second)) {
                 return first;
             }
@@ -296,7 +315,7 @@ public abstract class RopeNodes {
         }
 
         protected static boolean isMutableRope(Rope rope) {
-            return rope instanceof MutableRope;
+            return rope instanceof RopeBuffer;
         }
     }
 
@@ -489,6 +508,82 @@ public abstract class RopeNodes {
     }
 
     @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "base"),
+            @NodeChild(type = RubyNode.class, value = "times")
+    })
+    public abstract static class MakeRepeatingNode extends RubyNode {
+
+        public static MakeRepeatingNode create(RubyContext context, SourceSection sourceSection) {
+            return RopeNodesFactory.MakeRepeatingNodeGen.create(context, sourceSection, null, null);
+        }
+
+        public MakeRepeatingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract Rope executeMake(Rope base, int times);
+
+        @Specialization(guards = "times == 0")
+        public Rope repeatZero(Rope base, int times,
+                               @Cached("create(getContext(), getSourceSection())") WithEncodingNode withEncodingNode) {
+            return withEncodingNode.executeWithEncoding(RopeConstants.EMPTY_UTF8_ROPE, base.getEncoding(), CodeRange.CR_7BIT);
+        }
+
+        @Specialization(guards = "times == 1")
+        public Rope repeatOne(Rope base, int times,
+                              @Cached("create(getContext(), getSourceSection())") WithEncodingNode withEncodingNode) {
+            return base;
+        }
+
+        @Specialization(guards = "times > 1")
+        public Rope multiplyBuffer(RopeBuffer base, int times) {
+            final ByteList inputBytes = base.getByteList();
+            final ByteList outputBytes = new ByteList(inputBytes.realSize() * times);
+
+            for (int i = 0; i < times; i++) {
+                outputBytes.append(inputBytes);
+            }
+
+            outputBytes.setEncoding(inputBytes.getEncoding());
+
+            return new RopeBuffer(outputBytes, base.getCodeRange(), base.isSingleByteOptimizable(), base.characterLength() * times);
+        }
+
+        @Specialization(guards = { "!isRopeBuffer(base)", "isSingleByteString(base)", "times > 1" })
+        @TruffleBoundary
+        public Rope multiplySingleByteString(Rope base, int times,
+                                             @Cached("create(getContext(), getSourceSection())") MakeLeafRopeNode makeLeafRopeNode) {
+            final byte filler = base.getBytes()[0];
+
+            byte[] buffer = new byte[times];
+            Arrays.fill(buffer, filler);
+
+            return makeLeafRopeNode.executeMake(buffer, base.getEncoding(), base.getCodeRange(), times);
+        }
+
+        @Specialization(guards = { "!isRopeBuffer(base)", "!isSingleByteString(base)", "times > 1" })
+        public Rope repeat(Rope base, int times) {
+            try {
+                ExactMath.multiplyExact(base.byteLength(), times);
+            } catch (ArithmeticException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("Result of repeating string exceeds the system maximum string length", this));
+            }
+
+            return new RepeatingRope(base, times);
+        }
+
+        protected static boolean isSingleByteString(Rope rope) {
+            return rope.byteLength() == 1;
+        }
+
+        protected static boolean isRopeBuffer(Rope rope) {
+            return rope instanceof RopeBuffer;
+        }
+    }
+
+
+    @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "rope"),
             @NodeChild(type = RubyNode.class, value = "currentLevel"),
             @NodeChild(type = RubyNode.class, value = "printString")
@@ -569,6 +664,29 @@ public abstract class RopeNodes {
             return nil();
         }
 
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject debugPrintRepeatingRope(RepeatingRope rope, int currentLevel, boolean printString) {
+            printPreamble(currentLevel);
+
+            // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
+            final boolean bytesAreNull = rope.getRawBytes() == null;
+
+            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; T: %d; D: %d)",
+                    printString ? rope.toString() : "<skipped>",
+                    rope.getClass().getSimpleName(),
+                    bytesAreNull,
+                    rope.byteLength(),
+                    rope.characterLength(),
+                    rope.getCodeRange(),
+                    rope.getTimes(),
+                    rope.depth()));
+
+            executeDebugPrint(rope.getChild(), currentLevel + 1, printString);
+
+            return nil();
+        }
+
         private void printPreamble(int level) {
             if (level > 0) {
                 for (int i = 0; i < level; i++) {
@@ -585,6 +703,10 @@ public abstract class RopeNodes {
             @NodeChild(type = RubyNode.class, value = "codeRange")
     })
     public abstract static class WithEncodingNode extends RubyNode {
+
+        public static WithEncodingNode create(RubyContext context, SourceSection sourceSection) {
+            return RopeNodesFactory.WithEncodingNodeGen.create(context, sourceSection, null, null, null);
+        }
 
         public WithEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

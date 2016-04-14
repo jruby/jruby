@@ -9,51 +9,60 @@
  */
 package org.jruby.truffle.core.array;
 
-public class EmptyArrayMirror extends BasicArrayMirror {
+import java.util.Arrays;
+
+/** Mirror for a long[] array doing the proper casting for int values */
+class LongIntArrayMirror extends BasicArrayMirror {
+
+    private final long[] array;
+
+    public LongIntArrayMirror(long[] array) {
+        this.array = array;
+    }
 
     @Override
     public int getLength() {
-        return 0;
+        return array.length;
     }
 
     @Override
     public Object get(int index) {
-        throw new IndexOutOfBoundsException();
+        return array[index];
     }
 
     @Override
     public void set(int index, Object value) {
-        throw new IndexOutOfBoundsException();
+        // Integer => int => long
+        array[index] = (long) (int) value;
     }
 
     @Override
     public ArrayMirror copyArrayAndMirror(int newLength) {
-        return new EmptyArrayMirror();
+        return new LongIntArrayMirror(Arrays.copyOf(array, newLength));
     }
 
     @Override
     public void copyTo(ArrayMirror destination, int sourceStart, int destinationStart, int count) {
-        if (sourceStart > 0 || count > 0) {
-            throw new IndexOutOfBoundsException();
+        for (int i = 0; i < count; i++) {
+            destination.set(destinationStart + i, array[sourceStart + i]);
         }
     }
 
     @Override
     public void copyTo(Object[] destination, int sourceStart, int destinationStart, int count) {
-        if (sourceStart > 0 || count > 0) {
-            throw new IndexOutOfBoundsException();
+        for (int n = 0; n < count; n++) {
+            destination[destinationStart + n] = array[sourceStart + n];
         }
     }
 
     @Override
     public ArrayMirror extractRange(int start, int end) {
-        assert start == 0 && end == 0;
-        return new EmptyArrayMirror();
+        return new LongIntArrayMirror(ArrayUtils.extractRange(array, start, end));
     }
 
     @Override
     public Object getArray() {
-        return null;
+        return array;
     }
 
 }

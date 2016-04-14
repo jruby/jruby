@@ -13,21 +13,26 @@ package org.jruby.truffle.core.rope;
 import org.jcodings.Encoding;
 import org.jruby.util.ByteList;
 
-public class MutableRope extends LeafRope {
+public class RopeBuffer extends LeafRope {
 
     private final ByteList byteList;
 
-    protected MutableRope(byte[] bytes, Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int characterLength) {
+    protected RopeBuffer(byte[] bytes, Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int characterLength) {
         super(bytes, encoding, codeRange, singleByteOptimizable, characterLength);
         this.byteList = new ByteList(bytes, encoding, true);
     }
 
-    public MutableRope(Rope original) {
+    public RopeBuffer(Rope original) {
         this(original.getBytes(),
                 original.getEncoding(),
                 original.getCodeRange(),
                 original.isSingleByteOptimizable(),
                 original.characterLength());
+    }
+
+    public RopeBuffer(ByteList byteList, CodeRange codeRange, boolean singleByteOptimizable, int characterLength) {
+        super(byteList.unsafeBytes(), byteList.getEncoding(), codeRange, singleByteOptimizable, characterLength);
+        this.byteList =  byteList;
     }
 
     @Override

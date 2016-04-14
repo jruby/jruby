@@ -85,9 +85,7 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
-
 import java.util.Arrays;
-
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
@@ -129,98 +127,57 @@ public abstract class ArrayNodes {
             return ToAryNodeGen.create(getContext(), getSourceSection(), other);
         }
 
+        // One array has null storage, just copy the other.
+
         @Specialization(guards = { "isNullArray(a)", "isNullArray(b)" })
         public DynamicObject addNullNull(DynamicObject a, DynamicObject b) {
             return createArray(getContext(), null, 0);
         }
 
-        @Specialization(guards = {"isObjectArray(a)", "isNullArray(b)"})
-        public DynamicObject addObjectNull(DynamicObject a, DynamicObject b) {
-            return createArray(getContext(), Arrays.copyOf((Object[]) getStore(a), getSize(a)), getSize(a));
-        }
-
-        @Specialization(guards = {"isIntArray(a)", "isIntArray(b)"})
-        public DynamicObject addBothIntegerFixnum(DynamicObject a, DynamicObject b) {
-            final int combinedSize = getSize(a) + getSize(b);
-            final int[] combined = new int[combinedSize];
-            System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
-            System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return createArray(getContext(), combined, combinedSize);
-        }
-
-        @Specialization(guards = {"isLongArray(a)", "isLongArray(b)"})
-        public DynamicObject addBothLongFixnum(DynamicObject a, DynamicObject b) {
-            final int combinedSize = getSize(a) + getSize(b);
-            final long[] combined = new long[combinedSize];
-            System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
-            System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return createArray(getContext(), combined, combinedSize);
-        }
-
-        @Specialization(guards = {"isDoubleArray(a)", "isRubyArray(b)", "isDoubleArray(b)"})
-        public DynamicObject addBothFloat(DynamicObject a, DynamicObject b) {
-            final int combinedSize = getSize(a) + getSize(b);
-            final double[] combined = new double[combinedSize];
-            System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
-            System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return createArray(getContext(), combined, combinedSize);
-        }
-
-        @Specialization(guards = {"isObjectArray(a)", "isRubyArray(b)", "isObjectArray(b)"})
-        public DynamicObject addBothObject(DynamicObject a, DynamicObject b) {
-            final int combinedSize = getSize(a) + getSize(b);
-            final Object[] combined = new Object[combinedSize];
-            System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
-            System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return createArray(getContext(), combined, combinedSize);
-        }
-
-        @Specialization(guards = {"isNullArray(a)", "isRubyArray(b)", "isIntArray(b)"})
-        public DynamicObject addNullIntegerFixnum(DynamicObject a, DynamicObject b) {
+        @Specialization(guards = { "isNullArray(a)", "!isNullArray(b)", "strategy.matches(b)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject addNullOther(DynamicObject a, DynamicObject b,
+                @Cached("of(b)") ArrayStrategy strategy) {
             final int size = getSize(b);
-            return createArray(getContext(), Arrays.copyOf((int[]) getStore(b), size), size);
+            final ArrayMirror mirror = strategy.newMirror(b).extractRange(0, size);
+            return createArray(getContext(), mirror.getArray(), size);
         }
 
-        @Specialization(guards = {"isNullArray(a)", "isRubyArray(b)", "isLongArray(b)"})
-        public DynamicObject addNullLongFixnum(DynamicObject a, DynamicObject b) {
-            final int size = getSize(b);
-            return createArray(getContext(), Arrays.copyOf((long[]) getStore(b), size), size);
-        }
-
-        @Specialization(guards = {"isNullArray(a)", "isRubyArray(b)", "isObjectArray(b)"})
-        public DynamicObject addNullObject(DynamicObject a, DynamicObject b) {
-            final int size = getSize(b);
-            return createArray(getContext(), Arrays.copyOf((Object[]) getStore(b), size), size);
-        }
-
-        @Specialization(guards = { "!isObjectArray(a)", "isObjectArray(b)" })
-        public DynamicObject addOtherObject(DynamicObject a, DynamicObject b) {
-            final int combinedSize = getSize(a) + getSize(b);
-            final Object[] combined = new Object[combinedSize];
-            System.arraycopy(ArrayUtils.box(getStore(a)), 0, combined, 0, getSize(a));
-            System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return createArray(getContext(), combined, combinedSize);
-        }
-
-        @Specialization(guards = { "isObjectArray(a)", "!isObjectArray(b)" })
-        public DynamicObject addObject(DynamicObject a, DynamicObject b) {
-            final int combinedSize = getSize(a) + getSize(b);
-            final Object[] combined = new Object[combinedSize];
-            System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
-            System.arraycopy(ArrayUtils.box(getStore(b)), 0, combined, getSize(a), getSize(b));
-            return createArray(getContext(), combined, combinedSize);
-        }
-
-        @Specialization(guards = "isEmptyArray(a)")
-        public DynamicObject addEmpty(DynamicObject a, DynamicObject b) {
-            final int size = getSize(b);
-            return createArray(getContext(), ArrayUtils.box(getStore(b)), size);
-        }
-
-        @Specialization(guards = "isEmptyArray(b)")
-        public DynamicObject addOtherEmpty(DynamicObject a, DynamicObject b) {
+        @Specialization(guards = { "!isNullArray(a)", "isNullArray(b)", "strategy.matches(a)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject addOtherNull(DynamicObject a, DynamicObject b,
+                @Cached("of(a)") ArrayStrategy strategy) {
             final int size = getSize(a);
-            return createArray(getContext(), ArrayUtils.box(getStore(a)), size);
+            final ArrayMirror mirror = strategy.newMirror(a).extractRange(0, size);
+            return createArray(getContext(), mirror.getArray(), size);
+        }
+
+        // Same storage
+
+        @Specialization(guards = { "strategy.matches(a)", "strategy.matches(b)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject addSameType(DynamicObject a, DynamicObject b,
+                @Cached("of(a)") ArrayStrategy strategy) {
+            final int aSize = getSize(a);
+            final int bSize = getSize(b);
+            final int combinedSize = aSize + bSize;
+            final ArrayMirror mirror = strategy.newArray(combinedSize);
+            strategy.newMirror(a).copyTo(mirror, 0, 0, aSize);
+            strategy.newMirror(b).copyTo(mirror, 0, aSize, bSize);
+            return createArray(getContext(), mirror.getArray(), combinedSize);
+        }
+
+        // Generalizations
+
+        @Specialization(guards = { "aStrategy.matches(a)", "bStrategy.matches(b)", "aStrategy != bStrategy" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject addGeneralize(DynamicObject a, DynamicObject b,
+                @Cached("of(a)") ArrayStrategy aStrategy,
+                @Cached("of(b)") ArrayStrategy bStrategy,
+                @Cached("aStrategy.generalize(bStrategy)") ArrayStrategy generalized) {
+            final int aSize = getSize(a);
+            final int bSize = getSize(b);
+            final int combinedSize = aSize + bSize;
+            final ArrayMirror mirror = generalized.newArray(combinedSize);
+            aStrategy.newMirror(a).copyTo(mirror, 0, 0, aSize);
+            bStrategy.newMirror(b).copyTo(mirror, 0, aSize, bSize);
+            return createArray(getContext(), mirror.getArray(), combinedSize);
         }
 
     }
@@ -248,92 +205,32 @@ public abstract class ArrayNodes {
             return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public DynamicObject mulIntegerFixnum(DynamicObject array, int count) {
+        @Specialization(guards = { "strategy.matches(array)", "!isNullArray(array)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject mulIntegerFixnum(DynamicObject array, int count,
+                @Cached("of(array)") ArrayStrategy strategy) {
             if (count < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreLibrary().argumentError("negative argument", this));
             }
-            final int[] store = (int[]) getStore(array);
-            final int storeLength = store.length;
-            final int newStoreLength = storeLength * count;
-            final int[] newStore = new int[newStoreLength];
 
+            final int size = getSize(array);
+            final int newSize = size * count;
+            final ArrayMirror store = strategy.newMirror(array);
+            final ArrayMirror newStore = strategy.newArray(newSize);
             for (int n = 0; n < count; n++) {
-                System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
+                store.copyTo(newStore, 0, n * size, size);
             }
-
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
-        }
-
-        @Specialization(guards = "isLongArray(array)")
-        public DynamicObject mulLongFixnum(DynamicObject array, int count) {
-            if (count < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("negative argument", this));
-            }
-            final long[] store = (long[]) getStore(array);
-            final int storeLength = store.length;
-            final int newStoreLength = storeLength * count;
-            final long[] newStore = new long[newStoreLength];
-
-            for (int n = 0; n < count; n++) {
-                System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
-            }
-
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public DynamicObject mulFloat(DynamicObject array, int count) {
-            if (count < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("negative argument", this));
-            }
-            final double[] store = (double[]) getStore(array);
-            final int storeLength = store.length;
-            final int newStoreLength = storeLength * count;
-            final double[] newStore = new double[newStoreLength];
-
-            for (int n = 0; n < count; n++) {
-                System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
-            }
-
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public DynamicObject mulObject(DynamicObject array, int count) {
-            if (count < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("negative argument", this));
-            }
-            final Object[] store = (Object[]) getStore(array);
-            final int storeLength = getSize(array);
-            final int newStoreLength = storeLength * count;
-            final Object[] newStore = new Object[newStoreLength];
-
-            for (int n = 0; n < count; n++) {
-                System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
-            }
-
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore.getArray(), newSize);
         }
 
         @Specialization(guards = "isRubyString(string)")
         public Object mulObject(VirtualFrame frame, DynamicObject array, DynamicObject string) {
-            CompilerDirectives.transferToInterpreter();
             return ruby("join(sep)", "sep", string);
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isRubyString(object)" })
         public Object mulObjectCount(VirtualFrame frame, DynamicObject array, Object object) {
-            CompilerDirectives.transferToInterpreter();
-            if (respondToToStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
-            }
-            if (respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
+            if (respondToToStr(frame, object)) {
                 return ruby("join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
@@ -343,6 +240,14 @@ public abstract class ArrayNodes {
                 final int count = toIntNode.doInt(frame, object);
                 return executeMul(frame, array, count);
             }
+        }
+
+        public boolean respondToToStr(VirtualFrame frame, Object object) {
+            if (respondToToStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+            }
+            return respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false);
         }
 
     }
@@ -859,21 +764,16 @@ public abstract class ArrayNodes {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendManyNode = ArrayAppendManyNodeGen.create(context, sourceSection, null, null, null);
+            appendManyNode = ArrayAppendManyNodeGen.create(context, sourceSection, null, null);
         }
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization(guards = {"isRubyArray(other)", "isNullArray(other)"})
-        public DynamicObject concatNull(DynamicObject array, DynamicObject other) {
-            return array;
-        }
-
-        @Specialization(guards = {"isRubyArray(other)", "!isNullArray(other)"})
+        @Specialization
         public DynamicObject concat(DynamicObject array, DynamicObject other) {
-            appendManyNode.executeAppendMany(array, getSize(other), getStore(other));
+            appendManyNode.executeAppendMany(array, other);
             return array;
         }
 

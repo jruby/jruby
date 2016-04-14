@@ -10,24 +10,27 @@ module Rubinius
   module RubyPrimitives
 
     def self.module_mirror(obj)
-      if obj.is_a?(::Numeric)
-        Rubinius::Mirror::Numeric
-      else
-        begin
-          Rubinius::Mirror.const_get(obj.class.name.to_sym, false)
-        rescue NameError
-          ancestor = obj.class.superclass
+      case obj
+        when ::Numeric then Rubinius::Mirror::Numeric
+        when ::String then Rubinius::Mirror::String
+        when ::Range then Rubinius::Mirror::Range
+        when ::Process then Rubinius::Mirror::Process
+        else
+          begin
+            Rubinius::Mirror.const_get(obj.class.name.to_sym, false)
+          rescue NameError
+            ancestor = obj.class.superclass
 
-          until ancestor.nil?
-            begin
-              return Rubinius::Mirror.const_get(ancestor.name.to_sym, false)
-            rescue NameError
-              ancestor = ancestor.superclass
+            until ancestor.nil?
+              begin
+                return Rubinius::Mirror.const_get(ancestor.name.to_sym, false)
+              rescue NameError
+                ancestor = ancestor.superclass
+              end
             end
-          end
 
-          nil
-        end
+            nil
+          end
       end
     end
 

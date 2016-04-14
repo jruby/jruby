@@ -60,7 +60,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
     @ImportStatic(StringCachingGuards.class)
     @NodeChildren({
             @NodeChild("receiver"),
-            @NodeChild("label"),
+            @NodeChild("name"),
             @NodeChild("value")
     })
     protected static abstract class StringCachingHelperNode extends RubyNode {
@@ -70,90 +70,90 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
         }
 
         public abstract Object executeStringCachingHelper(VirtualFrame frame, DynamicObject receiver,
-                                                          Object label, Object value);
+                                                          Object name, Object value);
 
         @Specialization(
                 guards = {
-                        "isRubyString(label)",
-                        "ropesEqual(label, cachedRope)"
+                        "isRubyString(name)",
+                        "ropesEqual(name, cachedRope)"
                 },
                 limit = "getCacheLimit()"
         )
         public Object cacheStringAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                DynamicObject label,
+                DynamicObject name,
                 Object value,
-                @Cached("privatizeRope(label)") Rope cachedRope,
+                @Cached("privatizeRope(name)") Rope cachedRope,
                 @Cached("ropeToString(cachedRope)") String cachedString,
                 @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            return nextHelper.executeStringCachedHelper(frame, receiver, label, cachedString, cachedStartsWithAt, value);
+            return nextHelper.executeStringCachedHelper(frame, receiver, name, cachedString, cachedStartsWithAt, value);
         }
 
         @Specialization(
-                guards = "isRubyString(label)",
+                guards = "isRubyString(name)",
                 contains = "cacheStringAndForward"
         )
         public Object uncachedStringAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                DynamicObject label,
+                DynamicObject name,
                 Object value,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            final String labelString = objectToString(label);
-            return nextHelper.executeStringCachedHelper(frame, receiver, label, labelString,
-                    startsWithAt(labelString), value);
+            final String nameString = objectToString(name);
+            return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString,
+                    startsWithAt(nameString), value);
         }
 
         @Specialization(
                 guards = {
-                        "isRubySymbol(label)",
-                        "label == cachedLabel"
+                        "isRubySymbol(name)",
+                        "name == cachedName"
                 },
                 limit = "getCacheLimit()"
         )
         public Object cacheSymbolAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                DynamicObject label,
+                DynamicObject name,
                 Object value,
-                @Cached("label") DynamicObject cachedLabel,
-                @Cached("objectToString(cachedLabel)") String cachedString,
+                @Cached("name") DynamicObject cachedName,
+                @Cached("objectToString(cachedName)") String cachedString,
                 @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            return nextHelper.executeStringCachedHelper(frame, receiver, cachedLabel, cachedString,
+            return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedString,
                     cachedStartsWithAt, value);
         }
 
         @Specialization(
-                guards = "isRubySymbol(label)",
+                guards = "isRubySymbol(name)",
                 contains = "cacheSymbolAndForward"
         )
         public Object uncachedSymbolAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                DynamicObject label,
+                DynamicObject name,
                 Object value,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            final String labelString = objectToString(label);
-            return nextHelper.executeStringCachedHelper(frame, receiver, label, labelString,
-                    startsWithAt(labelString), value);
+            final String nameString = objectToString(name);
+            return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString,
+                    startsWithAt(nameString), value);
         }
 
         @Specialization(
-                guards = "label == cachedLabel",
+                guards = "name == cachedName",
                 limit = "getCacheLimit()"
         )
         public Object cacheJavaStringAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                String label,
+                String name,
                 Object value,
-                @Cached("label") String cachedLabel,
-                @Cached("startsWithAt(cachedLabel)") boolean cachedStartsWithAt,
+                @Cached("name") String cachedName,
+                @Cached("startsWithAt(cachedName)") boolean cachedStartsWithAt,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            return nextHelper.executeStringCachedHelper(frame, receiver, cachedLabel, cachedLabel,
+            return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedName,
                     cachedStartsWithAt, value);
         }
 
@@ -161,10 +161,10 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
         public Object uncachedJavaStringAndForward(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                String label,
+                String name,
                 Object value,
                 @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
-            return nextHelper.executeStringCachedHelper(frame, receiver, label, label, startsWithAt(label), value);
+            return nextHelper.executeStringCachedHelper(frame, receiver, name, name, startsWithAt(name), value);
         }
 
         protected StringCachedHelperNode createNextHelper() {
@@ -182,8 +182,8 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
         }
 
         @CompilerDirectives.TruffleBoundary
-        protected boolean startsWithAt(String label) {
-            return !label.isEmpty() && label.charAt(0) == '@';
+        protected boolean startsWithAt(String name) {
+            return !name.isEmpty() && name.charAt(0) == '@';
         }
 
         protected int getCacheLimit() {
@@ -194,8 +194,8 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
 
     @NodeChildren({
             @NodeChild("receiver"),
-            @NodeChild("label"),
-            @NodeChild("stringLabel"),
+            @NodeChild("name"),
+            @NodeChild("stringName"),
             @NodeChild("startsAt"),
             @NodeChild("value")
     })
@@ -211,17 +211,17 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
             super(context, sourceSection);
         }
 
-        public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object label,
-                                                         String stringLabel, boolean startsAt, Object value);
+        public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object name,
+                                                         String stringName, boolean startsAt, Object value);
 
         @Specialization(guards = "startsAt(startsAt)")
         public Object readInstanceVariable(
                 DynamicObject receiver,
-                Object label,
-                String stringLabel,
+                Object name,
+                String stringName,
                 boolean startsAt,
                 Object value,
-                @Cached("createWriteObjectFieldNode(stringLabel)") WriteObjectFieldNode writeObjectFieldNode) {
+                @Cached("createWriteObjectFieldNode(stringName)") WriteObjectFieldNode writeObjectFieldNode) {
             writeObjectFieldNode.execute(receiver, value);
             return value;
         }
@@ -230,8 +230,8 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
             return startsAt;
         }
 
-        protected WriteObjectFieldNode createWriteObjectFieldNode(String label) {
-            return WriteObjectFieldNodeGen.create(getContext(), label);
+        protected WriteObjectFieldNode createWriteObjectFieldNode(String name) {
+            return WriteObjectFieldNodeGen.create(getContext(), name);
         }
 
         @Specialization(
@@ -243,16 +243,16 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
         public Object callMethod(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                Object label,
-                String stringLabel,
+                Object name,
+                String stringName,
                 boolean startsAt,
                 Object value,
-                @Cached("createWriteMethodName(stringLabel)") String writeMethodName) {
+                @Cached("createWriteMethodName(stringName)") String writeMethodName) {
             return getCallNode().call(frame, receiver, writeMethodName, null, value);
         }
 
-        protected String createWriteMethodName(String label) {
-            return label + "=";
+        protected String createWriteMethodName(String name) {
+            return name + "=";
         }
 
         @Specialization(
@@ -265,12 +265,12 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
         public Object index(
                 VirtualFrame frame,
                 DynamicObject receiver,
-                Object label,
-                String stringLabel,
+                Object name,
+                String stringName,
                 boolean startsAt,
                 Object value,
-                @Cached("createWriteMethodName(stringLabel)") String writeMethodName) {
-            return getCallNode().call(frame, receiver, "[]", null, label, value);
+                @Cached("createWriteMethodName(stringName)") String writeMethodName) {
+            return getCallNode().call(frame, receiver, "[]", null, name, value);
         }
 
         protected boolean notStartsAt(boolean startsAt) {
@@ -295,9 +295,9 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
             return indexDefinedNode;
         }
 
-        protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, String stringLabel,
+        protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, String stringName,
                                         DoesRespondDispatchHeadNode definedNode) {
-            return definedNode.doesRespondTo(frame, stringLabel, receiver);
+            return definedNode.doesRespondTo(frame, stringName, receiver);
         }
 
         protected CallDispatchHeadNode getCallNode() {

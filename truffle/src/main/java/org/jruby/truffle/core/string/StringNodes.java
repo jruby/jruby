@@ -42,6 +42,7 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
@@ -69,13 +70,14 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.RepeatingRope;
-import org.jruby.truffle.core.rope.MutableRope;
+import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
+import org.jruby.truffle.core.rope.RopeNodes.MakeRepeatingNode;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rope.SubstringRope;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.language.NotProvided;
@@ -184,36 +186,12 @@ public abstract class StringNodes {
             throw new RaiseException(coreLibrary().argumentError("negative argument", this));
         }
 
-        @Specialization(guards = "times == 0")
-        public DynamicObject multiplyTimesZero(DynamicObject string, int times) {
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), EMPTY_UTF8_ROPE, null);
-        }
+        @Specialization(guards = "times >= 0")
+        public DynamicObject multiply(DynamicObject string, int times,
+                                      @Cached("create(getContext(), getSourceSection())") MakeRepeatingNode makeRepeatingNode) {
+            final Rope repeated = makeRepeatingNode.executeMake(rope(string), times);
 
-        @Specialization(guards = "times == 1")
-        public DynamicObject multiplyTimesOne(DynamicObject string, int times) {
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), rope(string), null);
-        }
-
-        @Specialization(guards = { "isSingleByteString(string)", "times > 1" })
-        public DynamicObject multiplySingleByteString(DynamicObject string, int times) {
-            if (makeLeafRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), getSourceSection(), null, null, null, null));
-            }
-
-            final Rope baseRope = rope(string);
-            final byte filler = baseRope.getBytes()[0];
-
-            byte[] buffer = new byte[times];
-            Arrays.fill(buffer, filler);
-            final Rope multipliedRope = makeLeafRopeNode.executeMake(buffer, baseRope.getEncoding(), baseRope.getCodeRange(), times);
-
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), multipliedRope, null);
-        }
-
-        @Specialization(guards = { "!isSingleByteString(string)", "times > 1" })
-        public DynamicObject multiply(DynamicObject string, int times) {
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new RepeatingRope(rope(string), times), null);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), repeated, null);
         }
 
         @Specialization(guards = "isRubyBignum(times)")
@@ -704,38 +682,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "chop!", raiseIfFrozenSelf = true)
-    @ImportStatic(StringGuards.class)
-    public abstract static class ChopBangNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public ChopBangNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
-        }
-
-        @Specialization(guards = "isEmpty(string)")
-        public DynamicObject chopBangEmpty(DynamicObject string) {
-            return nil();
-        }
-
-        @Specialization(guards = "!isEmpty(string)")
-        public Object chopBang( DynamicObject string) {
-            final int newLength = choppedLength(string);
-
-            StringOperations.setRope(string, makeSubstringNode.executeMake(rope(string), 0, newLength));
-
-            return string;
-        }
-
-        @TruffleBoundary
-        private int choppedLength(DynamicObject string) {
-            assert RubyGuards.isRubyString(string);
-            return StringSupport.choppedLength19(StringOperations.getCodeRangeableReadOnly(string), getContext().getJRubyRuntime());
-        }
-    }
-
     @CoreMethod(names = "count", rest = true)
     @ImportStatic(StringGuards.class)
     public abstract static class CountNode extends CoreMethodArrayArgumentsNode {
@@ -1162,8 +1108,8 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
 
             if (differentEncodingProfile.profile(rope.getEncoding() != encoding)) {
-                if (mutableRopeProfile.profile(rope instanceof MutableRope)) {
-                    ((MutableRope) rope).getByteList().setEncoding(encoding);
+                if (mutableRopeProfile.profile(rope instanceof RopeBuffer)) {
+                    ((RopeBuffer) rope).getByteList().setEncoding(encoding);
                 } else {
                     final Rope newRope = withEncodingNode.executeWithEncoding(rope, encoding, CodeRange.CR_UNKNOWN);
                     StringOperations.setRope(string, newRope);
@@ -1839,9 +1785,9 @@ public abstract class StringNodes {
                         @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
             final Rope rope = rope(string);
 
-            if (mutableRopeProfile.profile(rope instanceof MutableRope)) {
+            if (mutableRopeProfile.profile(rope instanceof RopeBuffer)) {
                 // TODO (nirvdrum 11-Mar-16): This response is only correct for CR_7BIT. Mutable ropes have not been updated for multi-byte characters.
-                return ((MutableRope) rope).getByteList().realSize();
+                return ((RopeBuffer) rope).getByteList().realSize();
             } else {
                 return rope.characterLength();
             }
@@ -2171,8 +2117,8 @@ public abstract class StringNodes {
 
         public static boolean reverseIsEqualToSelf(DynamicObject string) {
             assert RubyGuards.isRubyString(string);
-            // TODO (nirvdrum 08-Jan-16) I suspect this invariant holds for multi-byte characters as well. If we have the logical string length calculated already, we can use it here as well.
-            return rope(string).byteLength() <= 1;
+
+            return rope(string).characterLength() <= 1;
         }
     }
 
@@ -2542,38 +2488,19 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "capitalize", taintFromSelf = true)
-    public abstract static class CapitalizeNode extends CoreMethodArrayArgumentsNode {
-
-        @Child CallDispatchHeadNode capitalizeBangNode;
-        @Child CallDispatchHeadNode dupNode;
-
-        public CapitalizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            capitalizeBangNode = DispatchHeadNodeFactory.createMethodCall(context);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization
-        public Object capitalize(VirtualFrame frame, DynamicObject string) {
-            final Object duped = dupNode.call(frame, string, "dup", null);
-            capitalizeBangNode.call(frame, duped, "capitalize!", null);
-
-            return duped;
-        }
-
-    }
-
     @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+
         public ClearNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            makeSubstringNode = RopeNodes.MakeSubstringNode.create(context, sourceSection);
         }
 
         @Specialization
         public DynamicObject clear(DynamicObject string) {
-            StringOperations.setRope(string, RopeOperations.withEncodingVerySlow(EMPTY_UTF8_ROPE, encoding(string)));
+            StringOperations.setRope(string, makeSubstringNode.executeMake(rope(string), 0, 0));
 
             return string;
         }

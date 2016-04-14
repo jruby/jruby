@@ -23,6 +23,8 @@ public interface ArrayMirror {
 
     void copyTo(Object[] destination, int sourceStart, int destinationStart, int count);
 
+    ArrayMirror extractRange(int start, int end);
+
     Object getArray();
 
     ArrayMirror copyArrayAndMirror();

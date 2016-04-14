@@ -314,7 +314,7 @@ public class BodyTranslator extends Translator {
             translatedValues[n] = values[n].accept(this);
         }
 
-        final RubyNode ret = new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, translate(node.getPosition()), translatedValues);
+        final RubyNode ret = ArrayLiteralNode.create(context, translate(node.getPosition()), translatedValues);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2155,8 +2155,8 @@ public class BodyTranslator extends Translator {
         if (preArray != null
                 && node.getPost() == null
                 && node.getRest() == null
-                && rhsTranslated instanceof ArrayLiteralNode.UninitialisedArrayLiteralNode
-                && ((ArrayLiteralNode.UninitialisedArrayLiteralNode) rhsTranslated).getValues().length == preArray.size()) {
+                && rhsTranslated instanceof ArrayLiteralNode
+                && ((ArrayLiteralNode) rhsTranslated).getSize() == preArray.size()) {
             /*
              * We can deal with this common case be rewriting
              *
@@ -2176,7 +2176,7 @@ public class BodyTranslator extends Translator {
              * executed if it isn't actually demanded.
              */
 
-            final RubyNode[] rhsValues = ((ArrayLiteralNode.UninitialisedArrayLiteralNode) rhsTranslated).getValues();
+            final ArrayLiteralNode rhsArrayLiteral = (ArrayLiteralNode) rhsTranslated;
             final int assignedValuesCount = preArray.size();
 
             final RubyNode[] sequence = new RubyNode[assignedValuesCount * 2];
@@ -2186,7 +2186,7 @@ public class BodyTranslator extends Translator {
             for (int n = 0; n < assignedValuesCount; n++) {
                 final String tempName = environment.allocateLocalTemp("multi");
                 final ReadLocalNode readTemp = environment.findLocalVarNode(tempName, sourceSection);
-                final RubyNode assignTemp = readTemp.makeWriteNode(rhsValues[n]);
+                final RubyNode assignTemp = readTemp.makeWriteNode(rhsArrayLiteral.stealNode(n));
                 final RubyNode assignFinalValue = translateDummyAssignment(preArray.get(n), NodeUtil.cloneNode(readTemp));
 
                 sequence[n] = assignTemp;
@@ -2197,7 +2197,7 @@ public class BodyTranslator extends Translator {
 
             final RubyNode blockNode = sequence(context, sourceSection, Arrays.asList(sequence));
 
-            final ArrayLiteralNode.UninitialisedArrayLiteralNode arrayNode = new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, tempValues);
+            final ArrayLiteralNode arrayNode = ArrayLiteralNode.create(context, sourceSection, tempValues);
 
             final ElidableResultNode elidableResult = new ElidableResultNode(context, sourceSection, blockNode, arrayNode);
 
@@ -3074,7 +3074,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitZArrayNode(org.jruby.ast.ZArrayNode node) {
         final RubyNode[] values = new RubyNode[0];
 
-        final RubyNode ret = new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, translate(node.getPosition()), values);
+        final RubyNode ret = ArrayLiteralNode.create(context, translate(node.getPosition()), values);
         return addNewlineIfNeeded(node, ret);
     }
 
