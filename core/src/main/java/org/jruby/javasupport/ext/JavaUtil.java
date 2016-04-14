@@ -422,8 +422,12 @@ public abstract class JavaUtil {
         @JRubyMethod
         @SuppressWarnings("unchecked")
         public static IRubyObject sort(final ThreadContext context, final IRubyObject self, final Block block) {
-            final java.util.Collection list = unwrapJavaObject(self);
-            java.util.List dupList = new java.util.ArrayList(list);
+            java.util.List dupList = unwrapJavaObject(self.callMethod(context, "dup"));
+            if ( dupList == unwrapJavaObject(self) ) {
+                // just in case dup failed - make sure we do not use the same list :
+                dupList = new java.util.ArrayList(dupList);
+                // NOTE: prior to JRuby 9.1 this method always returned an ArrayList
+            }
             sortImpl(context, dupList, block);
             return Java.getInstance(context.runtime, dupList);
         }

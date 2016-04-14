@@ -102,6 +102,25 @@ describe "List Ruby extensions" do
     expect(list.to_a).to eq(expected)
   end
 
+  it 'returns same collection type as target on sort' do
+    list = java.util.Vector.new ['b','a']
+    list = list.sort { |a, b| a.length <=> b.length }
+    # NOTE: collides with Java 8's sort :
+    unless TestHelper::JAVA_8
+      expect( list ).to be_a java.util.Vector
+      expect( list.to_a ).to eq ['b','a']
+    end
+
+    list = java.util.LinkedList.new ['b','a']
+    list = list.sort { |a, b| a <=> b }
+    unless TestHelper::JAVA_8
+      expect( list ).to be_a java.util.LinkedList
+      expect( list.to_a ).to eq ['a','b']
+    end
+
+    expect( java.util.ArrayList.new.sort ).to be_a java.util.ArrayList unless TestHelper::JAVA_8
+  end
+
   it 'converts to_ary' do
     list = java.util.LinkedList.new(@data)
     expect(list.to_ary).to eq(@data)
