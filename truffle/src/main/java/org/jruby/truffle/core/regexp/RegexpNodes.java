@@ -299,9 +299,9 @@ public abstract class RegexpNodes {
 
             return ret;
         } catch (ValueException e) {
-            throw new RaiseException(context.getCoreLibrary().runtimeError("error compiling regex", currentNode));
+            throw new RaiseException(context.getCoreExceptions().runtimeError("error compiling regex", currentNode));
         } catch (SyntaxException e) {
-            throw new RaiseException(context.getCoreLibrary().regexpError(e.getMessage(), currentNode));
+            throw new RaiseException(context.getCoreExceptions().regexpError(e.getMessage(), currentNode));
         }
     }
 

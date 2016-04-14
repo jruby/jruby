@@ -341,7 +341,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = "isNil(nil)")
         public DynamicObject defaultExternal(Object nil) {
-            throw new RaiseException(coreLibrary().argumentError("default external can not be nil", this));
+            throw new RaiseException(coreExceptions().argumentError("default external can not be nil", this));
         }
 
         @Specialization(guards = { "!isRubyEncoding(encoding)", "!isRubyString(encoding)", "!isNil(encoding)" })
@@ -562,7 +562,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

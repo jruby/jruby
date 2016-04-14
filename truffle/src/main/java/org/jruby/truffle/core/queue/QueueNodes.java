@@ -119,7 +119,7 @@ public abstract class QueueNodes {
             final Object value = doPoll(queue);
             if (value == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().threadError("queue empty", this));
+                throw new RaiseException(coreExceptions().threadError("queue empty", this));
             }
 
             return value;
@@ -242,7 +242,7 @@ public abstract class QueueNodes {
         @Specialization
         @TruffleBoundary
         public Object marshal_dump(DynamicObject self) {
-            throw new RaiseException(coreLibrary().typeErrorCantDump(self, this));
+            throw new RaiseException(coreExceptions().typeErrorCantDump(self, this));
         }
 
     }

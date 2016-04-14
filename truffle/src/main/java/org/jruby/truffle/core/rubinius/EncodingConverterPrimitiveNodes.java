@@ -124,7 +124,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
                 if (outBytes.getRealSize() < offset) {
                     throw new RaiseException(
-                            coreLibrary().argumentError("output offset too big", this)
+                            coreExceptions().argumentError("output offset too big", this)
                     );
                 }
 
@@ -133,7 +133,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                 if (outputByteEnd > Integer.MAX_VALUE) {
                     // overflow check
                     throw new RaiseException(
-                            coreLibrary().argumentError("output offset + bytesize too big", this)
+                            coreExceptions().argumentError("output offset + bytesize too big", this)
                     );
                 }
 
@@ -154,7 +154,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {
                     if (Integer.MAX_VALUE / 2 < size) {
                         throw new RaiseException(
-                                coreLibrary().argumentError("too long conversion result", this)
+                                coreExceptions().argumentError("too long conversion result", this)
                         );
                     }
                     size *= 2;

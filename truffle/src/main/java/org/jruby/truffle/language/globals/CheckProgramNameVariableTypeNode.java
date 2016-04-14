@@ -33,7 +33,7 @@ public class CheckProgramNameVariableTypeNode extends RubyNode {
 
         if (!RubyGuards.isRubyString(childValue)) {
             unsuitableTypeProfile.enter();
-            throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(childValue, "String", this));
+            throw new RaiseException(coreExceptions().typeErrorNoImplicitConversion(childValue, "String", this));
         }
 
         return childValue;

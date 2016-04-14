@@ -128,7 +128,7 @@ public abstract class SingletonClassNode extends RubyNode {
     }
 
     private DynamicObject noSingletonClass() {
-        throw new RaiseException(coreLibrary().typeErrorCantDefineSingleton(this));
+        throw new RaiseException(coreExceptions().typeErrorCantDefineSingleton(this));
     }
 
     @TruffleBoundary

@@ -193,7 +193,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject assertConstant(Object value) {
-            throw new RaiseException(coreLibrary().runtimeError("Truffle::Primitive.assert_constant can only be called lexically", this));
+            throw new RaiseException(coreExceptions().runtimeError("Truffle::Primitive.assert_constant can only be called lexically", this));
         }
 
     }
@@ -208,7 +208,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject assertNotCompiled() {
-            throw new RaiseException(coreLibrary().runtimeError("Truffle::Primitive.assert_not_compiled can only be called lexically", this));
+            throw new RaiseException(coreExceptions().runtimeError("Truffle::Primitive.assert_not_compiled can only be called lexically", this));
         }
 
     }
@@ -772,7 +772,7 @@ public abstract class TrufflePrimitiveNodes {
 
             if (pid == -1) {
                 // TODO (pitr 07-Sep-2015): needs compatibility improvements
-                throw new RaiseException(coreLibrary().errnoError(getContext().getNativePlatform().getPosix().errno(), this));
+                throw new RaiseException(coreExceptions().errnoError(getContext().getNativePlatform().getPosix().errno(), this));
             }
 
             return pid;
@@ -835,7 +835,7 @@ public abstract class TrufflePrimitiveNodes {
                 deferredCall.call(frame, callNode);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().loadErrorCannotLoad(file.toString(), this));
+                throw new RaiseException(coreExceptions().loadErrorCannotLoad(file.toString(), this));
             }
 
             return true;
@@ -1023,7 +1023,7 @@ public abstract class TrufflePrimitiveNodes {
         public boolean requireRelative(VirtualFrame frame, DynamicObject feature, @Cached("create()") IndirectCallNode callNode) {
             final CoreLibrary coreLibrary = getContext().getCoreLibrary();
             if (!(coreLibrary.isLoadingRubyCore() || getContext().getOptions().PLATFORM_SAFE_LOAD)) {
-                throw new RaiseException(coreLibrary.internalErrorUnsafe(this));
+                throw new RaiseException(coreExceptions().internalErrorUnsafe(this));
             }
 
             final CodeLoader codeLoader = getContext().getCodeLoader();

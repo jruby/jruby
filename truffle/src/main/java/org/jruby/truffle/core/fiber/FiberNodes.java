@@ -109,9 +109,9 @@ public abstract class FiberNodes {
                     assert !Layouts.FIBER.getRootFiber(fiber);
                     // Naturally exit the Java thread on catching this
                 } catch (BreakException e) {
-                    addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(context.getCoreLibrary().breakFromProcClosure(null)));
+                    addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(context.getCoreExceptions().breakFromProcClosure(null)));
                 } catch (ReturnException e) {
-                    addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(context.getCoreLibrary().unexpectedReturn(null)));
+                    addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(context.getCoreExceptions().unexpectedReturn(null)));
                 } catch (RaiseException e) {
                     addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(e.getException()));
                 }
@@ -229,13 +229,13 @@ public abstract class FiberNodes {
         protected Object transfer(VirtualFrame frame, DynamicObject fiber, boolean isYield, Object[] args) {
             if (!Layouts.FIBER.getAlive(fiber)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().deadFiberCalledError(this));
+                throw new RaiseException(coreExceptions().deadFiberCalledError(this));
             }
 
             DynamicObject currentThread = getContext().getThreadManager().getCurrentThread();
             if (Layouts.FIBER.getRubyThread(fiber) != currentThread) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().fiberError("fiber called across threads", this));
+                throw new RaiseException(coreExceptions().fiberError("fiber called across threads", this));
             }
 
             final DynamicObject sendingFiber = Layouts.THREAD.getFiberManager(currentThread).getCurrentFiber();
@@ -296,7 +296,7 @@ public abstract class FiberNodes {
 
             if (Layouts.FIBER.getRootFiber(yieldingFiber) || fiberYieldedTo == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().yieldFromRootFiberError(this));
+                throw new RaiseException(coreExceptions().yieldFromRootFiberError(this));
             }
 
             return fiberTransferNode.executeTransferControlTo(frame, fiberYieldedTo, true, args);

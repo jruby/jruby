@@ -725,7 +725,7 @@ public abstract class HashNodes {
         @Specialization(guards = "wasProvided(defaultValue)")
         public Object initialize(DynamicObject hash, Object defaultValue, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().argumentError("wrong number of arguments (1 for 0)", this));
+            throw new RaiseException(coreExceptions().argumentError("wrong number of arguments (1 for 0)", this));
         }
 
     }

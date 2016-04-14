@@ -128,7 +128,7 @@ public class ThreadManager {
         } catch (RaiseException e) {
             setException(context, thread, e.getException(), currentNode);
         } catch (ReturnException e) {
-            setException(context, thread, context.getCoreLibrary().unexpectedReturn(currentNode), currentNode);
+            setException(context, thread, context.getCoreExceptions().unexpectedReturn(currentNode), currentNode);
         } finally {
             FiberNodes.cleanup(context, fiber);
             cleanup(context, thread);

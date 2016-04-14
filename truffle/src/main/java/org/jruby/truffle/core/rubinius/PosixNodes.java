@@ -266,7 +266,7 @@ public abstract class PosixNodes {
 
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
             }
 
             return result;
@@ -336,7 +336,7 @@ public abstract class PosixNodes {
             final int result = posix().readlink(decodeUTF8(path), Layouts.POINTER.getPointer(pointer), bufsize);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
             }
 
             return result;
@@ -431,7 +431,7 @@ public abstract class PosixNodes {
             final int result = posix().utimes(decodeUTF8(path), Layouts.POINTER.getPointer(pointer));
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
             }
 
             return result;
@@ -529,7 +529,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public int setresuid(int uid, int id, int priority) {
-            throw new RaiseException(coreLibrary().notImplementedError("setresuid", this));
+            throw new RaiseException(coreExceptions().notImplementedError("setresuid", this));
         }
 
     }
@@ -558,7 +558,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public int setreuid(int uid, int id) {
-            throw new RaiseException(coreLibrary().notImplementedError("setreuid", this));
+            throw new RaiseException(coreExceptions().notImplementedError("setreuid", this));
         }
 
     }
@@ -576,7 +576,7 @@ public abstract class PosixNodes {
 
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
             }
 
             return result;
@@ -594,7 +594,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public int setruid(int uid) {
-            throw new RaiseException(coreLibrary().notImplementedError("setruid", this));
+            throw new RaiseException(coreExceptions().notImplementedError("setruid", this));
         }
 
     }

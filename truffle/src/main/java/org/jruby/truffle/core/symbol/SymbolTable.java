@@ -164,7 +164,7 @@ public class SymbolTable {
         // check like Rubinius does for compatibility with their Struct Ruby implementation.
         if (!(name.startsWith("@") && name.length() > 1 && IdUtil.isInitialCharacter(name.charAt(1)))) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
         return name;
     }
@@ -172,7 +172,7 @@ public class SymbolTable {
     public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
         if (!IdUtil.isValidClassVariableName(name)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
         return name;
     }

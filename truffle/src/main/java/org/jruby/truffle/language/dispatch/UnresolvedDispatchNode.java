@@ -202,7 +202,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 final InternalMethod method = lookup(null, receiverObject, "method_missing", true);
 
                 if (method == null) {
-                    throw new RaiseException(coreLibrary().runtimeError(
+                    throw new RaiseException(coreExceptions().runtimeError(
                             receiverObject.toString() + " didn't have a #method_missing", this));
                 }
 

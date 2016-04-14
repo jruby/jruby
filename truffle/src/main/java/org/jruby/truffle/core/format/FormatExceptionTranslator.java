@@ -11,6 +11,7 @@ package org.jruby.truffle.core.format;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
 import org.jruby.truffle.core.format.exceptions.CantConvertException;
 import org.jruby.truffle.core.format.exceptions.FormatException;
@@ -26,26 +27,26 @@ public abstract class FormatExceptionTranslator {
 
     @CompilerDirectives.TruffleBoundary
     public static RuntimeException translate(RubyNode currentNode, FormatException exception) {
-        final CoreLibrary coreLibrary = currentNode.getContext().getCoreLibrary();
+        final CoreExceptions coreExceptions = currentNode.getContext().getCoreExceptions();
 
         if (exception instanceof TooFewArgumentsException) {
-            return new RaiseException(coreLibrary.argumentErrorTooFewArguments(currentNode));
+            return new RaiseException(coreExceptions.argumentErrorTooFewArguments(currentNode));
         } else if (exception instanceof NoImplicitConversionException) {
             final NoImplicitConversionException e = (NoImplicitConversionException) exception;
-            return new RaiseException(coreLibrary.typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), currentNode));
+            return new RaiseException(coreExceptions.typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), currentNode));
         } else if (exception instanceof OutsideOfStringException) {
-            return new RaiseException(coreLibrary.argumentErrorXOutsideOfString(currentNode));
+            return new RaiseException(coreExceptions.argumentErrorXOutsideOfString(currentNode));
         } else if (exception instanceof CantCompressNegativeException) {
-            return new RaiseException(coreLibrary.argumentErrorCantCompressNegativeNumbers(currentNode));
+            return new RaiseException(coreExceptions.argumentErrorCantCompressNegativeNumbers(currentNode));
         } else if (exception instanceof RangeException) {
             final RangeException e = (RangeException) exception;
-            return new RaiseException(coreLibrary.rangeError(e.getMessage(), currentNode));
+            return new RaiseException(coreExceptions.rangeError(e.getMessage(), currentNode));
         } else if (exception instanceof CantConvertException) {
             final CantConvertException e = (CantConvertException) exception;
-            return new RaiseException(coreLibrary.typeError(e.getMessage(), currentNode));
+            return new RaiseException(coreExceptions.typeError(e.getMessage(), currentNode));
         } else if (exception instanceof InvalidFormatException) {
             final InvalidFormatException e = (InvalidFormatException) exception;
-            return new RaiseException(coreLibrary.argumentError(e.getMessage(), currentNode));
+            return new RaiseException(coreExceptions.argumentError(e.getMessage(), currentNode));
 
         } else {
             throw new IllegalArgumentException();

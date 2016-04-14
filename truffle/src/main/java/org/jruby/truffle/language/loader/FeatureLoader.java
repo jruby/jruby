@@ -52,7 +52,7 @@ public class FeatureLoader {
         final String featurePath = findFeature(feature);
 
         if (featurePath == null) {
-            throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, callNode));
+            throw new RaiseException(context.getCoreExceptions().loadErrorCannotLoad(feature, callNode));
         }
 
         return doRequire(frame, featurePath, callNode);
@@ -229,7 +229,7 @@ public class FeatureLoader {
 
                 default:
                     throw new RaiseException(
-                            context.getCoreLibrary().internalError("unknown language " + expandedPath, callNode));
+                            context.getCoreExceptions().internalError("unknown language " + expandedPath, callNode));
             }
 
             final DynamicObject pathString = StringOperations.createString(context,

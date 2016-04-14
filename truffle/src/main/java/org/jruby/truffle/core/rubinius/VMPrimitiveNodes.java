@@ -220,7 +220,7 @@ public abstract class VMPrimitiveNodes {
             final Passwd passwd = posix().getpwnam(username.toString());
             if (passwd == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("user " + username.toString() + " does not exist", this));
+                throw new RaiseException(coreExceptions().argumentError("user " + username.toString() + " does not exist", this));
             }
             return createString(StringOperations.encodeRope(passwd.getHome(), UTF8Encoding.INSTANCE));
         }
@@ -465,7 +465,7 @@ public abstract class VMPrimitiveNodes {
             try {
                 getContext().getNativePlatform().getSignalManager().watchDefaultForSignal(signal);
             } catch (IllegalArgumentException e) {
-                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
             return true;
         }
@@ -476,7 +476,7 @@ public abstract class VMPrimitiveNodes {
             try {
                 getContext().getNativePlatform().getSignalManager().watchSignal(signal, newHandler);
             } catch (IllegalArgumentException e) {
-                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
             return true;
         }

@@ -58,7 +58,7 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
         } catch (RaiseException e) {
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(object, "String", this));
+                throw new RaiseException(coreExceptions().typeErrorNoImplicitConversion(object, "String", this));
             } else {
                 throw e;
             }
@@ -68,7 +68,7 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
             return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
+            throw new RaiseException(coreExceptions().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
         }
     }
 }

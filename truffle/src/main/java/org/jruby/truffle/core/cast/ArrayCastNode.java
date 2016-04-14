@@ -109,7 +109,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
         if (!RubyGuards.isRubyArray(result)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().typeErrorCantConvertTo(object, "Array", "to_ary", result, this));
+            throw new RaiseException(coreExceptions().typeErrorCantConvertTo(object, "Array", "to_ary", result, this));
         }
 
         return result;

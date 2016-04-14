@@ -302,7 +302,7 @@ public abstract class BigDecimalNodes {
         @Specialization
         public DynamicObject create(VirtualFrame frame, double value, DynamicObject self, NotProvided digits) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().argumentError("can't omit precision for a Float.", this));
+            throw new RaiseException(coreExceptions().argumentError("can't omit precision for a Float.", this));
         }
 
         @Specialization
@@ -376,7 +376,7 @@ public abstract class BigDecimalNodes {
         public DynamicObject create(VirtualFrame frame, DynamicObject value, DynamicObject self, int digits) {
             final Object castedValue = bigDecimalCast.executeObject(frame, value, getRoundMode(frame));
             if (castedValue == nil()) {
-                throw new RaiseException(coreLibrary().typeError("could not be casted to BigDecimal", this));
+                throw new RaiseException(coreExceptions().typeError("could not be casted to BigDecimal", this));
             }
 
             setBigDecimalValue(
@@ -399,7 +399,7 @@ public abstract class BigDecimalNodes {
                     modeCall.call(frame, getBigDecimalClass(), "boolean_mode", null, exceptionConstant));
             if (raise) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError(errorMessage, this));
+                throw new RaiseException(coreExceptions().floatDomainError(errorMessage, this));
             }
 
             setBigDecimalValue(self, value);
@@ -1097,7 +1097,7 @@ public abstract class BigDecimalNodes {
             setupFloorCall();
             if (bZeroProfile.profile(isNormalZero(b))) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             } else {
                 final Object result = div(frame, a, b, 0);
                 return floorCall.call(frame, result, "floor", null);
@@ -1123,10 +1123,10 @@ public abstract class BigDecimalNodes {
         public Object divNormalSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, NotProvided precision) {
             if (Layouts.BIG_DECIMAL.getType(b) == Type.NEGATIVE_ZERO) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             } else if (Layouts.BIG_DECIMAL.getType(b) == Type.NAN) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+                throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
             } else {
                 return divNormalSpecial(frame, a, b, 0);
             }
@@ -1145,13 +1145,13 @@ public abstract class BigDecimalNodes {
         public Object divSpecialNormal(VirtualFrame frame, DynamicObject a, DynamicObject b, NotProvided precision) {
             if (isNormalZero(b)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             } else if (Layouts.BIG_DECIMAL.getType(a) == Type.NAN) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+                throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
             } else if (Layouts.BIG_DECIMAL.getType(a) == Type.POSITIVE_INFINITY || Layouts.BIG_DECIMAL.getType(a) == Type.NEGATIVE_INFINITY) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("Computation results to 'Infinity'", this));
+                throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'Infinity'", this));
             } else {
                 return divSpecialNormal(frame, a, b, 0);
             }
@@ -1170,10 +1170,10 @@ public abstract class BigDecimalNodes {
         public Object divSpecialSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, NotProvided precision) {
             if (Layouts.BIG_DECIMAL.getType(b) == Type.NEGATIVE_ZERO) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             } else if (Layouts.BIG_DECIMAL.getType(a) == Type.NAN || Layouts.BIG_DECIMAL.getType(b) == Type.NAN) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+                throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
             } else {
                 return divSpecialSpecial(frame, a, b, 0);
             }
@@ -1250,7 +1250,7 @@ public abstract class BigDecimalNodes {
                 "isNormalZero(b)" })
         public Object divmodZeroDivisor(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().zeroDivisionError(this));
+            throw new RaiseException(coreExceptions().zeroDivisionError(this));
         }
 
         @Specialization(guards = {
@@ -1267,7 +1267,7 @@ public abstract class BigDecimalNodes {
 
             if (bType == Type.NEGATIVE_ZERO || (bType == Type.NORMAL && isNormalZero(b))) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 
             if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
@@ -1373,7 +1373,7 @@ public abstract class BigDecimalNodes {
                 "isNormalZero(b)" })
         public Object moduloZero(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().zeroDivisionError(this));
+            throw new RaiseException(coreExceptions().zeroDivisionError(this));
         }
 
         @Specialization(guards = {
@@ -1389,7 +1389,7 @@ public abstract class BigDecimalNodes {
 
             if (bType == Type.NEGATIVE_ZERO || (bType == Type.NORMAL && isNormalZero(b))) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 
             if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
@@ -1510,7 +1510,7 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = { "precision < 0" })
         public Object sqrtNegativePrecision(VirtualFrame frame, DynamicObject a, int precision) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().argumentError("precision must be positive", this));
+            throw new RaiseException(coreExceptions().argumentError("precision must be positive", this));
         }
 
         @Specialization(guards = { "precision == 0" })
@@ -1525,7 +1525,7 @@ public abstract class BigDecimalNodes {
                 return createBigDecimal(frame, sqrt(valueBigDecimal, new MathContext(precision, getRoundMode(frame))));
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("(VpSqrt) SQRT(negative value)", this));
+                throw new RaiseException(coreExceptions().floatDomainError("(VpSqrt) SQRT(negative value)", this));
             }
         }
 
@@ -1534,12 +1534,12 @@ public abstract class BigDecimalNodes {
             switch (Layouts.BIG_DECIMAL.getType(a)) {
                 case NAN:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().floatDomainError("(VpSqrt) SQRT(NaN value)", this));
+                    throw new RaiseException(coreExceptions().floatDomainError("(VpSqrt) SQRT(NaN value)", this));
                 case POSITIVE_INFINITY:
                     return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                 case NEGATIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().floatDomainError("(VpSqrt) SQRT(negative value)", this));
+                    throw new RaiseException(coreExceptions().floatDomainError("(VpSqrt) SQRT(negative value)", this));
                 case NEGATIVE_ZERO:
                     return createBigDecimal(frame, sqrt(BigDecimal.ZERO, new MathContext(precision, getRoundMode(frame))));
                 default:
@@ -1892,17 +1892,17 @@ public abstract class BigDecimalNodes {
             switch (Layouts.BIG_DECIMAL.getType(value)) {
                 case NEGATIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError("Computation results to '-Infinity'", this));
                 case POSITIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError("Computation results to 'Infinity'", this));
                 case NEGATIVE_ZERO:
                     return fixnumOrBignumNode.fixnumOrBignum(Layouts.BIG_DECIMAL.getValue(value));
                 case NAN:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError("Computation results to 'NaN'(Not a Number)", this));
                 default:
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
@@ -2067,15 +2067,15 @@ public abstract class BigDecimalNodes {
             switch (type) {
                 case NEGATIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError(type.getRepresentation(), this));
                 case POSITIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError(type.getRepresentation(), this));
                 case NAN:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError(type.getRepresentation(), this));
                 case NEGATIVE_ZERO:
                     return 0;

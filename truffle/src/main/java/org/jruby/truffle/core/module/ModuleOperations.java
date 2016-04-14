@@ -176,7 +176,7 @@ public abstract class ModuleOperations {
                 module = (DynamicObject) constant.getValue();
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(context.getCoreLibrary().typeError(fullName.substring(0, next) + " does not refer to class/module", currentNode));
+                throw new RaiseException(context.getCoreExceptions().typeError(fullName.substring(0, next) + " does not refer to class/module", currentNode));
             }
             start = next + 2;
         }
@@ -184,7 +184,7 @@ public abstract class ModuleOperations {
         final String lastSegment = fullName.substring(start);
         if (!IdUtil.isValidConstantName19(lastSegment)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameError(String.format("wrong constant name %s", fullName), fullName, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameError(String.format("wrong constant name %s", fullName), fullName, currentNode));
         }
 
         return lookupConstantWithInherit(context, module, lastSegment, inherit, currentNode);
@@ -195,7 +195,7 @@ public abstract class ModuleOperations {
 
         if (!IdUtil.isValidConstantName19(name)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameError(String.format("wrong constant name %s", name), name, currentNode));
         }
 
         if (inherit) {
@@ -399,7 +399,7 @@ public abstract class ModuleOperations {
         final Object found = moduleFields.getClassVariables().remove(name);
         if (found == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameErrorClassVariableNotDefined(name, moduleFields.rubyModuleObject, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameErrorClassVariableNotDefined(name, moduleFields.rubyModuleObject, currentNode));
         }
         return found;
     }

@@ -584,11 +584,11 @@ public abstract class RangeNodes {
             try {
                 cmpResult = cmpNode.call(frame, begin, "<=>", null, end);
             } catch (RaiseException e) {
-                throw new RaiseException(coreLibrary().argumentError("bad value for range", this));
+                throw new RaiseException(coreExceptions().argumentError("bad value for range", this));
             }
 
             if (cmpResult == nil()) {
-                throw new RaiseException(coreLibrary().argumentError("bad value for range", this));
+                throw new RaiseException(coreExceptions().argumentError("bad value for range", this));
             }
 
             return allocateNode.allocate(rubyClass, excludeEnd, begin, end);

@@ -53,7 +53,7 @@ public class DefineClassNode extends RubyNode {
 
         if (!RubyGuards.isRubyModule(lexicalParentObject)) {
             errorProfile.enter();
-            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParentObject, "module", this));
+            throw new RaiseException(coreExceptions().typeErrorIsNotA(lexicalParentObject, "module", this));
         }
 
         DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
@@ -66,14 +66,14 @@ public class DefineClassNode extends RubyNode {
 
         if (!RubyGuards.isRubyClass(superClassObject)) {
             errorProfile.enter();
-            throw new RaiseException(coreLibrary().typeError("superclass must be a Class", this));
+            throw new RaiseException(coreExceptions().typeError("superclass must be a Class", this));
         }
 
         final DynamicObject superClassModule = (DynamicObject) superClassObject;
 
         if (Layouts.CLASS.getIsSingleton(superClassModule)) {
             errorProfile.enter();
-            throw new RaiseException(coreLibrary().typeError("can't make subclass of virtual class", this));
+            throw new RaiseException(coreExceptions().typeError("can't make subclass of virtual class", this));
         }
 
         if (needToDefineProfile.profile(constant == null)) {
@@ -88,7 +88,7 @@ public class DefineClassNode extends RubyNode {
         } else {
             if (!RubyGuards.isRubyClass(constant.getValue())) {
                 errorProfile.enter();
-                throw new RaiseException(coreLibrary().typeErrorIsNotA(constant.getValue(), "class", this));
+                throw new RaiseException(coreExceptions().typeErrorIsNotA(constant.getValue(), "class", this));
             }
 
             definingClass = (DynamicObject) constant.getValue();
@@ -97,7 +97,7 @@ public class DefineClassNode extends RubyNode {
                     && ClassNodes.getSuperClass(definingClass) != superClassModule) {
                 errorProfile.enter();
 
-                throw new RaiseException(coreLibrary().superclassMismatch(
+                throw new RaiseException(coreExceptions().superclassMismatch(
                         Layouts.MODULE.getFields(definingClass).getName(), this));
             }
         }

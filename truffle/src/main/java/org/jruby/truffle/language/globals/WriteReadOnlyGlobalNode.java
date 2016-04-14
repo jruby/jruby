@@ -30,7 +30,7 @@ public class WriteReadOnlyGlobalNode extends RubyNode {
     @Override
     public void executeVoid(VirtualFrame frame) {
         value.executeVoid(frame);
-        throw new RaiseException(coreLibrary().nameErrorReadOnly(name, this));
+        throw new RaiseException(coreExceptions().nameErrorReadOnly(name, this));
     }
 
     @Override

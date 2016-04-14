@@ -139,7 +139,7 @@ public abstract class IOBufferPrimitiveNodes {
                 // and now there isn't enough room for this data.
                 if (bytesRead > left(frame, ioBuffer)) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().internalError("IO buffer overrun", this));
+                    throw new RaiseException(coreExceptions().internalError("IO buffer overrun", this));
                 }
                 final int used = Layouts.IO_BUFFER.getUsed(ioBuffer);
                 final ByteList storage = Layouts.BYTE_ARRAY.getBytes(Layouts.IO_BUFFER.getStorage(ioBuffer));

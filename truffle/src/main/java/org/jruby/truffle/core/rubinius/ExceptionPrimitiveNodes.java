@@ -28,7 +28,7 @@ public abstract class ExceptionPrimitiveNodes {
 
         @Specialization
         public DynamicObject exceptionErrnoError(DynamicObject message, int errno) {
-            return coreLibrary().errnoError(errno, message.toString(), this);
+            return coreExceptions().errnoError(errno, message.toString(), this);
         }
 
     }
