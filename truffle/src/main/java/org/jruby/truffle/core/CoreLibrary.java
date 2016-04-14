@@ -1464,16 +1464,8 @@ public class CoreLibrary {
         return basicObjectClass;
     }
 
-    public DynamicObject getBignumClass() {
-        return bignumClass;
-    }
-
     public DynamicObject getBigDecimalClass() {
         return bigDecimalClass;
-    }
-
-    public DynamicObject getBindingClass() {
-        return bindingClass;
     }
 
     public DynamicObjectFactory getBindingFactory() {
@@ -1488,10 +1480,6 @@ public class CoreLibrary {
         return falseClass;
     }
 
-    public DynamicObject getFiberClass() {
-        return fiberClass;
-    }
-
     public DynamicObjectFactory getFiberFactory() {
         return fiberFactory;
     }
@@ -1502,10 +1490,6 @@ public class CoreLibrary {
 
     public DynamicObject getFloatClass() {
         return floatClass;
-    }
-
-    public DynamicObject getHashClass() {
-        return hashClass;
     }
 
     public DynamicObject getStandardErrorClass() {
@@ -1532,10 +1516,6 @@ public class CoreLibrary {
         return nilClass;
     }
 
-    public DynamicObject getRubyInternalMethod() {
-        return rubyInternalMethod;
-    }
-
     public DynamicObject getNoMethodErrorClass() {
         return noMethodErrorClass;
     }
@@ -1552,10 +1532,6 @@ public class CoreLibrary {
         return rangeClass;
     }
 
-    public DynamicObject getRationalClass() {
-        return rationalClass;
-    }
-
     public DynamicObject getRegexpClass() {
         return regexpClass;
     }
@@ -1564,24 +1540,12 @@ public class CoreLibrary {
         return rubyTruffleErrorClass;
     }
 
-    public DynamicObject getRuntimeErrorClass() {
-        return runtimeErrorClass;
-    }
-
-    public DynamicObject getSystemStackErrorClass() {
-        return systemStackErrorClass;
-    }
-
     public DynamicObject getStringClass() {
         return stringClass;
     }
 
     public DynamicObject getThreadClass() {
         return threadClass;
-    }
-
-    public DynamicObject getTimeClass() {
-        return timeClass;
     }
 
     public DynamicObject getTypeErrorClass() {
@@ -1598,10 +1562,6 @@ public class CoreLibrary {
 
     public DynamicObject getKernelModule() {
         return kernelModule;
-    }
-
-    public DynamicObject getArgv() {
-        return argv;
     }
 
     public GlobalVariables getGlobalVariables() {
