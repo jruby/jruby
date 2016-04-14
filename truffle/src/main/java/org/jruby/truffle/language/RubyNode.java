@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.Instrumentable;
+import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -244,16 +245,25 @@ public abstract class RubyNode extends Node {
         return ((flags >> FLAG_CALL) & 1) == 1;
     }
 
+    private boolean isRoot() {
+        return getParent() instanceof RubyRootNode;
+    }
+
     @Override
     protected boolean isTaggedWith(Class<?> tag) {
-        if (tag == TraceManager.CallTag.class) {
+        if (tag == TraceManager.CallTag.class || tag == StandardTags.CallTag.class) {
             return isCall();
         }
 
         if (tag == AttachmentsManager.LineTag.class
                 || tag == TraceManager.LineTag.class
-                || tag == CoverageManager.LineTag.class) {
+                || tag == CoverageManager.LineTag.class
+                || tag == StandardTags.StatementTag.class) {
             return isNewLine();
+        }
+
+        if (tag == StandardTags.RootTag.class) {
+            return isRoot();
         }
         
         return false;
