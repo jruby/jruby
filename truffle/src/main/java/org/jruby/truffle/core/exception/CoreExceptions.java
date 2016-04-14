@@ -32,12 +32,18 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject runtimeError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getRuntimeErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getRuntimeErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
     public DynamicObject systemStackErrorStackLevelTooDeep(Node currentNode, Throwable javaThrowable) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getSystemStackErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("stack level too deep", UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getSystemStackErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope("stack level too deep", UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
     @TruffleBoundary
@@ -80,7 +86,10 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject argumentError(String message, Node currentNode, Throwable javaThrowable) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getArgumentErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getArgumentErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
     public DynamicObject argumentErrorOutOfRange(Node currentNode) {
@@ -124,7 +133,10 @@ public class CoreExceptions {
             return systemCallError(String.format("Unknown Error (%s)", errno), currentNode);
         }
 
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getErrnoClass(errnoObj), StringOperations.createString(context, StringOperations.encodeRope(errnoObj.description(), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getErrnoClass(errnoObj),
+                StringOperations.createString(context, StringOperations.encodeRope(errnoObj.description(), UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
@@ -135,12 +147,19 @@ public class CoreExceptions {
         }
 
         final DynamicObject errorMessage = StringOperations.createString(context, StringOperations.encodeRope(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE));
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getErrnoClass(errnoObj), errorMessage, context.getCallStack().getBacktrace(currentNode));
+
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getErrnoClass(errnoObj),
+                errorMessage,
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
     public DynamicObject indexError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getIndexErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getIndexErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
@@ -150,7 +169,10 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject localJumpError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getLocalJumpErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getLocalJumpErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     public DynamicObject noBlockGiven(Node currentNode) {
@@ -184,7 +206,10 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject typeError(String message, Node currentNode, Throwable javaThrowable) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getTypeErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getTypeErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
     @TruffleBoundary
@@ -400,12 +425,18 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject zeroDivisionError(Node currentNode, ArithmeticException exception) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("divided by 0", UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, exception));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getZeroDivisionErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope("divided by 0", UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode, exception));
     }
 
     @TruffleBoundary
     public DynamicObject notImplementedError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getNotImplementedErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(String.format("Method %s not implemented", message), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getNotImplementedErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(String.format("Method %s not implemented", message),
+                        UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
@@ -415,22 +446,34 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject syntaxError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getSyntaxErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getSyntaxErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
     public DynamicObject floatDomainError(String value, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getFloatDomainErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(value, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getFloatDomainErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(value, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
     public DynamicObject mathDomainError(String method, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getErrnoClass(Errno.EDOM), StringOperations.createString(context, StringOperations.encodeRope(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getErrnoClass(Errno.EDOM),
+                StringOperations.createString(context, StringOperations.encodeRope(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
     public DynamicObject ioError(String fileName, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getIOErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(String.format("Error reading file -  %s", fileName), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getIOErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(String.format("Error reading file -  %s", fileName), UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
@@ -455,7 +498,10 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject rangeError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getRangeErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getRangeErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     public DynamicObject internalErrorUnsafe(Node currentNode) {
@@ -476,12 +522,18 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject internalError(String message, Node currentNode, Throwable javaThrowable) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("internal implementation error - " + message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getRubyTruffleErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope("internal implementation error - " + message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
     @TruffleBoundary
     public DynamicObject regexpError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getRegexpErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getRegexpErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
@@ -491,12 +543,18 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject encodingCompatibilityError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getEncodingCompatibilityErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getEncodingCompatibilityErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
     public DynamicObject fiberError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getFiberErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getFiberErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     public DynamicObject deadFiberCalledError(Node currentNode) {
@@ -509,7 +567,10 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject threadError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getThreadErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getThreadErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     public DynamicObject threadErrorKilledThread(Node currentNode) {
@@ -530,12 +591,18 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject securityError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getSecurityErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getSecurityErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
     public DynamicObject systemCallError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(context.getCoreLibrary().getSystemCallErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getSystemCallErrorClass(),
+                StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
+                context.getCallStack().getBacktrace(currentNode));
     }
 
     @TruffleBoundary
