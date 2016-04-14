@@ -784,6 +784,11 @@ public abstract class RopeNodes {
         }
 
         @Specialization(guards = "rope.getRawBytes() == null")
+        public int getByte(LazyRope rope, int index) {
+            return rope.getBytes()[index] & 0xff;
+        }
+
+        @Specialization(guards = "rope.getRawBytes() == null")
         public int getByteSubstringRope(SubstringRope rope, int index,
                                         @Cached("createBinaryProfile()") ConditionProfile childRawBytesNullProfile) {
             if (childRawBytesNullProfile.profile(rope.getChild().getRawBytes() == null)) {

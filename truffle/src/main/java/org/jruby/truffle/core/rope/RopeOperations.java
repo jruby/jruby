@@ -164,8 +164,9 @@ public class RopeOperations {
             }
 
             return builder.toString();
-        }
-        else {
+        } else if (value instanceof LazyIntRope) {
+            return Integer.toString(((LazyIntRope) value).getValue());
+        } else {
             throw new RuntimeException("Decoding to String is not supported for rope of type: " + value.getClass().getName());
         }
     }
@@ -285,6 +286,8 @@ public class RopeOperations {
             } else {
                 visitBytes(child, visitor, 0, remainingEnd);
             }
+        } else if (rope instanceof LazyRope) {
+            visitor.accept(rope.getBytes(), offset, length);
         } else {
             throw new UnsupportedOperationException("Don't know how to visit rope of type: " + rope.getClass().getName());
         }
@@ -348,6 +351,11 @@ public class RopeOperations {
             // An empty rope trivially cannot contribute to filling the output buffer.
             if (current.isEmpty()) {
                 continue;
+            }
+
+            // Force lazy ropes
+            if (current instanceof LazyRope) {
+                current.getBytes();
             }
 
             if (current.getRawBytes() != null) {
@@ -562,6 +570,8 @@ public class RopeOperations {
             }
 
             return hash;
+        } else if (rope instanceof LazyRope) {
+            return hashCodeForLeafRope(rope.getBytes(), startingHashCode, offset, length);
         } else {
             throw new RuntimeException("Hash code not supported for rope of type: " + rope.getClass().getName());
         }
@@ -664,7 +674,7 @@ public class RopeOperations {
                     valueRope = StringOperations.encodeRope(decodeRope(context.getJRubyRuntime(), stringRope), UTF8Encoding.INSTANCE);
                 }
             } else if (value instanceof Integer) {
-                valueRope = StringOperations.encodeRope(Integer.toString((int) value), UTF8Encoding.INSTANCE, CodeRange.CR_7BIT);
+                valueRope = new LazyIntRope((int) value);
             } else if (value instanceof String) {
                 valueRope = context.getRopeTable().getRope((String) value);
             } else {
