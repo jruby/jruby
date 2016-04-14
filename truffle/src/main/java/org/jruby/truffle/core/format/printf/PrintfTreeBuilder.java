@@ -139,25 +139,22 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
         switch (type) {
             case 's':
+            case 'p':
+                final String conversionMethodName = type == 's' ? "to_s" : "inspect";
+                final FormatNode conversionNode;
+
                 if (ctx.ANGLE_KEY() == null) {
-                    if (spacePadding == DEFAULT) {
-                        node = WriteBytesNodeGen.create(context, ReadStringNodeGen.create(
-                                context, true, "to_s", false, EMPTY_BYTES,
-                                        new SourceNode()));
-                    } else {
-                        node = WritePaddedBytesNodeGen.create(context, spacePadding, leftJustified,
-                                ReadStringNodeGen.create(context, true, "to_s", false, EMPTY_BYTES,
-                                        new SourceNode()));
-                    }
+                    conversionNode = ReadStringNodeGen.create(context, true, conversionMethodName, false, EMPTY_BYTES, new SourceNode());
                 } else {
-                    if (spacePadding == DEFAULT) {
-                        node = WriteBytesNodeGen.create(context, ToStringNodeGen.create(
-                                context, true, "to_s", false, EMPTY_BYTES, valueNode));
-                    } else {
-                        node = WritePaddedBytesNodeGen.create(context, spacePadding, leftJustified,
-                                ToStringNodeGen.create(context, true, "to_s", false, EMPTY_BYTES, valueNode));
-                    }
+                    conversionNode = ToStringNodeGen.create(context, true, conversionMethodName, false, EMPTY_BYTES, valueNode);
                 }
+
+                if (spacePadding == DEFAULT) {
+                    node = WriteBytesNodeGen.create(context, conversionNode);
+                } else {
+                    node = WritePaddedBytesNodeGen.create(context, spacePadding, leftJustified, conversionNode);
+                }
+
                 break;
             case 'd':
             case 'i':
