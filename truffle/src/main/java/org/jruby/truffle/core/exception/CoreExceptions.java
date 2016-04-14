@@ -543,4 +543,12 @@ public class CoreExceptions {
         return ExceptionOperations.createRubyException(context.getCoreLibrary().getSystemCallErrorClass(), StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
     }
 
+    @CompilerDirectives.TruffleBoundary
+    public DynamicObject systemExit(int exitStatus, Node currentNode) {
+        final DynamicObject message = StringOperations.createString(context, StringOperations.encodeRope("exit", UTF8Encoding.INSTANCE));
+        final DynamicObject systemExit = ExceptionOperations.createRubyException(context.getCoreLibrary().getSystemExitClass(), message, context.getCallStack().getBacktrace(currentNode));
+        systemExit.define("@status", exitStatus, 0);
+        return systemExit;
+    }
+
 }

@@ -170,7 +170,7 @@ public class ThreadManager {
         Layouts.THREAD.getFiberManager(thread).shutdown();
 
         if (thread == context.getThreadManager().getRootThread()) {
-            throw new RaiseException(context.getCoreLibrary().systemExit(0, currentNode));
+            throw new RaiseException(context.getCoreExceptions().systemExit(0, currentNode));
         } else {
             throw new ThreadExitException();
         }
