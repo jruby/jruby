@@ -1755,7 +1755,7 @@ public abstract class StringNodes {
                     ToIntNodeGen.create(getContext(), getSourceSection(), value));
         }
 
-        @Specialization
+        @Specialization(guards = "!isRopeBuffer(string)")
         public int setByte(DynamicObject string, int index, int value) {
             final int normalizedIndex = StringNodesHelper.checkIndexForRef(string, index, this);
 
@@ -1769,6 +1769,23 @@ public abstract class StringNodes {
             StringOperations.setRope(string, composed);
 
             return value;
+        }
+
+        @Specialization(guards = "isRopeBuffer(string)")
+        public int setByteRopeBuffer(DynamicObject string, int index, int value) {
+            final int normalizedIndex = StringNodesHelper.checkIndexForRef(string, index, this);
+
+            final RopeBuffer rope = (RopeBuffer) rope(string);
+
+            rope.getByteList().set(normalizedIndex, value);
+
+            return value;
+        }
+
+        protected boolean isRopeBuffer(DynamicObject string) {
+            assert RubyGuards.isRubyString(string);
+
+            return rope(string) instanceof RopeBuffer;
         }
     }
 
