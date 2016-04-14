@@ -54,26 +54,4 @@ public class RopeConstants {
         }
     }
 
-    private static final Map<Integer, WeakReference<LeafRope>> integerRopes = new ConcurrentHashMap<>();
-
-    @TruffleBoundary
-    public static LeafRope getIntegerRope(int value) {
-        WeakReference<LeafRope> ropeReference = integerRopes.get(value);
-
-        if (ropeReference != null && ropeReference.get() != null) {
-            return ropeReference.get();
-        }
-
-        // On misses we don't care too much about racing to populate the cache
-
-        final LeafRope rope = new AsciiOnlyLeafRope(
-                Integer.toString(value).getBytes(StandardCharsets.UTF_8), USASCIIEncoding.INSTANCE);
-
-        ropeReference = new WeakReference<>(rope);
-
-        integerRopes.put(value, ropeReference);
-
-        return rope;
-    }
-
 }

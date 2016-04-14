@@ -664,7 +664,7 @@ public class RopeOperations {
                     valueRope = StringOperations.encodeRope(decodeRope(context.getJRubyRuntime(), stringRope), UTF8Encoding.INSTANCE);
                 }
             } else if (value instanceof Integer) {
-                valueRope = RopeConstants.getIntegerRope((int) value);
+                valueRope = StringOperations.encodeRope(Integer.toString((int) value), UTF8Encoding.INSTANCE, CodeRange.CR_7BIT);
             } else if (value instanceof String) {
                 valueRope = context.getRopeTable().getRope((String) value);
             } else {
