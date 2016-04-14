@@ -1000,14 +1000,6 @@ public class CoreLibrary {
         return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
     }
 
-    @TruffleBoundary
-    public DynamicObject systemExit(int exitStatus, Node currentNode) {
-        final DynamicObject message = StringOperations.createString(context, StringOperations.encodeRope("exit", UTF8Encoding.INSTANCE));
-        final DynamicObject systemExit = ExceptionOperations.createRubyException(systemExitClass, message, context.getCallStack().getBacktrace(currentNode));
-        systemExit.define("@status", exitStatus, 0);
-        return systemExit;
-    }
-
     public RubyContext getContext() {
         return context;
     }
