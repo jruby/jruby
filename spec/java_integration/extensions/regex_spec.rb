@@ -52,11 +52,14 @@ describe 'java.util.regex.Matcher' do
 
     p = java.util.regex.Pattern.compile("(?<foo>.)(.)(?<bar>.)")
     m = p.match('hoge')
-    expect( m.begin(:foo) ).to eq 0
-    expect( m.begin(:bar) ).to eq 2
-    expect( m.end(:foo) ).to eq 1
-    expect( m.end(:bar) ).to eq 3
-    expect( m.offset(:bar) ).to eq [2, 3]
+
+    if TestHelper::JAVA_8
+      expect( m.begin(:foo) ).to eq 0
+      expect( m.begin(:bar) ).to eq 2
+      expect( m.end(:foo) ).to eq 1
+      expect( m.end(:bar) ).to eq 3
+      expect( m.offset(:bar) ).to eq [2, 3]
+    end
   end
 
   it 'reports size and string' do

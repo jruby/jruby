@@ -46,6 +46,8 @@ module TestHelper
 
   IBM_JVM = RbConfig::CONFIG['host_vendor'] =~ /IBM Corporation/
 
+  JAVA_8 = ENV_JAVA['java.specification.version'] >= '1.8'
+
   def q
     WINDOWS ? '"' : '\''
   end
