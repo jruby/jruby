@@ -69,6 +69,7 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Iterator;
 
 @CoreClass(name = "Regexp")
@@ -586,7 +587,7 @@ public abstract class RegexpNodes {
 
             for (final Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
-                final DynamicObject name = getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
+                final DynamicObject name = getContext().getSymbolTable().getSymbol(getContext().getRopeTable().getRope(Arrays.copyOfRange(e.name, e.nameP, e.nameEnd), USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
 
                 final int[] backrefs = e.getBackRefs();
                 final DynamicObject backrefsRubyArray = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), backrefs, backrefs.length);

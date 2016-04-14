@@ -11,6 +11,7 @@ package org.jruby.truffle.core.format.printf;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.antlr.v4.runtime.Token;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.LiteralFormatNode;
@@ -29,13 +30,12 @@ import org.jruby.truffle.core.format.read.array.ReadValueNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteByteNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteBytesNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WritePaddedBytesNodeGen;
+import org.jruby.truffle.core.rope.CodeRange;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.jruby.truffle.core.format.printf.PrintfParserBaseListener;
-import org.jruby.truffle.core.format.printf.PrintfParser;
 
 public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
@@ -63,7 +63,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
     @Override
     public void exitString(PrintfParser.StringContext ctx) {
         final byte[] keyBytes = tokenAsBytes(ctx.CURLY_KEY().getSymbol(), 1);
-        final DynamicObject key = context.getSymbolTable().getSymbol(keyBytes);
+        final DynamicObject key = context.getSymbolTable().getSymbol(context.getRopeTable().getRope(keyBytes, USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
 
         sequence.add(
                 WriteBytesNodeGen.create(context,
@@ -123,7 +123,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
             valueNode = ReadValueNodeGen.create(context, new SourceNode());
         } else {
             final byte[] keyBytes = tokenAsBytes(ctx.ANGLE_KEY().getSymbol(), 1);
-            final DynamicObject key = context.getSymbolTable().getSymbol(keyBytes);
+            final DynamicObject key = context.getSymbolTable().getSymbol(context.getRopeTable().getRope(keyBytes, USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
             valueNode = ReadHashValueNodeGen.create(context, key, new SourceNode());
         }
 

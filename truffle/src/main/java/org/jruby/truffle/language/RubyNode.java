@@ -152,10 +152,6 @@ public abstract class RubyNode extends Node {
         return getContext().getSymbolTable().getSymbol(name);
     }
 
-    protected DynamicObject getSymbol(ByteList name) {
-        return getContext().getSymbolTable().getSymbol(name);
-    }
-
     protected DynamicObject getSymbol(Rope name) {
         return getContext().getSymbolTable().getSymbol(name);
     }
