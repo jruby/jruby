@@ -179,7 +179,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

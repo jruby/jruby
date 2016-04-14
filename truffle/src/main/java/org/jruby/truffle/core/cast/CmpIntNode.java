@@ -90,7 +90,7 @@ public abstract class CmpIntNode extends RubyNode {
     @Specialization(guards = "isNil(nil)")
     public int cmpNil(Object nil, Object receiver, Object other) {
         throw new RaiseException(
-            coreLibrary().argumentError(
+            coreExceptions().argumentError(
                 String.format("comparison of %s with %s failed",
                         Layouts.MODULE.getFields(coreLibrary().getLogicalClass(receiver)).getName(),
                         Layouts.MODULE.getFields(coreLibrary().getLogicalClass(other)).getName()), this)

@@ -183,7 +183,7 @@ public abstract class StringNodes {
         @Specialization(guards = "times < 0")
         @TruffleBoundary
         public DynamicObject multiplyTimesNegative(DynamicObject string, int times) {
-            throw new RaiseException(coreLibrary().argumentError("negative argument", this));
+            throw new RaiseException(coreExceptions().argumentError("negative argument", this));
         }
 
         @Specialization(guards = "times >= 0")
@@ -197,7 +197,7 @@ public abstract class StringNodes {
         @Specialization(guards = "isRubyBignum(times)")
         @TruffleBoundary
         public DynamicObject multiply(DynamicObject string, DynamicObject times) {
-            throw new RaiseException(coreLibrary().rangeError("bignum too big to convert into `long'", this));
+            throw new RaiseException(coreExceptions().rangeError("bignum too big to convert into `long'", this));
         }
 
         @Specialization(guards = { "!isRubyBignum(times)", "!isInteger(times)" })
@@ -702,7 +702,7 @@ public abstract class StringNodes {
         public int count(VirtualFrame frame, DynamicObject string, Object[] args) {
             if (args.length == 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentErrorEmptyVarargs(this));
+                throw new RaiseException(coreExceptions().argumentErrorEmptyVarargs(this));
             }
 
             DynamicObject[] otherStrings = new DynamicObject[args.length];
@@ -764,7 +764,7 @@ public abstract class StringNodes {
             final Encoding ascii8bit = getContext().getJRubyRuntime().getEncodingService().getAscii8bitEncoding();
             if (other.byteLength() < 2) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
+                throw new RaiseException(coreExceptions().argumentError("salt too short (need >= 2 bytes)", this));
             }
 
             final TrufflePosix posix = posix();
@@ -773,7 +773,7 @@ public abstract class StringNodes {
 
             if (saltBytes[0] == 0 || saltBytes[1] == 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
+                throw new RaiseException(coreExceptions().argumentError("salt too short (need >= 2 bytes)", this));
             }
 
             final byte[] cryptedString = posix.crypt(keyBytes, saltBytes);
@@ -782,7 +782,7 @@ public abstract class StringNodes {
             // return any errors via errno.
             if (cryptedString == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix.errno(), this));
+                throw new RaiseException(coreExceptions().errnoError(posix.errno(), this));
             }
 
             if (taintResultNode == null) {
@@ -820,7 +820,7 @@ public abstract class StringNodes {
         public Object deleteBang(VirtualFrame frame, DynamicObject string, Object... args) {
             if (args.length == 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentErrorEmptyVarargs(this));
+                throw new RaiseException(coreExceptions().argumentErrorEmptyVarargs(this));
             }
 
             DynamicObject[] otherStrings = new DynamicObject[args.length];
@@ -904,7 +904,7 @@ public abstract class StringNodes {
             if (encoding.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        coreLibrary().encodingCompatibilityError(
+                        coreExceptions().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", encoding), this));
             }
 
@@ -926,7 +926,7 @@ public abstract class StringNodes {
                 }
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
         }
 
@@ -1201,7 +1201,7 @@ public abstract class StringNodes {
             if (isFrozenNode.executeIsFrozen(self)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        coreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(self)).getName(), this));
+                        coreExceptions().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(self)).getName(), this));
             }
 
             StringOperations.setRope(self, rope(from));
@@ -1286,7 +1286,7 @@ public abstract class StringNodes {
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().encodingCompatibilityError(
+                throw new RaiseException(coreExceptions().encodingCompatibilityError(
                         String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
             }
 
@@ -1327,7 +1327,7 @@ public abstract class StringNodes {
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().encodingCompatibilityError(
+                throw new RaiseException(coreExceptions().encodingCompatibilityError(
                         String.format("incompatible encodings: %s and %s", source.getEncoding(), insert.getEncoding()), this));
             }
 
@@ -1457,7 +1457,7 @@ public abstract class StringNodes {
 
             if (count > rope.byteLength()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError(
+                throw new RaiseException(coreExceptions().argumentError(
                         String.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength()), this));
             }
 
@@ -1480,7 +1480,7 @@ public abstract class StringNodes {
         @Specialization(guards = "isEmpty(string)")
         @TruffleBoundary
         public int ordEmpty(DynamicObject string) {
-            throw new RaiseException(coreLibrary().argumentError("empty string", this));
+            throw new RaiseException(coreExceptions().argumentError("empty string", this));
         }
 
         // TODO (nirvdrum 03-Feb-16): Is it possible to have a single-byte optimizable string that isn't ASCII-compatible?
@@ -1502,7 +1502,7 @@ public abstract class StringNodes {
                 return codePoint(rope.getEncoding(), rope.getBytes(), rope.begin(), rope.begin() + rope.byteLength());
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
         }
 
@@ -1638,7 +1638,7 @@ public abstract class StringNodes {
             if (enc.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        coreLibrary().encodingCompatibilityError(
+                        coreExceptions().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", enc), this));
             }
 
@@ -2369,7 +2369,7 @@ public abstract class StringNodes {
             if (encoding.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        coreLibrary().encodingCompatibilityError(
+                        coreExceptions().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", encoding), this));
             }
 
@@ -2390,7 +2390,7 @@ public abstract class StringNodes {
                 }
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
         }
 
@@ -2447,7 +2447,7 @@ public abstract class StringNodes {
             if (enc.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        coreLibrary().encodingCompatibilityError(
+                        coreExceptions().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", enc), this));
             }
 
@@ -2513,7 +2513,7 @@ public abstract class StringNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                        node.getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), node));
+                        node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
             }
 
             if (index < 0) {
@@ -2521,7 +2521,7 @@ public abstract class StringNodes {
                     CompilerDirectives.transferToInterpreter();
 
                     throw new RaiseException(
-                            node.getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), node));
+                            node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
                 }
 
                 index += length;
@@ -2539,7 +2539,7 @@ public abstract class StringNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                        node.getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), node));
+                        node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
             }
 
             if (index < 0) {
@@ -2547,7 +2547,7 @@ public abstract class StringNodes {
                     CompilerDirectives.transferToInterpreter();
 
                     throw new RaiseException(
-                            node.getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), node));
+                            node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
                 }
 
                 index += length;

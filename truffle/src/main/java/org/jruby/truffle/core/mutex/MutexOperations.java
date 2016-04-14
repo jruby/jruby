@@ -26,7 +26,7 @@ public abstract class MutexOperations {
         final RubyContext context = currentNode.getContext();
 
         if (lock.isHeldByCurrentThread()) {
-            throw new RaiseException(context.getCoreLibrary().threadErrorRecursiveLocking(currentNode));
+            throw new RaiseException(context.getCoreExceptions().threadErrorRecursiveLocking(currentNode));
         }
 
         context.getThreadManager().runUntilResult(currentNode, new ThreadManager.BlockingAction<Boolean>() {
@@ -49,9 +49,9 @@ public abstract class MutexOperations {
             lock.unlock();
         } catch (IllegalMonitorStateException e) {
             if (!lock.isLocked()) {
-                throw new RaiseException(context.getCoreLibrary().threadErrorUnlockNotLocked(currentNode));
+                throw new RaiseException(context.getCoreExceptions().threadErrorUnlockNotLocked(currentNode));
             } else {
-                throw new RaiseException(context.getCoreLibrary().threadErrorAlreadyLocked(currentNode));
+                throw new RaiseException(context.getCoreExceptions().threadErrorAlreadyLocked(currentNode));
             }
         }
 

@@ -87,7 +87,7 @@ public abstract class DirPrimitiveNodes {
             final File file = new File(path.toString());
 
             if (!file.isDirectory()) {
-                throw new RaiseException(coreLibrary().errnoError(Errno.ENOTDIR.intValue(), this));
+                throw new RaiseException(coreExceptions().errnoError(Errno.ENOTDIR.intValue(), this));
             }
 
             final String[] contents = file.list();

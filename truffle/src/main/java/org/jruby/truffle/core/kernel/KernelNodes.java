@@ -674,7 +674,7 @@ public abstract class KernelNodes {
                 "!isRubyBinding(badBinding)" })
         public Object evalBadBinding(DynamicObject source, DynamicObject badBinding, NotProvided filename,
                                      NotProvided lineNumber) {
-            throw new RaiseException(coreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
+            throw new RaiseException(coreExceptions().typeErrorWrongArgumentType(badBinding, "binding", this));
         }
 
         @TruffleBoundary
@@ -951,7 +951,7 @@ public abstract class KernelNodes {
 
             if (Layouts.BASIC_OBJECT.getLogicalClass(self) != Layouts.BASIC_OBJECT.getLogicalClass(from)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().typeError("initialize_copy should take same class object", this));
+                throw new RaiseException(coreExceptions().typeError("initialize_copy should take same class object", this));
             }
 
             return self;
@@ -1162,7 +1162,7 @@ public abstract class KernelNodes {
             final Object value = object.get(ivar, nil());
             if (!object.delete(name)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().nameErrorInstanceVariableNotDefined(name, this));
+                throw new RaiseException(coreExceptions().nameErrorInstanceVariableNotDefined(name, this));
             }
             return value;
         }
@@ -1204,7 +1204,7 @@ public abstract class KernelNodes {
         @Specialization(guards = "!isRubyModule(module)")
         public boolean isATypeError(Object self, Object module) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().typeError("class or module required", this));
+            throw new RaiseException(coreExceptions().typeError("class or module required", this));
         }
 
     }
@@ -1224,7 +1224,7 @@ public abstract class KernelNodes {
 
             if (parentBlock == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("tried to create Proc object without a block", this));
+                throw new RaiseException(coreExceptions().argumentError("tried to create Proc object without a block", this));
             }
             return lambda(parentBlock);
         }
@@ -1318,7 +1318,7 @@ public abstract class KernelNodes {
                     final DynamicObject module = coreLibrary().getMetaClass(self);
                     method = new InternalMethod(info, normalizedName, module, Visibility.PUBLIC, newCallTarget);
                 } else {
-                    throw new RaiseException(coreLibrary().nameErrorUndefinedMethod(
+                    throw new RaiseException(coreExceptions().nameErrorUndefinedMethod(
                             normalizedName, coreLibrary().getLogicalClass(self), this));
                 }
             }
@@ -1596,7 +1596,7 @@ public abstract class KernelNodes {
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
             if (feature.equals("strscan") && callerIs("stdlib/erb.rb")) {
-                throw new RaiseException(coreLibrary().loadErrorCannotLoad(feature, this));
+                throw new RaiseException(coreExceptions().loadErrorCannotLoad(feature, this));
             }
 
             return getContext().getFeatureLoader().require(frame, feature, callNode);
@@ -1646,7 +1646,7 @@ public abstract class KernelNodes {
 
                 if (sourcePath == null) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().loadError("cannot infer basepath", featureString, this));
+                    throw new RaiseException(coreExceptions().loadError("cannot infer basepath", featureString, this));
                 }
 
                 featurePath = dirname(sourcePath) + "/" + featureString;
@@ -1901,7 +1901,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         private long doSleepMillis(final long durationInMillis) {
             if (durationInMillis < 0) {
-                throw new RaiseException(coreLibrary().argumentError("time interval must be positive", this));
+                throw new RaiseException(coreExceptions().argumentError("time interval must be positive", this));
             }
 
             final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
@@ -2033,7 +2033,7 @@ public abstract class KernelNodes {
                 return new PrintfCompiler(getContext(), this)
                         .compile(format.toString(), Layouts.STRING.getRope(format).getBytes());
             } catch (InvalidFormatException e) {
-                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
         }
 
@@ -2155,7 +2155,7 @@ public abstract class KernelNodes {
 
             if (isFrozenNode.executeIsFrozen(object)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().frozenError(Layouts.MODULE.getFields(coreLibrary().getLogicalClass(object)).getName(), this));
+                throw new RaiseException(coreExceptions().frozenError(Layouts.MODULE.getFields(coreLibrary().getLogicalClass(object)).getName(), this));
             }
 
             writeTaintNode.execute(object, false);

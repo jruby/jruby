@@ -140,7 +140,7 @@ public abstract class TimePrimitiveNodes {
             } catch (ArithmeticException e) {
                 CompilerDirectives.transferToInterpreter();
                 String message = String.format("UNIX epoch + %d seconds out of range for Time (Joda-Time limitation)", seconds);
-                throw new RaiseException(coreLibrary().rangeError(message, this));
+                throw new RaiseException(coreExceptions().rangeError(message, this));
             }
         }
 
@@ -295,7 +295,7 @@ public abstract class TimePrimitiveNodes {
                     hour < 0 || hour > 23 ||
                     mday < 1 || mday > 31 ||
                     month < 1 || month > 12) {
-                throw new RaiseException(coreLibrary().argumentErrorOutOfRange(this));
+                throw new RaiseException(coreExceptions().argumentErrorOutOfRange(this));
             }
 
             DateTime dt = new DateTime(year, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC);
@@ -525,7 +525,7 @@ public abstract class TimePrimitiveNodes {
             }
 
             if (h > 23 || m > 59) {
-                throw new RaiseException(node.getContext().getCoreLibrary().argumentError("utc_offset out of range", node));
+                throw new RaiseException(node.getContext().getCoreExceptions().argumentError("utc_offset out of range", node));
             }
 
             int offset = (positive ? +1 : -1) * ((h * 3600) + m * 60 + s) * 1000;

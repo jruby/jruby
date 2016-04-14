@@ -72,7 +72,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             exception.printStackTrace();
         }
 
-        return coreLibrary().zeroDivisionError(this, exception);
+        return coreExceptions().zeroDivisionError(this, exception);
     }
 
     private DynamicObject translate(StackOverflowError error) {
@@ -80,7 +80,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             error.printStackTrace();
         }
 
-        return coreLibrary().systemStackErrorStackLevelTooDeep(this, error);
+        return coreExceptions().systemStackErrorStackLevelTooDeep(this, error);
     }
 
     private DynamicObject translate(UnsupportedSpecializationException exception) {
@@ -142,9 +142,9 @@ public class ExceptionTranslatingNode extends RubyNode {
 
         switch (unsupportedOperationBehavior) {
             case TYPE_ERROR:
-                return coreLibrary().typeError(builder.toString(), this, exception);
+                return coreExceptions().typeError(builder.toString(), this, exception);
             case ARGUMENT_ERROR:
-                return coreLibrary().argumentError(builder.toString(), this, exception);
+                return coreExceptions().argumentError(builder.toString(), this, exception);
             default:
                 throw new UnsupportedOperationException();
         }
@@ -166,7 +166,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             message.append(throwable.getStackTrace()[0].toString());
         }
 
-        return coreLibrary().internalError(message.toString(), this, throwable);
+        return coreExceptions().internalError(message.toString(), this, throwable);
     }
 
 }

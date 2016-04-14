@@ -44,7 +44,7 @@ public class FeatureLoader {
         final String featurePath = findFeature(feature);
 
         if (featurePath == null) {
-            throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, callNode));
+            throw new RaiseException(context.getCoreExceptions().loadErrorCannotLoad(feature, callNode));
         }
 
         return doRequire(frame, featurePath, callNode);

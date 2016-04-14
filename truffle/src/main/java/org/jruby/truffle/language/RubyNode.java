@@ -22,6 +22,7 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
@@ -177,6 +178,10 @@ public abstract class RubyNode extends Node {
 
     protected CoreLibrary coreLibrary() {
         return getContext().getCoreLibrary();
+    }
+
+    protected CoreExceptions coreExceptions() {
+        return getContext().getCoreExceptions();
     }
 
     protected TrufflePosix posix() {

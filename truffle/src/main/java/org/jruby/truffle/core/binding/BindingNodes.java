@@ -165,7 +165,7 @@ public abstract class BindingNodes {
         public Object localVariableGetUncached(DynamicObject binding, DynamicObject symbol) {
             final FrameSlotAndDepth frameSlot = findFrameSlotOrNull(binding, symbol);
             if (frameSlot == null) {
-                throw new RaiseException(coreLibrary().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
+                throw new RaiseException(coreExceptions().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
             } else {
                 final MaterializedFrame frame = RubyArguments.getDeclarationFrame(Layouts.BINDING.getFrame(binding), frameSlot.depth);
                 return frame.getValue(frameSlot.slot);
@@ -179,7 +179,7 @@ public abstract class BindingNodes {
             final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(Layouts.SYMBOL.getString(symbol));
 
             if (frameSlot == null) {
-                throw new RaiseException(coreLibrary().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
+                throw new RaiseException(coreExceptions().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
             }
 
             final Object value = frame.getValue(frameSlot);
@@ -351,7 +351,7 @@ public abstract class BindingNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

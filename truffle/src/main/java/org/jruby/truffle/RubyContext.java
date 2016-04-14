@@ -18,6 +18,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.tools.CoverageTracker;
 import org.jruby.Ruby;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.module.ModuleOperations;
@@ -78,6 +79,7 @@ public class RubyContext extends ExecutionContext {
     private final CallStackManager callStack = new CallStackManager(this);
     private final CoreStrings coreStrings = new CoreStrings(this);
     private final FrozenStrings frozenStrings = new FrozenStrings(this);
+    private final CoreExceptions coreExceptions = new CoreExceptions(this);
 
     private final CompilerOptions compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
@@ -354,5 +356,9 @@ public class RubyContext extends ExecutionContext {
 
     public Object getClassVariableDefinitionLock() {
         return classVariableDefinitionLock;
+    }
+
+    public CoreExceptions getCoreExceptions() {
+        return coreExceptions;
     }
 }

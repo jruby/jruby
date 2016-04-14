@@ -76,7 +76,7 @@ public abstract class ObjectSpaceNodes {
                 }
             }
 
-            throw new RaiseException(coreLibrary().rangeError(String.format("0x%016x is not id value", id), this));
+            throw new RaiseException(coreExceptions().rangeError(String.format("0x%016x is not id value", id), this));
         }
 
         @Specialization(guards = { "isRubyBignum(id)", "isLargeFixnumID(id)" })
@@ -169,7 +169,7 @@ public abstract class ObjectSpaceNodes {
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentErrorWrongArgumentType(finalizer, "callable", this));
+                throw new RaiseException(coreExceptions().argumentErrorWrongArgumentType(finalizer, "callable", this));
             }
         }
 

@@ -170,7 +170,7 @@ public abstract class ThreadNodes {
                 return InterruptMode.NEVER;
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("invalid timing symbol", this));
+                throw new RaiseException(coreExceptions().argumentError("invalid timing symbol", this));
             }
         }
 
@@ -367,7 +367,7 @@ public abstract class ThreadNodes {
         @Specialization
         public DynamicObject wakeup(final DynamicObject thread) {
             if (Layouts.THREAD.getStatus(thread) == Status.DEAD) {
-                throw new RaiseException(coreLibrary().threadErrorKilledThread(this));
+                throw new RaiseException(coreExceptions().threadErrorKilledThread(this));
             }
 
             Layouts.THREAD.getWakeUp(thread).set(true);

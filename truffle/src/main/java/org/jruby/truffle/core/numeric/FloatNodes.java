@@ -253,7 +253,7 @@ public abstract class FloatNodes {
         public double mod(double a, double b) {
             if (b == 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 
             double result = Math.IEEEremainder(a, b);
@@ -661,12 +661,12 @@ public abstract class FloatNodes {
 
             if (Double.isInfinite(n)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("Infinity", this));
+                throw new RaiseException(coreExceptions().floatDomainError("Infinity", this));
             }
 
             if (Double.isNaN(n)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("NaN", this));
+                throw new RaiseException(coreExceptions().floatDomainError("NaN", this));
             }
 
             double f = n;
@@ -711,12 +711,12 @@ public abstract class FloatNodes {
         Object toI(double value) {
             if (Double.isInfinite(value)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("Infinity", this));
+                throw new RaiseException(coreExceptions().floatDomainError("Infinity", this));
             }
 
             if (Double.isNaN(value)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("NaN", this));
+                throw new RaiseException(coreExceptions().floatDomainError("NaN", this));
             }
 
             return fixnumOrBignum.fixnumOrBignum(value);

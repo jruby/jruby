@@ -48,7 +48,7 @@ public class DefineModuleNode extends RubyNode {
 
         if (!RubyGuards.isRubyModule(lexicalParentObject)) {
             errorProfile.enter();
-            throw new RaiseException(coreLibrary().typeErrorIsNotA(lexicalParentObject, "module", this));
+            throw new RaiseException(coreExceptions().typeErrorIsNotA(lexicalParentObject, "module", this));
         }
 
         final DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
@@ -64,7 +64,7 @@ public class DefineModuleNode extends RubyNode {
 
             if (!RubyGuards.isRubyModule(constantValue) || RubyGuards.isRubyClass(constantValue)) {
                 errorProfile.enter();
-                throw new RaiseException(coreLibrary().typeErrorIsNotA(name, "module", this));
+                throw new RaiseException(coreExceptions().typeErrorIsNotA(name, "module", this));
             }
 
             definingModule = (DynamicObject) constantValue;
@@ -92,7 +92,7 @@ public class DefineModuleNode extends RubyNode {
         }
 
         if (constant != null && !constant.isVisibleTo(context, LexicalScope.NONE, lexicalParent)) {
-            throw new RaiseException(context.getCoreLibrary().nameErrorPrivateConstant(lexicalParent, name, callNode));
+            throw new RaiseException(context.getCoreExceptions().nameErrorPrivateConstant(lexicalParent, name, callNode));
         }
 
         // If a constant already exists with this class/module name and it's an autoload module, we have to trigger

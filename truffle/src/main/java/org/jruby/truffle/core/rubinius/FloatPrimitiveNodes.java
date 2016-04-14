@@ -111,12 +111,12 @@ public abstract class FloatPrimitiveNodes {
 
             if (Double.isInfinite(n)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("Infinity", this));
+                throw new RaiseException(coreExceptions().floatDomainError("Infinity", this));
             }
 
             if (Double.isNaN(n)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("NaN", this));
+                throw new RaiseException(coreExceptions().floatDomainError("NaN", this));
             }
 
             double f = n;

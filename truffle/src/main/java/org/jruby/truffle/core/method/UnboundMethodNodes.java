@@ -88,10 +88,10 @@ public abstract class UnboundMethodNodes {
                 CompilerDirectives.transferToInterpreter();
                 final DynamicObject declaringModule = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
                 if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
-                    throw new RaiseException(coreLibrary().typeError(
+                    throw new RaiseException(coreExceptions().typeError(
                             "singleton method called for a different object", this));
                 } else {
-                    throw new RaiseException(coreLibrary().typeError(
+                    throw new RaiseException(coreExceptions().typeError(
                             "bind argument must be an instance of " + Layouts.MODULE.getFields(declaringModule).getName(), this));
                 }
             }
@@ -198,7 +198,7 @@ public abstract class UnboundMethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

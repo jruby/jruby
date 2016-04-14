@@ -94,7 +94,7 @@ public abstract class ByteArrayNodes {
         public Object setByte(DynamicObject bytes, int index, int value) {
             if (index < 0 || index >= Layouts.BYTE_ARRAY.getBytes(bytes).getRealSize()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().indexError("index out of bounds", this));
+                throw new RaiseException(coreExceptions().indexError("index out of bounds", this));
             }
 
             Layouts.BYTE_ARRAY.getBytes(bytes).set(index, value);
@@ -147,7 +147,7 @@ public abstract class ByteArrayNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

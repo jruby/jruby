@@ -1145,7 +1145,7 @@ public abstract class FixnumNodes {
             }
 
             if (base < 2 || base > 36) {
-                throw new RaiseException(coreLibrary().argumentErrorInvalidRadix(base, this));
+                throw new RaiseException(coreExceptions().argumentErrorInvalidRadix(base, this));
             }
 
             return create7BitString(Long.toString(n, base), USASCIIEncoding.INSTANCE);

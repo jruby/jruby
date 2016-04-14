@@ -92,7 +92,7 @@ public class UncachedDispatchNode extends DispatchNode {
                 return false;
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().runtimeError(
+                throw new RaiseException(coreExceptions().runtimeError(
                         receiverObject.toString() + " didn't have a #method_missing", this));
             }
         }

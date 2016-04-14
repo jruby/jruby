@@ -23,7 +23,7 @@ public class UnsafeNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        throw new RaiseException(coreLibrary().internalErrorUnsafe(this));
+        throw new RaiseException(coreExceptions().internalErrorUnsafe(this));
     }
 
 }

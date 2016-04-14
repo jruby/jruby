@@ -43,7 +43,7 @@ public abstract class ReadHashValueNode extends FormatNode {
     @Specialization
     public Object read(VirtualFrame frame, Object[] source) {
         if (oneHashProfile.profile(source.length != 1 || !RubyGuards.isRubyHash(source[0]))) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentErrorOneHashRequired(this));
+            throw new RaiseException(getContext().getCoreExceptions().argumentErrorOneHashRequired(this));
         }
 
         final DynamicObject hash = (DynamicObject) source[0];

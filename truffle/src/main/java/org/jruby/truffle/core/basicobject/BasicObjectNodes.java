@@ -232,7 +232,7 @@ public abstract class BasicObjectNodes {
         public Object instanceExec(Object receiver, Object[] arguments, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
-            throw new RaiseException(coreLibrary().localJumpError("no block given", this));
+            throw new RaiseException(coreExceptions().localJumpError("no block given", this));
         }
 
     }
@@ -277,7 +277,7 @@ public abstract class BasicObjectNodes {
         @Specialization
         public Object methodMissingNoName(Object self, NotProvided name, Object[] args, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().argumentError("no id given", this));
+            throw new RaiseException(coreExceptions().argumentError("no id given", this));
         }
 
         @Specialization
@@ -295,13 +295,13 @@ public abstract class BasicObjectNodes {
             final String name = nameObject.toString();
 
             if (lastCallWasSuper()) {
-                throw new RaiseException(coreLibrary().noSuperMethodError(name, this));
+                throw new RaiseException(coreExceptions().noSuperMethodError(name, this));
             } else if (lastCallWasCallingPrivateMethod(self, name)) {
-                throw new RaiseException(coreLibrary().privateMethodError(name, self, this));
+                throw new RaiseException(coreExceptions().privateMethodError(name, self, this));
             } else if (lastCallWasVCall()) {
-                throw new RaiseException(coreLibrary().nameErrorUndefinedLocalVariableOrMethod(name, self, this));
+                throw new RaiseException(coreExceptions().nameErrorUndefinedLocalVariableOrMethod(name, self, this));
             } else {
-                throw new RaiseException(coreLibrary().noMethodErrorOnReceiver(name, self, this));
+                throw new RaiseException(coreExceptions().noMethodErrorOnReceiver(name, self, this));
             }
         }
 

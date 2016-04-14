@@ -186,7 +186,7 @@ public abstract class StringOperations {
 
         if (encoding == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().encodingCompatibilityErrorIncompatible(
+            throw new RaiseException(context.getCoreExceptions().encodingCompatibilityErrorIncompatible(
                     rope(string).getEncoding().toString(),
                     rope(other).getEncoding().toString(),
                     node));

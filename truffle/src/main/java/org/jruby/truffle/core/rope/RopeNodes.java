@@ -250,7 +250,7 @@ public abstract class RopeNodes {
                 ExactMath.addExact(left.byteLength(), right.byteLength());
             } catch(ArithmeticException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("Result of string concatenation exceeds the system maximum string length", this));
+                throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
             }
 
             final ByteList byteList = left.getByteList();
@@ -273,7 +273,7 @@ public abstract class RopeNodes {
                 ExactMath.addExact(left.byteLength(), right.byteLength());
             } catch(ArithmeticException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("Result of string concatenation exceeds the system maximum string length", this));
+                throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
             }
 
             int depth = depth(left, right);
@@ -567,7 +567,7 @@ public abstract class RopeNodes {
                 ExactMath.multiplyExact(base.byteLength(), times);
             } catch (ArithmeticException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("Result of repeating string exceeds the system maximum string length", this));
+                throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of repeating string exceeds the system maximum string length", this));
             }
 
             return new RepeatingRope(base, times);

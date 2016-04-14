@@ -364,7 +364,7 @@ public abstract class ClassNodes {
                 return superclass;
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized class", this));
+                throw new RaiseException(getContext().getCoreExceptions().typeError("uninitialized class", this));
             }
         }
 

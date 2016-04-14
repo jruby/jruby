@@ -64,7 +64,7 @@ public abstract class SizedQueueNodes {
         public DynamicObject initialize(DynamicObject self, int capacity) {
             if (capacity <= 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("queue size must be positive", this));
+                throw new RaiseException(coreExceptions().argumentError("queue size must be positive", this));
             }
 
             final ArrayBlockingQueueLocksConditions<Object> blockingQueue = getContext().getNativePlatform().createArrayBlockingQueueLocksConditions(capacity);
@@ -86,7 +86,7 @@ public abstract class SizedQueueNodes {
         public int setMax(DynamicObject self, int newCapacity) {
             if (newCapacity <= 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("queue size must be positive", this));
+                throw new RaiseException(coreExceptions().argumentError("queue size must be positive", this));
             }
 
             final ArrayBlockingQueueLocksConditions<Object> oldQueue = Layouts.SIZED_QUEUE.getQueue(self);
@@ -166,7 +166,7 @@ public abstract class SizedQueueNodes {
             final boolean pushed = doOffer(value, queue);
             if (!pushed) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().threadError("queue full", this));
+                throw new RaiseException(coreExceptions().threadError("queue full", this));
             }
 
             return self;
@@ -219,7 +219,7 @@ public abstract class SizedQueueNodes {
             final Object value = doPoll(queue);
             if (value == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().threadError("queue empty", this));
+                throw new RaiseException(coreExceptions().threadError("queue empty", this));
             }
 
             return value;

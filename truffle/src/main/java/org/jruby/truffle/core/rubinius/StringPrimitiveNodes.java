@@ -187,7 +187,7 @@ public abstract class StringPrimitiveNodes {
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().encodingCompatibilityError(
+                throw new RaiseException(coreExceptions().encodingCompatibilityError(
                         String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
             }
 
@@ -381,7 +381,7 @@ public abstract class StringPrimitiveNodes {
             for (int i = 0; i < bytes.length; i++) {
                 if (bytes[i] == 0) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().argumentError("string contains NULL byte", this));
+                    throw new RaiseException(coreExceptions().argumentError("string contains NULL byte", this));
                 }
             }
 
@@ -463,7 +463,7 @@ public abstract class StringPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                        coreLibrary().indexError(
+                        coreExceptions().indexError(
                                 String.format("index %d out of string", start),
                                 this
                         ));
@@ -473,7 +473,7 @@ public abstract class StringPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                        coreLibrary().indexError(
+                        coreExceptions().indexError(
                                 String.format("index %d out of string", start),
                                 this
                         ));
@@ -743,12 +743,12 @@ public abstract class StringPrimitiveNodes {
                 length = EncodingOperations.getEncoding(encoding).codeToMbcLength(code);
             } catch (EncodingException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().rangeError(code, encoding, this));
+                throw new RaiseException(coreExceptions().rangeError(code, encoding, this));
             }
 
             if (length <= 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().rangeError(code, encoding, this));
+                throw new RaiseException(coreExceptions().rangeError(code, encoding, this));
             }
 
             final byte[] bytes = new byte[length];
@@ -757,7 +757,7 @@ public abstract class StringPrimitiveNodes {
                 EncodingOperations.getEncoding(encoding).codeToMbc(code, bytes, 0);
             } catch (EncodingException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().rangeError(code, encoding, this));
+                throw new RaiseException(coreExceptions().rangeError(code, encoding, this));
             }
 
             return createString(new ByteList(bytes, EncodingOperations.getEncoding(encoding)));
@@ -1115,7 +1115,7 @@ public abstract class StringPrimitiveNodes {
 
             if (k < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("character index is negative", this));
+                throw new RaiseException(coreExceptions().argumentError("character index is negative", this));
             }
 
             for (i = 0; i < k && p < e; i++) {
@@ -1144,7 +1144,7 @@ public abstract class StringPrimitiveNodes {
 
             if (offset < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("negative start given", this));
+                throw new RaiseException(coreExceptions().argumentError("negative start given", this));
             }
 
             final Rope stringRope = rope(string);
@@ -1208,7 +1208,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = "index < 0")
         @TruffleBoundary
         public Object stringPreviousByteIndexNegativeIndex(DynamicObject string, int index) {
-            throw new RaiseException(coreLibrary().argumentError("negative index given", this));
+            throw new RaiseException(coreExceptions().argumentError("negative index given", this));
         }
 
         @Specialization(guards = "index == 0")
@@ -1337,7 +1337,7 @@ public abstract class StringPrimitiveNodes {
 
             if (pos < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("negative start given", this));
+                throw new RaiseException(coreExceptions().argumentError("negative start given", this));
             }
 
             final Rope stringRope = rope(string);
@@ -1834,7 +1834,7 @@ public abstract class StringPrimitiveNodes {
 
             if (!StringGuards.isSingleByteOptimizable(string)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().internalError("Taking the substring of MBC rope buffer is not currently supported", this));
+                throw new RaiseException(getContext().getCoreExceptions().internalError("Taking the substring of MBC rope buffer is not currently supported", this));
             }
 
             final RopeBuffer buffer = (RopeBuffer) rope(string);

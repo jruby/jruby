@@ -2443,7 +2443,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         if (!environment.isBlock() && !translatingWhile) {
-            throw new RaiseException(context.getCoreLibrary().syntaxError("Invalid next", currentNode));
+            throw new RaiseException(context.getCoreExceptions().syntaxError("Invalid next", currentNode));
         }
 
         final RubyNode resultNode;
@@ -2689,7 +2689,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitRedoNode(org.jruby.ast.RedoNode node) {
         if (!environment.isBlock() && !translatingWhile) {
-            throw new RaiseException(context.getCoreLibrary().syntaxError("Invalid redo", currentNode));
+            throw new RaiseException(context.getCoreExceptions().syntaxError("Invalid redo", currentNode));
         }
 
         final RubyNode ret = new RedoNode(context, translate(node.getPosition()));

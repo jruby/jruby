@@ -369,7 +369,7 @@ public class PackTreeBuilder extends PackBaseListener {
 
     @Override
     public void exitErrorDisallowedNative(PackParser.ErrorDisallowedNativeContext ctx) {
-        throw new RaiseException(context.getCoreLibrary().argumentError(
+        throw new RaiseException(context.getCoreExceptions().argumentError(
                 "'" + ctx.NATIVE().getText() + "' allowed only after types sSiIlLqQ", currentNode));
     }
 

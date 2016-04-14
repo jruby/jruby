@@ -175,7 +175,7 @@ public abstract class MutexNodes {
 
         public long doSleepMillis(DynamicObject mutex, long durationInMillis) {
             if (durationLessThanZeroProfile.profile(durationInMillis < 0)) {
-                throw new RaiseException(coreLibrary().argumentErrorTimeItervalPositive(this));
+                throw new RaiseException(coreExceptions().argumentErrorTimeItervalPositive(this));
             }
 
             final ReentrantLock lock = Layouts.MUTEX.getLock(mutex);

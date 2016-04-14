@@ -47,7 +47,7 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode {
             @Cached("isVisible(constant)") boolean isVisible) {
         if (!isVisible) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().nameErrorPrivateConstant(getModule(), name, this));
+            throw new RaiseException(coreExceptions().nameErrorPrivateConstant(getModule(), name, this));
         }
         return constant;
     }

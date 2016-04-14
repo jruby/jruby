@@ -82,7 +82,7 @@ public abstract class ToFNode extends RubyNode {
         } catch (RaiseException e) {
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().typeErrorNoImplicitConversion(object, "Float", this));
+                throw new RaiseException(coreExceptions().typeErrorNoImplicitConversion(object, "Float", this));
             } else {
                 throw e;
             }
@@ -92,7 +92,7 @@ public abstract class ToFNode extends RubyNode {
             return (double) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().typeErrorBadCoercion(object, "Float", "to_f", coerced, this));
+            throw new RaiseException(coreExceptions().typeErrorBadCoercion(object, "Float", "to_f", coerced, this));
         }
     }
 

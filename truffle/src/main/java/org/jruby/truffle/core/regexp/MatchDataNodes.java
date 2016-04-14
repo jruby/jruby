@@ -212,7 +212,7 @@ public abstract class MatchDataNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                    coreLibrary().indexError(String.format("undefined group name reference: %s", Layouts.SYMBOL.getString(index)), this));
+                        coreExceptions().indexError(String.format("undefined group name reference: %s", Layouts.SYMBOL.getString(index)), this));
             }
         }
 
@@ -229,7 +229,7 @@ public abstract class MatchDataNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                        coreLibrary().indexError(String.format("undefined group name reference: %s", index.toString()), this));
+                        coreExceptions().indexError(String.format("undefined group name reference: %s", index.toString()), this));
             }
         }
 
@@ -273,7 +273,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization(guards = "!inBounds(matchData, index)")
         public Object beginError(DynamicObject matchData, int index) {
-            throw new RaiseException(coreLibrary().indexError(String.format("index %d out of matches", index), this));
+            throw new RaiseException(coreExceptions().indexError(String.format("index %d out of matches", index), this));
         }
 
         protected boolean inBounds(DynamicObject matchData, int index) {
@@ -312,7 +312,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization(guards = "!inBounds(matchData, index)")
         public Object endError(DynamicObject matchData, int index) {
-            throw new RaiseException(coreLibrary().indexError(String.format("index %d out of matches", index), this));
+            throw new RaiseException(coreExceptions().indexError(String.format("index %d out of matches", index), this));
         }
 
         protected boolean inBounds(DynamicObject matchData, int index) {
@@ -452,7 +452,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

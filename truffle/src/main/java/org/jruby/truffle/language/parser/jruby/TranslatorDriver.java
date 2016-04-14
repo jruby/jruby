@@ -117,7 +117,7 @@ public class TranslatorDriver implements Parser {
                 message = "(no message)";
             }
 
-            throw new RaiseException(context.getCoreLibrary().syntaxError(message, currentNode));
+            throw new RaiseException(context.getCoreExceptions().syntaxError(message, currentNode));
         }
 
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
