@@ -323,7 +323,7 @@ public class RopeOperations {
      */
     @TruffleBoundary
     public static byte[] flattenBytes(Rope rope) {
-        if (rope instanceof LeafRope) {
+        if (rope.getRawBytes() != null) {
             return rope.getRawBytes();
         }
 
