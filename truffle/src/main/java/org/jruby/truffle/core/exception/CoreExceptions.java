@@ -138,7 +138,7 @@ public class CoreExceptions {
                 context.getCallStack().getBacktrace(currentNode, javaThrowable));
     }
 
-    // ErrnoError
+    // Errno
 
     @TruffleBoundary
     public DynamicObject mathDomainError(String method, Node currentNode) {
