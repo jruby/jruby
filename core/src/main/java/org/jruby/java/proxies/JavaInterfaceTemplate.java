@@ -219,12 +219,17 @@ public class JavaInterfaceTemplate {
         }
     }
 
-    private static class InterfaceProxyFactory extends JavaMethodN { // __jcreate! and __jcreate_meta!
+    private static final class InterfaceProxyFactory extends JavaMethodN { // __jcreate! and __jcreate_meta!
 
         InterfaceProxyFactory(final RubyClass clazz) { super(clazz, Visibility.PRIVATE); }
 
+        @Override // will be called with zero args
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            return newInterfaceProxy(self);
+        }
+
         @Override
-        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             return newInterfaceProxy(self);
         }
 
@@ -362,7 +367,7 @@ public class JavaInterfaceTemplate {
         return implObject;
     }
 
-    private static class BlockInterfaceImpl extends org.jruby.internal.runtime.methods.JavaMethod {
+    private static final class BlockInterfaceImpl extends org.jruby.internal.runtime.methods.JavaMethod {
 
         private final IRubyObject[] methodNames; // RubySymbol[]
         private final Block implBlock;
