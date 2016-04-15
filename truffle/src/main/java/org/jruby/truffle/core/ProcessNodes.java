@@ -47,6 +47,7 @@ public abstract class ProcessNodes {
         public static final int CLOCK_MONOTONIC_RAW_ID = 4; // Linux only
 
         private final DynamicObject floatSecondSymbol = getContext().getSymbolTable().getSymbol("float_second");
+        private final DynamicObject floatMicrosecondSymbol = getContext().getSymbolTable().getSymbol("float_microsecond");
         private final DynamicObject nanosecondSymbol = getContext().getSymbolTable().getSymbol("nanosecond");
 
         public ClockGetTimeNode(RubyContext context, SourceSection sourceSection) {
@@ -99,6 +100,8 @@ public abstract class ProcessNodes {
                 return time;
             } else if (unit == floatSecondSymbol) {
                 return time / 1e9;
+            } else if (unit == floatMicrosecondSymbol) {
+                return time / 1e3;
             } else {
                 throw new UnsupportedOperationException(Layouts.SYMBOL.getString(unit));
             }
