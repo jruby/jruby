@@ -1228,11 +1228,20 @@ public class IRBuilder {
             nodeBodies.put(whenNode, bodyLabel);
         }
 
-        // now build a JVM switch based on the given table
+        // sort the jump table
+        Map.Entry<Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
+        Arrays.sort(jumpEntries, new Comparator<Map.Entry<Integer, Label>>() {
+            @Override
+            public int compare(Map.Entry<Integer, Label> o1, Map.Entry<Integer, Label> o2) {
+                return Integer.compare(o1.getKey(), o2.getKey());
+            }
+        });
+
+        // build a switch
         int[] jumps = new int[jumpTable.size()];
         Label[] targets = new Label[jumps.length];
         int i = 0;
-        for (Map.Entry<Integer, Label> jumpEntry : jumpTable.entrySet()) {
+        for (Map.Entry<Integer, Label> jumpEntry : jumpEntries) {
             jumps[i] = jumpEntry.getKey();
             targets[i] = jumpEntry.getValue();
             i++;

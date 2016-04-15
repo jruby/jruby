@@ -864,7 +864,17 @@ public class JVMVisitor extends IRVisitor {
         Label[] targets = bswitchinstr.getTargets();
         org.objectweb.asm.Label[] jvmTargets = new org.objectweb.asm.Label[targets.length];
         for (int i = 0; i < targets.length; i++) jvmTargets[i] = getJVMLabel(targets[i]);
-        jvmAdapter().lookupswitch(getJVMLabel(bswitchinstr.getElseTarget()), bswitchinstr.getJumps(), jvmTargets);
+
+        // if jump table is all contiguous values, use a tableswitch
+        int[] jumps = bswitchinstr.getJumps();
+        int low = jumps[0];
+        int high = jumps[jumps.length - 1];
+        int span = high - low;
+        if (span == jumps.length) {
+            jvmAdapter().tableswitch(low, high, getJVMLabel(bswitchinstr.getElseTarget()), jvmTargets);
+        } else {
+            jvmAdapter().lookupswitch(getJVMLabel(bswitchinstr.getElseTarget()), bswitchinstr.getJumps(), jvmTargets);
+        }
         jvmAdapter().label(notFixnum);
         jvmAdapter().pop();
         jvmAdapter().label(rubyCaseLabel);

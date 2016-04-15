@@ -25,6 +25,10 @@ public class BSwitchInstr extends MultiBranchInstr {
 
     public BSwitchInstr(int[] jumps, Operand operand, Label rubyCase, Label[] targets, Label elseTarget) {
         super(Operation.B_SWITCH);
+
+        // We depend on the jump table being sorted, so ensure that's the case here
+        assert jumpsAreSorted(jumps);
+
         this.jumps = jumps;
         this.operand = operand;
         this.rubyCase = rubyCase;
@@ -79,15 +83,10 @@ public class BSwitchInstr extends MultiBranchInstr {
             // not a fixnum, fall back on old case logic
             return rubyCase.getTargetPC();
         }
+
         int value = ((RubyFixnum) result).getIntValue();
-        int index = -1;
-        // TODO: this is obviously linear time
-        for (int i = 0; i < jumps.length; i++) {
-            if (jumps[i] == value) {
-                index = i;
-                break;
-            }
-        }
+
+        int index = Arrays.binarySearch(jumps, value);
 
         if (index == -1) {
             return elseTarget.getTargetPC();
@@ -110,5 +109,11 @@ public class BSwitchInstr extends MultiBranchInstr {
         }
         jumpTargets[jumpTargets.length - 1] = elseTarget;
         return jumpTargets;
+    }
+
+    private static boolean jumpsAreSorted(int[] jumps) {
+        int[] jumps2 = jumps.clone();
+        Arrays.sort(jumps2);
+        return Arrays.equals(jumps, jumps2);
     }
 }
