@@ -191,6 +191,11 @@ public class CoreExceptions {
         return indexError(String.format("index %d too small for %s; minimum: -%d", index, type, length), currentNode);
     }
 
+    @TruffleBoundary
+    public DynamicObject negativeLengthError(int length, Node currentNode) {
+        return indexError(String.format("negative length (%d)", length), currentNode);
+    }
+
     // LocalJumpError
 
     @TruffleBoundary
