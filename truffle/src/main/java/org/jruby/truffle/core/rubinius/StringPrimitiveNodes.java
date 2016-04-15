@@ -342,14 +342,14 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Rope rope = rope(string);
-            final int stringLength = rope.characterLength();
-            final int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
+            final int stringByteLength = rope.byteLength();
+            final int normalizedIndex = StringOperations.normalizeIndex(stringByteLength, index);
 
-            if (indexOutOfBoundsProfile.profile(normalizedIndex < 0 || normalizedIndex > rope.byteLength())) {
+            if (indexOutOfBoundsProfile.profile(normalizedIndex < 0 || normalizedIndex > stringByteLength)) {
                 return nil();
             }
 
-            if (lengthTooLongProfile.profile(normalizedIndex + length > rope.byteLength())) {
+            if (lengthTooLongProfile.profile(normalizedIndex + length > stringByteLength)) {
                 length = rope.byteLength() - normalizedIndex;
             }
 
