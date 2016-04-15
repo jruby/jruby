@@ -427,7 +427,7 @@ public abstract class ArrayNodes {
             final int end = start + length;
             final int arraySize = getSize(array);
             final int replacementSize = getSize(replacement);
-            final int endOfreplacementInArray = start + replacementSize;
+            final int endOfReplacementInArray = start + replacementSize;
 
             if (recursive.profile(array == replacement)) {
                 final DynamicObject copy = readSlice(array, 0, arraySize);
@@ -450,15 +450,15 @@ public abstract class ArrayNodes {
             // Append the saved tail
             if (needsTail) {
                 for (int i = 0; i < tailSize; i++) {
-                    write(array, endOfreplacementInArray + i, read(tailCopy, i));
+                    write(array, endOfReplacementInArray + i, read(tailCopy, i));
                 }
             }
 
             // Set size
             if (needsTail) {
-                Layouts.ARRAY.setSize(array, endOfreplacementInArray + tailSize);
+                Layouts.ARRAY.setSize(array, endOfReplacementInArray + tailSize);
             } else {
-                Layouts.ARRAY.setSize(array, endOfreplacementInArray);
+                Layouts.ARRAY.setSize(array, endOfReplacementInArray);
             }
 
             return replacement;
