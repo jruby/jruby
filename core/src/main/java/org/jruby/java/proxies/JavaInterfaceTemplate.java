@@ -276,8 +276,8 @@ public class JavaInterfaceTemplate {
     private static IRubyObject newInterfaceProxy(final IRubyObject self) {
         final RubyClass current = self.getMetaClass();
         // construct the new interface impl and set it into the object
-        IRubyObject newObject = Java.newInterfaceImpl(self, Java.getInterfacesFromRubyClass(current));
-        JavaUtilities.set_java_object(self, self, newObject);
+        JavaObject newObject = Java.newInterfaceImpl(self, Java.getInterfacesFromRubyClass(current));
+        JavaUtilities.set_java_object(self, self, newObject); // self.dataWrapStruct(newObject);
         return newObject;
     }
 
