@@ -433,7 +433,7 @@ public abstract class StringNodes {
             final int stringLength = rope.characterLength();
             int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
 
-            if (normalizedIndex < 0 || normalizedIndex >= rope.byteLength()) {
+            if (normalizedIndex < 0 || normalizedIndex >= rope.characterLength()) {
                 outOfBounds.enter();
                 return nil();
             } else {
