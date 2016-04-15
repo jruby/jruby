@@ -11,6 +11,7 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOneBlock;
@@ -258,6 +259,7 @@ public class JavaInterfaceTemplate {
     public static void addRealImplClassNew(final RubyClass clazz) {
         clazz.setAllocator(new ObjectAllocator() {
             private Constructor proxyConstructor;
+
             public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                 // if we haven't been here before, reify the class
                 Class reifiedClass = klazz.getReifiedClass();
@@ -358,17 +360,39 @@ public class JavaInterfaceTemplate {
             // RubySymbol implements a Java compareTo thus will always work
         }
 
-        RubyClass implClass = RubyClass.newClass(runtime, runtime.getObject());
-        implClass.include(context, self);
+        RubyClass implClass = RubyClass.newClass(runtime, runtime.getObject()); // ImplClass = Class.new
+        implClass.include(context, self); // ImplClass.include Interface
 
-        final IRubyObject implObject = implClass.callMethod(context, "new");
+        final BlockInterfaceImpl ifaceImpl = new BlockInterfaceImpl(implClass, implBlock, methodNames);
+        implClass.addMethod("method_missing", ifaceImpl); // def ImplClass.method_missing ...
 
-        implClass.addMethod("method_missing", new BlockInterfaceImpl(implClass, implBlock, methodNames));
+        //
+        final Class<?> ifaceClass = JavaClass.getJavaClass(context, ((RubyModule) self));
+        if ( methodNames == null ) {
+            final BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod();
+            for ( Method method : ifaceClass.getMethods() ) {
+                implClass.addMethodInternal(method.getName(), implMethod); // might add twice - its fine
+            }
+        }
+        else {
+            final BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod();
+            final Method[] allMethods = ifaceClass.getDeclaredMethods();
+            for ( IRubyObject methodName : methodNames ) {
+                final String name = methodName.toString();
+                for ( int i = 0; i < allMethods.length; i++ ) {
+                    // add if its a declared method of the interface or its super-interfaces
+                    if ( name.equals( allMethods[i].getName() ) ) {
+                        implClass.addMethodInternal(name, implMethod);
+                        break;
+                    }
+                }
+            }
+        }
 
-        return implObject;
+        return implClass.callMethod(context, "new"); // ImplClass.new
     }
 
-    private static final class BlockInterfaceImpl extends org.jruby.internal.runtime.methods.JavaMethod {
+    private static final class BlockInterfaceImpl extends JavaMethod {
 
         private final IRubyObject[] methodNames; // RubySymbol[]
         private final Block implBlock;
@@ -399,6 +423,11 @@ public class JavaInterfaceTemplate {
         }
 
         @Override
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
+            return callImpl(context, klazz, block); // avoids checkArgumentCount
+        }
+
+        @Override
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, Block block) {
             return callImpl(context, klazz, block, arg0); // avoids checkArgumentCount
         }
@@ -413,7 +442,60 @@ public class JavaInterfaceTemplate {
             return callImpl(context, klazz, block, arg0, arg1, arg2); // avoids checkArgumentCount
         }
 
-        //public DynamicMethod dup() { return this; }
+        public DynamicMethod dup() { return this; }
+
+        final ConcreteMethod getConcreteMethod() { return new ConcreteMethod(); }
+
+        private final class ConcreteMethod extends JavaMethod {
+
+            ConcreteMethod() {
+                super(BlockInterfaceImpl.this.implementationClass, Visibility.PUBLIC);
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
+                final IRubyObject[] nargs = new IRubyObject[] { context.runtime.newSymbol(name) };
+                return BlockInterfaceImpl.this.callImpl(context, klazz, block, nargs);
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, Block block) {
+                final IRubyObject[] nargs = new IRubyObject[] { context.runtime.newSymbol(name), arg0 };
+                return BlockInterfaceImpl.this.callImpl(context, klazz, block, nargs);
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+                final IRubyObject[] nargs = new IRubyObject[] { context.runtime.newSymbol(name), arg0, arg1 };
+                return BlockInterfaceImpl.this.callImpl(context, klazz, block, nargs);
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+                final IRubyObject[] nargs = new IRubyObject[] { context.runtime.newSymbol(name), arg0, arg1, arg2 };
+                return BlockInterfaceImpl.this.callImpl(context, klazz, block, nargs);
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+                switch (args.length) {
+                    case 0:
+                        return call(context, self, klazz, name, block);
+                    case 1:
+                        return call(context, self, klazz, name, args[0], block);
+                    case 2:
+                        return call(context, self, klazz, name, args[0], args[1], block);
+                    case 3:
+                        return call(context, self, klazz, name, args[0], args[1], args[2], block);
+                    default:
+                        final IRubyObject[] nargs = new IRubyObject[args.length + 1];
+                        nargs[0] = context.runtime.newSymbol(name);
+                        System.arraycopy(args, 0, nargs, 1, args.length);
+                        return BlockInterfaceImpl.this.callImpl(context, klazz, block, nargs);
+                }
+            }
+
+        }
 
     }
 
