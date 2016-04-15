@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.language;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -35,8 +37,12 @@ import org.jruby.util.ByteList;
 @ImportStatic(RubyGuards.class)
 public abstract class RubyNode extends Node {
 
-    private final RubyContext context;
+    @CompilationFinal private RubyContext context;
+
     private boolean atNewline = false;
+
+    public RubyNode() {
+    }
 
     public RubyNode(RubyContext context, SourceSection sourceSection) {
         super(sourceSection);
@@ -199,6 +205,20 @@ public abstract class RubyNode extends Node {
     // Accessors
 
     public RubyContext getContext() {
+        if (context == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+
+            final Node parent = getParent();
+
+            if (parent instanceof RubyNode) {
+                context = ((RubyNode) parent).getContext();
+            } else if (parent instanceof RubyRootNode) {
+                context = ((RubyRootNode) parent).getContext();
+            } else {
+                throw new UnsupportedOperationException();
+            }
+        }
+
         return context;
     }
 

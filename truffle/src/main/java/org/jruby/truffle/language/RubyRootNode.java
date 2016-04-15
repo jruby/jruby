@@ -85,4 +85,7 @@ public class RubyRootNode extends RootNode {
         return needsDeclarationFrame;
     }
 
+    public RubyContext getContext() {
+        return context;
+    }
 }
