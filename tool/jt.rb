@@ -371,7 +371,7 @@ module Commands
 
     if args.delete('--bips')
       bips_version = '2.6.1'
-      bips = "lib/ruby/gems/shared/gems/benchmark-ips-#{bips_version}/lib"
+      bips = "#{JRUBY_DIR}/lib/ruby/gems/shared/gems/benchmark-ips-#{bips_version}/lib"
       sh 'bin/jruby', 'bin/gem', 'install', 'benchmark-ips', '-v', bips_version unless Dir.exist?(bips)
       jruby_args << "-I#{bips}"
     end
