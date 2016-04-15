@@ -182,28 +182,6 @@ public class JavaInterfaceTemplate {
 
             // If we hold a Java object, we need a java_class accessor
             clazz.addMethod("java_class", new JavaClassAccessor(clazz));
-
-            // Because we implement Java interfaces now, we need a new === that's
-            // aware of those additional "virtual" supertypes
-            if (!clazz.searchMethod("===").isUndefined()) {
-                clazz.defineAlias("old_eqq", "===");
-                clazz.addMethod("===", new JavaMethodOne(clazz, Visibility.PUBLIC) {
-
-                    @Override
-                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
-                        // TODO: WRONG - get interfaces from class
-                        if (arg.respondsTo("java_object")) {
-                            IRubyObject interfaces = self.getMetaClass().getInstanceVariables().getInstanceVariable("@java_interfaces");
-                            assert interfaces instanceof RubyArray : "interface list was not an array";
-
-                            return context.runtime.newBoolean(((RubyArray) interfaces).op_diff(
-                                    ((JavaObject) arg.dataGetStruct()).java_class().interfaces()).equals(RubyArray.newArray(context.runtime)));
-                        } else {
-                            return Helpers.invoke(context, self, "old_eqq", arg);
-                        }
-                    }
-                });
-            }
         }
 
         // Now we add an "implement" and "implement_all" methods to the class
