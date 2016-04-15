@@ -262,6 +262,7 @@ module Commands
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
     puts '        --full      show all phases, not just up to the Truffle partial escape'
+    puts '    --bips          run with benchmark-ips on the load path (implies --graal)'
     puts '    --jdebug        run a JDWP debug server on #{JDEBUG_PORT}'
     puts '    --jexception[s] print java exceptions'
     puts 'jt e 14 + 2                                    evaluate an expression'
@@ -346,7 +347,11 @@ module Commands
       '-Xtruffle.graal.warn_unless=false'
     ]
 
-    { '--asm' => '--graal', '--igv' => '--graal' }.each_pair do |arg, dep|
+    {
+      '--asm' => '--graal',
+      '--igv' => '--graal',
+      '--bips' => '--graal'
+    }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
     end
 
@@ -362,6 +367,13 @@ module Commands
 
     if args.delete('--asm')
       jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
+    end
+
+    if args.delete('--bips')
+      bips_version = '2.6.1'
+      bips = "lib/ruby/gems/shared/gems/benchmark-ips-#{bips_version}/lib"
+      sh 'bin/jruby', 'bin/gem', 'install', 'benchmark-ips', '-v', bips_version unless Dir.exist?(bips)
+      jruby_args << "-I#{bips}"
     end
 
     if args.delete('--jdebug')
