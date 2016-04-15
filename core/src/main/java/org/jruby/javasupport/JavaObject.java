@@ -111,12 +111,12 @@ public class JavaObject extends RubyObject {
     }
 
     @Override
-    public Class<?> getJavaClass() {
+    public final Class<?> getJavaClass() {
         Object dataStruct = dataGetStruct();
         return dataStruct != null ? dataStruct.getClass() : Void.TYPE;
     }
 
-    public Object getValue() {
+    public final Object getValue() {
         return dataGetStruct();
     }
 
