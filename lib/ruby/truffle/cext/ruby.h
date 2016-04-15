@@ -26,15 +26,25 @@ extern "C" {
 typedef void *ID;
 typedef void *VALUE;
 
-extern VALUE Qfalse;
-extern VALUE Qtrue;
-extern VALUE Qnil;
+VALUE get_Qfalse();
+VALUE get_Qtrue();
+VALUE get_Qnil();
 
-extern VALUE rb_cObject;
-extern VALUE rb_cArray;
-extern VALUE rb_cHash;
+#define Qfalse get_Qfalse()
+#define Qtrue get_Qtrue()
+#define Qnil get_Qnil()
 
-extern VALUE rb_eRuntimeError;
+VALUE get_rb_cObject();
+VALUE get_rb_cArray();
+VALUE get_rb_cHash();
+
+#define rb_cObject get_rb_cObject()
+#define rb_cArray get_rb_cArray()
+#define rb_cHash get_rb_cHash()
+
+VALUE get_rb_eRuntimeError();
+
+#define rb_eRuntimeError get_rb_eRuntimeError();
 
 int NUM2INT(VALUE value);
 unsigned int NUM2UINT(VALUE value);
@@ -53,14 +63,14 @@ VALUE LONG2FIX(long value);
 
 int FIXNUM_P(VALUE value);
 
-char* RSTRING_PTR(VALUE string);
+char *RSTRING_PTR(VALUE string);
 int RSTRING_LEN(VALUE string);
 ID rb_intern(const char *string);
 VALUE rb_intern_str(VALUE string);
 void rb_str_cat(VALUE string, char *to_concat, long length);
 
 int RARRAY_LEN(VALUE array);
-VALUE* RARRAY_PTR(VALUE array);
+VALUE *RARRAY_PTR(VALUE array);
 VALUE rb_ary_new_capa(long capacity);
 VALUE rb_ary_new2();
 VALUE rb_ary_new();
@@ -71,9 +81,9 @@ VALUE rb_ary_entry(VALUE array, long index);
 VALUE rb_hash_aref(VALUE hash, VALUE key);
 void rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 
-void rb_scan_args(int, VALUE*, char *, ...);
+void rb_scan_args(int argc, VALUE *argv, char *format, ...);
 
-VALUE rb_funcall(VALUE object, ID, int, ...);
+VALUE rb_funcall(VALUE object, ID name, int argc, ...);
 
 VALUE rb_iv_get(VALUE object, const char *name);
 VALUE rb_iv_set(VALUE object, const char *name, VALUE value);
