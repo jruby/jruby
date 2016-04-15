@@ -122,15 +122,26 @@ public abstract class RubyBaseNode extends Node {
         if (context == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
-            final Node parent = getParent();
+            Node parent = getParent();
 
-            if (parent instanceof RubyBaseNode) {
-                context = ((RubyBaseNode) parent).getContext();
-            } else if (parent instanceof RubyRootNode) {
-                context = ((RubyRootNode) parent).getContext();
-            } else {
-                throw new UnsupportedOperationException();
+            while (true) {
+                if (parent == null) {
+                    throw new UnsupportedOperationException("can't get the RubyContext because the parent is null");
+                }
+
+                if (parent instanceof RubyBaseNode) {
+                    context = ((RubyBaseNode) parent).getContext();
+                    break;
+                }
+
+                if (parent instanceof RubyRootNode) {
+                    context = ((RubyRootNode) parent).getContext();
+                    break;
+                }
+
+                parent = parent.getParent();
             }
+
         }
 
         return context;
