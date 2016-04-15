@@ -49,6 +49,19 @@ class TestInclude < Test::Unit::TestCase
     assert_equal 456, Foo.get
   end
 
+  class Bar
+    include M1, M2
+  end
+
+  def test_multi_include
+    assert_equal 123, Bar::V
+    assert_equal Bar, Bar.send(:include)
+    assert_equal Bar, Bar.send(:include, Comparable, Enumerable)
+
+    assert_equal Object, Object.include
+    assert_equal Object, Object.include(*[])
+  end
+
   # JRUBY-3036
   def test_included_does_not_hit_each_class
     ObjectSpace.each_object(Class) do |cls|
