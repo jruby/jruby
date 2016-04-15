@@ -49,8 +49,8 @@ public abstract class ArrayStrategy {
 
     // Helpers
 
-    protected static RuntimeException unsupported() {
-        return new UnsupportedOperationException();
+    protected RuntimeException unsupported() {
+        return new UnsupportedOperationException(toString());
     }
 
     public static final ArrayStrategy[] TYPE_STRATEGIES = {
@@ -78,18 +78,10 @@ public abstract class ArrayStrategy {
 
     public static ArrayStrategy of(DynamicObject array, Object value) {
         CompilerAsserts.neverPartOfCompilation();
-        if (ArrayGuards.isIntArray(array) && value instanceof Integer) {
-            return IntArrayStrategy.INSTANCE;
-        } else if (ArrayGuards.isLongArray(array) && value instanceof Long) {
-            return LongArrayStrategy.INSTANCE;
-        } else if (ArrayGuards.isLongArray(array) && value instanceof Integer) {
+        if (ArrayGuards.isLongArray(array) && value instanceof Integer) {
             return LongIntArrayStrategy.INSTANCE;
-        } else if (ArrayGuards.isDoubleArray(array) && value instanceof Double) {
-            return DoubleArrayStrategy.INSTANCE;
-        } else if (ArrayGuards.isObjectArray(array)) {
-            return ObjectArrayStrategy.INSTANCE;
         } else {
-            return NullArrayStrategy.INSTANCE;
+            return of(array);
         }
     }
 
@@ -275,7 +267,7 @@ public abstract class ArrayStrategy {
     // Specific generalization strategies to handle int => long
 
     /** long[] accepting int */
-    private static class LongIntArrayStrategy extends ArrayStrategy {
+    private static class LongIntArrayStrategy extends LongArrayStrategy {
 
         static final ArrayStrategy INSTANCE = new LongIntArrayStrategy();
 
@@ -285,10 +277,6 @@ public abstract class ArrayStrategy {
 
         public boolean matches(DynamicObject array) {
             return ArrayGuards.isLongArray(array);
-        }
-
-        public ArrayMirror newArray(int size) {
-            throw unsupported();
         }
 
         public ArrayMirror newMirror(DynamicObject array) {
@@ -340,6 +328,11 @@ public abstract class ArrayStrategy {
 
         public boolean matches(DynamicObject array) {
             return false;
+        }
+
+        @Override
+        public ArrayStrategy generalize(ArrayStrategy other) {
+            return other;
         }
 
         public ArrayMirror newArray(int size) {
