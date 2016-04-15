@@ -90,9 +90,10 @@ public class ThreadBacktraceLocationNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject threadBacktraceLocation) {
-            final Activation activation= ThreadBacktraceLocationLayoutImpl.INSTANCE
+            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE
                     .getActivation(threadBacktraceLocation);
 
             if (activation.getCallNode() == null) {
