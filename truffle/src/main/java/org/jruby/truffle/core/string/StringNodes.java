@@ -77,7 +77,6 @@ import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodes.MakeRepeatingNode;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.core.rope.SubstringRope;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.language.NotProvided;
@@ -102,7 +101,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_UTF8_ROPE;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
@@ -146,14 +144,27 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization(guards = "isRubyString(other)")
-        public DynamicObject add(DynamicObject string, DynamicObject other) {
+        @Specialization(guards = {"isRubyString(other)", "getEncoding(string) == getEncoding(other)"})
+        public DynamicObject addSameEncoding(DynamicObject string, DynamicObject other) {
+            return add(string, other, getEncoding(string));
+        }
+
+        @Specialization(guards = {"isRubyString(other)", "getEncoding(string) != getEncoding(other)", "isUTF8AndUSASCII(string, other)"})
+        public DynamicObject addUTF8AndUSASCII(DynamicObject string, DynamicObject other) {
+            return add(string, other, UTF8Encoding.INSTANCE);
+        }
+
+        @Specialization(guards = {"isRubyString(other)", "getEncoding(string) != getEncoding(other)", "!isUTF8AndUSASCII(string, other)"})
+        public DynamicObject addDifferentEncodings(DynamicObject string, DynamicObject other) {
+            final Encoding enc = StringOperations.checkEncoding(getContext(), string, other, this);
+            return add(string, other, enc);
+        }
+
+        private DynamicObject add(DynamicObject string, DynamicObject other, Encoding encoding) {
             final Rope left = rope(string);
             final Rope right = rope(other);
 
-            final Encoding enc = StringOperations.checkEncoding(getContext(), string, other, this);
-
-            final Rope concatRope = makeConcatNode.executeMake(left, right, enc);
+            final Rope concatRope = makeConcatNode.executeMake(left, right, encoding);
 
             final DynamicObject ret = Layouts.STRING.createString(coreLibrary().getStringFactory(), concatRope);
 
@@ -161,6 +172,21 @@ public abstract class StringNodes {
             taintResultNode.maybeTaint(other, ret);
 
             return ret;
+        }
+
+        protected Encoding getEncoding(DynamicObject string) {
+            return Layouts.STRING.getRope(string).getEncoding();
+        }
+
+        protected boolean isUTF8AndUSASCII(DynamicObject string, DynamicObject other) {
+            final Encoding stringEncoding = getEncoding(string);
+            final Encoding otherEncoding = getEncoding(other);
+
+            if (stringEncoding != UTF8Encoding.INSTANCE && otherEncoding != UTF8Encoding.INSTANCE) {
+                return false;
+            }
+
+            return stringEncoding == USASCIIEncoding.INSTANCE || otherEncoding == USASCIIEncoding.INSTANCE;
         }
 
     }
@@ -1381,7 +1407,7 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#singleByteLStrip.
 
             final Rope rope = rope(string);
-            final int s = rope.begin();
+            final int s = 0;
             final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytes();
 
@@ -1403,7 +1429,7 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
             final Encoding enc = RopeOperations.STR_ENC_GET(rope);
-            final int s = rope.begin();
+            final int s = 0;
             final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytes();
 
@@ -1499,7 +1525,7 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
 
             try {
-                return codePoint(rope.getEncoding(), rope.getBytes(), rope.begin(), rope.begin() + rope.byteLength());
+                return codePoint(rope.getEncoding(), rope.getBytes(), 0, rope.byteLength());
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
@@ -1646,7 +1672,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            final int s = rope.begin();
+            final int s = 0;
             final int end = s + rope.byteLength();
             final byte[] bytes = rope.getBytesCopy();
 
@@ -1976,7 +2002,7 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
             final byte[] bytes = rope.getBytes();
-            int p = rope.begin();
+            int p = 0;
             final int len = rope.byteLength();
             final int end = p + len;
 

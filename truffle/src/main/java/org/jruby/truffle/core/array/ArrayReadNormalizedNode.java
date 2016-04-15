@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
@@ -32,7 +31,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeRead(VirtualFrame frame, DynamicObject array, int index);
+    public abstract Object executeRead(DynamicObject array, int index);
 
     // Anything from a null array is nil
 

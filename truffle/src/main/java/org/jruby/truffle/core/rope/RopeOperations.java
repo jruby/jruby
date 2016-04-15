@@ -24,7 +24,6 @@ package org.jruby.truffle.core.rope;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -122,7 +121,7 @@ public class RopeOperations {
     @TruffleBoundary
     public static String decodeRope(Ruby runtime, Rope value) {
         if (value instanceof LeafRope) {
-            int begin = value.begin();
+            int begin = 0;
             int length = value.byteLength();
 
             Encoding encoding = value.getEncoding();
@@ -230,7 +229,7 @@ public class RopeOperations {
         assert length <= rope.byteLength();
 
         if (rope.getRawBytes() != null) {
-            visitor.accept(rope.getRawBytes(), rope.begin() + offset, length);
+            visitor.accept(rope.getRawBytes(), offset, length);
         } else if (rope instanceof ConcatRope) {
             final ConcatRope concat = (ConcatRope) rope;
             
@@ -323,7 +322,7 @@ public class RopeOperations {
      */
     @TruffleBoundary
     public static byte[] flattenBytes(Rope rope) {
-        if (rope instanceof LeafRope) {
+        if (rope.getRawBytes() != null) {
             return rope.getRawBytes();
         }
 
@@ -586,9 +585,9 @@ public class RopeOperations {
         // [slightly] understand it), in some cases, when two (or more?)
         // arrays are being accessed, the member reference is actually
         // faster.  this is one of those cases...
-        for (  ; ++offset < len && bytes[string.begin() + offset] == otherBytes[other.begin() + offset]; ) ;
+        for (  ; ++offset < len && bytes[offset] == otherBytes[offset]; ) ;
         if (offset < len) {
-            return (bytes[string.begin() + offset]&0xFF) > (otherBytes[other.begin() + offset]&0xFF) ? 1 : -1;
+            return (bytes[offset]&0xFF) > (otherBytes[offset]&0xFF) ? 1 : -1;
         }
         return size == other.byteLength() ? 0 : size == len ? -1 : 1;
     }
@@ -665,7 +664,7 @@ public class RopeOperations {
                     valueRope = StringOperations.encodeRope(decodeRope(context.getJRubyRuntime(), stringRope), UTF8Encoding.INSTANCE);
                 }
             } else if (value instanceof Integer) {
-                valueRope = RopeConstants.getIntegerRope((int) value);
+                valueRope = StringOperations.encodeRope(Integer.toString((int) value), UTF8Encoding.INSTANCE, CodeRange.CR_7BIT);
             } else if (value instanceof String) {
                 valueRope = context.getRopeTable().getRope((String) value);
             } else {

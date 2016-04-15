@@ -1866,6 +1866,7 @@ public class RubyInstanceConfig {
     public static String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
     public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
+    public static boolean RECORD_LEXICAL_HIERARCHY = Options.RECORD_LEXICAL_HIERARCHY.load();
 
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
 

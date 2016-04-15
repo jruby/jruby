@@ -1122,9 +1122,10 @@ public abstract class FixnumNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject toS(int n, NotProvided base) {
-            return createString(RopeConstants.getIntegerRope(n));
+            return create7BitString(Integer.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary

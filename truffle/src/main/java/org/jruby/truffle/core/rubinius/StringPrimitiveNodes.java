@@ -87,7 +87,6 @@ import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.RepeatingRope;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.rope.RopeConstants;
@@ -219,7 +218,7 @@ public abstract class StringPrimitiveNodes {
             int i = lim > 0 ? 1 : 0;
 
             byte[]bytes = rope.getBytes();
-            int p = rope.begin();
+            int p = 0;
             int ptr = p;
             int len = rope.byteLength();
             int end = p + len;
@@ -491,8 +490,8 @@ public abstract class StringPrimitiveNodes {
             final Rope otherRope = StringOperations.rope(other);
 
             // TODO (nirvdrum 21-Jan-16): Reimplement with something more friendly to rope byte[] layout?
-            return ByteList.memcmp(rope.getBytes(), rope.begin(), size,
-                    otherRope.getBytes(), otherRope.begin() + start, size);
+            return ByteList.memcmp(rope.getBytes(), 0, size,
+                    otherRope.getBytes(), start, size);
         }
 
     }
@@ -678,7 +677,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Encoding enc = rope.getEncoding();
-            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), rope.begin(), rope.begin() + rope.byteLength());
+            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), 0, rope.byteLength());
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
@@ -850,7 +849,7 @@ public abstract class StringPrimitiveNodes {
 
             if (sourceLen - offset < otherLen) return -1;
             byte[]bytes = source.getBytes();
-            int p = source.begin();
+            int p = 0;
             int end = p + source.byteLength();
             if (offset != 0) {
                 offset = source.isSingleByteOptimizable() ? offset : StringSupport.offset(enc, bytes, p, end, offset);
@@ -859,9 +858,9 @@ public abstract class StringPrimitiveNodes {
             if (otherLen == 0) return offset;
 
             while (true) {
-                int pos = indexOf(source, other, p - source.begin());
+                int pos = indexOf(source, other, p);
                 if (pos < 0) return pos;
-                pos -= (p - source.begin());
+                pos -= p;
                 int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
                 if (t == p + pos) return pos + offset;
                 if ((sourceLen -= t - p) <= 0) return -1;
@@ -875,10 +874,10 @@ public abstract class StringPrimitiveNodes {
             // Taken from org.jruby.util.ByteList.indexOf.
 
             final byte[] source = sourceRope.getBytes();
-            final int sourceOffset = sourceRope.begin();
+            final int sourceOffset = 0;
             final int sourceCount = sourceRope.byteLength();
             final byte[] target = otherRope.getBytes();
-            final int targetOffset = otherRope.begin();
+            final int targetOffset = 0;
             final int targetCount = otherRope.byteLength();
 
             if (fromIndex >= sourceCount) return (targetCount == 0 ? sourceCount : -1);
@@ -997,9 +996,9 @@ public abstract class StringPrimitiveNodes {
             final Rope patternRope = rope(pattern);
 
             final int total = stringRope.byteLength();
-            int p = stringRope.begin();
+            int p = 0;
             final int e = p + total;
-            int pp = patternRope.begin();
+            int pp = 0;
             final int pe = pp + patternRope.byteLength();
             int s;
             int ss;
@@ -1108,7 +1107,7 @@ public abstract class StringPrimitiveNodes {
 
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
-            int p = rope.begin();
+            int p = 0;
             final int e = p + rope.byteLength();
 
             int i, k = index;
@@ -1132,7 +1131,7 @@ public abstract class StringPrimitiveNodes {
             if (indexTooLargeProfile.profile(i < k)) {
                 return nil();
             } else {
-                return p - rope.begin();
+                return p;
             }
         }
 
@@ -1157,9 +1156,9 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Encoding encoding = StringOperations.checkEncoding(getContext(), string, pattern, this);
-            int p = stringRope.begin();
+            int p = 0;
             final int e = p + stringRope.byteLength();
-            int pp = patternRope.begin();
+            int pp = 0;
             final int pe = pp + patternRope.byteLength();
             int s;
             int ss;
@@ -1182,7 +1181,7 @@ public abstract class StringPrimitiveNodes {
                     final int c = StringSupport.preciseLength(encoding, stringBytes, s, e);
 
                     if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
-                        return s - stringRope.begin();
+                        return s;
                     } else {
                         return nil();
                     }
@@ -1242,7 +1241,7 @@ public abstract class StringPrimitiveNodes {
         @TruffleBoundary
         public Object stringPreviousByteIndex(DynamicObject string, int index) {
             final Rope rope = rope(string);
-            final int p = rope.begin();
+            final int p = 0;
             final int end = p + rope.byteLength();
 
             final int b = rope.getEncoding().prevCharHead(rope.getBytes(), p, p + index, end);
@@ -1285,7 +1284,7 @@ public abstract class StringPrimitiveNodes {
             if(negativeDestinationOffsetProfile.profile(dst < 0)) dst = 0;
             if(sizeTooLargeInStringProfile.profile(cnt > sz - dst)) cnt = sz - dst;
 
-            System.arraycopy(otherRope.getBytes(), otherRope.begin() + src, stringBytes.getUnsafeBytes(), stringBytes.begin() + dest, cnt);
+            System.arraycopy(otherRope.getBytes(), src, stringBytes.getUnsafeBytes(), stringBytes.begin() + dest, cnt);
 
             StringOperations.setRope(string, StringOperations.ropeFromByteList(stringBytes));
 
@@ -1312,7 +1311,7 @@ public abstract class StringPrimitiveNodes {
 
             // TODO (nirvdrum 21-Jan-16) Verify whether we still need this method as we never have spare capacity allocated with ropes.
             final Rope rope = rope(string);
-            return offset >= (rope.byteLength() - rope.begin());
+            return offset >= rope.byteLength();
         }
 
     }
@@ -1429,7 +1428,7 @@ public abstract class StringPrimitiveNodes {
             // TODO (nirvdrum 21-Jan-16): Investigate whether using a ConcatRope (potentially combined with a RepeatingRope) would be better here.
             if (! rope.isEmpty()) {
                 for (int n = 0; n < size; n += rope.byteLength()) {
-                    System.arraycopy(rope.getBytes(), rope.begin(), bytes, n, Math.min(rope.byteLength(), size - n));
+                    System.arraycopy(rope.getBytes(), 0, bytes, n, Math.min(rope.byteLength(), size - n));
                 }
             }
 

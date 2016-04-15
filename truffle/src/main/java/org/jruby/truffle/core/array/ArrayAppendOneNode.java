@@ -71,10 +71,10 @@ public abstract class ArrayAppendOneNode extends RubyNode {
     // Append forcing a generalization
 
     @Specialization(guards = {
-            "currentStrategy.matches(array)", "!currentStrategy.accepts(array)", "generalizedStrategy.accepts(value)",
-            "currentStrategy != generalizedStrategy" }, limit = "ARRAY_STRATEGIES")
+            "currentStrategy.matches(array)", "!currentStrategy.accepts(value)", "generalizedStrategy.accepts(value)",
+    }, limit = "ARRAY_STRATEGIES")
     public DynamicObject appendOneGeneralize(DynamicObject array, Object value,
-            @Cached("of(array)") ArrayStrategy currentStrategy,
+            @Cached("of(array, value)") ArrayStrategy currentStrategy,
             @Cached("currentStrategy.generalizeFor(value)") ArrayStrategy generalizedStrategy) {
         final int oldSize = Layouts.ARRAY.getSize(array);
         final int newSize = oldSize + 1;

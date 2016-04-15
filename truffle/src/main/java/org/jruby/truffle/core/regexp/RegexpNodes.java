@@ -69,6 +69,7 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Iterator;
 
 @CoreClass(name = "Regexp")
@@ -86,10 +87,10 @@ public abstract class RegexpNodes {
         final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
 
         final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, sourceRope, true));
-        final Matcher matcher = r.matcher(sourceRope.getBytes(), sourceRope.begin(), sourceRope.begin() + sourceRope.byteLength());
-        int range = sourceRope.begin() + sourceRope.byteLength();
+        final Matcher matcher = r.matcher(sourceRope.getBytes(), 0, sourceRope.byteLength());
+        int range = sourceRope.byteLength();
 
-        return matchCommon(context, makeSubstringNode, regexp, source, operator, setNamedCaptures, matcher, sourceRope.begin() + startPos, range);
+        return matchCommon(context, makeSubstringNode, regexp, source, operator, setNamedCaptures, matcher, startPos, range);
     }
 
     @TruffleBoundary
@@ -586,7 +587,7 @@ public abstract class RegexpNodes {
 
             for (final Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
-                final DynamicObject name = getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
+                final DynamicObject name = getContext().getSymbolTable().getSymbol(getContext().getRopeTable().getRope(Arrays.copyOfRange(e.name, e.nameP, e.nameEnd), USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
 
                 final int[] backrefs = e.getBackRefs();
                 final DynamicObject backrefsRubyArray = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), backrefs, backrefs.length);

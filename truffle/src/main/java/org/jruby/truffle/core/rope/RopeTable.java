@@ -52,8 +52,12 @@ public class RopeTable {
             if (key != null) {
                 final WeakReference<Rope> ropeReference = ropesTable.get(key);
 
-                if (ropeReference != null && ropeReference.get() != null) {
-                    return ropeReference.get();
+                if (ropeReference != null) {
+                    final Rope rope = ropeReference.get();
+
+                    if (rope != null) {
+                        return rope;
+                    }
                 }
             }
         } finally {

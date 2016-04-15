@@ -43,11 +43,6 @@ public class SymbolTable {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public DynamicObject getSymbol(byte[] bytes) {
-        return getSymbol(new String(bytes, StandardCharsets.US_ASCII));
-    }
-
-    @CompilerDirectives.TruffleBoundary
     public DynamicObject getSymbol(String string) {
         lock.readLock().lock();
 
@@ -77,11 +72,6 @@ public class SymbolTable {
         } finally {
         lock.writeLock().unlock();
         }
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public DynamicObject getSymbol(ByteList bytes) {
-        return getSymbol(StringOperations.ropeFromByteList(bytes));
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -117,7 +107,7 @@ public class SymbolTable {
 
             final DynamicObject symbolClass = context.getCoreLibrary().getSymbolClass();
             final Rope flattenedRope = RopeOperations.flatten(rope);
-            final String string = ByteList.decode(flattenedRope.getBytes(), flattenedRope.begin(), flattenedRope.byteLength(), "ISO-8859-1");
+            final String string = ByteList.decode(flattenedRope.getBytes(), 0, flattenedRope.byteLength(), "ISO-8859-1");
 
             final DynamicObject newSymbol = Layouts.SYMBOL.createSymbol(
                     Layouts.CLASS.getInstanceFactory(symbolClass),
