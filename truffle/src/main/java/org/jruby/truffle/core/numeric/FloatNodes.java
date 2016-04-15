@@ -633,6 +633,27 @@ public abstract class FloatNodes {
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
+        @Specialization(guards = "doubleInIntRange(n)")
+        public int roundFittingInt(double n, NotProvided ndigits,
+                @Cached("createBinaryProfile()") ConditionProfile positiveProfile) {
+            int l = (int) n;
+            if (positiveProfile.profile(n >= 0.0)) {
+                if (n - l >= 0.5) {
+                    l++;
+                }
+                return l;
+            } else {
+                if (l - n >= 0.5) {
+                    l--;
+                }
+                return l;
+            }
+        }
+
+        protected boolean doubleInIntRange(double n) {
+            return Integer.MIN_VALUE < n && n < Integer.MAX_VALUE;
+        }
+
         @Specialization(guards = "doubleInLongRange(n)")
         public long roundFittingLong(double n, NotProvided ndigits,
                                      @Cached("createBinaryProfile()") ConditionProfile positiveProfile) {
