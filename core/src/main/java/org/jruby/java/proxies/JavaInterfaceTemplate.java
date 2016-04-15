@@ -210,9 +210,8 @@ public class JavaInterfaceTemplate {
         if ( ! clazz.isMethodBound("implement", false) ) {
             final RubyClass singleton = clazz.getSingletonClass();
 
-            // implement is called to force this class to create stubs for all
-            // methods in the given interface, so they'll show up in the list
-            // of methods and be invocable without passing through method_missing
+            // implement is called to force this class to create stubs for all methods in the given interface,
+            // so they'll show up in the list of methods and be invocable without passing through method_missing
             singleton.addMethod("implement", new JavaMethodOne(clazz, Visibility.PRIVATE) {
 
                 @Override
@@ -225,8 +224,7 @@ public class JavaInterfaceTemplate {
                 }
             });
 
-            // implement all forces implementation of all interfaces we intend
-            // for this class to implement
+            // implement all forces implementation of all interfaces we intend for this class to implement
             singleton.addMethod("implement_all", new JavaMethodOne(clazz, Visibility.PRIVATE) {
 
                 @Override
@@ -341,7 +339,7 @@ public class JavaInterfaceTemplate {
             }
 
             final RubyModule target = (RubyModule) arg;
-            target.include( getInterfaceModules(self).toJavaArray() );
+            target.include( getInterfaceModules(self).toJavaArrayMaybeUnsafe() );
 
             return Helpers.invokeAs(context, clazz.getSuperClass(), self, name, arg, block);
         }
@@ -350,11 +348,8 @@ public class JavaInterfaceTemplate {
 
     @JRubyMethod
     public static IRubyObject extended(ThreadContext context, IRubyObject self, IRubyObject object) {
-        if ( ! (self instanceof RubyModule) ) {
-            throw context.runtime.newTypeError(self, context.runtime.getModule());
-        }
         RubyClass singleton = object.getSingletonClass();
-        singleton.include(new IRubyObject[] { self });
+        singleton.include(context, self);
         return singleton;
     }
 
@@ -376,11 +371,11 @@ public class JavaInterfaceTemplate {
         else {
             methodNames = args.clone();
             Arrays.sort(methodNames); // binarySearch needs a sorted array
-            // RubySymbol implements a Java compareTo thus will allways work
+            // RubySymbol implements a Java compareTo thus will always work
         }
 
         RubyClass implClass = RubyClass.newClass(runtime, runtime.getObject());
-        implClass.include(new IRubyObject[] { self });
+        implClass.include(context, self);
 
         final IRubyObject implObject = implClass.callMethod(context, "new");
 
@@ -456,8 +451,8 @@ public class JavaInterfaceTemplate {
         return (JavaClass) module.getInstanceVariables().getInstanceVariable("@java_class");
     }
 
-    private static RubyArray getJavaInterfaces(final IRubyObject module) {
-        return (RubyArray) module.getInstanceVariables().getInstanceVariable("@java_interfaces");
+    private static RubyArray getJavaInterfaces(final IRubyObject clazz) {
+        return (RubyArray) clazz.getInstanceVariables().getInstanceVariable("@java_interfaces");
     }
 
     private static RubyArray getInterfaceModules(final IRubyObject module) {
