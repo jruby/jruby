@@ -42,6 +42,7 @@ public class JavaInterfaceTemplate {
         return JavaInterfaceTemplate;
     }
 
+    @Deprecated // not used - should go away in >= 9.2
     // not intended to be called directly by users (private)
     // OLD TODO from Ruby code:
     // This should be implemented in JavaClass.java, where we can
@@ -286,9 +287,9 @@ public class JavaInterfaceTemplate {
         // included together. make it so.
         final Ruby runtime = context.runtime;
 
+        final IRubyObject java_class = module.getInstanceVariables().getInstanceVariable("@java_class");
         // not allowed for existing Java interface modules
-        if (module.getInstanceVariables().hasInstanceVariable("@java_class") &&
-            module.getInstanceVariables().getInstanceVariable("@java_class").isTrue()) {
+        if (java_class != null && java_class.isTrue()) {
             throw runtime.newTypeError("can not add Java interface to existing Java interface");
         }
 
