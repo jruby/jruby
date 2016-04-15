@@ -1,0 +1,2 @@
+src: ./*.c
+out: ruby.su
