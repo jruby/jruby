@@ -1,4 +1,7 @@
-fails:StringScanner#scan treats ^ as matching from the beginning of the current position
+fails:StringScanner#scan simple match treats ^ as matching from the beginning of the current position
+fails:StringScanner#scan with named parameters should extract day of week
+fails:StringScanner#scan with named parameters should extract month abbreviation
+fails:StringScanner#scan with named parameters should extract day of month
 graalvm:StringScanner#scan returns the matched string
 graalvm:StringScanner#scan returns nil if there's no match
 graalvm:StringScanner#scan returns nil when there is no more to scan
