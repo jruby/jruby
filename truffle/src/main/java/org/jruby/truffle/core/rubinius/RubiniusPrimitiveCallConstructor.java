@@ -42,8 +42,8 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
         return new CallRubiniusPrimitiveNode(context, sourceSection,
                 MethodNodesFactory.CallNodeFactory.create(context, sourceSection, new RubyNode[] {
                     new ObjectLiteralNode(context, sourceSection, method),
-                    new ReadAllArgumentsNode(context, sourceSection),
-                    new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
+                    new ReadAllArgumentsNode(),
+                    new ReadBlockNode(NotProvided.INSTANCE)
         }), returnID);
     }
 
@@ -51,8 +51,8 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
         return MethodNodesFactory.CallNodeFactory.create(context, sourceSection, new RubyNode[] {
                 new ObjectLiteralNode(context, sourceSection, method),
-                new ObjectArrayNode(context, sourceSection, arguments),
-                new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
+                new ObjectArrayNode(arguments),
+                new ReadBlockNode(NotProvided.INSTANCE)
         });
     }
 

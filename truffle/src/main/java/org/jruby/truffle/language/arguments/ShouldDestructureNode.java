@@ -12,8 +12,6 @@ package org.jruby.truffle.language.arguments;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.RespondToNode;
@@ -25,8 +23,7 @@ public class ShouldDestructureNode extends RubyNode {
 
     private final BranchProfile checkIsArrayProfile = BranchProfile.create();
 
-    public ShouldDestructureNode(RubyContext context, SourceSection sourceSection, RubyNode readArrayNode) {
-        super(context, sourceSection);
+    public ShouldDestructureNode(RubyNode readArrayNode) {
         this.readArrayNode = readArrayNode;
     }
 

@@ -12,8 +12,6 @@ package org.jruby.truffle.language.arguments;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 public class ReadBlockNode extends RubyNode {
@@ -22,8 +20,7 @@ public class ReadBlockNode extends RubyNode {
 
     private final ConditionProfile blockProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadBlockNode(RubyContext context, SourceSection sourceSection, Object valueIfAbsent) {
-        super(context, sourceSection);
+    public ReadBlockNode(Object valueIfAbsent) {
         this.valueIfAbsent = valueIfAbsent;
     }
 

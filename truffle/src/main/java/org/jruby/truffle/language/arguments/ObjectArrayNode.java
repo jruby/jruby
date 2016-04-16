@@ -11,16 +11,13 @@ package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 public class ObjectArrayNode extends RubyNode {
 
     @Children private final RubyNode[] nodes;
 
-    public ObjectArrayNode(RubyContext context, SourceSection sourceSection, RubyNode[] nodes) {
-        super(context, sourceSection);
+    public ObjectArrayNode(RubyNode[] nodes) {
         this.nodes = nodes;
     }
 

@@ -55,7 +55,7 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
         }
 
         for (int n = 0; n < argumentsCount; n++) {
-            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehavior.UNDEFINED);
+            RubyNode readArgumentNode = new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED);
             arguments.add(transformArgument(readArgumentNode, n));
         }
 
@@ -91,7 +91,7 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
 
     private RubyNode transformArgument(RubyNode argument, int n) {
         if (ArrayUtils.contains(annotation.lowerFixnumParameters(), n)) {
-            return FixnumLowerNodeGen.create(argument.getContext(), argument.getSourceSection(), argument);
+            return FixnumLowerNodeGen.create(null, null, argument);
         } else {
             return argument;
         }

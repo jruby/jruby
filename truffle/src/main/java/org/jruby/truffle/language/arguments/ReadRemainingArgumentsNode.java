@@ -11,8 +11,6 @@ package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 public class ReadRemainingArgumentsNode extends RubyNode {
@@ -20,8 +18,7 @@ public class ReadRemainingArgumentsNode extends RubyNode {
     private final int start;
     private final ConditionProfile remainingArguments = ConditionProfile.createBinaryProfile();
 
-    public ReadRemainingArgumentsNode(RubyContext context, SourceSection sourceSection, int start) {
-        super(context, sourceSection);
+    public ReadRemainingArgumentsNode(int start) {
         this.start = start;
     }
 

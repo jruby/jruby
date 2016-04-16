@@ -168,7 +168,7 @@ public class CoreMethodNodeManager {
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
         if (needsCallerFrame) {
-            argumentsNodes.add(new ReadCallerFrameNode(context, sourceSection));
+            argumentsNodes.add(new ReadCallerFrameNode());
         }
 
         // Do not use needsSelf=true in module functions, it is either the module/class or the instance.
@@ -190,7 +190,7 @@ public class CoreMethodNodeManager {
         }
 
         for (int n = 0; n < arity.getPreRequired() + arity.getOptional(); n++) {
-            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehavior.UNDEFINED);
+            RubyNode readArgumentNode = new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED);
 
             if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
                 readArgumentNode = FixnumLowerNodeGen.create(context, sourceSection, readArgumentNode);
@@ -203,11 +203,11 @@ public class CoreMethodNodeManager {
             argumentsNodes.add(readArgumentNode);
         }
         if (method.rest()) {
-            argumentsNodes.add(new ReadRemainingArgumentsNode(context, sourceSection, arity.getPreRequired() + arity.getOptional()));
+            argumentsNodes.add(new ReadRemainingArgumentsNode(arity.getPreRequired() + arity.getOptional()));
         }
 
         if (method.needsBlock()) {
-            argumentsNodes.add(new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE));
+            argumentsNodes.add(new ReadBlockNode(NotProvided.INSTANCE));
         }
 
         final RubyNode methodNode;

@@ -16,10 +16,6 @@ import org.jruby.truffle.language.RubyNode;
 
 public class ReadAllArgumentsNode extends RubyNode {
 
-    public ReadAllArgumentsNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
-
     @Override
     public Object[] executeObjectArray(VirtualFrame frame) {
         return RubyArguments.getArguments(frame);

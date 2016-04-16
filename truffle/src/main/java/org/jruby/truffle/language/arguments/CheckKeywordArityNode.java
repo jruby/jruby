@@ -35,7 +35,7 @@ public class CheckKeywordArityNode extends RubyNode {
     public CheckKeywordArityNode(RubyContext context, SourceSection sourceSection, Arity arity) {
         super(context, sourceSection);
         this.arity = arity;
-        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, arity.getRequired());
+        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(arity.getRequired());
     }
 
     @Override
