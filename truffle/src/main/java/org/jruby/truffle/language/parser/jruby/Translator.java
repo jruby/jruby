@@ -72,6 +72,10 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         int endLine = base.getEndLine();
 
         for (SourceSection sourceSection : sourceSections) {
+            if (sourceSection == null) {
+                continue;
+            }
+
             startLine = Math.min(startLine, sourceSection.getStartLine());
 
             final int nodeEndLine;
