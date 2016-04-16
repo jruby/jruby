@@ -16,12 +16,13 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.RubyBaseNode;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
 import java.math.BigInteger;
 
-public class GeneralDivModNode extends RubyNode {
+public class GeneralDivModNode extends RubyBaseNode {
 
     @Child private FixnumOrBignumNode fixnumOrBignumQuotient;
     @Child private FixnumOrBignumNode fixnumOrBignumRemainder;
@@ -170,11 +171,6 @@ public class GeneralDivModNode extends RubyNode {
 
     public DynamicObject create(BigInteger value) {
         return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), value);
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        throw new UnsupportedOperationException();
     }
 
 }
