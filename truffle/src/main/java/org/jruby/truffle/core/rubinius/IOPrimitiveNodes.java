@@ -449,7 +449,8 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public int seek(VirtualFrame frame, DynamicObject io, int amount, int whence) {
             final int fd = Layouts.IO.getDescriptor(io);
-            return ensureSuccessful(posix().lseek(fd, amount, whence));
+            // TODO (pitr-ch 15-Apr-2016): should it have ensureSuccessful too?
+            return posix().lseek(fd, amount, whence);
         }
 
     }

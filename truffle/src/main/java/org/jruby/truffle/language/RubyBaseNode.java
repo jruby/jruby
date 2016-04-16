@@ -50,7 +50,6 @@ public abstract class RubyBaseNode extends Node {
     }
 
     public RubyBaseNode(RubyContext context, SourceSection sourceSection) {
-        assert context != null;
         this.context = context;
         this.sourceSection = sourceSection;
     }

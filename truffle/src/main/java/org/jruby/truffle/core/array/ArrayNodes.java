@@ -2105,7 +2105,7 @@ public abstract class ArrayNodes {
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
                                         new ReadDeclarationVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
-                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehavior.RUNTIME_ERROR)
+                                        new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR)
                                 }), false));
         }
 
@@ -2223,7 +2223,7 @@ public abstract class ArrayNodes {
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
                                         new ReadDeclarationVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
-                                        new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehavior.RUNTIME_ERROR)
+                                        new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR)
                                 }), false));
         }
 

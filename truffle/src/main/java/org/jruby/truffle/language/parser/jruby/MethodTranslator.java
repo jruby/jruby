@@ -95,7 +95,7 @@ public class MethodTranslator extends BodyTranslator {
 
         final RubyNode preludeProc;
         if (shouldConsiderDestructuringArrayArg(arity)) {
-            final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehavior.RUNTIME_ERROR);
+            final RubyNode readArrayNode = new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR);
             final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
 
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
@@ -105,7 +105,7 @@ public class MethodTranslator extends BodyTranslator {
             destructureArgumentsTranslator.pushArraySlot(arraySlot);
             final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
-            final RubyNode shouldDestructure = new ShouldDestructureNode(context, sourceSection, readArrayNode);
+            final RubyNode shouldDestructure = new ShouldDestructureNode(readArrayNode);
 
             final RubyNode arrayWasNotNil = sequence(context, sourceSection, Arrays.asList(writeArrayNode, new NotNode(context, sourceSection, new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)))));
 
@@ -361,7 +361,7 @@ public class MethodTranslator extends BodyTranslator {
         if (blockNode != null) {
             return blockNode;
         } else {
-            return new ReadBlockNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+            return new ReadBlockNode(context.getCoreLibrary().getNilObject());
         }
     }
 

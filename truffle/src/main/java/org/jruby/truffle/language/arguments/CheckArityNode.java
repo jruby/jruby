@@ -11,8 +11,6 @@ package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.Arity;
@@ -23,8 +21,7 @@ public class CheckArityNode extends RubyNode {
 
     private final BranchProfile checkFailedProfile = BranchProfile.create();
 
-    public CheckArityNode(RubyContext context, SourceSection sourceSection, Arity arity) {
-        super(context, sourceSection);
+    public CheckArityNode(Arity arity) {
         this.arity = arity;
     }
 

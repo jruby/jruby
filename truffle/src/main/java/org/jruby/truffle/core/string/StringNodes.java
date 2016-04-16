@@ -433,7 +433,7 @@ public abstract class StringNodes {
             final int stringLength = rope.characterLength();
             int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
 
-            if (normalizedIndex < 0 || normalizedIndex >= rope.byteLength()) {
+            if (normalizedIndex < 0 || normalizedIndex >= rope.characterLength()) {
                 outOfBounds.enter();
                 return nil();
             } else {
@@ -1825,12 +1825,17 @@ public abstract class StringNodes {
 
         @Specialization
         public int size(DynamicObject string,
-                        @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
+                        @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile,
+                        @Cached("createBinaryProfile()") ConditionProfile isSingleByteOptimizableRopeBufferProfile) {
             final Rope rope = rope(string);
 
-            if (mutableRopeProfile.profile(rope instanceof RopeBuffer)) {
-                // TODO (nirvdrum 11-Mar-16): This response is only correct for CR_7BIT. Mutable ropes have not been updated for multi-byte characters.
-                return ((RopeBuffer) rope).getByteList().realSize();
+            if (ropeBufferProfile.profile(rope instanceof RopeBuffer)) {
+                if (isSingleByteOptimizableRopeBufferProfile.profile(rope.isSingleByteOptimizable())) {
+                    return ((RopeBuffer) rope).getByteList().realSize();
+                } else {
+                    final ByteList byteList = ((RopeBuffer) rope).getByteList();
+                    return RopeOperations.strLength(rope.getEncoding(), byteList.unsafeBytes(), byteList.begin(), byteList.realSize());
+                }
             } else {
                 return rope.characterLength();
             }

@@ -17,12 +17,13 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.RubyBaseNode;
 import org.jruby.truffle.language.RubyNode;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class FixnumOrBignumNode extends RubyNode {
+public class FixnumOrBignumNode extends RubyBaseNode {
 
     private static final BigInteger LONG_MIN_BIGINT = BigInteger.valueOf(Long.MIN_VALUE);
     private static final BigInteger LONG_MAX_BIGINT = BigInteger.valueOf(Long.MAX_VALUE);
@@ -74,10 +75,6 @@ public class FixnumOrBignumNode extends RubyNode {
     @TruffleBoundary
     private static BigInteger doubleToBigInteger(double value) {
         return new BigDecimal(value).toBigInteger();
-    }
-
-    public Object execute(VirtualFrame frame) {
-        throw new UnsupportedOperationException();
     }
 
 }

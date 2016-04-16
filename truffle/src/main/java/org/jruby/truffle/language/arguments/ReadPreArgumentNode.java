@@ -12,8 +12,6 @@ package org.jruby.truffle.language.arguments;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ValueProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 
@@ -26,9 +24,8 @@ public class ReadPreArgumentNode extends RubyNode {
 
     private final ValueProfile argumentValueProfile = ValueProfile.createEqualityProfile();
 
-    public ReadPreArgumentNode(RubyContext context, SourceSection sourceSection, int index,
+    public ReadPreArgumentNode(int index,
                                MissingArgumentBehavior missingArgumentBehavior) {
-        super(context, sourceSection);
         this.index = index;
         this.missingArgumentBehavior = missingArgumentBehavior;
     }

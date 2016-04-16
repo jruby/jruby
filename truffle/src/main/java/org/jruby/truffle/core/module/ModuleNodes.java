@@ -432,7 +432,7 @@ public abstract class ModuleNodes {
             if (isGetter) {
                 accessInstanceVariable = new ReadInstanceVariableNode(getContext(), sourceSection, ivar, self);
             } else {
-                ReadPreArgumentNode readArgument = new ReadPreArgumentNode(getContext(), sourceSection, 0, MissingArgumentBehavior.RUNTIME_ERROR);
+                ReadPreArgumentNode readArgument = new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR);
                 accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceSection, ivar, self, readArgument);
             }
             final RubyNode sequence = Translator.sequence(getContext(), sourceSection, Arrays.asList(checkArity, accessInstanceVariable));

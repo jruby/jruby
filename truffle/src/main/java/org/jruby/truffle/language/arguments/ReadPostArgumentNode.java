@@ -10,16 +10,13 @@
 package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 public class ReadPostArgumentNode extends RubyNode {
 
     private final int indexFromCount;
 
-    public ReadPostArgumentNode(RubyContext context, SourceSection sourceSection, int indexFromCount) {
-        super(context, sourceSection);
+    public ReadPostArgumentNode(int indexFromCount) {
         this.indexFromCount = indexFromCount;
     }
 

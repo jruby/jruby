@@ -87,12 +87,16 @@ import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.ConcatRope;
+import org.jruby.truffle.core.rope.LeafRope;
+import org.jruby.truffle.core.rope.RepeatingRope;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rope.SubstringRope;
 import org.jruby.truffle.core.string.StringGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
@@ -342,14 +346,14 @@ public abstract class StringPrimitiveNodes {
             }
 
             final Rope rope = rope(string);
-            final int stringLength = rope.characterLength();
-            final int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
+            final int stringByteLength = rope.byteLength();
+            final int normalizedIndex = StringOperations.normalizeIndex(stringByteLength, index);
 
-            if (indexOutOfBoundsProfile.profile(normalizedIndex < 0 || normalizedIndex > rope.byteLength())) {
+            if (indexOutOfBoundsProfile.profile(normalizedIndex < 0 || normalizedIndex > stringByteLength)) {
                 return nil();
             }
 
-            if (lengthTooLongProfile.profile(normalizedIndex + length > rope.byteLength())) {
+            if (lengthTooLongProfile.profile(normalizedIndex + length > stringByteLength)) {
                 length = rope.byteLength() - normalizedIndex;
             }
 
@@ -1681,65 +1685,93 @@ public abstract class StringPrimitiveNodes {
 
         public abstract Object execute(VirtualFrame frame, DynamicObject string, int beg, int len);
 
-        @Specialization(guards = { "len >= 0" , "isSingleByteOptimizable(string)" })
+        @Specialization(guards = "!indexTriviallyOutOfBounds(string, beg, len)")
         public Object stringSubstring(DynamicObject string, int beg, int len,
-                                                           @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile tooLargeBeginProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile stillNegativeBeginProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile tooLargeTotalProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
-            // Taken from org.jruby.RubyString#substr19.
+                           @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                           @Cached("createBinaryProfile()") ConditionProfile stillNegativeIndexProfile,
+                           @Cached("createBinaryProfile()") ConditionProfile tooLargeTotalProfile,
+                           @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile,
+                           @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile,
+                           @Cached("createBinaryProfile()") ConditionProfile foundSingleByteOptimizableDescendentProfile) {
             final Rope rope = rope(string);
-            if (emptyStringProfile.profile(rope.isEmpty())) {
-                len = 0;
-            }
 
-            final int length = rope.byteLength();
-            if (tooLargeBeginProfile.profile(beg > length)) {
-                return nil();
-            }
+            int index = beg;
+            int length = len;
+            if (negativeIndexProfile.profile(index < 0)) {
+                index += rope.characterLength();
 
-            if (negativeBeginProfile.profile(beg < 0)) {
-                beg += length;
-
-                if (stillNegativeBeginProfile.profile(beg < 0)) {
+                if (stillNegativeIndexProfile.profile(index < 0)) {
                     return nil();
                 }
             }
 
-            if (tooLargeTotalProfile.profile((beg + len) > length)) {
-                len = length - beg;
+            if (tooLargeTotalProfile.profile(index + length > rope.characterLength())) {
+                length = rope.characterLength() - index;
             }
 
-            if (negativeLengthProfile.profile(len <= 0)) {
-                len = 0;
-                beg = 0;
-            }
+            if (singleByteOptimizableProfile.profile((length == 0) || rope.isSingleByteOptimizable())) {
+                if (mutableRopeProfile.profile(rope instanceof RopeBuffer)) {
+                    return makeBuffer(string, index, length);
+                }
 
-            if (mutableRopeProfile.profile(rope instanceof RopeBuffer)) {
-                return makeBuffer(string, beg, len);
-            }
+                return makeRope(string, rope, index, length);
+            } else {
+                final Rope searched = searchForSingleByteOptimizableDescendant(rope, index, length);
 
-            return makeRope(string, beg, len);
+                if (foundSingleByteOptimizableDescendentProfile.profile(searched.isSingleByteOptimizable())) {
+                    return makeRope(string, searched, index, length);
+                }
+
+                return stringSubstringMultitByte(string, index, length);
+            }
         }
 
         @TruffleBoundary
-        @Specialization(guards = { "len >= 0", "!isSingleByteOptimizable(string)" })
-        public Object stringSubstring(DynamicObject string, int beg, int len) {
+        private Rope searchForSingleByteOptimizableDescendant(Rope base, int index, int length) {
+            // If we've found something that's single-byte optimizable, we can halt the search. Taking a substring of
+            // a single byte optimizable rope is a fast operation.
+            if (base.isSingleByteOptimizable()) {
+                return base;
+            }
+
+            if (base instanceof LeafRope) {
+                return base;
+            } else if (base instanceof SubstringRope) {
+                final SubstringRope substringRope = (SubstringRope) base;
+                return searchForSingleByteOptimizableDescendant(substringRope.getChild(), index + substringRope.getOffset(), length);
+            } else if (base instanceof ConcatRope) {
+                final ConcatRope concatRope = (ConcatRope) base;
+                final Rope left = concatRope.getLeft();
+                final Rope right = concatRope.getRight();
+
+                if (index < left.byteLength()) {
+                    return searchForSingleByteOptimizableDescendant(left, index, length);
+                } else if (index >= left.byteLength()) {
+                    return searchForSingleByteOptimizableDescendant(right, index - left.byteLength(), length);
+                } else {
+                    return concatRope;
+                }
+            } else if (base instanceof RepeatingRope) {
+                final RepeatingRope repeatingRope = (RepeatingRope) base;
+
+                if (index + length < repeatingRope.getChild().byteLength()) {
+                    return searchForSingleByteOptimizableDescendant(repeatingRope.getChild(), index, length);
+                } else {
+                    return repeatingRope;
+                }
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new UnsupportedOperationException("Don't know how to traverse rope type: " + base.getClass().getName());
+            }
+        }
+
+        @TruffleBoundary
+        private Object stringSubstringMultitByte(DynamicObject string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19 & org.jruby.RubyString#multibyteSubstr19.
 
             final Rope rope = rope(string);
             final int length = rope.byteLength();
-
-            if (rope.isEmpty()) {
-                len = 0;
-            }
-
-            if ((beg + len) > length) {
-                len = length - beg;
-            }
+            final boolean isMutableRope = rope instanceof RopeBuffer;
 
             final Encoding enc = rope.getEncoding();
             int p;
@@ -1761,7 +1793,12 @@ public abstract class StringPrimitiveNodes {
                     if (p == -1) {
                         return nil();
                     }
-                    return makeRope(string, p - s, e - p);
+
+                    if (isMutableRope) {
+                        return makeBuffer(string, p - s, e - p);
+                    }
+
+                    return makeRope(string, rope, p - s, e - p);
                 } else {
                     beg += rope.characterLength();
                     if (beg < 0) {
@@ -1792,15 +1829,26 @@ public abstract class StringPrimitiveNodes {
             } else {
                 len = StringSupport.offset(enc, bytes, p, end, len);
             }
-            return makeRope(string, p - s, len);
+
+            if (isMutableRope) {
+                return makeBuffer(string, p - s, len);
+            }
+
+            return makeRope(string, rope, p - s, len);
         }
 
-        @Specialization(guards = "len < 0")
+        @Specialization(guards = "indexTriviallyOutOfBounds(string, beg, len)")
         public Object stringSubstringNegativeLength(DynamicObject string, int beg, int len) {
             return nil();
         }
 
-        private DynamicObject makeRope(DynamicObject string, int beg, int len) {
+        protected static boolean indexTriviallyOutOfBounds(DynamicObject string, int index, int length) {
+            assert RubyGuards.isRubyString(string);
+
+            return (length < 0) || (index > rope(string).characterLength());
+        }
+
+        private DynamicObject makeRope(DynamicObject string, Rope rope, int beg, int len) {
             assert RubyGuards.isRubyString(string);
 
             if (allocateNode == null) {
@@ -1820,7 +1868,7 @@ public abstract class StringPrimitiveNodes {
 
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
-                    makeSubstringNode.executeMake(rope(string), beg, len),
+                    makeSubstringNode.executeMake(rope, beg, len),
                     null);
 
             taintResultNode.maybeTaint(string, ret);
@@ -1830,11 +1878,6 @@ public abstract class StringPrimitiveNodes {
 
         private DynamicObject makeBuffer(DynamicObject string, int beg, int len) {
             assert RubyGuards.isRubyString(string);
-
-            if (!StringGuards.isSingleByteOptimizable(string)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreExceptions().internalError("Taking the substring of MBC rope buffer is not currently supported", this));
-            }
 
             final RopeBuffer buffer = (RopeBuffer) rope(string);
 

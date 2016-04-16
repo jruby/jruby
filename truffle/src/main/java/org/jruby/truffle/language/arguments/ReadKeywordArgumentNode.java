@@ -33,7 +33,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
         super(context, sourceSection);
         this.name = name;
         this.defaultValue = defaultValue;
-        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimum);
+        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(minimum);
     }
 
     @Override

@@ -45,7 +45,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
         this.reduceMinimumWhenNoKWargs = reduceMinimumWhenNoKWargs;
 
         if (reduceMinimumWhenNoKWargs) {
-            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, requiredForKWArgs);
+            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(requiredForKWArgs);
         }
     }
 
