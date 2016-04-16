@@ -53,11 +53,11 @@ describe "StringScanner#scan" do
       @s[:wday].should  == 'Fri'
     end
 
-    it "should extract day of week" do
+    it "should extract month abbreviation" do
       @s[:month].should  == 'Dec'
     end
 
-    it "should extract day " do
+    it "should extract day of month" do
       @s[:day].should  == '12'
     end
   end
