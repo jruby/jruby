@@ -1771,6 +1771,7 @@ public abstract class StringPrimitiveNodes {
 
             final Rope rope = rope(string);
             final int length = rope.byteLength();
+            final boolean isMutableRope = rope instanceof RopeBuffer;
 
             final Encoding enc = rope.getEncoding();
             int p;
@@ -1792,6 +1793,11 @@ public abstract class StringPrimitiveNodes {
                     if (p == -1) {
                         return nil();
                     }
+
+                    if (isMutableRope) {
+                        return makeBuffer(string, p - s, e - p);
+                    }
+
                     return makeRope(string, rope, p - s, e - p);
                 } else {
                     beg += rope.characterLength();
@@ -1822,6 +1828,10 @@ public abstract class StringPrimitiveNodes {
                 len = 0;
             } else {
                 len = StringSupport.offset(enc, bytes, p, end, len);
+            }
+
+            if (isMutableRope) {
+                return makeBuffer(string, p - s, len);
             }
 
             return makeRope(string, rope, p - s, len);
@@ -1868,11 +1878,6 @@ public abstract class StringPrimitiveNodes {
 
         private DynamicObject makeBuffer(DynamicObject string, int beg, int len) {
             assert RubyGuards.isRubyString(string);
-
-            if (!StringGuards.isSingleByteOptimizable(string)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreExceptions().internalError("Taking the substring of MBC rope buffer is not currently supported", this));
-            }
 
             final RopeBuffer buffer = (RopeBuffer) rope(string);
 
