@@ -43,8 +43,9 @@ describe "Single-method Java interfaces implemented in Ruby" do
   end
 
   it "should be kind_of? the interface" do
-    expect(@value_holder1.new(1)).to be_kind_of(SingleMethodInterface)
-    expect(SingleMethodInterface === @value_holder1.new(1)).to be true
+    expect( @value_holder1.new(1) ).to be_kind_of SingleMethodInterface
+    expect( @value_holder1.new(1) ).to be_a SingleMethodInterface
+    expect( SingleMethodInterface === @value_holder1.new(1) ).to be true
   end
 
   it "should be implemented with 'include InterfaceClass'" do

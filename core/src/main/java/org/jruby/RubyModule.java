@@ -2493,16 +2493,27 @@ public class RubyModule extends RubyObject {
         ThreadContext context = getRuntime().getCurrentContext();
         // MRI checks all types first:
         for (int i = modules.length; --i >= 0; ) {
-            IRubyObject obj = modules[i];
-            if (!obj.isModule()) {
-                throw context.runtime.newTypeError(obj, context.runtime.getModule());
+            IRubyObject module = modules[i];
+            if ( ! module.isModule() ) {
+                throw context.runtime.newTypeError(module, context.runtime.getModule());
             }
         }
         for (int i = modules.length - 1; i >= 0; i--) {
-            modules[i].callMethod(context, "append_features", this);
-            modules[i].callMethod(context, "included", this);
+            IRubyObject module = modules[i];
+            module.callMethod(context, "append_features", this);
+            module.callMethod(context, "included", this);
         }
 
+        return this;
+    }
+
+    @JRubyMethod(name = "include", required = 1) // most common path: include Enumerable
+    public RubyModule include(ThreadContext context, IRubyObject module) {
+        if ( ! module.isModule() ) {
+            throw context.runtime.newTypeError(module, context.runtime.getModule());
+        }
+        module.callMethod(context, "append_features", this);
+        module.callMethod(context, "included", this);
         return this;
     }
 

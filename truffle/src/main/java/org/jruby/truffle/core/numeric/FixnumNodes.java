@@ -27,6 +27,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.rope.LazyIntRope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
@@ -1068,15 +1069,18 @@ public abstract class FixnumNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject inspect(int n) {
-            return create7BitString(Integer.toString(n), USASCIIEncoding.INSTANCE);
+            return createString(new LazyIntRope(n));
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject inspect(long n) {
+            if (CoreLibrary.fitsIntoInteger(n)) {
+                return inspect((int) n);
+            }
+
             return create7BitString(Long.toString(n), USASCIIEncoding.INSTANCE);
         }
 
@@ -1122,16 +1126,15 @@ public abstract class FixnumNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject toS(int n, NotProvided base) {
-            return create7BitString(Integer.toString(n), USASCIIEncoding.INSTANCE);
+            return createString(new LazyIntRope(n));
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(long n, NotProvided base) {
-            if (n >= Integer.MIN_VALUE && n <= Integer.MAX_VALUE) {
+            if (CoreLibrary.fitsIntoInteger(n)) {
                 return toS((int) n, base);
             }
 

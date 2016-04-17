@@ -49,3 +49,6 @@ example "x = 'abc'; y = 'xyz'; x.replace(y) == y", true
 example "'abc'.getbyte(0) == 97", true
 example "'abc'.getbyte(-1) == 99", true
 example "'abc'.getbyte(10_000) == nil", true
+
+example "14.to_s.length", 2
+counter_example "14.to_s.getbyte(0)", '1'.ord # Doesn't work becuase the bytes are only populated on demand and so aren't constant

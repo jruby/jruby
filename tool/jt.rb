@@ -110,40 +110,50 @@ module Utilities
   def self.mangle_for_env(name)
     name.upcase.tr('-', '_')
   end
+  
+  def self.find_jvmci
+    jvmci_locations = [
+      ENV['JVMCI_DIR'],
+      ENV["JVMCI_DIR#{mangle_for_env(git_branch)}"]
+    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
-  def self.find_graal_parent
-    graal = File.expand_path('../../../../../graal-compiler', find_graal)
-    raise "couldn't find graal - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless Dir.exist?(graal)
-    graal
+    not_found = -> {
+      raise "couldn't find JVMCI"
+    }
+
+    jvmci_locations.find(not_found) do |location|
+      Dir.exist?(location)
+    end
   end
-
-  def self.find_graal_mx
-    mx = File.expand_path('../../../../../../mx/mx', find_graal)
-    raise "couldn't find mx - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless File.executable?(mx)
-    mx
-  end
-
+  
   def self.igv_running?
-    `ps ax`.include? 'IdealGraphVisualizer'
+    `ps ax`.include?('IdealGraphVisualizer')
   end
 
   def self.ensure_igv_running
     unless igv_running?
-      Dir.chdir(find_graal_parent + "/../jvmci") do
-        spawn "#{find_graal_mx} --vm server igv", pgroup: true
+      Dir.chdir(find_jvmci) do
+        spawn 'mx --vm server igv', pgroup: true
       end
 
-      sleep 5
       puts
       puts
       puts "-------------"
       puts "Waiting for IGV start"
       puts "The first time you run IGV it may take several minutes to download dependencies and compile"
-      puts "Press enter when you see the IGV window"
       puts "-------------"
       puts
       puts
-      $stdin.gets
+      
+      sleep 3
+      
+      until igv_running?
+        puts 'still waiting for IGV to appear in ps ax...'
+        sleep 3
+      end
+      
+      puts 'just a few more seconds...'
+      sleep 6
     end
   end
 
@@ -312,6 +322,8 @@ module Commands
     puts '  GRAAL_BIN                                    GraalVM executable (java command) to use'
     puts '  GRAAL_BIN_...git_branch_name...              GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
+    puts '  JVMCI_DIR                                    JMVCI repository checkout to use when running IGV (mx must already be on the $PATH)'
+    puts '  JVMCI_DIR_...git_branch_name...              JMVCI repository to use for a given branch'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
   end
