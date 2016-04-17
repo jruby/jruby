@@ -63,6 +63,7 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -3972,9 +3973,17 @@ public abstract class ArrayNodes {
             return createArray(getContext(), store, size);
         }
 
+        public static final String SNIPPET = "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted";
+        public static final String RIGHT = "right";
+        public static final String BLOCK = "block";
+
         @Specialization(guards = { "!isNullArray(array)" })
-        public Object sortUsingRubinius(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return ruby("sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted", "right", getSize(array), "block", block);
+        public Object sortUsingRubinius(
+                VirtualFrame frame,
+                DynamicObject array,
+                DynamicObject block,
+                @Cached("new(SNIPPET, RIGHT, BLOCK)") SnippetNode snippet) {
+            return snippet.execute(frame, getSize(array), block);
         }
 
         @Specialization(guards = { "!isNullArray(array)", "!isSmall(array)" })

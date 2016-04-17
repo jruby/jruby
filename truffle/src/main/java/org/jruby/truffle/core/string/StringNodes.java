@@ -82,6 +82,7 @@ import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -406,9 +407,14 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isRubyString(other)")
-        public Object concat(DynamicObject string, Object other) {
-            return ruby("string.concat_internal(other)", "string", string, "other", other);
+        public Object concat(
+                VirtualFrame frame,
+                DynamicObject string,
+                Object other,
+                @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
+            return callNode.call(frame, string, "concat_internal", null, other);
         }
+
     }
 
     @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintFromSelf = true)

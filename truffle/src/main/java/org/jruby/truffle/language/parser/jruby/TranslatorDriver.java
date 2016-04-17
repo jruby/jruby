@@ -10,6 +10,7 @@
 package org.jruby.truffle.language.parser.jruby;
 
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
@@ -57,7 +58,7 @@ public class TranslatorDriver implements Parser {
     }
 
     @Override
-    public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
+    public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, FrameDescriptor frameDescriptor, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getJRubyRuntime());
@@ -70,8 +71,18 @@ public class TranslatorDriver implements Parser {
          * parent scope.
          */
 
-        if (parentFrame != null) {
+        final TranslatorEnvironment parentEnvironment;
 
+        if (frameDescriptor != null) {
+            for (FrameSlot slot : frameDescriptor.getSlots()) {
+                if (slot.getIdentifier() instanceof String) {
+                    final String name = (String) slot.getIdentifier();
+                    staticScope.addVariableThisScope(name.intern()); // StaticScope expects interned var names
+                }
+            }
+
+            parentEnvironment = environmentForFrameDescriptor(context, frameDescriptor);
+        } else if (parentFrame != null) {
             MaterializedFrame frame = parentFrame;
 
             while (frame != null) {
@@ -84,6 +95,10 @@ public class TranslatorDriver implements Parser {
 
                 frame = RubyArguments.getDeclarationFrame(frame);
             }
+
+            parentEnvironment = environmentForFrame(context, parentFrame);
+        } else {
+            parentEnvironment = environmentForFrame(context, null);
         }
 
         if (argumentNames != null) {
@@ -138,7 +153,7 @@ public class TranslatorDriver implements Parser {
         // TODO (10 Feb. 2015): name should be "<top (required)> for the require-d/load-ed files.
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, parseEnvironment.getLexicalScope(), Arity.NO_ARGUMENTS, "<main>", false, null, false, false, false);
 
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame),
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, parentEnvironment,
                 parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), 0, null);
 
         // Declare arguments as local variables in the top-level environment - we'll put the values there in a prelude
@@ -217,6 +232,14 @@ public class TranslatorDriver implements Parser {
         }
 
         return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
+    }
+
+    private TranslatorEnvironment environmentForFrameDescriptor(RubyContext context, FrameDescriptor frameDescriptor) {
+            SourceSection sourceSection = SourceSection.createUnavailable("Unknown source section", "(unknown)");
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false, false, false);
+            // TODO(CS): how do we know if the frame is a block or not?
+            return new TranslatorEnvironment(context, null, parseEnvironment,
+                    parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frameDescriptor);
     }
 
     private TranslatorEnvironment environmentForFrame(RubyContext context, MaterializedFrame frame) {
