@@ -194,21 +194,30 @@ public class Java implements Library {
     }
 
     public static class OldStyleExtensionInherited {
+        @Deprecated
+        public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
+            return inherited(self.getRuntime().getCurrentContext(), self, subclass);
+        }
+
         @JRubyMethod
-        public static IRubyObject inherited(IRubyObject self, IRubyObject arg0) {
-            return Java.concrete_proxy_inherited(self, arg0);
+        public static IRubyObject inherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
+            return invokeProxyClassInherited(context, self, subclass);
         }
     };
 
     public static class NewStyleExtensionInherited {
+        @Deprecated
+        public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
+            return inherited(self.getRuntime().getCurrentContext(), self, subclass);
+        }
+
         @JRubyMethod
-        public static IRubyObject inherited(IRubyObject self, IRubyObject arg0) {
-            final Ruby runtime = self.getRuntime();
-            if ( ! ( arg0 instanceof RubyClass ) ) {
-                throw runtime.newTypeError(arg0, runtime.getClassClass());
+        public static IRubyObject inherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
+            if ( ! ( subclass instanceof RubyClass ) ) {
+                throw context.runtime.newTypeError(subclass, context.runtime.getClassClass());
             }
-            JavaInterfaceTemplate.addRealImplClassNew((RubyClass) arg0);
-            return runtime.getNil();
+            JavaInterfaceTemplate.addRealImplClassNew((RubyClass) subclass);
+            return context.nil;
         }
     };
 
@@ -431,7 +440,7 @@ public class Java implements Library {
             if (clazz.isInterface()) {
                 generateInterfaceProxy(runtime, clazz, proxy);
             } else {
-                generateClassProxy(runtime, clazz, (RubyClass)proxy, superClass, javaSupport);
+                generateClassProxy(runtime, clazz, (RubyClass) proxy, superClass, javaSupport);
             }
         } finally {
             javaSupport.endProxy(clazz);
@@ -536,14 +545,18 @@ public class Java implements Library {
 
     }
 
+    @Deprecated
     public static IRubyObject concrete_proxy_inherited(final IRubyObject clazz, final IRubyObject subclazz) {
-        final Ruby runtime = clazz.getRuntime();
-        final ThreadContext context = runtime.getCurrentContext();
-        JavaSupport javaSupport = runtime.getJavaSupport();
+        return invokeProxyClassInherited(clazz.getRuntime().getCurrentContext(), clazz, subclazz);
+    }
+
+    private static IRubyObject invokeProxyClassInherited(final ThreadContext context,
+        final IRubyObject clazz, final IRubyObject subclazz) {
+        final JavaSupport javaSupport = context.runtime.getJavaSupport();
         RubyClass javaProxyClass = javaSupport.getJavaProxyClass().getMetaClass();
         Helpers.invokeAs(context, javaProxyClass, clazz, "inherited", subclazz, Block.NULL_BLOCK);
         if ( ! ( subclazz instanceof RubyClass ) ) {
-            throw runtime.newTypeError(subclazz, runtime.getClassClass());
+            throw context.runtime.newTypeError(subclazz, context.runtime.getClassClass());
         }
         setupJavaSubclass(context, (RubyClass) subclazz);
         return context.nil;
@@ -1328,9 +1341,9 @@ public class Java implements Library {
         String implClassName;
         if (clazz.getBaseName() == null) {
             // no-name class, generate a bogus name for it
-            implClassName = "anon_class" + Math.abs(System.identityHashCode(clazz)) + "_" + Math.abs(interfacesHashCode);
+            implClassName = "anon_class" + Math.abs(System.identityHashCode(clazz)) + '_' + Math.abs(interfacesHashCode);
         } else {
-            implClassName = clazz.getName().replaceAll("::", "\\$\\$") + "_" + Math.abs(interfacesHashCode);
+            implClassName = clazz.getName().replaceAll("::", "\\$\\$") + '_' + Math.abs(interfacesHashCode);
         }
         Class<? extends IRubyObject> proxyImplClass;
         try {
