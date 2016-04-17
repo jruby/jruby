@@ -274,7 +274,7 @@ module Commands
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
-    puts '    --sulong        add Sulong to the classpath (set SULONG_JAR, implies --graal)'
+    puts '    --sulong        add Sulong to the classpath (set SULONG_DIR, implies --graal)'
     puts '    --asm           show assembly (implies --graal)'
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
