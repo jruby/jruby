@@ -1077,7 +1077,7 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject inspect(long n) {
-            if (n >= Integer.MIN_VALUE && n <= Integer.MAX_VALUE) {
+            if (CoreLibrary.fitsIntoInteger(n)) {
                 return inspect((int) n);
             }
 
@@ -1134,7 +1134,7 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(long n, NotProvided base) {
-            if (n >= Integer.MIN_VALUE && n <= Integer.MAX_VALUE) {
+            if (CoreLibrary.fitsIntoInteger(n)) {
                 return toS((int) n, base);
             }
 

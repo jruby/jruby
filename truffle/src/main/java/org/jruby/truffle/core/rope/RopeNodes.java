@@ -687,6 +687,27 @@ public abstract class RopeNodes {
             return nil();
         }
 
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject debugPrintLazyInt(LazyIntRope rope, int currentLevel, boolean printString) {
+            printPreamble(currentLevel);
+
+            // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
+            final boolean bytesAreNull = rope.getRawBytes() == null;
+
+            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; V: %d, D: %d)",
+                    printString ? rope.toString() : "<skipped>",
+                    rope.getClass().getSimpleName(),
+                    bytesAreNull,
+                    rope.byteLength(),
+                    rope.characterLength(),
+                    rope.getCodeRange(),
+                    rope.getValue(),
+                    rope.depth()));
+
+            return nil();
+        }
+
         private void printPreamble(int level) {
             if (level > 0) {
                 for (int i = 0; i < level; i++) {
