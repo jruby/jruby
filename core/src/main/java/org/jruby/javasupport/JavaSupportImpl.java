@@ -108,8 +108,8 @@ public class JavaSupportImpl extends JavaSupport {
 
         this.javaClassCache = ClassValue.newInstance(new ClassValueCalculator<JavaClass>() {
             @Override
-            public JavaClass computeValue(Class<?> cls) {
-                return new JavaClass(runtime, cls);
+            public JavaClass computeValue(Class<?> klass) {
+                return new JavaClass(runtime, getJavaClassClass(), klass);
             }
         });
 
@@ -120,8 +120,8 @@ public class JavaSupportImpl extends JavaSupport {
              * allowing us to skip some threading work downstream.
              */
             @Override
-            public synchronized RubyModule computeValue(Class<?> cls) {
-                return Java.createProxyClassForClass(runtime, cls);
+            public synchronized RubyModule computeValue(Class<?> klass) {
+                return Java.createProxyClassForClass(runtime, klass);
             }
         });
 

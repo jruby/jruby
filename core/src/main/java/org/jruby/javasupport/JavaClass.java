@@ -73,8 +73,12 @@ public class JavaClass extends JavaObject {
 
     public static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
 
-    public JavaClass(final Ruby runtime, final Class<?> javaClass) {
-        super(runtime, runtime.getJavaSupport().getJavaClassClass(), javaClass);
+    public JavaClass(final Ruby runtime, final Class<?> klass) {
+        this(runtime, runtime.getJavaSupport().getJavaClassClass(), klass);
+    }
+
+    JavaClass(final Ruby runtime, final RubyClass javaClassProxy, final Class<?> klass) {
+        super(runtime, javaClassProxy, klass);
     }
 
     @Override
