@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core.rope;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 
 public abstract class LazyRope extends Rope {
@@ -24,13 +25,18 @@ public abstract class LazyRope extends Rope {
 
     public byte[] getBytes() {
         if (bytes == null) {
-            bytes = fulfill();
+            doFulfill();
         }
 
         return bytes;
     }
 
-    protected abstract byte[] fulfill();
+    @TruffleBoundary
+    private void doFulfill() {
+        bytes = fulfill();
+    }
+
+    protected abstract byte[]  fulfill();
 
     @Override
     public String toString() {
