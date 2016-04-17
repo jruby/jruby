@@ -21,6 +21,13 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
 
     @Child private BooleanCastNode booleanCastNode;
 
+    public static CallDispatchHeadNode createMethodCall() {
+        return new CallDispatchHeadNode(
+                null,
+                false,
+                MissingBehavior.CALL_METHOD_MISSING);
+    }
+
     public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
         super(context, ignoreVisibility, missingBehavior, DispatchAction.CALL_METHOD);
     }

@@ -411,12 +411,8 @@ public abstract class StringNodes {
                 VirtualFrame frame,
                 DynamicObject string,
                 Object other,
-                @Cached("createSnippet()") SnippetNode snippet) {
-            return snippet.execute(frame, string, other);
-        }
-
-        protected SnippetNode createSnippet() {
-            return new SnippetNode("string.concat_internal(other)", "string", "other");
+                @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
+            return callNode.call(frame, string, "concat_internal", null, other);
         }
 
     }
