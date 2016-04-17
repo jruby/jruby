@@ -24,13 +24,13 @@ public abstract class LazyRope extends Rope {
 
     public byte[] getBytes() {
         if (bytes == null) {
-            bytes = fulfil();
+            bytes = fulfill();
         }
 
         return bytes;
     }
 
-    protected abstract byte[] fulfil();
+    protected abstract byte[] fulfill();
 
     @Override
     public String toString() {

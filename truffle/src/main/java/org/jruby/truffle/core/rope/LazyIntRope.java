@@ -96,7 +96,7 @@ public class LazyIntRope extends LazyRope {
     }
 
     @Override
-    public byte[] fulfil() {
+    public byte[] fulfill() {
         if (bytes == null) {
             bytes = Integer.toString(value).getBytes(StandardCharsets.US_ASCII);
         }
