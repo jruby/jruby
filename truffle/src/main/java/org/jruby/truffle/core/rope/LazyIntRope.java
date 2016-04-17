@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 
@@ -29,6 +30,7 @@ public class LazyIntRope extends LazyRope {
         assert Integer.toString(value).length() == length;
     }
 
+    @ExplodeLoop
     private static int length(int value) {
         if (value < 0) {
             /*
@@ -46,40 +48,10 @@ public class LazyIntRope extends LazyRope {
 
         // If values were evenly distributed it would make more sense to do this in the reverse order, but they aren't
 
-        if (value < 10) {
-            return 1;
-        }
-
-        if (value < 100) {
-            return 2;
-        }
-
-        if (value < 1000) {
-            return 3;
-        }
-
-        if (value < 10000) {
-            return 4;
-        }
-
-        if (value < 100000) {
-            return 5;
-        }
-
-        if (value < 1000000) {
-            return 6;
-        }
-
-        if (value < 10000000) {
-            return 7;
-        }
-
-        if (value < 100000000) {
-            return 8;
-        }
-
-        if (value < 1000000000) {
-            return 9;
+        for (int n = 1, limit = 10; n < 10; n++, limit *= 10) {
+            if (value < limit) {
+                return n;
+            }
         }
 
         return 10;
