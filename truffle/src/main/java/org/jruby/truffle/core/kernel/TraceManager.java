@@ -181,7 +181,7 @@ public class TraceManager {
             final String file;
             final int line;
 
-            if (sourceSection.getSource() != null) {
+            if (sourceSection != null && sourceSection.getSource() != null) {
                 file = sourceSection.getSource().getName();
                 line = sourceSection.getStartLine();
             } else {

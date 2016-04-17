@@ -82,10 +82,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "binding_of_caller", isModuleFunction = true)
     public abstract static class BindingOfCallerNode extends CoreMethodArrayArgumentsNode {
 
-        public BindingOfCallerNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject bindingOfCaller() {
@@ -122,10 +118,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "source_of_caller", isModuleFunction = true)
     public abstract static class SourceOfCallerNode extends CoreMethodArrayArgumentsNode {
 
-        public SourceOfCallerNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject sourceOfCaller() {
@@ -157,10 +149,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "gc_count", onSingleton = true)
     public abstract static class GCCountNode extends CoreMethodArrayArgumentsNode {
 
-        public GCCountNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public int gcCount() {
@@ -171,10 +159,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "gc_time", onSingleton = true)
     public abstract static class GCTimeNode extends CoreMethodArrayArgumentsNode {
-
-        public GCTimeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -187,10 +171,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "assert_constant", onSingleton = true, required = 1)
     public abstract static class AssertConstantNode extends CoreMethodArrayArgumentsNode {
 
-        public AssertConstantNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject assertConstant(Object value) {
             throw new RaiseException(coreExceptions().runtimeError("Truffle::Primitive.assert_constant can only be called lexically", this));
@@ -200,10 +180,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "assert_not_compiled", onSingleton = true)
     public abstract static class AssertNotCompiledNode extends CoreMethodArrayArgumentsNode {
-
-        public AssertNotCompiledNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -216,10 +192,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "java_class_of", onSingleton = true, required = 1)
     public abstract static class JavaClassOfNode extends CoreMethodArrayArgumentsNode {
 
-        public JavaClassOfNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject javaClassOf(Object value) {
             return createString(StringOperations.encodeRope(value.getClass().getSimpleName(), UTF8Encoding.INSTANCE));
@@ -229,10 +201,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "dump_string", onSingleton = true, required = 1)
     public abstract static class DumpStringNode extends CoreMethodArrayArgumentsNode {
-
-        public DumpStringNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
@@ -253,10 +221,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "graal?", onSingleton = true)
     public abstract static class GraalNode extends CoreMethodArrayArgumentsNode {
 
-        public GraalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public boolean graal() {
@@ -268,10 +232,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "substrate?", onSingleton = true)
     public abstract static class SubstrateNode extends CoreMethodArrayArgumentsNode {
 
-        public SubstrateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean substrate() {
             return TruffleOptions.AOT;
@@ -281,10 +241,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "graal_version", onSingleton = true)
     public abstract static class GraalVersionNode extends CoreMethodArrayArgumentsNode {
-
-        public GraalVersionNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -297,10 +253,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "simple_shell", onSingleton = true, unsafe = UnsafeGroup.IO)
     public abstract static class SimpleShellNode extends CoreMethodArrayArgumentsNode {
 
-        public SimpleShellNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject simpleShell() {
@@ -312,10 +264,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "coverage_result", onSingleton = true)
     public abstract static class CoverageResultNode extends CoreMethodArrayArgumentsNode {
-
-        public CoverageResultNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -357,10 +305,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "coverage_start", onSingleton = true)
     public abstract static class CoverageStartNode extends CoreMethodArrayArgumentsNode {
 
-        public CoverageStartNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject coverageStart() {
@@ -373,10 +317,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "attach", onSingleton = true, required = 2, needsBlock = true)
     public abstract static class AttachNode extends CoreMethodArrayArgumentsNode {
 
-        public AttachNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
         public DynamicObject attach(DynamicObject file, int line, DynamicObject block) {
@@ -387,10 +327,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "detach", onSingleton = true, required = 1)
     public abstract static class DetachNode extends CoreMethodArrayArgumentsNode {
-
-        public DetachNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isHandle(handle)")
@@ -405,10 +341,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "debug_print", onSingleton = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintNode extends CoreMethodArrayArgumentsNode {
 
-        public DebugPrintNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject debugPrint(DynamicObject string) {
@@ -420,10 +352,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "safe_puts", onSingleton = true, required = 1, unsafe = UnsafeGroup.SAFE_PUTS)
     public abstract static class SafePutsNode extends CoreMethodArrayArgumentsNode {
-
-        public SafePutsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
@@ -450,10 +378,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "convert_to_mutable_rope", onSingleton = true, required = 1)
     public abstract static class ConvertToMutableRope extends CoreMethodArrayArgumentsNode {
 
-        public ConvertToMutableRope(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject convertToMutableRope(DynamicObject string) {
             final RopeBuffer ropeBuffer = new RopeBuffer(StringOperations.rope(string));
@@ -470,7 +394,7 @@ public abstract class TrufflePrimitiveNodes {
 
         public DebugPrintRopeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            debugPrintRopeNode = RopeNodesFactory.DebugPrintRopeNodeGen.create(context, sourceSection, null, null, null);
+            debugPrintRopeNode = RopeNodesFactory.DebugPrintRopeNodeGen.create(null, null, null);
         }
 
         @TruffleBoundary
@@ -501,13 +425,9 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "flatten_rope", onSingleton = true, required = 1)
     public abstract static class FlattenRopeNode extends CoreMethodArrayArgumentsNode {
 
-        public FlattenRopeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject flattenRope(DynamicObject string,
-                                         @Cached("create(getContext(), getSourceSection())") RopeNodes.FlattenNode flattenNode) {
+                                         @Cached("create()") RopeNodes.FlattenNode flattenNode) {
             final Rope flattened = flattenNode.executeFlatten(StringOperations.rope(string));
 
             return createString(flattened);
@@ -517,10 +437,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "jruby_home_directory", onSingleton = true)
     public abstract static class JRubyHomeDirectoryNode extends CoreMethodNode {
-
-        public JRubyHomeDirectoryNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -532,10 +448,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "jruby_home_directory_protocol", onSingleton = true)
     public abstract static class JRubyHomeDirectoryProtocolNode extends CoreMethodNode {
-
-        public JRubyHomeDirectoryProtocolNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -560,10 +472,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "host_os", onSingleton = true)
     public abstract static class HostOSNode extends CoreMethodNode {
 
-        public HostOSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject hostOS() {
             return createString(StringOperations.encodeRope(RbConfigLibrary.getOSName(), UTF8Encoding.INSTANCE));
@@ -573,10 +481,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true, required = 1, unsafe = UnsafeGroup.AT_EXIT)
     public abstract static class AtExitSystemNode extends CoreMethodArrayArgumentsNode {
-
-        public AtExitSystemNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -589,10 +493,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "install_rubinius_primitive", isModuleFunction = true, required = 1)
     public abstract static class InstallRubiniusPrimitiveNode extends CoreMethodArrayArgumentsNode {
 
-        public InstallRubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyMethod(rubyMethod)")
         public Object installRubiniusPrimitive(DynamicObject rubyMethod) {
             String name = Layouts.METHOD.getMethod(rubyMethod).getName();
@@ -603,10 +503,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "fixnum_lower", isModuleFunction = true, required = 1)
     public abstract static class FixnumLowerPrimitiveNode extends UnaryCoreMethodNode {
-
-        public FixnumLowerPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int lower(int value) {
@@ -632,10 +528,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "synchronized", isModuleFunction = true, required = 1, needsBlock = true)
     public abstract static class SynchronizedPrimitiveNode extends YieldingCoreMethodNode {
 
-        public SynchronizedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         // We must not allow to synchronize on boxed primitives.
         @Specialization
         public Object synchronize(VirtualFrame frame, DynamicObject self, DynamicObject block) {
@@ -647,10 +539,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "full_memory_barrier", isModuleFunction = true)
     public abstract static class FullMemoryBarrierPrimitiveNode extends CoreMethodNode {
-
-        public FullMemoryBarrierPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object fullMemoryBarrier() {
@@ -665,10 +553,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "print_backtrace", onSingleton = true, unsafe = UnsafeGroup.IO)
     public abstract static class PrintBacktraceNode extends CoreMethodNode {
-
-        public PrintBacktraceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -687,10 +571,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "ast", onSingleton = true, required = 1)
     public abstract static class ASTNode extends CoreMethodArrayArgumentsNode {
-
-        public ASTNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyMethod(method)")
         public DynamicObject astMethod(DynamicObject method) {
@@ -737,10 +617,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "object_type_of", onSingleton = true, required = 1)
     public abstract static class ObjectTypeOfNode extends CoreMethodArrayArgumentsNode {
 
-        public ObjectTypeOfNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject objectTypeOf(DynamicObject value) {
             return getSymbol(value.getShape().getObjectType().getClass().getSimpleName());
@@ -749,10 +625,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "spawn_process", onSingleton = true, required = 3, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SpawnProcessNode extends CoreMethodArrayArgumentsNode {
-
-        public SpawnProcessNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = {
                 "isRubyString(command)",
@@ -806,10 +678,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "context", onSingleton = true)
     public abstract static class ContextNode extends CoreMethodArrayArgumentsNode {
 
-        public ContextNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public RubyContext context() {
             return getContext();
@@ -818,10 +686,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1, unsafe = UnsafeGroup.LOAD)
     public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
-
-        public LoadNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyString(file)")
         public boolean load(VirtualFrame frame, DynamicObject file, boolean wrap, @Cached("create()") IndirectCallNode callNode) {
@@ -849,10 +713,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "run_jruby_root", onSingleton = true)
     public abstract static class RunJRubyRootNode extends CoreMethodArrayArgumentsNode {
-
-        public RunJRubyRootNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()")IndirectCallNode callNode) {
@@ -902,10 +762,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "create_simple_string", onSingleton = true)
     public abstract static class CreateSimpleStringNode extends CoreMethodArrayArgumentsNode {
 
-        public CreateSimpleStringNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject createSimpleString() {
             return createString(RopeOperations.create(new byte[]{'t', 'e', 's', 't'}, UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
@@ -914,10 +770,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "logical_processors", onSingleton = true)
     public abstract static class LogicalProcessorsNode extends CoreMethodNode {
-
-        public LogicalProcessorsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int logicalProcessors() {
@@ -928,10 +780,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "original_argv", onSingleton = true)
     public abstract static class OriginalArgvNode extends CoreMethodNode {
-
-        public OriginalArgvNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -951,10 +799,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "original_load_path", onSingleton = true)
     public abstract static class OriginalLoadPathNode extends CoreMethodNode {
 
-        public OriginalLoadPathNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject originalLoadPath() {
@@ -973,10 +817,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "io_safe?", onSingleton = true)
     public abstract static class IsIOSafeNode extends CoreMethodNode {
 
-        public IsIOSafeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean ioSafe() {
             return getContext().getOptions().PLATFORM_SAFE_IO;
@@ -986,10 +826,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "memory_safe?", onSingleton = true)
     public abstract static class IsMemorySafeNode extends CoreMethodNode {
-
-        public IsMemorySafeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean memorySafe() {
@@ -1001,10 +837,6 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "signals_safe?", onSingleton = true)
     public abstract static class AreSignalsSafeNode extends CoreMethodNode {
 
-        public AreSignalsSafeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean signalsSafe() {
             return getContext().getOptions().PLATFORM_SAFE_SIGNALS;
@@ -1014,10 +846,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "require_core", isModuleFunction = true, required = 1)
     public abstract static class RequireCoreNode extends CoreMethodArrayArgumentsNode {
-
-        public RequireCoreNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyString(feature)")
         public boolean requireRelative(VirtualFrame frame, DynamicObject feature, @Cached("create()") IndirectCallNode callNode) {
@@ -1042,10 +870,6 @@ public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "array_storage", onSingleton = true, required = 1)
     public abstract static class ArrayStorageNode extends CoreMethodArrayArgumentsNode {
-
-        public ArrayStorageNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyArray(array)")
         public DynamicObject arrayStorage(DynamicObject array) {

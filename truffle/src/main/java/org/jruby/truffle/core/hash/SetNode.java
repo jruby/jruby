@@ -59,7 +59,7 @@ public abstract class SetNode extends RubyNode {
         super(context, sourceSection);
         hashNode = new HashNode(context, sourceSection);
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
+        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null);
     }
 
     public abstract Object executeSet(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity);

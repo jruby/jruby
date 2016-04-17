@@ -60,7 +60,7 @@ public class SetExceptionVariableNode extends Node {
     private void writeDollarBang(DynamicObject threadLocals, Object value) {
         if (writeDollarBang == null) {
             CompilerDirectives.transferToInterpreter();
-            writeDollarBang = insert(WriteObjectFieldNodeGen.create(context, "$!"));
+            writeDollarBang = insert(WriteObjectFieldNodeGen.create("$!"));
         }
 
         writeDollarBang.execute(threadLocals, value);
@@ -69,8 +69,7 @@ public class SetExceptionVariableNode extends Node {
     private Object readDollarBang(DynamicObject threadLocals) {
         if (readDollarBang == null) {
             CompilerDirectives.transferToInterpreter();
-            readDollarBang = insert(ReadObjectFieldNodeGen.create(context, "$!",
-                    context.getCoreLibrary().getNilObject()));
+            readDollarBang = insert(ReadObjectFieldNodeGen.create("$!", context.getCoreLibrary().getNilObject()));
         }
 
         return readDollarBang.execute(threadLocals);

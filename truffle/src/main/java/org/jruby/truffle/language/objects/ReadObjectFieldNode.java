@@ -18,17 +18,16 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyBaseNode;
 import org.jruby.truffle.language.RubyGuards;
 
 @ImportStatic({ RubyGuards.class, ShapeCachingGuards.class })
-public abstract class ReadObjectFieldNode extends Node {
+public abstract class ReadObjectFieldNode extends RubyBaseNode {
 
-    private final RubyContext context;
     private final Object defaultValue;
     protected final Object name;
 
-    public ReadObjectFieldNode(RubyContext context, Object name, Object defaultValue) {
-        this.context = context;
+    public ReadObjectFieldNode(Object name, Object defaultValue) {
         this.name = name;
         this.defaultValue = defaultValue;
     }
@@ -65,7 +64,7 @@ public abstract class ReadObjectFieldNode extends Node {
     }
 
     protected int getCacheLimit() {
-        return context.getOptions().INSTANCE_VARIABLE_CACHE;
+        return getContext().getOptions().INSTANCE_VARIABLE_CACHE;
     }
 
 }

@@ -23,10 +23,6 @@ public abstract class SymbolPrimitiveNodes {
     @RubiniusPrimitive(name = "symbol_is_constant")
     public static abstract class SymbolIsConstantPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public SymbolIsConstantPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(symbol)")
         public boolean symbolIsConstant(DynamicObject symbol) {

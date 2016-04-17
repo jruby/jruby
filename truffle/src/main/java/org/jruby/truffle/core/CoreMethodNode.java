@@ -17,6 +17,9 @@ import org.jruby.truffle.language.RubyNode;
 @GenerateNodeFactory
 public abstract class CoreMethodNode extends RubyNode {
 
+    public CoreMethodNode() {
+    }
+
     public CoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }

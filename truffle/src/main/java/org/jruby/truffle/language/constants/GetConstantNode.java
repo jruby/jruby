@@ -101,7 +101,7 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     protected RequireNode createRequireNode() {
-        return KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null);
+        return KernelNodesFactory.RequireNodeFactory.create(null);
     }
 
     protected RestartableReadConstantNode deepCopyReadConstantNode() {

@@ -50,8 +50,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
             CompilerDirectives.transferToInterpreter();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
             final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-            helperNode = insert(ForeignWriteNodeFactory.StringCachingHelperNodeGen.create(
-                    context, null, null, null, null));
+            helperNode = insert(ForeignWriteNodeFactory.StringCachingHelperNodeGen.create(null, null, null));
         }
 
         return helperNode;
@@ -64,10 +63,6 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
             @NodeChild("value")
     })
     protected static abstract class StringCachingHelperNode extends RubyNode {
-
-        public StringCachingHelperNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         public abstract Object executeStringCachingHelper(VirtualFrame frame, DynamicObject receiver,
                                                           Object name, Object value);
@@ -168,8 +163,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
         }
 
         protected StringCachedHelperNode createNextHelper() {
-            return ForeignWriteNodeFactory.StringCachedHelperNodeGen.create(
-                    getContext(), null, null, null, null, null, null);
+            return ForeignWriteNodeFactory.StringCachedHelperNodeGen.create(null, null, null, null, null);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -207,10 +201,6 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
 
         protected final static String INDEX_METHOD_NAME = "[]=";
 
-        public StringCachedHelperNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object name,
                                                          String stringName, boolean startsAt, Object value);
 
@@ -231,7 +221,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
         }
 
         protected WriteObjectFieldNode createWriteObjectFieldNode(String name) {
-            return WriteObjectFieldNodeGen.create(getContext(), name);
+            return WriteObjectFieldNodeGen.create(name);
         }
 
         @Specialization(

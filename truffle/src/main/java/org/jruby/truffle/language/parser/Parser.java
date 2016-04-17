@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.parser;
 
+import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
@@ -23,6 +24,7 @@ public interface Parser {
                        Encoding defaultEncoding,
                        ParserContext parserContext,
                        String[] argumentNames,
+                       FrameDescriptor frameDescriptor,
                        MaterializedFrame parentFrame,
                        boolean ownScopeForAssignments,
                        Node currentNode);

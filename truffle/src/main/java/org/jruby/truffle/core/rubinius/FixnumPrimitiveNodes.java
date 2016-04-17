@@ -28,10 +28,6 @@ public abstract class FixnumPrimitiveNodes {
     @RubiniusPrimitive(name = "fixnum_coerce")
     public static abstract class FixnumCoercePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public FixnumCoercePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject coerce(int a, int b) {
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new int[]{b, a}, 2);
@@ -54,10 +50,6 @@ public abstract class FixnumPrimitiveNodes {
 
         private final ConditionProfile negativeProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile complexProfile = ConditionProfile.createBinaryProfile();
-
-        public FixnumPowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "canShiftIntoInt(a, b)")
         public int powTwo(int a, int b) {

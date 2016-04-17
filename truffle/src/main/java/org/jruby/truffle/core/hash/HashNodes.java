@@ -176,7 +176,7 @@ public abstract class HashNodes {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
+            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null);
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
         }
@@ -399,10 +399,6 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
-        public ClearNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isNullHash(hash)")
         public DynamicObject emptyNull(DynamicObject hash) {
             return hash;
@@ -425,10 +421,6 @@ public abstract class HashNodes {
 
     @CoreMethod(names = "compare_by_identity", raiseIfFrozenSelf = true)
     public abstract static class CompareByIdentityNode extends CoreMethodArrayArgumentsNode {
-
-        public CompareByIdentityNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject compareByIdentity(DynamicObject hash) {
@@ -456,10 +448,6 @@ public abstract class HashNodes {
 
     @CoreMethod(names = "default_proc")
     public abstract static class DefaultProcNode extends CoreMethodArrayArgumentsNode {
-
-        public DefaultProcNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object defaultProc(DynamicObject hash) {
@@ -659,10 +647,6 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
-        public EmptyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isNullHash(hash)")
         public boolean emptyNull(DynamicObject hash) {
             return true;
@@ -678,10 +662,6 @@ public abstract class HashNodes {
     @CoreMethod(names = "initialize", needsBlock = true, optional = 1, raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject initialize(DynamicObject hash, NotProvided defaultValue, NotProvided block) {
@@ -733,10 +713,6 @@ public abstract class HashNodes {
     @CoreMethod(names = {"initialize_copy", "replace"}, required = 1, raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
-
-        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = {"isRubyHash(from)", "isNullHash(from)"})
         public DynamicObject replaceNull(DynamicObject self, DynamicObject from) {
@@ -808,10 +784,6 @@ public abstract class HashNodes {
     @CoreMethod(names = {"map", "collect"}, needsBlock = true)
     @ImportStatic(HashGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
-
-        public MapNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullHash(hash)")
         public DynamicObject mapNull(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
@@ -1220,10 +1192,6 @@ public abstract class HashNodes {
     @CoreMethod(names = "default=", required = 1, raiseIfFrozenSelf = true)
     public abstract static class SetDefaultNode extends CoreMethodArrayArgumentsNode {
 
-        public SetDefaultNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object setDefault(DynamicObject hash, Object defaultValue) {
             Layouts.HASH.setDefaultValue(hash, defaultValue);
@@ -1237,10 +1205,6 @@ public abstract class HashNodes {
     public abstract static class ShiftNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldNode yieldNode;
-
-        public ShiftNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = {"isEmptyHash(hash)", "!hasDefaultValue(hash)", "!hasDefaultBlock(hash)"})
         public DynamicObject shiftEmpty(DynamicObject hash) {
@@ -1347,10 +1311,6 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
-        public SizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isNullHash(hash)")
         public int sizeNull(DynamicObject hash) {
             return 0;
@@ -1435,10 +1395,6 @@ public abstract class HashNodes {
     @NodeChild(type = RubyNode.class, value = "self")
     public abstract static class DefaultValueNode extends CoreMethodNode {
 
-        public DefaultValueNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object defaultValue(DynamicObject hash) {
             final Object value = Layouts.HASH.getDefaultValue(hash);
@@ -1458,10 +1414,6 @@ public abstract class HashNodes {
     })
     public abstract static class SetDefaultValueNode extends CoreMethodNode {
 
-        public SetDefaultValueNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object setDefaultValue(DynamicObject hash, Object defaultValue) {
             Layouts.HASH.setDefaultValue(hash, defaultValue);
@@ -1476,10 +1428,6 @@ public abstract class HashNodes {
             @NodeChild(type = RubyNode.class, value = "defaultProc")
     })
     public abstract static class SetDefaultProcNode extends CoreMethodNode {
-
-        public SetDefaultProcNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyProc(defaultProc)")
         public DynamicObject setDefaultProc(DynamicObject hash, DynamicObject defaultProc) {

@@ -166,10 +166,6 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_seconds")
     public static abstract class TimeSecondsPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public TimeSecondsPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public long timeSeconds(DynamicObject time) {
             return Layouts.TIME.getDateTime(time).getMillis() / 1_000;
@@ -179,10 +175,6 @@ public abstract class TimePrimitiveNodes {
 
     @RubiniusPrimitive(name = "time_useconds")
     public static abstract class TimeUSecondsPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public TimeUSecondsPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -243,10 +235,6 @@ public abstract class TimePrimitiveNodes {
 
     @RubiniusPrimitive(name = "time_strftime")
     public static abstract class TimeStrftimePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public TimeStrftimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(format)")
@@ -365,10 +353,6 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_nseconds")
     public static abstract class TimeNSecondsPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public TimeNSecondsPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public long timeNSeconds(DynamicObject time) {
@@ -379,10 +363,6 @@ public abstract class TimePrimitiveNodes {
 
     @RubiniusPrimitive(name = "time_set_nseconds", lowerFixnumParameters = 0)
     public static abstract class TimeSetNSecondsPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public TimeSetNSecondsPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -396,10 +376,6 @@ public abstract class TimePrimitiveNodes {
 
     @RubiniusPrimitive(name = "time_utc_offset")
     public static abstract class TimeUTCOffsetPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public TimeUTCOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

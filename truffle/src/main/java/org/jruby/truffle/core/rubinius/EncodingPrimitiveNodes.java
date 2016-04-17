@@ -24,10 +24,6 @@ public abstract class EncodingPrimitiveNodes {
     @RubiniusPrimitive(name = "encoding_get_object_encoding", needsSelf = false)
     public static abstract class EncodingGetObjectEncodingNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public EncodingGetObjectEncodingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject encodingGetObjectEncodingString(DynamicObject string) {
             return EncodingNodes.getEncoding(Layouts.STRING.getRope(string).getEncoding());

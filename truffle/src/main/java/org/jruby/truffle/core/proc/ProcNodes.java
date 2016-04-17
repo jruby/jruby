@@ -46,10 +46,6 @@ public abstract class ProcNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
@@ -62,13 +58,6 @@ public abstract class ProcNodes {
 
         @Child private CallDispatchHeadNode initializeNode;
         @Child private AllocateObjectNode allocateObjectNode;
-
-        protected final DynamicObject PROC_CLASS = coreLibrary().getProcClass();
-        protected final Shape PROC_SHAPE = coreLibrary().getProcFactory().getShape();
-
-        public ProcNewNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         public abstract DynamicObject executeProcNew(
                 VirtualFrame frame,
@@ -90,9 +79,17 @@ public abstract class ProcNodes {
             return executeProcNew(frame, procClass, args, parentBlock);
         }
 
-        @Specialization(guards = { "procClass == PROC_CLASS", "block.getShape() == PROC_SHAPE" })
+        @Specialization(guards = { "procClass == getProcClass()", "block.getShape() == getProcShape()" })
         public DynamicObject procNormalOptimized(DynamicObject procClass, Object[] args, DynamicObject block) {
             return block;
+        }
+
+        protected DynamicObject getProcClass() {
+            return coreLibrary().getProcClass();
+        }
+
+        protected Shape getProcShape() {
+            return coreLibrary().getProcFactory().getShape();
         }
 
         @Specialization(guards = "procClass == metaClass(block)")
@@ -150,10 +147,6 @@ public abstract class ProcNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public DupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject dup(DynamicObject proc) {
             final DynamicObject copy = getAllocateObjectNode().allocate(
@@ -185,10 +178,6 @@ public abstract class ProcNodes {
     @CoreMethod(names = "arity")
     public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
 
-        public ArityNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int arity(DynamicObject proc) {
             return Layouts.PROC.getSharedMethodInfo(proc).getArity().getArityNumber();
@@ -198,10 +187,6 @@ public abstract class ProcNodes {
 
     @CoreMethod(names = "binding")
     public abstract static class BindingNode extends CoreMethodArrayArgumentsNode {
-
-        public BindingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject binding(DynamicObject proc) {
@@ -213,10 +198,6 @@ public abstract class ProcNodes {
 
     @CoreMethod(names = {"call", "[]", "yield"}, rest = true, needsBlock = true)
     public abstract static class CallNode extends YieldingCoreMethodNode {
-
-        public CallNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object call(VirtualFrame frame, DynamicObject proc, Object[] args, NotProvided block) {
@@ -233,10 +214,6 @@ public abstract class ProcNodes {
     @CoreMethod(names = "lambda?")
     public abstract static class LambdaNode extends CoreMethodArrayArgumentsNode {
 
-        public LambdaNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean lambda(DynamicObject proc) {
             return Layouts.PROC.getType(proc) == ProcType.LAMBDA;
@@ -246,10 +223,6 @@ public abstract class ProcNodes {
 
     @CoreMethod(names = "parameters")
     public abstract static class ParametersNode extends CoreMethodArrayArgumentsNode {
-
-        public ParametersNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -263,10 +236,6 @@ public abstract class ProcNodes {
 
     @CoreMethod(names = "source_location")
     public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
-
-        public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

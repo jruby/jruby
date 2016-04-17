@@ -32,10 +32,6 @@ public class ThreadBacktraceLocationNodes {
     // TODO (eregon, 8 July 2015): these two methods are slightly different (path can be relative if it is the main script)
     public abstract static class AbsolutePathNode extends UnaryCoreMethodNode {
 
-        public AbsolutePathNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject absolutePath(DynamicObject threadBacktraceLocation) {
@@ -67,10 +63,6 @@ public class ThreadBacktraceLocationNodes {
     @CoreMethod(names = "lineno")
     public abstract static class LinenoNode extends UnaryCoreMethodNode {
 
-        public LinenoNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public int lineno(DynamicObject threadBacktraceLocation) {
@@ -85,10 +77,6 @@ public class ThreadBacktraceLocationNodes {
 
     @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends UnaryCoreMethodNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

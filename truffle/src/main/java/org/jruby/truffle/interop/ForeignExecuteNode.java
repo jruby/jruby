@@ -47,7 +47,7 @@ public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
             CompilerDirectives.transferToInterpreter();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
             final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-            executeMethodNode = insert(ForeignExecuteNodeFactory.HelperNodeGen.create(context, null, null, null));
+            executeMethodNode = insert(ForeignExecuteNodeFactory.HelperNodeGen.create(context, null, null));
         }
 
         return executeMethodNode;
@@ -59,8 +59,8 @@ public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
     })
     protected static abstract class HelperNode extends RubyNode {
 
-        public HelperNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
+        public HelperNode(RubyContext context) {
+            super(context, null);
         }
 
         public abstract Object executeCall(VirtualFrame frame, Object receiver, Object[] arguments);

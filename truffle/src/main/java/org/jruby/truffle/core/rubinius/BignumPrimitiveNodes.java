@@ -27,10 +27,6 @@ public abstract class BignumPrimitiveNodes {
     @RubiniusPrimitive(name = "bignum_compare")
     public abstract static class BignumCompareNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public BignumCompareNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int compare(DynamicObject a, long b) {
             return Layouts.BIGNUM.getValue(a).compareTo(BigInteger.valueOf(b));
@@ -66,10 +62,6 @@ public abstract class BignumPrimitiveNodes {
     public static abstract class BignumPowPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         private final ConditionProfile negativeProfile = ConditionProfile.createBinaryProfile();
-
-        public BignumPowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject pow(DynamicObject a, int b) {

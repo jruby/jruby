@@ -31,10 +31,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "acos", isModuleFunction = true, required = 1)
     public abstract static class ACosNode extends SimpleMonadicMathNode {
 
-        public ACosNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
@@ -49,10 +45,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "acosh", isModuleFunction = true, required = 1)
     public abstract static class ACosHNode extends SimpleMonadicMathNode {
-
-        public ACosHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -75,10 +67,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "asin", isModuleFunction = true, required = 1)
     public abstract static class ASinNode extends SimpleMonadicMathNode {
 
-        public ASinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
@@ -93,10 +81,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "asinh", isModuleFunction = true, required = 1)
     public abstract static class ASinHNode extends SimpleMonadicMathNode {
-
-        public ASinHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -124,10 +108,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "atan", isModuleFunction = true, required = 1)
     public abstract static class ATanNode extends SimpleMonadicMathNode {
 
-        public ATanNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.atan(a);
@@ -138,10 +118,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "atan2", isModuleFunction = true, required = 2)
     public abstract static class ATan2Node extends SimpleDyadicMathNode {
 
-        public ATan2Node(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a, double b) {
             return Math.atan2(a, b);
@@ -151,10 +127,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "atanh", isModuleFunction = true, required = 1)
     public abstract static class ATanHNode extends SimpleMonadicMathNode {
-
-        public ATanHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -187,10 +159,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "cbrt", isModuleFunction = true, required = 1)
     public abstract static class CbRtNode extends SimpleMonadicMathNode {
 
-        public CbRtNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.cbrt(a);
@@ -200,10 +168,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "cos", isModuleFunction = true, required = 1)
     public abstract static class CosNode extends SimpleMonadicMathNode {
-
-        public CosNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -215,10 +179,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "cosh", isModuleFunction = true, required = 1)
     public abstract static class CosHNode extends SimpleMonadicMathNode {
 
-        public CosHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.cosh(a);
@@ -228,10 +188,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "erf", isModuleFunction = true, required = 1)
     public abstract static class ErfNode extends SimpleMonadicMathNode {
-
-        public ErfNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -256,10 +212,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "erfc", isModuleFunction = true, required = 1)
     public abstract static class ErfcNode extends SimpleMonadicMathNode {
-
-        public ErfcNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         public double doFunction(double a) {
@@ -297,10 +249,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "exp", isModuleFunction = true, required = 1)
     public abstract static class ExpNode extends SimpleMonadicMathNode {
-
-        public ExpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -376,10 +324,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "gamma", isModuleFunction = true, required = 1)
     public abstract static class GammaNode extends SimpleMonadicMathNode {
 
-        public GammaNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             // Copied from RubyMath - see copyright notices there
@@ -428,10 +372,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "hypot", isModuleFunction = true, required = 2)
     public abstract static class HypotNode extends SimpleDyadicMathNode {
-
-        public HypotNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a, double b) {
@@ -591,10 +531,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "log", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class LogNode extends SimpleDyadicMathNode {
 
-        public LogNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public double function(int a, NotProvided b) {
             return doFunction(a);
@@ -649,10 +585,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "log10", isModuleFunction = true, required = 1)
     public abstract static class Log10Node extends SimpleMonadicMathNode {
 
-        public Log10Node(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < 0) {
@@ -670,10 +602,6 @@ public abstract class MathNodes {
 
         private final double LOG2 = Math.log(2);
 
-        public Log2Node(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < 0) {
@@ -689,10 +617,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "sin", isModuleFunction = true, required = 1)
     public abstract static class SinNode extends SimpleMonadicMathNode {
 
-        public SinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.sin(a);
@@ -702,10 +626,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "sinh", isModuleFunction = true, required = 1)
     public abstract static class SinHNode extends SimpleMonadicMathNode {
-
-        public SinHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -717,10 +637,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "tan", isModuleFunction = true, required = 1)
     public abstract static class TanNode extends SimpleMonadicMathNode {
 
-        public TanNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.tan(a);
@@ -731,10 +647,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "tanh", isModuleFunction = true, required = 1)
     public abstract static class TanHNode extends SimpleMonadicMathNode {
 
-        public TanHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.tanh(a);
@@ -744,10 +656,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "sqrt", isModuleFunction = true, required = 1)
     public abstract static class SqrtNode extends SimpleMonadicMathNode {
-
-        public SqrtNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -760,6 +668,10 @@ public abstract class MathNodes {
 
         @Child private IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
+
+        protected SimpleMonadicMathNode() {
+            this(null, null);
+        }
 
         protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -810,6 +722,10 @@ public abstract class MathNodes {
         @Child protected IsANode isANode;
         @Child protected CallDispatchHeadNode floatANode;
         @Child protected CallDispatchHeadNode floatBNode;
+
+        protected SimpleDyadicMathNode() {
+            this(null, null);
+        }
 
         protected SimpleDyadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

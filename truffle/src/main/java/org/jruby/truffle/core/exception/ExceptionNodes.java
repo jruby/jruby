@@ -37,10 +37,6 @@ public abstract class ExceptionNodes {
     @CoreMethod(names = "initialize", optional = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject initialize(DynamicObject exception, NotProvided message) {
             Layouts.EXCEPTION.setMessage(exception, nil());
@@ -59,10 +55,6 @@ public abstract class ExceptionNodes {
     public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ReadObjectFieldNode readCustomBacktraceNode;
-
-        public BacktraceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object backtrace(
@@ -86,7 +78,7 @@ public abstract class ExceptionNodes {
         private ReadObjectFieldNode getReadCustomBacktraceNode() {
             if (readCustomBacktraceNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create(getContext(),
+                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create(
                         "@custom_backtrace", null));
             }
 
@@ -98,10 +90,6 @@ public abstract class ExceptionNodes {
     @RubiniusOnly
     @CoreMethod(names = "capture_backtrace!", optional = 1)
     public abstract static class CaptureBacktraceNode extends CoreMethodArrayArgumentsNode {
-
-        public CaptureBacktraceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, NotProvided offset) {
@@ -120,10 +108,6 @@ public abstract class ExceptionNodes {
 
     @CoreMethod(names = "message")
     public abstract static class MessageNode extends CoreMethodArrayArgumentsNode {
-
-        public MessageNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object message(

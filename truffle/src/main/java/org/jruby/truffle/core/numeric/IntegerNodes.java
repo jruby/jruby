@@ -38,10 +38,6 @@ public abstract class IntegerNodes {
 
         @Child private CallDispatchHeadNode downtoInternalCall;
 
-        public DownToNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object downto(VirtualFrame frame, int from, int to, DynamicObject block) {
             int count = 0;
@@ -112,10 +108,6 @@ public abstract class IntegerNodes {
 
         // TODO CS 2-May-15 we badly need OSR in this node
 
-        public TimesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject times(VirtualFrame frame, int n, NotProvided block) {
             // TODO (eregon, 16 June 2015): this should return an enumerator
@@ -180,10 +172,6 @@ public abstract class IntegerNodes {
     @CoreMethod(names = { "to_i", "to_int" })
     public abstract static class ToINode extends CoreMethodArrayArgumentsNode {
 
-        public ToINode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int toI(int n) {
             return n;
@@ -205,10 +193,6 @@ public abstract class IntegerNodes {
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode uptoInternalCall;
-
-        public UpToNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object upto(VirtualFrame frame, int from, int to, DynamicObject block) {

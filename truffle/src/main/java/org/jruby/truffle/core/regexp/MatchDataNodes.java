@@ -173,10 +173,6 @@ public abstract class MatchDataNodes {
 
         @Child private ToIntNode toIntNode;
 
-        public GetIndexNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, NotProvided length) {
@@ -261,10 +257,6 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "begin", required = 1, lowerFixnumParameters = 1)
     public abstract static class BeginNode extends CoreMethodArrayArgumentsNode {
 
-        public BeginNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "inBounds(matchData, index)")
         public Object begin(DynamicObject matchData, int index) {
             return MatchDataNodes.begin(getContext(), matchData, index);
@@ -285,10 +277,6 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "captures")
     public abstract static class CapturesNode extends CoreMethodArrayArgumentsNode {
 
-        public CapturesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
@@ -299,10 +287,6 @@ public abstract class MatchDataNodes {
 
     @CoreMethod(names = "end", required = 1, lowerFixnumParameters = 1)
     public abstract static class EndNode extends CoreMethodArrayArgumentsNode {
-
-        public EndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "inBounds(matchData, index)")
         public Object end(DynamicObject matchData, int index) {
@@ -325,10 +309,6 @@ public abstract class MatchDataNodes {
     public abstract static class FullNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode newTupleNode;
-
-        public FullNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object full(VirtualFrame frame, DynamicObject matchData) {
@@ -354,10 +334,6 @@ public abstract class MatchDataNodes {
 
     @CoreMethod(names = { "length", "size" })
     public abstract static class LengthNode extends CoreMethodArrayArgumentsNode {
-
-        public LengthNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int length(DynamicObject matchData) {
@@ -403,10 +379,6 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "to_a")
     public abstract static class ToANode extends CoreMethodArrayArgumentsNode {
 
-        public ToANode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
             Object[] objects = ArrayUtils.copy(Layouts.MATCH_DATA.getValues(matchData));
@@ -416,10 +388,6 @@ public abstract class MatchDataNodes {
 
     @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject toS(DynamicObject matchData) {
@@ -431,10 +399,6 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "regexp")
     public abstract static class RegexpNode extends CoreMethodArrayArgumentsNode {
 
-        public RegexpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject regexp(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getRegexp(matchData);
@@ -443,10 +407,6 @@ public abstract class MatchDataNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         // MatchData can be allocated in MRI but it does not seem to be any useful
         @TruffleBoundary
@@ -460,10 +420,6 @@ public abstract class MatchDataNodes {
     @RubiniusOnly
     @NodeChild(value = "self")
     public abstract static class RubiniusSourceNode extends RubyNode {
-
-        public RubiniusSourceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject rubiniusSource(DynamicObject matchData) {

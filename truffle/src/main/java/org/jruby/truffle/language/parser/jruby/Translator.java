@@ -60,6 +60,18 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     public static SourceSection enclosing(SourceSection base, SourceSection... sourceSections) {
+        for (SourceSection sourceSection : sourceSections) {
+            if (base == null) {
+                base = sourceSection;
+            } else {
+                break;
+            }
+        }
+
+        if (base == null) {
+            return null;
+        }
+
         if (base.getSource() == null) {
             return base;
         }
@@ -177,6 +189,11 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         } else {
             return new CheckKeywordArityNode(context, sourceSection, arity);
         }
+    }
+
+    protected void setSourceSection(RubyNode node, SourceSection sourceSection) {
+        node.clearSourceSection();
+        node.assignSourceSection(sourceSection);
     }
 
 }

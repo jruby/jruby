@@ -300,10 +300,6 @@ public abstract class BindingNodes {
     @CoreMethod(names = "local_variables")
     public abstract static class LocalVariablesNode extends CoreMethodArrayArgumentsNode {
 
-        public LocalVariablesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject localVariables(DynamicObject binding) {
             MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
@@ -331,10 +327,6 @@ public abstract class BindingNodes {
     @CoreMethod(names = "receiver")
     public abstract static class ReceiverNode extends UnaryCoreMethodNode {
 
-        public ReceiverNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object receiver(DynamicObject binding) {
             return RubyArguments.getSelf(Layouts.BINDING.getFrame(binding).getArguments());
@@ -343,10 +335,6 @@ public abstract class BindingNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

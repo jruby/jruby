@@ -17,6 +17,9 @@ import org.jruby.truffle.language.RubyNode;
 @NodeChild(value = "arguments", type = RubyNode[].class)
 public abstract class CoreMethodArrayArgumentsNode extends CoreMethodNode {
 
+    public CoreMethodArrayArgumentsNode() {
+    }
+
     public CoreMethodArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }

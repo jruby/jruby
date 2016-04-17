@@ -20,6 +20,9 @@ import org.jruby.truffle.language.RubyNode;
         @NodeChild(value = "right", type = RubyNode.class)})
 public abstract class BinaryCoreMethodNode extends CoreMethodNode {
 
+    public BinaryCoreMethodNode() {
+    }
+
     public BinaryCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }

@@ -47,10 +47,6 @@ public abstract class RangeNodes {
     @CoreMethod(names = { "map", "collect" }, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
-        public MapNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public DynamicObject map(VirtualFrame frame, DynamicObject range, DynamicObject block,
                 @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
@@ -85,10 +81,6 @@ public abstract class RangeNodes {
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode eachInternalCall;
-
-        public EachNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object eachInt(VirtualFrame frame, DynamicObject range, DynamicObject block) {
@@ -177,10 +169,6 @@ public abstract class RangeNodes {
     @CoreMethod(names = "exclude_end?")
     public abstract static class ExcludeEndNode extends CoreMethodArrayArgumentsNode {
 
-        public ExcludeEndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public boolean excludeEndInt(DynamicObject range) {
             return Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range);
@@ -200,10 +188,6 @@ public abstract class RangeNodes {
 
     @CoreMethod(names = "begin")
     public abstract static class BeginNode extends CoreMethodArrayArgumentsNode {
-
-        public BeginNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int eachInt(DynamicObject range) {
@@ -265,10 +249,6 @@ public abstract class RangeNodes {
     @CoreMethod(names = "end")
     public abstract static class EndNode extends CoreMethodArrayArgumentsNode {
 
-        public EndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int lastInt(DynamicObject range) {
             return Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
@@ -290,10 +270,6 @@ public abstract class RangeNodes {
     public abstract static class StepNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode stepInternalCall;
-
-        public StepNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = { "isIntegerFixnumRange(range)", "step > 0" })
         public Object stepInt(VirtualFrame frame, DynamicObject range, int step, DynamicObject block) {
@@ -429,10 +405,6 @@ public abstract class RangeNodes {
 
         @Child private CallDispatchHeadNode toAInternalCall;
 
-        public ToANode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public DynamicObject toA(DynamicObject range) {
             final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
@@ -477,10 +449,6 @@ public abstract class RangeNodes {
     })
     public abstract static class InternalSetBeginNode extends RubyNode {
 
-        public InternalSetBeginNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isObjectRange(range)")
         public Object setBegin(DynamicObject range, Object begin) {
             Layouts.OBJECT_RANGE.setBegin(range, begin);
@@ -494,10 +462,6 @@ public abstract class RangeNodes {
             @NodeChild(type = RubyNode.class, value = "end")
     })
     public abstract static class InternalSetEndNode extends RubyNode {
-
-        public InternalSetEndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object setEnd(DynamicObject range, Object end) {
@@ -513,13 +477,9 @@ public abstract class RangeNodes {
     })
     public abstract static class InternalSetExcludeEndNode extends RubyNode {
 
-        public InternalSetExcludeEndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("excludeEnd")
         public RubyNode castToBoolean(RubyNode excludeEnd) {
-            return BooleanCastNodeGen.create(getContext(), getSourceSection(), excludeEnd);
+            return BooleanCastNodeGen.create(null, null, excludeEnd);
         }
 
         @Specialization(guards = "isObjectRange(range)")
@@ -551,7 +511,7 @@ public abstract class RangeNodes {
 
         @CreateCast("excludeEnd")
         public RubyNode coerceToBoolean(RubyNode excludeEnd) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), false, excludeEnd);
+            return BooleanCastWithDefaultNodeGen.create(null, null, false, excludeEnd);
         }
 
         @Specialization(guards = "rubyClass == rangeClass")

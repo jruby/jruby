@@ -46,10 +46,6 @@ public abstract class EncodingConverterPrimitiveNodes {
     @RubiniusPrimitive(name = "encoding_converter_allocate")
     public static abstract class EncodingConverterAllocateNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public EncodingConverterAllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object encodingConverterAllocate(DynamicObject encodingConverterClass, NotProvided unused1, NotProvided unused2) {
             return EncodingConverterNodes.createEncodingConverter(encodingConverterClass, null);
@@ -64,7 +60,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         public PrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)", "isRubyHash(options)"})
@@ -176,10 +172,6 @@ public abstract class EncodingConverterPrimitiveNodes {
     @RubiniusPrimitive(name = "encoding_converter_putback")
     public static abstract class EncodingConverterPutbackNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public EncodingConverterPutbackNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject encodingConverterPutback(DynamicObject encodingConverter, int maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
@@ -275,10 +267,6 @@ public abstract class EncodingConverterPrimitiveNodes {
 
     @RubiniusPrimitive(name = "encoding_converter_primitive_errinfo")
     public static abstract class EncodingConverterErrinfoNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public EncodingConverterErrinfoNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object encodingConverterLastError(DynamicObject encodingConverter) {

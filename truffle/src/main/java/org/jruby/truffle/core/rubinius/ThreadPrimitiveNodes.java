@@ -34,10 +34,6 @@ public class ThreadPrimitiveNodes {
     @RubiniusPrimitive(name = "thread_raise", unsafe = UnsafeGroup.THREADS)
     public static abstract class ThreadRaisePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public ThreadRaisePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = { "isRubyThread(thread)", "isRubyException(exception)" })
         public DynamicObject raise(DynamicObject thread, final DynamicObject exception) {
             raiseInThread(getContext(), thread, exception, this);

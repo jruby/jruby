@@ -43,10 +43,6 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "alive?", unsafe = UnsafeGroup.THREADS)
     public abstract static class AliveNode extends CoreMethodArrayArgumentsNode {
 
-        public AliveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean alive(DynamicObject thread) {
             final Status status = Layouts.THREAD.getStatus(thread);
@@ -57,10 +53,6 @@ public abstract class ThreadNodes {
 
     @CoreMethod(names = "backtrace", unsafe = UnsafeGroup.THREADS)
     public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
-
-        public BacktraceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -93,10 +85,6 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "current", onSingleton = true)
     public abstract static class CurrentNode extends CoreMethodArrayArgumentsNode {
 
-        public CurrentNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject current() {
             return getContext().getThreadManager().getCurrentThread();
@@ -106,10 +94,6 @@ public abstract class ThreadNodes {
 
     @CoreMethod(names = { "kill", "exit", "terminate" }, unsafe = UnsafeGroup.THREADS)
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
-
-        public KillNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -139,13 +123,9 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE, unsafe = UnsafeGroup.THREADS)
     public abstract static class HandleInterruptNode extends YieldingCoreMethodNode {
 
-        private final DynamicObject immediateSymbol = getContext().getSymbolTable().getSymbol("immediate");
-        private final DynamicObject onBlockingSymbol = getContext().getSymbolTable().getSymbol("on_blocking");
-        private final DynamicObject neverSymbol = getContext().getSymbolTable().getSymbol("never");
-
-        public HandleInterruptNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+        @CompilerDirectives.CompilationFinal private DynamicObject immediateSymbol;
+        @CompilerDirectives.CompilationFinal private DynamicObject onBlockingSymbol;
+        @CompilerDirectives.CompilationFinal private DynamicObject neverSymbol;
 
         @Specialization(guards = { "isRubyClass(exceptionClass)", "isRubySymbol(timing)" })
         public Object handle_interrupt(VirtualFrame frame, DynamicObject self, DynamicObject exceptionClass, DynamicObject timing, DynamicObject block) {
@@ -162,11 +142,11 @@ public abstract class ThreadNodes {
         }
 
         private InterruptMode symbolToInterruptMode(DynamicObject symbol) {
-            if (symbol == immediateSymbol) {
+            if (symbol == getImmediateSymbol()) {
                 return InterruptMode.IMMEDIATE;
-            } else if (symbol == onBlockingSymbol) {
+            } else if (symbol == getOnBlockingSymbol()) {
                 return InterruptMode.ON_BLOCKING;
-            } else if (symbol == neverSymbol) {
+            } else if (symbol == getNeverSymbol()) {
                 return InterruptMode.NEVER;
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -174,14 +154,37 @@ public abstract class ThreadNodes {
             }
         }
 
+        private DynamicObject getImmediateSymbol() {
+            if (immediateSymbol == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                immediateSymbol = getSymbol("immediate");
+            }
+
+            return immediateSymbol;
+        }
+
+        private DynamicObject getOnBlockingSymbol() {
+            if (onBlockingSymbol == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                onBlockingSymbol = getSymbol("on_blocking");
+            }
+
+            return onBlockingSymbol;
+        }
+
+        private DynamicObject getNeverSymbol() {
+            if (neverSymbol == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                neverSymbol = getSymbol("never");
+            }
+
+            return neverSymbol;
+        }
+
     }
 
     @CoreMethod(names = "initialize", rest = true, needsBlock = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -194,10 +197,6 @@ public abstract class ThreadNodes {
 
     @CoreMethod(names = "join", optional = 1, unsafe = UnsafeGroup.THREADS)
     public abstract static class JoinNode extends CoreMethodArrayArgumentsNode {
-
-        public JoinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject join(DynamicObject thread, NotProvided timeout) {
@@ -276,10 +275,6 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "main", onSingleton = true)
     public abstract static class MainNode extends CoreMethodArrayArgumentsNode {
 
-        public MainNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject main() {
             return getContext().getThreadManager().getRootThread();
@@ -289,10 +284,6 @@ public abstract class ThreadNodes {
 
     @CoreMethod(names = "pass", onSingleton = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class PassNode extends CoreMethodArrayArgumentsNode {
-
-        public PassNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject pass() {
@@ -304,10 +295,6 @@ public abstract class ThreadNodes {
 
     @CoreMethod(names = "status", unsafe = UnsafeGroup.THREADS)
     public abstract static class StatusNode extends CoreMethodArrayArgumentsNode {
-
-        public StatusNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object status(DynamicObject self) {
@@ -329,10 +316,6 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "stop?", unsafe = UnsafeGroup.THREADS)
     public abstract static class StopNode extends CoreMethodArrayArgumentsNode {
 
-        public StopNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean stop(DynamicObject self) {
             final Status status = Layouts.THREAD.getStatus(self);
@@ -344,10 +327,6 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "value", unsafe = UnsafeGroup.THREADS)
     public abstract static class ValueNode extends CoreMethodArrayArgumentsNode {
 
-        public ValueNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object value(DynamicObject self) {
             JoinNode.doJoin(this, self);
@@ -358,10 +337,6 @@ public abstract class ThreadNodes {
 
     @CoreMethod(names = { "wakeup", "run" }, unsafe = UnsafeGroup.THREADS)
     public abstract static class WakeupNode extends CoreMethodArrayArgumentsNode {
-
-        public WakeupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -387,10 +362,6 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "abort_on_exception", unsafe = UnsafeGroup.THREADS)
     public abstract static class AbortOnExceptionNode extends CoreMethodArrayArgumentsNode {
 
-        public AbortOnExceptionNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean abortOnException(DynamicObject self) {
             return Layouts.THREAD.getAbortOnException(self);
@@ -400,10 +371,6 @@ public abstract class ThreadNodes {
 
     @CoreMethod(names = "abort_on_exception=", required = 1, unsafe = UnsafeGroup.THREADS)
     public abstract static class SetAbortOnExceptionNode extends CoreMethodArrayArgumentsNode {
-
-        public SetAbortOnExceptionNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject setAbortOnException(DynamicObject self, boolean abortOnException) {
@@ -416,10 +383,6 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "allocate", constructor = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             // TODO (eregon, 13/10/2015): Thread is not allocatable in MRI but Rubinius's kernel uses it
@@ -430,10 +393,6 @@ public abstract class ThreadNodes {
 
     @CoreMethod(names = "list", onSingleton = true)
     public abstract static class ListNode extends CoreMethodArrayArgumentsNode {
-
-        public ListNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject list() {

@@ -82,10 +82,6 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_free", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerFreePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public PointerFreePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject free(DynamicObject pointer) {
@@ -97,10 +93,6 @@ public abstract class PointerPrimitiveNodes {
 
     @RubiniusPrimitive(name = "pointer_set_address", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerSetAddressPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerSetAddressPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public long setAddress(DynamicObject pointer, int address) {
@@ -140,10 +132,6 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_read_int", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerReadIntPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public PointerReadIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isSigned(signed)")
         public int readInt(DynamicObject pointer, boolean signed) {
             return Layouts.POINTER.getPointer(pointer).getInt(0);
@@ -158,10 +146,6 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_read_string", lowerFixnumParameters = 0, unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerReadStringPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public PointerReadStringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject readString(DynamicObject pointer, int length) {
             final byte[] bytes = new byte[length];
@@ -174,10 +158,6 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_set_autorelease", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerSetAutoreleasePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public PointerSetAutoreleasePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean setAutorelease(DynamicObject pointer, boolean autorelease) {
             // TODO CS 24-April-2015 let memory leak
@@ -189,10 +169,6 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_set_at_offset", lowerFixnumParameters = {0, 1}, unsafe = UnsafeGroup.MEMORY)
     @ImportStatic(RubiniusTypes.class)
     public static abstract class PointerSetAtOffsetPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerSetAtOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "type == TYPE_INT")
         public int setAtOffsetInt(DynamicObject pointer, int offset, int type, int value) {
@@ -246,10 +222,6 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_address", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerAddressPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public PointerAddressPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public long address(DynamicObject pointer) {
             return Layouts.POINTER.getPointer(pointer).address();
@@ -262,10 +234,6 @@ public abstract class PointerPrimitiveNodes {
     public static abstract class PointerGetAtOffsetPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
-
-        public PointerGetAtOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "type == TYPE_CHAR")
         public int getAtOffsetChar(DynamicObject pointer, int offset, int type) {
@@ -334,10 +302,6 @@ public abstract class PointerPrimitiveNodes {
     @RubiniusPrimitive(name = "pointer_write_string", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerWriteStringPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public PointerWriteStringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject address(DynamicObject pointer, DynamicObject string, int maxLength) {
             final Rope rope = StringOperations.rope(string);
@@ -350,10 +314,6 @@ public abstract class PointerPrimitiveNodes {
 
     @RubiniusPrimitive(name = "pointer_read_string_to_null", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerReadStringToNullPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerReadStringToNullPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullPointer(pointer)")
         public DynamicObject readNullPointer(DynamicObject pointer) {
@@ -370,10 +330,6 @@ public abstract class PointerPrimitiveNodes {
 
     @RubiniusPrimitive(name = "pointer_write_int", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerWriteIntPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerWriteIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject address(DynamicObject pointer, int value) {

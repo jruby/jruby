@@ -211,10 +211,6 @@ public abstract class FiberNodes {
 
         @Child SingleValueCastNode singleValueCastNode;
 
-        public FiberTransferNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         protected Object singleValue(VirtualFrame frame, Object[] args) {
             if (singleValueCastNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -248,10 +244,6 @@ public abstract class FiberNodes {
     @CoreMethod(names = "initialize", needsBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR, unsafe = UnsafeGroup.THREADS)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject initialize(DynamicObject fiber, DynamicObject block) {
@@ -268,7 +260,7 @@ public abstract class FiberNodes {
 
         public ResumeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
+            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(new RubyNode[] { null, null, null });
         }
 
         @Specialization
@@ -285,7 +277,7 @@ public abstract class FiberNodes {
 
         public YieldNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
+            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(new RubyNode[] { null, null, null });
         }
 
         @Specialization
@@ -355,10 +347,6 @@ public abstract class FiberNodes {
     @CoreMethod(names = "alive?", unsafe = UnsafeGroup.THREADS)
     public abstract static class AliveNode extends UnaryCoreMethodNode {
 
-        public AliveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean alive(DynamicObject fiber) {
             return Layouts.FIBER.getAlive(fiber);
@@ -368,10 +356,6 @@ public abstract class FiberNodes {
 
     @CoreMethod(names = "current", onSingleton = true)
     public abstract static class CurrentNode extends CoreMethodNode {
-
-        public CurrentNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject current() {
@@ -383,10 +367,6 @@ public abstract class FiberNodes {
 
     @CoreMethod(names = "allocate", constructor = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

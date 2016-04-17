@@ -66,6 +66,16 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
         if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
             return new CallRubiniusPrimitiveNode(context, sourceSection,
                     factory.createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])), returnID);
+        } else if (signature.size() == 1 && signature.get(0) == RubyNode[].class) {
+            return new CallRubiniusPrimitiveNode(context, sourceSection,
+                    factory.createNode(new Object[]{arguments.toArray(new RubyNode[arguments.size()])}), returnID);
+        } else if (signature.size() == 0) {
+            return new CallRubiniusPrimitiveNode(context, sourceSection,
+                    factory.createNode(), returnID);
+        } else if (signature.get(0) != RubyContext.class) {
+            final Object[] varargs = new Object[arguments.size()];
+            System.arraycopy(arguments.toArray(new RubyNode[arguments.size()]), 0, varargs, 0, arguments.size());
+            return new CallRubiniusPrimitiveNode(context, sourceSection, factory.createNode(varargs), returnID);
         } else {
             final Object[] varargs = new Object[2 + arguments.size()];
             varargs[0] = context;
@@ -85,8 +95,18 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
             arguments[n] = transformArgument(arguments[n], n);
         }
 
-        return new InvokeRubiniusPrimitiveNode(context, sourceSection,
-                factory.createNode(context, sourceSection, arguments));
+        List<List<Class<?>>> signatures = factory.getNodeSignatures();
+
+        assert signatures.size() == 1;
+        List<Class<?>> signature = signatures.get(0);
+
+        if (signature.get(0) == RubyContext.class) {
+            return new InvokeRubiniusPrimitiveNode(context, sourceSection,
+                    factory.createNode(context, sourceSection, arguments));
+        } else {
+            return new InvokeRubiniusPrimitiveNode(context, sourceSection,
+                    factory.createNode(new Object[]{arguments}));
+        }
     }
 
     private RubyNode transformArgument(RubyNode argument, int n) {

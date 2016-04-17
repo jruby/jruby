@@ -84,10 +84,6 @@ public abstract class IOBufferPrimitiveNodes {
     @RubiniusPrimitive(name = "iobuffer_unshift", lowerFixnumParameters = 1, unsafe = UnsafeGroup.IO)
     public static abstract class IOBufferUnshiftPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public IOBufferUnshiftPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyString(string)")
         public int unshift(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject string, int startPosition) {
             Layouts.IO_BUFFER.setWriteSynced(ioBuffer, false);
@@ -115,10 +111,6 @@ public abstract class IOBufferPrimitiveNodes {
 
     @RubiniusPrimitive(name = "iobuffer_fill", unsafe = UnsafeGroup.IO)
     public static abstract class IOBufferFillPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public IOBufferFillPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int fill(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject io) {
