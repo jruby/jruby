@@ -35,6 +35,10 @@ public class SnippetNode extends RubyBaseNode {
 
     @Child private DirectCallNode directCallNode;
 
+    public SnippetNode(String expression, String a, String b) {
+        this(expression, new String[]{a, b});
+    }
+
     public SnippetNode(String expression, String... parameters) {
         this.expression = expression;
         this.parameters = parameters;
