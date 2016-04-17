@@ -52,10 +52,6 @@ public abstract class MutexNodes {
     @CoreMethod(names = "lock")
     public abstract static class LockNode extends UnaryCoreMethodNode {
 
-        public LockNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject lock(DynamicObject mutex) {
             final ReentrantLock lock = Layouts.MUTEX.getLock(mutex);
@@ -69,10 +65,6 @@ public abstract class MutexNodes {
     @CoreMethod(names = "locked?")
     public abstract static class IsLockedNode extends UnaryCoreMethodNode {
 
-        public IsLockedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean isLocked(DynamicObject mutex) {
             return Layouts.MUTEX.getLock(mutex).isLocked();
@@ -83,10 +75,6 @@ public abstract class MutexNodes {
     @CoreMethod(names = "owned?")
     public abstract static class IsOwnedNode extends UnaryCoreMethodNode {
 
-        public IsOwnedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean isOwned(DynamicObject mutex) {
             return Layouts.MUTEX.getLock(mutex).isHeldByCurrentThread();
@@ -96,10 +84,6 @@ public abstract class MutexNodes {
 
     @CoreMethod(names = "try_lock")
     public abstract static class TryLockNode extends UnaryCoreMethodNode {
-
-        public TryLockNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean tryLock(
@@ -130,10 +114,6 @@ public abstract class MutexNodes {
     @CoreMethod(names = "unlock")
     public abstract static class UnlockNode extends UnaryCoreMethodNode {
 
-        public UnlockNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject unlock(DynamicObject mutex) {
             final ReentrantLock lock = Layouts.MUTEX.getLock(mutex);
@@ -148,10 +128,6 @@ public abstract class MutexNodes {
     public abstract static class SleepNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile durationLessThanZeroProfile = ConditionProfile.createBinaryProfile();
-
-        public SleepNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public long sleep(DynamicObject mutex, NotProvided duration) {

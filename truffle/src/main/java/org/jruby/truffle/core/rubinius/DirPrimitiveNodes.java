@@ -75,10 +75,6 @@ public abstract class DirPrimitiveNodes {
     @RubiniusPrimitive(name = "dir_open", unsafe = UnsafeGroup.IO)
     public static abstract class DirOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public DirOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(path)", "isNil(encoding)"})
         public DynamicObject open(DynamicObject dir, DynamicObject path, DynamicObject encoding) {
@@ -114,10 +110,6 @@ public abstract class DirPrimitiveNodes {
     @RubiniusPrimitive(name = "dir_read", unsafe = UnsafeGroup.IO)
     public static abstract class DirReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public DirReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public Object read(DynamicObject dir) {
@@ -146,10 +138,6 @@ public abstract class DirPrimitiveNodes {
     @RubiniusPrimitive(name = "dir_control", unsafe = UnsafeGroup.IO)
     public static abstract class DirControlPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public DirControlPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public Object control(DynamicObject dir, int kind, int position) {
@@ -171,10 +159,6 @@ public abstract class DirPrimitiveNodes {
 
     @RubiniusPrimitive(name = "dir_close", unsafe = UnsafeGroup.IO)
     public static abstract class DirClosePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public DirClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

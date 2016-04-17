@@ -72,7 +72,7 @@ public abstract class FreezeNode extends RubyNode {
     }
 
     protected WriteObjectFieldNode createWriteFrozenNode() {
-        return WriteObjectFieldNodeGen.create(getContext(), Layouts.FROZEN_IDENTIFIER);
+        return WriteObjectFieldNodeGen.create(Layouts.FROZEN_IDENTIFIER);
     }
 
 }

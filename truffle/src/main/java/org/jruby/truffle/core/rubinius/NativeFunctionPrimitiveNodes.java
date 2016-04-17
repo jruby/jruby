@@ -19,10 +19,6 @@ public abstract class NativeFunctionPrimitiveNodes {
     @RubiniusPrimitive(name = "nativefunction_type_size", needsSelf = false)
     public static abstract class NativeFunctionTypeSizePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public NativeFunctionTypeSizePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public long typeSize(int type) {
             switch (type) {

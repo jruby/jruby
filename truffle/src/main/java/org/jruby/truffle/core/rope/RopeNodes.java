@@ -52,12 +52,8 @@ public abstract class RopeNodes {
 
         @Child private MakeLeafRopeNode makeLeafRopeNode;
 
-        public static MakeSubstringNode create(RubyContext context, SourceSection sourceSection) {
-            return RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
-        }
-
-        public MakeSubstringNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
+        public static MakeSubstringNode createX() {
+            return RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
         public abstract Rope executeMake(Rope base, int offset, int byteLength);
@@ -67,7 +63,7 @@ public abstract class RopeNodes {
                                         @Cached("createBinaryProfile()") ConditionProfile isUTF8,
                                         @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
                                         @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit,
-                                        @Cached("create(getContext(), getSourceSection())") WithEncodingNode withEncodingNode) {
+                                        @Cached("create()") WithEncodingNode withEncodingNode) {
             if (isUTF8.profile(base.getEncoding() == UTF8Encoding.INSTANCE)) {
                 return RopeConstants.EMPTY_UTF8_ROPE;
             }
@@ -88,7 +84,7 @@ public abstract class RopeNodes {
                                         @Cached("createBinaryProfile()") ConditionProfile isUTF8,
                                         @Cached("createBinaryProfile()") ConditionProfile isUSAscii,
                                         @Cached("createBinaryProfile()") ConditionProfile isAscii8Bit,
-                                        @Cached("create(getContext(), getSourceSection())") GetByteNode getByteNode) {
+                                        @Cached("create()") GetByteNode getByteNode) {
             final int index = getByteNode.executeGetByte(base, offset);
 
             if (isUTF8.profile(base.getEncoding() == UTF8Encoding.INSTANCE)) {
@@ -215,7 +211,7 @@ public abstract class RopeNodes {
             } else {
                 if (makeLeafRopeNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(getContext(), getSourceSection(), null, null, null, null));
+                    makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null));
                 }
 
                 final byte[] bytes = RopeOperations.extractRange(base, offset, byteLength);
@@ -236,10 +232,6 @@ public abstract class RopeNodes {
             @NodeChild(type = RubyNode.class, value = "encoding")
     })
     public abstract static class MakeConcatNode extends RubyNode {
-
-        public MakeConcatNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         public abstract Rope executeMake(Rope left, Rope right, Encoding encoding);
 
@@ -328,12 +320,8 @@ public abstract class RopeNodes {
     })
     public abstract static class MakeLeafRopeNode extends RubyNode {
 
-        public static MakeLeafRopeNode create(RubyContext context, SourceSection sourceSection) {
-            return RopeNodesFactory.MakeLeafRopeNodeGen.create(context, sourceSection, null, null, null, null);
-        }
-
-        public MakeLeafRopeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
+        public static MakeLeafRopeNode create() {
+            return RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
         }
 
         public abstract LeafRope executeMake(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength);
@@ -513,25 +501,21 @@ public abstract class RopeNodes {
     })
     public abstract static class MakeRepeatingNode extends RubyNode {
 
-        public static MakeRepeatingNode create(RubyContext context, SourceSection sourceSection) {
-            return RopeNodesFactory.MakeRepeatingNodeGen.create(context, sourceSection, null, null);
-        }
-
-        public MakeRepeatingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
+        public static MakeRepeatingNode create() {
+            return RopeNodesFactory.MakeRepeatingNodeGen.create(null, null);
         }
 
         public abstract Rope executeMake(Rope base, int times);
 
         @Specialization(guards = "times == 0")
         public Rope repeatZero(Rope base, int times,
-                               @Cached("create(getContext(), getSourceSection())") WithEncodingNode withEncodingNode) {
+                               @Cached("create()") WithEncodingNode withEncodingNode) {
             return withEncodingNode.executeWithEncoding(RopeConstants.EMPTY_UTF8_ROPE, base.getEncoding(), CodeRange.CR_7BIT);
         }
 
         @Specialization(guards = "times == 1")
         public Rope repeatOne(Rope base, int times,
-                              @Cached("create(getContext(), getSourceSection())") WithEncodingNode withEncodingNode) {
+                              @Cached("create()") WithEncodingNode withEncodingNode) {
             return base;
         }
 
@@ -552,7 +536,7 @@ public abstract class RopeNodes {
         @Specialization(guards = { "!isRopeBuffer(base)", "isSingleByteString(base)", "times > 1" })
         @TruffleBoundary
         public Rope multiplySingleByteString(Rope base, int times,
-                                             @Cached("create(getContext(), getSourceSection())") MakeLeafRopeNode makeLeafRopeNode) {
+                                             @Cached("create()") MakeLeafRopeNode makeLeafRopeNode) {
             final byte filler = base.getBytes()[0];
 
             byte[] buffer = new byte[times];
@@ -589,10 +573,6 @@ public abstract class RopeNodes {
             @NodeChild(type = RubyNode.class, value = "printString")
     })
     public abstract static class DebugPrintRopeNode extends RubyNode {
-
-        public DebugPrintRopeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         public abstract DynamicObject executeDebugPrint(Rope rope, int currentLevel, boolean printString);
 
@@ -725,12 +705,8 @@ public abstract class RopeNodes {
     })
     public abstract static class WithEncodingNode extends RubyNode {
 
-        public static WithEncodingNode create(RubyContext context, SourceSection sourceSection) {
-            return RopeNodesFactory.WithEncodingNodeGen.create(context, sourceSection, null, null, null);
-        }
-
-        public WithEncodingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
+        public static WithEncodingNode create() {
+            return RopeNodesFactory.WithEncodingNodeGen.create(null, null, null);
         }
 
         public abstract Rope executeWithEncoding(Rope rope, Encoding encoding, CodeRange codeRange);
@@ -765,7 +741,7 @@ public abstract class RopeNodes {
                 "!isAsciiCompatbileChange(rope, encoding)"
         })
         public Rope withEncoding(Rope rope, Encoding encoding, CodeRange codeRange,
-                                 @Cached("create(getContext(), getSourceSection())") MakeLeafRopeNode makeLeafRopeNode) {
+                                 @Cached("create()") MakeLeafRopeNode makeLeafRopeNode) {
             return makeLeafRopeNode.executeMake(rope.getBytes(), encoding, codeRange, NotProvided.INSTANCE);
         }
 
@@ -789,12 +765,8 @@ public abstract class RopeNodes {
     })
     public abstract static class GetByteNode extends RubyNode {
 
-        public static GetByteNode create(RubyContext context, SourceSection sourceSection) {
-            return RopeNodesFactory.GetByteNodeGen.create(context, sourceSection, null, null);
-        }
-
-        public GetByteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
+        public static GetByteNode create() {
+            return RopeNodesFactory.GetByteNodeGen.create(null, null);
         }
 
         public abstract int executeGetByte(Rope rope, int index);
@@ -858,13 +830,13 @@ public abstract class RopeNodes {
 
         @Child private MakeLeafRopeNode makeLeafRopeNode;
 
-        public static FlattenNode create(RubyContext context, SourceSection sourceSection) {
-            return RopeNodesFactory.FlattenNodeGen.create(context, sourceSection, null);
+        public static FlattenNode create() {
+            return RopeNodesFactory.FlattenNodeGen.create(null, null, null);
         }
 
         public FlattenNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            makeLeafRopeNode = MakeLeafRopeNode.create(context, sourceSection);
+            makeLeafRopeNode = MakeLeafRopeNode.create();
         }
 
         public abstract LeafRope executeFlatten(Rope rope);

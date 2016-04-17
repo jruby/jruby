@@ -56,6 +56,6 @@ public abstract class IsFrozenNode extends RubyNode {
     }
 
     protected ReadObjectFieldNode createReadFrozenNode() {
-        return ReadObjectFieldNodeGen.create(getContext(), Layouts.FROZEN_IDENTIFIER, false);
+        return ReadObjectFieldNodeGen.create(Layouts.FROZEN_IDENTIFIER, false);
     }
 }

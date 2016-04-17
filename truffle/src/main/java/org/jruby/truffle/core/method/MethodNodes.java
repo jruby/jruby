@@ -55,14 +55,10 @@ public abstract class MethodNodes {
 
         @Child protected ReferenceEqualNode referenceEqualNode;
 
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         protected boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), null, null));
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null));
             }
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
         }
@@ -81,10 +77,6 @@ public abstract class MethodNodes {
 
     @CoreMethod(names = "arity")
     public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
-
-        public ArityNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int arity(DynamicObject method) {
@@ -115,10 +107,6 @@ public abstract class MethodNodes {
     @CoreMethod(names = "name")
     public abstract static class NameNode extends CoreMethodArrayArgumentsNode {
 
-        public NameNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject name(DynamicObject method) {
             CompilerDirectives.transferToInterpreter();
@@ -131,10 +119,6 @@ public abstract class MethodNodes {
     @CoreMethod(names = "owner")
     public abstract static class OwnerNode extends CoreMethodArrayArgumentsNode {
 
-        public OwnerNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject owner(DynamicObject method) {
             return Layouts.METHOD.getMethod(method).getDeclaringModule();
@@ -144,10 +128,6 @@ public abstract class MethodNodes {
 
     @CoreMethod(names = "parameters")
     public abstract static class ParametersNode extends CoreMethodArrayArgumentsNode {
-
-        public ParametersNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -162,10 +142,6 @@ public abstract class MethodNodes {
     @CoreMethod(names = "receiver")
     public abstract static class ReceiverNode extends CoreMethodArrayArgumentsNode {
 
-        public ReceiverNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object receiver(DynamicObject method) {
             return Layouts.METHOD.getReceiver(method);
@@ -175,10 +151,6 @@ public abstract class MethodNodes {
 
     @CoreMethod(names = "source_location")
     public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
-
-        public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object sourceLocation(DynamicObject method) {
@@ -217,10 +189,6 @@ public abstract class MethodNodes {
 
     @CoreMethod(names = "to_proc")
     public abstract static class ToProcNode extends CoreMethodArrayArgumentsNode {
-
-        public ToProcNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "methodObject == cachedMethodObject", limit = "getCacheLimit()")
         public DynamicObject toProcCached(DynamicObject methodObject,
@@ -288,10 +256,6 @@ public abstract class MethodNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

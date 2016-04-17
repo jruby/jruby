@@ -17,6 +17,9 @@ import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
+    public ArrayCoreMethodNode() {
+    }
+
     public ArrayCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }

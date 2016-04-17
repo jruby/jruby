@@ -20,10 +20,6 @@ public abstract class ChannelPrimitiveNodes {
     @RubiniusPrimitive(name = "channel_new")
     public static abstract class ChannelNewPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public ChannelNewPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject channelNew() {
             final DynamicObject channelClass = coreLibrary().getRubiniusChannelClass();

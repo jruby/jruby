@@ -31,10 +31,6 @@ public abstract class FloatPrimitiveNodes {
     @RubiniusPrimitive(name = "float_dtoa")
     public static abstract class FloatDToAPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public FloatDToAPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject dToA(double value) {
@@ -79,10 +75,6 @@ public abstract class FloatPrimitiveNodes {
 
     @RubiniusPrimitive(name = "float_signbit_p")
     public static abstract class FloatSignBitNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public FloatSignBitNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean floatSignBit(double value) {

@@ -119,12 +119,8 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class AddNode extends CoreMethodNode {
 
-        public AddNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("b") public RubyNode coerceOtherToAry(RubyNode other) {
-            return ToAryNodeGen.create(getContext(), getSourceSection(), other);
+            return ToAryNodeGen.create(null, null, other);
         }
 
         // One array has null storage, just copy the other.
@@ -350,10 +346,6 @@ public abstract class ArrayNodes {
         @Child protected ArrayReadSliceNormalizedNode readSliceNode;
         @Child private ToIntNode toIntNode;
 
-        public IndexSetNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         public abstract Object executeSet(VirtualFrame frame, DynamicObject array, Object index, Object length, Object value);
 
         // array[index] = object
@@ -560,13 +552,9 @@ public abstract class ArrayNodes {
 
         @Child private ArrayReadDenormalizedNode readNode;
 
-        public AtNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
-            return FixnumLowerNodeGen.create(getContext(), getSourceSection(),
-                    ToIntNodeGen.create(getContext(), getSourceSection(), index));
+            return FixnumLowerNodeGen.create(null, null,
+                    ToIntNodeGen.create(null, null, index));
         }
 
         @Specialization
@@ -583,10 +571,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends ArrayCoreMethodNode {
 
-        public ClearNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyArray(array)")
         public DynamicObject clear(DynamicObject array) {
             setStoreAndSize(array, null, 0);
@@ -598,10 +582,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "compact")
     @ImportStatic(ArrayGuards.class)
     public abstract static class CompactNode extends ArrayCoreMethodNode {
-
-        public CompactNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isIntArray(array)")
         public DynamicObject compactInt(DynamicObject array) {
@@ -647,10 +627,6 @@ public abstract class ArrayNodes {
 
     @CoreMethod(names = "compact!", raiseIfFrozenSelf = true)
     public abstract static class CompactBangNode extends ArrayCoreMethodNode {
-
-        public CompactBangNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "!isObjectArray(array)")
         public DynamicObject compactNotObjects(DynamicObject array) {
@@ -698,7 +674,7 @@ public abstract class ArrayNodes {
         }
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
-            return ToAryNodeGen.create(getContext(), getSourceSection(), other);
+            return ToAryNodeGen.create(null, null, other);
         }
 
         @Specialization
@@ -717,7 +693,7 @@ public abstract class ArrayNodes {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null,null});
+            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(new RubyNode[]{null,null});
         }
 
         @Specialization(guards = "isIntArray(array)")
@@ -810,12 +786,8 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteAtNode extends CoreMethodNode {
 
-        public DeleteAtNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
-            return ToIntNodeGen.create(getContext(), getSourceSection(), index);
+            return ToIntNodeGen.create(null, null, index);
         }
 
         @Specialization(guards = "isIntArray(array)")
@@ -1024,10 +996,6 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
-        public EachWithIndexNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject eachWithEmpty(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             return array;
@@ -1135,10 +1103,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "fill", rest = true, needsBlock = true)
     public abstract static class FillNode extends ArrayCoreMethodNode {
 
-        public FillNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = { "isObjectArray(array)", "args.length == 1" })
         protected DynamicObject fill(DynamicObject array, Object[] args, NotProvided block) {
             final Object value = args[0];
@@ -1175,7 +1139,7 @@ public abstract class ArrayNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null,null});
+            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(new RubyNode[]{null,null});
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -1252,10 +1216,6 @@ public abstract class ArrayNodes {
         @Child private ToIntNode toIntNode;
         @Child private CallDispatchHeadNode toAryNode;
         @Child private KernelNodes.RespondToNode respondToToAryNode;
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
         
         @Specialization
         public DynamicObject initialize(DynamicObject array, NotProvided size, NotProvided defaultValue, NotProvided block) {
@@ -1465,7 +1425,7 @@ public abstract class ArrayNodes {
         }
 
         protected ReplaceNode createReplaceNode() {
-            return ReplaceNodeFactory.create(getContext(), getSourceSection(), null, null);
+            return ReplaceNodeFactory.create(null, null);
         }
 
     }
@@ -1479,12 +1439,8 @@ public abstract class ArrayNodes {
     public abstract static class InitializeCopyNode extends CoreMethodNode {
         // TODO(cs): what about allocationSite ?
 
-        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("from") public RubyNode coerceOtherToAry(RubyNode other) {
-            return ToAryNodeGen.create(getContext(), getSourceSection(), other);
+            return ToAryNodeGen.create(null, null, other);
         }
 
         @Specialization(guards = {"isRubyArray(from)", "isNullArray(from)"})
@@ -1727,10 +1683,6 @@ public abstract class ArrayNodes {
 
         @Child private ToIntNode toIntNode;
 
-        public InsertNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object insertMissingValue(VirtualFrame frame, DynamicObject array, Object idx, NotProvided value, Object[] values) {
             return array;
@@ -1823,10 +1775,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"map", "collect"}, needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
-
-        public MapNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject mapNull(DynamicObject array, DynamicObject block) {
@@ -1939,10 +1887,6 @@ public abstract class ArrayNodes {
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
         @Child private ArrayWriteNormalizedNode writeNode;
-
-        public MapInPlaceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject mapInPlaceNull(DynamicObject array, DynamicObject block) {
@@ -2254,10 +2198,6 @@ public abstract class ArrayNodes {
         private final BranchProfile exceptionProfile = BranchProfile.create();
         private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
 
-        public PackNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(
                 guards = {
                         "isRubyString(format)",
@@ -2313,8 +2253,7 @@ public abstract class ArrayNodes {
 
             if (makeLeafRopeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(
-                        getContext(), null, null, null, null, null));
+                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null));
             }
 
             final DynamicObject string = createString(makeLeafRopeNode.executeMake(
@@ -2362,10 +2301,6 @@ public abstract class ArrayNodes {
 
         @Child private ToIntNode toIntNode;
         @Child private ArrayPopOneNode popOneNode;
-
-        public PopNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object pop(DynamicObject array, NotProvided n) {
@@ -2716,10 +2651,6 @@ public abstract class ArrayNodes {
 
         private final BranchProfile extendBranch = BranchProfile.create();
 
-        public PushNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = { "isNullArray(array)", "values.length == 0" })
         public DynamicObject pushNullEmptySingleIntegerFixnum(DynamicObject array, int value, Object[] values) {
             setStoreAndSize(array, new int[] { value }, 1);
@@ -2885,10 +2816,6 @@ public abstract class ArrayNodes {
 
         private final BranchProfile extendBranch = BranchProfile.create();
 
-        public PushOneNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject pushEmpty(DynamicObject array, Object value) {
             setStoreAndSize(array, new Object[] { value }, 1);
@@ -2956,10 +2883,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "reject", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
-
-        public RejectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullArray(array)")
         public Object selectNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
@@ -3039,10 +2962,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "delete_if" , needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteIfNode extends YieldingCoreMethodNode {
-
-        public DeleteIfNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullArray(array)")
         public Object rejectInPlaceNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
@@ -3155,10 +3074,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "reject!", needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
-
-        public RejectInPlaceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullArray(array)")
         public Object rejectInPlaceNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
@@ -3283,14 +3198,10 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class ReplaceNode extends CoreMethodNode {
 
-        public ReplaceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         public abstract DynamicObject executeReplace(DynamicObject array, DynamicObject other);
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode index) {
-            return ToAryNodeGen.create(getContext(), getSourceSection(), index);
+            return ToAryNodeGen.create(null, null, index);
         }
 
         @Specialization(guards = {"isRubyArray(other)", "isNullArray(other)"})
@@ -3332,10 +3243,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "select", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
-
-        public SelectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullArray(array)")
         public Object selectNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
@@ -3412,10 +3319,6 @@ public abstract class ArrayNodes {
     public abstract static class ShiftNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
-
-        public ShiftNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         public abstract Object executeShift(VirtualFrame frame, DynamicObject array, Object n);
 
@@ -3866,10 +3769,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"size", "length"})
     public abstract static class SizeNode extends ArrayCoreMethodNode {
 
-        public SizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int size(DynamicObject array) {
             return getSize(array);
@@ -4011,10 +3910,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "unshift", rest = true, raiseIfFrozenSelf = true)
     public abstract static class UnshiftNode extends CoreMethodArrayArgumentsNode {
 
-        public UnshiftNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject unshift(DynamicObject array, Object... args) {
             CompilerDirectives.transferToInterpreter();
@@ -4033,10 +3928,6 @@ public abstract class ArrayNodes {
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode zipInternalCall;
-
-        public ZipNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isIntArray(other)", "others.length == 0" })
         public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others, NotProvided block,

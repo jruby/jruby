@@ -42,10 +42,6 @@ public abstract class TimeNodes {
     @CoreMethod(names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
-        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyTime(from)")
         public Object initializeCopy(DynamicObject self, DynamicObject from) {
             Layouts.TIME.setDateTime(self, Layouts.TIME.getDateTime(from));
@@ -61,10 +57,6 @@ public abstract class TimeNodes {
     @NodeChild(type = RubyNode.class, value = "self")
     public abstract static class InternalGMTNode extends CoreMethodNode {
 
-        public InternalGMTNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean internalGMT(DynamicObject time) {
             return Layouts.TIME.getIsUtc(time);
@@ -74,10 +66,6 @@ public abstract class TimeNodes {
     // Not a core method, used to simulate Rubinius @offset.
     @NodeChild(type = RubyNode.class, value = "self")
     public abstract static class InternalOffsetNode extends CoreMethodNode {
-
-        public InternalOffsetNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -139,10 +127,6 @@ public abstract class TimeNodes {
     @CoreMethod(names = "add_internal!", required = 2, visibility = Visibility.PROTECTED)
     public abstract static class AddInternalNode extends CoreMethodArrayArgumentsNode {
 
-        public AddInternalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject addInternal(DynamicObject time, long seconds, long nanoSeconds) {
@@ -179,10 +163,6 @@ public abstract class TimeNodes {
 
     @CoreMethod(names = "gmtime")
     public abstract static class GmTimeNode extends CoreMethodArrayArgumentsNode {
-
-        public GmTimeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject localtime(DynamicObject time) {

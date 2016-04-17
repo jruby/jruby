@@ -34,7 +34,7 @@ public class LookupEntryNode extends RubyBaseNode {
         super(context, sourceSection);
         hashNode = new HashNode(context, sourceSection);
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
+        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null);
     }
 
     public HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {

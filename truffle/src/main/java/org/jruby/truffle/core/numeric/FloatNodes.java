@@ -37,10 +37,6 @@ public abstract class FloatNodes {
     @CoreMethod(names = "-@")
     public abstract static class NegNode extends CoreMethodArrayArgumentsNode {
 
-        public NegNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public double neg(double value) {
             return -value;
@@ -50,10 +46,6 @@ public abstract class FloatNodes {
 
     @CoreMethod(names = "+", required = 1)
     public abstract static class AddNode extends CoreMethodArrayArgumentsNode {
-
-        public AddNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public double add(double a, long b) {
@@ -80,10 +72,6 @@ public abstract class FloatNodes {
     @CoreMethod(names = "-", required = 1)
     public abstract static class SubNode extends CoreMethodArrayArgumentsNode {
 
-        public SubNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public double sub(double a, long b) {
             return a - b;
@@ -108,10 +96,6 @@ public abstract class FloatNodes {
 
     @CoreMethod(names = "*", required = 1)
     public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
-
-        public MulNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public double mul(double a, long b) {
@@ -142,10 +126,6 @@ public abstract class FloatNodes {
         @Child private CallDispatchHeadNode complexPowNode;
 
         private final ConditionProfile complexProfile = ConditionProfile.createBinaryProfile();
-
-        public PowNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = {
                 "exponent == cachedExponent",
@@ -200,10 +180,6 @@ public abstract class FloatNodes {
 
         @Child private CallDispatchHeadNode redoCoercedNode;
 
-        public DivNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public double div(double a, long b) {
             return a / b;
@@ -239,10 +215,6 @@ public abstract class FloatNodes {
     public abstract static class ModNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
-
-        public ModNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public double mod(double a, long b) {
@@ -312,10 +284,6 @@ public abstract class FloatNodes {
     @CoreMethod(names = "<", required = 1)
     public abstract static class LessNode extends CoreMethodArrayArgumentsNode {
 
-        public LessNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean less(double a, long b) {
             return a < b;
@@ -343,10 +311,6 @@ public abstract class FloatNodes {
 
     @CoreMethod(names = "<=", required = 1)
     public abstract static class LessEqualNode extends CoreMethodArrayArgumentsNode {
-
-        public LessEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean lessEqual(double a, long b) {
@@ -376,10 +340,6 @@ public abstract class FloatNodes {
     @CoreMethod(names = "eql?", required = 1)
     public abstract static class EqlNode extends CoreMethodArrayArgumentsNode {
 
-        public EqlNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean eql(double a, double b) {
             return a == b;
@@ -395,10 +355,6 @@ public abstract class FloatNodes {
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode fallbackCallNode;
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean equal(double a, long b) {
@@ -428,10 +384,6 @@ public abstract class FloatNodes {
 
     @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
-
-        public CompareNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNaN(a)")
         public DynamicObject compareFirstNaN(double a, Object b) {
@@ -477,10 +429,6 @@ public abstract class FloatNodes {
     @CoreMethod(names = ">=", required = 1)
     public abstract static class GreaterEqualNode extends CoreMethodArrayArgumentsNode {
 
-        public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean greaterEqual(double a, long b) {
             return a >= b;
@@ -510,10 +458,6 @@ public abstract class FloatNodes {
     @CoreMethod(names = ">", required = 1)
     public abstract static class GreaterNode extends CoreMethodArrayArgumentsNode {
 
-        public GreaterNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean greater(double a, long b) {
             return a > b;
@@ -541,10 +485,6 @@ public abstract class FloatNodes {
 
     @CoreMethod(names = { "abs", "magnitude" })
     public abstract static class AbsNode extends CoreMethodArrayArgumentsNode {
-
-        public AbsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public double abs(double n) {
@@ -590,10 +530,6 @@ public abstract class FloatNodes {
     @CoreMethod(names = "infinite?")
     public abstract static class InfiniteNode extends CoreMethodArrayArgumentsNode {
 
-        public InfiniteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object infinite(double value) {
             if (Double.isInfinite(value)) {
@@ -611,10 +547,6 @@ public abstract class FloatNodes {
 
     @CoreMethod(names = "nan?")
     public abstract static class NaNNode extends CoreMethodArrayArgumentsNode {
-
-        public NaNNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean nan(double value) {
@@ -748,10 +680,6 @@ public abstract class FloatNodes {
     @CoreMethod(names = "to_f")
     public abstract static class ToFNode extends CoreMethodArrayArgumentsNode {
 
-        public ToFNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public double toF(double value) {
             return value;
@@ -761,10 +689,6 @@ public abstract class FloatNodes {
 
     @CoreMethod(names = { "to_s", "inspect" })
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

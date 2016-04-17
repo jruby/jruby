@@ -26,13 +26,9 @@ public abstract class TrueClassNodes {
     @CoreMethod(names = "&", needsSelf = false, required = 1)
     public abstract static class AndNode extends UnaryCoreMethodNode {
 
-        public AndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("operand")
         public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
+            return BooleanCastNodeGen.create(null, null, operand);
         }
 
         @Specialization
@@ -44,10 +40,6 @@ public abstract class TrueClassNodes {
     @CoreMethod(names = "|", needsSelf = false, required = 1)
     public abstract static class OrNode extends CoreMethodArrayArgumentsNode {
 
-        public OrNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean or(Object other) {
             return true;
@@ -57,13 +49,9 @@ public abstract class TrueClassNodes {
     @CoreMethod(names = "^", needsSelf = false, required = 1)
     public abstract static class XorNode extends UnaryCoreMethodNode {
 
-        public XorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("operand")
         public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
+            return BooleanCastNodeGen.create(null, null, operand);
         }
 
         @Specialization

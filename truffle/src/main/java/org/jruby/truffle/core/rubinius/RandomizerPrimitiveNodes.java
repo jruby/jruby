@@ -25,10 +25,6 @@ public abstract class RandomizerPrimitiveNodes {
     @RubiniusPrimitive(name = "randomizer_allocate", needsSelf = false)
     public static abstract class RandomizerAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public RandomizerAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject randomizerAllocate() {
             return Layouts.RANDOMIZER.createRandomizer(coreLibrary().getRandomizerFactory(), new Random());
@@ -38,10 +34,6 @@ public abstract class RandomizerPrimitiveNodes {
 
     @RubiniusPrimitive(name = "randomizer_seed")
     public static abstract class RandomizerSeedPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public RandomizerSeedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyBignum(seed)")
         public DynamicObject randomizerSeed(DynamicObject randomizer, DynamicObject seed) {
@@ -70,10 +62,6 @@ public abstract class RandomizerPrimitiveNodes {
     @RubiniusPrimitive(name = "randomizer_rand_float")
     public static abstract class RandomizerRandFloatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public RandomizerRandFloatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public double randomizerRandFloat(DynamicObject randomizer) {
             // Logic copied from org.jruby.util.Random
@@ -87,10 +75,6 @@ public abstract class RandomizerPrimitiveNodes {
 
     @RubiniusPrimitive(name = "randomizer_rand_int")
     public static abstract class RandomizerRandIntPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public RandomizerRandIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int randomizerRandInt(DynamicObject randomizer, int limit) {
@@ -113,10 +97,6 @@ public abstract class RandomizerPrimitiveNodes {
 
     @RubiniusPrimitive(name = "randomizer_gen_seed")
     public static abstract class RandomizerGenSeedPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public RandomizerGenSeedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

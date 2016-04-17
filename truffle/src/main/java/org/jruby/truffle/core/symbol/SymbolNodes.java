@@ -47,10 +47,6 @@ public abstract class SymbolNodes {
     @CoreMethod(names = "all_symbols", onSingleton = true)
     public abstract static class AllSymbolsNode extends CoreMethodArrayArgumentsNode {
 
-        public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject allSymbols() {
@@ -62,10 +58,6 @@ public abstract class SymbolNodes {
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)
     public abstract static class EqualNode extends BinaryCoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubySymbol(b)")
         public boolean equal(DynamicObject a, DynamicObject b) {
@@ -82,10 +74,6 @@ public abstract class SymbolNodes {
     @CoreMethod(names = "encoding")
     public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
 
-        public EncodingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject encoding(DynamicObject symbol) {
             return EncodingNodes.getEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
@@ -96,10 +84,6 @@ public abstract class SymbolNodes {
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
-        public HashNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int hash(DynamicObject symbol) {
             return Layouts.SYMBOL.getHashCode(symbol);
@@ -109,10 +93,6 @@ public abstract class SymbolNodes {
 
     @CoreMethod(names = "to_proc")
     public abstract static class ToProcNode extends CoreMethodArrayArgumentsNode {
-
-        public ToProcNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "cachedSymbol == symbol", limit = "getCacheLimit()")
         public DynamicObject toProcCached(VirtualFrame frame, DynamicObject symbol,
@@ -158,10 +138,6 @@ public abstract class SymbolNodes {
     @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject toS(DynamicObject symbol) {
             return createString(Layouts.SYMBOL.getRope(symbol));
@@ -171,10 +147,6 @@ public abstract class SymbolNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

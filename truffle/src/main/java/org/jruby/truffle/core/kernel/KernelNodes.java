@@ -151,10 +151,6 @@ public abstract class KernelNodes {
 
         @Child private CallDispatchHeadNode toHashNode;
 
-        public BacktickNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyString(command)")
         public DynamicObject backtick(VirtualFrame frame, DynamicObject command) {
             // Command is lexically a string interoplation, so variables will already have been expanded
@@ -222,10 +218,6 @@ public abstract class KernelNodes {
 
         private final ConditionProfile sameProfile = ConditionProfile.createBinaryProfile();
 
-        public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
 
         @Specialization
@@ -240,7 +232,7 @@ public abstract class KernelNodes {
         private boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), null, null));
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null));
             }
 
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
@@ -259,10 +251,6 @@ public abstract class KernelNodes {
 
     @CoreMethod(names = "=~", required = 1, needsSelf = false)
     public abstract static class MatchNode extends CoreMethodArrayArgumentsNode {
-
-        public MatchNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject equal(Object other) {
@@ -295,7 +283,7 @@ public abstract class KernelNodes {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{ null, null });
+            equalNode = SameOrEqualNodeFactory.create(new RubyNode[]{ null, null });
         }
 
         @Specialization
@@ -312,10 +300,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "binding", isModuleFunction = true)
     public abstract static class BindingNode extends CoreMethodArrayArgumentsNode {
 
-        public BindingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject binding() {
@@ -329,10 +313,6 @@ public abstract class KernelNodes {
 
     @CoreMethod(names = "block_given?", isModuleFunction = true, needsCallerFrame = true)
     public abstract static class BlockGivenNode extends CoreMethodArrayArgumentsNode {
-
-        public BlockGivenNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean blockGiven(MaterializedFrame callerFrame,
@@ -351,10 +331,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "__callee__", needsSelf = false)
     public abstract static class CalleeNameNode extends CoreMethodArrayArgumentsNode {
 
-        public CalleeNameNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject calleeName() {
             CompilerDirectives.transferToInterpreter();
@@ -365,10 +341,6 @@ public abstract class KernelNodes {
 
     @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = { 0, 1 })
     public abstract static class CallerLocationsNode extends CoreMethodArrayArgumentsNode {
-
-        public CallerLocationsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject callerLocations(NotProvided omit, NotProvided length) {
@@ -531,20 +503,15 @@ public abstract class KernelNodes {
         @Child private CallDispatchHeadNode toStr;
         @Child private BindingNode bindingNode;
 
-        public EvalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("source")
         public RubyNode coerceSourceToString(RubyNode source) {
-            return ToStrNodeGen.create(getContext(), getSourceSection(), source);
+            return ToStrNodeGen.create(null, null, source);
         }
 
         protected DynamicObject getCallerBinding(VirtualFrame frame) {
             if (bindingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(
-                        getContext(), getSourceSection(), new RubyNode[]{}));
+                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(new RubyNode[]{}));
             }
 
             try {
@@ -732,10 +699,6 @@ public abstract class KernelNodes {
 
         @Child private CallDispatchHeadNode toHashNode;
 
-        public ExecNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object exec(VirtualFrame frame, Object command, Object[] args) {
             if (toHashNode == null) {
@@ -797,10 +760,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "fork", isModuleFunction = true, rest = true, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class ForkNode extends CoreMethodArrayArgumentsNode {
 
-        public ForkNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public Object fork(Object[] args) {
@@ -833,10 +792,6 @@ public abstract class KernelNodes {
 
         @Child private IsFrozenNode isFrozenNode;
 
-        public KernelFrozenNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean isFrozen(Object self) {
             if (isFrozenNode == null) {
@@ -851,10 +806,6 @@ public abstract class KernelNodes {
 
     @CoreMethod(names = "gets", isModuleFunction = true, unsafe = UnsafeGroup.IO)
     public abstract static class GetsNode extends CoreMethodArrayArgumentsNode {
-
-        public GetsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject gets(VirtualFrame frame) {
@@ -903,10 +854,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
-        public HashNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int hash(int value) {
             // TODO(CS): should check this matches MRI
@@ -942,10 +889,6 @@ public abstract class KernelNodes {
 
     @CoreMethod(names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
-
-        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object initializeCopy(DynamicObject self, DynamicObject from) {
@@ -1002,13 +945,9 @@ public abstract class KernelNodes {
     })
     public abstract static class InstanceVariableDefinedNode extends CoreMethodNode {
 
-        public InstanceVariableDefinedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(null, null, name);
         }
 
         @TruffleBoundary
@@ -1027,13 +966,9 @@ public abstract class KernelNodes {
     })
     public abstract static class InstanceVariableGetNode extends CoreMethodNode {
 
-        public InstanceVariableGetNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {
-            return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToSymbolOrStringNodeGen.create(null, null, name);
         }
 
         @Specialization(
@@ -1070,7 +1005,7 @@ public abstract class KernelNodes {
         }
 
         protected ReadObjectFieldNode createReadFieldNode(String name) {
-            return ReadObjectFieldNodeGen.create(getContext(), name, nil());
+            return ReadObjectFieldNodeGen.create(name, nil());
         }
 
         protected int getCacheLimit() {
@@ -1087,13 +1022,9 @@ public abstract class KernelNodes {
     })
     public abstract static class InstanceVariableSetNode extends CoreMethodNode {
 
-        public InstanceVariableSetNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {
-            return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToSymbolOrStringNodeGen.create(null, null, name);
         }
 
         @Specialization(
@@ -1132,7 +1063,7 @@ public abstract class KernelNodes {
         }
 
         protected WriteObjectFieldNode createWriteFieldNode(String name) {
-            return WriteObjectFieldNodeGen.create(getContext(), name);
+            return WriteObjectFieldNodeGen.create(name);
         }
 
         protected int getCacheLimit() {
@@ -1148,13 +1079,9 @@ public abstract class KernelNodes {
     })
     public abstract static class RemoveInstanceVariableNode extends CoreMethodNode {
 
-        public RemoveInstanceVariableNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(null, null, name);
         }
 
         @TruffleBoundary
@@ -1178,7 +1105,7 @@ public abstract class KernelNodes {
 
         public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            instanceVariablesNode = BasicObjectNodesFactory.InstanceVariablesNodeFactory.create(context, sourceSection, new RubyNode[] {});
+            instanceVariablesNode = BasicObjectNodesFactory.InstanceVariablesNodeFactory.create(new RubyNode[] {});
         }
 
         @Specialization
@@ -1214,10 +1141,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "lambda", isModuleFunction = true, needsBlock = true)
     public abstract static class LambdaNode extends CoreMethodArrayArgumentsNode {
 
-        public LambdaNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject lambda(NotProvided block) {
@@ -1249,10 +1172,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "local_variables", needsSelf = false)
     public abstract static class LocalVariablesNode extends CoreMethodArrayArgumentsNode {
 
-        public LocalVariablesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject localVariables() {
@@ -1264,10 +1183,6 @@ public abstract class KernelNodes {
 
     @CoreMethod(names = "__method__", needsSelf = false)
     public abstract static class MethodNameNode extends CoreMethodArrayArgumentsNode {
-
-        public MethodNameNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject methodName() {
@@ -1298,7 +1213,7 @@ public abstract class KernelNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToSymbolOrStringNodeGen.create(null, null, name);
         }
 
         @Specialization
@@ -1356,13 +1271,9 @@ public abstract class KernelNodes {
     })
     public abstract static class MethodsNode extends CoreMethodNode {
 
-        public MethodsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("regular")
         public RubyNode coerceToBoolean(RubyNode regular) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, regular);
+            return BooleanCastWithDefaultNodeGen.create(null, null, true, regular);
         }
 
         @Specialization(guards = "regular")
@@ -1394,10 +1305,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "nil?", needsSelf = false)
     public abstract static class NilNode extends CoreMethodArrayArgumentsNode {
 
-        public NilNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean isNil() {
             return false;
@@ -1420,7 +1327,7 @@ public abstract class KernelNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
         }
 
         @Specialization
@@ -1441,7 +1348,7 @@ public abstract class KernelNodes {
 
         public ProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            procNewNode = ProcNewNodeFactory.create(context, sourceSection, null);
+            procNewNode = ProcNewNodeFactory.create(null);
         }
 
         @Specialization
@@ -1467,7 +1374,7 @@ public abstract class KernelNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
         }
 
         @Specialization
@@ -1497,7 +1404,7 @@ public abstract class KernelNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
         }
 
         @Specialization
@@ -1538,10 +1445,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "rand", isModuleFunction = true, optional = 1)
     public abstract static class RandNode extends CoreMethodArrayArgumentsNode {
 
-        public RandNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public double rand(NotProvided max) {
             return ThreadLocalRandom.current().nextDouble();
@@ -1575,13 +1478,9 @@ public abstract class KernelNodes {
     })
     public abstract static class RequireNode extends CoreMethodNode {
 
-        public RequireNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("feature")
         public RubyNode coerceFeatureToPath(RubyNode feature) {
-            return ToPathNodeGen.create(getContext(), getSourceSection(), feature);
+            return ToPathNodeGen.create(null, null, feature);
         }
 
         @Specialization(guards = "isRubyString(featureString)")
@@ -1620,10 +1519,6 @@ public abstract class KernelNodes {
 
     @CoreMethod(names = "require_relative", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.LOAD)
     public abstract static class RequireRelativeNode extends CoreMethodArrayArgumentsNode {
-
-        public RequireRelativeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyString(feature)")
         public boolean requireRelative(VirtualFrame frame, DynamicObject feature, @Cached("create()") IndirectCallNode callNode) {
@@ -1692,7 +1587,7 @@ public abstract class KernelNodes {
 
         @CreateCast("includeProtectedAndPrivate")
         public RubyNode coerceToBoolean(RubyNode includeProtectedAndPrivate) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), false, includeProtectedAndPrivate);
+            return BooleanCastWithDefaultNodeGen.create(null, null, false, includeProtectedAndPrivate);
         }
 
         @Specialization(guards = "isRubyString(name)")
@@ -1746,10 +1641,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "respond_to_missing?", required = 2)
     public abstract static class RespondToMissingNode extends CoreMethodArrayArgumentsNode {
 
-        public RespondToMissingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyString(name)")
         public boolean doesRespondToMissingString(Object object, DynamicObject name, Object unusedIncludeAll) {
             return false;
@@ -1764,10 +1655,6 @@ public abstract class KernelNodes {
 
     @CoreMethod(names = "set_trace_func", isModuleFunction = true, required = 1)
     public abstract static class SetTraceFuncNode extends CoreMethodArrayArgumentsNode {
-
-        public SetTraceFuncNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNil(nil)")
         public DynamicObject setTraceFunc(Object nil) {
@@ -1817,7 +1704,7 @@ public abstract class KernelNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
         }
 
         @Specialization
@@ -1861,10 +1748,6 @@ public abstract class KernelNodes {
     public abstract static class SleepNode extends CoreMethodArrayArgumentsNode {
 
         @Child NumericToFloatNode floatCastNode;
-
-        public SleepNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public long sleep(NotProvided duration) {
@@ -1952,10 +1835,6 @@ public abstract class KernelNodes {
         private final BranchProfile exceptionProfile = BranchProfile.create();
         private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
 
-        public SprintfNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = { "isRubyString(format)", "ropesEqual(format, cachedFormat)" })
         public DynamicObject formatCached(
                 VirtualFrame frame,
@@ -2005,8 +1884,7 @@ public abstract class KernelNodes {
 
             if (makeLeafRopeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(
-                        getContext(), null, null, null, null, null));
+                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null));
             }
 
             final DynamicObject string = createString(makeLeafRopeNode.executeMake(
@@ -2046,10 +1924,6 @@ public abstract class KernelNodes {
 
         @Child private TaintNode taintNode;
 
-        public KernelTaintNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object taint(Object object) {
             if (taintNode == null) {
@@ -2066,10 +1940,6 @@ public abstract class KernelNodes {
 
         @Child private IsTaintedNode isTaintedNode;
 
-        public KernelIsTaintedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean isTainted(Object object) {
             if (isTaintedNode == null) {
@@ -2082,10 +1952,6 @@ public abstract class KernelNodes {
     }
 
     public abstract static class ToHexStringNode extends CoreMethodArrayArgumentsNode {
-
-        public ToHexStringNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         public abstract String executeToHexString(VirtualFrame frame, Object value);
 
@@ -2116,8 +1982,8 @@ public abstract class KernelNodes {
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             classNode = LogicalClassNodeGen.create(context, sourceSection, null);
-            objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[]{ null });
-            toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{ null });
+            objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDPrimitiveNodeFactory.create(new RubyNode[]{ null });
+            toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(new RubyNode[]{ null });
         }
 
         public abstract DynamicObject executeToS(VirtualFrame frame, Object self);
@@ -2146,7 +2012,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-            writeTaintNode = WriteObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER);
+            writeTaintNode = WriteObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
         }
 
         @Specialization

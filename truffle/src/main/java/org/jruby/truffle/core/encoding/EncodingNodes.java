@@ -98,10 +98,6 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "ascii_compatible?")
     public abstract static class AsciiCompatibleNode extends CoreMethodArrayArgumentsNode {
 
-        public AsciiCompatibleNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object isCompatible(DynamicObject encoding) {
             return EncodingOperations.getEncoding(encoding).isAsciiCompatible();
@@ -110,10 +106,6 @@ public abstract class EncodingNodes {
 
     @CoreMethod(names = "compatible?", needsSelf = false, onSingleton = true, required = 2)
     public abstract static class CompatibleQueryNode extends CoreMethodArrayArgumentsNode {
-
-        public CompatibleQueryNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = {
                 "isRubyString(first)",
@@ -317,10 +309,6 @@ public abstract class EncodingNodes {
 
         @Child private ToStrNode toStrNode;
 
-        public SetDefaultExternalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
@@ -362,10 +350,6 @@ public abstract class EncodingNodes {
 
         @Child private ToStrNode toStrNode;
 
-        public SetDefaultInternalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject defaultInternal(DynamicObject encoding) {
@@ -400,10 +384,6 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "list", onSingleton = true)
     public abstract static class ListNode extends CoreMethodArrayArgumentsNode {
 
-        public ListNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject list() {
@@ -417,10 +397,6 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "locale_charmap", onSingleton = true)
     public abstract static class LocaleCharacterMapNode extends CoreMethodArrayArgumentsNode {
 
-        public LocaleCharacterMapNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject localeCharacterMap() {
@@ -431,10 +407,6 @@ public abstract class EncodingNodes {
 
     @CoreMethod(names = "dummy?")
     public abstract static class DummyNode extends CoreMethodArrayArgumentsNode {
-
-        public DummyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean isDummy(DynamicObject encoding) {
@@ -539,10 +511,6 @@ public abstract class EncodingNodes {
     @CoreMethod(names = { "name", "to_s" })
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject encoding) {
@@ -554,10 +522,6 @@ public abstract class EncodingNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

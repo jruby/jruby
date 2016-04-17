@@ -22,10 +22,6 @@ public abstract class ExceptionPrimitiveNodes {
     @RubiniusPrimitive(name = "exception_errno_error", needsSelf = false)
     public static abstract class ExceptionErrnoErrorPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public ExceptionErrnoErrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject exceptionErrnoError(DynamicObject message, int errno) {
             return coreExceptions().errnoError(errno, message.toString(), this);

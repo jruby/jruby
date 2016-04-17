@@ -52,7 +52,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             CompilerDirectives.transferToInterpreter();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
             final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-            helperNode = insert(ForeignReadNodeFactory.StringCachingHelperNodeGen.create(context, null, null, null));
+            helperNode = insert(ForeignReadNodeFactory.StringCachingHelperNodeGen.create(null, null));
         }
 
         return helperNode;
@@ -64,10 +64,6 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             @NodeChild("name")
     })
     protected static abstract class StringCachingHelperNode extends RubyNode {
-
-        public StringCachingHelperNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         public abstract Object executeStringCachingHelper(VirtualFrame frame, DynamicObject receiver, Object name);
 
@@ -157,7 +153,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
         }
 
         protected StringCachedHelperNode createNextHelper() {
-            return ForeignReadNodeFactory.StringCachedHelperNodeGen.create(getContext(), null, null, null, null, null);
+            return ForeignReadNodeFactory.StringCachedHelperNodeGen.create(null, null, null, null);
         }
 
         @TruffleBoundary
@@ -224,10 +220,6 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
 
         protected final static String INDEX_METHOD_NAME = "[]";
 
-        public StringCachedHelperNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object name,
                                                          String stringName, boolean startsAt);
 
@@ -246,7 +238,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
         }
 
         protected ReadObjectFieldNode createReadObjectFieldNode(String name) {
-            return ReadObjectFieldNodeGen.create(getContext(), name, nil());
+            return ReadObjectFieldNodeGen.create(name, nil());
         }
 
         @Specialization(

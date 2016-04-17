@@ -179,4 +179,9 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         }
     }
 
+    protected void setSourceSection(RubyNode node, SourceSection sourceSection) {
+        node.clearSourceSection();
+        node.assignSourceSection(sourceSection);
+    }
+
 }

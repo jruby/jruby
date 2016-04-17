@@ -64,13 +64,9 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "!")
     public abstract static class NotNode extends UnaryCoreMethodNode {
 
-        public NotNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("operand")
         public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
+            return BooleanCastNodeGen.create(null, null, operand);
         }
 
         @Specialization
@@ -99,10 +95,6 @@ public abstract class BasicObjectNodes {
 
     @CoreMethod(names = { "equal?", "==" }, required = 1)
     public abstract static class ReferenceEqualNode extends BinaryCoreMethodNode {
-
-        public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         public abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
 
@@ -158,10 +150,6 @@ public abstract class BasicObjectNodes {
 
     @CoreMethod(names = "initialize", needsSelf = false)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject initialize() {
@@ -241,10 +229,6 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "__instance_variables__")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 
-        public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         public abstract DynamicObject executeObject(DynamicObject self);
 
         @TruffleBoundary
@@ -269,10 +253,6 @@ public abstract class BasicObjectNodes {
 
     @CoreMethod(names = "method_missing", needsBlock = true, rest = true, optional = 1, visibility = Visibility.PRIVATE)
     public abstract static class MethodMissingNode extends CoreMethodArrayArgumentsNode {
-
-        public MethodMissingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object methodMissingNoName(Object self, NotProvided name, Object[] args, NotProvided block) {

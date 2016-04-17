@@ -67,10 +67,6 @@ public abstract class DigestNodes {
     @CoreMethod(names = "md5", onSingleton = true)
     public abstract static class MD5Node extends CoreMethodArrayArgumentsNode {
 
-        public MD5Node(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject md5() {
@@ -81,10 +77,6 @@ public abstract class DigestNodes {
 
     @CoreMethod(names = "sha1", onSingleton = true)
     public abstract static class SHA1Node extends CoreMethodArrayArgumentsNode {
-
-        public SHA1Node(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -97,10 +89,6 @@ public abstract class DigestNodes {
     @CoreMethod(names = "sha256", onSingleton = true)
     public abstract static class SHA256Node extends CoreMethodArrayArgumentsNode {
 
-        public SHA256Node(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject sha256() {
@@ -111,10 +99,6 @@ public abstract class DigestNodes {
 
     @CoreMethod(names = "sha384", onSingleton = true)
     public abstract static class SHA384Node extends CoreMethodArrayArgumentsNode {
-
-        public SHA384Node(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -127,10 +111,6 @@ public abstract class DigestNodes {
     @CoreMethod(names = "sha512", onSingleton = true)
     public abstract static class SHA512Node extends CoreMethodArrayArgumentsNode {
 
-        public SHA512Node(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject sha512() {
@@ -141,10 +121,6 @@ public abstract class DigestNodes {
 
     @CoreMethod(names = "update", onSingleton = true, required = 2)
     public abstract static class UpdateNode extends CoreMethodArrayArgumentsNode {
-
-        public UpdateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
@@ -168,10 +144,6 @@ public abstract class DigestNodes {
     @CoreMethod(names = "reset", onSingleton = true, required = 1)
     public abstract static class ResetNode extends CoreMethodArrayArgumentsNode {
 
-        public ResetNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject reset(DynamicObject digestObject) {
@@ -183,10 +155,6 @@ public abstract class DigestNodes {
 
     @CoreMethod(names = "digest", onSingleton = true, required = 1)
     public abstract static class DigestNode extends CoreMethodArrayArgumentsNode {
-
-        public DigestNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -212,10 +180,6 @@ public abstract class DigestNodes {
     @CoreMethod(names = "digest_length", onSingleton = true, required = 1)
     public abstract static class DigestLengthNode extends CoreMethodArrayArgumentsNode {
 
-        public DigestLengthNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public int digestLength(DynamicObject digestObject) {
@@ -226,10 +190,6 @@ public abstract class DigestNodes {
 
     @CoreMethod(names = "bubblebabble", onSingleton = true, required = 1)
     public abstract static class BubbleBabbleNode extends CoreMethodArrayArgumentsNode {
-
-        public BubbleBabbleNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
