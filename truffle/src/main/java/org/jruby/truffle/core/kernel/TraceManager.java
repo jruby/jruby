@@ -20,6 +20,7 @@ import com.oracle.truffle.api.instrumentation.ExecutionEventNode;
 import com.oracle.truffle.api.instrumentation.ExecutionEventNodeFactory;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
@@ -206,7 +207,13 @@ public class TraceManager {
 
         @TruffleBoundary
         private SourceSection getCallerSourceSection() {
-            return Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final Node callNode = Truffle.getRuntime().getCallerFrame().getCallNode();
+
+            if (callNode == null) {
+                return null;
+            } else {
+                return callNode.getEncapsulatingSourceSection();
+            }
         }
 
         @TruffleBoundary
