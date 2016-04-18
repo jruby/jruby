@@ -1,4 +1,6 @@
-version = File.read( File.join( basedir, 'VERSION' ) ).strip
+version = ENV['JRUBY_VERSION'] ||
+  File.read( File.join( basedir, 'VERSION' ) ).strip
+
 project 'JRuby', 'https://github.com/jruby/jruby' do
 
   model_version '4.0.0'

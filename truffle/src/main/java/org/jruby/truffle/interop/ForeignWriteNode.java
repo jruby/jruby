@@ -50,7 +50,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
             CompilerDirectives.transferToInterpreter();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
             final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-            helperNode = insert(ForeignWriteNodeFactory.StringCachingHelperNodeGen.create(null, null, null));
+            helperNode = insert(ForeignWriteNodeFactory.StringCachingHelperNodeGen.create(context, null, null, null));
         }
 
         return helperNode;
@@ -63,6 +63,10 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
             @NodeChild("value")
     })
     protected static abstract class StringCachingHelperNode extends RubyNode {
+
+        public StringCachingHelperNode(RubyContext context) {
+            super(context, null);
+        }
 
         public abstract Object executeStringCachingHelper(VirtualFrame frame, DynamicObject receiver,
                                                           Object name, Object value);

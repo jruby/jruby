@@ -167,7 +167,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
         for (int i = 0; i < in.size(); i++) {
             if (in.get(i)) {
                 count++;
-                buf.append(' ').append(i);
+                buf.append(' ').append(problem.getVariable(i));
                 if (count % 10 == 0) buf.append("\t\n");
             }
         }
@@ -179,7 +179,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
         for (int i = 0; i < out.size(); i++) {
             if (out.get(i)) {
                 count++;
-                buf.append(' ').append(i);
+                buf.append(' ').append(problem.getVariable(i));
                 if (count % 10 == 0) buf.append("\t\n");
             }
         }
