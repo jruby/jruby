@@ -65,9 +65,10 @@ import org.jruby.RubyString;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
@@ -995,7 +996,7 @@ public class Java implements Library {
 
     }
 
-    final static class ProcToInterface extends org.jruby.internal.runtime.methods.DynamicMethod {
+    static final class ProcToInterface extends org.jruby.internal.runtime.methods.DynamicMethod {
 
         ProcToInterface(final RubyClass singletonClass) {
             super(singletonClass, PUBLIC);
@@ -1003,10 +1004,6 @@ public class Java implements Library {
 
         @Override // method_missing impl :
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            if ( ! ( self instanceof RubyProc ) ) {
-                throw context.runtime.newTypeError("interface impl method_missing for block used with non-Proc object");
-            }
-            final RubyProc proc = (RubyProc) self;
             final IRubyObject[] newArgs;
             switch( args.length ) {
                 case 1 :  newArgs = IRubyObject.NULL_ARRAY; break;
@@ -1015,12 +1012,54 @@ public class Java implements Library {
                 default : newArgs = new IRubyObject[ args.length - 1 ];
                     System.arraycopy(args, 1, newArgs, 0, newArgs.length);
             }
-            return proc.call(context, newArgs);
+            return callProc(context, self, newArgs);
+        }
+
+        private IRubyObject callProc(ThreadContext context, IRubyObject self, IRubyObject[] procArgs) {
+            if ( ! ( self instanceof RubyProc ) ) {
+                throw context.runtime.newTypeError("interface impl method_missing for block used with non-Proc object");
+            }
+            return ((RubyProc) self).call(context, procArgs);
         }
 
         @Override
         public DynamicMethod dup() {
             return this;
+        }
+
+        final ConcreteMethod getConcreteMethod() { return new ConcreteMethod(); }
+
+        final class ConcreteMethod extends org.jruby.internal.runtime.methods.JavaMethod {
+
+            ConcreteMethod() {
+                super(ProcToInterface.this.implementationClass, Visibility.PUBLIC);
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
+                return ProcToInterface.this.callProc(context, self, IRubyObject.NULL_ARRAY);
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, Block block) {
+                return ProcToInterface.this.callProc(context, self, new IRubyObject[]{arg0});
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+                return ProcToInterface.this.callProc(context, self, new IRubyObject[]{arg0, arg1});
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+                return ProcToInterface.this.callProc(context, self, new IRubyObject[]{arg0, arg1, arg2});
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+                return ProcToInterface.this.callProc(context, self, args);
+            }
+
         }
 
     }

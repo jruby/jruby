@@ -37,13 +37,14 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ReflectPermission;
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.isUpperCase;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.toLowerCase;
 
-import java.lang.reflect.ReflectPermission;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.security.AccessController;
@@ -242,7 +243,18 @@ public class JavaUtil {
             // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
             // no matter what method is called on the interface
             final RubyClass singletonClass = rubyObject.getSingletonClass();
-            singletonClass.addMethod("method_missing", new Java.ProcToInterface(singletonClass));
+            final Java.ProcToInterface procToIface = new Java.ProcToInterface(singletonClass);
+            singletonClass.addMethod("method_missing", procToIface);
+            // similar to Iface.impl { ... } - bind interface method(s) to avoid Java-Ruby conflicts
+            // ... e.g. calling a Ruby implemented Predicate#test should not dispatch to Kernel#test
+            final Java.ProcToInterface.ConcreteMethod implMethod = procToIface.getConcreteMethod();
+            // getMethods for interface returns all methods (including ones from super-interfaces)
+            for ( Method method : targetType.getMethods() ) {
+                if ( Modifier.isAbstract(method.getModifiers()) ) {
+                    singletonClass.addMethodInternal(method.getName(), implMethod);
+                }
+            }
+
         }
         JavaObject javaObject = (JavaObject) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
         return (T) javaObject.getValue();
