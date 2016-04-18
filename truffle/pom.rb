@@ -14,14 +14,12 @@ project 'JRuby Truffle' do
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
-              :id => 'truffle' )
-
-  truffle_version = 'fc569a2cda2cf886f4513b9f340ee9233f1847af-SNAPSHOT'
+  truffle_version = '0.12'
   jar 'com.oracle.truffle:truffle-api:' + truffle_version
   jar 'com.oracle.truffle:truffle-debug:' + truffle_version
   jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
   jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
+  
   jar 'junit:junit', :scope => 'test'
 
   plugin 'org.antlr:antlr4-maven-plugin', '4.5.1-1' do
