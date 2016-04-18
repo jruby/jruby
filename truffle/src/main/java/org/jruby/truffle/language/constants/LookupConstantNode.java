@@ -44,25 +44,36 @@ public abstract class LookupConstantNode extends RubyNode {
 
     @Child CheckLayoutNode checkLayoutNode = new CheckLayoutNode();
 
-    public LookupConstantNode(RubyContext context, SourceSection sourceSection, boolean ignoreVisibility, boolean lookInObject) {
+    public LookupConstantNode(
+            RubyContext context,
+            SourceSection sourceSection,
+            boolean ignoreVisibility,
+            boolean lookInObject) {
         super(context, sourceSection);
         this.ignoreVisibility = ignoreVisibility;
         this.lookInObject = lookInObject;
     }
 
-    public abstract RubyConstant executeLookupConstant(VirtualFrame frame, Object module, String name);
+    public abstract RubyConstant executeLookupConstant(
+            VirtualFrame frame,
+            Object module,
+            String name);
 
-    @Specialization(guards = {
-            "isRubyModule(module)",
-            "module == cachedModule",
-            "guardName(name, cachedName, sameNameProfile)"
-    }, assumptions = "getUnmodifiedAssumption(cachedModule)", limit = "getCacheLimit()")
-    protected RubyConstant lookupConstant(VirtualFrame frame, DynamicObject module, String name,
-                                          @Cached("module") DynamicObject cachedModule,
-                                          @Cached("name") String cachedName,
-                                          @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
-                                          @Cached("isVisible(cachedModule, constant)") boolean isVisible,
-                                          @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
+    @Specialization(
+            guards = {
+                    "isRubyModule(module)",
+                    "module == cachedModule",
+                    "guardName(name, cachedName, sameNameProfile)" },
+            assumptions = "getUnmodifiedAssumption(cachedModule)",
+            limit = "getCacheLimit()")
+    protected RubyConstant lookupConstant(
+            VirtualFrame frame, DynamicObject module, String name,
+            @Cached("module") DynamicObject cachedModule,
+            @Cached("name") String cachedName,
+            @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
+            @Cached("isVisible(cachedModule, constant)") boolean isVisible,
+            @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
+
         if (!isVisible) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(module, name, this));
@@ -90,11 +101,15 @@ public abstract class LookupConstantNode extends RubyNode {
     @Specialization(guards = "!isRubyModule(module)")
     protected RubyConstant lookupNotModule(Object module, String name) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreExceptions().typeErrorIsNotA(module.toString(), "class/module", this));
+        throw new RaiseException(coreExceptions().typeErrorIsNotA(
+                module.toString(),
+                "class/module",
+                this));
     }
 
     protected boolean guardName(String name, String cachedName, ConditionProfile sameNameProfile) {
-        // This is likely as for literal constant lookup the name does not change and Symbols always return the same String.
+        // This is likely as for literal constant lookup the name does not change and Symbols
+        // always return the same String.
         if (sameNameProfile.profile(name == cachedName)) {
             return true;
         } else {
@@ -115,7 +130,9 @@ public abstract class LookupConstantNode extends RubyNode {
     }
 
     protected boolean isVisible(DynamicObject module, RubyConstant constant) {
-        return ignoreVisibility || constant == null || constant.isVisibleTo(getContext(), LexicalScope.NONE, module);
+        return ignoreVisibility ||
+                constant == null ||
+                constant.isVisibleTo(getContext(), LexicalScope.NONE, module);
     }
 
     protected int getCacheLimit() {
