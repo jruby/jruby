@@ -2,9 +2,12 @@ package org.jruby.java.proxies;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -344,7 +347,7 @@ public class JavaInterfaceTemplate {
         return JavaProxy.op_aref(context, self, args);
     }
 
-    @JRubyMethod(name = "impl", rest = true)
+    @JRubyMethod(name = "impl", rest = true) // impl(methods = true)
     public static IRubyObject impl(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block implBlock) {
         final Ruby runtime = context.runtime;
 
@@ -352,8 +355,13 @@ public class JavaInterfaceTemplate {
             throw runtime.newArgumentError("block required to call #impl on a Java interface");
         }
 
+        boolean allMethods = true;
         final IRubyObject[] methodNames;
         if ( args.length == 0 ) methodNames = null;
+        else if ( args.length == 1 && args[0] instanceof RubyBoolean ) {
+            allMethods = args[0].isTrue(); // impl(false) ... allMethods = false
+            methodNames = null;
+        }
         else {
             methodNames = args.clone();
             Arrays.sort(methodNames); // binarySearch needs a sorted array
@@ -366,26 +374,34 @@ public class JavaInterfaceTemplate {
         final BlockInterfaceImpl ifaceImpl = new BlockInterfaceImpl(implClass, implBlock, methodNames);
         implClass.addMethod("method_missing", ifaceImpl); // def ImplClass.method_missing ...
 
-        //
         final Class<?> ifaceClass = JavaClass.getJavaClass(context, ((RubyModule) self));
         if ( methodNames == null ) {
             final BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod();
             for ( Method method : ifaceClass.getMethods() ) {
+                if ( method.isBridge() || method.isSynthetic() ) continue;
+                if ( Modifier.isStatic( method.getModifiers() ) ) continue;
+                // override default methods (by default) - users should pass down method names or impl(false) { ... }
+                if ( ! allMethods && ! Modifier.isAbstract( method.getModifiers() ) ) continue;
                 implClass.addMethodInternal(method.getName(), implMethod); // might add twice - its fine
             }
         }
         else {
             final BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod();
-            final Method[] allMethods = ifaceClass.getDeclaredMethods();
-            for ( IRubyObject methodName : methodNames ) {
+            final Method[] decMethods = ifaceClass.getDeclaredMethods();
+            loop: for ( IRubyObject methodName : methodNames ) {
                 final String name = methodName.toString();
-                for ( int i = 0; i < allMethods.length; i++ ) {
+                for ( int i = 0; i < decMethods.length; i++ ) {
+                    final Method method = decMethods[i];
+                    if ( method.isBridge() || method.isSynthetic() ) continue;
+                    if ( Modifier.isStatic( method.getModifiers() ) ) continue;
                     // add if its a declared method of the interface or its super-interfaces
-                    if ( name.equals( allMethods[i].getName() ) ) {
+                    if ( name.equals(decMethods[i].getName()) ) {
                         implClass.addMethodInternal(name, implMethod);
-                        break;
+                        continue loop;
                     }
                 }
+                // did not continue (main) loop - passed method name not found in interface
+                runtime.getWarnings().warn("`" + name + "' is not a declared method in interface " + ifaceClass.getName());
             }
         }
 
