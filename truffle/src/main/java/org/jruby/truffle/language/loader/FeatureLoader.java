@@ -275,7 +275,7 @@ public class FeatureLoader {
                 return true;
             } finally {
                 if (!lock.hasQueuedThreads()) {
-                    // may remove lock after a thread starts waiting has to mitigated see (1)
+                    // may remove lock after a thread starts waiting, has to be mitigated see (1)
                     fileLocks.remove(expandedPath);
                 }
                 lock.unlock();
