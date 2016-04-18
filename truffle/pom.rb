@@ -7,6 +7,7 @@ project 'JRuby Truffle' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
+ +            'truffle.version' => '0.12',
               'jruby.basedir' => '${basedir}/..' )
 
   jar 'org.yaml:snakeyaml:1.14'
@@ -14,7 +15,7 @@ project 'JRuby Truffle' do
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  truffle_version = '0.12'
+  truffle_version = '${truffle.version}'
   jar 'com.oracle.truffle:truffle-api:' + truffle_version
   jar 'com.oracle.truffle:truffle-debug:' + truffle_version
   jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
