@@ -1170,7 +1170,7 @@ public class RubyModule extends RubyObject {
         addMethodInternal(name, method);
     }
 
-    public void addMethodInternal(String name, DynamicMethod method) {
+    public final void addMethodInternal(String name, DynamicMethod method) {
         synchronized(methodLocation.getMethodsForWrite()) {
             addMethodAtBootTimeOnly(name, method);
             invalidateCoreClasses();
@@ -1186,7 +1186,7 @@ public class RubyModule extends RubyObject {
      * @param name The name to which to bind the method
      * @param method The method to bind
      */
-    public void addMethodAtBootTimeOnly(String name, DynamicMethod method) {
+    public final void addMethodAtBootTimeOnly(String name, DynamicMethod method) {
         if (hasPrepends()) method = new WrapperMethod(methodLocation, method, method.getVisibility());
 
         methodLocation.getMethodsForWrite().put(name, method);
@@ -1195,21 +1195,21 @@ public class RubyModule extends RubyObject {
     }
 
     public void removeMethod(ThreadContext context, String name) {
-        Ruby runtime = context.runtime;
-
         testFrozen("class/module");
 
-        if (name.equals("object_id") || name.equals("__send__") || name.equals("initialize")) {
-            runtime.getWarnings().warn(ID.UNDEFINING_BAD, "removing `" + name + "' may cause serious problems");
+        switch (name) {
+            case "object_id"  : warnMethodRemoval(context, name); break;
+            case "__send__"   : warnMethodRemoval(context, name); break;
+            case "initialize" : warnMethodRemoval(context, name); break;
         }
 
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModule.
         Map<String, DynamicMethod> methodsForWrite = methodLocation.getMethodsForWrite();
         synchronized (methodsForWrite) {
-            DynamicMethod method = (DynamicMethod) methodsForWrite.remove(name);
+            DynamicMethod method = methodsForWrite.remove(name);
             if (method == null) {
-                throw runtime.newNameError("method '" + name + "' not defined in " + getName(), name);
+                throw context.runtime.newNameError("method '" + name + "' not defined in " + getName(), name);
             }
 
             invalidateCoreClasses();
@@ -1218,10 +1218,14 @@ public class RubyModule extends RubyObject {
 
         if (isSingleton()) {
             IRubyObject singleton = ((MetaClass)this).getAttached();
-            singleton.callMethod(context, "singleton_method_removed", runtime.newSymbol(name));
+            singleton.callMethod(context, "singleton_method_removed", context.runtime.newSymbol(name));
         } else {
-            callMethod(context, "method_removed", runtime.newSymbol(name));
+            callMethod(context, "method_removed", context.runtime.newSymbol(name));
         }
+    }
+
+    private static void warnMethodRemoval(final ThreadContext context, final String name) {
+        context.runtime.getWarnings().warn(ID.UNDEFINING_BAD, "removing `" + name + "' may cause serious problems");
     }
 
     /**
