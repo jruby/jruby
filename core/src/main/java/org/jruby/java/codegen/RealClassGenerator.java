@@ -31,6 +31,7 @@ package org.jruby.java.codegen;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -63,7 +64,7 @@ import org.objectweb.asm.Type;
 import static org.objectweb.asm.Opcodes.*;
 
 /**
- * On fly .class generator (used for Ruby interface impls, sub-classes).
+ * On fly .class generator (used for Ruby interface impls).
  *
  * @author headius
  */
@@ -82,6 +83,7 @@ public abstract class RealClassGenerator {
             superTypeNames[i] = p(interfaces[i]);
             for ( Method method : interfaces[i].getMethods() ) {
                 final String name = method.getName();
+                if ( Modifier.isStatic(method.getModifiers()) ) continue;
                 List<Method> methods = simpleToAll.get(name);
                 if (methods == null) {
                     simpleToAll.put(name, methods = new ArrayList<Method>(6));
