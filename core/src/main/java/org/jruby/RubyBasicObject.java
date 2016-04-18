@@ -2952,11 +2952,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // Deprecated methods below this line
 
     @Deprecated
-    public IRubyObject initialize() {
-        return getRuntime().getNil();
-    }
-
-    @Deprecated
     protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
         this(runtime, metaClass, useObjectSpace);
     }

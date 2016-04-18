@@ -117,4 +117,32 @@ describe "A Ruby class generating a Java stub" do
     end
 
   end
+
+  describe "with an initialize() Java method override" do
+    it "generates correct method despite initialize name" do
+      # java.beans.beancontext.BeanContextSupport
+      cls = generate("class BeanContext < RubyObject; def initialize(); end;" +
+                     " java_signature 'void initialize()'; def init(); end; end").classes[0]
+
+      init = cls.methods[0]
+
+      expect( init.name ).to eql 'initialize'
+      expect( init.constructor? ).to be true
+      expect( init.args.length ).to eql 0
+
+      init = cls.methods[1]
+
+      expect( init.name ).to eql 'init'
+      expect( init.constructor? ).to be false
+      expect( init.args.length ).to eql 0
+
+      java = init.to_s
+      expect( java.index('public void initialize()') ).to_not be nil
+
+      puts cls.to_s if $VERBOSE
+
+      javac_status = javac_compile_contents(cls.to_s, 'BeanContext.java')
+      raise 'javac failed (see above output)' unless javac_status
+    end
+  end
 end
