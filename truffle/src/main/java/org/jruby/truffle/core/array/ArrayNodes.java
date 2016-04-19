@@ -732,7 +732,7 @@ public abstract class ArrayNodes {
             }
             if (isFrozenNode.executeIsFrozen(array)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
+                throw new RaiseException(coreExceptions().frozenError(array, this));
             }
         }
 

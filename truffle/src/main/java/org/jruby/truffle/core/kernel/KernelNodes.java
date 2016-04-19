@@ -2023,7 +2023,7 @@ public abstract class KernelNodes {
 
             if (isFrozenNode.executeIsFrozen(object)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().frozenError(Layouts.MODULE.getFields(coreLibrary().getLogicalClass(object)).getName(), this));
+                throw new RaiseException(coreExceptions().frozenError(object, this));
             }
 
             writeTaintNode.execute(object, false);

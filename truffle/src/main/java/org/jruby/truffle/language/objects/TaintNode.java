@@ -66,9 +66,7 @@ public abstract class TaintNode extends RubyNode {
     }
 
     private Object frozen(Object object) {
-        throw new RaiseException(coreExceptions().frozenError(
-                Layouts.MODULE.getFields(coreLibrary().getLogicalClass(object)).getName(),
-                this));
+        throw new RaiseException(coreExceptions().frozenError(object, this));
     }
 
 }

@@ -160,7 +160,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     public void checkFrozen(RubyContext context, Node currentNode) {
         if (context.getCoreLibrary() != null && verySlowIsFrozen(context, rubyModuleObject)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreExceptions().frozenError(Layouts.MODULE.getFields(getLogicalClass()).getName(), currentNode));
+            throw new RaiseException(context.getCoreExceptions().frozenError(rubyModuleObject, currentNode));
         }
     }
 

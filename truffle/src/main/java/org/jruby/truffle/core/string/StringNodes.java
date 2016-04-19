@@ -1184,8 +1184,7 @@ public abstract class StringNodes {
 
             if (isFrozenNode.executeIsFrozen(self)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(
-                        coreExceptions().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(self)).getName(), this));
+                throw new RaiseException(coreExceptions().frozenError(self, this));
             }
 
             StringOperations.setRope(self, rope(from));
