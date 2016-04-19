@@ -20,6 +20,7 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
+    <truffle.version>0.12</truffle.version>
   </properties>
   <dependencies>
     <dependency>
@@ -41,23 +42,23 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-api</artifactId>
-      <version>0.12</version>
+      <version>${truffle.version}</version>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-debug</artifactId>
-      <version>0.12</version>
+      <version>${truffle.version}</version>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
-      <version>0.12</version>
+      <version>${truffle.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-tck</artifactId>
-      <version>0.12</version>
+      <version>${truffle.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
