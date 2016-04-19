@@ -91,6 +91,8 @@ public class IRDumper extends IRVisitor {
     public void visit(IRScope scope, boolean full, boolean recurse) {
         println("begin " + scope.getScopeType().name() + "<" + scope.getName() + ">");
 
+        println("flags: " + scope.getFlags());
+
         InterpreterContext ic;
 
         if (full) {
