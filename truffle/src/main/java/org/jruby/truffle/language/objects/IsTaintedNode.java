@@ -48,8 +48,7 @@ public abstract class IsTaintedNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubySymbol(object) || isNil(object)")
-    protected boolean isTaintedNilOrSymbol(
-        DynamicObject object) {
+    protected boolean isTaintedNilOrSymbol(DynamicObject object) {
         return false;
     }
 
