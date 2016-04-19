@@ -609,11 +609,11 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "bytes")
-    public abstract static class BytesNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "bytes", needsBlock = true)
+    public abstract static class BytesNode extends YieldingCoreMethodNode {
 
         @Specialization
-        public DynamicObject bytes(DynamicObject string) {
+        public DynamicObject bytes(VirtualFrame frame, DynamicObject string, NotProvided block) {
             final Rope rope = rope(string);
             final byte[] bytes = rope.getBytes();
 
@@ -624,6 +624,18 @@ public abstract class StringNodes {
             }
 
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+        }
+
+        @Specialization
+        public DynamicObject bytes(VirtualFrame frame, DynamicObject string, DynamicObject block) {
+            Rope rope = rope(string);
+            byte[] bytes = rope.getBytes();
+
+            for (int i = 0; i < bytes.length; i++) {
+                yield(frame, block, bytes[i] & 0xff);
+            }
+
+            return string;
         }
 
     }
