@@ -583,19 +583,17 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class CompactNode extends ArrayCoreMethodNode {
 
-        @Specialization(guards = "isIntArray(array)")
-        public DynamicObject compactInt(DynamicObject array) {
-            return createArray(getContext(), Arrays.copyOf((int[]) getStore(array), getSize(array)), getSize(array));
+        @Specialization(guards = "isNullArray(array)")
+        public Object compactNull(DynamicObject array) {
+            return createArray(getContext(), null, 0);
         }
 
-        @Specialization(guards = "isLongArray(array)")
-        public DynamicObject compactLong(DynamicObject array) {
-            return createArray(getContext(), Arrays.copyOf((long[]) getStore(array), getSize(array)), getSize(array));
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public DynamicObject compactDouble(DynamicObject array) {
-            return createArray(getContext(), Arrays.copyOf((double[]) getStore(array), getSize(array)), getSize(array));
+        @Specialization(guards = { "!isObjectArray(array)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject compactPrimitive(DynamicObject array,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final int size = getSize(array);
+            Object store = strategy.newMirror(array).extractRange(0, size).getArray();
+            return createArray(getContext(), store, size);
         }
 
         @Specialization(guards = "isObjectArray(array)")
@@ -616,11 +614,6 @@ public abstract class ArrayNodes {
             }
 
             return createArray(getContext(), newStore, m);
-        }
-
-        @Specialization(guards = "isNullArray(array)")
-        public Object compactNull(DynamicObject array) {
-            return createArray(getContext(), null, 0);
         }
 
     }
@@ -696,84 +689,51 @@ public abstract class ArrayNodes {
             equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(new RubyNode[]{null,null});
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object deleteIntegerFixnum(VirtualFrame frame, DynamicObject array, Object value) {
-            final int[] store = (int[]) getStore(array);
-
-            Object found = nil();
-
-            int i = 0;
-            int n = 0;
-            for (; n < getSize(array); n++) {
-                final Object stored = store[n];
-
-                if (equalNode.executeSameOrEqual(frame, stored, value)) {
-                    if (isFrozenNode == null) {
-                        CompilerDirectives.transferToInterpreter();
-                        isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
-                    }
-                    if (isFrozenNode.executeIsFrozen(array)) {
-                        CompilerDirectives.transferToInterpreter();
-                        throw new RaiseException(
-                            coreExceptions().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
-                    }
-                    found = store[n];
-                    continue;
-                }
-
-                if (i != n) {
-                    store[i] = store[n];
-                }
-
-                i++;
-            }
-            if(i != n){
-                setStoreAndSize(array, store, i);
-            }
-            return found;
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public Object deleteObject(VirtualFrame frame, DynamicObject array, Object value) {
-            final Object[] store = (Object[]) getStore(array);
-
-            Object found = nil();
-
-            int i = 0;
-            int n = 0;
-            for (; n < getSize(array); n++) {
-                final Object stored = store[n];
-
-                if (equalNode.executeSameOrEqual(frame, stored, value)) {
-                    if (isFrozenNode == null) {
-                        CompilerDirectives.transferToInterpreter();
-                        isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
-                    }
-                    if (isFrozenNode.executeIsFrozen(array)) {
-                        CompilerDirectives.transferToInterpreter();
-                        throw new RaiseException(
-                            coreExceptions().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
-                    }
-                    found = store[n];
-                    continue;
-                }
-
-                if (i != n) {
-                    store[i] = store[n];
-                }
-
-                i++;
-            }
-
-            if(i != n){
-                setStoreAndSize(array, store, i);
-            }
-            return found;
-        }
-
         @Specialization(guards = "isNullArray(array)")
         public Object deleteNull(VirtualFrame frame, DynamicObject array, Object value) {
             return nil();
+        }
+
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public Object delete(VirtualFrame frame, DynamicObject array, Object value,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror store = strategy.newMirror(array);
+
+            Object found = nil();
+
+            int i = 0;
+            int n = 0;
+            for (; n < getSize(array); n++) {
+                final Object stored = store.get(n);
+
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
+                    checkFrozen(array);
+                    found = stored;
+                    continue;
+                }
+
+                if (i != n) {
+                    store.set(i, store.get(n));
+                }
+
+                i++;
+            }
+
+            if (i != n) {
+                setStoreAndSize(array, store.getArray(), i);
+            }
+            return found;
+        }
+
+        public void checkFrozen(DynamicObject array) {
+            if (isFrozenNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            if (isFrozenNode.executeIsFrozen(array)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(coreExceptions().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
+            }
         }
 
     }
