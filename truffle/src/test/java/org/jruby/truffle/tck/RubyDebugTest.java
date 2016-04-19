@@ -27,11 +27,15 @@ import com.oracle.truffle.api.debug.ExecutionEvent;
 import com.oracle.truffle.api.debug.SuspendedEvent;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.EventConsumer;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import com.oracle.truffle.api.vm.PolyglotEngine.Value;
+import java.util.Objects;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.junit.After;
 
 public class RubyDebugTest {
@@ -45,7 +49,7 @@ public class RubyDebugTest {
     protected final ByteArrayOutputStream err = new ByteArrayOutputStream();
 
     @Before
-    public void before() {
+    public void before() throws IOException {
         suspendedEvent = null;
         executionEvent = null;
         engine = PolyglotEngine.newBuilder().setOut(out).setErr(err).onEvent(new EventConsumer<ExecutionEvent>(ExecutionEvent.class) {
@@ -64,6 +68,11 @@ public class RubyDebugTest {
                 suspendedEvent = null;
             }
         }).build();
+        engine.eval(Source.fromText(
+            "def nothing(n)\n" +
+            "end\n",
+            "init.rb").withMimeType("application/x-ruby")
+        );
         run.clear();
     }
 
@@ -138,7 +147,7 @@ public class RubyDebugTest {
             }
         });
         assertLocation(3, "1",
-                        "n", 1L,
+                        "n", 1,
                         "nMinusOne", null,
                         "nMOFact", null,
                         "res", null);
@@ -259,7 +268,7 @@ public class RubyDebugTest {
             public void run() {
                 assertNotNull(suspendedEvent);
                 Assert.assertEquals(line, suspendedEvent.getNode().getSourceSection().getLineLocation().getLineNumber());
-                Assert.assertEquals(code, suspendedEvent.getNode().getSourceSection().getCode());
+                Assert.assertEquals(code, suspendedEvent.getNode().getSourceSection().getCode().trim());
                 final MaterializedFrame frame = suspendedEvent.getFrame();
 
                 Assert.assertEquals(expectedFrame.length / 2, frame.getFrameDescriptor().getSize());
@@ -269,7 +278,16 @@ public class RubyDebugTest {
                     Object expectedValue = expectedFrame[i + 1];
                     FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(expectedIdentifier);
                     Assert.assertNotNull(slot);
-                    Assert.assertEquals(expectedValue, frame.getValue(slot));
+                    Object value = frame.getValue(slot);
+                    if (Objects.equals(expectedValue, value)) {
+                        continue;
+                    }
+                    Node findContextNode = RubyLanguage.INSTANCE.unprotectedCreateFindContextNode();
+                    RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
+                    if (value == context.getCoreLibrary().getNilObject()) {
+                        value = null;
+                    }
+                    Assert.assertEquals(expectedValue, value);
                 }
                 run.removeFirst().run();
             }
