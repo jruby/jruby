@@ -104,21 +104,26 @@ describe "List Ruby extensions" do
 
   it 'returns same collection type as target on sort' do
     list = java.util.Vector.new ['b','a']
-    list = list.sort { |a, b| a.length <=> b.length }
+
     # NOTE: collides with Java 8's sort :
-    unless TestHelper::JAVA_8
-      expect( list ).to be_a java.util.Vector
-      expect( list.to_a ).to eq ['b','a']
-    end
+    java.util.Vector.class_eval { alias sort ruby_sort }
 
-    list = java.util.LinkedList.new ['b','a']
-    list = list.sort { |a, b| a <=> b }
-    unless TestHelper::JAVA_8
-      expect( list ).to be_a java.util.LinkedList
-      expect( list.to_a ).to eq ['a','b']
-    end
+    list = list.sort { |a, b| a.length <=> b.length }
+    expect( list ).to be_a java.util.Vector
+    expect( list.to_a ).to eq ['b','a']
 
-    expect( java.util.ArrayList.new.sort ).to be_a java.util.ArrayList unless TestHelper::JAVA_8
+    list = java.util.LinkedList.new ['b','a','c']
+    # list = list.sort { |a, b| a <=> b }
+    if TestHelper::JAVA_8
+      sorted = list.ruby_sort { |a, b| a <=> b }
+    else
+      sorted = list.sort { |a, b| a <=> b }
+    end
+    expect( sorted ).to be_a java.util.LinkedList
+    expect( sorted.to_a ).to eq ['a','b','c']
+    expect( sorted ).to_not be list
+
+    expect( java.util.ArrayList.new.ruby_sort ).to be_a java.util.ArrayList
   end
 
   it 'converts to_ary' do

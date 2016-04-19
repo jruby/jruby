@@ -419,8 +419,8 @@ public abstract class JavaUtil {
             return RubyArray.newArrayNoCopy(runtime, array);
         }
 
-        @JRubyMethod
         @SuppressWarnings("unchecked")
+        @JRubyMethod(name = { "sort", "ruby_sort" }) // name conflict on Java 8, but users can alias if they want
         public static IRubyObject sort(final ThreadContext context, final IRubyObject self, final Block block) {
             java.util.List dupList = unwrapJavaObject(self.callMethod(context, "dup"));
             if ( dupList == unwrapJavaObject(self) ) {
@@ -432,8 +432,8 @@ public abstract class JavaUtil {
             return Java.getInstance(context.runtime, dupList);
         }
 
-        @JRubyMethod(name = "sort!")
         @SuppressWarnings("unchecked")
+        @JRubyMethod(name = "sort!")
         public static IRubyObject sort_bang(final ThreadContext context, final IRubyObject self, final Block block) {
             final java.util.List list = unwrapJavaObject(self);
             sortImpl(context, list, block);
