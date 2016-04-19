@@ -71,6 +71,7 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
@@ -104,7 +105,7 @@ public abstract class VMPrimitiveNodes {
         private boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), null, null));
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null));
             }
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
         }
@@ -128,10 +129,6 @@ public abstract class VMPrimitiveNodes {
     @RubiniusPrimitive(name = "vm_gc_start", needsSelf = false)
     public static abstract class VMGCStartPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public VMGCStartPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject vmGCStart() {
             System.gc();
@@ -141,16 +138,11 @@ public abstract class VMPrimitiveNodes {
     }
 
     // The hard #exit!
-    @RubiniusPrimitive(name = "vm_exit", needsSelf = false)
+    @RubiniusPrimitive(name = "vm_exit", needsSelf = false, unsafe = UnsafeGroup.EXIT)
     public static abstract class VMExitPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public VMExitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object vmExit(int status) {
-            getContext().shutdown();
             throw new ExitException(status);
         }
 
@@ -195,10 +187,6 @@ public abstract class VMPrimitiveNodes {
     @RubiniusPrimitive(name = "vm_get_module_name", needsSelf = false)
     public static abstract class VMGetModuleNamePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public VMGetModuleNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject vmGetModuleName(DynamicObject module) {
             return createString(StringOperations.encodeRope(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE));
@@ -206,12 +194,8 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_get_user_home", needsSelf = false)
+    @RubiniusPrimitive(name = "vm_get_user_home", needsSelf = false, unsafe = UnsafeGroup.IO)
     public abstract static class VMGetUserHomePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public VMGetUserHomePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyString(username)")
         public DynamicObject vmGetUserHome(DynamicObject username) {
@@ -220,7 +204,7 @@ public abstract class VMPrimitiveNodes {
             final Passwd passwd = posix().getpwnam(username.toString());
             if (passwd == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("user " + username.toString() + " does not exist", this));
+                throw new RaiseException(coreExceptions().argumentError("user " + username.toString() + " does not exist", this));
             }
             return createString(StringOperations.encodeRope(passwd.getHome(), UTF8Encoding.INSTANCE));
         }
@@ -251,7 +235,7 @@ public abstract class VMPrimitiveNodes {
 
         public VMObjectEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            referenceEqualNode = ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
+            referenceEqualNode = ReferenceEqualNodeFactory.create(null, null);
         }
 
         @Specialization
@@ -327,10 +311,6 @@ public abstract class VMPrimitiveNodes {
     @RubiniusPrimitive(name = "vm_set_module_name", needsSelf = false)
     public static abstract class VMSetModuleNamePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public VMSetModuleNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object vmSetModuleName(Object object) {
             throw new UnsupportedOperationException("vm_set_module_name");
@@ -340,10 +320,6 @@ public abstract class VMPrimitiveNodes {
 
     @RubiniusPrimitive(name = "vm_singleton_class_object", needsSelf = false)
     public static abstract class VMObjectSingletonClassObjectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public VMObjectSingletonClassObjectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
@@ -355,10 +331,6 @@ public abstract class VMPrimitiveNodes {
     @RubiniusPrimitive(name = "vm_throw", needsSelf = false)
     public abstract static class ThrowNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public ThrowNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object doThrow(Object tag, Object value) {
             throw new ThrowException(tag, value);
@@ -369,10 +341,6 @@ public abstract class VMPrimitiveNodes {
     @RubiniusPrimitive(name = "vm_time", needsSelf = false)
     public abstract static class TimeNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public TimeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public long time() {
             return System.currentTimeMillis() / 1000;
@@ -382,10 +350,6 @@ public abstract class VMPrimitiveNodes {
 
     @RubiniusPrimitive(name = "vm_times", needsSelf = false)
     public abstract static class TimesNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public TimesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -433,12 +397,8 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_watch_signal", needsSelf = false)
+    @RubiniusPrimitive(name = "vm_watch_signal", needsSelf = false, unsafe = UnsafeGroup.SIGNALS)
     public static abstract class VMWatchSignalPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public VMWatchSignalPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = { "isRubyString(signalName)", "isRubyString(action)" })
         public boolean watchSignal(DynamicObject signalName, DynamicObject action) {
@@ -465,7 +425,7 @@ public abstract class VMPrimitiveNodes {
             try {
                 getContext().getNativePlatform().getSignalManager().watchDefaultForSignal(signal);
             } catch (IllegalArgumentException e) {
-                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
             return true;
         }
@@ -476,7 +436,7 @@ public abstract class VMPrimitiveNodes {
             try {
                 getContext().getNativePlatform().getSignalManager().watchSignal(signal, newHandler);
             } catch (IllegalArgumentException e) {
-                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
             return true;
         }
@@ -485,10 +445,6 @@ public abstract class VMPrimitiveNodes {
 
     @RubiniusPrimitive(name = "vm_get_config_item", needsSelf = false)
     public abstract static class VMGetConfigItemPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public VMGetConfigItemPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(key)")
@@ -506,10 +462,6 @@ public abstract class VMPrimitiveNodes {
 
     @RubiniusPrimitive(name = "vm_get_config_section", needsSelf = false)
     public abstract static class VMGetConfigSectionPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public VMGetConfigSectionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(section)")
@@ -538,12 +490,8 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "vm_wait_pid", needsSelf = false)
+    @RubiniusPrimitive(name = "vm_wait_pid", needsSelf = false, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class VMWaitPidPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public VMWaitPidPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -610,10 +558,6 @@ public abstract class VMPrimitiveNodes {
 
     @RubiniusPrimitive(name = "vm_set_class", needsSelf = false)
     public abstract static class VMSetClassPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public VMSetClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyClass(newClass)")
         public DynamicObject setClass(DynamicObject object, DynamicObject newClass) {

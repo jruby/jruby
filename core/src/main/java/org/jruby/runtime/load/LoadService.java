@@ -41,7 +41,6 @@ import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
 import java.security.AccessControlException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +66,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
@@ -295,7 +293,7 @@ public class LoadService {
     }
 
     protected void addLoadedFeature(String shortName, String name) {
-        loadedFeatures.append(RubyString.newString(runtime, name));
+        loadedFeatures.appendString(runtime, name);
 
         addFeatureToIndex(shortName, name);
     }
@@ -640,8 +638,7 @@ public class LoadService {
     }
 
     public void removeInternalLoadedFeature(String name) {
-        RubyString nameRubyString = runtime.newString(name);
-        loadedFeatures.delete(runtime.getCurrentContext(), nameRubyString, Block.NULL_BLOCK);
+        loadedFeatures.deleteString(runtime.getCurrentContext(), name);
     }
 
     private boolean isFeaturesIndexUpToDate() {

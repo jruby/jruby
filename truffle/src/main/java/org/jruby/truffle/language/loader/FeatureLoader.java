@@ -9,8 +9,16 @@
  */
 package org.jruby.truffle.language.loader;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ArityException;
+import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.Message;
+import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.UnsupportedMessageException;
+import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
@@ -44,7 +52,7 @@ public class FeatureLoader {
         final String featurePath = findFeature(feature);
 
         if (featurePath == null) {
-            throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, callNode));
+            throw new RaiseException(context.getCoreExceptions().loadErrorCannotLoad(feature, callNode));
         }
 
         return doRequire(frame, featurePath, callNode);
@@ -78,6 +86,12 @@ public class FeatureLoader {
     }
 
     private String findFeatureWithAndWithoutExtension(String path) {
+        final String asCExt = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
+
+        if (asCExt != null) {
+            return asCExt;
+        }
+
         final String withExtension = findFeatureWithExactPath(path + RubyLanguage.EXTENSION);
 
         if (withExtension != null) {
@@ -115,7 +129,7 @@ public class FeatureLoader {
         }
     }
 
-    private boolean doRequire(final VirtualFrame frame, final String expandedPath, final IndirectCallNode calNode) {
+    private boolean doRequire(final VirtualFrame frame, final String expandedPath, final IndirectCallNode callNode) {
         if (isFeatureLoaded(expandedPath)) {
             return false;
         }
@@ -137,7 +151,7 @@ public class FeatureLoader {
             return false;
         }
 
-        context.getThreadManager().runUntilResult(calNode, new ThreadManager.BlockingAction<Boolean>() {
+        context.getThreadManager().runUntilResult(callNode, new ThreadManager.BlockingAction<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
                 lock.lockInterruptibly();
@@ -158,24 +172,68 @@ public class FeatureLoader {
                 return false;
             }
 
+            final String mimeType = source.getMimeType();
+
+            switch (mimeType) {
+                case RubyLanguage.MIME_TYPE: {
+                    final RubyRootNode rootNode = context.getCodeLoader().parse(
+                            source,
+                            UTF8Encoding.INSTANCE,
+                            ParserContext.TOP_LEVEL,
+                            null,
+                            true,
+                            callNode);
+
+                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
+                            ParserContext.TOP_LEVEL,
+                            DeclarationContext.TOP_LEVEL,
+                            rootNode, null,
+                            context.getCoreLibrary().getMainObject());
+
+                    deferredCall.call(frame, callNode);
+                } break;
+
+                case RubyLanguage.CEXT_MIME_TYPE: {
+                    final CallTarget callTarget;
+
+                    try {
+                        callTarget = context.getEnv().parse(source);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    callNode.call(frame, callTarget, new Object[]{});
+
+                    final Object initFunction = context.getEnv().importSymbol("@Init_" + getBaseName(expandedPath));
+
+                    if (!(initFunction instanceof TruffleObject)) {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    final TruffleObject initFunctionObject = (TruffleObject) initFunction;
+
+                    final Node isExecutableNode = Message.IS_EXECUTABLE.createNode();
+
+                    if (!ForeignAccess.sendIsExecutable(isExecutableNode, frame, initFunctionObject)) {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    final Node executeNode = Message.createExecute(0).createNode();
+
+                    try {
+                        ForeignAccess.sendExecute(executeNode, frame, initFunctionObject);
+                    } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
+                        throw new RuntimeException(e);
+                    }
+                } break;
+
+                default:
+                    throw new RaiseException(
+                            context.getCoreExceptions().internalError("unknown language " + expandedPath, callNode));
+            }
+
             final DynamicObject pathString = StringOperations.createString(context,
                     StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
-
-            final RubyRootNode rootNode = context.getCodeLoader().parse(
-                    source,
-                    UTF8Encoding.INSTANCE,
-                    ParserContext.TOP_LEVEL,
-                    null,
-                    true,
-                    calNode);
-
-            final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
-                    ParserContext.TOP_LEVEL,
-                    DeclarationContext.TOP_LEVEL,
-                    rootNode, null,
-                    context.getCoreLibrary().getMainObject());
-
-            calNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
 
             addToLoadedFeatures(pathString);
 
@@ -184,6 +242,18 @@ public class FeatureLoader {
             lock.unlock();
         }
 
+    }
+
+    private String getBaseName(String path) {
+        final String name = new File(path).getName();
+
+        final int firstDot = name.indexOf('.');
+
+        if (firstDot == -1) {
+            return name;
+        } else {
+            return name.substring(0, firstDot);
+        }
     }
 
     // TODO (pitr-ch 16-Mar-2016): this protects the $LOADED_FEATURES only in this class,
@@ -214,7 +284,7 @@ public class FeatureLoader {
             if (size < store.length) {
                 store[size] = feature;
             } else {
-                final Object[] newStore = ArrayUtils.grow(store, ArrayUtils.capacityForOneMore(store.length));
+                final Object[] newStore = ArrayUtils.grow(store, ArrayUtils.capacityForOneMore(context, store.length));
                 newStore[size] = feature;
                 Layouts.ARRAY.setStore(loadedFeatures, newStore);
             }

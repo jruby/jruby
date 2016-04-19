@@ -57,8 +57,8 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.adapaters.InputStreamAdapter;
-import org.jruby.truffle.core.coerce.ToStrNode;
-import org.jruby.truffle.core.coerce.ToStrNodeGen;
+import org.jruby.truffle.core.cast.ToStrNode;
+import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
@@ -148,8 +148,6 @@ public abstract class PsychParserNodes {
 
             Parser parser = new ParserImpl(streamReader);
             try {
-                Layouts.PSYCH_PARSER.setParser(parserObject, parser);
-
                 if (isNil(path) && (boolean) ruby("yaml.respond_to? :path", "yaml", yaml)) {
                     path = (DynamicObject) ruby("yaml.path", "yaml", yaml);
                 }
@@ -158,7 +156,6 @@ public abstract class PsychParserNodes {
 
                 while (true) {
                     Event event = parser.getEvent();
-                    Layouts.PSYCH_PARSER.setEvent(parserObject, event);
 
                     // FIXME: Event should expose a getID, so it can be switched
                     if (event.is(Event.ID.StreamStart)) {
@@ -188,21 +185,17 @@ public abstract class PsychParserNodes {
                     }
                 }
             } catch (ParserException pe) {
-                Layouts.PSYCH_PARSER.setParser(parserObject, null);
                 raiseParserException(yaml, pe, path);
             } catch (ScannerException se) {
-                Layouts.PSYCH_PARSER.setParser(parserObject, null);
                 StringBuilder message = new StringBuilder("syntax error");
                 if (se.getProblemMark() != null) {
                     message.append(se.getProblemMark().toString());
                 }
                 raiseParserException(yaml, se, path);
             } catch (ReaderException re) {
-                Layouts.PSYCH_PARSER.setParser(parserObject, null);
                 raiseParserException(yaml, re, path);
             } catch (Throwable t) {
                 Helpers.throwException(t);
-                Layouts.PSYCH_PARSER.setParser(parserObject, null);
                 return parserObject;
             }
 

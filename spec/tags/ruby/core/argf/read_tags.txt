@@ -1,3 +1,9 @@
 slow:ARGF.read reads the contents of stdin
 slow:ARGF.read reads a number of bytes from stdin
 slow:ARGF.read reads the contents of one file and stdin
+windows:ARGF.read treats second nil argument as no output buffer
+windows:ARGF.read treats second argument as an output buffer
+windows:ARGF.read clears output buffer before appending to it
+windows:ARGF.read reads a number of bytes from stdin
+windows:ARGF.read reads the contents of one file and some characters from the second
+windows:ARGF.read reads across two files consecutively

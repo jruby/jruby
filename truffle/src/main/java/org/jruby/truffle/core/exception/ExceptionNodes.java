@@ -9,9 +9,12 @@
  */
 package org.jruby.truffle.core.exception;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
@@ -23,61 +26,26 @@ import org.jruby.truffle.core.RubiniusOnly;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.backtrace.Backtrace;
-import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
-import java.util.EnumSet;
-import java.util.List;
-
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {
-
-    @TruffleBoundary
-    public static DynamicObject backtraceAsRubyStringArray(RubyContext context, DynamicObject exception, Backtrace backtrace) {
-        final List<String> lines = new BacktraceFormatter(context,
-                EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX,
-                        BacktraceFormatter.FormattingFlags.OMIT_EXCEPTION)).formatBacktrace(context, exception, backtrace);
-
-        final Object[] array = new Object[lines.size()];
-
-        for (int n = 0; n < lines.size(); n++) {
-            array[n] = StringOperations.createString(context, StringOperations.encodeRope(lines.get(n), UTF8Encoding.INSTANCE));
-        }
-
-        return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), array, array.length);
-    }
-
-    public static void setMessage(DynamicObject exception, Object message) {
-        Layouts.EXCEPTION.setMessage(exception, message);
-    }
-
-    public static DynamicObject createRubyException(DynamicObject rubyClass) {
-        return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), null, null);
-    }
-
-    public static DynamicObject createRubyException(DynamicObject rubyClass, Object message, Backtrace backtrace) {
-        return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace);
-    }
 
     @CoreMethod(names = "initialize", optional = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject initialize(DynamicObject exception, NotProvided message) {
-            setMessage(exception, nil());
+            Layouts.EXCEPTION.setMessage(exception, nil());
             return exception;
         }
 
         @Specialization(guards = "wasProvided(message)")
         public DynamicObject initialize(DynamicObject exception, Object message) {
-            setMessage(exception, message);
+            Layouts.EXCEPTION.setMessage(exception, message);
             return exception;
         }
 
@@ -86,23 +54,35 @@ public abstract class ExceptionNodes {
     @CoreMethod(names = "backtrace")
     public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
 
-        @Child ReadObjectFieldNode readCustomBacktrace;
-
-        public BacktraceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            readCustomBacktrace = ReadObjectFieldNodeGen.create(getContext(), "@custom_backtrace", null);
-        }
+        @Child private ReadObjectFieldNode readCustomBacktraceNode;
 
         @Specialization
-        public Object backtrace(DynamicObject exception) {
-            final Object customBacktrace = readCustomBacktrace.execute(exception);
-            if (customBacktrace != null) {
+        public Object backtrace(
+                DynamicObject exception,
+                @Cached("createBinaryProfile()") ConditionProfile hasCustomBacktraceProfile,
+                @Cached("createBinaryProfile()") ConditionProfile hasBacktraceProfile) {
+            final Object customBacktrace = getReadCustomBacktraceNode().execute(exception);
+
+            if (hasCustomBacktraceProfile.profile(customBacktrace != null)) {
                 return customBacktrace;
-            } else if (Layouts.EXCEPTION.getBacktrace(exception) != null) {
-                return backtraceAsRubyStringArray(getContext(), exception, Layouts.EXCEPTION.getBacktrace(exception));
+            } else if (hasBacktraceProfile.profile(Layouts.EXCEPTION.getBacktrace(exception) != null)) {
+                return ExceptionOperations.backtraceAsRubyStringArray(
+                        getContext(),
+                        exception,
+                        Layouts.EXCEPTION.getBacktrace(exception));
             } else {
                 return nil();
             }
+        }
+
+        private ReadObjectFieldNode getReadCustomBacktraceNode() {
+            if (readCustomBacktraceNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create(
+                        "@custom_backtrace", null));
+            }
+
+            return readCustomBacktraceNode;
         }
 
     }
@@ -110,10 +90,6 @@ public abstract class ExceptionNodes {
     @RubiniusOnly
     @CoreMethod(names = "capture_backtrace!", optional = 1)
     public abstract static class CaptureBacktraceNode extends CoreMethodArrayArgumentsNode {
-
-        public CaptureBacktraceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, NotProvided offset) {
@@ -123,7 +99,7 @@ public abstract class ExceptionNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
-            Backtrace backtrace = getContext().getCallStack().getBacktrace(this, offset, exception);
+            final Backtrace backtrace = getContext().getCallStack().getBacktrace(this, offset, exception);
             Layouts.EXCEPTION.setBacktrace(exception, backtrace);
             return nil();
         }
@@ -133,15 +109,15 @@ public abstract class ExceptionNodes {
     @CoreMethod(names = "message")
     public abstract static class MessageNode extends CoreMethodArrayArgumentsNode {
 
-        public MessageNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
-        public Object message(DynamicObject exception) {
+        public Object message(
+                DynamicObject exception,
+                @Cached("createBinaryProfile()") ConditionProfile messageProfile) {
             final Object message = Layouts.EXCEPTION.getMessage(exception);
-            if (message == null) {
-                final String className = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
+
+            if (messageProfile.profile(message == null)) {
+                final String className = Layouts.MODULE.getFields(
+                        Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
                 return createString(StringOperations.encodeRope(className, UTF8Encoding.INSTANCE));
             } else {
                 return message;

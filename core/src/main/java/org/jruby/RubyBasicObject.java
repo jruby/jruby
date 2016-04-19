@@ -776,8 +776,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public IRubyObject anyToString() {
         String cname = getMetaClass().getRealClass().getName();
+        String hex = Integer.toHexString(System.identityHashCode(this));
         /* 6:tags 16:addr 1:eos */
-        RubyString str = getRuntime().newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + '>');
+        RubyString str = RubyString.newString(getRuntime(),
+            new StringBuilder(2 + cname.length() + 3 + hex.length() + 1).
+            append("#<").append(cname).append(":0x").append(hex).append('>')
+        );
         str.setTaint(isTaint());
         return str;
     }
@@ -821,6 +825,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public Object toJava(Class target) {
+        return defaultToJava(target);
+    }
+
+    final <T> T defaultToJava(Class<T> target) {
         // for callers that unconditionally pass null retval type (JRUBY-4737)
         if (target == void.class) return null;
 
@@ -834,7 +842,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             if (target.isAssignableFrom(value.getClass())) {
                 getRuntime().getJavaSupport().getObjectProxyCache().put(value, this);
 
-                return value;
+                return (T) value;
             }
         }
         else if (JavaUtil.isDuckTypeConvertable(getClass(), target)) {
@@ -843,7 +851,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             }
         }
         else if (target.isAssignableFrom(getClass())) {
-            return this;
+            return (T) this;
         }
 
         throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + target);
@@ -1063,30 +1071,29 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public IRubyObject inspect() {
-        Ruby runtime = getRuntime();
         if ((!isImmediate()) && !(this instanceof RubyModule) && hasVariables()) {
             return hashyInspect();
-        } else {
-            if (isNil()) return RubyNil.inspect(runtime.getCurrentContext(), this);
-            return to_s();
         }
+
+        if (isNil()) return RubyNil.inspect(getRuntime());
+        return to_s();
     }
 
-    public IRubyObject hashyInspect() {
-        Ruby runtime = getRuntime();
-        StringBuilder part = new StringBuilder();
+    public final IRubyObject hashyInspect() {
+        final Ruby runtime = getRuntime();
         String cname = getMetaClass().getRealClass().getName();
+        StringBuilder part = new StringBuilder(2 + cname.length() + 3 + 8 + 1); // #<Object:0x5a1c0542>
         part.append("#<").append(cname).append(":0x");
         part.append(Integer.toHexString(inspectHashCode()));
 
         if (runtime.isInspecting(this)) {
             /* 6:tags 16:addr 1:eos */
             part.append(" ...>");
-            return runtime.newString(part.toString());
+            return RubyString.newString(runtime, part);
         }
         try {
             runtime.registerInspecting(this);
-            return runtime.newString(inspectObj(part).toString());
+            return RubyString.newString(runtime, inspectObj(runtime, part));
         } finally {
             runtime.unregisterInspecting(this);
         }
@@ -1126,8 +1133,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * The internal helper method that takes care of the part of the
      * inspection that inspects instance variables.
      */
-    private StringBuilder inspectObj(StringBuilder part) {
-        ThreadContext context = getRuntime().getCurrentContext();
+    private StringBuilder inspectObj(final Ruby runtime, StringBuilder part) {
+        final ThreadContext context = runtime.getCurrentContext();
         String sep = "";
 
         for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
@@ -1186,11 +1193,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return 0;
     }
 
-    @Override
-    public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return op_equal_19(context, obj);
-    }
-
     /** rb_obj_equal
      *
      * Will by default use identity equality to compare objects. This
@@ -1198,20 +1200,21 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * The name of this method doesn't follow the convention because hierarchy problems
      */
+    @Override
     @JRubyMethod(name = "==")
-    public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
+    public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         return this == obj ? context.runtime.getTrue() : context.runtime.getFalse();
+    }
+
+    @Deprecated
+    public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
+        return op_equal(context, obj);
     }
 
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         // Remain unimplemented due to problems with the double java hierarchy
-        return context.runtime.getNil();
-    }
-
-    @JRubyMethod(name = "equal?", required = 1)
-    public IRubyObject equal_p19(ThreadContext context, IRubyObject other) {
-        return op_equal_19(context, other);
+        return context.nil;
     }
 
     /**
@@ -1928,8 +1931,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * Will use Java identity equality.
      */
-    public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
-        return this == obj ? context.runtime.getTrue() : context.runtime.getFalse();
+    @JRubyMethod(name = "equal?", required = 1)
+    public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
+        return this == other ? context.runtime.getTrue() : context.runtime.getFalse();
+    }
+
+    @Deprecated
+    public IRubyObject equal_p19(ThreadContext context, IRubyObject other) {
+        return equal_p(context, other);
     }
 
     /** rb_obj_equal

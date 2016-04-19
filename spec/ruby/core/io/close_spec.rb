@@ -39,9 +39,10 @@ describe "IO#close" do
   end
 
   ruby_version_is "2.3" do
-    it "does not raise anything when self was already closed" do
+    it "does nothing if already closed" do
       @io.close
-      lambda { @io.close }.should_not raise_error
+
+      @io.close.should be_nil
     end
   end
 end
@@ -49,7 +50,7 @@ end
 describe "IO#close on an IO.popen stream" do
 
   it "clears #pid" do
-    io = IO.popen 'yes', 'r'
+    io = IO.popen "#{RUBY_EXE} -e 'r = loop{puts \"y\"; 0} rescue 1; exit r'", 'r'
 
     io.pid.should_not == 0
 
@@ -59,22 +60,22 @@ describe "IO#close on an IO.popen stream" do
   end
 
   it "sets $?" do
-    io = IO.popen 'true', 'r'
+    io = IO.popen "#{RUBY_EXE} -e 'exit 0'", 'r'
     io.close
 
     $?.exitstatus.should == 0
 
-    io = IO.popen 'false', 'r'
+    io = IO.popen "#{RUBY_EXE} -e 'exit 1'", 'r'
     io.close
 
     $?.exitstatus.should == 1
   end
 
   it "waits for the child to exit" do
-    io = IO.popen 'yes', 'r'
+    io = IO.popen "#{RUBY_EXE} -e 'r = loop{puts \"y\"; 0} rescue 1; exit r'", 'r'
     io.close
 
-    $?.exitstatus.should_not == 0 # SIGPIPE/EPIPE
+    $?.exitstatus.should_not == 0
   end
 
 end

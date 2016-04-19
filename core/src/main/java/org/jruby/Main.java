@@ -316,14 +316,13 @@ public class Main {
         }
     }
 
-    private Status handleUnsupportedClassVersion(UnsupportedClassVersionError ucve) {
+    private Status handleUnsupportedClassVersion(UnsupportedClassVersionError ex) {
         config.getError().println("Error: Some library (perhaps JRuby) was built with a later JVM version.");
         config.getError().println("Please use libraries built with the version you intend to use or an earlier one.");
         if (config.isVerbose()) {
-            config.getError().println("Exception trace follows:");
-            ucve.printStackTrace();
+            ex.printStackTrace(config.getError());
         } else {
-            config.getError().println("Specify -w for full UnsupportedClassVersionError stack trace");
+            config.getError().println("Specify -w for full " + ex + " stack trace");
         }
         return new Status(1);
     }
@@ -331,21 +330,20 @@ public class Main {
     /**
      * Print a nicer stack size error since Rubyists aren't used to seeing this.
      */
-    private Status handleStackOverflow(StackOverflowError soe) {
+    private Status handleStackOverflow(StackOverflowError ex) {
         String memoryMax = getRuntimeFlagValue("-Xss");
 
         if (memoryMax != null) {
-            config.getError().println("Error: Your application used more stack memory than the safety cap of " + memoryMax + ".");
+            config.getError().println("Error: Your application used more stack memory than the safety cap of " + memoryMax + '.');
         } else {
             config.getError().println("Error: Your application used more stack memory than the default safety cap.");
         }
         config.getError().println("Specify -J-Xss####k to increase it (#### = cap size in KB).");
 
         if (config.isVerbose()) {
-            config.getError().println("Exception trace follows:");
-            soe.printStackTrace(config.getError());
+            ex.printStackTrace(config.getError());
         } else {
-            config.getError().println("Specify -w for full StackOverflowError stack trace");
+            config.getError().println("Specify -w for full " + ex + " stack trace");
         }
 
         return new Status(1);
@@ -354,10 +352,10 @@ public class Main {
     /**
      * Print a nicer memory error since Rubyists aren't used to seeing this.
      */
-    private Status handleOutOfMemory(OutOfMemoryError oome) {
+    private Status handleOutOfMemory(OutOfMemoryError ex) {
         System.gc(); // try to clean up a bit of space, hopefully, so we can report this error
 
-        String oomeMessage = oome.getMessage();
+        String oomeMessage = ex.getMessage();
         boolean heapError = false;
 
         if (oomeMessage != null) {
@@ -387,10 +385,9 @@ public class Main {
         }
 
         if (config.isVerbose()) {
-            config.getError().println("Exception trace follows:");
-            oome.printStackTrace(config.getError());
+            ex.printStackTrace(config.getError());
         } else {
-            config.getError().println("Specify -w for full OutOfMemoryError stack trace");
+            config.getError().println("Specify -w for full " + ex + " stack trace");
         }
 
         return new Status(1);

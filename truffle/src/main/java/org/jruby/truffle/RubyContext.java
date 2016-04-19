@@ -18,6 +18,7 @@ import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.Ruby;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.module.ModuleOperations;
@@ -25,6 +26,7 @@ import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
 import org.jruby.truffle.core.rope.RopeTable;
 import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.core.string.CoreStrings;
+import org.jruby.truffle.core.string.FrozenStrings;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.extra.AttachmentsManager;
@@ -76,6 +78,8 @@ public class RubyContext extends ExecutionContext {
     private final SourceCache sourceCache = new SourceCache(new SourceLoader(this));
     private final CallStackManager callStack = new CallStackManager(this);
     private final CoreStrings coreStrings = new CoreStrings(this);
+    private final FrozenStrings frozenStrings = new FrozenStrings(this);
+    private final CoreExceptions coreExceptions = new CoreExceptions(this);
 
     private final CompilerOptions compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
@@ -107,9 +111,23 @@ public class RubyContext extends ExecutionContext {
 
         // Stuff that needs to be loaded before we load any code
 
+        /*
+         * The Graal option TimeThreshold sets how long a method has to become hot after it has started running, in ms.
+         * This is designed to not try to compile cold methods that just happen to be called enough times during a
+         * very long running program. We haven't worked out the best value of this for Ruby yet, and the default value
+         * produces poor benchmark results. Here we just set it to a very high value, to effectively disable it.
+         */
+
         if (compilerOptions.supportsOption("MinTimeThreshold")) {
             compilerOptions.setOption("MinTimeThreshold", 100000000);
         }
+
+        /*
+         * The Graal option InliningMaxCallerSize sets the maximum size of a method for where we consider to inline
+         * calls from that method. So it's the caller method we're talking about, not the called method. The default
+         * value doesn't produce good results for Ruby programs, but we aren't sure why yet. Perhaps it prevents a few
+         * key methods from the core library from inlining other methods.
+         */
 
         if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
             compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
@@ -173,6 +191,13 @@ public class RubyContext extends ExecutionContext {
     }
 
     public void shutdown() {
+        if (getOptions().ROPE_PRINT_INTERN_STATS) {
+            System.out.println("Ropes re-used: " + getRopeTable().getRopesReusedCount());
+            System.out.println("Rope byte arrays re-used: " + getRopeTable().getByteArrayReusedCount());
+            System.out.println("Rope bytes saved: " + getRopeTable().getRopeBytesSaved());
+            System.out.println("Total ropes interned: " + getRopeTable().totalRopes());
+        }
+
         atExitManager.runSystemExitHooks();
 
         if (instrumentationServerManager != null) {
@@ -314,12 +339,20 @@ public class RubyContext extends ExecutionContext {
         return coreStrings;
     }
 
+    public FrozenStrings getFrozenStrings() {
+        return frozenStrings;
+    }
+
     public Object getClassVariableDefinitionLock() {
         return classVariableDefinitionLock;
     }
 
     public Instrumenter getInstrumenter() {
         return env.lookup(Instrumenter.class);
+    }
+
+    public CoreExceptions getCoreExceptions() {
+        return coreExceptions;
     }
 
 }

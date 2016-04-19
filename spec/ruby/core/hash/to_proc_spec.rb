@@ -48,6 +48,10 @@ ruby_version_is "2.3" do
           end
         end
       end
+
+      it "raises an ArgumentError when calling #call on the Proc with no arguments" do
+        lambda { @hash.to_proc.call }.should raise_error(ArgumentError)
+      end
     end
   end
 end

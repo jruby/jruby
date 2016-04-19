@@ -79,6 +79,8 @@ module NetHTTPSpecs
           @server_thread.join
         end
       end
+      timeout = WEBrick::Utils::TimeoutHandler
+      timeout.terminate if timeout.respond_to?(:terminate)
     end
   end
 end

@@ -26,7 +26,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.cast.ArrayCastNodeGen;
-import org.jruby.truffle.core.proc.ProcNodes.Type;
+import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -71,7 +71,7 @@ public class MethodTranslator extends BodyTranslator {
         this.argsNode = argsNode;
     }
 
-    public BlockDefinitionNode compileBlockNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, Type type) {
+    public BlockDefinitionNode compileBlockNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, ProcType type) {
         declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
         final Arity arityForCheck;
@@ -89,13 +89,13 @@ public class MethodTranslator extends BodyTranslator {
             arityForCheck = arity;
         }
 
-        final boolean isProc = type == Type.PROC;
+        final boolean isProc = type == ProcType.PROC;
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isProc, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
 
         final RubyNode preludeProc;
         if (shouldConsiderDestructuringArrayArg(arity)) {
-            final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehavior.RUNTIME_ERROR);
+            final RubyNode readArrayNode = new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR);
             final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
 
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
@@ -105,7 +105,7 @@ public class MethodTranslator extends BodyTranslator {
             destructureArgumentsTranslator.pushArraySlot(arraySlot);
             final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
-            final RubyNode shouldDestructure = new ShouldDestructureNode(context, sourceSection, readArrayNode);
+            final RubyNode shouldDestructure = new ShouldDestructureNode(readArrayNode);
 
             final RubyNode arrayWasNotNil = sequence(context, sourceSection, Arrays.asList(writeArrayNode, new NotNode(context, sourceSection, new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)))));
 
@@ -361,7 +361,7 @@ public class MethodTranslator extends BodyTranslator {
         if (blockNode != null) {
             return blockNode;
         } else {
-            return new ReadBlockNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+            return new ReadBlockNode(context.getCoreLibrary().getNilObject());
         }
     }
 
@@ -402,6 +402,10 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     private static SourceSection considerExtendingMethodToCoverEnd(SourceSection sourceSection) {
+        if (sourceSection == null) {
+            return sourceSection;
+        }
+
         final Source source = sourceSection.getSource();
 
         if (sourceSection.getEndLine() + 1 >= source.getLineCount()) {

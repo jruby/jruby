@@ -25,13 +25,15 @@ describe "Dir.pwd" do
     rm_r @name
   end
 
-  it "correctly handles dirs with unicode characters in them" do
-    Dir.mkdir @name
-    Dir.chdir @name do
-      if @fs_encoding == Encoding::UTF_8
-        Dir.pwd.encoding.should == Encoding::UTF_8
+  platform_is_not :windows do
+    it "correctly handles dirs with unicode characters in them" do
+      Dir.mkdir @name
+      Dir.chdir @name do
+        if @fs_encoding == Encoding::UTF_8
+          Dir.pwd.encoding.should == Encoding::UTF_8
+        end
+        Dir.pwd.force_encoding('binary').should == @name
       end
-      Dir.pwd.force_encoding('binary').should == @name
     end
   end
 end

@@ -39,10 +39,6 @@ public abstract class BignumNodes {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
-        public BignumCoreMethodNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         public Object fixnumOrBignum(BigInteger value) {
             if (fixnumOrBignum == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -56,10 +52,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = "-@")
     public abstract static class NegNode extends BignumCoreMethodNode {
 
-        public NegNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object neg(DynamicObject value) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(value).negate());
@@ -69,10 +61,6 @@ public abstract class BignumNodes {
 
     @CoreMethod(names = "+", required = 1)
     public abstract static class AddNode extends BignumCoreMethodNode {
-
-        public AddNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object add(DynamicObject a, long b) {
@@ -94,10 +82,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = "-", required = 1)
     public abstract static class SubNode extends BignumCoreMethodNode {
 
-        public SubNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object sub(DynamicObject a, long b) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).subtract(BigInteger.valueOf(b)));
@@ -117,10 +101,6 @@ public abstract class BignumNodes {
 
     @CoreMethod(names = "*", required = 1)
     public abstract static class MulNode extends BignumCoreMethodNode {
-
-        public MulNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -149,10 +129,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = {"/", "__slash__"}, required = 1)
     public abstract static class DivNode extends BignumCoreMethodNode {
 
-        public DivNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object div(DynamicObject a, long b) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).divide(BigInteger.valueOf(b)));
@@ -172,10 +148,6 @@ public abstract class BignumNodes {
 
     @CoreMethod(names = {"%", "modulo"}, required = 1)
     public abstract static class ModNode extends BignumCoreMethodNode {
-
-        public ModNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object mod(DynamicObject a, long b) {
@@ -212,10 +184,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = "<", required = 1)
     public abstract static class LessNode extends CoreMethodArrayArgumentsNode {
 
-        public LessNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean less(DynamicObject a, long b) {
             return Layouts.BIGNUM.getValue(a).compareTo(BigInteger.valueOf(b)) < 0;
@@ -244,10 +212,6 @@ public abstract class BignumNodes {
 
     @CoreMethod(names = "<=", required = 1)
     public abstract static class LessEqualNode extends CoreMethodArrayArgumentsNode {
-
-        public LessEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean lessEqual(DynamicObject a, long b) {
@@ -279,10 +243,6 @@ public abstract class BignumNodes {
 
         @Child private BooleanCastNode booleanCastNode;
         @Child private CallDispatchHeadNode reverseCallNode;
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean equal(DynamicObject a, int b) {
@@ -325,10 +285,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = ">=", required = 1)
     public abstract static class GreaterEqualNode extends CoreMethodArrayArgumentsNode {
 
-        public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean greaterEqual(DynamicObject a, long b) {
             return Layouts.BIGNUM.getValue(a).compareTo(BigInteger.valueOf(b)) >= 0;
@@ -356,10 +312,6 @@ public abstract class BignumNodes {
 
     @CoreMethod(names = ">", required = 1)
     public abstract static class GreaterNode extends CoreMethodArrayArgumentsNode {
-
-        public GreaterNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean greater(DynamicObject a, long b) {
@@ -389,10 +341,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = "~")
     public abstract static class ComplementNode extends BignumCoreMethodNode {
 
-        public ComplementNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object complement(DynamicObject value) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(value).not());
@@ -402,10 +350,6 @@ public abstract class BignumNodes {
 
     @CoreMethod(names = "&", required = 1)
     public abstract static class BitAndNode extends BignumCoreMethodNode {
-
-        public BitAndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object bitAnd(DynamicObject a, long b) {
@@ -421,10 +365,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = "|", required = 1)
     public abstract static class BitOrNode extends BignumCoreMethodNode {
 
-        public BitOrNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object bitOr(DynamicObject a, long b) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).or(BigInteger.valueOf(b)));
@@ -438,10 +378,6 @@ public abstract class BignumNodes {
 
     @CoreMethod(names = "^", required = 1)
     public abstract static class BitXOrNode extends BignumCoreMethodNode {
-
-        public BitXOrNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object bitXOr(DynamicObject a, long b) {
@@ -458,10 +394,6 @@ public abstract class BignumNodes {
     public abstract static class LeftShiftNode extends BignumCoreMethodNode {
 
         private final BranchProfile bLessThanZero = BranchProfile.create();
-
-        public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object leftShift(DynamicObject a, int b) {
@@ -480,10 +412,6 @@ public abstract class BignumNodes {
 
         private final BranchProfile bLessThanZero = BranchProfile.create();
 
-        public RightShiftNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object leftShift(DynamicObject a, int b) {
             if (b >= 0) {
@@ -499,10 +427,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = { "abs", "magnitude" })
     public abstract static class AbsNode extends BignumCoreMethodNode {
 
-        public AbsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object abs(DynamicObject value) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(value).abs());
@@ -513,10 +437,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = "bit_length")
     public abstract static class BitLengthNode extends CoreMethodArrayArgumentsNode {
 
-        public BitLengthNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int bitLength(DynamicObject value) {
             return Layouts.BIGNUM.getValue(value).bitLength();
@@ -526,10 +446,6 @@ public abstract class BignumNodes {
 
     @CoreMethod(names = "coerce", required = 1)
     public abstract static class CoerceNode extends CoreMethodArrayArgumentsNode {
-
-        public CoerceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject coerce(DynamicObject a, int b) {
@@ -591,10 +507,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = "even?")
     public abstract static class EvenNode extends BignumCoreMethodNode {
 
-        public EvenNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public boolean even(DynamicObject value) {
@@ -606,10 +518,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
-        public HashNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int hash(DynamicObject value) {
             return Layouts.BIGNUM.getValue(value).hashCode();
@@ -619,10 +527,6 @@ public abstract class BignumNodes {
 
     @CoreMethod(names = "odd?")
     public abstract static class OddNode extends BignumCoreMethodNode {
-
-        public OddNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -635,10 +539,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = "size")
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
-        public SizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int size(DynamicObject value) {
             return (Layouts.BIGNUM.getValue(value).bitLength() + 7) / 8;
@@ -649,10 +549,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = "to_f")
     public abstract static class ToFNode extends CoreMethodArrayArgumentsNode {
 
-        public ToFNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public double toF(DynamicObject value) {
             return Layouts.BIGNUM.getValue(value).doubleValue();
@@ -662,10 +558,6 @@ public abstract class BignumNodes {
 
     @CoreMethod(names = {"to_s", "inspect"}, optional = 1)
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -678,7 +570,7 @@ public abstract class BignumNodes {
         public DynamicObject toS(DynamicObject value, int base) {
             if (base < 2 || base > 36) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentErrorInvalidRadix(base, this));
+                throw new RaiseException(coreExceptions().argumentErrorInvalidRadix(base, this));
             }
 
             return create7BitString(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE);
@@ -689,14 +581,10 @@ public abstract class BignumNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

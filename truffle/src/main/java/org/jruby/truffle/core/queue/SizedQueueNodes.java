@@ -42,10 +42,6 @@ public abstract class SizedQueueNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             return Layouts.SIZED_QUEUE.createSizedQueue(Layouts.CLASS.getInstanceFactory(rubyClass), null);
@@ -56,15 +52,11 @@ public abstract class SizedQueueNodes {
     @CoreMethod(names = "initialize", visibility = Visibility.PRIVATE, required = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject initialize(DynamicObject self, int capacity) {
             if (capacity <= 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("queue size must be positive", this));
+                throw new RaiseException(coreExceptions().argumentError("queue size must be positive", this));
             }
 
             final ArrayBlockingQueueLocksConditions<Object> blockingQueue = getContext().getNativePlatform().createArrayBlockingQueueLocksConditions(capacity);
@@ -77,16 +69,12 @@ public abstract class SizedQueueNodes {
     @CoreMethod(names = "max=", required = 1)
     public abstract static class SetMaxNode extends CoreMethodArrayArgumentsNode {
 
-        public SetMaxNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public int setMax(DynamicObject self, int newCapacity) {
             if (newCapacity <= 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("queue size must be positive", this));
+                throw new RaiseException(coreExceptions().argumentError("queue size must be positive", this));
             }
 
             final ArrayBlockingQueueLocksConditions<Object> oldQueue = Layouts.SIZED_QUEUE.getQueue(self);
@@ -107,10 +95,6 @@ public abstract class SizedQueueNodes {
     @CoreMethod(names = "max")
     public abstract static class MaxNode extends CoreMethodArrayArgumentsNode {
 
-        public MaxNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public int max(DynamicObject self) {
@@ -130,13 +114,9 @@ public abstract class SizedQueueNodes {
     })
     public abstract static class PushNode extends CoreMethodNode {
 
-        public PushNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("nonBlocking")
         public RubyNode coerceToBoolean(RubyNode nonBlocking) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), false, nonBlocking);
+            return BooleanCastWithDefaultNodeGen.create(null, null, false, nonBlocking);
         }
 
         @Specialization(guards = "!nonBlocking")
@@ -166,7 +146,7 @@ public abstract class SizedQueueNodes {
             final boolean pushed = doOffer(value, queue);
             if (!pushed) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().threadError("queue full", this));
+                throw new RaiseException(coreExceptions().threadError("queue full", this));
             }
 
             return self;
@@ -186,13 +166,9 @@ public abstract class SizedQueueNodes {
     })
     public abstract static class PopNode extends CoreMethodNode {
 
-        public PopNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("nonBlocking")
         public RubyNode coerceToBoolean(RubyNode nonBlocking) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), false, nonBlocking);
+            return BooleanCastWithDefaultNodeGen.create(null, null, false, nonBlocking);
         }
 
         @Specialization(guards = "!nonBlocking")
@@ -219,7 +195,7 @@ public abstract class SizedQueueNodes {
             final Object value = doPoll(queue);
             if (value == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().threadError("queue empty", this));
+                throw new RaiseException(coreExceptions().threadError("queue empty", this));
             }
 
             return value;
@@ -235,10 +211,6 @@ public abstract class SizedQueueNodes {
     @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
-        public EmptyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public boolean empty(DynamicObject self) {
@@ -251,10 +223,6 @@ public abstract class SizedQueueNodes {
     @CoreMethod(names = { "size", "length" })
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
-        public SizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int size(DynamicObject self) {
             final BlockingQueue<Object> queue = Layouts.SIZED_QUEUE.getQueue(self);
@@ -265,10 +233,6 @@ public abstract class SizedQueueNodes {
 
     @CoreMethod(names = "clear")
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
-
-        public ClearNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -282,10 +246,6 @@ public abstract class SizedQueueNodes {
 
     @CoreMethod(names = "num_waiting")
     public abstract static class NumWaitingNode extends CoreMethodArrayArgumentsNode {
-
-        public NumWaitingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int num_waiting(DynamicObject self) {

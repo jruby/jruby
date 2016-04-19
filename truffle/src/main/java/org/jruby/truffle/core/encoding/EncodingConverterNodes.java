@@ -30,6 +30,7 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -47,10 +48,6 @@ public abstract class EncodingConverterNodes {
     @RubiniusOnly
     @CoreMethod(names = "initialize_jruby", required = 2, optional = 1, visibility = Visibility.PRIVATE)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -116,7 +113,7 @@ public abstract class EncodingConverterNodes {
 
         private IRubyObject toJRuby(Object object) {
             if (RubyGuards.isRubyString(object)) {
-                return getContext().getJRubyRuntime().newString(StringOperations.rope((DynamicObject) object).toByteListCopy());
+                return getContext().getJRubyRuntime().newString(RopeOperations.toByteListCopy(StringOperations.rope((DynamicObject) object)));
             } else if (RubyGuards.isRubyEncoding(object)) {
                 return getContext().getJRubyRuntime().getEncodingService().rubyEncodingFromObject(getContext().getJRubyRuntime().newString(Layouts.ENCODING.getName((DynamicObject) object)));
             } else {
@@ -176,10 +173,6 @@ public abstract class EncodingConverterNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {

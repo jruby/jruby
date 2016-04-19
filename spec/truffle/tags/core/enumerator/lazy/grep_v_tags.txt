@@ -1,0 +1,9 @@
+fails:Enumerator::Lazy#grep_v requires an argument
+fails:Enumerator::Lazy#grep_v returns a new instance of Enumerator::Lazy
+fails:Enumerator::Lazy#grep_v sets #size to nil
+fails:Enumerator::Lazy#grep_v calls the block with a gathered array when yield with multiple arguments
+fails:Enumerator::Lazy#grep_v when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times when not given a block
+fails:Enumerator::Lazy#grep_v when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times when given a block
+fails:Enumerator::Lazy#grep_v on a nested Lazy sets #size to nil
+fails:Enumerator::Lazy#grep_v on a nested Lazy when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times when not given a block
+fails:Enumerator::Lazy#grep_v on a nested Lazy when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times when given a block

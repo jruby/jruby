@@ -89,7 +89,7 @@ public class JavaProxy extends RubyObject {
         this.object = javaObject.getValue();
     }
 
-    public Object getObject() {
+    public final Object getObject() {
         // FIXME: Added this because marshal_spec seemed to reconstitute objects without calling dataWrapStruct
         // this resulted in object being null after unmarshalling...
         if (object == null) {
@@ -451,6 +451,7 @@ public class JavaProxy extends RubyObject {
         final Class<?> clazz = object.getClass();
 
         if ( type.isAssignableFrom(clazz) ) return object;
+        if ( type.isAssignableFrom(getClass()) ) return this; // e.g. IRubyObject.class
 
         throw getRuntime().newTypeError("failed to coerce " + clazz.getName() + " to " + type.getName());
     }

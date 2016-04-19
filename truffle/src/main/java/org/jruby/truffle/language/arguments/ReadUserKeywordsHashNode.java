@@ -12,8 +12,6 @@ package org.jruby.truffle.language.arguments;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -24,8 +22,7 @@ public class ReadUserKeywordsHashNode extends RubyNode {
     private final ConditionProfile notEnoughArgumentsProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile lastArgumentIsHashProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadUserKeywordsHashNode(RubyContext context, SourceSection sourceSection, int minArgumentCount) {
-        super(context, sourceSection);
+    public ReadUserKeywordsHashNode(int minArgumentCount) {
         this.minArgumentCount = minArgumentCount;
     }
 

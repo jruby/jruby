@@ -98,6 +98,48 @@ public class ConstantLookupSite extends MutableCallSite {
         return constant;
     }
 
+    public IRubyObject searchModuleForConst(ThreadContext context, IRubyObject cmVal) {
+        // Inheritance lookup
+        RubyModule module = (RubyModule) cmVal;
+        Ruby runtime = context.getRuntime();
+        IRubyObject constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
+
+        // Call const_missing or cache
+        if (constant == null) {
+            return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(name));
+        }
+
+        SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name).getData();
+
+        // bind constant until invalidated
+        MethodHandle target = Binder.from(type())
+                .drop(0, 2)
+                .constant(constant);
+
+        MethodHandle fallback = getTarget();
+        if (fallback == null) {
+            fallback = Binder.from(type())
+                    .insert(0, this)
+                    .invokeVirtualQuiet(Bootstrap.LOOKUP, "searchModuleForConst");
+        }
+
+        // test that module is same as before
+        MethodHandle test = Binder.from(type().changeReturnType(boolean.class))
+                .drop(0, 1)
+                .insert(1, module.id)
+                .invokeStaticQuiet(Bootstrap.LOOKUP, Bootstrap.class, "testArg0ModuleMatch");
+
+        target = guardWithTest(test, target, fallback);
+
+        setTarget(switchPoint.guardWithTest(target, fallback));
+
+        if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) {
+            LOG.info(name + "\tretrieved and cached from module " + module);// + " added to PIC" + extractSourceInfo(site));
+        }
+
+        return constant;
+    }
+
     public IRubyObject inheritanceSearchConst(ThreadContext context, IRubyObject cmVal) {
         Ruby runtime = context.runtime;
         RubyModule module;

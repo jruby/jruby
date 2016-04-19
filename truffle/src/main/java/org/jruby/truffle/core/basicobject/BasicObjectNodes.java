@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.BinaryCoreMethodNode;
@@ -32,6 +33,8 @@ import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.module.ModuleOperations;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
@@ -50,7 +53,6 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
-import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,12 +64,9 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "!")
     public abstract static class NotNode extends UnaryCoreMethodNode {
 
-        public NotNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
+        @CreateCast("operand")
+        public RubyNode createCast(RubyNode operand) {
+            return BooleanCastNodeGen.create(null, null, operand);
         }
 
         @Specialization
@@ -97,22 +96,34 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = { "equal?", "==" }, required = 1)
     public abstract static class ReferenceEqualNode extends BinaryCoreMethodNode {
 
-        public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         public abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
 
-        @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
-        @Specialization public boolean equal(int a, int b) { return a == b; }
-        @Specialization public boolean equal(long a, long b) { return a == b; }
-        @Specialization public boolean equal(double a, double b) { return Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b); }
-
-        @Specialization public boolean equal(DynamicObject a, DynamicObject b) {
+        @Specialization
+        public boolean equal(boolean a, boolean b) {
             return a == b;
         }
 
-        @Specialization(guards = {"isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)"})
+        @Specialization
+        public boolean equal(int a, int b) {
+            return a == b;
+        }
+
+        @Specialization
+        public boolean equal(long a, long b) {
+            return a == b;
+        }
+
+        @Specialization
+        public boolean equal(double a, double b) {
+            return Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b);
+        }
+
+        @Specialization
+        public boolean equal(DynamicObject a, DynamicObject b) {
+            return a == b;
+        }
+
+        @Specialization(guards = { "isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)" })
         public boolean equal(Object a, Object b) {
             return false;
         }
@@ -140,10 +151,6 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "initialize", needsSelf = false)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject initialize() {
             return nil();
@@ -151,7 +158,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "instance_eval", needsBlock = true, optional = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "instance_eval", needsBlock = true, optional = 3, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class InstanceEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldNode yield;
@@ -161,17 +168,32 @@ public abstract class BasicObjectNodes {
             yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
-        @Specialization(guards = "isRubyString(string)")
-        public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, NotProvided block, @Cached("create()")IndirectCallNode callNode) {
-            ByteList code = StringOperations.getByteListReadOnly(string);
-            final Source source = Source.fromText(code, "(eval)");
+        @Specialization(guards = { "isRubyString(string)", "isRubyString(fileName)" })
+        public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, DynamicObject fileName, int line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
+            final Rope code = StringOperations.rope(string);
+
+            // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
+            final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
+            final Source source = Source.fromText(space + code.toString(), StringOperations.rope(fileName).toString());
+
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
             final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
-            return callNode.call(frame, deferredCall.getCallTarget(), deferredCall.getArguments());
+            return deferredCall.call(frame, callNode);
+        }
+
+        @Specialization(guards = { "isRubyString(string)", "isRubyString(fileName)" })
+        public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, DynamicObject fileName, NotProvided line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
+            return instanceEval(frame, receiver, string, fileName, 1, block, callNode);
+        }
+
+        @Specialization(guards = { "isRubyString(string)" })
+        public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, NotProvided fileName, NotProvided line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
+            final DynamicObject eval = StringOperations.createString(getContext(), StringOperations.encodeRope("(eval)", ASCIIEncoding.INSTANCE));
+            return instanceEval(frame, receiver, string, eval, 1, block, callNode);
         }
 
         @Specialization
-        public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, DynamicObject block) {
+        public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, NotProvided fileName, NotProvided line, DynamicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, receiver, receiver);
         }
 
@@ -198,7 +220,7 @@ public abstract class BasicObjectNodes {
         public Object instanceExec(Object receiver, Object[] arguments, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
-            throw new RaiseException(coreLibrary().localJumpError("no block given", this));
+            throw new RaiseException(coreExceptions().localJumpError("no block given", this));
         }
 
     }
@@ -206,10 +228,6 @@ public abstract class BasicObjectNodes {
     @RubiniusOnly
     @CoreMethod(names = "__instance_variables__")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
-
-        public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         public abstract DynamicObject executeObject(DynamicObject self);
 
@@ -236,14 +254,10 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "method_missing", needsBlock = true, rest = true, optional = 1, visibility = Visibility.PRIVATE)
     public abstract static class MethodMissingNode extends CoreMethodArrayArgumentsNode {
 
-        public MethodMissingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object methodMissingNoName(Object self, NotProvided name, Object[] args, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().argumentError("no id given", this));
+            throw new RaiseException(coreExceptions().argumentError("no id given", this));
         }
 
         @Specialization
@@ -261,13 +275,13 @@ public abstract class BasicObjectNodes {
             final String name = nameObject.toString();
 
             if (lastCallWasSuper()) {
-                throw new RaiseException(coreLibrary().noSuperMethodError(name, this));
+                throw new RaiseException(coreExceptions().noSuperMethodError(name, this));
             } else if (lastCallWasCallingPrivateMethod(self, name)) {
-                throw new RaiseException(coreLibrary().privateMethodError(name, self, this));
+                throw new RaiseException(coreExceptions().privateMethodError(name, self, this));
             } else if (lastCallWasVCall()) {
-                throw new RaiseException(coreLibrary().nameErrorUndefinedLocalVariableOrMethod(name, self, this));
+                throw new RaiseException(coreExceptions().nameErrorUndefinedLocalVariableOrMethod(name, self, this));
             } else {
-                throw new RaiseException(coreLibrary().noMethodErrorOnReceiver(name, self, this));
+                throw new RaiseException(coreExceptions().noMethodErrorOnReceiver(name, self, this));
             }
         }
 

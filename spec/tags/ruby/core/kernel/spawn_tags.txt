@@ -53,3 +53,94 @@ fails:Kernel#spawn when passed close_others: false closes file descriptors >= 3 
 fails:Kernel.spawn when passed close_others: false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
 fails:Kernel#spawn redirects STDOUT to the given file if out: [String name, String mode]
 fails:Kernel.spawn redirects STDOUT to the given file if out: [String name, String mode]
+windows:Kernel#spawn executes the given command
+windows:Kernel#spawn returns the process ID of the new process as a Fixnum
+windows:Kernel#spawn returns immediately
+windows:Kernel#spawn sets environment variables in the child environment
+windows:Kernel#spawn unsets environment variables whose value is nil
+windows:Kernel#spawn calls #to_hash to convert the environment
+windows:Kernel#spawn raises an ArgumentError if an environment key includes an equals sign
+windows:Kernel#spawn raises an ArgumentError if an environment key includes a null byte
+windows:Kernel#spawn raises an ArgumentError if an environment value includes a null byte
+windows:Kernel#spawn unsets other environment variables when given a true :unsetenv_others option
+windows:Kernel#spawn unsets other environment variables when given a non-false :unsetenv_others option
+windows:Kernel#spawn does not unset other environment variables when given a nil :unsetenv_others option
+windows:Kernel#spawn raises an ArgumentError if given :pgroup option
+windows:Kernel#spawn uses the current working directory as its working directory
+windows:Kernel#spawn uses the current umask by default
+windows:Kernel#spawn redirects STDOUT to the given file descriptior if out: Fixnum
+windows:Kernel#spawn redirects STDOUT to the given file if out: IO
+windows:Kernel#spawn redirects STDERR to the given file descriptior if err: Fixnum
+windows:Kernel#spawn redirects STDERR to the given file descriptor if err: IO
+windows:Kernel#spawn redirects STDERR to child STDOUT if :err => [:child, :out]
+windows:Kernel#spawn redirects both STDERR and STDOUT to the given file descriptior
+windows:Kernel#spawn redirects both STDERR and STDOUT to the given IO
+windows:Kernel#spawn raises an ArgumentError if passed no command arguments
+windows:Kernel#spawn raises an ArgumentError if passed env or options but no command arguments
+windows:Kernel#spawn raises an ArgumentError if passed env and options but no command arguments
+windows:Kernel#spawn raises an ArgumentError when passed a string key in options
+windows:Kernel#spawn raises an ArgumentError when passed an unknown option key
+windows:Kernel#spawn with a single argument subjects the specified command to shell expansion
+windows:Kernel#spawn with a single argument creates an argument array with shell parsing semantics for whitespace
+windows:Kernel#spawn with a single argument calls #to_str to convert the argument to a String
+windows:Kernel#spawn with a single argument raises an ArgumentError if the command includes a null byte
+windows:Kernel#spawn with a single argument raises a TypeError if the argument does not respond to #to_str
+windows:Kernel#spawn with multiple arguments does not subject the arguments to shell expansion
+windows:Kernel#spawn with multiple arguments preserves whitespace in passed arguments
+windows:Kernel#spawn with multiple arguments calls #to_str to convert the arguments to Strings
+windows:Kernel#spawn with multiple arguments raises an ArgumentError if an argument includes a null byte
+windows:Kernel#spawn with multiple arguments raises a TypeError if an argument does not respond to #to_str
+windows:Kernel#spawn with a command array does not subject the arguments to shell expansion
+windows:Kernel#spawn with a command array preserves whitespace in passed arguments
+windows:Kernel#spawn with a command array calls #to_str to convert the first element to a String
+windows:Kernel#spawn with a command array calls #to_str to convert the second element to a String
+windows:Kernel#spawn with a command array raises an ArgumentError if the Array does not have exactly two elements
+windows:Kernel#spawn with a command array raises an ArgumentError if the Strings in the Array include a null byte
+windows:Kernel#spawn with a command array raises a TypeError if an element in the Array does not respond to #to_str
+windows:Kernel#spawn when passed :chdir changes to the directory passed for :chdir
+windows:Kernel#spawn when passed :chdir calls #to_path to convert the :chdir value
+windows:Kernel#spawn when passed close_others: true closes file descriptors >= 3 in the child process
+windows:Kernel#spawn when passed close_others: true does not close STDIN
+windows:Kernel#spawn when passed close_others: true does not close STDOUT
+windows:Kernel#spawn when passed close_others: true does not close STDERR
+windows:Kernel#spawn when passed close_others: false does not close STDIN
+windows:Kernel#spawn when passed close_others: false does not close STDOUT
+windows:Kernel#spawn when passed close_others: false does not close STDERR
+windows:Kernel.spawn sets environment variables in the child environment
+windows:Kernel.spawn unsets environment variables whose value is nil
+windows:Kernel.spawn calls #to_hash to convert the environment
+windows:Kernel.spawn raises an ArgumentError if an environment key includes an equals sign
+windows:Kernel.spawn raises an ArgumentError if an environment key includes a null byte
+windows:Kernel.spawn raises an ArgumentError if an environment value includes a null byte
+windows:Kernel.spawn unsets other environment variables when given a true :unsetenv_others option
+windows:Kernel.spawn unsets other environment variables when given a non-false :unsetenv_others option
+windows:Kernel.spawn does not unset other environment variables when given a nil :unsetenv_others option
+windows:Kernel.spawn raises an ArgumentError if given :pgroup option
+windows:Kernel.spawn uses the current working directory as its working directory
+windows:Kernel.spawn uses the current umask by default
+windows:Kernel.spawn redirects STDOUT to the given file descriptior if out: Fixnum
+windows:Kernel.spawn redirects STDOUT to the given file if out: IO
+windows:Kernel.spawn redirects STDERR to the given file descriptior if err: Fixnum
+windows:Kernel.spawn redirects STDERR to the given file descriptor if err: IO
+windows:Kernel.spawn redirects STDERR to child STDOUT if :err => [:child, :out]
+windows:Kernel.spawn redirects both STDERR and STDOUT to the given file descriptior
+windows:Kernel.spawn redirects both STDERR and STDOUT to the given IO
+windows:Kernel.spawn raises an ArgumentError if passed no command arguments
+windows:Kernel.spawn raises an ArgumentError if passed env or options but no command arguments
+windows:Kernel.spawn raises an ArgumentError if passed env and options but no command arguments
+windows:Kernel.spawn with a single argument subjects the specified command to shell expansion
+windows:Kernel.spawn with a single argument creates an argument array with shell parsing semantics for whitespace
+windows:Kernel.spawn with a single argument calls #to_str to convert the argument to a String
+windows:Kernel.spawn with multiple arguments preserves whitespace in passed arguments
+windows:Kernel.spawn with multiple arguments calls #to_str to convert the arguments to Strings
+windows:Kernel.spawn with a command array preserves whitespace in passed arguments
+windows:Kernel.spawn with a command array calls #to_str to convert the first element to a String
+windows:Kernel.spawn with a command array calls #to_str to convert the second element to a String
+windows:Kernel.spawn with a command array raises an ArgumentError if the Array does not have exactly two elements
+windows:Kernel.spawn when passed close_others: true closes file descriptors >= 3 in the child process
+windows:Kernel.spawn when passed close_others: true does not close STDIN
+windows:Kernel.spawn when passed close_others: true does not close STDOUT
+windows:Kernel.spawn when passed close_others: true does not close STDERR
+windows:Kernel.spawn when passed close_others: false does not close STDIN
+windows:Kernel.spawn when passed close_others: false does not close STDOUT
+windows:Kernel.spawn when passed close_others: false does not close STDERR

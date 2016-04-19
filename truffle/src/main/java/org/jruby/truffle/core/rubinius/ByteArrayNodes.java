@@ -38,10 +38,6 @@ public abstract class ByteArrayNodes {
     @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
-        public GetByteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int getByte(DynamicObject bytes, int index,
                               @Cached("createBinaryProfile()") ConditionProfile nullByteIndexProfile) {
@@ -65,10 +61,6 @@ public abstract class ByteArrayNodes {
     @CoreMethod(names = "prepend", required = 1)
     public abstract static class PrependNode extends CoreMethodArrayArgumentsNode {
 
-        public PrependNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject prepend(DynamicObject bytes, DynamicObject string) {
             final Rope rope = StringOperations.rope(string);
@@ -86,15 +78,11 @@ public abstract class ByteArrayNodes {
     @CoreMethod(names = "set_byte", required = 2, lowerFixnumParameters = {0, 1})
     public abstract static class SetByteNode extends CoreMethodArrayArgumentsNode {
 
-        public SetByteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object setByte(DynamicObject bytes, int index, int value) {
             if (index < 0 || index >= Layouts.BYTE_ARRAY.getBytes(bytes).getRealSize()) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().indexError("index out of bounds", this));
+                throw new RaiseException(coreExceptions().indexError("index out of bounds", this));
             }
 
             Layouts.BYTE_ARRAY.getBytes(bytes).set(index, value);
@@ -106,10 +94,6 @@ public abstract class ByteArrayNodes {
     @CoreMethod(names = "size")
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
-        public SizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int size(DynamicObject bytes) {
             return Layouts.BYTE_ARRAY.getBytes(bytes).getRealSize();
@@ -119,10 +103,6 @@ public abstract class ByteArrayNodes {
 
     @CoreMethod(names = "locate", required = 3, lowerFixnumParameters = {1, 2})
     public abstract static class LocateNode extends CoreMethodArrayArgumentsNode {
-
-        public LocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyString(pattern)")
         public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
@@ -140,14 +120,10 @@ public abstract class ByteArrayNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

@@ -35,4 +35,13 @@ ruby_version_is "2.2" do
       end
     end
   end
+
+  describe "when an iterator method yields more than one value" do
+    it "processes all yielded values" do
+      def foo
+        yield 1, 2
+      end
+      to_enum(:foo).slice_when { true }.to_a.should == [[[1, 2]]]
+    end
+  end
 end

@@ -29,8 +29,8 @@ import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.TaintResultNode;
-import org.jruby.truffle.core.coerce.ToIntNode;
-import org.jruby.truffle.core.coerce.ToIntNodeGen;
+import org.jruby.truffle.core.cast.ToIntNode;
+import org.jruby.truffle.core.cast.ToIntNodeGen;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringGuards;
 import org.jruby.truffle.core.string.StringOperations;
@@ -173,10 +173,6 @@ public abstract class MatchDataNodes {
 
         @Child private ToIntNode toIntNode;
 
-        public GetIndexNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, NotProvided length) {
@@ -205,14 +201,14 @@ public abstract class MatchDataNodes {
         public Object getIndexSymbol(DynamicObject matchData, DynamicObject index, NotProvided length) {
             try {
                 final Rope value = Layouts.SYMBOL.getRope(index);
-                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
+                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), 0, value.byteLength(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             } catch (final ValueException e) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                    coreLibrary().indexError(String.format("undefined group name reference: %s", Layouts.SYMBOL.getString(index)), this));
+                        coreExceptions().indexError(String.format("undefined group name reference: %s", Layouts.SYMBOL.getString(index)), this));
             }
         }
 
@@ -221,7 +217,7 @@ public abstract class MatchDataNodes {
         public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length) {
             try {
                 final Rope value = StringOperations.rope(index);
-                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
+                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), 0, value.byteLength(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             }
@@ -229,7 +225,7 @@ public abstract class MatchDataNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                        coreLibrary().indexError(String.format("undefined group name reference: %s", index.toString()), this));
+                        coreExceptions().indexError(String.format("undefined group name reference: %s", index.toString()), this));
             }
         }
 
@@ -261,10 +257,6 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "begin", required = 1, lowerFixnumParameters = 1)
     public abstract static class BeginNode extends CoreMethodArrayArgumentsNode {
 
-        public BeginNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "inBounds(matchData, index)")
         public Object begin(DynamicObject matchData, int index) {
             return MatchDataNodes.begin(getContext(), matchData, index);
@@ -273,7 +265,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization(guards = "!inBounds(matchData, index)")
         public Object beginError(DynamicObject matchData, int index) {
-            throw new RaiseException(coreLibrary().indexError(String.format("index %d out of matches", index), this));
+            throw new RaiseException(coreExceptions().indexError(String.format("index %d out of matches", index), this));
         }
 
         protected boolean inBounds(DynamicObject matchData, int index) {
@@ -284,10 +276,6 @@ public abstract class MatchDataNodes {
 
     @CoreMethod(names = "captures")
     public abstract static class CapturesNode extends CoreMethodArrayArgumentsNode {
-
-        public CapturesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
@@ -300,10 +288,6 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "end", required = 1, lowerFixnumParameters = 1)
     public abstract static class EndNode extends CoreMethodArrayArgumentsNode {
 
-        public EndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "inBounds(matchData, index)")
         public Object end(DynamicObject matchData, int index) {
             return MatchDataNodes.end(getContext(), matchData, index);
@@ -312,7 +296,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization(guards = "!inBounds(matchData, index)")
         public Object endError(DynamicObject matchData, int index) {
-            throw new RaiseException(coreLibrary().indexError(String.format("index %d out of matches", index), this));
+            throw new RaiseException(coreExceptions().indexError(String.format("index %d out of matches", index), this));
         }
 
         protected boolean inBounds(DynamicObject matchData, int index) {
@@ -325,10 +309,6 @@ public abstract class MatchDataNodes {
     public abstract static class FullNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode newTupleNode;
-
-        public FullNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object full(VirtualFrame frame, DynamicObject matchData) {
@@ -354,10 +334,6 @@ public abstract class MatchDataNodes {
 
     @CoreMethod(names = { "length", "size" })
     public abstract static class LengthNode extends CoreMethodArrayArgumentsNode {
-
-        public LengthNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int length(DynamicObject matchData) {
@@ -403,10 +379,6 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "to_a")
     public abstract static class ToANode extends CoreMethodArrayArgumentsNode {
 
-        public ToANode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
             Object[] objects = ArrayUtils.copy(Layouts.MATCH_DATA.getValues(matchData));
@@ -416,10 +388,6 @@ public abstract class MatchDataNodes {
 
     @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject toS(DynamicObject matchData) {
@@ -431,10 +399,6 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "regexp")
     public abstract static class RegexpNode extends CoreMethodArrayArgumentsNode {
 
-        public RegexpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject regexp(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getRegexp(matchData);
@@ -444,15 +408,11 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         // MatchData can be allocated in MRI but it does not seem to be any useful
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }
@@ -460,10 +420,6 @@ public abstract class MatchDataNodes {
     @RubiniusOnly
     @NodeChild(value = "self")
     public abstract static class RubiniusSourceNode extends RubyNode {
-
-        public RubiniusSourceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject rubiniusSource(DynamicObject matchData) {

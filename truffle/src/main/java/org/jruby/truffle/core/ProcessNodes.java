@@ -16,15 +16,16 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.DefaultValueNodeGen;
+import org.jruby.truffle.core.cast.LazyDefaultValueNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.posix.ClockGetTime;
 import org.jruby.truffle.platform.posix.TimeSpec;
 import org.jruby.truffle.platform.signal.Signal;
+import org.jruby.util.func.Function0;
 
 @CoreClass(name = "Process")
 public abstract class ProcessNodes {
@@ -45,16 +46,47 @@ public abstract class ProcessNodes {
         public static final int CLOCK_THREAD_CPUTIME_ID = 3; // Linux only
         public static final int CLOCK_MONOTONIC_RAW_ID = 4; // Linux only
 
-        private final DynamicObject floatSecondSymbol = getContext().getSymbolTable().getSymbol("float_second");
-        private final DynamicObject nanosecondSymbol = getContext().getSymbolTable().getSymbol("nanosecond");
+        @CompilerDirectives.CompilationFinal private DynamicObject floatSecondSymbol;
+        @CompilerDirectives.CompilationFinal private DynamicObject floatMicrosecondSymbol;
+        @CompilerDirectives.CompilationFinal private DynamicObject nanosecondSymbol;
 
-        public ClockGetTimeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
+        private DynamicObject getFloatSecondSymbol() {
+            if (floatSecondSymbol == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                floatSecondSymbol = getContext().getSymbolTable().getSymbol("float_second");
+            }
+
+            return floatSecondSymbol;
+        }
+
+        private DynamicObject getFloatMicrosecondSymbol() {
+            if (floatMicrosecondSymbol == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                floatMicrosecondSymbol = getContext().getSymbolTable().getSymbol("float_microsecond");
+            }
+
+            return floatMicrosecondSymbol;
+        }
+
+        private DynamicObject getNanosecondSymbol() {
+            if (nanosecondSymbol == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                nanosecondSymbol = getContext().getSymbolTable().getSymbol("nanosecond");
+            }
+
+            return nanosecondSymbol;
         }
 
         @CreateCast("unit")
         public RubyNode coerceUnit(RubyNode unit) {
-            return DefaultValueNodeGen.create(getContext(), getSourceSection(), floatSecondSymbol, unit);
+            return LazyDefaultValueNodeGen.create(null, null, new Function0<Object>() {
+
+                @Override
+                public Object apply() {
+                    return getFloatSecondSymbol();
+                }
+
+            }, unit);
         }
 
         @Specialization(guards = { "isMonotonic(clock_id)", "isRubySymbol(unit)" })
@@ -86,7 +118,7 @@ public abstract class ProcessNodes {
             int r = libCClockGetTime.clock_gettime(clock_id, timeSpec);
             if (r != 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().systemCallError("clock_gettime failed: " + r, this));
+                throw new RaiseException(coreExceptions().systemCallError("clock_gettime failed: " + r, this));
             }
             long nanos = timeSpec.getTVsec() * 1_000_000_000 + timeSpec.getTVnsec();
             return timeToUnit(nanos, unit);
@@ -94,10 +126,12 @@ public abstract class ProcessNodes {
 
         private Object timeToUnit(long time, DynamicObject unit) {
             assert RubyGuards.isRubySymbol(unit);
-            if (unit == nanosecondSymbol) {
+            if (unit == getNanosecondSymbol()) {
                 return time;
-            } else if (unit == floatSecondSymbol) {
+            } else if (unit == getFloatSecondSymbol()) {
                 return time / 1e9;
+            } else if (unit == getFloatMicrosecondSymbol()) {
+                return time / 1e3;
             } else {
                 throw new UnsupportedOperationException(Layouts.SYMBOL.getString(unit));
             }
@@ -121,12 +155,8 @@ public abstract class ProcessNodes {
 
     }
 
-    @CoreMethod(names = "kill", onSingleton = true, required = 2)
+    @CoreMethod(names = "kill", onSingleton = true, required = 2, unsafe = {UnsafeGroup.PROCESSES, UnsafeGroup.SIGNALS})
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
-
-        public KillNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(signalName)")
@@ -146,7 +176,7 @@ public abstract class ProcessNodes {
             try {
                 getContext().getNativePlatform().getSignalManager().raise(signal);
             } catch (IllegalArgumentException e) {
-                throw new RaiseException(coreLibrary().argumentError(e.getMessage(), this));
+                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
             return 1;
         }
@@ -155,10 +185,6 @@ public abstract class ProcessNodes {
 
     @CoreMethod(names = "pid", onSingleton = true)
     public abstract static class PidNode extends CoreMethodArrayArgumentsNode {
-
-        public PidNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int pid() {

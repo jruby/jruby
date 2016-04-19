@@ -37,7 +37,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
                                        int minimum, String[] excludedKeywords) {
         super(context, sourceSection);
         this.excludedKeywords = excludedKeywords;
-        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimum);
+        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(minimum);
     }
 
     @Override

@@ -1,6 +1,7 @@
 # frozen-literal-string: true
+
 # Create convenience methods for top-level java packages so we do not need to prefix
-# with 'Java::'.  We undef these methods within Package in case we run into 'com.foo.com'.
+# with Java::com. We undef these methods within Package in case we run into 'com.foo.com'.
 module Kernel
   def java
     JavaUtilities.get_package_module_dot_format('java')

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.instrument.Visualizer;
 import com.oracle.truffle.api.instrument.WrapperNode;
 import com.oracle.truffle.api.instrumentation.ProvidedTags;
+import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
@@ -39,12 +40,18 @@ import java.io.IOException;
         AttachmentsManager.LineTag.class,
         TraceManager.CallTag.class,
         TraceManager.ClassTag.class,
-        TraceManager.LineTag.class
+        TraceManager.LineTag.class,
+        StandardTags.RootTag.class,
+        StandardTags.StatementTag.class,
+        StandardTags.CallTag.class
 })
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     public static final String MIME_TYPE = "application/x-ruby";
     public static final String EXTENSION = ".rb";
+
+    public static final String CEXT_MIME_TYPE = "application/x-sulong-library";
+    public static final String CEXT_EXTENSION = ".su";
 
     private RubyLanguage() {
     }

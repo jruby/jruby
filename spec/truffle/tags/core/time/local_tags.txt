@@ -1,4 +1,0 @@
-fails:Time.local creates the correct time just after dst change
-fails:Time.local timezone changes correctly adjusts the timezone change to 'EET' on 'Europe/Istanbul'
-fails:Time.local timezone changes correctly adjusts the timezone change to 'CEST' on 'Europe/Amsterdam'
-fails(Joda Time behavior):Time.local respects rare old timezones

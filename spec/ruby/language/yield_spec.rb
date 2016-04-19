@@ -141,4 +141,9 @@ describe "The yield call" do
       @y.rs([1, 2], 3, 4) { |(*a, b), c, d| [a, b, c, d] }.should == [[1], 2, 3, 4]
     end
   end
+
+  it "uses captured block of a block used in define_method" do
+    @y.deep(2).should == 4
+  end
+
 end

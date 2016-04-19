@@ -41,6 +41,12 @@ describe "Array#product" do
       acc.should be_empty
     end
 
+    it "returns self" do
+      a = [1, 2, 3].freeze
+
+      a.product([1, 2]) { |p| p.first }.should == a
+    end
+
     it "will ignore unreasonable numbers of products and yield anyway" do
       a = (0..100).to_a
       lambda do

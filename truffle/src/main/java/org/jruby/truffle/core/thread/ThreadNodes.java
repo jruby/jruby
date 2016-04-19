@@ -15,7 +15,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
@@ -27,142 +26,22 @@ import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RubiniusOnly;
 import org.jruby.truffle.core.YieldingCoreMethodNode;
-import org.jruby.truffle.core.exception.ExceptionNodes;
-import org.jruby.truffle.core.fiber.FiberManager;
-import org.jruby.truffle.core.fiber.FiberNodes;
-import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.control.ReturnException;
-import org.jruby.truffle.language.control.ThreadExitException;
+import org.jruby.truffle.platform.UnsafeGroup;
+import org.jruby.util.Memo;
 
-import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
 
 @CoreClass(name = "Thread")
 public abstract class ThreadNodes {
 
-    public static DynamicObject createRubyThread(RubyContext context, DynamicObject rubyClass) {
-        final DynamicObject threadLocals = createThreadLocals(context);
-        final DynamicObject object = Layouts.THREAD.createThread(
-                Layouts.CLASS.getInstanceFactory(rubyClass),
-                threadLocals,
-                InterruptMode.IMMEDIATE,
-                Status.RUN,
-                new ArrayList<Lock>(),
-                null,
-                null,
-                new CountDownLatch(1),
-                false,
-                null,
-                null,
-                null,
-                new AtomicBoolean(false),
-                0);
-        Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object)); // Because it is cyclic
-        return object;
-    }
-
-    private static DynamicObject createThreadLocals(RubyContext context) {
-        final DynamicObjectFactory instanceFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getObjectClass());
-        final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(instanceFactory);
-        threadLocals.define("$!", context.getCoreLibrary().getNilObject(), 0);
-        threadLocals.define("$~", context.getCoreLibrary().getNilObject(), 0);
-        threadLocals.define("$?", context.getCoreLibrary().getNilObject(), 0);
-        return threadLocals;
-    }
-
-    public static void initialize(final DynamicObject thread, RubyContext context, Node currentNode, final Object[] arguments, final DynamicObject block) {
-        String info = Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
-        initialize(thread, context, currentNode, info, new Runnable() {
-            @Override
-            public void run() {
-                final Object value = ProcNodes.rootCall(block, arguments);
-                Layouts.THREAD.setValue(thread, value);
-            }
-        });
-    }
-
-    public static void initialize(final DynamicObject thread, final RubyContext context, final Node currentNode, final String info, final Runnable task) {
-        assert RubyGuards.isRubyThread(thread);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                ThreadNodes.run(thread, context, currentNode, info, task);
-            }
-        }).start();
-
-        FiberNodes.waitForInitialization(context, Layouts.THREAD.getFiberManager(thread).getRootFiber(), currentNode);
-    }
-
-    public static void run(DynamicObject thread, final RubyContext context, Node currentNode, String info, Runnable task) {
-        assert RubyGuards.isRubyThread(thread);
-
-        final String name = "Ruby Thread@" + info;
-        Layouts.THREAD.setNameUnsafe(thread, name);
-        Thread.currentThread().setName(name);
-
-        start(context, thread);
-        try {
-            DynamicObject fiber = Layouts.THREAD.getFiberManager(thread).getRootFiber();
-            FiberNodes.run(context, fiber, currentNode, task);
-        } catch (ThreadExitException e) {
-            Layouts.THREAD.setValue(thread, context.getCoreLibrary().getNilObject());
-            return;
-        } catch (RaiseException e) {
-            Layouts.THREAD.setException(thread, e.getException());
-        } catch (ReturnException e) {
-            Layouts.THREAD.setException(thread, context.getCoreLibrary().unexpectedReturn(currentNode));
-        } finally {
-            cleanup(context, thread);
-        }
-    }
-
-    public static void start(RubyContext context, DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        Layouts.THREAD.setThread(thread, Thread.currentThread());
-        context.getThreadManager().registerThread(thread);
-    }
-
-    public static void cleanup(RubyContext context, DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-
-        Layouts.THREAD.setStatus(thread, Status.ABORTING);
-        context.getThreadManager().unregisterThread(thread);
-
-        Layouts.THREAD.setStatus(thread, Status.DEAD);
-        Layouts.THREAD.setThread(thread, null);
-        assert RubyGuards.isRubyThread(thread);
-        for (Lock lock : Layouts.THREAD.getOwnedLocks(thread)) {
-            lock.unlock();
-        }
-        Layouts.THREAD.getFinishedLatch(thread).countDown();
-    }
-
-    public static void shutdown(RubyContext context, DynamicObject thread, Node currentNode) {
-        assert RubyGuards.isRubyThread(thread);
-        Layouts.THREAD.getFiberManager(thread).shutdown();
-
-        if (thread == context.getThreadManager().getRootThread()) {
-            throw new RaiseException(context.getCoreLibrary().systemExit(0, currentNode));
-        } else {
-            throw new ThreadExitException();
-        }
-    }
-
-    @CoreMethod(names = "alive?")
+    @CoreMethod(names = "alive?", unsafe = UnsafeGroup.THREADS)
     public abstract static class AliveNode extends CoreMethodArrayArgumentsNode {
-
-        public AliveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean alive(DynamicObject thread) {
@@ -172,30 +51,30 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "backtrace")
+    @CoreMethod(names = "backtrace", unsafe = UnsafeGroup.THREADS)
     public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
 
-        public BacktraceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
+        @TruffleBoundary
         @Specialization
         public DynamicObject backtrace(DynamicObject rubyThread) {
             final Thread thread = Layouts.FIBER.getThread(Layouts.THREAD.getFiberManager(rubyThread).getCurrentFiber());
 
-            final DynamicObject[] result = new DynamicObject[1];
+            final Memo<DynamicObject> result = new Memo<>(null);
 
             getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new SafepointAction() {
+
                 @Override
                 public void run(DynamicObject thread, Node currentNode) {
                     final Backtrace backtrace = getContext().getCallStack().getBacktrace(currentNode);
-                    result[0] = ExceptionNodes.backtraceAsRubyStringArray(getContext(), null, backtrace);
+                    result.set(ExceptionOperations.backtraceAsRubyStringArray(getContext(), null, backtrace));
                 }
+
             });
 
-            // if the thread id dead or aborting the SafepointAction will not run
-            if (result[0] != null) {
-                return result[0];
+            // If the thread id dead or aborting the SafepointAction will not run
+
+            if (result.get() != null) {
+                return result.get();
             } else {
                 return nil();
             }
@@ -206,10 +85,6 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "current", onSingleton = true)
     public abstract static class CurrentNode extends CoreMethodArrayArgumentsNode {
 
-        public CurrentNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject current() {
             return getContext().getThreadManager().getCurrentThread();
@@ -217,27 +92,26 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = { "kill", "exit", "terminate" })
+    @CoreMethod(names = { "kill", "exit", "terminate" }, unsafe = UnsafeGroup.THREADS)
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
-
-        public KillNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject kill(final DynamicObject rubyThread) {
             final Thread toKill = Layouts.THREAD.getThread(rubyThread);
+
             if (toKill == null) {
                 // Already dead
                 return rubyThread;
             }
 
             getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
+
                 @Override
                 public void run(DynamicObject currentThread, Node currentNode) {
-                    shutdown(getContext(), currentThread, currentNode);
+                    ThreadManager.shutdown(getContext(), currentThread, currentNode);
                 }
+
             });
 
             return rubyThread;
@@ -246,16 +120,12 @@ public abstract class ThreadNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE, unsafe = UnsafeGroup.THREADS)
     public abstract static class HandleInterruptNode extends YieldingCoreMethodNode {
 
-        private final DynamicObject immediateSymbol = getContext().getSymbolTable().getSymbol("immediate");
-        private final DynamicObject onBlockingSymbol = getContext().getSymbolTable().getSymbol("on_blocking");
-        private final DynamicObject neverSymbol = getContext().getSymbolTable().getSymbol("never");
-
-        public HandleInterruptNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+        @CompilerDirectives.CompilationFinal private DynamicObject immediateSymbol;
+        @CompilerDirectives.CompilationFinal private DynamicObject onBlockingSymbol;
+        @CompilerDirectives.CompilationFinal private DynamicObject neverSymbol;
 
         @Specialization(guards = { "isRubyClass(exceptionClass)", "isRubySymbol(timing)" })
         public Object handle_interrupt(VirtualFrame frame, DynamicObject self, DynamicObject exceptionClass, DynamicObject timing, DynamicObject block) {
@@ -272,42 +142,61 @@ public abstract class ThreadNodes {
         }
 
         private InterruptMode symbolToInterruptMode(DynamicObject symbol) {
-            if (symbol == immediateSymbol) {
+            if (symbol == getImmediateSymbol()) {
                 return InterruptMode.IMMEDIATE;
-            } else if (symbol == onBlockingSymbol) {
+            } else if (symbol == getOnBlockingSymbol()) {
                 return InterruptMode.ON_BLOCKING;
-            } else if (symbol == neverSymbol) {
+            } else if (symbol == getNeverSymbol()) {
                 return InterruptMode.NEVER;
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentError("invalid timing symbol", this));
+                throw new RaiseException(coreExceptions().argumentError("invalid timing symbol", this));
             }
+        }
+
+        private DynamicObject getImmediateSymbol() {
+            if (immediateSymbol == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                immediateSymbol = getSymbol("immediate");
+            }
+
+            return immediateSymbol;
+        }
+
+        private DynamicObject getOnBlockingSymbol() {
+            if (onBlockingSymbol == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                onBlockingSymbol = getSymbol("on_blocking");
+            }
+
+            return onBlockingSymbol;
+        }
+
+        private DynamicObject getNeverSymbol() {
+            if (neverSymbol == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                neverSymbol = getSymbol("never");
+            }
+
+            return neverSymbol;
         }
 
     }
 
-    @CoreMethod(names = "initialize", rest = true, needsBlock = true)
+    @CoreMethod(names = "initialize", rest = true, needsBlock = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject initialize(DynamicObject thread, Object[] arguments, DynamicObject block) {
-            ThreadNodes.initialize(thread, getContext(), this, arguments, block);
+            ThreadManager.initialize(thread, getContext(), this, arguments, block);
             return nil();
         }
 
     }
 
-    @CoreMethod(names = "join", optional = 1)
+    @CoreMethod(names = "join", optional = 1, unsafe = UnsafeGroup.THREADS)
     public abstract static class JoinNode extends CoreMethodArrayArgumentsNode {
-
-        public JoinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject join(DynamicObject thread, NotProvided timeout) {
@@ -341,11 +230,13 @@ public abstract class ThreadNodes {
         @TruffleBoundary
         public static void doJoin(RubyNode currentNode, final DynamicObject thread) {
             currentNode.getContext().getThreadManager().runUntilResult(currentNode, new ThreadManager.BlockingAction<Boolean>() {
+
                 @Override
                 public Boolean block() throws InterruptedException {
                     Layouts.THREAD.getFinishedLatch(thread).await();
                     return SUCCESS;
                 }
+
             });
 
             if (Layouts.THREAD.getException(thread) != null) {
@@ -356,7 +247,9 @@ public abstract class ThreadNodes {
         @TruffleBoundary
         private boolean doJoinMillis(final DynamicObject thread, final int timeoutInMillis) {
             final long start = System.currentTimeMillis();
+
             final boolean joined = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Boolean>() {
+
                 @Override
                 public Boolean block() throws InterruptedException {
                     long now = System.currentTimeMillis();
@@ -367,6 +260,7 @@ public abstract class ThreadNodes {
                     }
                     return Layouts.THREAD.getFinishedLatch(thread).await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
                 }
+
             });
 
             if (joined && Layouts.THREAD.getException(thread) != null) {
@@ -381,10 +275,6 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "main", onSingleton = true)
     public abstract static class MainNode extends CoreMethodArrayArgumentsNode {
 
-        public MainNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject main() {
             return getContext().getThreadManager().getRootThread();
@@ -392,27 +282,19 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "pass", onSingleton = true)
+    @CoreMethod(names = "pass", onSingleton = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class PassNode extends CoreMethodArrayArgumentsNode {
 
-        public PassNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
-        public DynamicObject pass(VirtualFrame frame) {
+        public DynamicObject pass() {
             Thread.yield();
             return nil();
         }
 
     }
 
-    @CoreMethod(names = "status")
+    @CoreMethod(names = "status", unsafe = UnsafeGroup.THREADS)
     public abstract static class StatusNode extends CoreMethodArrayArgumentsNode {
-
-        public StatusNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object status(DynamicObject self) {
@@ -431,12 +313,8 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "stop?")
+    @CoreMethod(names = "stop?", unsafe = UnsafeGroup.THREADS)
     public abstract static class StopNode extends CoreMethodArrayArgumentsNode {
-
-        public StopNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean stop(DynamicObject self) {
@@ -446,12 +324,8 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "value")
+    @CoreMethod(names = "value", unsafe = UnsafeGroup.THREADS)
     public abstract static class ValueNode extends CoreMethodArrayArgumentsNode {
-
-        public ValueNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object value(DynamicObject self) {
@@ -461,26 +335,23 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = { "wakeup", "run" })
+    @CoreMethod(names = { "wakeup", "run" }, unsafe = UnsafeGroup.THREADS)
     public abstract static class WakeupNode extends CoreMethodArrayArgumentsNode {
-
-        public WakeupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject wakeup(final DynamicObject thread) {
             if (Layouts.THREAD.getStatus(thread) == Status.DEAD) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().threadError("killed thread", this));
+                throw new RaiseException(coreExceptions().threadErrorKilledThread(this));
             }
 
-            // TODO: should only interrupt sleep
             Layouts.THREAD.getWakeUp(thread).set(true);
-            Thread t = Layouts.THREAD.getThread(thread);
-            if (t != null) {
-                t.interrupt();
+
+            final Thread toInterrupt = Layouts.THREAD.getThread(thread);
+
+            if (toInterrupt != null) {
+                // TODO: should only interrupt sleep
+                toInterrupt.interrupt();
             }
 
             return thread;
@@ -488,12 +359,8 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "abort_on_exception")
+    @CoreMethod(names = "abort_on_exception", unsafe = UnsafeGroup.THREADS)
     public abstract static class AbortOnExceptionNode extends CoreMethodArrayArgumentsNode {
-
-        public AbortOnExceptionNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean abortOnException(DynamicObject self) {
@@ -502,12 +369,8 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "abort_on_exception=", required = 1)
+    @CoreMethod(names = "abort_on_exception=", required = 1, unsafe = UnsafeGroup.THREADS)
     public abstract static class SetAbortOnExceptionNode extends CoreMethodArrayArgumentsNode {
-
-        public SetAbortOnExceptionNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject setAbortOnException(DynamicObject self, boolean abortOnException) {
@@ -517,28 +380,19 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
+    @CoreMethod(names = "allocate", constructor = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        // TODO (eregon, 13/10/2015): Thread is not allocatable in MRI
-        @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return createRubyThread(getContext(), rubyClass);
+            // TODO (eregon, 13/10/2015): Thread is not allocatable in MRI but Rubinius's kernel uses it
+            return ThreadManager.createRubyThread(getContext(), rubyClass);
         }
 
     }
 
     @CoreMethod(names = "list", onSingleton = true)
     public abstract static class ListNode extends CoreMethodArrayArgumentsNode {
-
-        public ListNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject list() {

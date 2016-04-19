@@ -1,0 +1,2 @@
+src: ext/minimum/*.c
+out: lib/minimum/minimum.su

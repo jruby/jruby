@@ -39,7 +39,7 @@ public class UpdateLastBacktraceNode extends RubyNode {
 
         if (lastException == nil()) {
             lastExceptionNilProfile.enter();
-            throw new RaiseException(coreLibrary().argumentError("$! is not set", this));
+            throw new RaiseException(coreExceptions().argumentError("$! is not set", this));
         }
 
         final Object newBacktrace = child.execute(frame);

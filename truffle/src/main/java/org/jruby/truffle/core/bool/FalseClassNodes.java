@@ -25,10 +25,6 @@ public abstract class FalseClassNodes {
     @CoreMethod(names = "&", needsSelf = false, required = 1)
     public abstract static class AndNode extends UnaryCoreMethodNode {
 
-        public AndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean and(Object other) {
             return false;
@@ -38,12 +34,9 @@ public abstract class FalseClassNodes {
     @CoreMethod(names = { "|", "^" }, needsSelf = false, required = 1)
     public abstract static class OrXorNode extends UnaryCoreMethodNode {
 
-        public OrXorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
+        @CreateCast("operand")
+        public RubyNode createCast(RubyNode operand) {
+            return BooleanCastNodeGen.create(null, null, operand);
         }
 
         @Specialization

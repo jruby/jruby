@@ -35,12 +35,6 @@ public class StringGuards {
         return Layouts.STRING.getRope(string).getEncoding().isAsciiCompatible();
     }
 
-    public static boolean isSingleByteOptimizableOrAsciiOnly(DynamicObject string) {
-        assert RubyGuards.isRubyString(string);
-        // TODO (nirvdrum 08-Jun-15) Rubinius tracks whether a String is ASCII-only via a field in the String.
-        return isSingleByteOptimizable(string);
-    }
-
     public static boolean isSingleByte(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
         return Layouts.STRING.getRope(string).getEncoding().isSingleByte();
@@ -60,7 +54,7 @@ public class StringGuards {
 
     public static boolean isValidUtf8(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringOperations.isCodeRangeValid(string) && Layouts.STRING.getRope(string).getEncoding() instanceof UTF8Encoding;
+        return StringOperations.isCodeRangeValid(string) && Layouts.STRING.getRope(string).getEncoding().isUTF8();
     }
 
     public static boolean isEmpty(DynamicObject string) {

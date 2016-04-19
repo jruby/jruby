@@ -36,10 +36,6 @@ public abstract class ObjectPrimitiveNodes {
     @RubiniusPrimitive(name = "object_id")
     public abstract static class ObjectIDPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public ObjectIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
 
         @Specialization(guards = "isNil(nil)")
@@ -98,11 +94,11 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         protected ReadObjectFieldNode createReadObjectIDNode() {
-            return ReadObjectFieldNodeGen.create(getContext(), Layouts.OBJECT_ID_IDENTIFIER, 0L);
+            return ReadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER, 0L);
         }
 
         protected WriteObjectFieldNode createWriteObjectIDNode() {
-            return WriteObjectFieldNodeGen.create(getContext(), Layouts.OBJECT_ID_IDENTIFIER);
+            return WriteObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER);
         }
 
     }

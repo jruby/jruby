@@ -12,8 +12,6 @@ package org.jruby.truffle.language.arguments;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
@@ -28,8 +26,7 @@ public class RunBlockKWArgsHelperNode extends RubyNode {
 
     private final Object kwrestName;
 
-    public RunBlockKWArgsHelperNode(RubyContext context, SourceSection sourceSection, FrameSlot arrayFrameSlot, Object kwrestName) {
-        super(context, sourceSection);
+    public RunBlockKWArgsHelperNode(FrameSlot arrayFrameSlot, Object kwrestName) {
         readArrayNode = ReadFrameSlotNodeGen.create(arrayFrameSlot);
         writeArrayNode = WriteFrameSlotNodeGen.create(arrayFrameSlot);
         this.kwrestName = kwrestName;

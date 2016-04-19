@@ -39,7 +39,7 @@ public class ReadRestArgumentNode extends RubyNode {
         this.keywordArguments = keywordArguments;
 
         if (keywordArguments) {
-            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimumForKWargs);
+            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(minimumForKWargs);
         }
     }
 

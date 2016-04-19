@@ -10,9 +10,15 @@
 
 package org.jruby.truffle.core.rope;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+
+import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RopeConstants {
 

@@ -62,11 +62,11 @@ public abstract class TaintNode extends RubyNode {
     }
 
     protected WriteObjectFieldNode createWriteTaintNode() {
-        return WriteObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER);
+        return WriteObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
     }
 
     private Object frozen(Object object) {
-        throw new RaiseException(coreLibrary().frozenError(
+        throw new RaiseException(coreExceptions().frozenError(
                 Layouts.MODULE.getFields(coreLibrary().getLogicalClass(object)).getName(),
                 this));
     }

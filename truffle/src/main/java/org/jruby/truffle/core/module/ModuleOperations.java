@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.LexicalScope;
@@ -175,7 +176,7 @@ public abstract class ModuleOperations {
                 module = (DynamicObject) constant.getValue();
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(context.getCoreLibrary().typeError(fullName.substring(0, next) + " does not refer to class/module", currentNode));
+                throw new RaiseException(context.getCoreExceptions().typeError(fullName.substring(0, next) + " does not refer to class/module", currentNode));
             }
             start = next + 2;
         }
@@ -183,7 +184,7 @@ public abstract class ModuleOperations {
         final String lastSegment = fullName.substring(start);
         if (!IdUtil.isValidConstantName19(lastSegment)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameError(String.format("wrong constant name %s", fullName), fullName, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameError(String.format("wrong constant name %s", fullName), fullName, currentNode));
         }
 
         return lookupConstantWithInherit(context, module, lastSegment, inherit, currentNode);
@@ -194,7 +195,7 @@ public abstract class ModuleOperations {
 
         if (!IdUtil.isValidConstantName19(name)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameError(String.format("wrong constant name %s", name), name, currentNode));
         }
 
         if (inherit) {
@@ -295,6 +296,11 @@ public abstract class ModuleOperations {
         return null;
     }
 
+    public static InternalMethod lookupMethod(DynamicObject module, String name, Visibility visibility) {
+        InternalMethod method = lookupMethod(module, name);
+        return (method != null && method.getVisibility() == visibility) ? method : null;
+    }
+
     public static InternalMethod lookupSuperMethod(InternalMethod currentMethod, DynamicObject objectMetaClass) {
         assert RubyGuards.isRubyClass(objectMetaClass);
         final String name = currentMethod.getSharedMethodInfo().getName(); // use the original name
@@ -393,7 +399,7 @@ public abstract class ModuleOperations {
         final Object found = moduleFields.getClassVariables().remove(name);
         if (found == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameErrorClassVariableNotDefined(name, moduleFields.rubyModuleObject, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameErrorClassVariableNotDefined(name, moduleFields.rubyModuleObject, currentNode));
         }
         return found;
     }

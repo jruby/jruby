@@ -5,7 +5,8 @@ describe "Process.wait2" do
     # HACK: this kludge is temporarily necessary because some
     # misbehaving spec somewhere else does not clear processes
     begin
-      Process.waitall
+      leaked = Process.waitall
+      puts "leaked before wait2 specs: #{leaked}" unless leaked.empty?
     rescue NotImplementedError
     end
   end

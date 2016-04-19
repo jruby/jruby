@@ -17,29 +17,31 @@ import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyObjectType;
+import org.jruby.truffle.language.dispatch.DispatchAction;
+import org.jruby.truffle.language.dispatch.DispatchHeadNode;
+import org.jruby.truffle.language.dispatch.MissingBehavior;
 
 @AcceptMessage(value = "INVOKE", receiverType = RubyObjectType.class, language = RubyLanguage.class)
 public final class ForeignInvokeNode extends ForeignInvokeBaseNode {
 
     @Child private Node findContextNode;
-    @Child private RubyNode interopNode;
+    @Child private DispatchHeadNode dispatchHeadNode;
 
     @Override
-    public Object access(VirtualFrame frame, DynamicObject object, String name, Object[] args) {
-        return getInteropNode().execute(frame);
+    public Object access(VirtualFrame frame, DynamicObject receiver, String name, Object[] arguments) {
+        return getDispatchHeadNode().dispatch(frame, receiver, name, null, arguments);
     }
 
-    private RubyNode getInteropNode() {
-        if (interopNode == null) {
+    private DispatchHeadNode getDispatchHeadNode() {
+        if (dispatchHeadNode == null) {
             CompilerDirectives.transferToInterpreter();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
             final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-            interopNode = insert(new UnresolvedInteropExecuteAfterReadNode(context, null, 0));
+            dispatchHeadNode = insert(new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
         }
 
-        return interopNode;
+        return dispatchHeadNode;
     }
 
 }

@@ -120,6 +120,7 @@ public enum Operation {
     INHERITANCE_SEARCH_CONST(OpFlags.f_can_raise_exception),
     CONST_MISSING(OpFlags.f_can_raise_exception),
     SEARCH_CONST(OpFlags.f_can_raise_exception),
+    SEARCH_MODULE_FOR_CONST(OpFlags.f_can_raise_exception),
 
     GET_GLOBAL_VAR(OpFlags.f_is_load),
     GET_FIELD(OpFlags.f_is_load),

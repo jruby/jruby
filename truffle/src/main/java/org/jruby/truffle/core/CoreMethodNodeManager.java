@@ -24,6 +24,7 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -40,6 +41,7 @@ import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.parser.jruby.Translator;
+import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -166,7 +168,7 @@ public class CoreMethodNodeManager {
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
         if (needsCallerFrame) {
-            argumentsNodes.add(new ReadCallerFrameNode(context, sourceSection));
+            argumentsNodes.add(new ReadCallerFrameNode());
         }
 
         // Do not use needsSelf=true in module functions, it is either the module/class or the instance.
@@ -188,7 +190,7 @@ public class CoreMethodNodeManager {
         }
 
         for (int n = 0; n < arity.getPreRequired() + arity.getOptional(); n++) {
-            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehavior.UNDEFINED);
+            RubyNode readArgumentNode = new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED);
 
             if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
                 readArgumentNode = FixnumLowerNodeGen.create(context, sourceSection, readArgumentNode);
@@ -201,11 +203,11 @@ public class CoreMethodNodeManager {
             argumentsNodes.add(readArgumentNode);
         }
         if (method.rest()) {
-            argumentsNodes.add(new ReadRemainingArgumentsNode(context, sourceSection, arity.getPreRequired() + arity.getOptional()));
+            argumentsNodes.add(new ReadRemainingArgumentsNode(arity.getPreRequired() + arity.getOptional()));
         }
 
         if (method.needsBlock()) {
-            argumentsNodes.add(new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE));
+            argumentsNodes.add(new ReadBlockNode(NotProvided.INSTANCE));
         }
 
         final RubyNode methodNode;
@@ -215,9 +217,18 @@ public class CoreMethodNodeManager {
         assert signatures.size() == 1;
         List<Class<?>> signature = signatures.get(0);
 
-        if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
+        if (signature.size() == 0) {
+            methodNode = nodeFactory.createNode();
+        } else if (signature.size() == 1 && signature.get(0) == RubyNode[].class) {
+            Object[] args = argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]);
+            methodNode = nodeFactory.createNode(new Object[]{args});
+        } else if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
             Object[] args = argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]);
             methodNode = nodeFactory.createNode(context, sourceSection, args);
+        } else if (signature.get(0) != RubyContext.class) {
+            Object[] args = new Object[argumentsNodes.size()];
+            System.arraycopy(argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]), 0, args, 0, argumentsNodes.size());
+            methodNode = nodeFactory.createNode(args);
         } else {
             Object[] args = new Object[2 + argumentsNodes.size()];
             args[0] = context;
@@ -231,22 +242,75 @@ public class CoreMethodNodeManager {
         }
 
         final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection, arity);
-        RubyNode sequence = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
 
-        if (method.returnsEnumeratorIfNoBlock()) {
-            // TODO BF 3-18-2015 Handle multiple method names correctly
-            sequence = new ReturnEnumeratorIfNoBlockNode(method.names()[0], sequence);
-        }
+        RubyNode sequence;
 
-        if (method.taintFromSelf() || method.taintFromParameter() != -1) {
-            sequence = new TaintResultNode(method.taintFromSelf(),
-                                           method.taintFromParameter(),
-                                           sequence);
+        if (!isSafe(context, method.unsafe())) {
+            sequence = new UnsafeNode(context, sourceSection);
+        } else {
+            sequence = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
+
+            if (method.returnsEnumeratorIfNoBlock()) {
+                // TODO BF 3-18-2015 Handle multiple method names correctly
+                sequence = new ReturnEnumeratorIfNoBlockNode(method.names()[0], sequence);
+            }
+
+            if (method.taintFromSelf() || method.taintFromParameter() != -1) {
+                sequence = new TaintResultNode(method.taintFromSelf(),
+                        method.taintFromParameter(),
+                        sequence);
+            }
         }
 
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, method.unsupportedOperationBehavior());
 
         return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode, false);
+    }
+
+    public static boolean isSafe(RubyContext context, UnsafeGroup[] groups) {
+        final Options options = context.getOptions();
+
+        for (UnsafeGroup group : groups) {
+            final boolean option;
+
+            switch (group) {
+                case LOAD:
+                    option = options.PLATFORM_SAFE_LOAD;
+                    break;
+                case IO:
+                    option = options.PLATFORM_SAFE_IO;
+                    break;
+                case MEMORY:
+                    option = options.PLATFORM_SAFE_MEMORY;
+                    break;
+                case THREADS:
+                    option = options.PLATFORM_SAFE_THREADS;
+                    break;
+                case PROCESSES:
+                    option = options.PLATFORM_SAFE_PROCESSES;
+                    break;
+                case SIGNALS:
+                    option = options.PLATFORM_SAFE_SIGNALS;
+                    break;
+                case EXIT:
+                    option = options.PLATFORM_SAFE_EXIT;
+                    break;
+                case AT_EXIT:
+                    option = options.PLATFORM_SAFE_AT_EXIT;
+                    break;
+                case SAFE_PUTS:
+                    option = options.PLATFORM_SAFE_PUTS;
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+
+            if (!option) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public void allMethodInstalled() {

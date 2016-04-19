@@ -1,4 +1,6 @@
-version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
+version = ENV['JRUBY_VERSION'] ||
+  File.read( File.join( basedir, '..', 'VERSION' ) ).strip
+
 project 'JRuby Truffle' do
 
   model_version '4.0.0'
@@ -7,6 +9,7 @@ project 'JRuby Truffle' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
+ +            'truffle.version' => '0.12',
               'jruby.basedir' => '${basedir}/..' )
 
   jar 'org.yaml:snakeyaml:1.14'
@@ -14,14 +17,12 @@ project 'JRuby Truffle' do
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
-              :id => 'truffle' )
-
-  truffle_version = '551e8475af2fc8769bc3ead07c9156fe0ccbe338-SNAPSHOT'
+  truffle_version = '${truffle.version}'
   jar 'com.oracle.truffle:truffle-api:' + truffle_version
   jar 'com.oracle.truffle:truffle-debug:' + truffle_version
   jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
   jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
+  
   jar 'junit:junit', :scope => 'test'
 
   plugin 'org.antlr:antlr4-maven-plugin', '4.5.1-1' do
@@ -40,6 +41,7 @@ project 'JRuby Truffle' do
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
+                   :fork => true,
                    'annotationProcessors' => [ 'com.oracle.truffle.object.dsl.processor.LayoutProcessor',
                                                'com.oracle.truffle.dsl.processor.InstrumentableProcessor',
                                                'com.oracle.truffle.dsl.processor.TruffleProcessor',

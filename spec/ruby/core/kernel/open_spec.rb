@@ -52,7 +52,11 @@ describe "Kernel#open" do
   platform_is :windows do
     it "opens an io when path starts with a pipe" do
       @io = open("|date /t")
-      @io.should be_kind_of(IO)
+      begin
+        @io.should be_kind_of(IO)
+      ensure
+        @io.close
+      end
     end
 
     it "opens an io when called with a block" do

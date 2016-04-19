@@ -17,11 +17,12 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
+import org.jruby.truffle.language.RubyBaseNode;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
-public class LookupEntryNode extends RubyNode {
+public class LookupEntryNode extends RubyBaseNode {
 
     @Child HashNode hashNode;
     @Child CallDispatchHeadNode eqlNode;
@@ -33,7 +34,7 @@ public class LookupEntryNode extends RubyNode {
         super(context, sourceSection);
         hashNode = new HashNode(context, sourceSection);
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
+        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null);
     }
 
     public HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
@@ -61,11 +62,6 @@ public class LookupEntryNode extends RubyNode {
         }
 
         return new HashLookupResult(hashed, index, previousEntry, null);
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        throw new UnsupportedOperationException();
     }
 
 }

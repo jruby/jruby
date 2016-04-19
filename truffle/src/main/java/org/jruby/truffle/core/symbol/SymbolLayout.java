@@ -25,8 +25,7 @@ public interface SymbolLayout extends BasicObjectLayout {
     DynamicObject createSymbol(DynamicObjectFactory factory,
                                String string,
                                Rope rope,
-                               int hashCode,
-                               @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
+                               int hashCode);
 
     boolean isSymbol(Object object);
     boolean isSymbol(DynamicObject object);
@@ -36,8 +35,5 @@ public interface SymbolLayout extends BasicObjectLayout {
     Rope getRope(DynamicObject object);
 
     int getHashCode(DynamicObject object);
-
-    SymbolCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
-    void setCodeRangeableWrapper(DynamicObject object, SymbolCodeRangeableWrapper value);
 
 }

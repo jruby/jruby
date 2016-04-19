@@ -12,6 +12,7 @@ package org.jruby.truffle.core.rope;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
+import org.jruby.util.func.Function1;
 
 public class ConcatRope extends Rope {
 
@@ -29,7 +30,7 @@ public class ConcatRope extends Rope {
                 left.byteLength() + right.byteLength(),
                 left.characterLength() + right.characterLength(),
                 depth,
-                null);
+                bytes);
 
         this.left = left;
         this.right = right;
@@ -53,47 +54,6 @@ public class ConcatRope extends Rope {
         }
 
         return right.getByteSlow(index - left.byteLength());
-    }
-
-    @Override
-    @TruffleBoundary
-    public byte[] extractRange(int offset, int length) {
-        assert length <= this.byteLength();
-
-        if (getRawBytes() != null) {
-            final byte[] ret = new byte[length];
-            System.arraycopy(getRawBytes(), offset, ret, 0, length);
-
-            return ret;
-        }
-
-        byte[] leftBytes;
-        byte[] rightBytes;
-        final int leftLength = left.byteLength();
-
-        if (offset < leftLength) {
-            // The left branch might not be large enough to extract the full byte range we want. In that case,
-            // we'll extract what we can and extract the difference from the right side.
-            if (offset + length > leftLength) {
-                leftBytes = left.extractRange(offset, leftLength - offset);
-            } else {
-                leftBytes = left.extractRange(offset, length);
-            }
-
-            if (leftBytes.length < length) {
-                rightBytes = right.extractRange(0, length - leftBytes.length);
-
-                final byte[] ret = new byte[length];
-                System.arraycopy(leftBytes, 0, ret, 0, leftBytes.length);
-                System.arraycopy(rightBytes, 0, ret, leftBytes.length, rightBytes.length);
-
-                return ret;
-            } else {
-                return leftBytes;
-            }
-        }
-
-        return right.extractRange(offset - leftLength, length);
     }
 
     public Rope getLeft() {

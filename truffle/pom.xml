@@ -41,23 +41,23 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-api</artifactId>
-      <version>551e8475af2fc8769bc3ead07c9156fe0ccbe338-SNAPSHOT</version>
+      <version>0.12</version>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-debug</artifactId>
-      <version>551e8475af2fc8769bc3ead07c9156fe0ccbe338-SNAPSHOT</version>
+      <version>0.12</version>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
-      <version>551e8475af2fc8769bc3ead07c9156fe0ccbe338-SNAPSHOT</version>
+      <version>0.12</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-tck</artifactId>
-      <version>551e8475af2fc8769bc3ead07c9156fe0ccbe338-SNAPSHOT</version>
+      <version>0.12</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -66,12 +66,6 @@ DO NOT MODIFIY - GENERATED CODE
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <repositories>
-    <repository>
-      <id>truffle</id>
-      <url>http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/</url>
-    </repository>
-  </repositories>
   <build>
     <defaultGoal>package</defaultGoal>
     <resources>
@@ -106,6 +100,7 @@ DO NOT MODIFIY - GENERATED CODE
               <goal>compile</goal>
             </goals>
             <configuration>
+              <fork>true</fork>
               <annotationProcessors>
                 <annotationProcessor>com.oracle.truffle.object.dsl.processor.LayoutProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.InstrumentableProcessor</annotationProcessor>

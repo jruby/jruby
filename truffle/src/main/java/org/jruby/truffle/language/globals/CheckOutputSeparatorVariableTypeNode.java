@@ -33,7 +33,7 @@ public class CheckOutputSeparatorVariableTypeNode extends RubyNode {
 
         if (!RubyGuards.isRubyString(childValue) && !isNil(childValue)) {
             unsuitableTypeProfile.enter();
-            throw new RaiseException(coreLibrary().typeErrorMustBe("$,", "String", this));
+            throw new RaiseException(coreExceptions().typeErrorMustBe("$,", "String", this));
         }
 
         return childValue;

@@ -27,6 +27,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
@@ -45,10 +46,6 @@ public abstract class EncodingConverterPrimitiveNodes {
     @RubiniusPrimitive(name = "encoding_converter_allocate")
     public static abstract class EncodingConverterAllocateNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public EncodingConverterAllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object encodingConverterAllocate(DynamicObject encodingConverterClass, NotProvided unused1, NotProvided unused2) {
             return EncodingConverterNodes.createEncodingConverter(encodingConverterClass, null);
@@ -63,7 +60,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         public PrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)", "isRubyHash(options)"})
@@ -95,7 +92,7 @@ public abstract class EncodingConverterPrimitiveNodes {
             final boolean nonNullSource = source != nil();
             Rope sourceRope = nonNullSource ? rope(source) : RopeConstants.EMPTY_UTF8_ROPE;
             final Rope targetRope = rope(target);
-            final ByteList outBytes = targetRope.toByteListCopy();
+            final ByteList outBytes = RopeOperations.toByteListCopy(targetRope);
 
             final Ptr inPtr = new Ptr();
             final Ptr outPtr = new Ptr();
@@ -123,7 +120,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
                 if (outBytes.getRealSize() < offset) {
                     throw new RaiseException(
-                            coreLibrary().argumentError("output offset too big", this)
+                            coreExceptions().argumentError("output offset too big", this)
                     );
                 }
 
@@ -132,7 +129,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                 if (outputByteEnd > Integer.MAX_VALUE) {
                     // overflow check
                     throw new RaiseException(
-                            coreLibrary().argumentError("output offset + bytesize too big", this)
+                            coreExceptions().argumentError("output offset + bytesize too big", this)
                     );
                 }
 
@@ -153,7 +150,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {
                     if (Integer.MAX_VALUE / 2 < size) {
                         throw new RaiseException(
-                                coreLibrary().argumentError("too long conversion result", this)
+                                coreExceptions().argumentError("too long conversion result", this)
                         );
                     }
                     size *= 2;
@@ -174,10 +171,6 @@ public abstract class EncodingConverterPrimitiveNodes {
 
     @RubiniusPrimitive(name = "encoding_converter_putback")
     public static abstract class EncodingConverterPutbackNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public EncodingConverterPutbackNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject encodingConverterPutback(DynamicObject encodingConverter, int maxBytes) {
@@ -274,10 +267,6 @@ public abstract class EncodingConverterPrimitiveNodes {
 
     @RubiniusPrimitive(name = "encoding_converter_primitive_errinfo")
     public static abstract class EncodingConverterErrinfoNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public EncodingConverterErrinfoNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object encodingConverterLastError(DynamicObject encodingConverter) {

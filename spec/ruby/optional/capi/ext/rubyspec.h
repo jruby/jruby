@@ -23,6 +23,10 @@
    (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR < (minor)) || \
    (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR == (minor) && RUBY_VERSION_TEENY < (teeny)))
 
+#if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 3)
+#define RUBY_VERSION_IS_2_3
+#endif
+
 #if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 2)
 #define RUBY_VERSION_IS_2_2
 #endif
@@ -94,7 +98,6 @@
 /* Class */
 #define HAVE_RB_CALL_SUPER                 1
 #define HAVE_RB_CLASS2NAME                 1
-#define HAVE_RB_CLASS_INHERITED            1
 #define HAVE_RB_CLASS_NAME                 1
 #define HAVE_RB_CLASS_NEW                  1
 #define HAVE_RB_CLASS_NEW_INSTANCE         1
@@ -394,6 +397,7 @@
 #define HAVE_RB_CONST_SET                  1
 #define HAVE_RB_DEFINE_ALIAS               1
 #define HAVE_RB_DEFINE_CLASS_UNDER         1
+#define HAVE_RB_DEFINE_CLASS_ID_UNDER      1
 #define HAVE_RB_DEFINE_CONST               1
 #define HAVE_RB_DEFINE_GLOBAL_CONST        1
 #define HAVE_RB_DEFINE_GLOBAL_FUNCTION     1
@@ -595,6 +599,9 @@
 #define HAVE_RB_TIME_INTERVAL              1
 #define HAVE_RB_TIME_TIMEVAL               1
 #define HAVE_RB_TIME_TIMESPEC              1
+#ifdef RUBY_VERSION_IS_2_3
+#define HAVE_RB_TIME_TIMESPEC_NEW          1
+#endif
 
 /* Util */
 #define HAVE_RB_SCAN_ARGS                  1

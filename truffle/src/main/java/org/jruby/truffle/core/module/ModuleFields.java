@@ -160,7 +160,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     public void checkFrozen(RubyContext context, Node currentNode) {
         if (context.getCoreLibrary() != null && verySlowIsFrozen(context, rubyModuleObject)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().frozenError(Layouts.MODULE.getFields(getLogicalClass()).getName(), currentNode));
+            throw new RaiseException(context.getCoreExceptions().frozenError(Layouts.MODULE.getFields(getLogicalClass()).getName(), currentNode));
         }
     }
 
@@ -186,7 +186,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
         // If the module we want to include already includes us, it is cyclic
         if (ModuleOperations.includesModule(module, rubyModuleObject)) {
-            throw new RaiseException(context.getCoreLibrary().argumentError("cyclic include detected", currentNode));
+            throw new RaiseException(context.getCoreExceptions().argumentError("cyclic include detected", currentNode));
         }
 
         // We need to include the module ancestors in reverse order for a given inclusionPoint
@@ -246,7 +246,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
         // If the module we want to prepend already includes us, it is cyclic
         if (ModuleOperations.includesModule(module, rubyModuleObject)) {
-            throw new RaiseException(context.getCoreLibrary().argumentError("cyclic prepend detected", currentNode));
+            throw new RaiseException(context.getCoreExceptions().argumentError("cyclic prepend detected", currentNode));
         }
 
         ModuleChain mod = Layouts.MODULE.getFields(module).start;
@@ -353,7 +353,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     public void undefMethod(RubyContext context, Node currentNode, String methodName) {
         final InternalMethod method = ModuleOperations.lookupMethod(rubyModuleObject, methodName);
         if (method == null) {
-            throw new RaiseException(context.getCoreLibrary().nameErrorUndefinedMethod(methodName, rubyModuleObject, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameErrorUndefinedMethod(methodName, rubyModuleObject, currentNode));
         } else {
             addMethod(context, currentNode, method.undefined());
         }
@@ -388,7 +388,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameErrorUndefinedMethod(oldName, rubyModuleObject, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameErrorUndefinedMethod(oldName, rubyModuleObject, currentNode));
         }
 
         InternalMethod aliasMethod = method.withName(newName);
@@ -408,7 +408,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
             final RubyConstant previous = constants.get(name);
 
             if (previous == null) {
-                throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(rubyModuleObject, name, currentNode));
+                throw new RaiseException(context.getCoreExceptions().nameErrorUninitializedConstant(rubyModuleObject, name, currentNode));
             }
 
             if (constants.replace(name, previous, previous.withPrivate(isPrivate))) {

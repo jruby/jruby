@@ -190,7 +190,11 @@ public class BacktraceData implements Serializable {
                 case "ir" : return true;
                 case "internal" : return true; // e.g. org.jruby.internal.runtime.methods.DynamicMethod.call
                 case "java" : return true; // e.g. org.jruby.java.invokers.InstanceMethodInvoker.call
-                case "javasupport" : return true;
+                // NOTE: if filtering javasupport is added back consider keeping some of the internals as they
+                // help identify issues and probably makes sense to NOT be filtered, namely:
+                // - (most if not all) classes in the package such as Java, JavaPackage, JavaUtil
+                // - sub-packages such as util, binding - maybe only filter the "proxy" sub-package?
+                //case "javasupport" : return true;
                 case "parser" : return true;
                 case "platform" : return true;
                 case "runtime" : return true; // e.g.  org.jruby.runtime.callsite.CachingCallSite.cacheAndCall

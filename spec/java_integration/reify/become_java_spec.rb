@@ -1,8 +1,9 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 require 'jruby/core_ext'
 
+java_import 'java_integration.fixtures.Reflector'
+
 describe "JRuby class reification" do
-  jclass = java.lang.Class
 
   class RubyRunnable
     include java.lang.Runnable
@@ -26,6 +27,8 @@ describe "JRuby class reification" do
     ReifyInterfacesClass1.become_java!
     ReifyInterfacesClass1::ReifyInterfacesClass2.become_java!
 
+    jclass = java.lang.Class
+
     expect(ReifyInterfacesClass1.to_java(jclass).name).to eq("rubyobj.ReifyInterfacesClass1")
     expect(ReifyInterfacesClass1::ReifyInterfacesClass2.to_java(jclass).name).to eq("rubyobj.ReifyInterfacesClass1.ReifyInterfacesClass2")
 
@@ -35,21 +38,35 @@ describe "JRuby class reification" do
       ReifyInterfacesClass1::ReifyInterfacesClass2.new
     end.not_to raise_error
   end
-  
-  it "creates static methods for Ruby class methods" do
-    cls = Class.new do
+
+  it "creates static methods for reified Ruby class methods" do
+    klass = Class.new do
       class << self
-        def blah
-        end
+        def foo; 'FOO' end
       end
+      def self.bar(arg = 'baz'); "BAR-#{arg.upcase rescue arg.inspect}" end
     end
-    
-    java_class = cls.become_java!
-    
-    method = java_class.declared_methods.select {|m| m.name == "blah"}[0]
-    expect(method.name).to eq("blah")
-    expect(method.return_type).to eq(org.jruby.runtime.builtin.IRubyObject.java_class)
-    expect(method.parameter_types.length).to eq(0)
+
+    java_class = klass.become_java!
+
+    method = java_class.declared_methods.find { |m| m.name == 'foo' }
+    expect(method.return_type).to eql org.jruby.runtime.builtin.IRubyObject.java_class
+    expect(method.parameter_types.length).to eql 0 # foo()
+
+    expect( Reflector.invoke(nil, method) ).to eql 'FOO'
+
+    method = java_class.declared_methods.find { |m| m.name == 'bar' }
+
+    expect( method.return_type ).to eql org.jruby.runtime.builtin.IRubyObject.java_class
+    expect( method.parameter_types.length ).to eql 1 # bar(org.jruby.runtime.builtin.IRubyObject[])
+    expect( method.parameter_types[0] ).to eql org.jruby.runtime.builtin.IRubyObject[].java_class
+    expect( method.isVarArgs ).to be true
+
+    expect( Reflector.invoke(nil, method) ).to eql 'BAR-BAZ'
+    args = org.jruby.runtime.builtin.IRubyObject[1].new
+    expect( Reflector.invoke(nil, method, args) ).to eql 'BAR-nil'
+    args = org.jruby.runtime.builtin.IRubyObject[1].new; args[0] = 'zZz'.to_java(org.jruby.runtime.builtin.IRubyObject)
+    expect( Reflector.invoke(nil, method, args) ).to eql 'BAR-ZZZ'
   end
 
   it "supports fully reifying a deep class hierarchy" do
@@ -57,10 +74,10 @@ describe "JRuby class reification" do
     class MiddleOfTheStack < BottomOfTheStack ; end
     class TopLeftOfTheStack < MiddleOfTheStack ; end
     class TopRightOfTheStack < MiddleOfTheStack ; end
- 
+
     java_class = TopLeftOfTheStack.become_java!
     expect(java_class).not_to be_nil
-    
+
     java_class = TopRightOfTheStack.become_java!
     expect(java_class).not_to be_nil
   end
@@ -113,8 +130,59 @@ describe "JRuby class reification" do
     a_class = JRUBY5564.become_java!(false)
 
     # load the java class from the classloader
-    cl = java.lang.Thread.current_thread.getContextClassLoader
-    expect(cl.load_class(a_class.get_name)).to eq(a_class)
+    klass = java.lang.Thread.current_thread.getContextClassLoader
+    expect(klass.load_class(a_class.get_name)).to eq(a_class)
+  end
+
+  class ReifiedSample
+    def hello; 'Sayonara from Ruby' end
+    java_signature "java.lang.String ahoy()"
+    def ahoy; 'Ahoy There!' end
+
+    def hoja(arg); 'Hoja ' + arg.to_s end
+    def szia(arg1, arg2, arg3); return "Szia #{arg1} #{arg2} #{arg3}" end
+
+    def greet(*args); "Greetings #{args.inspect}!" end
+
+    java_signature "java.lang.String ola(java.lang.String[] args)"
+    def ola(*args); "OLA #{args.join(' ')}" end
+  end
+
+  it "handles argument count for reified class methods" do
+    j_class = ReifiedSample.become_java!; sample = ReifiedSample.new
+
+    methods = Reflector.findMethods(sample, 'hello')
+    expect( methods.size ).to eql 1; method = methods[0]
+    expect( method.isVarArgs ).to be false
+    expect( Reflector.invoke(sample, 'hello') ).to eql 'Sayonara from Ruby'
+    expect( Reflector.invoke(sample, j_class, 'hello') ).to eql 'Sayonara from Ruby'
+
+    methods = Reflector.findMethods(sample, 'ahoy')
+    expect( methods.size ).to eql 1; method = methods[0]
+    expect( method.isVarArgs ).to be false
+    expect( j_class.newInstance.ahoy ).to eql 'Ahoy There!'
+
+    methods = Reflector.findMethods(sample, 'hoja')
+    expect( methods.size ).to eql 1; method = methods[0]
+    expect( method.isVarArgs ).to be false
+    expect( j_class.newInstance.hoja('Ferko') ).to eql 'Hoja Ferko'
+    expect { j_class.newInstance.szia('Ferko', 'Janko') }.to raise_error(ArgumentError)
+
+    methods = Reflector.findMethods(sample, 'szia')
+    expect( methods.size ).to eql 1; method = methods[0]
+    expect( method.isVarArgs ).to be false
+    expect( j_class.newInstance.szia('Jozko', 'Janko', 'Ferko') ).to eql 'Szia Jozko Janko Ferko'
+    expect { j_class.newInstance.szia('Jozko', 'Janko') }.to raise_error(ArgumentError)
+
+    method = Reflector.resolveMethod(sample, 'greet', org.jruby.runtime.builtin.IRubyObject[])
+    expect( method.isVarArgs ).to be true
+    expect( Reflector.invoke(sample, method) ).to eql 'Greetings []!'
+    expect( j_class.newInstance.greet ).to eql 'Greetings []!'
+    expect( j_class.newInstance.greet('Janko') ).to eql 'Greetings ["Janko"]!'
+
+    method = Reflector.resolveMethod(sample, 'ola', java.lang.String[])
+    expect( method.isVarArgs ).to be true
+    expect( j_class.newInstance.ola('Jozko') ).to eql 'OLA Jozko'
   end
 
   describe "java fields" do

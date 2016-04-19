@@ -28,32 +28,30 @@ import java.util.concurrent.locks.Lock;
 @Layout
 public interface ThreadLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createThreadShape(DynamicObject logicalClass,
-                                           DynamicObject metaClass);
+    DynamicObjectFactory createThreadShape(
+            DynamicObject logicalClass,
+            DynamicObject metaClass);
 
-    DynamicObject createThread(DynamicObjectFactory factory,
-                               DynamicObject threadLocals,
-                               @Volatile InterruptMode interruptMode, // needs to be volatile for fibers implemented by threads
-                               @Volatile RubyThread.Status status,
-                               List<Lock> ownedLocks,
-                               @Nullable FiberManager fiberManager,
-                               @Nullable String name,
-                               CountDownLatch finishedLatch,
-                               boolean abortOnException,
-                               @Nullable @Volatile Thread thread,
-                               @Nullable @Volatile DynamicObject exception,
-                               @Nullable @Volatile Object value,
-                               AtomicBoolean wakeUp,
-                               @Volatile int priority);
+    DynamicObject createThread(
+            DynamicObjectFactory factory,
+            DynamicObject threadLocals,
+            @Volatile InterruptMode interruptMode, // needs to be volatile for fibers implemented by threads
+            @Volatile RubyThread.Status status,
+            List<Lock> ownedLocks,
+            @Nullable FiberManager fiberManager,
+            CountDownLatch finishedLatch,
+            boolean abortOnException,
+            @Nullable @Volatile Thread thread,
+            @Nullable @Volatile DynamicObject exception,
+            @Nullable @Volatile Object value,
+            AtomicBoolean wakeUp,
+            @Volatile int priority);
 
     boolean isThread(ObjectType objectType);
     boolean isThread(DynamicObject object);
 
     FiberManager getFiberManager(DynamicObject object);
     void setFiberManagerUnsafe(DynamicObject object, FiberManager value);
-
-    String getName(DynamicObject object);
-    void setNameUnsafe(DynamicObject object, String value);
 
     CountDownLatch getFinishedLatch(DynamicObject object);
 

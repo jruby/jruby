@@ -1,4 +1,6 @@
-version = File.read( File.join( basedir, 'VERSION' ) ).strip
+version = ENV['JRUBY_VERSION'] ||
+  File.read( File.join( basedir, 'VERSION' ) ).strip
+
 project 'JRuby', 'https://github.com/jruby/jruby' do
 
   model_version '4.0.0'
@@ -77,7 +79,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
               'rdoc.version' => '4.2.0',
               'rake.version' => '10.4.2',
-              'jar-dependencies.version' => '0.2.3',
+              'jar-dependencies.version' => '0.3.2',
 
               'jruby-launcher.version' => '1.1.1',
               'ant.version' => '1.9.2',

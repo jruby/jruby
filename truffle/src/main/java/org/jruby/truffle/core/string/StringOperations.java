@@ -77,7 +77,7 @@ public abstract class StringOperations {
 
     public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string) {
         return new StringCodeRangeableWrapper(string) {
-            private final ByteList byteList = StringOperations.rope(string).toByteListCopy();
+            private final ByteList byteList = RopeOperations.toByteListCopy(StringOperations.rope(string));
             int codeRange = StringOperations.getCodeRange(string).toInt();
 
             @Override
@@ -186,7 +186,7 @@ public abstract class StringOperations {
 
         if (encoding == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().encodingCompatibilityErrorIncompatible(
+            throw new RaiseException(context.getCoreExceptions().encodingCompatibilityErrorIncompatible(
                     rope(string).getEncoding().toString(),
                     rope(other).getEncoding().toString(),
                     node));
@@ -226,7 +226,7 @@ public abstract class StringOperations {
     }
 
     public static ByteList getByteListReadOnly(DynamicObject object) {
-        return Layouts.STRING.getRope(object).getUnsafeByteList();
+        return RopeOperations.getByteListReadOnly(rope(object));
     }
 
     public static Rope ropeFromByteList(ByteList byteList) {

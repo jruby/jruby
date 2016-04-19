@@ -16,6 +16,8 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
@@ -43,13 +45,23 @@ public class CodeLoader {
     public RubyRootNode parse(Source source,
                               Encoding defaultEncoding,
                               ParserContext parserContext,
+                              FrameDescriptor frameDescriptor,
                               MaterializedFrame parentFrame,
                               boolean ownScopeForAssignments,
                               Node currentNode) {
         final TranslatorDriver translator = new TranslatorDriver(context);
-
-        return translator.parse(context, source, defaultEncoding, parserContext, null, parentFrame,
+        return translator.parse(context, source, defaultEncoding, parserContext, null, frameDescriptor, parentFrame,
                 ownScopeForAssignments, currentNode);
+    }
+
+    @TruffleBoundary
+    public RubyRootNode parse(Source source,
+                              Encoding defaultEncoding,
+                              ParserContext parserContext,
+                              MaterializedFrame parentFrame,
+                              boolean ownScopeForAssignments,
+                              Node currentNode) {
+        return parse(source, defaultEncoding, parserContext, null, parentFrame, ownScopeForAssignments, currentNode);
     }
 
     @TruffleBoundary
@@ -136,7 +148,7 @@ public class CodeLoader {
                 evalFrame,
                 RubyArguments.getSelf(evalFrame));
 
-        return deferredCall.getCallTarget().call(deferredCall.getArguments());
+        return deferredCall.callWithoutCallNode();
     }
 
     public static class DeferredCall {
@@ -149,13 +161,14 @@ public class CodeLoader {
             this.arguments = arguments;
         }
 
-        public CallTarget getCallTarget() {
-            return callTarget;
+        public Object call(VirtualFrame frame, IndirectCallNode callNode) {
+            return callNode.call(frame, callTarget, arguments);
         }
 
-        public Object[] getArguments() {
-            return arguments;
+        public Object callWithoutCallNode() {
+            return callTarget.call(arguments);
         }
+
     }
 
 }

@@ -6,6 +6,8 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-Signal.trap("INT") do
-  raise Interrupt
+if Truffle::Primitive.signals_safe?
+  Signal.trap("INT") do
+    raise Interrupt
+  end
 end

@@ -89,7 +89,7 @@ public abstract class GetConstantNode extends RubyNode {
     private Object doMissingConstant(VirtualFrame frame, DynamicObject module, String name, boolean isValidConstantName, DynamicObject symbolName) {
         if (!isValidConstantName) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
+            throw new RaiseException(coreExceptions().nameError(String.format("wrong constant name %s", name), name, this));
         }
 
         if (constMissingNode == null) {
@@ -101,7 +101,7 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     protected RequireNode createRequireNode() {
-        return KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null);
+        return KernelNodesFactory.RequireNodeFactory.create(null);
     }
 
     protected RestartableReadConstantNode deepCopyReadConstantNode() {

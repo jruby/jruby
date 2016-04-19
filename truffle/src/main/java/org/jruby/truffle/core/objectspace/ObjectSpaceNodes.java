@@ -40,10 +40,6 @@ public abstract class ObjectSpaceNodes {
     @ImportStatic(ObjectIDOperations.class)
     public abstract static class ID2RefNode extends CoreMethodArrayArgumentsNode {
 
-        public ID2RefNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "id == NIL")
         public Object id2RefNil(long id) {
             return nil();
@@ -76,7 +72,7 @@ public abstract class ObjectSpaceNodes {
                 }
             }
 
-            throw new RaiseException(coreLibrary().rangeError(String.format("0x%016x is not id value", id), this));
+            throw new RaiseException(coreExceptions().rangeError(String.format("0x%016x is not id value", id), this));
         }
 
         @Specialization(guards = { "isRubyBignum(id)", "isLargeFixnumID(id)" })
@@ -90,7 +86,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         protected ReadObjectFieldNode createReadObjectIDNode() {
-            return ReadObjectFieldNodeGen.create(getContext(), Layouts.OBJECT_ID_IDENTIFIER, 0L);
+            return ReadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER, 0L);
         }
 
         protected boolean isLargeFixnumID(DynamicObject id) {
@@ -105,10 +101,6 @@ public abstract class ObjectSpaceNodes {
 
     @CoreMethod(names = "each_object", isModuleFunction = true, needsBlock = true, optional = 1, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachObjectNode extends YieldingCoreMethodNode {
-
-        public EachObjectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int eachObject(VirtualFrame frame, NotProvided ofClass, DynamicObject block) {
@@ -169,7 +161,7 @@ public abstract class ObjectSpaceNodes {
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().argumentErrorWrongArgumentType(finalizer, "callable", this));
+                throw new RaiseException(coreExceptions().argumentErrorWrongArgumentType(finalizer, "callable", this));
             }
         }
 
@@ -177,10 +169,6 @@ public abstract class ObjectSpaceNodes {
 
     @CoreMethod(names = "undefine_finalizer", isModuleFunction = true, required = 1)
     public abstract static class UndefineFinalizerNode extends CoreMethodArrayArgumentsNode {
-
-        public UndefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

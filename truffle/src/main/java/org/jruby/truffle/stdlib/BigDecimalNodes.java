@@ -39,8 +39,8 @@ import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.IntegerCastNode;
 import org.jruby.truffle.core.cast.IntegerCastNodeGen;
-import org.jruby.truffle.core.coerce.ToIntNode;
-import org.jruby.truffle.core.coerce.ToIntNodeGen;
+import org.jruby.truffle.core.cast.ToIntNode;
+import org.jruby.truffle.core.cast.ToIntNodeGen;
 import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
@@ -141,6 +141,9 @@ public abstract class BigDecimalNodes {
         @Child private CallDispatchHeadNode roundModeCall;
         @Child private IntegerCastNode roundModeIntegerCast;
 
+        public BigDecimalCoreMethodNode() {
+        }
+
         public BigDecimalCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -234,6 +237,9 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "arguments", type = RubyNode[].class)
     public abstract static class BigDecimalCoreMethodArrayArgumentsNode extends BigDecimalCoreMethodNode {
 
+        public BigDecimalCoreMethodArrayArgumentsNode() {
+        }
+
         public BigDecimalCoreMethodArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -302,7 +308,7 @@ public abstract class BigDecimalNodes {
         @Specialization
         public DynamicObject create(VirtualFrame frame, double value, DynamicObject self, NotProvided digits) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().argumentError("can't omit precision for a Float.", this));
+            throw new RaiseException(coreExceptions().argumentError("can't omit precision for a Float.", this));
         }
 
         @Specialization
@@ -376,7 +382,7 @@ public abstract class BigDecimalNodes {
         public DynamicObject create(VirtualFrame frame, DynamicObject value, DynamicObject self, int digits) {
             final Object castedValue = bigDecimalCast.executeObject(frame, value, getRoundMode(frame));
             if (castedValue == nil()) {
-                throw new RaiseException(coreLibrary().typeError("could not be casted to BigDecimal", this));
+                throw new RaiseException(coreExceptions().typeError("could not be casted to BigDecimal", this));
             }
 
             setBigDecimalValue(
@@ -399,7 +405,7 @@ public abstract class BigDecimalNodes {
                     modeCall.call(frame, getBigDecimalClass(), "boolean_mode", null, exceptionConstant));
             if (raise) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError(errorMessage, this));
+                throw new RaiseException(coreExceptions().floatDomainError(errorMessage, this));
             }
 
             setBigDecimalValue(self, value);
@@ -488,10 +494,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "initialize", required = 1, optional = 1)
     public abstract static class InitializeNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object initialize(VirtualFrame frame, DynamicObject self, Object value, NotProvided digits) {
             return initializeBigDecimal(frame, value, self, digits);
@@ -509,22 +511,14 @@ public abstract class BigDecimalNodes {
     })
     public abstract static class OpNode extends BigDecimalCoreMethodNode {
 
-        public OpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("b")
         protected RubyNode castB(RubyNode b) {
-            return BigDecimalCoerceNodeGen.create(getContext(), getSourceSection(), b);
+            return BigDecimalCoerceNodeGen.create(null, null, b);
         }
 
     }
 
     public abstract static class AbstractAddNode extends OpNode {
-
-        public AbstractAddNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         private BigDecimal addBigDecimal(DynamicObject a, DynamicObject b, MathContext mathContext) {
@@ -565,10 +559,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "+", required = 1)
     public abstract static class AddOpNode extends AbstractAddNode {
 
-        public AddOpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)" })
@@ -589,10 +579,6 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class AddNode extends AbstractAddNode {
 
-        public AddNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)" })
@@ -609,10 +595,6 @@ public abstract class BigDecimalNodes {
     }
 
     public abstract static class AbstractSubNode extends OpNode {
-
-        public AbstractSubNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         private BigDecimal subBigDecimal(DynamicObject a, DynamicObject b, MathContext mathContext) {
@@ -653,10 +635,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "-", required = 1)
     public abstract static class SubOpNode extends AbstractSubNode {
 
-        public SubOpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)" })
@@ -676,10 +654,6 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class SubNode extends AbstractSubNode {
 
-        public SubNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)" })
@@ -697,10 +671,6 @@ public abstract class BigDecimalNodes {
 
     @CoreMethod(names = "-@")
     public abstract static class NegNode extends BigDecimalCoreMethodArrayArgumentsNode {
-
-        public NegNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = {
                 "isNormal(value)",
@@ -737,10 +707,6 @@ public abstract class BigDecimalNodes {
     public abstract static class AbstractMultNode extends OpNode {
 
         private final ConditionProfile zeroNormal = ConditionProfile.createBinaryProfile();
-
-        public AbstractMultNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         private Object multBigDecimalWithProfile(DynamicObject a, DynamicObject b, MathContext mathContext) {
             final BigDecimal bBigDecimal = Layouts.BIG_DECIMAL.getValue(b);
@@ -830,10 +796,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "*", required = 1)
     public abstract static class MultOpNode extends AbstractMultNode {
 
-        public MultOpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)" })
@@ -867,10 +829,6 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class MultNode extends AbstractMultNode {
 
-        public MultNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)" })
@@ -903,10 +861,6 @@ public abstract class BigDecimalNodes {
     public abstract static class AbstractDivNode extends OpNode {
 
         private final ConditionProfile normalZero = ConditionProfile.createBinaryProfile();
-
-        public AbstractDivNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         private Object divBigDecimalWithProfile(DynamicObject a, DynamicObject b, MathContext mathContext) {
             final BigDecimal aBigDecimal = Layouts.BIG_DECIMAL.getValue(a);
@@ -1037,10 +991,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = { "/", "quo" }, required = 1)
     public abstract static class DivOpNode extends AbstractDivNode {
 
-        public DivOpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)" })
@@ -1079,10 +1029,6 @@ public abstract class BigDecimalNodes {
         private final ConditionProfile bZeroProfile = ConditionProfile.createBinaryProfile();
         @Child private CallDispatchHeadNode floorCall;
 
-        public DivNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         private void setupFloorCall() {
             if (floorCall == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1097,7 +1043,7 @@ public abstract class BigDecimalNodes {
             setupFloorCall();
             if (bZeroProfile.profile(isNormalZero(b))) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             } else {
                 final Object result = div(frame, a, b, 0);
                 return floorCall.call(frame, result, "floor", null);
@@ -1123,10 +1069,10 @@ public abstract class BigDecimalNodes {
         public Object divNormalSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, NotProvided precision) {
             if (Layouts.BIG_DECIMAL.getType(b) == Type.NEGATIVE_ZERO) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             } else if (Layouts.BIG_DECIMAL.getType(b) == Type.NAN) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+                throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
             } else {
                 return divNormalSpecial(frame, a, b, 0);
             }
@@ -1145,13 +1091,13 @@ public abstract class BigDecimalNodes {
         public Object divSpecialNormal(VirtualFrame frame, DynamicObject a, DynamicObject b, NotProvided precision) {
             if (isNormalZero(b)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             } else if (Layouts.BIG_DECIMAL.getType(a) == Type.NAN) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+                throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
             } else if (Layouts.BIG_DECIMAL.getType(a) == Type.POSITIVE_INFINITY || Layouts.BIG_DECIMAL.getType(a) == Type.NEGATIVE_INFINITY) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("Computation results to 'Infinity'", this));
+                throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'Infinity'", this));
             } else {
                 return divSpecialNormal(frame, a, b, 0);
             }
@@ -1170,10 +1116,10 @@ public abstract class BigDecimalNodes {
         public Object divSpecialSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, NotProvided precision) {
             if (Layouts.BIG_DECIMAL.getType(b) == Type.NEGATIVE_ZERO) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             } else if (Layouts.BIG_DECIMAL.getType(a) == Type.NAN || Layouts.BIG_DECIMAL.getType(b) == Type.NAN) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+                throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
             } else {
                 return divSpecialSpecial(frame, a, b, 0);
             }
@@ -1192,10 +1138,6 @@ public abstract class BigDecimalNodes {
 
         @Child private CallDispatchHeadNode signCall;
         @Child private IntegerCastNode signIntegerCast;
-
-        public DivModNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         private BigDecimal[] divmodBigDecimal(BigDecimal a, BigDecimal b) {
@@ -1250,7 +1192,7 @@ public abstract class BigDecimalNodes {
                 "isNormalZero(b)" })
         public Object divmodZeroDivisor(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().zeroDivisionError(this));
+            throw new RaiseException(coreExceptions().zeroDivisionError(this));
         }
 
         @Specialization(guards = {
@@ -1267,7 +1209,7 @@ public abstract class BigDecimalNodes {
 
             if (bType == Type.NEGATIVE_ZERO || (bType == Type.NORMAL && isNormalZero(b))) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 
             if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
@@ -1300,10 +1242,6 @@ public abstract class BigDecimalNodes {
 
     @CoreMethod(names = "remainder", required = 1)
     public abstract static class RemainderNode extends OpNode {
-
-        public RemainderNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         public static BigDecimal remainderBigDecimal(BigDecimal a, BigDecimal b) {
@@ -1344,10 +1282,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = { "modulo", "%" }, required = 1)
     public abstract static class ModuloNode extends OpNode {
 
-        public ModuloNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         public static BigDecimal moduloBigDecimal(BigDecimal a, BigDecimal b) {
             final BigDecimal modulo = a.remainder(b);
@@ -1373,7 +1307,7 @@ public abstract class BigDecimalNodes {
                 "isNormalZero(b)" })
         public Object moduloZero(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().zeroDivisionError(this));
+            throw new RaiseException(coreExceptions().zeroDivisionError(this));
         }
 
         @Specialization(guards = {
@@ -1389,7 +1323,7 @@ public abstract class BigDecimalNodes {
 
             if (bType == Type.NEGATIVE_ZERO || (bType == Type.NORMAL && isNormalZero(b))) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().zeroDivisionError(this));
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 
             if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
@@ -1419,10 +1353,6 @@ public abstract class BigDecimalNodes {
         private final ConditionProfile positiveExponentProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile zeroExponentProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile zeroProfile = ConditionProfile.createBinaryProfile();
-
-        public PowerNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         private BigDecimal power(BigDecimal value, int exponent, MathContext mathContext) {
@@ -1496,10 +1426,6 @@ public abstract class BigDecimalNodes {
 
         private final ConditionProfile positiveValueProfile = ConditionProfile.createBinaryProfile();
 
-        public SqrtNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         public abstract Object executeSqrt(VirtualFrame frame, DynamicObject value, int precision);
 
         @TruffleBoundary
@@ -1510,7 +1436,7 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = { "precision < 0" })
         public Object sqrtNegativePrecision(VirtualFrame frame, DynamicObject a, int precision) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().argumentError("precision must be positive", this));
+            throw new RaiseException(coreExceptions().argumentError("precision must be positive", this));
         }
 
         @Specialization(guards = { "precision == 0" })
@@ -1525,7 +1451,7 @@ public abstract class BigDecimalNodes {
                 return createBigDecimal(frame, sqrt(valueBigDecimal, new MathContext(precision, getRoundMode(frame))));
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().floatDomainError("(VpSqrt) SQRT(negative value)", this));
+                throw new RaiseException(coreExceptions().floatDomainError("(VpSqrt) SQRT(negative value)", this));
             }
         }
 
@@ -1534,12 +1460,12 @@ public abstract class BigDecimalNodes {
             switch (Layouts.BIG_DECIMAL.getType(a)) {
                 case NAN:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().floatDomainError("(VpSqrt) SQRT(NaN value)", this));
+                    throw new RaiseException(coreExceptions().floatDomainError("(VpSqrt) SQRT(NaN value)", this));
                 case POSITIVE_INFINITY:
                     return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                 case NEGATIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().floatDomainError("(VpSqrt) SQRT(negative value)", this));
+                    throw new RaiseException(coreExceptions().floatDomainError("(VpSqrt) SQRT(negative value)", this));
                 case NEGATIVE_ZERO:
                     return createBigDecimal(frame, sqrt(BigDecimal.ZERO, new MathContext(precision, getRoundMode(frame))));
                 default:
@@ -1550,10 +1476,6 @@ public abstract class BigDecimalNodes {
 
     @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends BigDecimalCoreMethodArrayArgumentsNode {
-
-        public CompareNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         private int compareBigDecimal(DynamicObject a, BigDecimal b) {
@@ -1664,10 +1586,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "zero?")
     public abstract static class ZeroNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
-        public ZeroNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isNormal(value)")
         public boolean zeroNormal(DynamicObject value) {
             return Layouts.BIG_DECIMAL.getValue(value).compareTo(BigDecimal.ZERO) == 0;
@@ -1757,10 +1675,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "nan?")
     public abstract static class NanNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
-        public NanNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isNormal(value)")
         public boolean nanNormal(DynamicObject value) {
             return false;
@@ -1775,10 +1689,6 @@ public abstract class BigDecimalNodes {
 
     @CoreMethod(names = "exponent")
     public abstract static class ExponentNode extends BigDecimalCoreMethodArrayArgumentsNode {
-
-        public ExponentNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = {
@@ -1805,10 +1715,6 @@ public abstract class BigDecimalNodes {
 
     @CoreMethod(names = "abs")
     public abstract static class AbsNode extends BigDecimalCoreMethodArrayArgumentsNode {
-
-        public AbsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         private BigDecimal abs(DynamicObject value) {
@@ -1842,10 +1748,6 @@ public abstract class BigDecimalNodes {
     public abstract static class RoundNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignumNode;
-
-        public RoundNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         private BigDecimal round(DynamicObject value, int digit, RoundingMode roundingMode) {
@@ -1892,17 +1794,17 @@ public abstract class BigDecimalNodes {
             switch (Layouts.BIG_DECIMAL.getType(value)) {
                 case NEGATIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError("Computation results to '-Infinity'", this));
                 case POSITIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError("Computation results to 'Infinity'", this));
                 case NEGATIVE_ZERO:
                     return fixnumOrBignumNode.fixnumOrBignum(Layouts.BIG_DECIMAL.getValue(value));
                 case NAN:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError("Computation results to 'NaN'(Not a Number)", this));
                 default:
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
@@ -1918,10 +1820,6 @@ public abstract class BigDecimalNodes {
 
     @CoreMethod(names = "finite?")
     public abstract static class FiniteNode extends BigDecimalCoreMethodArrayArgumentsNode {
-
-        public FiniteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNormal(value)")
         public boolean finiteNormal(DynamicObject value) {
@@ -1945,10 +1843,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "infinite?")
     public abstract static class InfiniteNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
-        public InfiniteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isNormal(value)")
         public Object infiniteNormal(DynamicObject value) {
             return nil();
@@ -1971,10 +1865,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "precs")
     public abstract static class PrecsNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
-        public PrecsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization(guards = "isNormal(value)")
         public Object precsNormal(DynamicObject value) {
@@ -1993,10 +1883,6 @@ public abstract class BigDecimalNodes {
 
     @CoreMethod(names = "to_f")
     public abstract static class ToFNode extends BigDecimalCoreMethodArrayArgumentsNode {
-
-        public ToFNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isNormal(value)")
@@ -2025,10 +1911,6 @@ public abstract class BigDecimalNodes {
     @RubiniusOnly
     @CoreMethod(names = "unscaled", visibility = Visibility.PRIVATE)
     public abstract static class UnscaledNode extends BigDecimalCoreMethodArrayArgumentsNode {
-
-        public UnscaledNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isNormal(value)")
@@ -2067,15 +1949,15 @@ public abstract class BigDecimalNodes {
             switch (type) {
                 case NEGATIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError(type.getRepresentation(), this));
                 case POSITIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError(type.getRepresentation(), this));
                 case NAN:
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().
+                    throw new RaiseException(coreExceptions().
                             floatDomainError(type.getRepresentation(), this));
                 case NEGATIVE_ZERO:
                     return 0;
@@ -2195,13 +2077,9 @@ public abstract class BigDecimalNodes {
     public abstract static class BigDecimalCoerceNode extends RubyNode {
         @Child private CreateBigDecimalNode createBigDecimal;
 
-        public BigDecimalCoerceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         public static BigDecimalCoerceNode create(RubyContext context, SourceSection sourceSection, RubyNode value) {
-            return BigDecimalCoerceNodeGen.create(context, sourceSection, value,
-                    BigDecimalNodesFactory.RoundModeNodeFactory.create(context, sourceSection),
+            return BigDecimalCoerceNodeGen.create(value,
+                    BigDecimalNodesFactory.RoundModeNodeFactory.create(),
                     BigDecimalCastNodeGen.create(context, sourceSection, null, null));
         }
 
@@ -2236,10 +2114,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             return Layouts.BIG_DECIMAL.createBigDecimal(Layouts.CLASS.getInstanceFactory(rubyClass), BigDecimal.ZERO, Type.NORMAL);
@@ -2248,10 +2122,6 @@ public abstract class BigDecimalNodes {
     }
 
     public abstract static class RoundModeNode extends BigDecimalCoreMethodNode {
-
-        public RoundModeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public RoundingMode doGetRoundMode(VirtualFrame frame) {

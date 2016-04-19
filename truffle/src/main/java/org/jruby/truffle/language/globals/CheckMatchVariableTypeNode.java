@@ -33,7 +33,7 @@ public class CheckMatchVariableTypeNode extends RubyNode {
 
         if (!(RubyGuards.isRubyMatchData(childValue) || isNil(childValue))) {
             unsuitableTypeProfile.enter();
-            throw new RaiseException(coreLibrary().typeErrorWrongArgumentType(childValue, "MatchData", this));
+            throw new RaiseException(coreExceptions().typeErrorWrongArgumentType(childValue, "MatchData", this));
         }
 
         return childValue;

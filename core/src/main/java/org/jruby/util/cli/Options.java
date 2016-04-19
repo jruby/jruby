@@ -165,6 +165,7 @@ public class Options {
     public static final Option<Boolean> PREFER_IPV4 = bool(MISCELLANEOUS, "net.preferIPv4", true, "Prefer IPv4 network stack");
     public static final Option<Boolean> FCNTL_LOCKING = bool(MISCELLANEOUS, "file.flock.fcntl", true, "Use fcntl rather than flock for File#flock");
     public static final Option<Boolean> VOLATILE_VARIABLES = bool(MISCELLANEOUS, "volatile.variables", true, "Always ensure volatile semantics for instance variables.");
+    public static final Option<Boolean> RECORD_LEXICAL_HIERARCHY = bool(MISCELLANEOUS, "record.lexical.hierarchy", false, "Maintain children static scopes to support scope dumping.");
 
     public static final Option<Boolean> DEBUG_LOADSERVICE = bool(DEBUG, "debug.loadService", false, "Log require/load file searches.");
     public static final Option<Boolean> DEBUG_LOADSERVICE_TIMING = bool(DEBUG, "debug.loadService.timing", false, "Log require/load parse+evaluate times.");
@@ -222,36 +223,54 @@ public class Options {
     public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
     public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
 
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE = bool(TRUFFLE, "truffle.platform.safe", true, "Default value for the safety of all operations.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_LOAD = bool(TRUFFLE, "truffle.platform.safe.load", TRUFFLE_PLATFORM_SAFE.load(), "Treat loading, requiring and autoloading as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_IO = bool(TRUFFLE, "truffle.platform.safe.io", TRUFFLE_PLATFORM_SAFE.load(), "Treat any methods that deal with IO as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_MEMORY = bool(TRUFFLE, "truffle.platform.safe.memory", TRUFFLE_PLATFORM_SAFE.load(), "Treat any methods that deal with unmanaged memory as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_THREADS = bool(TRUFFLE, "truffle.platform.safe.threads", TRUFFLE_PLATFORM_SAFE.load(), "Treat any methods that deal with threads as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_PROCESSES = bool(TRUFFLE, "truffle.platform.safe.processes", TRUFFLE_PLATFORM_SAFE.load(), "Treat any methods that deal with processes as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_SIGNALS = bool(TRUFFLE, "truffle.platform.safe.siganls", TRUFFLE_PLATFORM_SAFE.load(), "Treat any methods that deal with signals as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_EXIT = bool(TRUFFLE, "truffle.platform.safe.exit", TRUFFLE_PLATFORM_SAFE.load(), "Treat #exit! (hard exiting the VM) as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_AT_EXIT = bool(TRUFFLE, "truffle.platform.safe.at_exit", TRUFFLE_PLATFORM_SAFE.load(), "Treat #at_exit as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_PUTS = bool(TRUFFLE, "truffle.platform.safe_puts", true, "Treat Truffle::Primitive.safe_puts as safe.");
+    public static final Option<Boolean> TRUFFLE_PLATFORM_USE_JAVA = bool(TRUFFLE, "truffle.platform.use_java", false, "Use a pure-Java platform, so no native POSIX.");
+
     public static final Option<Boolean> TRUFFLE_COVERAGE_GLOBAL = bool(TRUFFLE, "truffle.coverage.global", false, "Run coverage for all code and print results on exit.");
 
     public static final Option<String> TRUFFLE_CORE_LOAD_PATH = string(TRUFFLE, "truffle.core.load_path", "truffle:/jruby-truffle", "Location to load the Truffle core library from.");
-    public static final Option<Boolean> TRUFFLE_PLATFORM_USE_JAVA = bool(TRUFFLE, "truffle.platform.use_java", false, "Use a pure-Java platform, so no native POSIX.");
 
     public static final Option<Integer> TRUFFLE_ARRAY_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.array.uninitialized_size", 32, "How large an Array to allocate when we have no other information to go on.");
     public static final Option<Integer> TRUFFLE_ARRAY_SMALL = integer(TRUFFLE, "truffle.array.small", 3, "Maximum size of an Array to consider small for optimisations.");
     public static final Option<Integer> TRUFFLE_HASH_PACKED_ARRAY_MAX = integer(TRUFFLE, "truffle.hash.packed_array.max", 3, "Maximum size of a Hash to consider using the packed array storage strategy for.");
+
     public static final Option<Boolean> TRUFFLE_ROPE_LAZY_SUBSTRINGS = bool(TRUFFLE, "truffle.rope.lazy_substrings", true, "Indicates whether a substring operation on a rope should be performed lazily.");
+    public static final Option<Boolean> TRUFFLE_ROPE_PRINT_INTERN_STATS = bool(TRUFFLE, "truffle.rope.print_intern_stats", false, "Print interned rope stats at application exit.");
 
     public static final Option<Integer> TRUFFLE_DEFAULT_CACHE = integer(TRUFFLE, "truffle.default_cache", 8, "Default size for caches.");
 
-    public static final Option<Integer> TRUFFLE_METHOD_LOOKUP_CACHE = integer(TRUFFLE, "truffle.method_lookup.cache", TRUFFLE_DEFAULT_CACHE.load(), "Method lookup cache size");
+    public static final Option<Integer> TRUFFLE_METHOD_LOOKUP_CACHE = integer(TRUFFLE, "truffle.method_lookup.cache", TRUFFLE_DEFAULT_CACHE.load(), "Method lookup cache size.");
     public static final Option<Integer> TRUFFLE_DISPATCH_CACHE = integer(TRUFFLE, "truffle.dispatch.cache", TRUFFLE_DEFAULT_CACHE.load(), "Dispatch (various forms of method call) cache size.");
     public static final Option<Integer> TRUFFLE_YIELD_CACHE = integer(TRUFFLE, "truffle.yield.cache", TRUFFLE_DEFAULT_CACHE.load(), "Yield cache size.");
-    public static final Option<Integer> TRUFFLE_METHOD_TO_PROC_CACHE = integer(TRUFFLE, "truffle.to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Method#to_proc cache size");
-    public static final Option<Integer> TRUFFLE_IS_A_CACHE = integer(TRUFFLE, "truffle.is_a.cache", TRUFFLE_DEFAULT_CACHE.load(), "Kernel#is_a? and #kind_of? cache size");
-    public static final Option<Integer> TRUFFLE_BIND_CACHE = integer(TRUFFLE, "truffle.bind.cache", TRUFFLE_DEFAULT_CACHE.load(), "Test for being able to bind a method to a module cache size");
-    public static final Option<Integer> TRUFFLE_CONSTANT_CACHE = integer(TRUFFLE, "truffle.constant.cache", TRUFFLE_DEFAULT_CACHE.load(), "Constant cache size");
-    public static final Option<Integer> TRUFFLE_INSTANCE_VARIABLE_CACHE = integer(TRUFFLE, "truffle.instance_variable.cache", TRUFFLE_DEFAULT_CACHE.load(), "Instance variable cache size");
-    public static final Option<Integer> TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE = integer(TRUFFLE, "truffle.binding_local_variable.cache", TRUFFLE_DEFAULT_CACHE.load(), "Binding#local_variable_get/set cache size");
-    public static final Option<Integer> TRUFFLE_SYMBOL_TO_PROC_CACHE = integer(TRUFFLE, "truffle.symbol_to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Symbol#to_proc cache size");
-    public static final Option<Integer> TRUFFLE_ALLOCATE_CLASS_CACHE = integer(TRUFFLE, "truffle.allocate_class.cache", TRUFFLE_DEFAULT_CACHE.load(), "Allocation size class cache size");
-    public static final Option<Integer> TRUFFLE_PACK_CACHE = integer(TRUFFLE, "truffle.pack.cache", TRUFFLE_DEFAULT_CACHE.load(), "Array#pack cache size");
-    public static final Option<Integer> TRUFFLE_UNPACK_CACHE = integer(TRUFFLE, "truffle.unpack.cache", TRUFFLE_DEFAULT_CACHE.load(), "String#unpack cache size");
-    public static final Option<Integer> TRUFFLE_EVAL_CACHE = integer(TRUFFLE, "truffle.eval.cache", TRUFFLE_DEFAULT_CACHE.load(), "eval lookup cache size");
-    public static final Option<Integer> TRUFFLE_CLASS_CACHE = integer(TRUFFLE, "truffle.class.cache", TRUFFLE_DEFAULT_CACHE.load(), ".class and .metaclass cache size");
-    public static final Option<Integer> TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE = integer(TRUFFLE, "truffle.encoding_compatible_query.cache", TRUFFLE_DEFAULT_CACHE.load(), "Encoding.compatible? cache size");
-    public static final Option<Integer> TRUFFLE_THREAD_CACHE = integer(TRUFFLE, "truffle.thread.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size of operations that depend on a particular thread");
-    public static final Option<Integer> TRUFFLE_ROPE_CLASS_CACHE = integer(TRUFFLE, "truffle.rope_class.cache", 6, "Cache size for rope operations that depend on a concrete rope implementation to avoid virtual calls");
+    public static final Option<Integer> TRUFFLE_METHOD_TO_PROC_CACHE = integer(TRUFFLE, "truffle.to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Method#to_proc cache size.");
+    public static final Option<Integer> TRUFFLE_IS_A_CACHE = integer(TRUFFLE, "truffle.is_a.cache", TRUFFLE_DEFAULT_CACHE.load(), "Kernel#is_a? and #kind_of? cache size.");
+    public static final Option<Integer> TRUFFLE_BIND_CACHE = integer(TRUFFLE, "truffle.bind.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size of test for being able to bind a method to a module.");
+    public static final Option<Integer> TRUFFLE_CONSTANT_CACHE = integer(TRUFFLE, "truffle.constant.cache", TRUFFLE_DEFAULT_CACHE.load(), "Constant cache size.");
+    public static final Option<Integer> TRUFFLE_INSTANCE_VARIABLE_CACHE = integer(TRUFFLE, "truffle.instance_variable.cache", TRUFFLE_DEFAULT_CACHE.load(), "Instance variable cache size.");
+    public static final Option<Integer> TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE = integer(TRUFFLE, "truffle.binding_local_variable.cache", TRUFFLE_DEFAULT_CACHE.load(), "Binding#local_variable_get/set cache size.");
+    public static final Option<Integer> TRUFFLE_SYMBOL_TO_PROC_CACHE = integer(TRUFFLE, "truffle.symbol_to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Symbol#to_proc cache size.");
+    public static final Option<Integer> TRUFFLE_ALLOCATE_CLASS_CACHE = integer(TRUFFLE, "truffle.allocate_class.cache", TRUFFLE_DEFAULT_CACHE.load(), "Allocation size class cache size.");
+    public static final Option<Integer> TRUFFLE_PACK_CACHE = integer(TRUFFLE, "truffle.pack.cache", TRUFFLE_DEFAULT_CACHE.load(), "Array#pack cache size.");
+    public static final Option<Integer> TRUFFLE_UNPACK_CACHE = integer(TRUFFLE, "truffle.unpack.cache", TRUFFLE_DEFAULT_CACHE.load(), "String#unpack cache size.");
+    public static final Option<Integer> TRUFFLE_EVAL_CACHE = integer(TRUFFLE, "truffle.eval.cache", TRUFFLE_DEFAULT_CACHE.load(), "eval cache size.");
+    public static final Option<Integer> TRUFFLE_CLASS_CACHE = integer(TRUFFLE, "truffle.class.cache", TRUFFLE_DEFAULT_CACHE.load(), ".class and .metaclass cache size.");
+    public static final Option<Integer> TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE = integer(TRUFFLE, "truffle.encoding_compatible_query.cache", TRUFFLE_DEFAULT_CACHE.load(), "Encoding.compatible? cache size.");
+    public static final Option<Integer> TRUFFLE_THREAD_CACHE = integer(TRUFFLE, "truffle.thread.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size of operations that depend on a particular thread.");
+    public static final Option<Integer> TRUFFLE_ROPE_CLASS_CACHE = integer(TRUFFLE, "truffle.rope_class.cache", 6, "Cache size for rope operations that depend on a concrete rope implementation to avoid virtual calls.");
+    public static final Option<Integer> TRUFFLE_INTEROP_CONVERT_CACHE = integer(TRUFFLE, "truffle.interop.convert.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for converting values for interop.");
+    public static final Option<Integer> TRUFFLE_INTEROP_EXECUTE_CACHE = integer(TRUFFLE, "truffle.interop.execute.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for interop EXECUTE messages.");
+    public static final Option<Integer> TRUFFLE_INTEROP_READ_CACHE = integer(TRUFFLE, "truffle.interop.read.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for interop READ messages.");
+    public static final Option<Integer> TRUFFLE_INTEROP_WRITE_CACHE = integer(TRUFFLE, "truffle.interop.write.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for interop WRITE messages.");
+    public static final Option<Integer> TRUFFLE_INTEROP_INVOKE_CACHE = integer(TRUFFLE, "truffle.interop.invoke.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for interop INVOKE messages.");
 
     public static final Option<Boolean> TRUFFLE_CLONE_DEFAULT = bool(TRUFFLE, "truffle.clone.default", true, "Default option for cloning.");
     public static final Option<Boolean> TRUFFLE_INLINE_DEFAULT = bool(TRUFFLE, "truffle.inline.default", true, "Default option for inlining.");

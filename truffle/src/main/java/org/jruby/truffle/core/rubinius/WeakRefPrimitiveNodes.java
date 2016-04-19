@@ -22,10 +22,6 @@ public abstract class WeakRefPrimitiveNodes {
     @RubiniusPrimitive(name = "weakref_new", needsSelf = false)
     public static abstract class WeakRefNewPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public WeakRefNewPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject weakRefNew(Object object) {
             return Layouts.WEAK_REF_LAYOUT.createWeakRef(coreLibrary().getWeakRefFactory(), new WeakReference<Object>(object));
@@ -35,10 +31,6 @@ public abstract class WeakRefPrimitiveNodes {
 
     @RubiniusPrimitive(name = "weakref_set_object")
     public static abstract class WeakRefSetObjectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public WeakRefSetObjectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object weakRefSetObject(DynamicObject weakRef, Object object) {
@@ -50,10 +42,6 @@ public abstract class WeakRefPrimitiveNodes {
 
     @RubiniusPrimitive(name = "weakref_object")
     public static abstract class WeakRefObjectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public WeakRefObjectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object weakRefObject(DynamicObject weakRef) {

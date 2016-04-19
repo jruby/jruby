@@ -33,6 +33,12 @@ module HashSpecs
     private :hash
   end
 
+  class ByIdentityKey
+    def hash
+      fail("#hash should not be called on compare_by_identity Hash")
+    end
+  end
+
   def self.empty_frozen_hash
     @empty ||= {}
     @empty.freeze

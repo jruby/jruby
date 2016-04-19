@@ -23,6 +23,10 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
     @Child private YieldNode dispatchNode;
     @Child private BooleanCastNode booleanCastNode;
 
+    public YieldingCoreMethodNode() {
+        this(null, null);
+    }
+
     public YieldingCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         dispatchNode = new YieldNode(context);
@@ -38,6 +42,10 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
 
     public Object yield(VirtualFrame frame, DynamicObject block, Object... arguments) {
         return dispatchNode.dispatch(frame, block, arguments);
+    }
+
+    public Object yieldWithModifiedBlock(VirtualFrame frame, DynamicObject block, DynamicObject modifiedBlock, Object... arguments) {
+        return dispatchNode.dispatchWithModifiedBlock(frame, block, modifiedBlock, arguments);
     }
 
     public boolean yieldIsTruthy(VirtualFrame frame, DynamicObject block, Object... arguments) {

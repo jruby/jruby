@@ -17,6 +17,9 @@ import org.jruby.truffle.language.RubyNode;
 @NodeChild(value = "operand", type = RubyNode.class)
 public abstract class UnaryCoreMethodNode extends CoreMethodNode {
 
+    public UnaryCoreMethodNode() {
+    }
+
     public UnaryCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }

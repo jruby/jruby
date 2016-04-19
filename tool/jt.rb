@@ -29,9 +29,9 @@ trap(:INT) {}
 
 module Utilities
 
-  def self.graal_version
+  def self.truffle_version
     File.foreach("#{JRUBY_DIR}/truffle/pom.rb") do |line|
-      if /jar 'com.oracle:truffle:(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
+      if /\btruffle_version = '(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
         break $1
       end
     end
@@ -61,9 +61,15 @@ module Utilities
     raise "couldn't find trufflejs.jar - download GraalVM as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and find it in there"
   end
 
+  def self.find_sulong_dir
+    dir = ENV['SULONG_DIR']
+    return dir if dir
+    raise "couldn't find the Sulong repository - you need to check it out and build it"
+  end
+
   def self.jruby_eclipse?
     # tool/jruby_eclipse only works on release currently
-    ENV["JRUBY_ECLIPSE"] == "true" && Utilities.git_branch == "master"
+    ENV["JRUBY_ECLIPSE"] == "true" and !truffle_version.end_with?('SNAPSHOT')
   end
 
   def self.find_ruby
@@ -104,40 +110,50 @@ module Utilities
   def self.mangle_for_env(name)
     name.upcase.tr('-', '_')
   end
+  
+  def self.find_jvmci
+    jvmci_locations = [
+      ENV['JVMCI_DIR'],
+      ENV["JVMCI_DIR#{mangle_for_env(git_branch)}"]
+    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
-  def self.find_graal_parent
-    graal = File.expand_path('../../../../../graal-compiler', find_graal)
-    raise "couldn't find graal - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless Dir.exist?(graal)
-    graal
+    not_found = -> {
+      raise "couldn't find JVMCI"
+    }
+
+    jvmci_locations.find(not_found) do |location|
+      Dir.exist?(location)
+    end
   end
-
-  def self.find_graal_mx
-    mx = File.expand_path('../../../../../../mx/mx', find_graal)
-    raise "couldn't find mx - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless File.executable?(mx)
-    mx
-  end
-
+  
   def self.igv_running?
-    `ps ax`.include? 'IdealGraphVisualizer'
+    `ps ax`.include?('IdealGraphVisualizer')
   end
 
   def self.ensure_igv_running
     unless igv_running?
-      Dir.chdir(find_graal_parent + "/../jvmci") do
-        spawn "#{find_graal_mx} --vm server igv", pgroup: true
+      Dir.chdir(find_jvmci) do
+        spawn 'mx --vm server igv', pgroup: true
       end
 
-      sleep 5
       puts
       puts
       puts "-------------"
       puts "Waiting for IGV start"
       puts "The first time you run IGV it may take several minutes to download dependencies and compile"
-      puts "Press enter when you see the IGV window"
       puts "-------------"
       puts
       puts
-      $stdin.gets
+      
+      sleep 3
+      
+      until igv_running?
+        puts 'still waiting for IGV to appear in ps ax...'
+        sleep 3
+      end
+      
+      puts 'just a few more seconds...'
+      sleep 6
     end
   end
 
@@ -258,10 +274,12 @@ module Commands
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
+    puts '    --sulong        add Sulong to the classpath (set SULONG_DIR, implies --graal)'
     puts '    --asm           show assembly (implies --graal)'
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
     puts '        --full      show all phases, not just up to the Truffle partial escape'
+    puts '    --bips          run with benchmark-ips on the load path (implies --graal)'
     puts '    --jdebug        run a JDWP debug server on #{JDEBUG_PORT}'
     puts '    --jexception[s] print java exceptions'
     puts 'jt e 14 + 2                                    evaluate an expression'
@@ -304,7 +322,10 @@ module Commands
     puts '  GRAAL_BIN                                    GraalVM executable (java command) to use'
     puts '  GRAAL_BIN_...git_branch_name...              GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
+    puts '  JVMCI_DIR                                    JMVCI repository checkout to use when running IGV (mx must already be on the $PATH)'
+    puts '  JVMCI_DIR_...git_branch_name...              JMVCI repository to use for a given branch'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
+    puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
   end
 
   def checkout(branch)
@@ -346,7 +367,12 @@ module Commands
       '-Xtruffle.graal.warn_unless=false'
     ]
 
-    { '--asm' => '--graal', '--igv' => '--graal' }.each_pair do |arg, dep|
+    {
+      '--asm' => '--graal',
+      '--igv' => '--graal',
+      '--sulong' => '--graal',
+      '--bips' => '--graal'
+    }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
     end
 
@@ -360,8 +386,26 @@ module Commands
       jruby_args << Utilities.find_graal_js
     end
 
+    if args.delete('--sulong')
+      dir = Utilities.find_sulong_dir
+      jruby_args << '-J-classpath'
+      jruby_args << File.join(dir, 'lib', '*')
+      jruby_args << '-J-classpath'
+      jruby_args << File.join(dir, 'build', 'sulong.jar')
+      jruby_args << '-J-classpath'
+      jruby_args << File.join(dir, '..', 'graal-core', 'mxbuild', 'graal', 'com.oracle.nfi', 'bin')
+      jruby_args << '-J-XX:-UseJVMCIClassLoader'
+    end
+
     if args.delete('--asm')
       jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
+    end
+
+    if args.delete('--bips')
+      bips_version = '2.6.1'
+      bips = "#{JRUBY_DIR}/lib/ruby/gems/shared/gems/benchmark-ips-#{bips_version}/lib"
+      sh 'bin/jruby', 'bin/gem', 'install', 'benchmark-ips', '-v', bips_version unless Dir.exist?(bips)
+      jruby_args << "-I#{bips}"
     end
 
     if args.delete('--jdebug')
@@ -409,10 +453,11 @@ module Commands
     when nil
       test_tck
       test_specs('run')
-      test_mri
-      test_integration
+      # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled
+      test_integration({'CI' => 'true', 'HAS_REDIS' => 'true'}, 'all')
+      test_compiler
     when 'compiler' then test_compiler(*rest)
-    when 'integration' then test_integration(*rest)
+    when 'integration' then test_integration({}, *rest)
     when 'specs' then test_specs('run', *rest)
     when 'tck' then
       args = []
@@ -457,7 +502,7 @@ module Commands
   end
   private :test_compiler
 
-  def test_integration(*args)
+  def test_integration(env, *args)
     no_gems = args.delete('--no-gems')
 
     all  = args.delete('all')
@@ -465,21 +510,31 @@ module Commands
     fast = args.delete('fast') || all ||
         !long # fast is the default
 
-    env_vars = {}
-    env_vars["JRUBY_OPTS"] = '-Xtruffle.graal.warn_unless=false'
-    env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
-    integration_path = "#{JRUBY_DIR}/test/truffle/integration"
-    long_tests = File.read(File.join(integration_path, 'long-tests.txt')).lines.map(&:chomp)
-    test_names = args.empty? ? '*' : '{' + args.join(',') + '}'
+    env_vars   = env
+    jruby_opts = []
+
+    jruby_opts << '-Xtruffle.graal.warn_unless=false'
+
+    if ENV['GRAAL_JS_JAR']
+      jruby_opts << '-J-classpath'
+      jruby_opts << Utilities.find_graal_js
+    end
+
+    env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
+
+    env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
+    integration_path       = "#{JRUBY_DIR}/test/truffle/integration"
+    long_tests             = File.read(File.join(integration_path, 'long-tests.txt')).lines.map(&:chomp)
+    single_test            = !args.empty?
+    test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
     Dir["#{integration_path}/#{test_names}.sh"].each do |test_script|
-      next if no_gems && File.read(test_script).include?('gem install')
+      is_long     = long_tests.include?(File.basename(test_script))
+      gem_check   = !(no_gems && File.read(test_script).include?('gem install'))
+      group_check = (is_long && long) || (!is_long && fast)
+      run         = single_test || group_check && gem_check
 
-      is_long = long_tests.include?(File.basename(test_script))
-
-      if (is_long && long) || (!is_long && fast)
-        sh env_vars, test_script
-      end
+      sh env_vars, test_script if run
     end
   end
   private :test_integration

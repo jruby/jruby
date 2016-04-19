@@ -33,19 +33,9 @@ describe "Kernel#freeze" do
   end
 
   describe "on a Symbol" do
-    ruby_version_is ""..."2.1" do
-      it "actually freezes it" do
-        :sym.frozen?.should be_false
-        :sym.freeze
-        :sym.frozen?.should be_true
-      end
-    end
-
-    ruby_version_is "2.1" do
-      it "has no effect since it is already frozen" do
-        :sym.frozen?.should be_true
-        :sym.freeze
-      end
+    it "has no effect since it is already frozen" do
+      :sym.frozen?.should be_true
+      :sym.freeze
     end
   end
 

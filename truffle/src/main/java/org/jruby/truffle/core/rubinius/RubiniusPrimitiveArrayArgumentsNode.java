@@ -19,6 +19,9 @@ import org.jruby.truffle.language.RubyNode;
 @NodeChild(value = "arguments", type = RubyNode[].class)
 public abstract class RubiniusPrimitiveArrayArgumentsNode extends RubiniusPrimitiveNode {
 
+    public RubiniusPrimitiveArrayArgumentsNode() {
+    }
+
     public RubiniusPrimitiveArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }

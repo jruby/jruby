@@ -49,7 +49,7 @@ public abstract class IntegerCastNode extends RubyNode {
     @Fallback
     public int doBasicObject(Object object) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreLibrary().
+        throw new RaiseException(coreExceptions().
                 typeErrorIsNotA(object.toString(), "Fixnum (fitting in int)", this));
     }
 

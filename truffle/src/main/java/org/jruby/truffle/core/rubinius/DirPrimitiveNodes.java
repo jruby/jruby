@@ -49,6 +49,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.io.File;
 
@@ -71,12 +72,8 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_open")
+    @RubiniusPrimitive(name = "dir_open", unsafe = UnsafeGroup.IO)
     public static abstract class DirOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public DirOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(path)", "isNil(encoding)"})
@@ -86,7 +83,7 @@ public abstract class DirPrimitiveNodes {
             final File file = new File(path.toString());
 
             if (!file.isDirectory()) {
-                throw new RaiseException(coreLibrary().errnoError(Errno.ENOTDIR.intValue(), this));
+                throw new RaiseException(coreExceptions().errnoError(Errno.ENOTDIR.intValue(), this));
             }
 
             final String[] contents = file.list();
@@ -110,12 +107,8 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_read")
+    @RubiniusPrimitive(name = "dir_read", unsafe = UnsafeGroup.IO)
     public static abstract class DirReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public DirReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -142,12 +135,8 @@ public abstract class DirPrimitiveNodes {
     }
 
 
-    @RubiniusPrimitive(name = "dir_control")
+    @RubiniusPrimitive(name = "dir_control", unsafe = UnsafeGroup.IO)
     public static abstract class DirControlPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public DirControlPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -168,12 +157,8 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_close")
+    @RubiniusPrimitive(name = "dir_close", unsafe = UnsafeGroup.IO)
     public static abstract class DirClosePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public DirClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization

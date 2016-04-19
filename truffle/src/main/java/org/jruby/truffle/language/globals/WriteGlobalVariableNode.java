@@ -9,46 +9,36 @@
  */
 package org.jruby.truffle.language.globals;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.objects.WriteObjectFieldNode;
-import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 
-public class WriteGlobalVariableNode extends RubyNode {
+@NodeChild(value = "value")
+public abstract class WriteGlobalVariableNode extends RubyNode {
 
     private final String name;
 
-    @Child private RubyNode rhs;
-    @Child private WriteObjectFieldNode writeNode;
-
-    public WriteGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode rhs) {
-        super(context, sourceSection);
-        this.name = name;
-        this.rhs = rhs;
+    @Specialization
+    public Object write(Object value, @Cached("getStorage()") GlobalVariableStorage storage) {
+        return storage.value = value;
     }
 
-    @Override
-    public Object execute(VirtualFrame frame) {
-        final Object value = rhs.execute(frame);
-        getWriteNode().execute(coreLibrary().getGlobalVariablesObject(), value);
-        return value;
+    protected GlobalVariableStorage getStorage() {
+        return getContext().getCoreLibrary().getGlobalVariables().getStorage(name);
+    }
+
+    public WriteGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
+        super(context, sourceSection);
+        this.name = name;
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
         return coreStrings().ASSIGNMENT.createInstance();
-    }
-
-    private WriteObjectFieldNode getWriteNode() {
-        if (writeNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            writeNode = insert(WriteObjectFieldNodeGen.create(getContext(), name));
-        }
-
-        return writeNode;
     }
 
 }

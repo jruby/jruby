@@ -8,7 +8,7 @@
  * GNU Lesser General Public License version 2.1
  *
  *
- * Some of the code in this class is modified from org.jruby.runtime.Helpers,
+ * Some of the code in this class is modified from org.jruby.runtime.Helpers and org.jruby.util.StringSupport,
  * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
  *
  * Contains code modified from ByteList's ByteList.java
@@ -23,12 +23,19 @@ package org.jruby.truffle.core.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.util.ByteList;
+import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
@@ -39,6 +46,7 @@ import java.util.Deque;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
+import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
 import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
 import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 
@@ -113,7 +121,7 @@ public class RopeOperations {
     @TruffleBoundary
     public static String decodeRope(Ruby runtime, Rope value) {
         if (value instanceof LeafRope) {
-            int begin = value.getBegin();
+            int begin = 0;
             int length = value.byteLength();
 
             Encoding encoding = value.getEncoding();
@@ -146,6 +154,18 @@ public class RopeOperations {
             final ConcatRope concatRope = (ConcatRope) value;
 
             return decodeRope(runtime, concatRope.getLeft()) + decodeRope(runtime, concatRope.getRight());
+        } else if (value instanceof RepeatingRope) {
+            final RepeatingRope repeatingRope = (RepeatingRope) value;
+
+            final String childString = decodeRope(runtime, repeatingRope.getChild());
+            final StringBuilder builder = new StringBuilder(childString.length() * repeatingRope.getTimes());
+            for (int i = 0; i < repeatingRope.getTimes(); i++) {
+                builder.append(childString);
+            }
+
+            return builder.toString();
+        } else if (value instanceof LazyIntRope) {
+            return Integer.toString(((LazyIntRope) value).getValue());
         } else {
             throw new RuntimeException("Decoding to String is not supported for rope of type: " + value.getClass().getName());
         }
@@ -196,6 +216,103 @@ public class RopeOperations {
         return create(flattenBytes(rope), rope.getEncoding(), rope.getCodeRange());
     }
 
+    public static void visitBytes(Rope rope, BytesVisitor visitor) {
+        visitBytes(rope, visitor, 0, rope.byteLength());
+    }
+
+    @TruffleBoundary
+    public static void visitBytes(Rope rope, BytesVisitor visitor, int offset, int length) {
+        /*
+         * TODO: CS-7-Apr-16 rewrite this to be iterative as flattenBytes is, but with new logic for offset and length
+         * creating a range, then write flattenBytes in terms of visitBytes.
+         */
+
+        assert length <= rope.byteLength();
+
+        if (rope.getRawBytes() != null) {
+            visitor.accept(rope.getRawBytes(), offset, length);
+        } else if (rope instanceof ConcatRope) {
+            final ConcatRope concat = (ConcatRope) rope;
+            
+            final int leftLength = concat.getLeft().byteLength();
+
+            if (offset < leftLength) {
+                /*
+                 * The left branch might not be large enough to extract the full byte range we want. In that case,
+                 * we'll extract what we can and extract the difference from the right side.
+                 */
+                
+                final int leftUsed;
+
+                if (offset + length > leftLength) {
+                    leftUsed = leftLength - offset;
+                } else {
+                    leftUsed = length;
+                }
+
+                visitBytes(concat.getLeft(), visitor, offset, leftUsed);
+
+                if (leftUsed < length) {
+                    visitBytes(concat.getRight(), visitor, 0, length - leftUsed);
+                }
+            } else {
+                visitBytes(concat.getRight(), visitor, offset - leftLength, length);
+            }
+        } else if (rope instanceof SubstringRope) {
+            final SubstringRope substring = (SubstringRope) rope;
+
+            visitBytes(substring.getChild(), visitor, substring.getOffset() + offset, length);
+        } else if (rope instanceof RepeatingRope) {
+            final RepeatingRope repeating = (RepeatingRope) rope;
+            final Rope child = repeating.getChild();
+
+            final int start = offset % child.byteLength();
+            final int firstPartLength = child.byteLength() - start;
+            visitBytes(child, visitor, start, firstPartLength);
+            final int lengthMinusFirstPart = length - firstPartLength;
+            final int remainingEnd = lengthMinusFirstPart % child.byteLength();
+
+            if (lengthMinusFirstPart >= child.byteLength()) {
+                final byte[] secondPart = child.getBytes();
+
+                final int repeatPartCount = lengthMinusFirstPart / child.byteLength();
+                for (int i = 0; i < repeatPartCount; i++) {
+                    visitBytes(child, visitor, 0, secondPart.length);
+                }
+
+                if (remainingEnd > 0) {
+                    visitBytes(child, visitor, 0, remainingEnd);
+                }
+            } else {
+                visitBytes(child, visitor, 0, remainingEnd);
+            }
+        } else if (rope instanceof LazyRope) {
+            visitor.accept(rope.getBytes(), offset, length);
+        } else {
+            throw new UnsupportedOperationException("Don't know how to visit rope of type: " + rope.getClass().getName());
+        }
+    }
+
+    @TruffleBoundary
+    public static byte[] extractRange(Rope rope, int offset, int length) {
+        final byte[] result = new byte[length];
+
+        final Memo<Integer> resultPosition = new Memo<>(0);
+
+        visitBytes(rope, new BytesVisitor() {
+
+            @Override
+            public void accept(byte[] bytes, int offset, int length) {
+                final int resultPositionValue = resultPosition.get();
+                System.arraycopy(bytes, offset, result, resultPositionValue, length);
+                resultPosition.set(resultPositionValue + length);
+            }
+
+        }, offset, length);
+
+        return result;
+    }
+
     /**
      * Performs an iterative depth first search of the Rope tree to calculate its byte[] without needing to populate
      * the byte[] for each level beneath. Every LeafRope has its byte[] populated by definition. The goal is to determine
@@ -208,7 +325,7 @@ public class RopeOperations {
      */
     @TruffleBoundary
     public static byte[] flattenBytes(Rope rope) {
-        if (rope instanceof LeafRope) {
+        if (rope.getRawBytes() != null) {
             return rope.getRawBytes();
         }
 
@@ -234,6 +351,11 @@ public class RopeOperations {
             // An empty rope trivially cannot contribute to filling the output buffer.
             if (current.isEmpty()) {
                 continue;
+            }
+
+            // Force lazy ropes
+            if (current instanceof LazyRope) {
+                current.getBytes();
             }
 
             if (current.getRawBytes() != null) {
@@ -347,8 +469,34 @@ public class RopeOperations {
                         substringLengths.push(adjustedByteLength);
                     }
                 }
+            } else if (current instanceof RepeatingRope) {
+                final RepeatingRope repeatingRope = (RepeatingRope) current;
+
+                // In the absence of any SubstringRopes, we always take the full contents of the RepeatingRope.
+                if (substringLengths.isEmpty()) {
+                    // TODO (nirvdrum 06-Apr-16) Rather than process the same child over and over, there may be opportunity to re-use the results from a single pass.
+                    for (int i = 0; i < repeatingRope.getTimes(); i++) {
+                        workStack.push(repeatingRope.getChild());
+                    }
+                } else {
+                    final int bytesToCopy = substringLengths.peek();
+                    int loopCount = bytesToCopy / repeatingRope.getChild().byteLength();
+
+                    // Fix the offset to be appropriate for a given child. The offset is reset the first time it is
+                    // consumed, so there's no need to worry about adversely affecting anything by adjusting it here.
+                    offset %= repeatingRope.getChild().byteLength();
+
+                    // Adjust the loop count in case we're straddling a boundary.
+                    if (offset != 0) {
+                        loopCount++;
+                    }
+
+                    // TODO (nirvdrum 06-Apr-16) Rather than process the same child over and over, there may be opportunity to re-use the results from whole sections.
+                    for (int i = 0; i < loopCount; i++) {
+                        workStack.push(repeatingRope.getChild());
+                    }
+                }
             } else {
-                CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException("Don't know how to flatten rope of type: " + rope.getClass().getName());
             }
         }
@@ -400,6 +548,30 @@ public class RopeOperations {
             }
 
             return hashForRange(right, hash, offset - leftLength, length);
+        } else if (rope instanceof RepeatingRope) {
+            final RepeatingRope repeatingRope = (RepeatingRope) rope;
+            final Rope child = repeatingRope.getChild();
+
+            int remainingLength = length;
+            int loopCount = length / child.byteLength();
+
+            offset %= child.byteLength();
+
+            // Adjust the loop count in case we're straddling a boundary.
+            if (offset != 0) {
+                loopCount++;
+            }
+
+            int hash = startingHashCode;
+            for (int i = 0; i < loopCount; i++) {
+                hash = hashForRange(child, hash, offset, remainingLength >= child.byteLength() ? child.byteLength() : remainingLength % child.byteLength());
+                remainingLength = child.byteLength() - offset;
+                offset = 0;
+            }
+
+            return hash;
+        } else if (rope instanceof LazyRope) {
+            return hashCodeForLeafRope(rope.getBytes(), startingHashCode, offset, length);
         } else {
             throw new RuntimeException("Hash code not supported for rope of type: " + rope.getClass().getName());
         }
@@ -410,8 +582,8 @@ public class RopeOperations {
         // Taken from org.jruby.util.ByteList#cmp.
 
         if (string == other) return 0;
-        final int size = string.realSize();
-        final int len =  Math.min(size, other.realSize());
+        final int size = string.byteLength();
+        final int len =  Math.min(size, other.byteLength());
         int offset = -1;
 
         final byte[] bytes = string.getBytes();
@@ -423,10 +595,129 @@ public class RopeOperations {
         // [slightly] understand it), in some cases, when two (or more?)
         // arrays are being accessed, the member reference is actually
         // faster.  this is one of those cases...
-        for (  ; ++offset < len && bytes[string.begin() + offset] == otherBytes[other.begin() + offset]; ) ;
+        for (  ; ++offset < len && bytes[offset] == otherBytes[offset]; ) ;
         if (offset < len) {
-            return (bytes[string.begin() + offset]&0xFF) > (otherBytes[other.begin() + offset]&0xFF) ? 1 : -1;
+            return (bytes[offset]&0xFF) > (otherBytes[offset]&0xFF) ? 1 : -1;
         }
-        return size == other.realSize() ? 0 : size == len ? -1 : 1;
+        return size == other.byteLength() ? 0 : size == len ? -1 : 1;
     }
+
+    @TruffleBoundary
+    public static Encoding areCompatible(Rope rope, Rope other) {
+        // Taken from org.jruby.util.StringSupport.areCompatible.
+
+        Encoding enc1 = rope.getEncoding();
+        Encoding enc2 = other.getEncoding();
+
+        if (enc1 == enc2) return enc1;
+
+        if (other.isEmpty()) return enc1;
+        if (rope.isEmpty()) {
+            return (enc1.isAsciiCompatible() && isAsciiOnly(other)) ? enc1 : enc2;
+        }
+
+        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+
+        return RubyEncoding.areCompatible(enc1, rope.getCodeRange().toInt(), enc2, other.getCodeRange().toInt());
+    }
+
+    public static boolean isAsciiOnly(Rope rope) {
+        // Taken from org.jruby.util.StringSupport.isAsciiOnly.
+
+        return rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CR_7BIT;
+    }
+
+    public static boolean areComparable(Rope rope, Rope other) {
+        // Taken from org.jruby.util.StringSupport.areComparable.
+
+        if (rope.getEncoding() == other.getEncoding() ||
+                rope.isEmpty() || other.isEmpty()) return true;
+        return areComparableViaCodeRange(rope, other);
+    }
+
+    public static boolean areComparableViaCodeRange(Rope string, Rope other) {
+        // Taken from org.jruby.util.StringSupport.areComparableViaCodeRange.
+
+        CodeRange cr1 = string.getCodeRange();
+        CodeRange cr2 = other.getCodeRange();
+
+        if (cr1 == CR_7BIT && (cr2 == CR_7BIT || other.getEncoding().isAsciiCompatible())) return true;
+        if (cr2 == CR_7BIT && string.getEncoding().isAsciiCompatible()) return true;
+        return false;
+    }
+
+
+    public static ByteList getByteListReadOnly(Rope rope) {
+        return new ByteList(rope.getBytes(), rope.getEncoding(), false);
+    }
+
+    public static ByteList toByteListCopy(Rope rope) {
+        return new ByteList(rope.getBytes(), rope.getEncoding(), true);
+    }
+
+    @TruffleBoundary
+    public static Rope format(RubyContext context, Object... values) {
+        Rope rope = null;
+
+        for (Object value : values) {
+            final Rope valueRope;
+
+            if (value instanceof DynamicObject && RubyGuards.isRubyString(value)) {
+                final Rope stringRope = Layouts.STRING.getRope((DynamicObject) value);
+                final Encoding encoding = stringRope.getEncoding();
+
+                if (encoding == UTF8Encoding.INSTANCE
+                        || encoding == USASCIIEncoding.INSTANCE
+                        || encoding == ASCIIEncoding.INSTANCE) {
+                    valueRope = stringRope;
+                } else {
+                    valueRope = StringOperations.encodeRope(decodeRope(context.getJRubyRuntime(), stringRope), UTF8Encoding.INSTANCE);
+                }
+            } else if (value instanceof Integer) {
+                valueRope = new LazyIntRope((int) value);
+            } else if (value instanceof String) {
+                valueRope = context.getRopeTable().getRope((String) value);
+            } else {
+                throw new IllegalArgumentException();
+            }
+
+            if (rope == null) {
+                rope = valueRope;
+            } else {
+                if (valueRope == null) {
+                    throw new UnsupportedOperationException(value.getClass().toString());
+                }
+
+                rope = new ConcatRope(
+                        rope,
+                        valueRope,
+                        UTF8Encoding.INSTANCE,
+                        commonCodeRange(rope.getCodeRange(), valueRope.getCodeRange()),
+                        rope.isSingleByteOptimizable() && valueRope.isSingleByteOptimizable(),
+                        Math.max(rope.depth(), valueRope.depth()) + 1);
+
+            }
+        }
+
+        if (rope == null) {
+            rope = RopeConstants.EMPTY_UTF8_ROPE;
+        }
+
+        return rope;
+    }
+
+    private static CodeRange commonCodeRange(CodeRange first, CodeRange second) {
+        if (first == second) {
+            return first;
+        }
+
+        if ((first == CR_BROKEN) || (second == CR_BROKEN)) {
+            return CR_BROKEN;
+        }
+
+        // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
+
+        return CR_VALID;
+    }
+
 }

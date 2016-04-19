@@ -20,9 +20,15 @@ class IO
 
 end
 
-STDIN = File.new(0)
-STDOUT = File.new(1)
-STDERR = File.new(2)
+if Truffle::Primitive.io_safe?
+  STDIN = File.new(0)
+  STDOUT = File.new(1)
+  STDERR = File.new(2)
+else
+  STDIN = nil
+  STDOUT = nil
+  STDERR = nil
+end
 
 $stdin = STDIN
 $stdout = STDOUT
@@ -34,19 +40,21 @@ class << STDIN
   end
 end
 
-if STDOUT.tty?
-  STDOUT.sync = true
-else
-  Truffle::Primitive.at_exit true do
-    STDOUT.flush
+if Truffle::Primitive.io_safe?
+  if STDOUT.tty?
+    STDOUT.sync = true
+  else
+    Truffle::Primitive.at_exit true do
+      STDOUT.flush
+    end
   end
-end
 
-if STDERR.tty?
-  STDERR.sync = true
-else
-  Truffle::Primitive.at_exit true do
-    STDERR.flush
+  if STDERR.tty?
+    STDERR.sync = true
+  else
+    Truffle::Primitive.at_exit true do
+      STDERR.flush
+    end
   end
 end
 
@@ -156,15 +164,15 @@ end
 
 # Windows probably doesn't have a HOME env var, but Rubinius requires it in places, so we need
 # to construct the value and place it in the hash.
-unless ENV['HOME']
-  if ENV['HOMEDRIVE']
-    ENV['HOME'] = if ENV['HOMEPATH']
-                    ENV['HOMEDRIVE'] + ENV['HOMEPATH']
-                  else
-                    ENV['USERPROFILE']
-                  end
-  end
-end
+#unless ENV['HOME']
+#  if ENV['HOMEDRIVE']
+#    ENV['HOME'] = if ENV['HOMEPATH']
+#                    ENV['HOMEDRIVE'] + ENV['HOMEPATH']
+#                  else
+#                    ENV['USERPROFILE']
+#                  end
+#  end
+#end
 
 class Exception
 
@@ -263,7 +271,7 @@ module Truffle::Primitive
     else
       kwargs = {}
     end
-    
+
     binding.local_variable_set(kwrest_name, kwargs) if kwrest_name
     array
   end

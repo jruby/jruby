@@ -156,20 +156,16 @@ describe "CApiNumericSpecs" do
       @s.rb_int2num(4.2).should == 4
     end
 
-    it "converts a Bignum" do
-      @s.rb_int2num(0x7fff_ffff).should == 0x7fff_ffff
+    it "raises a RangeError when passed a Bignum" do
+      lambda { @s.rb_int2num(bignum_value) }.should raise_error(RangeError)
     end
 
     it "converts a Fixnum" do
       @s.rb_int2num(5).should == 5
     end
 
-    platform_is_not wordsize: 32 do
-      # INT2NUM used to use `long` prior to MRI 1.9. With 1.9 it has been changed
-      # to use `int` instead.
-      it "converts 0xFFFFFFFF to -1" do
-        @s.rb_int2num(0xFFFFFFFF).should == -1
-      end
+    it "converts a negative Fixnum" do
+      @s.rb_int2num(-11).should == -11
     end
   end
 

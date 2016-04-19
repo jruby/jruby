@@ -37,7 +37,6 @@ import org.jruby.util.FileResource;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.func.Function2;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -61,6 +60,9 @@ import java.util.regex.Pattern;
  * script or by a native executable.
  */
 public class ArgumentProcessor {
+
+    public static final String SEPARATOR = "(?<!jar:file|jar|file|classpath|uri:classloader|uri|http|https):";
+
     private static final class Argument {
         public final String originalValue;
         public final String dashedValue;
@@ -250,7 +252,11 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'I':
                     String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
-                    String[] ls = s.split(java.io.File.pathSeparator);
+                    String separator = java.io.File.pathSeparator;
+                    if (":".equals(separator)) {
+                        separator = SEPARATOR;
+                    }
+                    String[] ls = s.split(separator);
                     config.getLoadPaths().addAll(Arrays.asList(ls));
                     break FOR;
                 case 'J':
@@ -384,10 +390,13 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("-T")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+                        Options.COMPILE_MODE.unforce();
                         config.setDisableGems(false);
                     } else if (extendedOption.equals("+T")) {
                         Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
+                        // Make the static option consistent with the compile mode.
+                        Options.COMPILE_MODE.force("TRUFFLE");
                         config.setDisableGems(true);
                     } else if (extendedOption.endsWith("...")) {
                         Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));

@@ -12,16 +12,19 @@ package org.jruby.truffle.core.method;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.language.methods.InternalMethod;
 
-public interface MethodFilter {
+public abstract class MethodFilter {
 
-    MethodFilter PUBLIC = new MethodFilter() {
+    private MethodFilter() {
+    }
+
+    public static final MethodFilter PUBLIC = new MethodFilter() {
         @Override
         public boolean filter(InternalMethod method) {
             return method.getVisibility() == Visibility.PUBLIC;
         }
     };
 
-    MethodFilter PUBLIC_PROTECTED = new MethodFilter() {
+    public static final MethodFilter PUBLIC_PROTECTED = new MethodFilter() {
         @Override
         public boolean filter(InternalMethod method) {
             return method.getVisibility() == Visibility.PUBLIC ||
@@ -29,20 +32,33 @@ public interface MethodFilter {
         }
     };
 
-    MethodFilter PROTECTED = new MethodFilter() {
+    public static final MethodFilter PROTECTED = new MethodFilter() {
         @Override
         public boolean filter(InternalMethod method) {
             return method.getVisibility() == Visibility.PROTECTED;
         }
     };
 
-    MethodFilter PRIVATE = new MethodFilter() {
+    public static final MethodFilter PRIVATE = new MethodFilter() {
         @Override
         public boolean filter(InternalMethod method) {
             return method.getVisibility() == Visibility.PRIVATE;
         }
     };
 
-    boolean filter(InternalMethod method);
+    public abstract boolean filter(InternalMethod method);
+
+    public static MethodFilter by(Visibility visibility) {
+        switch (visibility) {
+            case PUBLIC:
+                return PUBLIC;
+            case PROTECTED:
+                return PROTECTED;
+            case PRIVATE:
+                return PRIVATE;
+            default:
+                throw new IllegalArgumentException("unsupported visibility: " + visibility);
+        }
+    }
 
 }

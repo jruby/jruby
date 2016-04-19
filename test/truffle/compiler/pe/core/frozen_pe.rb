@@ -25,5 +25,5 @@ example "3.5.frozen?", true
 example ":symbol.frozen?", true
 
 # Object
-example "'abc'.frozen?", false
-example "'abc'.freeze.frozen?", true
+example "Object.new.frozen?", false
+example "Object.new.freeze.frozen?", true

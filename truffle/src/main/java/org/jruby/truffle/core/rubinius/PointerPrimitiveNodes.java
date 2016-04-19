@@ -20,13 +20,13 @@ import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.ffi.PointerGuards;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.platform.RubiniusTypes;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.ByteList;
 import org.jruby.util.unsafe.UnsafeHolder;
 
@@ -39,7 +39,7 @@ public abstract class PointerPrimitiveNodes {
      * library to define that method.
      */
 
-    @RubiniusPrimitive(name = "pointer_allocate")
+    @RubiniusPrimitive(name = "pointer_allocate", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -56,7 +56,7 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_malloc")
+    @RubiniusPrimitive(name = "pointer_malloc", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerMallocPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -79,12 +79,8 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_free")
+    @RubiniusPrimitive(name = "pointer_free", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerFreePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerFreePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @SuppressWarnings("restriction")
         @Specialization
@@ -95,12 +91,8 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_set_address")
+    @RubiniusPrimitive(name = "pointer_set_address", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerSetAddressPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerSetAddressPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public long setAddress(DynamicObject pointer, int address) {
@@ -115,7 +107,7 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_add")
+    @RubiniusPrimitive(name = "pointer_add", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerAddPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -137,12 +129,8 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_read_int")
+    @RubiniusPrimitive(name = "pointer_read_int", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerReadIntPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerReadIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isSigned(signed)")
         public int readInt(DynamicObject pointer, boolean signed) {
@@ -155,12 +143,8 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_read_string", lowerFixnumParameters = 0)
+    @RubiniusPrimitive(name = "pointer_read_string", lowerFixnumParameters = 0, unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerReadStringPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerReadStringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject readString(DynamicObject pointer, int length) {
@@ -171,12 +155,8 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_set_autorelease")
+    @RubiniusPrimitive(name = "pointer_set_autorelease", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerSetAutoreleasePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerSetAutoreleasePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public boolean setAutorelease(DynamicObject pointer, boolean autorelease) {
@@ -186,13 +166,9 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_set_at_offset", lowerFixnumParameters = {0, 1})
+    @RubiniusPrimitive(name = "pointer_set_at_offset", lowerFixnumParameters = {0, 1}, unsafe = UnsafeGroup.MEMORY)
     @ImportStatic(RubiniusTypes.class)
     public static abstract class PointerSetAtOffsetPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerSetAtOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "type == TYPE_INT")
         public int setAtOffsetInt(DynamicObject pointer, int offset, int type, int value) {
@@ -220,7 +196,7 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_read_pointer")
+    @RubiniusPrimitive(name = "pointer_read_pointer", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerReadPointerPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -243,12 +219,8 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_address")
+    @RubiniusPrimitive(name = "pointer_address", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerAddressPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerAddressPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public long address(DynamicObject pointer) {
@@ -257,15 +229,11 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_get_at_offset")
+    @RubiniusPrimitive(name = "pointer_get_at_offset", unsafe = UnsafeGroup.MEMORY)
     @ImportStatic(RubiniusTypes.class)
     public static abstract class PointerGetAtOffsetPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
-
-        public PointerGetAtOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "type == TYPE_CHAR")
         public int getAtOffsetChar(DynamicObject pointer, int offset, int type) {
@@ -331,12 +299,8 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_write_string")
+    @RubiniusPrimitive(name = "pointer_write_string", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerWriteStringPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerWriteStringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject address(DynamicObject pointer, DynamicObject string, int maxLength) {
@@ -348,13 +312,8 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_read_string_to_null")
-    @ImportStatic(PointerGuards.class)
+    @RubiniusPrimitive(name = "pointer_read_string_to_null", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerReadStringToNullPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerReadStringToNullPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullPointer(pointer)")
         public DynamicObject readNullPointer(DynamicObject pointer) {
@@ -369,12 +328,8 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_write_int")
+    @RubiniusPrimitive(name = "pointer_write_int", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerWriteIntPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public PointerWriteIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject address(DynamicObject pointer, int value) {

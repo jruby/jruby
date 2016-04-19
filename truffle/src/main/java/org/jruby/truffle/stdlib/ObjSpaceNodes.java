@@ -9,7 +9,8 @@
  */
 package org.jruby.truffle.stdlib;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -28,35 +29,6 @@ public abstract class ObjSpaceNodes {
 
     @CoreMethod(names = "memsize_of", isModuleFunction = true, required = 1)
     public abstract static class MemsizeOfNode extends CoreMethodArrayArgumentsNode {
-
-        public MemsizeOfNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = "isNil(nil)")
-        public int memsizeOf(Object nil) {
-            return 0;
-        }
-
-        @Specialization
-        public int memsizeOf(boolean object) {
-            return 0;
-        }
-
-        @Specialization
-        public int memsizeOf(int object) {
-            return 0;
-        }
-
-        @Specialization
-        public int memsizeOf(long object) {
-            return 0;
-        }
-
-        @Specialization
-        public int memsizeOf(double object) {
-            return 0;
-        }
 
         @Specialization(guards = "isRubyArray(object)")
         public int memsizeOfArray(DynamicObject object) {
@@ -78,10 +50,20 @@ public abstract class ObjSpaceNodes {
             return 1 + object.getShape().getPropertyListInternal(false).size() + Layouts.MATCH_DATA.getValues(object).length;
         }
 
-        @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)", "!isRubyHash(object)",
-                "!isRubyString(object)", "!isRubyMatchData(object)"})
+        @Specialization(guards = {
+                "!isNil(object)",
+                "!isRubyArray(object)",
+                "!isRubyHash(object)",
+                "!isRubyString(object)",
+                "!isRubyMatchData(object)"
+        })
         public int memsizeOfObject(DynamicObject object) {
             return 1 + object.getShape().getPropertyListInternal(false).size();
+        }
+
+        @Specialization(guards = "!isDynamicObject(object)")
+        public int memsize(Object object) {
+            return 0;
         }
 
     }
@@ -89,11 +71,7 @@ public abstract class ObjSpaceNodes {
     @CoreMethod(names = "adjacent_objects", isModuleFunction = true, required = 1)
     public abstract static class AdjacentObjectsNode extends CoreMethodArrayArgumentsNode {
 
-        public AdjacentObjectsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject adjacentObjects(DynamicObject object) {
             final Set<DynamicObject> objects = ObjectGraph.getAdjacentObjects(object);
@@ -105,11 +83,7 @@ public abstract class ObjSpaceNodes {
     @CoreMethod(names = "root_objects", isModuleFunction = true)
     public abstract static class RootObjectsNode extends CoreMethodArrayArgumentsNode {
 
-        public RootObjectsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject rootObjects() {
             final Set<DynamicObject> objects = ObjectGraph.stopAndGetRootObjects(this, getContext());
@@ -121,11 +95,7 @@ public abstract class ObjSpaceNodes {
     @CoreMethod(names = "trace_allocations_start", isModuleFunction = true)
     public abstract static class TraceAllocationsStartNode extends CoreMethodArrayArgumentsNode {
 
-        public TraceAllocationsStartNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject traceAllocationsStart() {
             getContext().getObjectSpaceManager().traceAllocationsStart();
@@ -137,11 +107,7 @@ public abstract class ObjSpaceNodes {
     @CoreMethod(names = "trace_allocations_stop", isModuleFunction = true)
     public abstract static class TraceAllocationsStopNode extends CoreMethodArrayArgumentsNode {
 
-        public TraceAllocationsStopNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject traceAllocationsStop() {
             getContext().getObjectSpaceManager().traceAllocationsStop();

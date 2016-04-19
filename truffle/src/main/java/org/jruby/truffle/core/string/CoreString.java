@@ -69,4 +69,9 @@ public class CoreString {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return literal;
+    }
+
 }

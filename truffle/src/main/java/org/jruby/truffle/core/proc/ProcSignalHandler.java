@@ -36,7 +36,7 @@ public class ProcSignalHandler implements SignalHandler {
         context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
             @Override
             public void run(DynamicObject thread, Node currentNode) {
-                ProcNodes.rootCall(proc);
+                ProcOperations.rootCall(proc);
             }
         });
     }

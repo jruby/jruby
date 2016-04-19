@@ -100,10 +100,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "initialize", visibility = Visibility.PRIVATE, required = 1, optional = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject initialize(DynamicObject emitter, DynamicObject io, NotProvided optionsSet) {
             final DumperOptions options = new DumperOptions();
@@ -134,10 +130,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_stream", required = 1)
     public abstract static class StartStreamNode extends CoreMethodArrayArgumentsNode {
 
-        public StartStreamNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject startStream(DynamicObject emitter, int encoding) {
@@ -156,10 +148,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_stream")
     public abstract static class EndStreamNode extends CoreMethodArrayArgumentsNode {
 
-        public EndStreamNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject endStream(DynamicObject emitter) {
@@ -172,10 +160,6 @@ public abstract class PsychEmitterNodes {
 
     @CoreMethod(names = "start_document", required = 3)
     public abstract static class StartDocumentNode extends CoreMethodArrayArgumentsNode {
-
-        public StartDocumentNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyArray(_version)", "isRubyArray(tags)"})
@@ -231,10 +215,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_document", required = 1)
     public abstract static class EndDocumentNode extends CoreMethodArrayArgumentsNode {
 
-        public EndDocumentNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject endDocument(DynamicObject emitter, boolean implicit) {
@@ -246,10 +226,6 @@ public abstract class PsychEmitterNodes {
 
     @CoreMethod(names = "scalar", required = 6)
     public abstract static class ScalarNode extends CoreMethodArrayArgumentsNode {
-
-        public ScalarNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(value)")
@@ -273,10 +249,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_sequence", required = 4)
     public abstract static class StartSequenceNode extends CoreMethodArrayArgumentsNode {
 
-        public StartSequenceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject startSequence(DynamicObject emitter, Object anchor, Object tag, boolean implicit, int style) {
@@ -299,10 +271,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_sequence")
     public abstract static class EndSequenceNode extends CoreMethodArrayArgumentsNode {
 
-        public EndSequenceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject endSequence(DynamicObject emitter) {
@@ -314,10 +282,6 @@ public abstract class PsychEmitterNodes {
 
     @CoreMethod(names = "start_mapping", required = 4)
     public abstract static class StartMappingNode extends CoreMethodArrayArgumentsNode {
-
-        public StartMappingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
@@ -342,10 +306,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_mapping")
     public abstract static class EndMappingNode extends CoreMethodArrayArgumentsNode {
 
-        public EndMappingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject endMapping(DynamicObject emitter) {
@@ -357,10 +317,6 @@ public abstract class PsychEmitterNodes {
 
     @CoreMethod(names = "alias", required = 1)
     public abstract static class AliasNode extends CoreMethodArrayArgumentsNode {
-
-        public AliasNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
@@ -374,10 +330,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "canonical=", required = 1)
     public abstract static class SetCanonicalNode extends CoreMethodArrayArgumentsNode {
 
-        public SetCanonicalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean setCanonical(DynamicObject emitter, boolean canonical) {
             Layouts.PSYCH_EMITTER.getOptions(emitter).setCanonical(canonical);
@@ -389,10 +341,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "canonical")
     public abstract static class CanonicalNode extends CoreMethodArrayArgumentsNode {
 
-        public CanonicalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean canonical(DynamicObject emitter) {
             return Layouts.PSYCH_EMITTER.getOptions(emitter).isCanonical();
@@ -402,10 +350,6 @@ public abstract class PsychEmitterNodes {
 
     @CoreMethod(names = "indentation=", required = 1)
     public abstract static class SetIndentationNode extends CoreMethodArrayArgumentsNode {
-
-        public SetIndentationNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int setIndentation(DynamicObject emitter, int indentation) {
@@ -418,10 +362,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "indentation")
     public abstract static class IndentationNode extends CoreMethodArrayArgumentsNode {
 
-        public IndentationNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int indentation(DynamicObject emitter) {
             return Layouts.PSYCH_EMITTER.getOptions(emitter).getIndent();
@@ -431,10 +371,6 @@ public abstract class PsychEmitterNodes {
 
     @CoreMethod(names = "line_width=", required = 1)
     public abstract static class SetLineWidthNode extends CoreMethodArrayArgumentsNode {
-
-        public SetLineWidthNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int setLineWidth(DynamicObject emitter, int width) {
@@ -446,10 +382,6 @@ public abstract class PsychEmitterNodes {
 
     @CoreMethod(names = "line_width")
     public abstract static class LineWidthNode extends CoreMethodArrayArgumentsNode {
-
-        public LineWidthNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int lineWidth(DynamicObject emitter) {

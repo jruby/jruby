@@ -26,10 +26,6 @@ public abstract class UndefinedPrimitiveNodes {
     @RubiniusPrimitive(name = NAME)
     public static abstract class UndefinedPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public UndefinedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public Object undefined(Object args) {

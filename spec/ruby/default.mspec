@@ -1,5 +1,7 @@
 # Configuration file for Ruby >= 2.0 implementations.
 
+require 'mspec/guards/platform'
+
 class MSpecScript
   # Language features specs
   set :language, [ 'language' ]
@@ -44,7 +46,7 @@ class MSpecScript
   MSpec.enable_feature :fiber
   MSpec.enable_feature :fiber_library
   MSpec.enable_feature :continuation_library
-  MSpec.enable_feature :fork
+  MSpec.enable_feature :fork unless PlatformGuard.windows?
   MSpec.enable_feature :encoding
 
   # The Readline specs are not enabled by default because the functionality

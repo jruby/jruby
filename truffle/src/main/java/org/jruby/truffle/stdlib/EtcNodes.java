@@ -23,10 +23,6 @@ public abstract class EtcNodes {
     @CoreMethod(names = "nprocessors", needsSelf = false)
     public abstract static class NProcessors extends CoreMethodNode {
 
-        public NProcessors(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public int nprocessors() {

@@ -60,6 +60,18 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     public static SourceSection enclosing(SourceSection base, SourceSection... sourceSections) {
+        for (SourceSection sourceSection : sourceSections) {
+            if (base == null) {
+                base = sourceSection;
+            } else {
+                break;
+            }
+        }
+
+        if (base == null) {
+            return null;
+        }
+
         if (base.getSource() == null) {
             return base;
         }
@@ -72,6 +84,10 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         int endLine = base.getEndLine();
 
         for (SourceSection sourceSection : sourceSections) {
+            if (sourceSection == null) {
+                continue;
+            }
+
             startLine = Math.min(startLine, sourceSection.getStartLine());
 
             final int nodeEndLine;
@@ -169,10 +185,15 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
 
     public static RubyNode createCheckArityNode(RubyContext context, SourceSection sourceSection, Arity arity) {
         if (!arity.acceptsKeywords()) {
-            return new CheckArityNode(context, sourceSection, arity);
+            return new CheckArityNode(arity);
         } else {
             return new CheckKeywordArityNode(context, sourceSection, arity);
         }
+    }
+
+    protected void setSourceSection(RubyNode node, SourceSection sourceSection) {
+        node.clearSourceSection();
+        node.assignSourceSection(sourceSection);
     }
 
 }

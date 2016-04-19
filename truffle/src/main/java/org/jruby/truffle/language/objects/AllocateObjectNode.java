@@ -149,7 +149,7 @@ public abstract class AllocateObjectNode extends RubyNode {
 
     @Specialization(guards = "isSingleton(classToAllocate)")
     public DynamicObject allocateSingleton(DynamicObject classToAllocate, Object[] values) {
-        throw new RaiseException(coreLibrary().typeErrorCantCreateInstanceOfSingletonClass(this));
+        throw new RaiseException(coreExceptions().typeErrorCantCreateInstanceOfSingletonClass(this));
     }
 
     protected Assumption getTracingAssumption() {

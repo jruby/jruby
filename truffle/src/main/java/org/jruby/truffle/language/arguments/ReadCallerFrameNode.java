@@ -11,18 +11,12 @@ package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 
 public class ReadCallerFrameNode extends RubyNode {
 
     private final ConditionProfile callerFrameProfile = ConditionProfile.createBinaryProfile();
-
-    public ReadCallerFrameNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 
     @Override
     public Object execute(VirtualFrame frame) {

@@ -8,11 +8,4 @@ describe :env_value, shared: true do
   it "returns false if ENV doesn't have the value" do
     ENV.send(@method, "this_value_should_never_exist").should == false
   end
-
-  platform_is :windows do
-    it "looks up values case-insensitively" do
-      ENV["FOO"] = "bar"
-      ENV.send(@method, "Foo").should == "bar"
-    end
-  end
 end

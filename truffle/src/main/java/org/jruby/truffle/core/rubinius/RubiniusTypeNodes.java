@@ -25,10 +25,6 @@ public abstract class RubiniusTypeNodes {
     @CoreMethod(names = "each_ancestor", onSingleton = true, required = 1, needsBlock = true)
     public abstract static class EachAncestorNode extends YieldingCoreMethodNode {
 
-        public EachAncestorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyModule(module)")
         public DynamicObject eachAncestor(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
