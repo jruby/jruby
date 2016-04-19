@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -150,21 +151,28 @@ public abstract class SingletonClassNode extends RubyNode {
         final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(
                 getContext(), logicalClass, object, name);
 
-        if (isFrozenNode == null) {
-            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
-        }
-
-        if (isFrozenNode.executeIsFrozen(object)) {
-            if (freezeNode == null) {
-                freezeNode = insert(FreezeNodeGen.create(getContext(), getSourceSection(), null));
-            }
-
-            freezeNode.executeFreeze(singletonClass);
+        if (isFrozen(object)) {
+            freeze(singletonClass);
         }
 
         Layouts.BASIC_OBJECT.setMetaClass(object, singletonClass);
 
         return singletonClass;
+    }
+
+    public void freeze(final DynamicObject singletonClass) {
+        if (freezeNode == null) {
+            freezeNode = insert(FreezeNodeGen.create(getContext(), getSourceSection(), null));
+        }
+        freezeNode.executeFreeze(singletonClass);
+    }
+
+    protected boolean isFrozen(Object object) {
+        if (isFrozenNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+        }
+        return isFrozenNode.executeIsFrozen(object);
     }
 
     protected int getCacheLimit() {

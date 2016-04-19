@@ -725,15 +725,12 @@ public abstract class ArrayNodes {
             return found;
         }
 
-        public void checkFrozen(DynamicObject array) {
+        public void checkFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
             }
-            if (isFrozenNode.executeIsFrozen(array)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().frozenError(array, this));
-            }
+            isFrozenNode.raiseIfFrozen(object);
         }
 
     }

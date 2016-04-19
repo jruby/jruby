@@ -28,10 +28,10 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.literal.ObjectLiteralNode;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.ObjectGraphNode;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -166,12 +166,12 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     // TODO CS 20-Aug-15 this needs to go
     public static boolean verySlowIsFrozen(RubyContext context, Object object) {
-        final RubyNode node = IsFrozenNodeGen.create(context, null, new ObjectLiteralNode(context, null, object));
+        final IsFrozenNode node = IsFrozenNodeGen.create(context, null, null);
         new Node() {
             @Child RubyNode child = node;
         }.adoptChildren();
 
-        return (boolean) node.execute(null);
+        return (boolean) node.executeIsFrozen(object);
     }
 
     public void insertAfter(DynamicObject module) {

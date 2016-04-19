@@ -97,10 +97,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.StringSupport;
-
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-
 import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
@@ -1177,12 +1175,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRubyString(from)")
         public DynamicObject initialize(DynamicObject self, DynamicObject from) {
-            if (isFrozenNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
-            }
-
-            if (isFrozenNode.executeIsFrozen(self)) {
+            if (isFrozen(self)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().frozenError(self, this));
             }
@@ -1201,6 +1194,15 @@ public abstract class StringNodes {
 
             return initialize(self, toStrNode.executeToStr(frame, from));
         }
+
+        protected boolean isFrozen(Object object) {
+            if (isFrozenNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return isFrozenNode.executeIsFrozen(object);
+        }
+
     }
 
     @CoreMethod(names = "initialize_copy", required = 1)

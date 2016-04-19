@@ -2010,7 +2010,6 @@ public abstract class KernelNodes {
 
         public UntaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
             writeTaintNode = WriteObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
         }
@@ -2021,13 +2020,17 @@ public abstract class KernelNodes {
                 return object;
             }
 
-            if (isFrozenNode.executeIsFrozen(object)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().frozenError(object, this));
-            }
-
+            checkFrozen(object);
             writeTaintNode.execute(object, false);
             return object;
+        }
+
+        protected void checkFrozen(Object object) {
+            if (isFrozenNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            isFrozenNode.raiseIfFrozen(object);
         }
 
     }
