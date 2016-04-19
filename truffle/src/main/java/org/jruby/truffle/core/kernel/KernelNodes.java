@@ -1722,28 +1722,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "String", isModuleFunction = true, required = 1)
-    public abstract static class StringNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode toS;
-
-        public StringNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toS = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization(guards = "isRubyString(value)")
-        public DynamicObject string(DynamicObject value) {
-            return value;
-        }
-
-        @Specialization(guards = "!isRubyString(value)")
-        public Object string(VirtualFrame frame, Object value) {
-            return toS.call(frame, value, "to_s", null);
-        }
-
-    }
-
     @CoreMethod(names = "sleep", isModuleFunction = true, optional = 1)
     public abstract static class SleepNode extends CoreMethodArrayArgumentsNode {
 
