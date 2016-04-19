@@ -28,7 +28,6 @@ import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
@@ -36,14 +35,13 @@ import org.jruby.truffle.language.parser.ParserContext;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class FeatureLoader {
 
     private final RubyContext context;
 
-    private final ConcurrentHashMap<String, ReentrantLock> fileLocks = new ConcurrentHashMap<>();
+    private final KeyedReentrantLock<String> fileLocks = new KeyedReentrantLock<String>();
 
     private final Object cextImplementationLock = new Object();
     private boolean cextImplementationLoaded = false;
@@ -149,16 +147,7 @@ public class FeatureLoader {
         }
 
         while (true) {
-            final ReentrantLock currentLock = fileLocks.get(expandedPath);
-            final ReentrantLock lock;
-
-            if (currentLock == null) {
-                ReentrantLock newLock = new ReentrantLock();
-                final ReentrantLock wasLock = fileLocks.putIfAbsent(expandedPath, newLock);
-                lock = (wasLock == null) ? newLock : wasLock;
-            } else {
-                lock = currentLock;
-            }
+            final ReentrantLock lock = fileLocks.getLock(expandedPath);
 
             if (lock.isHeldByCurrentThread()) {
                 // circular require
@@ -166,19 +155,10 @@ public class FeatureLoader {
                 return false;
             }
 
-            context.getThreadManager().runUntilResult(
-                    callNode,
-                    new ThreadManager.BlockingAction<Boolean>() {
-                        @Override
-                        public Boolean block() throws InterruptedException {
-                            lock.lockInterruptibly();
-                            return SUCCESS;
-                        }
-                    });
+            fileLocks.lock(callNode, context, lock);
 
-            // (1) Check that the lock is still correct, otherwise start over
-            if (lock != fileLocks.get(expandedPath)) {
-                lock.unlock();
+            // Check that the lock is still correct, otherwise start over
+            if (!fileLocks.ensureCorrectLock(expandedPath, lock)) {
                 continue;
             }
 
@@ -274,11 +254,7 @@ public class FeatureLoader {
 
                 return true;
             } finally {
-                if (!lock.hasQueuedThreads()) {
-                    // may remove lock after a thread starts waiting, has to be mitigated see (1)
-                    fileLocks.remove(expandedPath);
-                }
-                lock.unlock();
+                fileLocks.unlock(expandedPath, lock);
             }
         }
     }
