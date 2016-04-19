@@ -213,6 +213,28 @@ describe "List Ruby extensions" do
     expect( list.to_a ).to eq [0, nil, nil, 3]
   end
 
+  it 'supports (Array-like) first/last' do
+    expect( @list.first ).to eq 'foo'
+    list = java.util.ArrayList.new [1, 2, 3]
+    expect( list.first(2).to_a ).to eq [1, 2]
+    expect( list.first(1).to_a ).to eq [1]
+    expect( list.first(0).to_a ).to eq []
+    expect( list.first(5).to_a ).to eq [1, 2, 3]
+
+    # LinkedList does getList, unless we alias first ruby_first
+    expect( java.util.LinkedList.new.ruby_first ).to be nil
+    expect( java.util.LinkedList.new.ruby_last ).to be nil
+
+    list = java.util.LinkedList.new [1, 2, 3]
+    expect( list.ruby_last ).to eq 3
+    expect( java.util.Vector.new.last ).to be nil
+    expect( list.ruby_last(1).to_a ).to eq [3]
+    expect( list.ruby_last(2) ).to be_a java.util.List
+    expect( list.ruby_last(2).to_a ).to eq [2, 3]
+    expect( list.ruby_last(5).to_a ).to eq [1, 2, 3]
+    expect( list.ruby_last(0) ).to be_a java.util.List
+  end
+
   it "should respect to_ary objects defined on iteration" do
     class Pair
       def initialize(a, b)

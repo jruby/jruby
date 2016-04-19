@@ -299,6 +299,38 @@ public abstract class JavaUtil {
             return val;
         }
 
+        // NOTE: first conflicts with some Java types e.g. with java.util.LinkedList#getFirst
+        @JRubyMethod(name = { "first", "ruby_first" }) // re-def Enumerable#first (to skip iterator)
+        public static IRubyObject first(final ThreadContext context, final IRubyObject self) {
+            final java.util.List list = unwrapJavaObject(self);
+            return list.isEmpty() ? context.nil : convertJavaToUsableRubyObject(context.runtime, list.get(0));
+        }
+
+        @JRubyMethod(name = { "first", "ruby_first" }) // #first ext like with array: [1, 2, 3].first(2) == [1, 2]
+        public static IRubyObject first(final ThreadContext context, final IRubyObject self, final IRubyObject count) {
+            final java.util.List list = unwrapJavaObject(self);
+            int len = count.convertToInteger().getIntValue();
+            int size = list.size(); if ( len > size ) len = size;
+            return Java.getInstance(context.runtime, list.subList(0, len));
+        }
+
+        // NOTE: first conflicts with some Java types e.g. with java.util.LinkedList#getLast
+        @JRubyMethod(name = { "last", "ruby_last" }) // like with [].last
+        public static IRubyObject last(final ThreadContext context, final IRubyObject self) {
+            final java.util.List list = unwrapJavaObject(self);
+            return list.isEmpty() ? context.nil : convertJavaToUsableRubyObject(context.runtime, list.get(list.size() - 1));
+        }
+
+        @JRubyMethod(name = { "last", "ruby_last" }) // #last ext like with array: [1, 2, 3].last(2) == [2, 3]
+        public static IRubyObject last(final ThreadContext context, final IRubyObject self, final IRubyObject count) {
+            final java.util.List list = unwrapJavaObject(self);
+            int len = count.convertToInteger().getIntValue();
+            int size = list.size();
+            int start = size - len; if ( start < 0 ) start = 0;
+            int end = start + len; if ( end > size ) end = size;
+            return Java.getInstance(context.runtime, list.subList(start, end));
+        }
+
         @JRubyMethod(name = "index", required = 0) // list.index { |val| val > 0 }
         public static IRubyObject index(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
