@@ -1006,9 +1006,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isLong(object)", "wasProvided(object)", "!isRubyArray(object)" })
-        public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object object, NotProvided defaultValue, NotProvided block,
-                @Cached("createReplaceNode()") ReplaceNode replaceNode) {
-
+        public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object object, NotProvided defaultValue, NotProvided block) {
             DynamicObject copy = null;
             if (respondToToAry(frame, object)) {
                 Object toAryResult = callToAry(frame, object);
