@@ -1065,52 +1065,13 @@ public abstract class ArrayNodes {
             return ToAryNodeGen.create(null, null, other);
         }
 
-        @Specialization(guards = {"isRubyArray(from)", "isNullArray(from)"})
-        public DynamicObject initializeCopyNull(DynamicObject self, DynamicObject from) {
+        @Specialization
+        public DynamicObject initializeCopy(DynamicObject self, DynamicObject from,
+                @Cached("createReplaceNode()") ReplaceNode replaceNode) {
             if (self == from) {
                 return self;
             }
-            setStoreAndSize(self, null, 0);
-            return self;
-        }
-
-        @Specialization(guards = {"isRubyArray(from)", "isIntArray(from)"})
-        public DynamicObject initializeCopyIntegerFixnum(DynamicObject self, DynamicObject from) {
-            if (self == from) {
-                return self;
-            }
-            final int[] store = (int[]) getStore(from);
-            setStoreAndSize(self, store.clone(), getSize(from));
-            return self;
-        }
-
-        @Specialization(guards = {"isRubyArray(from)", "isLongArray(from)"})
-        public DynamicObject initializeCopyLongFixnum(DynamicObject self, DynamicObject from) {
-            if (self == from) {
-                return self;
-            }
-            final long[] store = (long[]) getStore(from);
-            setStoreAndSize(self, store.clone(), getSize(from));
-            return self;
-        }
-
-        @Specialization(guards = {"isRubyArray(from)", "isDoubleArray(from)"})
-        public DynamicObject initializeCopyFloat(DynamicObject self, DynamicObject from) {
-            if (self == from) {
-                return self;
-            }
-            final double[] store = (double[]) getStore(from);
-            setStoreAndSize(self, store.clone(), getSize(from));
-            return self;
-        }
-
-        @Specialization(guards = {"isRubyArray(from)", "isObjectArray(from)"})
-        public DynamicObject initializeCopyObject(DynamicObject self, DynamicObject from) {
-            if (self == from) {
-                return self;
-            }
-            final Object[] store = (Object[]) getStore(from);
-            setStoreAndSize(self, ArrayUtils.copy(store), getSize(from));
+            replaceNode.executeReplace(self, from);
             return self;
         }
 
