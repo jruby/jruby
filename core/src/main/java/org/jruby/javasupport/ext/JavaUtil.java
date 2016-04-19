@@ -137,6 +137,27 @@ public abstract class JavaUtil {
             return JavaLang.Iterable.each_with_index(context, self, block);
         }
 
+        // NOTE: first might conflict with some Java types (e.g. java.util.Deque) thus providing a ruby_ alias
+        @JRubyMethod(name = { "first", "ruby_first" }) // re-def Enumerable#first
+        public static IRubyObject first(final ThreadContext context, final IRubyObject self) {
+            final java.util.Collection coll = unwrapJavaObject(self);
+            return coll.isEmpty() ? context.nil : convertJavaToUsableRubyObject(context.runtime, coll.iterator().next());
+        }
+
+        @JRubyMethod(name = { "first", "ruby_first" }) // re-def Enumerable#first(n)
+        public static IRubyObject first(final ThreadContext context, final IRubyObject self, final IRubyObject count) {
+            final java.util.Collection coll = unwrapJavaObject(self);
+            int len = count.convertToInteger().getIntValue();
+            int size = coll.size(); if ( len > size ) len = size;
+            final Ruby runtime = context.runtime;
+            if ( len == 0 ) return RubyArray.newEmptyArray(runtime);
+            final RubyArray arr = RubyArray.newArray(runtime, len);
+            int i = 0; for ( java.util.Iterator it = coll.iterator(); i < len; i++ ) {
+                arr.append( convertJavaToUsableRubyObject(runtime, it.next() ) );
+            }
+            return arr;
+        }
+
         @JRubyMethod(name = { "<<" })
         public static IRubyObject append(final IRubyObject self, final IRubyObject item) {
             java.util.Collection coll = unwrapJavaObject(self);

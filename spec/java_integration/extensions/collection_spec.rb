@@ -30,6 +30,25 @@ describe "Collection Ruby extensions" do
     expect(data).to eq []
   end
 
+  it 'supports (Enumerable\'s) first' do
+    set = java.util.LinkedHashSet.new [ 'foo', 'bar', 'baz' ]
+    expect( set.first ).to eq 'foo'
+    expect( set.first(2) ).to eq ['foo', 'bar']
+    expect( set.first(1) ).to eq ['foo']
+    expect( set.first(8) ).to eq ['foo', 'bar', 'baz']
+    expect( set.first(0) ).to eq []
+    set.clear
+    expect( set.first ).to be nil
+
+    # java.util.Queue conflicts since it has getFirst :
+    que = java.util.ArrayDeque.new [1, 2, 3]
+    expect( que.first ).to eq 1
+    expect( que.ruby_first(2).to_a ).to eq [1, 2]
+    expect( que.ruby_first(0).to_a ).to eq []
+    que.clear
+    expect( que.ruby_first ).to be nil
+  end
+
   it 'handles << as add' do
     set = java.util.HashSet.new
     set << 'ZZZ'
