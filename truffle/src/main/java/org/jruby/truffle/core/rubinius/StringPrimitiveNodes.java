@@ -794,7 +794,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             // Rubinius will pass in a byte index for the `start` value, but StringSupport.index requires a character index.
-            final int charIndex = byteIndexToCharIndexNode.executeStringBytCharacterIndex(frame, string, start, 0);
+            final int charIndex = byteIndexToCharIndexNode.executeStringByteCharacterIndex(frame, string, start, 0);
 
             final int index = index(rope(string), rope(pattern), charIndex, encoding(string));
 
@@ -895,7 +895,7 @@ public abstract class StringPrimitiveNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringByteCharacterIndexNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public abstract int executeStringBytCharacterIndex(VirtualFrame frame, DynamicObject string, int index, int start);
+        public abstract int executeStringByteCharacterIndex(VirtualFrame frame, DynamicObject string, int index, int start);
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public int stringByteCharacterIndexSingleByte(DynamicObject string, int index, int start) {
