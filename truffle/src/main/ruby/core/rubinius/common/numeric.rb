@@ -137,6 +137,14 @@ class Numeric
     zero? ? nil : self
   end
 
+  def positive?
+    self > 0
+  end
+
+  def negative?
+    self < 0
+  end
+
   def round
     to_f.round
   end
