@@ -914,16 +914,16 @@ public abstract class ArrayNodes {
         @Child private CallDispatchHeadNode toAryNode;
         @Child private KernelNodes.RespondToNode respondToToAryNode;
         
-        public abstract DynamicObject executeInitialize(VirtualFrame frame, DynamicObject array, Object size, Object defaultValue, Object block);
+        public abstract DynamicObject executeInitialize(VirtualFrame frame, DynamicObject array, Object size, Object value, Object block);
 
         @Specialization
-        public DynamicObject initializeNoArgs(DynamicObject array, NotProvided size, NotProvided defaultValue, NotProvided block) {
+        public DynamicObject initializeNoArgs(DynamicObject array, NotProvided size, NotProvided unusedValue, NotProvided block) {
             setStoreAndSize(array, null, 0);
             return array;
         }
 
         @Specialization
-        public DynamicObject initializeOnlyBlock(DynamicObject array, NotProvided size, NotProvided defaultValue, DynamicObject block) {
+        public DynamicObject initializeOnlyBlock(DynamicObject array, NotProvided size, NotProvided unusedValue, DynamicObject block) {
             setStoreAndSize(array, null, 0);
             return array;
         }
@@ -944,36 +944,36 @@ public abstract class ArrayNodes {
 
         @TruffleBoundary
         @Specialization(guards = "size >= MAX_INT")
-        public DynamicObject initializeSizeTooBig(DynamicObject array, long size, NotProvided defaultValue, NotProvided block) {
+        public DynamicObject initializeSizeTooBig(DynamicObject array, long size, NotProvided unusedValue, NotProvided block) {
             throw new RaiseException(coreExceptions().argumentError("array size too big", this));
         }
 
         @Specialization(guards = "size >= 0")
-        public DynamicObject initializeWithSizeNoDefault(DynamicObject array, int size, NotProvided defaultValue, NotProvided block) {
+        public DynamicObject initializeWithSizeNoValue(DynamicObject array, int size, NotProvided unusedValue, NotProvided block) {
             final Object[] store = new Object[size];
             Arrays.fill(store, nil());
             setStoreAndSize(array, store, size);
             return array;
         }
 
-        @Specialization(guards = { "size >= 0", "wasProvided(defaultValue)", "strategy.specializesFor(defaultValue)" }, limit = "ARRAY_STRATEGIES")
-        public DynamicObject initializeWithSizeAndDefault(DynamicObject array, int size, Object defaultValue, NotProvided block,
-                @Cached("forValue(defaultValue)") ArrayStrategy strategy,
+        @Specialization(guards = { "size >= 0", "wasProvided(value)", "strategy.specializesFor(value)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject initializeWithSizeAndValue(DynamicObject array, int size, Object value, NotProvided block,
+                @Cached("forValue(value)") ArrayStrategy strategy,
                 @Cached("createBinaryProfile()") ConditionProfile needsFill) {
             final ArrayMirror store = strategy.newArray(size);
-            if (needsFill.profile(size > 0 && store.get(0) != defaultValue)) {
+            if (needsFill.profile(size > 0 && store.get(0) != value)) {
                 for (int i = 0; i < size; i++) {
-                    store.set(i, defaultValue);
+                    store.set(i, value);
                 }
             }
             setStoreAndSize(array, store.getArray(), size);
             return array;
         }
 
-        @Specialization(guards = { "wasProvided(sizeObject)", "!isInteger(sizeObject)", "!isLong(sizeObject)", "wasProvided(defaultValue)" })
-        public DynamicObject initializeSizeOther(VirtualFrame frame, DynamicObject array, Object sizeObject, Object defaultValue, NotProvided block) {
+        @Specialization(guards = { "wasProvided(sizeObject)", "!isInteger(sizeObject)", "!isLong(sizeObject)", "wasProvided(value)" })
+        public DynamicObject initializeSizeOther(VirtualFrame frame, DynamicObject array, Object sizeObject, Object value, NotProvided block) {
             int size = toInt(frame, sizeObject);
-            return executeInitialize(frame, array, size, defaultValue, block);
+            return executeInitialize(frame, array, size, value, block);
         }
 
         // With block
@@ -999,14 +999,14 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isRubyArray(copy)")
-        public DynamicObject initializeFromArray(DynamicObject array, DynamicObject copy, NotProvided defaultValue, Object maybeBlock,
+        public DynamicObject initializeFromArray(DynamicObject array, DynamicObject copy, NotProvided unusedValue, Object maybeBlock,
                 @Cached("createReplaceNode()") ReplaceNode replaceNode) {
             replaceNode.executeReplace(array, copy);
             return array;
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isLong(object)", "wasProvided(object)", "!isRubyArray(object)" })
-        public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object object, NotProvided defaultValue, NotProvided block) {
+        public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object object, NotProvided unusedValue, NotProvided block) {
             DynamicObject copy = null;
             if (respondToToAry(frame, object)) {
                 Object toAryResult = callToAry(frame, object);
