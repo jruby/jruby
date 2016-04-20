@@ -956,7 +956,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = { "size >= 0", "wasProvided(defaultValue)", "strategy.specializesFor(array)" }, limit = "ARRAY_STRATEGIES")
+        @Specialization(guards = { "size >= 0", "wasProvided(defaultValue)", "strategy.specializesFor(defaultValue)" }, limit = "ARRAY_STRATEGIES")
         public DynamicObject initializeWithSizeAndDefault(DynamicObject array, int size, Object defaultValue, NotProvided block,
                 @Cached("forValue(defaultValue)") ArrayStrategy strategy,
                 @Cached("createBinaryProfile()") ConditionProfile needsFill) {
