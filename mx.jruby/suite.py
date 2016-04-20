@@ -21,31 +21,9 @@ suite = {
 
     # ------------- Projects -------------
 
-    # truffle/target/generated-sources/org/jruby/truffle/runtime/layouts
-    # NOT WORKING since mutual dependencies :/
-    # "org/jruby/truffle/runtime/layouts" : {
-    #   "subDir": "truffle/target/generated-sources",
-    #   "sourceDirs": [""],
-    #   "dependencies": [
-    #     "JRUBY_CORE",
-    #     "truffle:TRUFFLE_API",
-    #   ],
-    #   "javaCompliance" : "1.7",
-    # },
-
-    # truffle/target/generated-sources/antlr4
-    "generated-sources/antlr4" : {
-      "subDir": "truffle/target",
-      "sourceDirs": ["."],
-      "dependencies": [
-      ],
-      "javaCompliance" : "1.7",
-    },
-
-    # truffle/src/main/java
-    "truffle/src/main/java" : {
+    "jruby-truffle" : {
       "subDir" : "",
-      "sourceDirs" : ["."],
+      "sourceDirs" : ["src/main/java"],
       "dependencies": [
         "truffle:TRUFFLE_API",
         "truffle:TRUFFLE_DEBUG",
@@ -69,7 +47,7 @@ suite = {
     "JRUBY_TRUFFLE" : {
       "javaCompliance" : "1.7",
       "dependencies" : [
-        "truffle/src/main/java",
+        "jruby-truffle",
       ],
       "exclude" : [
         "truffle:JLINE",
