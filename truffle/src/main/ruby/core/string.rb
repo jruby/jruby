@@ -28,4 +28,12 @@ class String
     s
   end
 
+  def +@
+    frozen? ? dup : self
+  end
+
+  def -@
+    frozen? ? self : dup.freeze
+  end
+
 end
