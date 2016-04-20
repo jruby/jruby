@@ -23,14 +23,12 @@ suite = {
 
     "jruby-truffle" : {
       "subDir" : "",
+      "class" : "MavenProject",
       "sourceDirs" : ["src/main/java"],
       "dependencies": [
         "truffle:TRUFFLE_API",
         "truffle:TRUFFLE_DEBUG",
       ],
-      "annotationProcessors" : ["truffle:TRUFFLE_DSL_PROCESSOR"],
-      "javaCompliance" : "1.7",
-      "workingSets" : "JRubyTruffle",
     },
 
   },

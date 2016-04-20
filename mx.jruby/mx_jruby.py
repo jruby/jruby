@@ -5,53 +5,67 @@ import subprocess
 
 _suite = mx.suite('jruby')
 
+class MavenProject(mx.Project):
+    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
+        mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
+        self.javaCompliance = "1.7"
+        self.output_dir = _suite.dir
 
-def build(args):
-    mx.log('Building JRuby')
+    def getOutput(self, replaceVar=False):
+        return mx.NativeProject.getOutput(self, replaceVar=replaceVar)
 
-    rubyDir = _suite.dir
+    def getResults(self, replaceVar=False):
+        return mx.NativeProject.getResults(self, replaceVar=replaceVar)
 
-    # HACK: since the maven executable plugin does not configure the
-    # java executable that is used we unfortunately need to append it to the PATH
-    javaHome = os.getenv('JAVA_HOME')
-    if javaHome:
-        os.environ["PATH"] = os.environ["JAVA_HOME"] + '/bin' + os.pathsep + os.environ["PATH"]
+    def getBuildTask(self, args):
+        return MavenBuildTask(self, args, None, None)
 
-    mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
-    mx.logv('Calling java -version')
-    mx.run(['java', '-version'])
+class MavenBuildTask(mx.BuildTask):
+    def __init__(self, project, args, vmbuild, vm):
+        mx.BuildTask.__init__(self, project, args, 1)
+        self.vm = vm
+        self.vmbuild = vmbuild
 
-    def apply_to_file(filename, function):
-        contents = open(filename).read()
-        contents = function(contents)
-        open(filename, 'w').write(contents)
+    def __str__(self):
+        return 'Building Maven[{}, {}]'.format(self.vmbuild, self.vm)
 
-#    # Repository and commit of JRuby we want to build
-#    commit = open(_rubyVersionFile()).read().strip()
+    def newestOutput(self):
+        return None
 
-    # Truffle version
+    def build(self):
+        mx.log('Building JRuby via Maven')
 
-    truffle = mx.suite('truffle')
-    truffle_commit = truffle.vc.parent(truffle.dir)
+        rubyDir = _suite.dir
 
-    mx.run_mx(['build'], suite=truffle)
-    mx.run_mx(['maven-install'], suite=truffle)
+        # HACK: since the maven executable plugin does not configure the
+        # java executable that is used we unfortunately need to append it to the PATH
+        javaHome = os.getenv('JAVA_HOME')
+        if javaHome:
+            os.environ["PATH"] = os.environ["JAVA_HOME"] + '/bin' + os.pathsep + os.environ["PATH"]
 
-    # Build jruby-truffle and
+        mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
+        mx.logv('Calling java -version')
+        mx.run(['java', '-version'])
 
-    mx.run_maven(['--version'], nonZeroIsFatal=False, cwd=rubyDir)
+        # Truffle version
 
-    mx.run_maven(['-DskipTests', '-Dtruffle.version=' + truffle_commit], cwd=rubyDir)
-    mx.run_maven(['-Pcomplete', '-DskipTests', '-Dtruffle.version=' + truffle_commit], cwd=rubyDir)
-#    mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
-    mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
+        truffle = mx.suite('truffle')
+        truffle_commit = truffle.vc.parent(truffle.dir)
 
-def clean(args):
-    rubyDir = _suite.dir
-    mx.run_maven(['clean'], nonZeroIsFatal=False, cwd=rubyDir)
+        mx.run_mx(['maven-install'], suite=truffle)
 
+        # Build jruby-truffle and
 
-mx.update_commands(_suite, {
-    'build': [build, ''],
-    'clean': [clean, ''],
-})
+        mx.run_maven(['--version'], nonZeroIsFatal=False, cwd=rubyDir)
+
+        mx.run_maven(['-DskipTests', '-Dtruffle.version=' + truffle_commit], cwd=rubyDir)
+        mx.run_maven(['-Pcomplete', '-DskipTests', '-Dtruffle.version=' + truffle_commit], cwd=rubyDir)
+    #    mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
+        mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
+
+    def clean(self, forBuild=False):
+        if forBuild:
+            return
+        rubyDir = _suite.dir
+        mx.run_maven(['clean'], nonZeroIsFatal=False, cwd=rubyDir)
+
