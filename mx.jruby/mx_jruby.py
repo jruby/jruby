@@ -32,8 +32,7 @@ def build(args):
     # Truffle version
 
     truffle = mx.suite('truffle')
-    truffle_commit = subprocess.check_output(
-        ['git', 'log', '-n', '1', '--format=%H'], cwd=truffle.dir).strip()
+    truffle_commit = truffle.vc.parent(truffle.dir)
 
     mx.run_mx(['build'], suite=truffle)
     mx.run_mx(['maven-install'], suite=truffle)
