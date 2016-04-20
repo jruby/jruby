@@ -235,7 +235,6 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_PLATFORM_SAFE_PUTS = bool(TRUFFLE, "truffle.platform.safe_puts", true, "Treat Truffle::Primitive.safe_puts as safe.");
     public static final Option<Boolean> TRUFFLE_PLATFORM_USE_JAVA = bool(TRUFFLE, "truffle.platform.use_java", false, "Use a pure-Java platform, so no native POSIX.");
 
-    public static final Option<Boolean> TRUFFLE_COVERAGE = bool(TRUFFLE, "truffle.coverage", false, "Enable coverage (will be enabled by default in the future - currently has some bugs).");
     public static final Option<Boolean> TRUFFLE_COVERAGE_GLOBAL = bool(TRUFFLE, "truffle.coverage.global", false, "Run coverage for all code and print results on exit.");
 
     public static final Option<String> TRUFFLE_CORE_LOAD_PATH = string(TRUFFLE, "truffle.core.load_path", "truffle:/jruby-truffle", "Location to load the Truffle core library from.");
@@ -293,7 +292,6 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_BACKTRACES_INTERLEAVE_JAVA = bool(TRUFFLE, "truffle.backtraces.interleave_java", false, "Interleave Java stacktraces into the Ruby backtrace.");
     public static final Option<Integer> TRUFFLE_BACKTRACES_LIMIT = integer(TRUFFLE, "truffle.backtraces.limit", 9999, "Limit the size of Ruby backtraces.");
     public static final Option<Boolean> TRUFFLE_BACKTRACES_OMIT_UNUSED = bool(TRUFFLE, "truffle.backtraces.omit_unused", true, "Omit backtraces that should be unused as they have pure rescue expressions.");
-    public static final Option<Boolean> TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = bool(TRUFFLE, "truffle.set_trace_func.include_core_file_callers", false, "Include internal core library calls in set_trace_func output.");
 
     public static final Option<Boolean> TRUFFLE_METRICS_TIME = bool(TRUFFLE, "truffle.metrics.time", false, "Print the time at various stages of VM operation.");
     public static final Option<Boolean> TRUFFLE_METRICS_MEMORY_USED_ON_EXIT = bool(TRUFFLE, "truffle.metrics.memory_used_on_exit", false, "Print the size of heap memory in use on exit.");

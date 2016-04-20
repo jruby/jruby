@@ -1485,6 +1485,8 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isRubyString(featureString)")
         public boolean require(VirtualFrame frame, DynamicObject featureString, @Cached("create()") IndirectCallNode callNode) {
+            // We transfer because we want the virtual frame when requring but can't compile that code
+
             CompilerDirectives.transferToInterpreter();
 
             final String feature = featureString.toString();

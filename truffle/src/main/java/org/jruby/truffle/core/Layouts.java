@@ -78,6 +78,8 @@ import org.jruby.truffle.core.thread.ThreadLayout;
 import org.jruby.truffle.core.thread.ThreadLayoutImpl;
 import org.jruby.truffle.core.time.TimeLayout;
 import org.jruby.truffle.core.time.TimeLayoutImpl;
+import org.jruby.truffle.core.tracepoint.TracePointLayout;
+import org.jruby.truffle.core.tracepoint.TracePointLayoutImpl;
 import org.jruby.truffle.stdlib.BigDecimalLayout;
 import org.jruby.truffle.stdlib.BigDecimalLayoutImpl;
 import org.jruby.truffle.stdlib.psych.EmitterLayout;
@@ -124,6 +126,7 @@ public abstract class Layouts {
     public static final RandomizerLayout RANDOMIZER = RandomizerLayoutImpl.INSTANCE;
     public static final AtomicReferenceLayout ATOMIC_REFERENCE = AtomicReferenceLayoutImpl.INSTANCE;
     public static final HandleLayout HANDLE = HandleLayoutImpl.INSTANCE;
+    public static final TracePointLayout TRACE_POINT = TracePointLayoutImpl.INSTANCE;
 
     // Other standard identifiers
 

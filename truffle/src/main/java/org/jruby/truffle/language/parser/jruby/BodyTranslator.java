@@ -52,6 +52,7 @@ import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
+import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.range.RangeNodesFactory;
@@ -72,6 +73,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.debug.AssertConstantNodeGen;
 import org.jruby.truffle.debug.AssertNotCompiledNodeGen;
+import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -163,6 +165,7 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNode;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNodeGen;
 import org.jruby.truffle.language.threadlocal.WrapInThreadLocalNodeGen;
 import org.jruby.truffle.language.yield.YieldExpressionNode;
+import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
@@ -446,8 +449,17 @@ public class BodyTranslator extends Translator {
         if (translatedChildren.size() == 1) {
             ret = translatedChildren.get(0);
         } else {
-            RubyNode[] sequence = translatedChildren.toArray(new RubyNode[translatedChildren.size()]);
-            ret = sequence(context, sourceSection, Arrays.asList(sequence));
+            final int startIndex = sourceSection.getSource().getLineStartOffset(node.getPosition().getLine() + 1);
+
+            int length = 0;
+
+            for (int n = firstLine; n <= lastLine; n++) {
+                length += sourceSection.getSource().getLineLength(n);
+            }
+
+            length = Math.min(length + startIndex, sourceSection.getSource().getLength()) - startIndex;
+
+            ret = sequence(context, sourceSection.getSource().createSection(sourceSection.getIdentifier(), startIndex, length), translatedChildren);
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -1779,7 +1791,7 @@ public class BodyTranslator extends Translator {
             ret = sequence(context, sourceSection, Arrays.asList(condition, new NilLiteralNode(context, sourceSection, true)));
         }
 
-        return addNewlineIfNeeded(node, ret);
+        return ret; // no addNewlineIfNeeded(node, ret) as the condition will already have a newline
     }
 
     @Override
@@ -3182,7 +3194,16 @@ public class BodyTranslator extends Translator {
 
     private RubyNode addNewlineIfNeeded(org.jruby.ast.Node jrubyNode, RubyNode node) {
         if (jrubyNode.isNewline()) {
-            node.setAtNewline();
+            final SourceSection current = node.getEncapsulatingSourceSection();
+
+            if (current == null) {
+                return node;
+            }
+
+            if (context.getCoverageManager() != null) {
+                context.getCoverageManager().setLineHasCode(current.getLineLocation());
+            }
+            node.unsafeSetIsNewLine();
         }
 
         return node;

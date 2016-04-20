@@ -14,8 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
@@ -27,7 +25,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
@@ -71,52 +68,23 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
         if (callNode == null || context != cachedContext) {
             CompilerDirectives.transferToInterpreter();
 
-            if (AttachmentsManager.ATTACHMENT_SOURCE == source) {
-                final SourceSection sourceSection = (SourceSection) frame.getArguments()[getIndex("section")];
-                final DynamicObject block = (DynamicObject) frame.getArguments()[getIndex("block")];
+            final TranslatorDriver translator = new TranslatorDriver(context);
 
-                final RootNode rootNode = new AttachmentsManager.AttachmentRootNode(RubyLanguage.class, cachedContext,
-                        sourceSection, null, block);
+            final RubyRootNode rootNode = translator.parse(context, source, UTF8Encoding.INSTANCE,
+                    ParserContext.TOP_LEVEL, argumentNames, null, null, true, null);
 
-                final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
-                callNode = insert(Truffle.getRuntime().createDirectCallNode(callTarget));
-                callNode.forceInlining();
-            } else {
-                final TranslatorDriver translator = new TranslatorDriver(context);
+            callNode = insert(Truffle.getRuntime().createDirectCallNode(callTarget));
+            callNode.forceInlining();
 
-                final RubyRootNode rootNode = translator.parse(context, source, UTF8Encoding.INSTANCE,
-                        ParserContext.TOP_LEVEL, argumentNames, null, null, true, null);
-
-                final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-
-                callNode = insert(Truffle.getRuntime().createDirectCallNode(callTarget));
-                callNode.forceInlining();
-
-                mainObject = context.getCoreLibrary().getMainObject();
-                method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
-                        context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, callTarget);
-            }
-        }
-
-        if (method == null) {
-            final MaterializedFrame callerFrame = Truffle.getRuntime().getCallerFrame()
-                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
-
-            return callNode.call(frame, new Object[] { callerFrame });
+            mainObject = context.getCoreLibrary().getMainObject();
+            method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
+                    context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, callTarget);
         }
 
         return callNode.call(frame, RubyArguments.pack(null, null, method, DeclarationContext.TOP_LEVEL, null,
                 mainObject, null, frame.getArguments()));
-    }
-
-    private int getIndex(String name) {
-        for (int i = 0; i < argumentNames.length; i++) {
-            if (name.equals(argumentNames[i])) {
-                return i;
-            }
-        }
-        return -1;
     }
 
 }

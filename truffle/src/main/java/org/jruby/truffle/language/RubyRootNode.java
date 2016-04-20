@@ -17,6 +17,7 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 public class RubyRootNode extends RootNode {
@@ -35,6 +36,8 @@ public class RubyRootNode extends RootNode {
         this.sharedMethodInfo = sharedMethodInfo;
         this.needsDeclarationFrame = needsDeclarationFrame;
         this.body = body;
+
+        body.unsafeSetIsCall();
 
         if (context.getCallGraph() != null) {
             context.getCallGraph().registerRootNode(this);

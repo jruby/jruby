@@ -61,6 +61,12 @@ module Utilities
     raise "couldn't find trufflejs.jar - download GraalVM as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and find it in there"
   end
 
+  def self.find_sulong_dir
+    dir = ENV['SULONG_DIR']
+    return dir if dir
+    raise "couldn't find the Sulong repository - you need to check it out and build it"
+  end
+
   def self.jruby_eclipse?
     # tool/jruby_eclipse only works on release currently
     ENV["JRUBY_ECLIPSE"] == "true" and !truffle_version.end_with?('SNAPSHOT')
@@ -268,6 +274,7 @@ module Commands
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
+    puts '    --sulong        add Sulong to the classpath (set SULONG_DIR, implies --graal)'
     puts '    --asm           show assembly (implies --graal)'
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
@@ -318,6 +325,7 @@ module Commands
     puts '  JVMCI_DIR                                    JMVCI repository checkout to use when running IGV (mx must already be on the $PATH)'
     puts '  JVMCI_DIR_...git_branch_name...              JMVCI repository to use for a given branch'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
+    puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
   end
 
   def checkout(branch)
@@ -362,6 +370,7 @@ module Commands
     {
       '--asm' => '--graal',
       '--igv' => '--graal',
+      '--sulong' => '--graal',
       '--bips' => '--graal'
     }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
@@ -369,12 +378,23 @@ module Commands
 
     if args.delete('--graal')
       env_vars["JAVACMD"] = Utilities.find_graal
-      jruby_args << '-J-server'
+      jruby_args << '-J-Djvmci.Compiler=graal'
     end
 
     if args.delete('--js')
       jruby_args << '-J-classpath'
       jruby_args << Utilities.find_graal_js
+    end
+
+    if args.delete('--sulong')
+      dir = Utilities.find_sulong_dir
+      jruby_args << '-J-classpath'
+      jruby_args << File.join(dir, 'lib', '*')
+      jruby_args << '-J-classpath'
+      jruby_args << File.join(dir, 'build', 'sulong.jar')
+      jruby_args << '-J-classpath'
+      jruby_args << File.join(dir, '..', 'graal-core', 'mxbuild', 'graal', 'com.oracle.nfi', 'bin')
+      jruby_args << '-J-XX:-UseJVMCIClassLoader'
     end
 
     if args.delete('--asm')
@@ -474,6 +494,7 @@ module Commands
     env_vars = {}
     env_vars["JRUBY_OPTS"] = '-Xtruffle.graal.warn_unless=false'
     env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
+    env_vars["JRUBY_OPTS"] = '-J-Djvmci.Compiler=graal'
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
       sh env_vars, test_script

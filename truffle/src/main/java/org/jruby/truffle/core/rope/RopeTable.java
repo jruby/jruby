@@ -12,6 +12,7 @@ package org.jruby.truffle.core.rope;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.StringSupport;
@@ -36,6 +37,10 @@ public class RopeTable {
     private int byteArrayReusedCount;
     private int ropesReusedCount;
     private int ropeBytesSaved;
+
+    public Rope getRopeUTF8(String string) {
+        return getRope(string);
+    }
 
     @TruffleBoundary
     public Rope getRope(String string) {

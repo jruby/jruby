@@ -12,7 +12,9 @@ Coverage.start
 
 require_relative 'subject.rb'
 
-data = Coverage.result[File.join(File.dirname(__FILE__), 'subject.rb')]
+result = Coverage.result
+key = result.keys.select { |k| k.end_with?('subject.rb') }.first
+data = result[key]
 expected = [nil, nil, nil, nil, nil, nil, nil, nil, 1, 1, nil, 1, 10, nil, nil, 1, nil, 1, 1, nil, nil, 1, 2, nil, nil, 1, 1, nil, 1]
 
 raise 'coverage data not as expected' unless data == expected

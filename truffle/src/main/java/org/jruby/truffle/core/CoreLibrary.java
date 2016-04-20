@@ -78,7 +78,9 @@ import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationNodesFactory;
 import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
+import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
 import org.jruby.truffle.extra.TrufflePrimitiveNodesFactory;
+import org.jruby.truffle.interop.CExtNodesFactory;
 import org.jruby.truffle.interop.TruffleInteropNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -534,6 +536,8 @@ public class CoreLibrary {
         weakRefClass = defineClass("WeakRef");
         weakRefFactory = Layouts.WEAK_REF_LAYOUT.createWeakRefShape(weakRefClass, weakRefClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(weakRefClass, weakRefFactory);
+        final DynamicObject tracePointClass = defineClass("TracePoint");
+        Layouts.CLASS.setInstanceFactoryUnsafe(tracePointClass, Layouts.TRACE_POINT.createTracePointShape(tracePointClass, tracePointClass));
 
         // Modules
 
@@ -555,6 +559,7 @@ public class CoreLibrary {
 
         truffleModule = defineModule("Truffle");
         defineModule(truffleModule, "Interop");
+        defineModule(truffleModule, "CExt");
         defineModule(truffleModule, "Debug");
         final DynamicObject primitiveModule = defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
@@ -689,6 +694,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(EncodingNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingConverterNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleInteropNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(CExtNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(MethodNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(UnboundMethodNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ByteArrayNodesFactory.getFactories());
@@ -703,6 +709,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TracePointNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 

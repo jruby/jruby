@@ -20,7 +20,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.instrument.Instrument;
+import com.oracle.truffle.api.instrumentation.EventBinding;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -61,6 +61,7 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.Graal;
+import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import org.jruby.util.ByteList;
@@ -95,7 +96,7 @@ public abstract class TrufflePrimitiveNodes {
 
                 @Override
                 public MaterializedFrame visitFrame(FrameInstance frameInstance) {
-                    if (frameCount.get() == 1) {
+                    if (frameCount.get() == 2) {
                         return frameInstance.getFrame(FrameInstance.FrameAccess.READ_WRITE, false).materialize();
                     } else {
                         frameCount.set(frameCount.get() + 1);
@@ -126,7 +127,7 @@ public abstract class TrufflePrimitiveNodes {
 
                 @Override
                 public String visitFrame(FrameInstance frameInstance) {
-                    if (frameCount.get() == 1) {
+                    if (frameCount.get() == 2) {
                         return frameInstance.getCallNode().getEncapsulatingSourceSection().getSource().getName();
                     } else {
                         frameCount.set(frameCount.get() + 1);
@@ -267,13 +268,13 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject coverageResult() {
-            if (getContext().getCoverageTracker() == null) {
+            if (getContext().getCoverageManager() == null) {
                 throw new UnsupportedOperationException("coverage is disabled");
             }
 
             final Map<Object, Object> converted = new HashMap<>();
 
-            for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
+            for (Map.Entry<Source, long[]> source : getContext().getCoverageManager().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
                 final DynamicObject array = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
 
@@ -285,12 +286,12 @@ public abstract class TrufflePrimitiveNodes {
             return BucketsStrategy.create(getContext(), converted.entrySet(), false);
         }
 
-        private Object[] lineCountsStore(Long[] array) {
+        private Object[] lineCountsStore(long[] array) {
             final Object[] store = new Object[array.length];
 
             for (int n = 0; n < array.length; n++) {
-                if (array[n] == null) {
-                    store[n] = coreLibrary().getNilObject();
+                if (array[n] == CoverageManager.NO_CODE) {
+                    store[n] = nil();
                 } else {
                     store[n] = array[n];
                 }
@@ -304,14 +305,11 @@ public abstract class TrufflePrimitiveNodes {
     @CoreMethod(names = "coverage_start", onSingleton = true)
     public abstract static class CoverageStartNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject coverageStart() {
-            if (getContext().getCoverageTracker() == null) {
-                throw new UnsupportedOperationException("coverage is disabled");
-            }
-
-            getContext().getEnv().instrumenter().install(getContext().getCoverageTracker());
-            return coreLibrary().getNilObject();
+            getContext().getCoverageManager().enable();
+            return nil();
         }
 
     }
@@ -333,9 +331,9 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isHandle(handle)")
         public DynamicObject detach(DynamicObject handle) {
-            final Instrument instrument = (Instrument) Layouts.HANDLE.getObject(handle);
-            instrument.dispose();
-            return coreLibrary().getNilObject();
+            final EventBinding<?> binding = (EventBinding<?>) Layouts.HANDLE.getObject(handle);
+            binding.dispose();
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

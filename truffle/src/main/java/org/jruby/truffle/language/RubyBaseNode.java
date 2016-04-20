@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
+import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
@@ -23,28 +24,34 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.exception.CoreExceptions;
+import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
+import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
 public abstract class RubyBaseNode extends Node {
 
-    @CompilationFinal private RubyContext context;
+    private static final int FLAG_NEWLINE = 0;
+    private static final int FLAG_CALL = 1;
 
-    private boolean atNewline = false;
+    @CompilationFinal private RubyContext context;
+    @CompilationFinal private SourceSection sourceSection;
+    @CompilationFinal private int flags;
 
     public RubyBaseNode() {
     }
 
     public RubyBaseNode(RubyContext context, SourceSection sourceSection) {
-        super(sourceSection);
         this.context = context;
+        this.sourceSection = sourceSection;
     }
 
     // Guards which use the context and so can't be static
@@ -146,12 +153,53 @@ public abstract class RubyBaseNode extends Node {
         return context;
     }
 
-    public void setAtNewline() {
-        atNewline = true;
+    // Source section
+
+    @Override
+    public SourceSection getSourceSection() {
+        return sourceSection;
     }
 
-    public boolean isAtNewline() {
-        return atNewline;
+    // Tags
+
+    public void unsafeSetIsNewLine() {
+        flags |= 1 << FLAG_NEWLINE;
+    }
+
+    public void unsafeSetIsCall() {
+        flags |= 1 << FLAG_CALL;
+    }
+
+    private boolean isNewLine() {
+        return ((flags >> FLAG_NEWLINE) & 1) == 1;
+    }
+
+    private boolean isCall() {
+        return ((flags >> FLAG_CALL) & 1) == 1;
+    }
+
+    private boolean isRoot() {
+        return getParent() instanceof RubyRootNode;
+    }
+
+    @Override
+    protected boolean isTaggedWith(Class<?> tag) {
+        if (tag == TraceManager.CallTag.class || tag == StandardTags.CallTag.class) {
+            return isCall();
+        }
+
+        if (tag == AttachmentsManager.LineTag.class
+                || tag == TraceManager.LineTag.class
+                || tag == CoverageManager.LineTag.class
+                || tag == StandardTags.StatementTag.class) {
+            return isNewLine();
+        }
+
+        if (tag == StandardTags.RootTag.class) {
+            return isRoot();
+        }
+
+        return false;
     }
 
 }

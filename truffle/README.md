@@ -45,10 +45,10 @@ But you can also build it yourself, which you will need to do if you are on the
 https://github.com/jruby/jruby/wiki/Building-Graal
 
 You then need to set the `JAVACMD` environment variable as described on those
-pages.
+pages, and tell the JVM to use the Graal compiler.
 
 ```
-$ JAVACMD=... bin/jruby -X+T ...
+$ JAVACMD=... bin/jruby -X+T -J-Djvmci.Compiler=graal ...
 ```
 
 ### What to expect

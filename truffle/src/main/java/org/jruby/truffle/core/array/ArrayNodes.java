@@ -25,6 +25,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
@@ -815,6 +816,7 @@ public abstract class ArrayNodes {
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
         @Specialization(guards = "isNullArray(array)")
+
         public DynamicObject eachWithIndexNull(DynamicObject array, DynamicObject block) {
             return array;
         }
@@ -831,7 +833,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(n);
+                    LoopNode.reportLoopCount(this, n);
                 }
             }
 
@@ -990,7 +992,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(n);
+                    LoopNode.reportLoopCount(this, n);
                 }
                 setStoreAndSize(array, arrayBuilder.finish(store, n), n);
             }
@@ -1170,7 +1172,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(n);
+                    LoopNode.reportLoopCount(this, n);
                 }
             }
             return accumulator;
@@ -1299,7 +1301,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -1324,7 +1326,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -1349,7 +1351,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -1374,7 +1376,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -1409,7 +1411,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -1433,7 +1435,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -2416,7 +2418,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -2450,7 +2452,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -2774,7 +2776,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -2806,7 +2808,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 

@@ -12,7 +12,7 @@ package org.jruby.truffle.language;
 import com.oracle.truffle.api.dsl.ImplicitCast;
 import com.oracle.truffle.api.dsl.TypeSystem;
 
-@TypeSystem({})
+@TypeSystem
 public abstract class RubyTypes {
 
     @ImplicitCast

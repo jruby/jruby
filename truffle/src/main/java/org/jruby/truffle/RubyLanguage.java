@@ -15,16 +15,19 @@ import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.instrument.Visualizer;
 import com.oracle.truffle.api.instrument.WrapperNode;
+import com.oracle.truffle.api.instrumentation.ProvidedTags;
+import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
-import org.jruby.truffle.instrument.RubyWrapperNode;
+import org.jruby.truffle.core.kernel.TraceManager;
+import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.stdlib.CoverageManager;
 
 import java.io.IOException;
 
@@ -32,10 +35,23 @@ import java.io.IOException;
         name = "Ruby",
         version = Constants.RUBY_VERSION,
         mimeType = RubyLanguage.MIME_TYPE)
+@ProvidedTags({
+        CoverageManager.LineTag.class,
+        AttachmentsManager.LineTag.class,
+        TraceManager.CallTag.class,
+        TraceManager.ClassTag.class,
+        TraceManager.LineTag.class,
+        StandardTags.RootTag.class,
+        StandardTags.StatementTag.class,
+        StandardTags.CallTag.class
+})
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     public static final String MIME_TYPE = "application/x-ruby";
     public static final String EXTENSION = ".rb";
+
+    public static final String CEXT_MIME_TYPE = "application/x-sulong-library";
+    public static final String CEXT_EXTENSION = ".su";
 
     private RubyLanguage() {
     }
@@ -82,21 +98,6 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
     @Override
     protected boolean isObjectOfLanguage(Object object) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected Visualizer getVisualizer() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isInstrumentable(Node node) {
-        return !(node instanceof RubyWrapperNode);
-    }
-
-    @Override
-    protected WrapperNode createWrapperNode(Node node) {
-        return new RubyWrapperNode((RubyNode) node);
     }
 
     @Override

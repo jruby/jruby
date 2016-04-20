@@ -9,6 +9,7 @@ project 'JRuby Truffle' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
+              'truffle.version' => '0.12',
               'jruby.basedir' => '${basedir}/..' )
 
   jar 'org.yaml:snakeyaml:1.14'
@@ -16,11 +17,12 @@ project 'JRuby Truffle' do
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  truffle_version = '0.11'
+  truffle_version = '${truffle.version}'
   jar 'com.oracle.truffle:truffle-api:' + truffle_version
   jar 'com.oracle.truffle:truffle-debug:' + truffle_version
   jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
   jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
+  
   jar 'junit:junit', :scope => 'test'
 
   plugin 'org.antlr:antlr4-maven-plugin', '4.5.1-1' do
@@ -37,21 +39,15 @@ project 'JRuby Truffle' do
           'target' => [ '${base.javac.version}', '1.7' ],
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
-                   :id => 'anno',
-                   :phase => 'process-resources',
-                   :fork => true,
-                   'includes' => [ 'org/jruby/truffle/om/dsl/processor/OMProcessor.java' ],
-                   'compilerArgs' => [ '-XDignore.symbol.file=true',
-                                       '-J-ea' ] )
-    execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
                    :fork => true,
-                   'annotationProcessors' => [ 'org.jruby.truffle.om.dsl.processor.OMProcessor',
+                   'annotationProcessors' => [ 'com.oracle.truffle.object.dsl.processor.LayoutProcessor',
+                                               'com.oracle.truffle.dsl.processor.InstrumentableProcessor',
                                                'com.oracle.truffle.dsl.processor.TruffleProcessor',
                                                'com.oracle.truffle.dsl.processor.InteropProcessor',
                                                'com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor',
-                                               'com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor' ],
+                                               'com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor', ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
