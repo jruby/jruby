@@ -84,13 +84,15 @@
       <dirEntry mountPoint="103" file="${compiler:jruby.location}" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
         <exclude>
           <entry location="bin" fileType="regular" />
-          <entry location="lib/jni/arm-Linux" fileType="regular" />
           <entry location="lib/jni/Darwin" fileType="regular" />
-          <entry location="lib/jni/i386-FreeBSD" fileType="regular" />
+          <entry location="lib/jni/arm-Linux" fileType="regular" />
           <entry location="lib/jni/i386-Linux" fileType="regular" />
-          <entry location="lib/jni/i386-OpenBSD" fileType="regular" />
           <entry location="lib/jni/i386-SunOS" fileType="regular" />
+          <entry location="lib/jni/i386-FreeBSD" fileType="regular" />
+          <entry location="lib/jni/i386-OpenBSD" fileType="regular" />
           <entry location="lib/jni/ppc-AIX" fileType="regular" />
+          <entry location="lib/jni/ppc64-Linux" fileType="regular" />
+          <entry location="lib/jni/ppc64le-Linux" fileType="regular" />
           <entry location="lib/jni/ppc-Linux" fileType="regular" />
           <entry location="lib/jni/s390x-Linux" fileType="regular" />
           <entry location="lib/jni/sparc-SunOS" fileType="regular" />
@@ -111,6 +113,8 @@
           <entry location="lib/jni/i386-OpenBSD" fileType="regular" />
           <entry location="lib/jni/i386-SunOS" fileType="regular" />
           <entry location="lib/jni/i386-Windows" fileType="regular" />
+          <entry location="lib/jni/ppc64-Linux" fileType="regular" />
+          <entry location="lib/jni/ppc64le-Linux" fileType="regular" />
           <entry location="lib/jni/ppc-AIX" fileType="regular" />
           <entry location="lib/jni/ppc-Linux" fileType="regular" />
           <entry location="lib/jni/s390x-Linux" fileType="regular" />

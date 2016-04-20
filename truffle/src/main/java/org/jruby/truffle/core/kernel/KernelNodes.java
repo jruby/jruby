@@ -1724,28 +1724,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "String", isModuleFunction = true, required = 1)
-    public abstract static class StringNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode toS;
-
-        public StringNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toS = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization(guards = "isRubyString(value)")
-        public DynamicObject string(DynamicObject value) {
-            return value;
-        }
-
-        @Specialization(guards = "!isRubyString(value)")
-        public Object string(VirtualFrame frame, Object value) {
-            return toS.call(frame, value, "to_s", null);
-        }
-
-    }
-
     @CoreMethod(names = "sleep", isModuleFunction = true, optional = 1)
     public abstract static class SleepNode extends CoreMethodArrayArgumentsNode {
 
@@ -2012,7 +1990,6 @@ public abstract class KernelNodes {
 
         public UntaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
             writeTaintNode = WriteObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
         }
@@ -2023,13 +2000,17 @@ public abstract class KernelNodes {
                 return object;
             }
 
-            if (isFrozenNode.executeIsFrozen(object)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().frozenError(Layouts.MODULE.getFields(coreLibrary().getLogicalClass(object)).getName(), this));
-            }
-
+            checkFrozen(object);
             writeTaintNode.execute(object, false);
             return object;
+        }
+
+        protected void checkFrozen(Object object) {
+            if (isFrozenNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            isFrozenNode.raiseIfFrozen(object);
         }
 
     }

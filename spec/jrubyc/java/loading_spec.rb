@@ -52,7 +52,7 @@ describe "JRuby::Compiler.compile_argv" do
     expect( Object.const_defined?(:HashyKwargs) ).to be true
     klass = Class.new { include HashyKwargs }
     res = klass.new.generic('0', 111, arg: 1) { 'block' }
-    pending 'FIXME if you wonder!'
+
     expect( res[0] ).to eql [ '0', 111 ]
     expect( res[1] ).to eql({ :arg => 1 })
     expect( res[2].call ).to eql 'block'

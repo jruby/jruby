@@ -97,10 +97,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.StringSupport;
-
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-
 import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
@@ -611,11 +609,11 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "bytes")
-    public abstract static class BytesNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "bytes", needsBlock = true)
+    public abstract static class BytesNode extends YieldingCoreMethodNode {
 
         @Specialization
-        public DynamicObject bytes(DynamicObject string) {
+        public DynamicObject bytes(VirtualFrame frame, DynamicObject string, NotProvided block) {
             final Rope rope = rope(string);
             final byte[] bytes = rope.getBytes();
 
@@ -626,6 +624,18 @@ public abstract class StringNodes {
             }
 
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+        }
+
+        @Specialization
+        public DynamicObject bytes(VirtualFrame frame, DynamicObject string, DynamicObject block) {
+            Rope rope = rope(string);
+            byte[] bytes = rope.getBytes();
+
+            for (int i = 0; i < bytes.length; i++) {
+                yield(frame, block, bytes[i] & 0xff);
+            }
+
+            return string;
         }
 
     }
@@ -1177,15 +1187,9 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRubyString(from)")
         public DynamicObject initialize(DynamicObject self, DynamicObject from) {
-            if (isFrozenNode == null) {
+            if (isFrozen(self)) {
                 CompilerDirectives.transferToInterpreter();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
-            }
-
-            if (isFrozenNode.executeIsFrozen(self)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(
-                        coreExceptions().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(self)).getName(), this));
+                throw new RaiseException(coreExceptions().frozenError(self, this));
             }
 
             StringOperations.setRope(self, rope(from));
@@ -1202,6 +1206,15 @@ public abstract class StringNodes {
 
             return initialize(self, toStrNode.executeToStr(frame, from));
         }
+
+        protected boolean isFrozen(Object object) {
+            if (isFrozenNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return isFrozenNode.executeIsFrozen(object);
+        }
+
     }
 
     @CoreMethod(names = "initialize_copy", required = 1)

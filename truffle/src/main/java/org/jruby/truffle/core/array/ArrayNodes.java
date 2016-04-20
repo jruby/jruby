@@ -584,19 +584,17 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class CompactNode extends ArrayCoreMethodNode {
 
-        @Specialization(guards = "isIntArray(array)")
-        public DynamicObject compactInt(DynamicObject array) {
-            return createArray(getContext(), Arrays.copyOf((int[]) getStore(array), getSize(array)), getSize(array));
+        @Specialization(guards = "isNullArray(array)")
+        public Object compactNull(DynamicObject array) {
+            return createArray(getContext(), null, 0);
         }
 
-        @Specialization(guards = "isLongArray(array)")
-        public DynamicObject compactLong(DynamicObject array) {
-            return createArray(getContext(), Arrays.copyOf((long[]) getStore(array), getSize(array)), getSize(array));
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public DynamicObject compactDouble(DynamicObject array) {
-            return createArray(getContext(), Arrays.copyOf((double[]) getStore(array), getSize(array)), getSize(array));
+        @Specialization(guards = { "!isObjectArray(array)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject compactPrimitive(DynamicObject array,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final int size = getSize(array);
+            Object store = strategy.newMirror(array).extractRange(0, size).getArray();
+            return createArray(getContext(), store, size);
         }
 
         @Specialization(guards = "isObjectArray(array)")
@@ -617,11 +615,6 @@ public abstract class ArrayNodes {
             }
 
             return createArray(getContext(), newStore, m);
-        }
-
-        @Specialization(guards = "isNullArray(array)")
-        public Object compactNull(DynamicObject array) {
-            return createArray(getContext(), null, 0);
         }
 
     }
@@ -697,84 +690,48 @@ public abstract class ArrayNodes {
             equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(new RubyNode[]{null,null});
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object deleteIntegerFixnum(VirtualFrame frame, DynamicObject array, Object value) {
-            final int[] store = (int[]) getStore(array);
-
-            Object found = nil();
-
-            int i = 0;
-            int n = 0;
-            for (; n < getSize(array); n++) {
-                final Object stored = store[n];
-
-                if (equalNode.executeSameOrEqual(frame, stored, value)) {
-                    if (isFrozenNode == null) {
-                        CompilerDirectives.transferToInterpreter();
-                        isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
-                    }
-                    if (isFrozenNode.executeIsFrozen(array)) {
-                        CompilerDirectives.transferToInterpreter();
-                        throw new RaiseException(
-                            coreExceptions().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
-                    }
-                    found = store[n];
-                    continue;
-                }
-
-                if (i != n) {
-                    store[i] = store[n];
-                }
-
-                i++;
-            }
-            if(i != n){
-                setStoreAndSize(array, store, i);
-            }
-            return found;
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public Object deleteObject(VirtualFrame frame, DynamicObject array, Object value) {
-            final Object[] store = (Object[]) getStore(array);
-
-            Object found = nil();
-
-            int i = 0;
-            int n = 0;
-            for (; n < getSize(array); n++) {
-                final Object stored = store[n];
-
-                if (equalNode.executeSameOrEqual(frame, stored, value)) {
-                    if (isFrozenNode == null) {
-                        CompilerDirectives.transferToInterpreter();
-                        isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
-                    }
-                    if (isFrozenNode.executeIsFrozen(array)) {
-                        CompilerDirectives.transferToInterpreter();
-                        throw new RaiseException(
-                            coreExceptions().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
-                    }
-                    found = store[n];
-                    continue;
-                }
-
-                if (i != n) {
-                    store[i] = store[n];
-                }
-
-                i++;
-            }
-
-            if(i != n){
-                setStoreAndSize(array, store, i);
-            }
-            return found;
-        }
-
         @Specialization(guards = "isNullArray(array)")
         public Object deleteNull(VirtualFrame frame, DynamicObject array, Object value) {
             return nil();
+        }
+
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public Object delete(VirtualFrame frame, DynamicObject array, Object value,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror store = strategy.newMirror(array);
+
+            Object found = nil();
+
+            int i = 0;
+            int n = 0;
+            for (; n < getSize(array); n++) {
+                final Object stored = store.get(n);
+
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
+                    checkFrozen(array);
+                    found = stored;
+                    continue;
+                }
+
+                if (i != n) {
+                    store.set(i, store.get(n));
+                }
+
+                i++;
+            }
+
+            if (i != n) {
+                setStoreAndSize(array, store.getArray(), i);
+            }
+            return found;
+        }
+
+        public void checkFrozen(Object object) {
+            if (isFrozenNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            isFrozenNode.raiseIfFrozen(object);
         }
 
     }
@@ -791,107 +748,41 @@ public abstract class ArrayNodes {
             return ToIntNodeGen.create(null, null, index);
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object deleteAtIntegerFixnum(DynamicObject array, int index,
-                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
-                @Cached("create()") BranchProfile notInBoundsProfile) {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(getSize(array), index, negativeIndexProfile);
-
-            if (normalizedIndex < 0 || normalizedIndex >= getSize(array)) {
-                notInBoundsProfile.enter();
-                return nil();
-            } else {
-                final int[] store = (int[]) getStore(array);
-                final int value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, getSize(array) - normalizedIndex - 1);
-                setStoreAndSize(array, store, getSize(array) - 1);
-                return value;
-            }
-        }
-
-        @Specialization(guards = "isLongArray(array)")
-        public Object deleteAtLongFixnum(DynamicObject array, int index,
-                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
-                @Cached("create()") BranchProfile notInBoundsProfile) {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(getSize(array), index, negativeIndexProfile);
-
-            if (normalizedIndex < 0 || normalizedIndex >= getSize(array)) {
-                notInBoundsProfile.enter();
-                return nil();
-            } else {
-                final long[] store = (long[]) getStore(array);
-                final long value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, getSize(array) - normalizedIndex - 1);
-                setStoreAndSize(array, store, getSize(array) - 1);
-                return value;
-            }
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object deleteAtFloat(DynamicObject array, int index,
-                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
-                @Cached("create()") BranchProfile notInBoundsProfile) {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(getSize(array), index, negativeIndexProfile);
-
-            if (normalizedIndex < 0 || normalizedIndex >= getSize(array)) {
-                notInBoundsProfile.enter();
-                return nil();
-            } else {
-                final double[] store = (double[]) getStore(array);
-                final double value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, getSize(array) - normalizedIndex - 1);
-                setStoreAndSize(array, store, getSize(array) - 1);
-                return value;
-            }
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public Object deleteAtObject(DynamicObject array, int index,
-                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
-                @Cached("create()") BranchProfile notInBoundsProfile) {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(getSize(array), index, negativeIndexProfile);
-
-            if (normalizedIndex < 0 || normalizedIndex >= getSize(array)) {
-                notInBoundsProfile.enter();
-                return nil();
-            } else {
-                final Object[] store = (Object[]) getStore(array);
-                final Object value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, getSize(array) - normalizedIndex - 1);
-                setStoreAndSize(array, store, getSize(array) - 1);
-                return value;
-            }
-        }
-
         @Specialization(guards = "isEmptyArray(array)")
         public Object deleteAtNullOrEmpty(DynamicObject array, int index) {
             return nil();
         }
 
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public Object deleteAt(DynamicObject array, int index,
+                @Cached("of(array)") ArrayStrategy strategy,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                @Cached("create()") BranchProfile notInBoundsProfile) {
+            final int size = getSize(array);
+            final int i = ArrayOperations.normalizeIndex(size, index, negativeIndexProfile);
+
+            if (i < 0 || i >= size) {
+                notInBoundsProfile.enter();
+                return nil();
+            } else {
+                final ArrayMirror store = strategy.newMirror(array);
+                final Object value = store.get(i);
+                store.copyTo(store, i + 1, i, size - i - 1);
+                setStoreAndSize(array, store.getArray(), size - 1);
+                return value;
+            }
+        }
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true)
+    @CoreMethod(names = "each", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode toEnumNode;
 
-        private final DynamicObject eachSymbol;
-
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachSymbol = getSymbol("each");
-        }
-
-        @Specialization
-        public Object eachEnumerator(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return toEnumNode.call(frame, array, "to_enum", null, eachSymbol);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -899,92 +790,19 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object eachIntegerFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final int[] store = (int[]) getStore(array);
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public Object eachOther(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror store = strategy.newMirror(array);
 
-            int count = 0;
-
+            int n = 0;
             try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, store[n]);
+                for (; n < getSize(array); n++) {
+                    yield(frame, block, store.get(n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
-            return array;
-        }
-
-        @Specialization(guards = "isLongArray(array)")
-        public Object eachLongFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final long[] store = (long[]) getStore(array);
-
-            int count = 0;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, store[n]);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
-            return array;
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object eachFloat(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final double[] store = (double[]) getStore(array);
-
-            int count = 0;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, store[n]);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
-            return array;
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public Object eachObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final Object[] store = (Object[]) getStore(array);
-
-            int count = 0;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, store[n]);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
+                    getRootNode().reportLoopCount(n);
                 }
             }
 
@@ -993,142 +811,66 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "each_with_index", needsBlock = true)
+    @CoreMethod(names = "each_with_index", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
         @Specialization(guards = "isNullArray(array)")
-        public DynamicObject eachWithEmpty(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+
+        public DynamicObject eachWithIndexNull(DynamicObject array, DynamicObject block) {
             return array;
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object eachWithIndexInt(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final int[] store = (int[]) getStore(array);
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public Object eachWithIndexOther(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror store = strategy.newMirror(array);
 
-            int count = 0;
-
+            int n = 0;
             try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, store[n], n);
+                for (; n < getSize(array); n++) {
+                    yield(frame, block, store.get(n), n);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
+                    LoopNode.reportLoopCount(this, n);
                 }
             }
 
             return array;
-        }
-
-        @Specialization(guards = "isLongArray(array)")
-        public Object eachWithIndexLong(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final long[] store = (long[]) getStore(array);
-
-            int count = 0;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, store[n], n);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
-            return array;
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object eachWithIndexDouble(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final double[] store = (double[]) getStore(array);
-
-            int count = 0;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, store[n], n);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
-            return array;
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public Object eachWithIndexObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final Object[] store = (Object[]) getStore(array);
-
-            int count = 0;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, store[n], n);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
-            return array;
-        }
-
-        @Specialization
-        public Object eachWithIndexObject(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            return ruby("to_enum(:each_with_index)");
         }
 
     }
 
-    @CoreMethod(names = "fill", rest = true, needsBlock = true)
+    @CoreMethod(names = "fill", rest = true, needsBlock = true, raiseIfFrozenSelf = true)
     public abstract static class FillNode extends ArrayCoreMethodNode {
 
-        @Specialization(guards = { "isObjectArray(array)", "args.length == 1" })
-        protected DynamicObject fill(DynamicObject array, Object[] args, NotProvided block) {
+        @Specialization(guards = { "args.length == 1", "strategy.matches(array)", "strategy.accepts(value(args))" }, limit = "ARRAY_STRATEGIES")
+        protected DynamicObject fill(DynamicObject array, Object[] args, NotProvided block,
+                @Cached("of(array, value(args))") ArrayStrategy strategy) {
             final Object value = args[0];
-            final Object[] store = (Object[]) getStore(array);
+            final ArrayMirror store = strategy.newMirror(array);
             final int size = getSize(array);
             for (int i = 0; i < size; i++) {
-                store[i] = value;
+                store.set(i, value);
             }
             return array;
         }
 
+        protected Object value(Object[] args) {
+            return args[0];
+        }
+
         @Specialization
         protected Object fillFallback(VirtualFrame frame, DynamicObject array, Object[] args, NotProvided block,
-                @Cached("createCallNode()") CallDispatchHeadNode callFillInternal) {
+                @Cached("createMethodCall()") CallDispatchHeadNode callFillInternal) {
             return callFillInternal.call(frame, array, "fill_internal", null, args);
         }
 
         @Specialization
         protected Object fillFallback(VirtualFrame frame, DynamicObject array, Object[] args, DynamicObject block,
-                @Cached("createCallNode()") CallDispatchHeadNode callFillInternal) {
+                @Cached("createMethodCall()") CallDispatchHeadNode callFillInternal) {
             return callFillInternal.call(frame, array, "fill_internal", block, args);
-        }
-
-        protected CallDispatchHeadNode createCallNode() {
-            return DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
     }
@@ -1148,57 +890,13 @@ public abstract class ArrayNodes {
             return false;
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public boolean includeIntegerFixnum(VirtualFrame frame, DynamicObject array, Object value) {
-            final int[] store = (int[]) getStore(array);
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public boolean include(VirtualFrame frame, DynamicObject array, Object value,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror store = strategy.newMirror(array);
 
             for (int n = 0; n < getSize(array); n++) {
-                final Object stored = store[n];
-
-                if (equalNode.executeSameOrEqual(frame, stored, value)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        @Specialization(guards = "isLongArray(array)")
-        public boolean includeLongFixnum(VirtualFrame frame, DynamicObject array, Object value) {
-            final long[] store = (long[]) getStore(array);
-
-            for (int n = 0; n < getSize(array); n++) {
-                final Object stored = store[n];
-
-                if (equalNode.executeSameOrEqual(frame, stored, value)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public boolean includeFloat(VirtualFrame frame, DynamicObject array, Object value) {
-            final double[] store = (double[]) getStore(array);
-
-            for (int n = 0; n < getSize(array); n++) {
-                final Object stored = store[n];
-
-                if (equalNode.executeSameOrEqual(frame, stored, value)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public boolean includeObject(VirtualFrame frame, DynamicObject array, Object value) {
-            final Object[] store = (Object[]) getStore(array);
-
-            for (int n = 0; n < getSize(array); n++) {
-                final Object stored = store[n];
+                final Object stored = store.get(n);
 
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     return true;
@@ -1218,169 +916,99 @@ public abstract class ArrayNodes {
         @Child private CallDispatchHeadNode toAryNode;
         @Child private KernelNodes.RespondToNode respondToToAryNode;
         
-        @Specialization
-        public DynamicObject initialize(DynamicObject array, NotProvided size, NotProvided defaultValue, NotProvided block) {
-            return initialize(array, 0, nil(), block);
-        }
+        public abstract DynamicObject executeInitialize(VirtualFrame frame, DynamicObject array, Object size, Object value, Object block);
 
         @Specialization
-        public DynamicObject initialize(DynamicObject array, NotProvided size, NotProvided defaultValue, DynamicObject block) {
-            return initialize(array, 0, nil(), NotProvided.INSTANCE);
-        }
-
-        @Specialization(guards = "size >= 0")
-        public DynamicObject initializeWithSize(DynamicObject array, int size, NotProvided defaultValue, NotProvided block) {
-            return initialize(array, size, nil(), block);
-        }
-
-        @Specialization(guards = "size < 0")
-        public DynamicObject initializeNegative(DynamicObject array, int size, NotProvided defaultValue, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-        }
-
-        @Specialization(guards = "size >= 0")
-        public DynamicObject initialize(DynamicObject array, long size, NotProvided defaultValue, NotProvided block) {
-            if (size > Integer.MAX_VALUE) {
-                throw new RaiseException(coreExceptions().argumentError("array size too big", this));
-            }
-            return initialize(array, (int) size, nil(), block);
-        }
-
-        @Specialization(guards = "size < 0")
-        public DynamicObject initializeNegative(DynamicObject array, long size, NotProvided defaultValue, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-        }
-
-        @Specialization(guards = "size >= 0")
-        public DynamicObject initialize(DynamicObject array, int size, int defaultValue, NotProvided block) {
-            final int[] store = new int[size];
-            if (defaultValue != 0) {
-                Arrays.fill(store, defaultValue);
-            }
-            setStoreAndSize(array, store, size);
+        public DynamicObject initializeNoArgs(DynamicObject array, NotProvided size, NotProvided unusedValue, NotProvided block) {
+            setStoreAndSize(array, null, 0);
             return array;
         }
 
-        @Specialization(guards = "size < 0")
-        public DynamicObject initializeNegative(DynamicObject array, int size, int defaultValue, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-        }
-
-        @Specialization(guards = "size >= 0")
-        public DynamicObject initialize(DynamicObject array, int size, long defaultValue, NotProvided block) {
-            final long[] store = new long[size];
-            if (defaultValue != 0L) {
-                Arrays.fill(store, defaultValue);
-            }
-            setStoreAndSize(array, store, size);
+        @Specialization
+        public DynamicObject initializeOnlyBlock(DynamicObject array, NotProvided size, NotProvided unusedValue, DynamicObject block) {
+            setStoreAndSize(array, null, 0);
             return array;
         }
 
+        @TruffleBoundary
         @Specialization(guards = "size < 0")
-        public DynamicObject initializeNegative(DynamicObject array, int size, long defaultValue, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
+        public DynamicObject initializeNegativeIntSize(DynamicObject array, int size, Object unusedValue, Object maybeBlock) {
             throw new RaiseException(coreExceptions().argumentError("negative array size", this));
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "size < 0")
+        public DynamicObject initializeNegativeLongSize(DynamicObject array, long size, Object unusedValue, Object maybeBlock) {
+            throw new RaiseException(coreExceptions().argumentError("negative array size", this));
+        }
+
+        protected static final long MAX_INT = Integer.MAX_VALUE;
+
+        @TruffleBoundary
+        @Specialization(guards = "size >= MAX_INT")
+        public DynamicObject initializeSizeTooBig(DynamicObject array, long size, NotProvided unusedValue, NotProvided block) {
+            throw new RaiseException(coreExceptions().argumentError("array size too big", this));
         }
 
         @Specialization(guards = "size >= 0")
-        public DynamicObject initialize(DynamicObject array, int size, double defaultValue, NotProvided block) {
-            final double[] store = new double[size];
-            if (defaultValue != 0.0) {
-                Arrays.fill(store, defaultValue);
-            }
-            setStoreAndSize(array, store, size);
-            return array;
-        }
-
-        @Specialization(guards = "size < 0")
-        public DynamicObject initializeNegative(DynamicObject array, int size, double defaultValue, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-        }
-
-        @Specialization(guards = { "wasProvided(defaultValue)", "size >= 0" })
-        public DynamicObject initialize(DynamicObject array, int size, Object defaultValue, NotProvided block) {
+        public DynamicObject initializeWithSizeNoValue(DynamicObject array, int size, NotProvided unusedValue, NotProvided block) {
             final Object[] store = new Object[size];
-            Arrays.fill(store, defaultValue);
+            Arrays.fill(store, nil());
             setStoreAndSize(array, store, size);
             return array;
         }
 
-        @Specialization(guards = { "wasProvided(defaultValue)", "size < 0" })
-        public DynamicObject initializeNegative(DynamicObject array, int size, Object defaultValue, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-        }
-
-        @Specialization(guards = { "wasProvided(sizeObject)", "!isInteger(sizeObject)", "wasProvided(defaultValue)" })
-        public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object sizeObject, Object defaultValue, NotProvided block) {
-            int size = toInt(frame, sizeObject);
-            if (size < 0) {
-                return initializeNegative(array, size, defaultValue, NotProvided.INSTANCE);
-            } else {
-                return initialize(array, size, defaultValue, NotProvided.INSTANCE);
+        @Specialization(guards = { "size >= 0", "wasProvided(value)", "strategy.specializesFor(value)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject initializeWithSizeAndValue(DynamicObject array, int size, Object value, NotProvided block,
+                @Cached("forValue(value)") ArrayStrategy strategy,
+                @Cached("createBinaryProfile()") ConditionProfile needsFill) {
+            final ArrayMirror store = strategy.newArray(size);
+            if (needsFill.profile(size > 0 && store.get(0) != value)) {
+                for (int i = 0; i < size; i++) {
+                    store.set(i, value);
+                }
             }
-
+            setStoreAndSize(array, store.getArray(), size);
+            return array;
         }
 
-        @Specialization(guards = { "wasProvided(defaultValue)", "size >= 0" })
-        public Object initialize(VirtualFrame frame, DynamicObject array, int size, Object defaultValue, DynamicObject block,
-                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
-            return initializeBlock(frame, array, size, NotProvided.INSTANCE, block, arrayBuilder);
+        @Specialization(guards = { "wasProvided(sizeObject)", "!isInteger(sizeObject)", "!isLong(sizeObject)", "wasProvided(value)" })
+        public DynamicObject initializeSizeOther(VirtualFrame frame, DynamicObject array, Object sizeObject, Object value, NotProvided block) {
+            int size = toInt(frame, sizeObject);
+            return executeInitialize(frame, array, size, value, block);
         }
 
-        @Specialization(guards = { "wasProvided(defaultValue)", "size < 0" })
-        public Object initializeNegative(VirtualFrame frame, DynamicObject array, int size, Object defaultValue, DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-        }
+        // With block
 
         @Specialization(guards = "size >= 0")
-        public Object initializeBlock(VirtualFrame frame, DynamicObject array, int size, NotProvided defaultValue, DynamicObject block,
+        public Object initializeBlock(VirtualFrame frame, DynamicObject array, int size, Object unusedValue, DynamicObject block,
                 @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             Object store = arrayBuilder.start(size);
 
-            int count = 0;
             int n = 0;
             try {
                 for (; n < size; n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
                     store = arrayBuilder.appendValue(store, n, yield(frame, block, n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
+                    LoopNode.reportLoopCount(this, n);
                 }
-
                 setStoreAndSize(array, arrayBuilder.finish(store, n), n);
             }
 
             return array;
         }
 
-        @Specialization(guards = "size < 0")
-        public Object initializeNegative(VirtualFrame frame, DynamicObject array, int size, NotProvided defaultValue, DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-        }
-
         @Specialization(guards = "isRubyArray(copy)")
-        public DynamicObject initializeFromArray(DynamicObject array, DynamicObject copy, NotProvided defaultValue, Object maybeBlock,
+        public DynamicObject initializeFromArray(DynamicObject array, DynamicObject copy, NotProvided unusedValue, Object maybeBlock,
                 @Cached("createReplaceNode()") ReplaceNode replaceNode) {
             replaceNode.executeReplace(array, copy);
             return array;
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isLong(object)", "wasProvided(object)", "!isRubyArray(object)" })
-        public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object object, NotProvided defaultValue, NotProvided block,
-                @Cached("createReplaceNode()") ReplaceNode replaceNode) {
-
+        public DynamicObject initialize(VirtualFrame frame, DynamicObject array, Object object, NotProvided unusedValue, NotProvided block) {
             DynamicObject copy = null;
             if (respondToToAry(frame, object)) {
                 Object toAryResult = callToAry(frame, object);
@@ -1390,14 +1018,10 @@ public abstract class ArrayNodes {
             }
 
             if (copy != null) {
-                return initializeFromArray(array, copy, NotProvided.INSTANCE, NotProvided.INSTANCE, replaceNode);
+                return executeInitialize(frame, array, copy, NotProvided.INSTANCE, NotProvided.INSTANCE);
             } else {
                 int size = toInt(frame, object);
-                if (size < 0) {
-                    return initializeNegative(array, size, NotProvided.INSTANCE, NotProvided.INSTANCE);
-                } else {
-                    return initializeWithSize(array, size, NotProvided.INSTANCE, NotProvided.INSTANCE);
-                }
+                return executeInitialize(frame, array, size, NotProvided.INSTANCE, NotProvided.INSTANCE);
             }
         }
 
@@ -1438,64 +1062,28 @@ public abstract class ArrayNodes {
     })
     @ImportStatic(ArrayGuards.class)
     public abstract static class InitializeCopyNode extends CoreMethodNode {
-        // TODO(cs): what about allocationSite ?
 
         @CreateCast("from") public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeGen.create(null, null, other);
         }
 
-        @Specialization(guards = {"isRubyArray(from)", "isNullArray(from)"})
-        public DynamicObject initializeCopyNull(DynamicObject self, DynamicObject from) {
+        @Specialization
+        public DynamicObject initializeCopy(DynamicObject self, DynamicObject from,
+                @Cached("createReplaceNode()") ReplaceNode replaceNode) {
             if (self == from) {
                 return self;
             }
-            setStoreAndSize(self, null, 0);
+            replaceNode.executeReplace(self, from);
             return self;
         }
 
-        @Specialization(guards = {"isRubyArray(from)", "isIntArray(from)"})
-        public DynamicObject initializeCopyIntegerFixnum(DynamicObject self, DynamicObject from) {
-            if (self == from) {
-                return self;
-            }
-            final int[] store = (int[]) getStore(from);
-            setStoreAndSize(self, store.clone(), getSize(from));
-            return self;
-        }
-
-        @Specialization(guards = {"isRubyArray(from)", "isLongArray(from)"})
-        public DynamicObject initializeCopyLongFixnum(DynamicObject self, DynamicObject from) {
-            if (self == from) {
-                return self;
-            }
-            final long[] store = (long[]) getStore(from);
-            setStoreAndSize(self, store.clone(), getSize(from));
-            return self;
-        }
-
-        @Specialization(guards = {"isRubyArray(from)", "isDoubleArray(from)"})
-        public DynamicObject initializeCopyFloat(DynamicObject self, DynamicObject from) {
-            if (self == from) {
-                return self;
-            }
-            final double[] store = (double[]) getStore(from);
-            setStoreAndSize(self, store.clone(), getSize(from));
-            return self;
-        }
-
-        @Specialization(guards = {"isRubyArray(from)", "isObjectArray(from)"})
-        public DynamicObject initializeCopyObject(DynamicObject self, DynamicObject from) {
-            if (self == from) {
-                return self;
-            }
-            final Object[] store = (Object[]) getStore(from);
-            setStoreAndSize(self, ArrayUtils.copy(store), getSize(from));
-            return self;
+        protected ReplaceNode createReplaceNode() {
+            return ReplaceNodeFactory.create(null, null);
         }
 
     }
 
-    @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, optional = 2)
+    @CoreMethod(names = { "inject", "reduce" }, needsBlock = true, optional = 2)
     @ImportStatic(ArrayGuards.class)
     public abstract static class InjectNode extends YieldingCoreMethodNode {
 
@@ -1505,6 +1093,8 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
             dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
         }
+
+        // With block
 
         @Specialization(guards = { "isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectEmptyArray(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
@@ -1516,63 +1106,37 @@ public abstract class ArrayNodes {
             return nil();
         }
 
-        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectIntegerFixnum(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayReflector.reflect((int[]) getStore(array)), array, initial, block, 0);
+        @Specialization(guards = { "strategy.matches(array)", "!isEmptyArray(array)", "wasProvided(initial)" }, limit = "ARRAY_STRATEGIES")
+        public Object injectWithInitial(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror store = strategy.newMirror(array);
+            return injectBlockHelper(frame, array, block, store, initial, 0);
         }
 
-        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)" })
-        public Object injectIntegerFixnumNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayReflector.reflect((int[]) getStore(array));
-
-            return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
+        @Specialization(guards = { "strategy.matches(array)", "!isEmptyArray(array)" }, limit = "ARRAY_STRATEGIES")
+        public Object injectNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror store = strategy.newMirror(array);
+            return injectBlockHelper(frame, array, block, store, store.get(0), 1);
         }
 
-        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectLongFixnum(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayReflector.reflect((long[]) getStore(array)), array, initial, block, 0);
+        public Object injectBlockHelper(VirtualFrame frame, DynamicObject array, DynamicObject block, ArrayMirror store, Object initial, int start) {
+            Object accumulator = initial;
+            int n = start;
+            try {
+                for (; n < getSize(array); n++) {
+                    accumulator = yield(frame, block, accumulator, store.get(n));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(n);
+                }
+            }
+
+            return accumulator;
         }
 
-        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)" })
-        public Object injectLongFixnumNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayReflector.reflect((long[]) getStore(array));
-
-            return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
-        }
-
-        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectFloat(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayReflector.reflect((double[]) getStore(array)), array, initial, block, 0);
-        }
-
-        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)" })
-        public Object injectFloatNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayReflector.reflect((double[]) getStore(array));
-
-            return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
-        }
-
-        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectObject(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayReflector.reflect((Object[]) getStore(array)), array, initial, block, 0);
-        }
-
-        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)" })
-        public Object injectObjectNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayReflector.reflect((Object[]) getStore(array));
-
-            return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
-        }
-
-        @Specialization(guards = { "isNullArray(array)", "wasProvided(initial)" })
-        public Object injectNull(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return initial;
-        }
-
-        @Specialization(guards = "isNullArray(array)")
-        public Object injectNullNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            return nil();
-        }
+        // With Symbol
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolEmptyArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
@@ -1580,100 +1144,37 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isEmptyArray(array)" })
-        public Object injectSymbolEmptyArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
+        public Object injectSymbolEmptyArrayNoInitial(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
             return nil();
         }
 
-        @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectSymbolIntArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayReflector.reflect((int[]) getStore(array)), array, initial, symbol, 0);
+        @Specialization(guards = { "isRubySymbol(symbol)", "strategy.matches(array)", "!isEmptyArray(array)", "wasProvided(initial)" }, limit = "ARRAY_STRATEGIES")
+        public Object injectSymbolWithInitial(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror store = strategy.newMirror(array);
+            return injectSymbolHelper(frame, array, symbol, store, initial, 0);
         }
 
-        @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)" })
-        public Object injectSymbolIntArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayReflector.reflect((int[]) getStore(array));
-
-            return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
+        @Specialization(guards = { "isRubySymbol(symbol)", "strategy.matches(array)", "!isEmptyArray(array)" }, limit = "ARRAY_STRATEGIES")
+        public Object injectSymbolNoInitial(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror store = strategy.newMirror(array);
+            return injectSymbolHelper(frame, array, symbol, store, store.get(0), 1);
         }
 
-        @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectSymbolLongArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayReflector.reflect((long[]) getStore(array)), array, initial, symbol, 0);
-        }
-
-        @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)" })
-        public Object injectSymbolLongArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayReflector.reflect((long[]) getStore(array));
-
-            return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
-        }
-
-        @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectSymbolDoubleArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayReflector.reflect((double[]) getStore(array)), array, initial, symbol, 0);
-        }
-
-        @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)" })
-        public Object injectSymbolDoubleArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayReflector.reflect((double[]) getStore(array));
-
-            return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
-        }
-
-        @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectSymbolObjectArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayReflector.reflect((Object[]) getStore(array)), array, initial, symbol, 0);
-        }
-
-        @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)" })
-        public Object injectSymbolObjectArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayReflector.reflect((Object[]) getStore(array));
-
-            return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
-        }
-
-        private Object injectHelper(VirtualFrame frame, ArrayMirror mirror, DynamicObject array, Object initial, DynamicObject block, int startIndex) {
-            int count = 0;
-
+        public Object injectSymbolHelper(VirtualFrame frame, DynamicObject array, DynamicObject symbol, ArrayMirror store, Object initial, int start) {
             Object accumulator = initial;
+            int n = start;
 
             try {
-                for (int n = startIndex; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    accumulator = yield(frame, block, accumulator, mirror.get(n));
+                for (; n < getSize(array); n++) {
+                    accumulator = dispatch.call(frame, accumulator, symbol, null, store.get(n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
+                    LoopNode.reportLoopCount(this, n);
                 }
             }
-
-            return accumulator;
-        }
-
-
-        private Object injectSymbolHelper(VirtualFrame frame, ArrayMirror mirror, DynamicObject array, Object initial, DynamicObject symbol, int startIndex) {
-            int count = 0;
-
-            Object accumulator = initial;
-
-            try {
-                for (int n = startIndex; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    accumulator = dispatch.call(frame, accumulator, symbol, null, mirror.get(n));
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
             return accumulator;
         }
 

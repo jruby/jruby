@@ -116,7 +116,8 @@ public class CoreExceptions {
     // RuntimeError
 
     @TruffleBoundary
-    public DynamicObject frozenError(String className, Node currentNode) {
+    public DynamicObject frozenError(Object object, Node currentNode) {
+        String className = Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(object)).getName();
         return runtimeError(String.format("can't modify frozen %s", className), currentNode);
     }
 

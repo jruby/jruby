@@ -10,6 +10,7 @@
 
 package org.jruby.truffle.language.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -18,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 
 @NodeChild(value = "child")
 public abstract class IsFrozenNode extends RubyNode {
@@ -27,6 +29,13 @@ public abstract class IsFrozenNode extends RubyNode {
     }
 
     public abstract boolean executeIsFrozen(Object object);
+
+    public void raiseIfFrozen(Object object) {
+        if (executeIsFrozen(object)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(coreExceptions().frozenError(object, this));
+        }
+    }
 
     @Specialization
     public boolean isFrozen(boolean object) {

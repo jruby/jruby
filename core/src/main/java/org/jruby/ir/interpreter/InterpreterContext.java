@@ -24,12 +24,12 @@ public class InterpreterContext {
     protected Instr[] instructions;
 
     // Cached computed fields
-    private final boolean hasExplicitCallProtocol;
-    private final boolean pushNewDynScope;
-    private final boolean reuseParentDynScope;
-    private final boolean popDynScope;
-    private final boolean receivesKeywordArguments;
-    private final boolean metaClassBodyScope;
+    private boolean hasExplicitCallProtocol;
+    private boolean pushNewDynScope;
+    private boolean reuseParentDynScope;
+    private boolean popDynScope;
+    private boolean receivesKeywordArguments;
+    private boolean metaClassBodyScope;
 
     private final static InterpreterEngine BODY_INTERPRETER = new BodyInterpreterEngine();
     private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
@@ -46,7 +46,7 @@ public class InterpreterContext {
             }
             // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
             // For impl testing - engine = determineInterpreterEngine(scope);
-            engine = instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER;
+            setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
         }
         return engine;
     }
@@ -64,14 +64,7 @@ public class InterpreterContext {
         setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
-        this.temporaryVariablecount = scope.getTemporaryVariablesCount();
         this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
-        this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
-        // FIXME: Centralize this out of InterpreterContext
-        this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
-        this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
-        this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
     }
 
     public InterpreterContext(IRScope scope, Callable<List<Instr>> instructions) throws Exception {
@@ -79,6 +72,9 @@ public class InterpreterContext {
         this.scope = scope;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
+    }
+
+    private void retrieveFlags() {
         this.temporaryVariablecount = scope.getTemporaryVariablesCount();
         this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         // FIXME: Centralize this out of InterpreterContext
@@ -242,5 +238,7 @@ public class InterpreterContext {
 
     public void setEngine(InterpreterEngine engine) {
         this.engine = engine;
+
+        retrieveFlags();
     }
 }

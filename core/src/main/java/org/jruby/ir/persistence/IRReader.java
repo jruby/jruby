@@ -65,6 +65,13 @@ public class IRReader implements IRPersistenceValues {
             });
         }
 
+        // Run through all scopes again and ensure they've calculated flags.
+        // This also forces lazy instrs from above to eagerly decode.
+        for (KeyValuePair<IRScope, Integer> pair: scopes) {
+            final IRScope scope = pair.getKey();
+            scope.computeScopeFlags();
+        }
+
         return scopes[0].getKey(); // topmost scope;
     }
 
