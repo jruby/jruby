@@ -51,8 +51,10 @@ import jnr.posix.Timeval;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.rope.BytesVisitor;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
@@ -375,20 +377,23 @@ public abstract class IOPrimitiveNodes {
                 return rope.byteLength();
             }
 
-            // TODO (eregon, 11 May 2015): review consistency under concurrent modification
-            final ByteBuffer buffer = ByteBuffer.wrap(rope.getBytes(), 0, rope.byteLength());
+            RopeOperations.visitBytes(rope, new BytesVisitor() {
 
-            int total = 0;
+                @Override
+                public void accept(byte[] bytes, int offset, int length) {
+                    final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
 
-            while (buffer.hasRemaining()) {
-                getContext().getSafepointManager().poll(this);
+                    while (buffer.hasRemaining()) {
+                        getContext().getSafepointManager().poll(IOWritePrimitiveNode.this);
 
-                int written = ensureSuccessful(posix().write(fd, buffer, buffer.remaining()));
-                buffer.position(buffer.position() + written);
-                total += written;
-            }
+                        int written = ensureSuccessful(posix().write(fd, buffer, buffer.remaining()));
+                        buffer.position(buffer.position() + written);
+                    }
+                }
 
-            return total;
+            });
+
+            return rope.byteLength();
         }
 
     }
