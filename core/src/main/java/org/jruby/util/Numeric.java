@@ -507,18 +507,24 @@ public class Numeric {
                 y >>= 1;
             }
             
-            BigInteger bigX = BigInteger.valueOf(x);
-            BigInteger bigXZ = bigX.multiply(bigX);
-            if (bigXZ.divide(bigX).longValue() != z) {
+            if (multiplyOverflows(x, z)) {
                 IRubyObject v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, x))).op_pow(context, RubyFixnum.newFixnum(runtime, y));
                 if (z != 1) v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, neg ? -z : z))).op_mul19(context, v);
                 return v;
             }
-            z = bigXZ.longValue();
+            z = x * z;
         } while(--y != 0);
         if (neg) z = -z;
         return RubyFixnum.newFixnum(runtime, z);
     }
+
+    public static boolean multiplyOverflows(long a, long b) {
+            return a == 0 ? false :
+                    a == -1 ? b < -Long.MAX_VALUE :
+                            a > 0 ? (b > 0 ? Long.MAX_VALUE / a < b : Long.MIN_VALUE / a > b) :
+                                    (b > 0 ? Long.MIN_VALUE / a < b : Long.MAX_VALUE / a > b);
+    }
+
 
     public static boolean k_exact_p(IRubyObject x) {
         return !(x instanceof RubyFloat);
