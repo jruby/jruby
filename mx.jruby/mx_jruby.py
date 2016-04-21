@@ -9,9 +9,10 @@ class MavenProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
         mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
         self.javaCompliance = "1.7"
+        self.subdir = args['subDir']
 
     def output_dir(self):
-        return os.path.join(_suite.dir, "truffle", "target", "classes")
+        return os.path.join(_suite.dir, self.subdir)
 
     def source_gen_dir(self):
         return None
@@ -67,6 +68,7 @@ class MavenBuildTask(mx.BuildTask):
         mx.run_maven(['-Pcomplete', '-DskipTests', '-Dtruffle.version=' + truffle_commit], cwd=rubyDir)
     #    mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
+        shutil.rmtree(os.path.join(_suite.dir, "lib", "target"))
 
     def clean(self, forBuild=False):
         if forBuild:

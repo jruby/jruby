@@ -35,13 +35,19 @@ suite = {
     # ------------- Projects -------------
 
     "jruby-truffle" : {
-      "subDir" : "",
+      "subDir" : "truffle/target/classes",
       "class" : "MavenProject",
       "sourceDirs" : ["src/main/java"],
       "dependencies": [
         "truffle:TRUFFLE_API",
         "truffle:TRUFFLE_DEBUG",
       ],
+    },
+    "jruby-lib" : {
+      "subDir" : "lib",
+      "class" : "MavenProject",
+      "sourceDirs" : ["src/main/java"],
+      "dependencies": [],
     },
 
   },
@@ -66,6 +72,16 @@ suite = {
           "truffle:TRUFFLE_DEBUG",
         ],
         "description" : "JRuby+Truffle",
+    },
+    "RUBY-ZIP": {
+        "dependencies": [
+            "jruby-lib",
+        ],
+        "exclude" : [
+          "truffle:JLINE",
+        ],
+        "distDependencies" : [],
+        "description" : "JRuby+Truffle Native Libs",
     },
 
   },
