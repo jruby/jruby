@@ -9,13 +9,18 @@ class MavenProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
         mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
         self.javaCompliance = "1.7"
-        self.output_dir = _suite.dir
+
+    def output_dir(self):
+        return os.path.join(_suite.dir, "truffle", "target", "classes")
+
+    def source_gen_dir(self):
+        return None
 
     def getOutput(self, replaceVar=False):
-        return mx.NativeProject.getOutput(self, replaceVar=replaceVar)
+        return os.path.join(_suite.dir, "target")
 
     def getResults(self, replaceVar=False):
-        return mx.NativeProject.getResults(self, replaceVar=replaceVar)
+        return mx.Project.getResults(self, replaceVar=replaceVar)
 
     def getBuildTask(self, args):
         return MavenBuildTask(self, args, None, None)

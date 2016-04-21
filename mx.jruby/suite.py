@@ -51,6 +51,8 @@ suite = {
         "truffle:JLINE",
       ],
       "distDependencies" : [
+        "truffle:TRUFFLE_API",
+        "truffle:TRUFFLE_DEBUG",
       ],
       "description" : "JRuby+Truffle",
     },
