@@ -802,7 +802,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(n);
+                    LoopNode.reportLoopCount(this, n);
                 }
             }
 
@@ -1129,7 +1129,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(n);
+                    LoopNode.reportLoopCount(this, n);
                 }
             }
 
