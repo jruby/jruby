@@ -52,7 +52,7 @@ module Utilities
 
   def self.find_graal
     graal_locations do |location|
-      return location if File.executable?(location)
+      return location if File.executable?(File.expand_path(location))
     end
     raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
   end
