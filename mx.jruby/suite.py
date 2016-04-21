@@ -1,7 +1,7 @@
 suite = {
   "mxversion" : "5.6.6",
   "name" : "jrubytruffle",
-  "defaultLicense" : "GPLv2-CPE", # FIXME
+  "defaultLicense" : "GPLv2", # FIXME
 
   "imports" : {
     "suites": [
@@ -16,7 +16,20 @@ suite = {
             },
     ],
   },
-
+  "libraries": {
+    "RUBY_COMPLETE": {
+        "path": "maven/jruby-complete/target/jruby-complete-graal-vm.jar",
+        "sha1": "NOCHECK",
+        "optional" :"true",
+        "license" : "GPLv2"
+    },
+    "RUBY_TRUFFLE": {
+        "path": "lib/jruby-truffle.jar",
+        "sha1": "NOCHECK",
+        "optional" :"true",
+        "license" : "GPLv2"
+    },
+  },
   "projects" : {
 
     # ------------- Projects -------------
@@ -42,19 +55,17 @@ suite = {
 
     # ------------- Distributions -------------
 
-    "JRUBY_TRUFFLE" : {
-      "javaCompliance" : "1.7",
-      "dependencies" : [
-        "jruby-truffle",
-      ],
-      "exclude" : [
-        "truffle:JLINE",
-      ],
-      "distDependencies" : [
-        "truffle:TRUFFLE_API",
-        "truffle:TRUFFLE_DEBUG",
-      ],
-      "description" : "JRuby+Truffle",
+    "RUBY": {
+        "mainClass": "org.jruby.Main",
+        "dependencies": ["jruby-truffle", "RUBY_COMPLETE", "RUBY_TRUFFLE"],
+        "exclude" : [
+          "truffle:JLINE",
+        ],
+        "distDependencies" : [
+          "truffle:TRUFFLE_API",
+          "truffle:TRUFFLE_DEBUG",
+        ],
+        "description" : "JRuby+Truffle",
     },
 
   },
