@@ -9,13 +9,16 @@ project 'JRuby Truffle' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
-              'truffle.version' => '0.12',
+              'truffle.version' => 'd0afa11d368d07000b5ec8c9e23494798a175ef1-SNAPSHOT',
               'jruby.basedir' => '${basedir}/..' )
 
   jar 'org.yaml:snakeyaml:1.14'
   jar 'org.antlr:antlr4-runtime:4.5.1-1'
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
+
+  repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
+              :id => 'truffle' )
 
   truffle_version = '${truffle.version}'
   jar 'com.oracle.truffle:truffle-api:' + truffle_version
