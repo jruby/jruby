@@ -2,6 +2,7 @@ import mx
 import os
 from os.path import join, exists
 import subprocess
+import shutil
 
 _suite = mx.suite('jruby')
 
