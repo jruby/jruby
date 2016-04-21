@@ -4,7 +4,7 @@
 
 M2REPO = "#{Dir.home}/.m2/repository"
 
-TRUFFLE_VERSION = "0.11"
+TRUFFLE_VERSION = "0.12"
 
 TRUFFLEJARS = %W[
   com/oracle/truffle/truffle-api/#{TRUFFLE_VERSION}/truffle-api-#{TRUFFLE_VERSION}.jar
