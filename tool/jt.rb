@@ -39,7 +39,7 @@ module Utilities
 
   def self.graal_locations
     from_env = ENV['GRAAL_BIN']
-    yield from_env if from_env
+    yield File.expand_path(from_env) if from_env
 
     rel_java_bin = "bin/java" # "jre/bin/javao"
     %w[dk re].each { |kind|
@@ -52,7 +52,7 @@ module Utilities
 
   def self.find_graal
     graal_locations do |location|
-      return location if File.executable?(File.expand_path(location))
+      return location if File.executable?(location)
     end
     raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
   end
