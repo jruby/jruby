@@ -83,6 +83,9 @@ public abstract class JavaLang {
         @JRubyMethod
         public static IRubyObject each(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
+            if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
+                return runtime.getEnumerator().callMethod("new", self, runtime.newSymbol("each"));
+            }
             java.lang.Iterable iterable = unwrapJavaObject(self);
             java.util.Iterator iterator = iterable.iterator();
             while ( iterator.hasNext() ) {
@@ -95,6 +98,9 @@ public abstract class JavaLang {
         @JRubyMethod
         public static IRubyObject each_with_index(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
+            if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
+                return runtime.getEnumerator().callMethod("new", self, runtime.newSymbol("each_with_index"));
+            }
             java.lang.Iterable iterable = unwrapJavaObject(self);
             java.util.Iterator iterator = iterable.iterator();
             final boolean arity2 = block.getSignature().arity() == Arity.TWO_ARGUMENTS;

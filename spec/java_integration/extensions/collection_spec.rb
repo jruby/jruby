@@ -17,6 +17,15 @@ describe "Collection Ruby extensions" do
     expect(data).to eq @data
   end
 
+  it 'iterates with an Enumerator on #each' do
+    enum = java.util.concurrent.LinkedBlockingQueue.new(@data).each
+    expect( enum.next ).to eq 'foo'
+    expect( enum.next ).to eq 'baz'
+    expect( enum.next ).to eq 'bar'
+    enum.next
+    expect { enum.next }.to raise_error(StopIteration)
+  end
+
   it 'iterates with index' do
     set = java.util.LinkedHashSet.new
     @data.each { |elem| set.add elem }
@@ -28,6 +37,15 @@ describe "Collection Ruby extensions" do
     data = []
     java.util.concurrent.LinkedBlockingQueue.new.each_with_index { |elem| data << elem }
     expect(data).to eq []
+  end
+
+  it 'iterates with an Enumerator on #each_with_index' do
+    enum = java.util.LinkedHashSet.new(@data).each_with_index
+    expect( enum.next[0] ).to eq 'foo'
+    expect( enum.next[1] ).to eq 1
+    expect( enum.next[0] ).to eq 'bar'
+    expect( enum.next[1] ).to eq 3
+    expect { enum.next }.to raise_error(StopIteration)
   end
 
   it 'supports (Enumerable\'s) first' do
