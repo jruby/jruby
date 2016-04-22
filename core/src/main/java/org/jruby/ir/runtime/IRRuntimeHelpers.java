@@ -1886,7 +1886,7 @@ public class IRRuntimeHelpers {
                 }
             }
 
-            refinedScope = refinedScope.getPreviousCRefScope();
+            refinedScope = refinedScope.getEnclosingScope();
         }
         return method;
     }
