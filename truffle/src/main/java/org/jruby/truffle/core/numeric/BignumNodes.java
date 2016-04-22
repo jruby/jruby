@@ -131,7 +131,14 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object div(DynamicObject a, long b) {
-            return fixnumOrBignum(Layouts.BIGNUM.getValue(a).divide(BigInteger.valueOf(b)));
+            final BigInteger bBigInt = BigInteger.valueOf(b);
+            final BigInteger aBigInt = Layouts.BIGNUM.getValue(a);
+            final BigInteger result = aBigInt.divide(bBigInt);
+            if (result.signum() == -1 && !aBigInt.mod(bBigInt.abs()).equals(BigInteger.ZERO)) {
+                return fixnumOrBignum(result.subtract(BigInteger.ONE));
+            } else {
+                return fixnumOrBignum(result);
+            }
         }
 
         @Specialization
@@ -141,7 +148,14 @@ public abstract class BignumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public Object div(DynamicObject a, DynamicObject b) {
-            return fixnumOrBignum(Layouts.BIGNUM.getValue(a).divide(Layouts.BIGNUM.getValue(b)));
+            final BigInteger aBigInt = Layouts.BIGNUM.getValue(a);
+            final BigInteger bBigInt = Layouts.BIGNUM.getValue(b);
+            final BigInteger result = aBigInt.divide(bBigInt);
+            if (result.signum() == -1 && !aBigInt.mod(bBigInt.abs()).equals(BigInteger.ZERO)) {
+                return fixnumOrBignum(result.subtract(BigInteger.ONE));
+            } else {
+                return fixnumOrBignum(result);
+            }
         }
 
     }

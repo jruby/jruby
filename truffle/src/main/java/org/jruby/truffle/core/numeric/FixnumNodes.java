@@ -350,19 +350,25 @@ public abstract class FixnumNodes {
             return a / b;
         }
 
-        @Specialization(guards = "isRubyBignum(b)")
+        @Specialization(guards = {"!isLongMinValue(a)", "isRubyBignum(b)"})
         public int div(long a, DynamicObject b) {
-            if (a == Long.MIN_VALUE) {
-                // -Long.MIN_VALUE is a BigNum so a special case is needed
-                return BigInteger.valueOf(a).divide(Layouts.BIGNUM.getValue(b)).intValue();
-            } else {
-                return 0;
-            }
+            assert Layouts.BIGNUM.getValue(b).compareTo(BigInteger.valueOf(Long.MAX_VALUE)) == 1 ||
+                Layouts.BIGNUM.getValue(b).compareTo(BigInteger.valueOf(Long.MIN_VALUE)) == -1;
+            return 0;
+        }
+
+        @Specialization(guards = {"isLongMinValue(a)", "isRubyBignum(b)"})
+        public int divEdgeCase(long a, DynamicObject b) {
+            return -(Layouts.BIGNUM.getValue(b).signum());
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
         public Object divCoerced(VirtualFrame frame, long a, DynamicObject b) {
             return ruby("redo_coerced :/, b", "b", b);
+        }
+
+        public static boolean isLongMinValue(long a) {
+            return a == Long.MIN_VALUE;
         }
 
     }
