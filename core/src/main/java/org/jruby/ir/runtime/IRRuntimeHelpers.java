@@ -1873,16 +1873,19 @@ public class IRRuntimeHelpers {
 
             if (!refinements.isEmpty()) {
 
-                refinement = refinements.get(selfType);
+                for (Map.Entry<RubyClass, RubyModule> refinementEntry : refinements.entrySet()) {
 
-                if (refinement != null) {
-                    method = refinement.searchMethod(methodName);
+                    if (selfType.isKindOfModule(refinementEntry.getKey())) {
 
-                    if (!method.isUndefined()) {
-                        break;
+                        refinement = refinementEntry.getValue();
+                        method = refinement.searchMethod(methodName);
+
+                        if (!method.isUndefined()) {
+                            break;
+                        }
+
+                        method = null;
                     }
-
-                    method = null;
                 }
             }
 
