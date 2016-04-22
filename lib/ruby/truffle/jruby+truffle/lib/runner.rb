@@ -137,7 +137,8 @@ class JRubyTruffleRunner
             exclude_pattern:  ['--exclude-pattern REGEXP', 'Files matching the regexp will not be required by --require-pattern (applies to subsequent --require-pattern options)', ADD_TO_ARRAY, []],
             load_path:        ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', ADD_TO_ARRAY, []],
             executable:       ['-S', '--executable NAME', 'finds and runs an executable of a gem', STORE_NEW_VALUE, nil],
-            jexception:       ['--jexception', 'print Java exceptions', STORE_NEW_VALUE, false]
+            jexception:       ['--jexception', 'print Java exceptions', STORE_NEW_VALUE, false],
+            environment:      ['--environment NAME,VALUE', Array, 'Set environment variables', MERGE_TO_HASH, {}]
         },
         ci:     {
             batch:      ['--batch FILE', 'Run batch of ci tests supplied in a file. One ci command options per line. If FILE is in or stdin it reads from $stdin.',
@@ -471,8 +472,9 @@ class JRubyTruffleRunner
         *@options[:run][:require].flat_map { |v| ['-r', v] }
     ].compact
 
-    env            = {}
+    env            = @options[:run][:environment]
     env['JAVACMD'] = @options[:global][:graal_path] if @options[:run][:graal]
+    env.each { |k, v| env[k] = v.to_s }
 
     cmd = [(env unless env.empty?),
            @options[:run][:interpreter_path].to_s,
