@@ -18,7 +18,7 @@ suite = {
   },
   "libraries": {
     "RUBY_COMPLETE": {
-        "path": "maven/jruby-complete/target/jruby-complete-graal-vm.jar",
+        "path": "lib/jruby.jar",
         "sha1": "NOCHECK",
         "optional" :"true",
         "license" : "GPLv2"
