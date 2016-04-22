@@ -352,7 +352,12 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public int div(long a, DynamicObject b) {
-            return 0;
+            if (a == Long.MIN_VALUE) {
+                // -Long.MIN_VALUE is a BigNum so a special case is needed
+                return BigInteger.valueOf(a).divide(Layouts.BIGNUM.getValue(b)).intValue();
+            } else {
+                return 0;
+            }
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
