@@ -182,7 +182,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
             return super.call(context, caller, self, arg0, arg1);
         }
 
-        return method.call(context, self, selfType, methodName);
+        return method.call(context, self, selfType, methodName, arg0, arg1);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
