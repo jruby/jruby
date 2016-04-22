@@ -182,6 +182,17 @@ public abstract class JavaLang {
             return RubyString.newString(context.runtime, throwable.toString());
         }
 
+        @JRubyMethod(name = "===", meta = true)
+        public static IRubyObject eqq(final ThreadContext context, final IRubyObject self, IRubyObject other) {
+            if ( other instanceof NativeException ) {
+                final java.lang.Class java_class = (java.lang.Class) self.dataGetStruct();
+                if ( java_class.isAssignableFrom( ((NativeException) other).getCause().getClass() ) ) {
+                    return context.runtime.getTrue();
+                }
+            }
+            return self.op_eqq(context, other);
+        }
+
     }
 
     @JRubyModule(name = "Java::JavaLang::Runnable")
