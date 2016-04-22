@@ -64,7 +64,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         }
 
         if (refinedScope == null) {
-            return super.call(context, caller, self);
+            return super.call(context, caller, self, args, block);
         }
 
         return method.call(context, self, selfType, methodName, args, block);
