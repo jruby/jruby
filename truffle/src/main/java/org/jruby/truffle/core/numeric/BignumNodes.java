@@ -252,7 +252,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = {"==", "eql?"}, required = 1)
+    @CoreMethod(names = "==" , required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private BooleanCastNode booleanCastNode;
