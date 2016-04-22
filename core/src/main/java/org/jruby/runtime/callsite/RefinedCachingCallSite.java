@@ -1,18 +1,12 @@
 package org.jruby.runtime.callsite;
 
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -26,21 +20,9 @@ public class RefinedCachingCallSite extends CachingCallSite {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {
         RubyClass selfType = getClass(self);
-        StaticScope refinedScope = context.getCurrentStaticScope();
-        Map<RubyClass, RubyModule> refinements;
-        RubyModule refinement;
-        DynamicMethod method = null;
+        DynamicMethod method = IRRuntimeHelpers.getRefinedMethod(context, selfType, methodName);
 
-        while (refinedScope != null &&
-                (
-                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
-                                (refinement = refinements.get(selfType)) == null ||
-                                (method = refinement.searchMethod(methodName)).isUndefined())
-                ) {
-            refinedScope = refinedScope.getPreviousCRefScope();
-        }
-
-        if (refinedScope == null) {
+        if (method == null) {
             return super.call(context, caller, self, args);
         }
 
@@ -49,21 +31,9 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
         RubyClass selfType = getClass(self);
-        StaticScope refinedScope = context.getCurrentStaticScope();
-        Map<RubyClass, RubyModule> refinements;
-        RubyModule refinement;
-        DynamicMethod method = null;
+        DynamicMethod method = IRRuntimeHelpers.getRefinedMethod(context, selfType, methodName);
 
-        while (refinedScope != null &&
-                (
-                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
-                                (refinement = refinements.get(selfType)) == null ||
-                                (method = refinement.searchMethod(methodName)).isUndefined())
-                ) {
-            refinedScope = refinedScope.getPreviousCRefScope();
-        }
-
-        if (refinedScope == null) {
+        if (method == null) {
             return super.call(context, caller, self, args, block);
         }
 
@@ -72,21 +42,9 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self) {
         RubyClass selfType = getClass(self);
-        StaticScope refinedScope = context.getCurrentStaticScope();
-        Map<RubyClass, RubyModule> refinements;
-        RubyModule refinement;
-        DynamicMethod method = null;
+        DynamicMethod method = IRRuntimeHelpers.getRefinedMethod(context, selfType, methodName);
 
-        while (refinedScope != null &&
-                (
-                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
-                                (refinement = refinements.get(selfType)) == null ||
-                                (method = refinement.searchMethod(methodName)).isUndefined())
-                ) {
-            refinedScope = refinedScope.getPreviousCRefScope();
-        }
-
-        if (refinedScope == null) {
+        if (method == null) {
             return super.call(context, caller, self);
         }
 
@@ -95,21 +53,9 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
         RubyClass selfType = getClass(self);
-        StaticScope refinedScope = context.getCurrentStaticScope();
-        Map<RubyClass, RubyModule> refinements;
-        RubyModule refinement;
-        DynamicMethod method = null;
+        DynamicMethod method = IRRuntimeHelpers.getRefinedMethod(context, selfType, methodName);
 
-        while (refinedScope != null &&
-                (
-                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
-                                (refinement = refinements.get(selfType)) == null ||
-                                (method = refinement.searchMethod(methodName)).isUndefined())
-                ) {
-            refinedScope = refinedScope.getPreviousCRefScope();
-        }
-
-        if (refinedScope == null) {
+        if (method == null) {
             return super.call(context, caller, self, block);
         }
 
@@ -118,21 +64,9 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) {
         RubyClass selfType = getClass(self);
-        StaticScope refinedScope = context.getCurrentStaticScope();
-        Map<RubyClass, RubyModule> refinements;
-        RubyModule refinement;
-        DynamicMethod method = null;
+        DynamicMethod method = IRRuntimeHelpers.getRefinedMethod(context, selfType, methodName);
 
-        while (refinedScope != null &&
-                (
-                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
-                                (refinement = refinements.get(selfType)) == null ||
-                                (method = refinement.searchMethod(methodName)).isUndefined())
-                ) {
-            refinedScope = refinedScope.getPreviousCRefScope();
-        }
-
-        if (refinedScope == null) {
+        if (method == null) {
             return super.call(context, caller, self, arg0);
         }
 
@@ -141,21 +75,9 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) {
         RubyClass selfType = getClass(self);
-        StaticScope refinedScope = context.getCurrentStaticScope();
-        Map<RubyClass, RubyModule> refinements;
-        RubyModule refinement;
-        DynamicMethod method = null;
+        DynamicMethod method = IRRuntimeHelpers.getRefinedMethod(context, selfType, methodName);
 
-        while (refinedScope != null &&
-                (
-                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
-                                (refinement = refinements.get(selfType)) == null ||
-                                (method = refinement.searchMethod(methodName)).isUndefined())
-                ) {
-            refinedScope = refinedScope.getPreviousCRefScope();
-        }
-
-        if (refinedScope == null) {
+        if (method == null) {
             return super.call(context, caller, self, arg0, block);
         }
 
@@ -164,21 +86,9 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
         RubyClass selfType = getClass(self);
-        StaticScope refinedScope = context.getCurrentStaticScope();
-        Map<RubyClass, RubyModule> refinements;
-        RubyModule refinement;
-        DynamicMethod method = null;
+        DynamicMethod method = IRRuntimeHelpers.getRefinedMethod(context, selfType, methodName);
 
-        while (refinedScope != null &&
-                (
-                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
-                                (refinement = refinements.get(selfType)) == null ||
-                                (method = refinement.searchMethod(methodName)).isUndefined())
-                ) {
-            refinedScope = refinedScope.getPreviousCRefScope();
-        }
-
-        if (refinedScope == null) {
+        if (method == null) {
             return super.call(context, caller, self, arg0, arg1);
         }
 
@@ -187,21 +97,9 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
         RubyClass selfType = getClass(self);
-        StaticScope refinedScope = context.getCurrentStaticScope();
-        Map<RubyClass, RubyModule> refinements;
-        RubyModule refinement;
-        DynamicMethod method = null;
+        DynamicMethod method = IRRuntimeHelpers.getRefinedMethod(context, selfType, methodName);
 
-        while (refinedScope != null &&
-                (
-                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
-                                (refinement = refinements.get(selfType)) == null ||
-                                (method = refinement.searchMethod(methodName)).isUndefined())
-                ) {
-            refinedScope = refinedScope.getPreviousCRefScope();
-        }
-
-        if (refinedScope == null) {
+        if (method == null) {
             return super.call(context, caller, self, arg0, arg1, block);
         }
 
@@ -210,21 +108,9 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         RubyClass selfType = getClass(self);
-        StaticScope refinedScope = context.getCurrentStaticScope();
-        Map<RubyClass, RubyModule> refinements;
-        RubyModule refinement;
-        DynamicMethod method = null;
+        DynamicMethod method = IRRuntimeHelpers.getRefinedMethod(context, selfType, methodName);
 
-        while (refinedScope != null &&
-                (
-                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
-                                (refinement = refinements.get(selfType)) == null ||
-                                (method = refinement.searchMethod(methodName)).isUndefined())
-                ) {
-            refinedScope = refinedScope.getPreviousCRefScope();
-        }
-
-        if (refinedScope == null) {
+        if (method == null) {
             return super.call(context, caller, self, arg0, arg1, arg2);
         }
 
@@ -233,21 +119,9 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         RubyClass selfType = getClass(self);
-        StaticScope refinedScope = context.getCurrentStaticScope();
-        Map<RubyClass, RubyModule> refinements;
-        RubyModule refinement;
-        DynamicMethod method = null;
+        DynamicMethod method = IRRuntimeHelpers.getRefinedMethod(context, selfType, methodName);
 
-        while (refinedScope != null &&
-                (
-                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
-                                (refinement = refinements.get(selfType)) == null ||
-                                (method = refinement.searchMethod(methodName)).isUndefined())
-                ) {
-            refinedScope = refinedScope.getPreviousCRefScope();
-        }
-
-        if (refinedScope == null) {
+        if (method == null) {
             return super.call(context, caller, self, arg0, arg1, arg2, block);
         }
 
@@ -257,10 +131,5 @@ public class RefinedCachingCallSite extends CachingCallSite {
     protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {
         // doing full "normal" MM check rather than multiple refined sites by call types
         return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
-    }
-
-    private static RubyClass getClass(IRubyObject self) {
-        // the cast in the following line is necessary due to lacking optimizations in Hotspot
-        return ((RubyBasicObject) self).getMetaClass();
     }
 }
