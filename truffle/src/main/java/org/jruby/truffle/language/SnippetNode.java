@@ -27,27 +27,26 @@ import org.jruby.truffle.language.parser.ParserContext;
 
 public class SnippetNode extends RubyBaseNode {
 
-    private final String expression;
-    private final String[] parameters;
-
+    @CompilationFinal private String expression;
+    @CompilationFinal private String[] parameters;
     @CompilationFinal private FrameDescriptor frameDescriptor;
     @CompilationFinal private FrameSlot[] parameterFrameSlots;
 
     @Child private DirectCallNode directCallNode;
 
-    public SnippetNode(String expression, String a, String b) {
-        this(expression, new String[]{a, b});
+    public SnippetNode() {
     }
 
-    public SnippetNode(String expression, String... parameters) {
-        this.expression = expression;
-        this.parameters = parameters;
-    }
-
-    @ExplodeLoop
-    public Object execute(VirtualFrame frame, Object... arguments) {
+    public Object execute(VirtualFrame frame, String expression, Object... arguments) {
         if (directCallNode == null) {
             CompilerDirectives.transferToInterpreter();
+
+            this.expression = expression;
+            assert arguments.length % 2 == 0;
+            parameters = new String[arguments.length / 2];
+            for (int n = 0; n < parameters.length; n++) {
+                parameters[n] = (String) arguments[2 * n];
+            }
 
             frameDescriptor = new FrameDescriptor(nil());
             parameterFrameSlots = new FrameSlot[parameters.length];
@@ -56,7 +55,9 @@ public class SnippetNode extends RubyBaseNode {
                 parameterFrameSlots[n] = frameDescriptor.findOrAddFrameSlot(parameters[n]);
             }
 
-            final Source source = Source.fromText(StringOperations.createByteList(expression), "(snippet)");
+            final Source source = Source.fromText(
+                    StringOperations.createByteList(this.expression),
+                    "(snippet)");
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(
                     source,
@@ -67,13 +68,45 @@ public class SnippetNode extends RubyBaseNode {
                     true,
                     this);
 
-            directCallNode = insert(Truffle.getRuntime().createDirectCallNode(Truffle.getRuntime().createCallTarget(rootNode)));
+            directCallNode = insert(Truffle.getRuntime().createDirectCallNode(
+                    Truffle.getRuntime().createCallTarget(rootNode)));
 
             if (directCallNode.isInlinable()) {
                 directCallNode.forceInlining();
             }
         }
 
+        if (arguments.length != parameters.length * 2) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException(
+                    "number of arguments doesn't match number of parameters");
+        }
+
+        ensureConstantExpressionParameters(expression, arguments);
+
+        final Object[] callArguments = RubyArguments.pack(
+                parentFrame(frame, arguments),
+                null,
+                RubyArguments.getMethod(frame),
+                DeclarationContext.INSTANCE_EVAL,
+                null,
+                RubyArguments.getSelf(frame),
+                null,
+                new Object[]{});
+
+        return directCallNode.call(frame, callArguments);
+    }
+
+    @ExplodeLoop
+    private void ensureConstantExpressionParameters(String expression, Object[] arguments) {
+        assert this.expression == expression;
+        for (int n = 0; n < parameters.length; n++) {
+            assert parameters[n] == arguments[2 * n];
+        }
+    }
+
+    @ExplodeLoop
+    private MaterializedFrame parentFrame(VirtualFrame frame, Object[] arguments) {
         final Object[] parentFrameArguments = RubyArguments.pack(
                 null,
                 null,
@@ -88,26 +121,10 @@ public class SnippetNode extends RubyBaseNode {
                 parentFrameArguments,
                 frameDescriptor);
 
-        if (arguments.length != parameterFrameSlots.length) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException("number of arguments doesn't match number of parameters");
-        }
-
         for (int n = 0; n < parameters.length; n++) {
-            parentFrame.setObject(parameterFrameSlots[n], arguments[n]);
+            parentFrame.setObject(parameterFrameSlots[n], arguments[2 * n + 1]);
         }
-
-        final Object[] callArguments = RubyArguments.pack(
-                parentFrame,
-                null,
-                RubyArguments.getMethod(frame),
-                DeclarationContext.INSTANCE_EVAL,
-                null,
-                RubyArguments.getSelf(frame),
-                null,
-                new Object[]{});
-
-        return directCallNode.call(frame, callArguments);
+        return parentFrame;
     }
 
 }
