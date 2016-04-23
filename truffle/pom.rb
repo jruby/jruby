@@ -70,6 +70,12 @@ project 'JRuby Truffle' do
       includes '**/*rb'
       target_path '${project.build.directory}/classes/jruby-truffle'
     end
+
+    resource do
+      directory '${project.basedir}/..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
+    end
   end
 
   [ :dist, :'jruby-jars', :all, :release ].each do |name|

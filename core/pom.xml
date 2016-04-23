@@ -300,6 +300,16 @@ DO NOT MODIFIY - GENERATED CODE
           <include>${Constants.java}</include>
         </includes>
       </resource>
+      <resource>
+        <targetPath>${project.build.outputDirectory}/META-INF/</targetPath>
+        <directory>${project.basedir}/..</directory>
+        <includes>
+          <include>BSDL</include>
+          <include>COPYING</include>
+          <include>LEGAL</include>
+          <include>LICENSE.RUBY</include>
+        </includes>
+      </resource>
     </resources>
     <pluginManagement>
       <plugins>
