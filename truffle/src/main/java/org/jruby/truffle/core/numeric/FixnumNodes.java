@@ -31,6 +31,7 @@ import org.jruby.truffle.core.rope.LazyIntRope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -496,8 +497,12 @@ public abstract class FixnumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object lessCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a < b", "other", b);
+        public Object lessCoerced(
+                VirtualFrame frame,
+                long a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
     }
 
@@ -534,8 +539,12 @@ public abstract class FixnumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object lessEqualCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a <= b", "other", b);
+        public Object lessEqualCoerced(
+                VirtualFrame frame,
+                long a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -617,8 +626,12 @@ public abstract class FixnumNodes {
                 "!isLong(b)",
                 "!isDouble(b)",
                 "!isRubyBignum(b)" })
-        public Object compare(VirtualFrame frame, Object a, Object b) {
-            return ruby("begin; b, a = math_coerce(other, :compare_error); a <=> b; rescue ArgumentError; nil; end", "other", b);
+        public Object compare(
+                VirtualFrame frame,
+                Object a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "begin; b, a = math_coerce(other, :compare_error); a <=> b; rescue ArgumentError; nil; end", "other", b);
         }
 
     }
@@ -656,8 +669,12 @@ public abstract class FixnumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object greaterEqualCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a >= b", "other", b);
+        public Object greaterEqualCoerced(
+                VirtualFrame frame,
+                long a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
     }
 
@@ -695,8 +712,12 @@ public abstract class FixnumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object greaterCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby("b, a = math_coerce(other, :compare_error); a > b", "other", b);
+        public Object greaterCoerced(
+                VirtualFrame frame,
+                long a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
         }
     }
 
@@ -782,8 +803,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object bitXOr(VirtualFrame frame, Object a, DynamicObject b) {
-            return ruby("a ^ Rubinius::Type.coerce_to_bitwise_operand(b)", "a", a, "b", b);
+        public Object bitXOr(
+                VirtualFrame frame,
+                Object a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "a ^ Rubinius::Type.coerce_to_bitwise_operand(b)", "a", a, "b", b);
         }
 
     }

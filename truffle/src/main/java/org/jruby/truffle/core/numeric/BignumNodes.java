@@ -11,6 +11,7 @@ package org.jruby.truffle.core.numeric;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -26,6 +27,7 @@ import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -218,8 +220,12 @@ public abstract class BignumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)"})
-        public Object lessCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a < b", "other", b);
+        public Object lessCoerced(
+                VirtualFrame frame,
+                DynamicObject a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
 
     }
@@ -247,8 +253,12 @@ public abstract class BignumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)"})
-        public Object lessEqualCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a <= b", "other", b);
+        public Object lessEqualCoerced(
+                VirtualFrame frame,
+                DynamicObject a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -319,8 +329,12 @@ public abstract class BignumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)"})
-        public Object greaterEqualCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a >= b", "other", b);
+        public Object greaterEqualCoerced(
+                VirtualFrame frame,
+                DynamicObject a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
     }
 
@@ -347,8 +361,12 @@ public abstract class BignumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)"})
-        public Object greaterCoerced(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a > b", "other", b);
+        public Object greaterCoerced(
+                VirtualFrame frame,
+                DynamicObject a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a > b", "other", b);
         }
     }
 

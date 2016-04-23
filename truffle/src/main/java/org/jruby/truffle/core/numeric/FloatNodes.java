@@ -25,6 +25,7 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -304,8 +305,12 @@ public abstract class FloatNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object lessCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a < b", "other", b);
+        public Object lessCoerced(
+                VirtualFrame frame,
+                double a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
     }
 
@@ -332,8 +337,12 @@ public abstract class FloatNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object lessEqualCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a <= b", "other", b);
+        public Object lessEqualCoerced(
+                VirtualFrame frame,
+                double a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -449,8 +458,12 @@ public abstract class FloatNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object greaterEqualCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a >= b", "other", b);
+        public Object greaterEqualCoerced(
+                VirtualFrame frame,
+                double a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
 
     }
@@ -478,8 +491,12 @@ public abstract class FloatNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object greaterCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby("b, a = math_coerce(other, :compare_error); a > b", "other", b);
+        public Object greaterCoerced(
+                VirtualFrame frame,
+                double a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
         }
     }
 

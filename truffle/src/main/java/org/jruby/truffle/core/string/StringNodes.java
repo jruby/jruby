@@ -512,14 +512,23 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {"isRubyRegexp(regexp)", "wasNotProvided(capture) || isRubiniusUndefined(capture)"})
-        public Object slice1(VirtualFrame frame, DynamicObject string, DynamicObject regexp, Object capture) {
-            return sliceCapture(string, regexp, 0);
+        public Object slice1(
+                VirtualFrame frame,
+                DynamicObject string,
+                DynamicObject regexp,
+                Object capture,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "match, str = subpattern(index, 0); Regexp.last_match = match; str", "index", regexp);
         }
 
         @Specialization(guards = {"isRubyRegexp(regexp)", "wasProvided(capture)"})
-        public Object sliceCapture(DynamicObject string, DynamicObject regexp, Object capture) {
-            // Extracted from Rubinius's definition of String#[].
-            return ruby("match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
+        public Object sliceCapture(
+                VirtualFrame frame,
+                DynamicObject string,
+                DynamicObject regexp,
+                Object capture,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
         }
 
         @Specialization(guards = {"wasNotProvided(length) || isRubiniusUndefined(length)", "isRubyString(matchStr)"})
@@ -1979,8 +1988,11 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!isInteger(bits)", "!isLong(bits)", "wasProvided(bits)" })
-        public Object sum(DynamicObject string, Object bits) {
-            return ruby("sum Rubinius::Type.coerce_to(bits, Fixnum, :to_int)", "bits", bits);
+        public Object sum(VirtualFrame frame,
+                          DynamicObject string,
+                          Object bits,
+                          @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "sum Rubinius::Type.coerce_to(bits, Fixnum, :to_int)", "bits", bits);
         }
 
     }
@@ -2013,8 +2025,11 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isStringSubclass(string)")
-        public Object toSOnSubclass(DynamicObject string) {
-            return ruby("''.replace(self)", "self", string);
+        public Object toSOnSubclass(
+                VirtualFrame frame,
+                DynamicObject string,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "''.replace(self)", "self", string);
         }
 
         public boolean isStringSubclass(DynamicObject string) {
@@ -2257,8 +2272,12 @@ public abstract class StringNodes {
                 "!isInteger(format)",
                 "!isLong(format)",
                 "!isNil(format)"})
-        public Object unpack(DynamicObject array, Object format) {
-            return ruby("unpack(format.to_str)", "format", format);
+        public Object unpack(
+                VirtualFrame frame,
+                DynamicObject array,
+                Object format,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "unpack(format.to_str)", "format", format);
         }
 
         @TruffleBoundary

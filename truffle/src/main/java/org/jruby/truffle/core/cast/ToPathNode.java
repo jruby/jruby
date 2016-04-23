@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core.cast;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -16,6 +17,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToPathNode extends RubyNode {
@@ -30,8 +32,11 @@ public abstract class ToPathNode extends RubyNode {
     }
 
     @Specialization(guards = "!isRubyString(object)")
-    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
-        return (DynamicObject) ruby("Rubinius::Type.coerce_to_path(object)", "object", object);
+    public DynamicObject coerceObject(
+            VirtualFrame frame,
+            Object object,
+            @Cached("new()") SnippetNode snippetNode) {
+        return (DynamicObject) snippetNode.execute(frame, "Rubinius::Type.coerce_to_path(object)", "object", object);
     }
 
 }
