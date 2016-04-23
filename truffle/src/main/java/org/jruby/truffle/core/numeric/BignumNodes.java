@@ -386,7 +386,7 @@ public abstract class BignumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public Object bitOr(DynamicObject a, DynamicObject b) {
-            return fixnumOrBignum(Layouts.BIGNUM.getValue(a).or(Layouts.BIGNUM.getValue(a)));
+            return fixnumOrBignum(Layouts.BIGNUM.getValue(a).or(Layouts.BIGNUM.getValue(b)));
         }
     }
 
