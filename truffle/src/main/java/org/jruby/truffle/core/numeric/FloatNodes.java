@@ -682,8 +682,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "wasProvided(ndigits)")
-        public Object round(VirtualFrame frame, double n, Object ndigits) {
-            return ruby("round_internal(ndigits)", "ndigits", ndigits);
+        public Object round(
+                VirtualFrame frame,
+                double n,
+                Object ndigits,
+                @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
+            return callNode.call(frame, n, "round_internal", null, ndigits);
         }
 
     }

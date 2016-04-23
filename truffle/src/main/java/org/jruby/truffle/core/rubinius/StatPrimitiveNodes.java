@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -18,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.FileStat;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.WriteObjectFieldNode;
@@ -32,9 +34,12 @@ public abstract class StatPrimitiveNodes {
     public static abstract class StatAtimePrimitiveNode extends StatReadPrimitiveNode {
 
         @Specialization
-        public Object atime(VirtualFrame frame, DynamicObject rubyStat) {
+        public Object atime(
+                VirtualFrame frame,
+                DynamicObject rubyStat,
+                @Cached("new()")SnippetNode snippetNode) {
             final long time = getStat(rubyStat).atime();
-            return ruby("Time.at(time)", "time", time);
+            return snippetNode.execute(frame, "Time.at(time)", "time", time);
         }
 
     }
@@ -43,9 +48,12 @@ public abstract class StatPrimitiveNodes {
     public static abstract class StatCtimePrimitiveNode extends StatReadPrimitiveNode {
 
         @Specialization
-        public Object ctime(VirtualFrame frame, DynamicObject rubyStat) {
+        public Object ctime(
+                VirtualFrame frame,
+                DynamicObject rubyStat,
+                @Cached("new()")SnippetNode snippetNode) {
             final long time = getStat(rubyStat).ctime();
-            return ruby("Time.at(time)", "time", time);
+            return snippetNode.execute(frame, "Time.at(time)", "time", time);
         }
 
     }
@@ -54,9 +62,12 @@ public abstract class StatPrimitiveNodes {
     public static abstract class StatMtimePrimitiveNode extends StatReadPrimitiveNode {
 
         @Specialization
-        public Object mtime(VirtualFrame frame, DynamicObject rubyStat) {
+        public Object mtime(
+                VirtualFrame frame,
+                DynamicObject rubyStat,
+                @Cached("new()")SnippetNode snippetNode) {
             final long time = getStat(rubyStat).mtime();
-            return ruby("Time.at(time)", "time", time);
+            return snippetNode.execute(frame, "Time.at(time)", "time", time);
         }
 
     }
