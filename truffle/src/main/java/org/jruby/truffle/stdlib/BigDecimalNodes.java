@@ -11,6 +11,7 @@ package org.jruby.truffle.stdlib;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
@@ -46,6 +47,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.constants.ReadConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -1575,8 +1577,12 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = {
                 "!isRubyBigDecimal(b)",
                 "!isNil(b)" })
-        public Object compareCoerced(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            return ruby("redo_coerced :<=>, b", "b", b);
+        public Object compareCoerced(
+                VirtualFrame frame,
+                DynamicObject a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :<=>, b", "b", b);
         }
 
     }

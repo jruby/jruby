@@ -122,8 +122,12 @@ public abstract class BignumNodes {
         }
 
         @Specialization(guards = {"!isInteger(b)", "!isLong(b)", "!isDouble(b)", "!isRubyBignum(b)"})
-        public Object mul(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby("redo_coerced :*, other", "other", b);
+        public Object mul(
+                VirtualFrame frame,
+                DynamicObject a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :*, other", "other", b);
         }
 
     }
@@ -191,8 +195,12 @@ public abstract class BignumNodes {
         }
 
         @Specialization(guards = {"!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)"})
-        public Object mod(VirtualFrame frame, DynamicObject a, Object b) {
-            return ruby("redo_coerced :%, other", "other", b);
+        public Object mod(
+                VirtualFrame frame,
+                DynamicObject a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :%, other", "other", b);
         }
 
     }

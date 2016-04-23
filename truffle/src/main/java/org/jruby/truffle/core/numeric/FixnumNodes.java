@@ -91,8 +91,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object addCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby("redo_coerced :+, b", "b", b);
+        public Object addCoerced(
+                VirtualFrame frame,
+                int a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :+, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -116,8 +120,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object addCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby("redo_coerced :+, b", "b", b);
+        public Object addCoerced(
+                VirtualFrame frame,
+                long a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :+, b", "b", b);
         }
 
     }
@@ -136,8 +144,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object subCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby("redo_coerced :-, b", "b", b);
+        public Object subCoerced(
+                VirtualFrame frame,
+                int a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :-, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -161,8 +173,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object subCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby("redo_coerced :-, b", "b", b);
+        public Object subCoerced(
+                VirtualFrame frame,
+                long a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :-, b", "b", b);
         }
 
     }
@@ -181,8 +197,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object mulCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby("redo_coerced :*, b", "b", b);
+        public Object mulCoerced(
+                VirtualFrame frame,
+                int a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :*, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -208,8 +228,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object mulCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby("redo_coerced :*, b", "b", b);
+        public Object mulCoerced(
+                VirtualFrame frame,
+                long a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :*, b", "b", b);
         }
     }
 
@@ -284,8 +308,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object divCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby("redo_coerced :/, b", "b", b);
+        public Object divCoerced(
+                VirtualFrame frame,
+                int a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :/, b", "b", b);
         }
 
         @Specialization(rewriteOn = UnexpectedResultException.class)
@@ -364,8 +392,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object divCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby("redo_coerced :/, b", "b", b);
+        public Object divCoerced(
+                VirtualFrame frame,
+                long a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :/, b", "b", b);
         }
 
         public static boolean isLongMinValue(long a) {

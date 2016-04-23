@@ -63,10 +63,13 @@ public abstract class FloatNodes {
             return a + Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
-        // TODO (pitr 14-Sep-2015): all coerces should be replaced with a CallDispatchHeadNodes to speed up things like `5 + rational`
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object addCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :+, b", "b", b);
+        public Object addCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :+, b", "b", b);
         }
     }
 
@@ -89,8 +92,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object subCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :-, b", "b", b);
+        public Object subCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :-, b", "b", b);
         }
 
     }
@@ -114,8 +121,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object mulCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :*, b", "b", b);
+        public Object mulCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :*, b", "b", b);
         }
 
     }
@@ -170,8 +181,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object powCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :**, b", "b", b);
+        public Object powCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :**, b", "b", b);
         }
 
     }
@@ -244,8 +259,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object modCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :mod, b", "b", b);
+        public Object modCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :mod, b", "b", b);
         }
 
     }
@@ -276,8 +295,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object divModCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :divmod, b", "b", b);
+        public Object divModCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :divmod, b", "b", b);
         }
 
     }
