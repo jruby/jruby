@@ -48,6 +48,7 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.ExactMath;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -63,6 +64,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.ReadTimeZoneNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
@@ -258,7 +260,22 @@ public abstract class TimePrimitiveNodes {
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
-        @Specialization
+        @Specialization(guards = {"!fromutc", "!isNil(utcoffset)"})
+        public DynamicObject timeSFromArray(VirtualFrame frame, DynamicObject timeClass, int sec, int min, int hour, int mday, int month, int year,
+                                            int nsec, int isdst, boolean fromutc, DynamicObject utcoffset,
+                                            @Cached("new()") SnippetNode snippetNode) {
+
+            DynamicObject envZon = null;
+            if (!fromutc && utcoffset == nil()) {
+                envZon = (DynamicObject) readTimeZoneNode.execute(frame);
+            }
+
+            final int millis = cast(snippetNode.execute(frame, "(offset * 1000).to_i", "offset", utcoffset));
+
+            return buildTime(timeClass, sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset, envZon, millis);
+        }
+
+        @Specialization(guards = "(fromutc || !isDynamicObject(utcoffset)) || isNil(utcoffset)")
         public DynamicObject timeSFromArray(VirtualFrame frame, DynamicObject timeClass, int sec, int min, int hour, int mday, int month, int year,
                                             int nsec, int isdst, boolean fromutc, Object utcoffset) {
 
@@ -266,7 +283,7 @@ public abstract class TimePrimitiveNodes {
             if (!fromutc && utcoffset == nil()) {
                 envZon = (DynamicObject) readTimeZoneNode.execute(frame);
             }
-            return buildTime(timeClass, sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset, envZon);
+            return buildTime(timeClass, sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset, envZon, -1);
         }
 
         @Specialization(guards = "!isInteger(sec) || !isInteger(nsec)")
@@ -277,7 +294,7 @@ public abstract class TimePrimitiveNodes {
 
         @TruffleBoundary
         private DynamicObject buildTime(DynamicObject timeClass, int sec, int min, int hour, int mday, int month, int year,
-                                        int nsec, int isdst, boolean fromutc, Object utcoffset, DynamicObject envZon) {
+                                        int nsec, int isdst, boolean fromutc, Object utcoffset, DynamicObject envZon, int millis) {
             if (sec < 0 || sec > 59 ||
                     min < 0 || min > 59 ||
                     hour < 0 || hour > 23 ||
@@ -317,7 +334,6 @@ public abstract class TimePrimitiveNodes {
                 relativeOffset = true;
                 zoneToStore = nil();
             } else if (utcoffset instanceof DynamicObject) {
-                final int millis = cast(ruby("(offset * 1000).to_i", "offset", utcoffset));
                 zone = DateTimeZone.forOffsetMillis(millis);
                 relativeOffset = true;
                 zoneToStore = nil();
