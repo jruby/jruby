@@ -29,6 +29,7 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.debug.DebugHelpers;
 import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
@@ -116,10 +117,6 @@ public abstract class RubyBaseNode extends Node {
 
     protected MemoryManager memoryManager() {
         return getContext().getNativePlatform().getMemoryManager();
-    }
-
-    protected Object ruby(String expression, Object... arguments) {
-        return getContext().getCodeLoader().inline(this, expression, arguments);
     }
 
     // Accessors
