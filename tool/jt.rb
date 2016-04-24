@@ -297,6 +297,7 @@ module Commands
     puts '    --no-java-cmd   don\'t set JAVACMD - rely on bin/jruby or RUBY_BIN to have Graal already'
     puts 'jt test integration [fast|long|all]            runs bigger integration tests (fast is default)'
     puts '    --no-gems       don\'t run tests that install gems'
+    puts 'jt test cexts                                  run C extension tests (set SULONG_DIR)'
     puts 'jt tag spec/ruby/language                      tag failing specs in this directory'
     puts 'jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file'
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
@@ -458,7 +459,9 @@ module Commands
       # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled
       test_integration({'CI' => 'true', 'HAS_REDIS' => 'true'}, 'all')
       test_compiler
+      test_cexts if ENV['SULONG_DIR']
     when 'compiler' then test_compiler(*rest)
+    when 'cexts' then test_cexts(*rest)
     when 'integration' then test_integration({}, *rest)
     when 'specs' then test_specs('run', *rest)
     when 'tck' then
@@ -503,6 +506,21 @@ module Commands
     end
   end
   private :test_compiler
+
+  def test_cexts(*args)
+    output_file = 'cext-output.txt'
+    Dir["#{JRUBY_DIR}/test/truffle/cexts/*"].each do |dir|
+      sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", dir
+      name = File.basename(dir)
+      run '--sulong', '-I', File.join(dir, 'lib'), File.join(dir, 'bin', name), :out => output_file
+      unless File.read(output_file) == File.read(File.join(dir, 'expected.txt'))
+        abort "c extension #{dir} didn't work as expected"
+      end
+    end
+  ensure
+    File.delete output_file
+  end
+  private :test_cexts
 
   def test_integration(env, *args)
     no_gems = args.delete('--no-gems')
