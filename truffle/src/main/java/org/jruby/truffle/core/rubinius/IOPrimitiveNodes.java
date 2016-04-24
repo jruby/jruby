@@ -266,7 +266,7 @@ public abstract class IOPrimitiveNodes {
             if (res == 0) {
                 throw new RaiseException(
                         Layouts.CLASS.getInstanceFactory(coreLibrary().getEagainWaitReadable()).newInstance(
-                            create7BitString("Resource temporarily unavailable", USASCIIEncoding.INSTANCE),
+                            coreStrings().RESOURCE_TEMP_UNAVAIL.createInstance(),
                             Errno.EAGAIN.intValue()));
             }
 
