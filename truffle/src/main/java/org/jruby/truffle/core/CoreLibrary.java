@@ -218,6 +218,7 @@ public class CoreLibrary {
     private final DynamicObject atomicReferenceClass;
     private final DynamicObject handleClass;
     private final DynamicObjectFactory handleFactory;
+    private final DynamicObject ioClass;
 
     private final DynamicObject argv;
     private final GlobalVariables globalVariables;
@@ -225,6 +226,8 @@ public class CoreLibrary {
     private final DynamicObject nilObject;
     private final DynamicObject rubiniusUndefined;
     private final DynamicObject digestClass;
+
+    @CompilationFinal private DynamicObject eagainWaitReadable;
 
     @CompilationFinal private ArrayNodes.MinBlock arrayMinBlock;
     @CompilationFinal private ArrayNodes.MaxBlock arrayMaxBlock;
@@ -316,6 +319,10 @@ public class CoreLibrary {
 
     public DynamicObject getSystemCallErrorClass() {
         return systemCallErrorClass;
+    }
+
+    public DynamicObject getEagainWaitReadable() {
+        return eagainWaitReadable;
     }
 
     private enum State {
@@ -529,7 +536,7 @@ public class CoreLibrary {
         unboundMethodClass = defineClass("UnboundMethod");
         unboundMethodFactory = Layouts.UNBOUND_METHOD.createUnboundMethodShape(unboundMethodClass, unboundMethodClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(unboundMethodClass, unboundMethodFactory);
-        final DynamicObject ioClass = defineClass("IO");
+        ioClass = defineClass("IO");
         Layouts.CLASS.setInstanceFactoryUnsafe(ioClass, Layouts.IO.createIOShape(ioClass, ioClass));
         internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
         Layouts.CLASS.setInstanceFactoryUnsafe(internalBufferClass, Layouts.IO_BUFFER.createIOBufferShape(internalBufferClass, internalBufferClass));
@@ -858,6 +865,10 @@ public class CoreLibrary {
         } finally {
             state = State.LOADED;
         }
+
+        // Get some references to things defined in the Ruby core
+
+        eagainWaitReadable = (DynamicObject) Layouts.MODULE.getFields(ioClass).getConstant("EAGAINWaitReadable").getValue();
     }
 
     private void initializeRubiniusFFI() {

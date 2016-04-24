@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -28,6 +29,7 @@ import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
@@ -856,9 +858,16 @@ public abstract class PosixNodes {
 
         // This should probably done at a higher-level, but rubysl/socket does not handle it.
         @Specialization(guards = { "isRubySymbol(level)", "isRubySymbol(optname)", "isRubyPointer(optval)", "isRubyPointer(optlen)" })
-        public int getSockOptionsSymbols(VirtualFrame frame, int sockfd, DynamicObject level, DynamicObject optname, DynamicObject optval, DynamicObject optlen) {
-            int levelInt = (int) ruby("Socket::SOL_" + Layouts.SYMBOL.getString(level));
-            int optnameInt = (int) ruby("Socket::SO_" + Layouts.SYMBOL.getString(optname));
+        public int getSockOptionsSymbols(
+                VirtualFrame frame,
+                int sockfd,
+                DynamicObject level,
+                DynamicObject optname,
+                DynamicObject optval,
+                DynamicObject optlen,
+                @Cached("new()") SnippetNode snippetNode) {
+            int levelInt = (int) snippetNode.execute(frame, "Socket.const_get('SOL_' + name)", "name", Layouts.SYMBOL.getString(level));
+            int optnameInt = (int) snippetNode.execute(frame, "Socket.const_get('SOL_' + name)", "name", Layouts.SYMBOL.getString(optname));
             return getSockOptions(sockfd, levelInt, optnameInt, optval, optlen);
         }
 

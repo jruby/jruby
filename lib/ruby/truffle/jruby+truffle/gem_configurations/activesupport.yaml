@@ -93,3 +93,5 @@
     - bigdecimal
     - pathname
     - openssl-stubs
+  :environment:
+    N: 1

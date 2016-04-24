@@ -267,8 +267,10 @@ public class RopeOperations {
             final Rope child = repeating.getChild();
 
             final int start = offset % child.byteLength();
-            final int firstPartLength = child.byteLength() - start;
+            final int firstPartLength = Math.min(child.byteLength() - start, length);
+
             visitBytes(child, visitor, start, firstPartLength);
+
             final int lengthMinusFirstPart = length - firstPartLength;
             final int remainingEnd = lengthMinusFirstPart % child.byteLength();
 
@@ -283,7 +285,7 @@ public class RopeOperations {
                 if (remainingEnd > 0) {
                     visitBytes(child, visitor, 0, remainingEnd);
                 }
-            } else {
+            } else if (remainingEnd > 0) {
                 visitBytes(child, visitor, 0, remainingEnd);
             }
         } else if (rope instanceof LazyRope) {

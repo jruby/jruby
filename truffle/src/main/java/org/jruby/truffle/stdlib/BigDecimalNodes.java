@@ -11,6 +11,7 @@ package org.jruby.truffle.stdlib;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
@@ -46,6 +47,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.constants.ReadConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -1575,8 +1577,12 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = {
                 "!isRubyBigDecimal(b)",
                 "!isNil(b)" })
-        public Object compareCoerced(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            return ruby("redo_coerced :<=>, b", "b", b);
+        public Object compareCoerced(
+                VirtualFrame frame,
+                DynamicObject a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :<=>, b", "b", b);
         }
 
     }
@@ -2005,10 +2011,17 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = { "!isRubyBignum(value)", "!isRubyBigDecimal(value)" })
-        public Object doOther(VirtualFrame frame, DynamicObject value, Object roundingMode) {
-            if (roundingMode instanceof RoundingMode && (boolean) ruby("value.is_a?(Rational)", "value", value)) {
+        public Object doOther(
+                VirtualFrame frame,
+                DynamicObject value,
+                Object roundingMode,
+                @Cached("new()") SnippetNode isRationalSnippet,
+                @Cached("createMethodCall()") CallDispatchHeadNode numeratorCallNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode denominatorCallNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode toFCallNode) {
+            if (roundingMode instanceof RoundingMode && (boolean) isRationalSnippet.execute(frame, "value.is_a?(Rational)", "value", value)) {
 
-                final Object numerator = ruby("value.numerator", "value", value);
+                final Object numerator = numeratorCallNode.call(frame, value, "numerator", null);
 
                 final IRubyObject numeratorValue;
 
@@ -2022,7 +2035,7 @@ public abstract class BigDecimalNodes {
                     throw new UnsupportedOperationException(numerator.toString());
                 }
 
-                final Object denominator = ruby("value.denominator", "value", value);
+                final Object denominator = denominatorCallNode.call(frame, value, "denominator", null);
 
                 final IRubyObject denominatorValue;
 
@@ -2049,7 +2062,7 @@ public abstract class BigDecimalNodes {
 
                 return rubyBigDecimalValue.getBigDecimalValue();
             } else {
-                final Object result = ruby("value.to_f", "value", value);
+                final Object result = toFCallNode.call(frame, value, "to_f", null);
                 if (result != nil()) {
                     return new BigDecimal((double) result);
                 } else {

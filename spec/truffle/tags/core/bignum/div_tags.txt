@@ -1,1 +1,0 @@
-fails:Bignum#div returns self divided by other

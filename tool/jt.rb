@@ -14,7 +14,7 @@
 require 'fileutils'
 require 'digest/sha1'
 
-GRAALVM_VERSION = "0.10"
+GRAALVM_VERSION = "0.11"
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 
@@ -31,28 +31,30 @@ module Utilities
 
   def self.truffle_version
     File.foreach("#{JRUBY_DIR}/truffle/pom.rb") do |line|
-      if /\btruffle_version = '(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
+      if /'truffle\.version' => '(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
         break $1
       end
     end
   end
 
-  def self.find_graal
-    graal_locations = [
-      ENV['GRAAL_BIN'],
-      ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
-      "GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
-      "../GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
-      "../../GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
-    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
+  def self.graal_locations
+    from_env = ENV['GRAAL_BIN']
+    yield File.expand_path(from_env) if from_env
 
-    not_found = -> {
-      raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
+    rel_java_bin = "bin/java" # "jre/bin/javao"
+    %w[dk re].each { |kind|
+      ["", "../", "../../"].each { |prefix|
+        path = "#{prefix}graalvm-#{GRAALVM_VERSION}-#{kind}/#{rel_java_bin}"
+        yield File.expand_path(path, JRUBY_DIR)
+      }
     }
+  end
 
-    graal_locations.find(not_found) do |location|
-      File.executable?(location)
+  def self.find_graal
+    graal_locations do |location|
+      return location if File.executable?(location)
     end
+    raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
   end
 
   def self.find_graal_js

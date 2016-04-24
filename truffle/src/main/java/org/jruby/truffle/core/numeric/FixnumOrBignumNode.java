@@ -42,9 +42,8 @@ public class FixnumOrBignumNode extends RubyBaseNode {
     private final ConditionProfile integerFromDoubleProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile longFromDoubleProfile = ConditionProfile.createBinaryProfile();
 
+    @TruffleBoundary
     public Object fixnumOrBignum(BigDecimal value) {
-        CompilerDirectives.transferToInterpreter();
-
         return fixnumOrBignum(value.toBigInteger());
     }
 

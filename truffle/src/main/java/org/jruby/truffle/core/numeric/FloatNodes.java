@@ -25,6 +25,7 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -62,10 +63,13 @@ public abstract class FloatNodes {
             return a + Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
-        // TODO (pitr 14-Sep-2015): all coerces should be replaced with a CallDispatchHeadNodes to speed up things like `5 + rational`
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object addCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :+, b", "b", b);
+        public Object addCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :+, b", "b", b);
         }
     }
 
@@ -88,8 +92,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object subCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :-, b", "b", b);
+        public Object subCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :-, b", "b", b);
         }
 
     }
@@ -113,8 +121,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object mulCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :*, b", "b", b);
+        public Object mulCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :*, b", "b", b);
         }
 
     }
@@ -169,8 +181,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object powCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :**, b", "b", b);
+        public Object powCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :**, b", "b", b);
         }
 
     }
@@ -243,8 +259,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object modCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :mod, b", "b", b);
+        public Object modCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :mod, b", "b", b);
         }
 
     }
@@ -275,8 +295,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object divModCoerced(VirtualFrame frame, double a, DynamicObject b) {
-            return ruby("redo_coerced :divmod, b", "b", b);
+        public Object divModCoerced(
+                VirtualFrame frame,
+                double a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :divmod, b", "b", b);
         }
 
     }
@@ -304,8 +328,12 @@ public abstract class FloatNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object lessCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a < b", "other", b);
+        public Object lessCoerced(
+                VirtualFrame frame,
+                double a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
     }
 
@@ -332,8 +360,12 @@ public abstract class FloatNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object lessEqualCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a <= b", "other", b);
+        public Object lessEqualCoerced(
+                VirtualFrame frame,
+                double a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -449,8 +481,12 @@ public abstract class FloatNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object greaterEqualCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a >= b", "other", b);
+        public Object greaterEqualCoerced(
+                VirtualFrame frame,
+                double a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
 
     }
@@ -478,8 +514,12 @@ public abstract class FloatNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object greaterCoerced(VirtualFrame frame, double a, Object b) {
-            return ruby("b, a = math_coerce(other, :compare_error); a > b", "other", b);
+        public Object greaterCoerced(
+                VirtualFrame frame,
+                double a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
         }
     }
 
@@ -642,8 +682,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "wasProvided(ndigits)")
-        public Object round(VirtualFrame frame, double n, Object ndigits) {
-            return ruby("round_internal(ndigits)", "ndigits", ndigits);
+        public Object round(
+                VirtualFrame frame,
+                double n,
+                Object ndigits,
+                @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
+            return callNode.call(frame, n, "round_internal", null, ndigits);
         }
 
     }

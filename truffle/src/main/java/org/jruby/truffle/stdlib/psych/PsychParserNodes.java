@@ -60,6 +60,7 @@ import org.jruby.truffle.core.adapaters.InputStreamAdapter;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.debug.DebugHelpers;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
@@ -144,15 +145,15 @@ public abstract class PsychParserNodes {
 
         @TruffleBoundary
         private Object doParse(DynamicObject parserObject, DynamicObject yaml, DynamicObject path, StreamReader streamReader) {
-            boolean tainted = (boolean) ruby("yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
+            boolean tainted = (boolean) DebugHelpers.eval(getContext(), "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
 
             Parser parser = new ParserImpl(streamReader);
             try {
-                if (isNil(path) && (boolean) ruby("yaml.respond_to? :path", "yaml", yaml)) {
-                    path = (DynamicObject) ruby("yaml.path", "yaml", yaml);
+                if (isNil(path) && (boolean) DebugHelpers.eval(getContext(), "yaml.respond_to? :path", "yaml", yaml)) {
+                    path = (DynamicObject) DebugHelpers.eval(getContext(), "yaml.path", "yaml", yaml);
                 }
 
-                Object handler = getInstanceVariable("@handler");
+                Object handler = DebugHelpers.eval(getContext(), "@handler");
 
                 while (true) {
                     Event event = parser.getEvent();
@@ -204,7 +205,7 @@ public abstract class PsychParserNodes {
 
         private StreamReader readerFor(VirtualFrame frame, DynamicObject yaml) {
             // fall back on IOInputStream, using default charset
-            if (!RubyGuards.isRubyString(yaml) && (boolean) ruby("yaml.respond_to? :read", "yaml", yaml)) {
+            if (!RubyGuards.isRubyString(yaml) && (boolean) DebugHelpers.eval(getContext(), "yaml.respond_to? :read", "yaml", yaml)) {
                 //final boolean isIO = (boolean) ruby("yaml.is_a? IO", "yaml", yaml);
                 //Encoding enc = isIO
                 //        ? UTF8Encoding.INSTANCE // ((RubyIO)yaml).getReadEncoding()
@@ -247,7 +248,7 @@ public abstract class PsychParserNodes {
                 for (Map.Entry<String, String> tag : tagsMap.entrySet()) {
                     Object key = stringFor(tag.getKey(), tainted);
                     Object value = stringFor(tag.getValue(), tainted);
-                    ruby("tags.push [key, value]", "tags", tags, "key", key, "value", value);
+                    DebugHelpers.eval(getContext(), "tags.push [key, value]", "tags", tags, "key", key, "value", value);
                 }
             }
             Object notExplicit = !dse.getExplicit();
@@ -286,30 +287,19 @@ public abstract class PsychParserNodes {
         }
 
         private void raiseParserException(DynamicObject yaml, ReaderException re, DynamicObject rbPath) {
-            ruby("raise Psych::SyntaxError.new(file, line, col, offset, problem, context)",
-                    "file", rbPath,
-                    "line", 0,
-                    "col", 0,
-                    "offset", re.getPosition(),
-                    "problem", re.getName() == null ? nil() : createString(new ByteList(re.getName().getBytes(StandardCharsets.UTF_8))),
-                    "context", re.toString() == null ? nil() : createString(new ByteList(re.toString().getBytes(StandardCharsets.UTF_8))));
+            Object[] arguments = new Object[]{"file", rbPath, "line", 0, "col", 0, "offset", re.getPosition(), "problem", re.getName() == null ? nil() : createString(new ByteList(re.getName().getBytes(StandardCharsets.UTF_8))), "context", re.toString() == null ? nil() : createString(new ByteList(re.toString().getBytes(StandardCharsets.UTF_8)))};
+            DebugHelpers.eval(getContext(), "raise Psych::SyntaxError.new(file, line, col, offset, problem, context)", arguments);
         }
 
         private void raiseParserException(DynamicObject yaml, MarkedYAMLException mye, DynamicObject rbPath) {
             final Mark mark = mye.getProblemMark();
 
-            ruby("raise Psych::SyntaxError.new(file, line, col, offset, problem, context)",
-                    "file", rbPath,
-                    "line", mark.getLine(),
-                    "col", mark.getColumn(),
-                    "offset", mark.getIndex(),
-                    "problem", mye.getProblem() == null ? nil() : createString(new ByteList(mye.getProblem().getBytes(StandardCharsets.UTF_8))),
-                    "context", mye.getContext() == null ? nil() : createString(new ByteList(mye.getContext().getBytes(StandardCharsets.UTF_8))));
+            Object[] arguments = new Object[]{"file", rbPath, "line", mark.getLine(), "col", mark.getColumn(), "offset", mark.getIndex(), "problem", mye.getProblem() == null ? nil() : createString(new ByteList(mye.getProblem().getBytes(StandardCharsets.UTF_8))), "context", mye.getContext() == null ? nil() : createString(new ByteList(mye.getContext().getBytes(StandardCharsets.UTF_8)))};
+            DebugHelpers.eval(getContext(), "raise Psych::SyntaxError.new(file, line, col, offset, problem, context)", arguments);
         }
 
         private Object invoke(Object receiver, String name, Object... args) {
-            return ruby("receiver.send(name, *args)", "receiver", receiver, "name", getSymbol(name),
-                    "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
+            return DebugHelpers.eval(getContext(), "receiver.send(name, *args)", "receiver", receiver, "name", getSymbol(name), "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
         }
 
         private static int translateStyle(Character style) {
@@ -361,14 +351,10 @@ public abstract class PsychParserNodes {
             Object string = createString(bytes);
 
             if (tainted) {
-                ruby("string.taint", "string", string);
+                DebugHelpers.eval(getContext(), "string.taint", "string", string);
             }
 
             return string;
-        }
-
-        private Object getInstanceVariable(String name) {
-            return ruby(name);
         }
 
     }

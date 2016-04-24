@@ -221,14 +221,22 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public Object mulObject(VirtualFrame frame, DynamicObject array, DynamicObject string) {
-            return ruby("join(sep)", "sep", string);
+        public Object mulObject(
+                VirtualFrame frame,
+                DynamicObject array,
+                DynamicObject string,
+                @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
+            return callNode.call(frame, array, "join", null, string);
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isRubyString(object)" })
-        public Object mulObjectCount(VirtualFrame frame, DynamicObject array, Object object) {
+        public Object mulObjectCount(
+                VirtualFrame frame,
+                DynamicObject array,
+                Object object,
+                @Cached("new()") SnippetNode snippetNode) {
             if (respondToToStr(frame, object)) {
-                return ruby("join(sep.to_str)", "sep", object);
+                return snippetNode.execute(frame, "join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -802,7 +810,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(n);
+                    LoopNode.reportLoopCount(this, n);
                 }
             }
 
@@ -1129,7 +1137,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(n);
+                    LoopNode.reportLoopCount(this, n);
                 }
             }
 
@@ -1180,101 +1188,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "insert", raiseIfFrozenSelf = true, rest = true, required = 1, optional = 1)
-    public abstract static class InsertNode extends ArrayCoreMethodNode {
-
-        @Child private ToIntNode toIntNode;
-
-        @Specialization
-        public Object insertMissingValue(VirtualFrame frame, DynamicObject array, Object idx, NotProvided value, Object[] values) {
-            return array;
-        }
-
-        @Specialization(guards = { "isNullArray(array)", "wasProvided(value)", "values.length == 0" })
-        public Object insertNull(DynamicObject array, int idx, Object value, Object[] values) {
-            CompilerDirectives.transferToInterpreter();
-            final int index = normalizeInsertIndex(array, idx);
-            final Object[] store = new Object[index + 1];
-            Arrays.fill(store, nil());
-            store[index] = value;
-            setStoreAndSize(array, store, index + 1);
-            return array;
-        }
-
-        @Specialization(guards = { "isIntArray(array)", "values.length == 0", "idx >= 0", "isIndexSmallerThanSize(idx,array)", "hasRoomForOneExtra(array)" })
-        public Object insert(VirtualFrame frame, DynamicObject array, int idx, int value, Object[] values) {
-            final int index = idx;
-            final int[] store = (int[]) getStore(array);
-            System.arraycopy(store, index, store, index + 1, getSize(array) - index);
-            store[index] = value;
-            setStoreAndSize(array, store, getSize(array) + 1);
-            return array;
-        }
-
-        @Specialization
-        public Object insertBoxed(VirtualFrame frame, DynamicObject array, Object idxObject, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame, 1);
-            final int idx = toInt(frame, idxObject);
-
-            CompilerDirectives.transferToInterpreter();
-            final int index = normalizeInsertIndex(array, idx);
-
-            final int oldSize = getSize(array);
-            final int newSize = (index < oldSize ? oldSize : index) + values.length;
-            final Object[] store = ArrayUtils.boxExtra(getStore(array), newSize - oldSize);
-
-            if (index >= oldSize) {
-                Arrays.fill(store, oldSize, index, nil());
-            } else {
-                final int dest = index + values.length;
-                final int len = oldSize - index;
-                System.arraycopy(store, index, store, dest, len);
-            }
-
-            System.arraycopy(values, 0, store, index, values.length);
-
-            setStoreAndSize(array, store, newSize);
-
-            return array;
-        }
-
-        private int normalizeInsertIndex(DynamicObject array, int index) {
-            final int normalizedIndex = normalizeInsertIndex(getSize(array), index);
-            if (normalizedIndex < 0) {
-                CompilerDirectives.transferToInterpreter();
-                String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-getSize(array));
-                throw new RaiseException(coreExceptions().indexError(errMessage, this));
-            }
-            return normalizedIndex;
-        }
-
-        private static int normalizeInsertIndex(int length, int index) {
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index < 0)) {
-                return length + index + 1;
-            } else {
-                return index;
-            }
-        }
-
-        protected static boolean isIndexSmallerThanSize(int idx, DynamicObject array) {
-            return idx <= getSize(array);
-        }
-
-        protected static boolean hasRoomForOneExtra(DynamicObject array) {
-            return ((int[]) getStore(array)).length > getSize(array);
-        }
-
-        private int toInt(VirtualFrame frame, Object indexObject) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            return toIntNode.doInt(frame, indexObject);
-        }
-
-    }
-
-    @CoreMethod(names = {"map", "collect"}, needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = { "map", "collect" }, needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
@@ -1283,108 +1197,32 @@ public abstract class ArrayNodes {
             return createArray(getContext(), null, 0);
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object mapIntegerFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block,
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public Object map(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("of(array)") ArrayStrategy strategy,
                 @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
-            final int[] store = (int[]) getStore(array);
-            final int arraySize = getSize(array);
-            Object mappedStore = arrayBuilder.start(arraySize);
+            final ArrayMirror store = strategy.newMirror(array);
+            final int size = getSize(array);
+            Object mappedStore = arrayBuilder.start(size);
 
-            int count = 0;
+            int n = 0;
             try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    mappedStore = arrayBuilder.appendValue(mappedStore, n, yield(frame, block, store[n]));
+                for (; n < getSize(array); n++) {
+                    final Object mappedValue = yield(frame, block, store.get(n));
+                    mappedStore = arrayBuilder.appendValue(mappedStore, n, mappedValue);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
+                    LoopNode.reportLoopCount(this, n);
                 }
             }
 
-            return createArray(getContext(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
+            return createArray(getContext(), arrayBuilder.finish(mappedStore, size), size);
         }
 
-        @Specialization(guards = "isLongArray(array)")
-        public Object mapLongFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block,
-                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
-            final long[] store = (long[]) getStore(array);
-            final int arraySize = getSize(array);
-            Object mappedStore = arrayBuilder.start(arraySize);
-
-            int count = 0;
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    mappedStore = arrayBuilder.appendValue(mappedStore, n, yield(frame, block, store[n]));
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
-            return createArray(getContext(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object mapFloat(VirtualFrame frame, DynamicObject array, DynamicObject block,
-                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
-            final double[] store = (double[]) getStore(array);
-            final int arraySize = getSize(array);
-            Object mappedStore = arrayBuilder.start(arraySize);
-
-            int count = 0;
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    mappedStore = arrayBuilder.appendValue(mappedStore, n, yield(frame, block, store[n]));
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
-            return createArray(getContext(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public Object mapObject(VirtualFrame frame, DynamicObject array, DynamicObject block,
-                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
-            final Object[] store = (Object[]) getStore(array);
-            final int arraySize = getSize(array);
-            Object mappedStore = arrayBuilder.start(arraySize);
-
-            int count = 0;
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    mappedStore = arrayBuilder.appendValue(mappedStore, n, yield(frame, block, store[n]));
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
-            return createArray(getContext(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
-        }
     }
 
-    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "map!", "collect!" }, needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
@@ -1395,61 +1233,30 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object mapInPlaceFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final int[] store = (int[]) getStore(array);
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public Object map(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("of(array)") ArrayStrategy strategy,
+                @Cached("createWriteNode()") ArrayWriteNormalizedNode writeNode) {
+            final ArrayMirror store = strategy.newMirror(array);
 
-            int count = 0;
-
+            int n = 0;
             try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    write(frame, array, n, yield(frame, block, store[n]));
+                for (; n < getSize(array); n++) {
+                    writeNode.executeWrite(array, n, yield(frame, block, store.get(n)));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
+                    LoopNode.reportLoopCount(this, n);
                 }
             }
-
 
             return array;
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object mapInPlaceObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final Object[] store = (Object[]) getStore(array);
-
-            int count = 0;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    write(frame, array, n, yield(frame, block, store[n]));
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
-
-            return array;
+        protected ArrayWriteNormalizedNode createWriteNode() {
+            return ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null);
         }
 
-        private Object write(VirtualFrame frame, DynamicObject array, int index, Object value) {
-            if (writeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
-            }
-            return writeNode.executeWrite(array, index, value);
-        }
     }
 
     // TODO: move into Enumerable?
@@ -1491,8 +1298,12 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object max(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return ruby("array.max_internal(&block)", "array", array, "block", block);
+        public Object max(
+                VirtualFrame frame,
+                DynamicObject array,
+                DynamicObject block,
+                @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
+            return callNode.call(frame, array, "max_internal", block);
         }
 
     }
@@ -1609,8 +1420,12 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object min(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return ruby("array.min_internal(&block)", "array", array, "block", block);
+        public Object min(
+                VirtualFrame frame,
+                DynamicObject array,
+                DynamicObject block,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "array.min_internal(&block)", "array", array, "block", block);
         }
 
     }
@@ -1783,8 +1598,12 @@ public abstract class ArrayNodes {
                 "!isLong(format)",
                 "!isNil(format)"
         })
-        public Object pack(DynamicObject array, Object format) {
-            return ruby("pack(format.to_str)", "format", format);
+        public Object pack(
+                VirtualFrame frame,
+                DynamicObject array,
+                Object format,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "pack(format.to_str)", "format", format);
         }
 
         @TruffleBoundary
@@ -3374,22 +3193,27 @@ public abstract class ArrayNodes {
             return createArray(getContext(), store, size);
         }
 
-        public static final String SNIPPET = "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted";
-        public static final String RIGHT = "right";
-        public static final String BLOCK = "block";
-
         @Specialization(guards = { "!isNullArray(array)" })
         public Object sortUsingRubinius(
                 VirtualFrame frame,
                 DynamicObject array,
                 DynamicObject block,
-                @Cached("new(SNIPPET, RIGHT, BLOCK)") SnippetNode snippet) {
-            return snippet.execute(frame, getSize(array), block);
+                @Cached("new()") SnippetNode snippet) {
+
+            return snippet.execute(
+                    frame,
+                    "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted",
+                    "right", getSize(array),
+                    "block", block);
         }
 
         @Specialization(guards = { "!isNullArray(array)", "!isSmall(array)" })
-        public Object sortUsingRubinius(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            return ruby("sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", getSize(array));
+        public Object sortUsingRubinius(
+                VirtualFrame frame,
+                DynamicObject array,
+                NotProvided block,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", getSize(array));
         }
 
         private int castSortValue(Object value) {

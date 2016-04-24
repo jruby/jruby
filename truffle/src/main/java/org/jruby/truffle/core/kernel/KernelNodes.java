@@ -1442,36 +1442,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "rand", isModuleFunction = true, optional = 1)
-    public abstract static class RandNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public double rand(NotProvided max) {
-            return ThreadLocalRandom.current().nextDouble();
-        }
-
-        @Specialization(guards = "max == 0")
-        public double randZero(int max) {
-            return ThreadLocalRandom.current().nextDouble();
-        }
-
-        @Specialization(guards = "max != 0")
-        public int randNonZero(int max) {
-            return ThreadLocalRandom.current().nextInt(max);
-        }
-
-        @Specialization(guards = "max == 0")
-        public double randZero(long max) {
-            return ThreadLocalRandom.current().nextDouble();
-        }
-
-        @Specialization(guards = "max != 0")
-        public long randNonZero(long max) {
-            return ThreadLocalRandom.current().nextLong(max);
-        }
-
-    }
-
     @CoreMethod(names = "require", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.LOAD)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "feature")

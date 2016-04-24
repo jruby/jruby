@@ -166,3 +166,5 @@
     - rubygems
     - shims
     - openssl-stubs
+  :environment:
+    N: 1

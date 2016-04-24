@@ -39,7 +39,9 @@
 package org.jruby.truffle.stdlib.psych;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
@@ -52,6 +54,7 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.adapaters.OutputStreamAdapter;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.yaml.snakeyaml.DumperOptions;
@@ -105,23 +108,25 @@ public abstract class PsychEmitterNodes {
             final DumperOptions options = new DumperOptions();
             options.setIndent(2);
             Layouts.PSYCH_EMITTER.setOptions(emitter, options);
-
             Layouts.PSYCH_EMITTER.setIo(emitter, io);
-
             return nil();
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
-        public DynamicObject initialize(DynamicObject emitter, DynamicObject io, DynamicObject optionsSet) {
+        public DynamicObject initialize(
+                VirtualFrame frame,
+                DynamicObject emitter,
+                DynamicObject io,
+                DynamicObject optionsSet,
+                @Cached("createMethodCall()") CallDispatchHeadNode lineWidthCallNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode canonicalCallNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode indentationCallNode) {
             final DumperOptions options = new DumperOptions();
-            options.setWidth((int) ruby("options_set.line_width", "options_set", optionsSet));
-            options.setCanonical((boolean) ruby("options_set.canonical", "options_set", optionsSet));
-            options.setIndent((int) ruby("options_set.indentation", "options_set", optionsSet));
+            options.setWidth((int) lineWidthCallNode.call(frame, optionsSet, "line_width", null));
+            options.setCanonical((boolean) canonicalCallNode.call(frame, optionsSet, "canonical", null));
+            options.setIndent((int) indentationCallNode.call(frame, optionsSet, "indentation", null));
             Layouts.PSYCH_EMITTER.setOptions(emitter, options);
-
             Layouts.PSYCH_EMITTER.setIo(emitter, io);
-
             return nil();
         }
 
