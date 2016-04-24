@@ -2011,10 +2011,17 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = { "!isRubyBignum(value)", "!isRubyBigDecimal(value)" })
-        public Object doOther(VirtualFrame frame, DynamicObject value, Object roundingMode) {
-            if (roundingMode instanceof RoundingMode && (boolean) ruby("value.is_a?(Rational)", "value", value)) {
+        public Object doOther(
+                VirtualFrame frame,
+                DynamicObject value,
+                Object roundingMode,
+                @Cached("new()") SnippetNode isRationalSnippet,
+                @Cached("createMethodCall()") CallDispatchHeadNode numeratorCallNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode denominatorCallNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode toFCallNode) {
+            if (roundingMode instanceof RoundingMode && (boolean) isRationalSnippet.execute(frame, "value.is_a?(Rational)", "value", value)) {
 
-                final Object numerator = ruby("value.numerator", "value", value);
+                final Object numerator = numeratorCallNode.call(frame, value, "numerator", null);
 
                 final IRubyObject numeratorValue;
 
@@ -2028,7 +2035,7 @@ public abstract class BigDecimalNodes {
                     throw new UnsupportedOperationException(numerator.toString());
                 }
 
-                final Object denominator = ruby("value.denominator", "value", value);
+                final Object denominator = denominatorCallNode.call(frame, value, "denominator", null);
 
                 final IRubyObject denominatorValue;
 
@@ -2055,7 +2062,7 @@ public abstract class BigDecimalNodes {
 
                 return rubyBigDecimalValue.getBigDecimalValue();
             } else {
-                final Object result = ruby("value.to_f", "value", value);
+                final Object result = toFCallNode.call(frame, value, "to_f", null);
                 if (result != nil()) {
                     return new BigDecimal((double) result);
                 } else {
