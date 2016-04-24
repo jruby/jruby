@@ -152,7 +152,7 @@ public abstract class PsychParserNodes {
                     path = (DynamicObject) ruby("yaml.path", "yaml", yaml);
                 }
 
-                Object handler = getInstanceVariable("@handler");
+                Object handler = ruby("@handler");
 
                 while (true) {
                     Event event = parser.getEvent();
@@ -365,10 +365,6 @@ public abstract class PsychParserNodes {
             }
 
             return string;
-        }
-
-        private Object getInstanceVariable(String name) {
-            return ruby(name);
         }
 
     }
