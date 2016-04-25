@@ -45,7 +45,8 @@ VALUE get_rb_cHash();
 
 VALUE get_rb_eRuntimeError();
 
-#define rb_eRuntimeError get_rb_eRuntimeError();
+#define rb_eRuntimeError get_rb_eRuntimeError()
+
 
 int NUM2INT(VALUE value);
 unsigned int NUM2UINT(VALUE value);
@@ -64,9 +65,13 @@ VALUE LONG2FIX(long value);
 
 int FIXNUM_P(VALUE value);
 
+VALUE rb_float_new(double value);
+
 char *RSTRING_PTR(VALUE string);
 int RSTRING_LEN(VALUE string);
 ID rb_intern(const char *string);
+VALUE rb_str_new2(const char *string);
+VALUE ID2SYM(ID id);
 VALUE rb_intern_str(VALUE string);
 void rb_str_cat(VALUE string, char *to_concat, long length);
 
@@ -78,7 +83,10 @@ VALUE rb_ary_new();
 void rb_ary_push(VALUE array, VALUE value);
 void rb_ary_store(VALUE array, long index, VALUE value);
 VALUE rb_ary_entry(VALUE array, long index);
+int RARRAY_LENINT(VALUE array);
+VALUE rb_ary_dup(VALUE array);
 
+VALUE rb_hash_new();
 VALUE rb_hash_aref(VALUE hash, VALUE key);
 void rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 

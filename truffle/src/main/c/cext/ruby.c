@@ -95,6 +95,10 @@ int FIXNUM_P(VALUE value) {
   return truffle_invoke_i(ruby_cext, "fixnum?", value);
 }
 
+VALUE rb_float_new(double value) {
+  return (VALUE) truffle_invoke(ruby_cext, "float_new", value);
+}
+
 char *RSTRING_PTR(VALUE string) {
   // Needs to return a fake char* which actually calls back into Ruby when read or written
   return (char*) truffle_invoke(ruby_cext, "string_ptr", string);
@@ -104,12 +108,24 @@ int RSTRING_LEN(VALUE string) {
   return truffle_get_size(string);
 }
 
+VALUE rb_ary_dup(VALUE array) {
+  return (VALUE) truffle_invoke(array, "dup");
+}
+
 ID rb_intern(const char *string) {
   return (ID) truffle_invoke(ruby_cext, "intern", string);
 }
 
+VALUE rb_str_new2(const char *string) {
+  return (VALUE) truffle_invoke(ruby_cext, "str_new2", string);
+}
+
 VALUE rb_intern_str(VALUE string) {
   return (VALUE) truffle_invoke(ruby_cext, "intern", string);
+}
+
+VALUE ID2SYM(ID id) {
+  return truffle_invoke(ruby_cext, "id2sym", id);
 }
 
 void rb_str_cat(VALUE string, char *to_concat, long length) {
@@ -147,6 +163,14 @@ void rb_ary_store(VALUE array, long index, VALUE value) {
 
 VALUE rb_ary_entry(VALUE array, long index) {
   return truffle_read_idx(array, (int) index);
+}
+
+int RARRAY_LENINT(VALUE array) {
+  return truffle_get_size(array);
+}
+
+VALUE rb_hash_new() {
+  return (VALUE) truffle_invoke(ruby_cext, "hash_new");
 }
 
 VALUE rb_hash_aref(VALUE hash, VALUE key) {
