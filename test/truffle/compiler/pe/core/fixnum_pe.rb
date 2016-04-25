@@ -9,18 +9,18 @@
 example "14", 14
 
 example "14 + 2", 16
-tagged_counter_example "14 + 0xfffffffffffffffffffffffffffffff" # Graal error
+tagged counter example "14 + 0xfffffffffffffffffffffffffffffff" # Graal error
 example "14 + 2.0", 16.0
-counter_example "14 + rand"
+counter example "14 + rand"
 
 example "14 * 2", 28
-counter_example "14 * 0xfffffffffffffffffffffffffffffff"
+counter example "14 * 0xfffffffffffffffffffffffffffffff"
 example "14 * 2.0", 28.0
-counter_example "14 * rand"
+counter example "14 * rand"
 
 example "14 / 2", 7
 example "14 / 0xfffffffffffffffffffffffffffffff", 0
 example "14 / 2.0", 7.0
-counter_example "14 / rand"
+counter example "14 / rand"
 
 example "14 <=> 2", 1

@@ -35,29 +35,34 @@ TIMEOUT = 10
 
 EXAMPLES = []
 
-Example = Struct.new(:code, :expected_value, :expected_constant, :tagged)
+Example = Struct.new(:code, :expected_value, :expected_constant, :tagged, :main_thread)
 
-def example(code, expected_value, expected_constant=true, tagged=false)
-  EXAMPLES << Example.new(code, expected_value, expected_constant, tagged)
+def example(code, expected_value=nil)
+  example = Example.new(code, expected_value, true, false, false)
+  EXAMPLES << example
+  example
 end
 
-def tagged_example(code, expected_value)
-  example(code, expected_value, true, true)
+def main_thread(example)
+  example.main_thread = true
+  example
 end
 
-def counter_example(code)
-  example(code, nil, false, false)
+def tagged(example)
+  example.tagged = true
+  example
 end
 
-def tagged_counter_example(code)
-  example(code, nil, false, true)
+def counter(example)
+  example.expected_constant = false
+  example
 end
 
 if ARGV.first
   require File.expand_path(ARGV.first)
 else
-  example "14", 14
-  counter_example "rand"
+  example '14', 14
+  counter example 'rand'
 
   require_relative 'language/controlflow_pe.rb'
   require_relative 'language/closures_pe.rb'
@@ -103,8 +108,8 @@ EXAMPLES.each do |example|
   next if example.tagged
 
   finished = false
-
-  test_thread = Thread.new do
+  
+  runner = proc do
     begin
       tested += 1
       $value = nil
@@ -155,11 +160,19 @@ EXAMPLES.each do |example|
     end
   end
 
-  test_thread.join(TIMEOUT)
+  if example.main_thread
+    runner.call
+  else
+    test_thread = Thread.new do
+      runner.call
+    end
 
-  unless finished
-    report 'TIMEOUT', example.code, "didn't compile in time so I don't know if it's constant or not"
-    timedout += 1
+    test_thread.join(TIMEOUT)
+
+    unless finished
+      report 'TIMEOUT', example.code, "didn't compile in time so I don't know if it's constant or not"
+      timedout += 1
+    end
   end
 end
 
