@@ -6,7 +6,7 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-unless defined?(Truffle) && Truffle::Interop.mime_type_supported?('application/javascript')
+unless Truffle::Interop.mime_type_supported?('application/javascript')
   puts "JavaScript doesn't appear to be available - skipping execjs test"
   exit
 end
