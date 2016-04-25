@@ -17,7 +17,7 @@ suite = {
     ],
   },
   "libraries": {
-    "RUBY_COMPLETE": {
+    "RUBY_CORE": {
         "path": "lib/jruby.jar",
         "sha1": "NOCHECK",
         "optional" :"true",
@@ -63,7 +63,7 @@ suite = {
 
     "RUBY": {
         "mainClass": "org.jruby.Main",
-        "dependencies": ["jruby-truffle", "RUBY_COMPLETE", "RUBY_TRUFFLE"],
+        "dependencies": ["jruby-truffle", "RUBY_CORE", "RUBY_TRUFFLE"],
         "exclude" : [
           "truffle:JLINE",
         ],
