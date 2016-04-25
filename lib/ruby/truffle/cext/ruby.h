@@ -18,6 +18,7 @@ extern "C" {
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #define xmalloc malloc
 #define xfree free
