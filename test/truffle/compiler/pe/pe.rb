@@ -91,6 +91,10 @@ else
   if Truffle::Interop.mime_type_supported?('application/javascript')
     require_relative 'js.rb'
   end
+  
+  if Truffle::Interop.mime_type_supported?('application/x-r')
+    require_relative 'r.rb'
+  end
 
 end
 
