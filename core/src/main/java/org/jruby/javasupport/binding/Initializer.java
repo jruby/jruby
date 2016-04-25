@@ -41,7 +41,7 @@ public abstract class Initializer {
     protected final JavaSupport javaSupport;
     protected final Class javaClass;
 
-    private static final Logger LOG = LoggerFactory.getLogger("Initializer");
+    private static final Logger LOG = LoggerFactory.getLogger(Initializer.class);
 
     private static final int ACC_BRIDGE    = 0x00000040;
 

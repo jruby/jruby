@@ -62,7 +62,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 public class JavaProxyClassFactory {
-    private static final Logger LOG = LoggerFactory.getLogger("JavaProxyClassFactory");
+    private static final Logger LOG = LoggerFactory.getLogger(JavaProxyClassFactory.class);
 
     static final Type[] EMPTY_TYPE_ARRAY = new Type[0];
 

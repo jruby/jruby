@@ -14,7 +14,7 @@
  *
  * Copyright (C) 2006-2007 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2006-2007 Charles Nutter <headius@headius.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -67,7 +67,7 @@ import org.jruby.util.log.LoggerFactory;
 public class MethodIndex {
     private static final boolean DEBUG = false;
 
-    private static final Logger LOG = LoggerFactory.getLogger("MethodIndex");
+    private static final Logger LOG = LoggerFactory.getLogger(MethodIndex.class);
 
     @Deprecated
     public static final int NO_METHOD = MethodNames.DUMMY.ordinal();
@@ -104,7 +104,7 @@ public class MethodIndex {
 
         return new NormalCachingCallSite(name);
     }
-    
+
     private static final Map<String, String> FIXNUM_OPS = new HashMap<String, String>();
     private static final String[][] fastFixnumOps = {
         {"+", "op_plus"},
@@ -122,11 +122,11 @@ public class MethodIndex {
         {">>", "op_rshift"},
         {"<<", "op_lshift"}
     };
-    
+
     static {
         for (String[] fastOp : fastFixnumOps) FIXNUM_OPS.put(fastOp[0], fastOp[1]);
     }
-    
+
     private static final Map<String, String> FLOAT_OPS = new HashMap<String, String>();
     private static final String[][] fastFloatOps = {
         {"+", "op_plus"},
@@ -139,15 +139,15 @@ public class MethodIndex {
         {">=", "op_ge"},
         {"<=>", "op_cmp"}
     };
-    
+
     static {
         for (String[] fastOp : fastFloatOps) FLOAT_OPS.put(fastOp[0], fastOp[1]);
     }
-    
+
     public static boolean hasFastFixnumOps(String name) {
         return FIXNUM_OPS.containsKey(name);
     }
-    
+
     public static String getFastFixnumOpsMethod(String name) {
         return FIXNUM_OPS.get(name);
     }
@@ -185,11 +185,11 @@ public class MethodIndex {
 
         return new NormalCachingCallSite(name);
     }
-    
+
     public static boolean hasFastFloatOps(String name) {
         return FLOAT_OPS.containsKey(name);
     }
-    
+
     public static String getFastFloatOpsMethod(String name) {
         return FLOAT_OPS.get(name);
     }
@@ -217,11 +217,11 @@ public class MethodIndex {
 
         return new NormalCachingCallSite(name);
     }
-    
+
     public static CallSite getFunctionalCallSite(String name) {
         return new FunctionalCachingCallSite(name);
     }
-    
+
     public static CallSite getVariableCallSite(String name) {
         return new VariableCachingCallSite(name);
     }

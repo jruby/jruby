@@ -50,7 +50,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 public class IRRuntimeHelpers {
-    private static final Logger LOG = LoggerFactory.getLogger("IRRuntimeHelpers");
+    private static final Logger LOG = LoggerFactory.getLogger(IRRuntimeHelpers.class);
 
     public static boolean inProfileMode() {
         return RubyInstanceConfig.IR_PROFILE;

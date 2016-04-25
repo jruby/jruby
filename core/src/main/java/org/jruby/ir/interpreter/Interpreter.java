@@ -33,7 +33,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
-    public static final Logger LOG = LoggerFactory.getLogger("Interpreter");
+    public static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
     public static final String ROOT = "(root)";
     static int interpInstrsCount = 0;
 
@@ -71,7 +71,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         ThreadContext context = runtime.getCurrentContext();
         String name = ROOT;
 
-        if (IRRuntimeHelpers.isDebug()) LOG.info("Executing " + ic);
+        if (IRRuntimeHelpers.isDebug()) LOG.info("Executing {}", ic);
 
         // We get the live object ball rolling here.
         // This give a valid value for the top of this lexical tree.

@@ -24,7 +24,7 @@ import java.io.ByteArrayOutputStream;
  * Method for -X-C (interpreted only execution).  See MixedModeIRMethod for inter/JIT method impl.
  */
 public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<InterpreterContext> {
-    private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
+    private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRMethod.class);
 
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 

@@ -103,7 +103,8 @@ import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
 @JRubyClass(name="Thread")
 public class RubyThread extends RubyObject implements ExecutionContext {
 
-    private static final Logger LOG = LoggerFactory.getLogger("RubyThread");
+    private static final Logger LOG = LoggerFactory.getLogger(RubyThread.class);
+    // static { LOG.setDebugEnable(true); }
 
     /** The thread-like think that is actually executing */
     private volatile ThreadLike threadImpl;
@@ -151,7 +152,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Thread-local tuple used for sleeping (semaphore, millis, nanos) */
     private final SleepTask2 sleepTask = new SleepTask2();
 
-    private static final boolean DEBUG = false;
     public static final int RUBY_MIN_THREAD_PRIORITY = -3;
     public static final int RUBY_MAX_THREAD_PRIORITY = 3;
 
@@ -1516,7 +1516,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private static void debug(RubyThread thread, String message) {
-        if (DEBUG) LOG.debug(Thread.currentThread() + "(" + thread.status + "): " + message);
+        if (LOG.isDebugEnabled()) LOG.debug( "{} ({}): {}", Thread.currentThread(), thread.status, message );
     }
 
     @JRubyMethod

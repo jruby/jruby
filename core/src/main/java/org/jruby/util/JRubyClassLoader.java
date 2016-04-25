@@ -56,7 +56,7 @@ import org.jruby.util.log.LoggerFactory;
  */
 public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
-    private static final Logger LOG = LoggerFactory.getLogger("JRubyClassLoader");
+    private static final Logger LOG = LoggerFactory.getLogger(JRubyClassLoader.class);
 
     private Runnable unloader;
 

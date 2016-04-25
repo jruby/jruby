@@ -63,7 +63,7 @@ import org.jruby.util.log.LoggerFactory;
 @Deprecated
 public class ChannelStream implements Stream, Finalizable {
 
-    private static final Logger LOG = LoggerFactory.getLogger("ChannelStream");
+    private static final Logger LOG = LoggerFactory.getLogger(ChannelStream.class);
 
     private final static boolean DEBUG = false;
 

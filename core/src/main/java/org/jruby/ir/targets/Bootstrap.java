@@ -61,7 +61,7 @@ public class Bootstrap {
         RubyObjectVar8.class,
         RubyObjectVar9.class,
     };
-    private static final Logger LOG = LoggerFactory.getLogger("Bootstrap");
+    private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
     static final Lookup LOOKUP = MethodHandles.lookup();
 
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
