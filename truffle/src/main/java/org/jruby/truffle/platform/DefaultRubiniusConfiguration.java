@@ -44,9 +44,9 @@ import jnr.posix.FileStat;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.numeric.BignumOperations;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.StringOperations;
-
 import java.math.BigInteger;
 import java.util.Arrays;
 
@@ -163,7 +163,7 @@ public abstract class DefaultRubiniusConfiguration {
     }
 
     protected static DynamicObject newBignum(RubyContext context, String value) {
-        return Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), new BigInteger(value));
+        return BignumOperations.createBignum(context, new BigInteger(value));
     }
 
     protected static DynamicObject string(RubyContext context, String value) {

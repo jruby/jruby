@@ -102,7 +102,7 @@ public abstract class RandomizerPrimitiveNodes {
         @Specialization
         public DynamicObject randomizerGenSeed(DynamicObject randomizerClass) {
             final BigInteger seed = RubyRandom.randomSeedBigInteger(getContext().getJRubyRuntime().getRandom());
-            return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), seed);
+            return createBignum(seed);
         }
     }
 

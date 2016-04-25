@@ -169,8 +169,4 @@ public class GeneralDivModNode extends RubyBaseNode {
                 fixnumOrBignumRemainder.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }
 
-    public DynamicObject create(BigInteger value) {
-        return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), value);
-    }
-
 }

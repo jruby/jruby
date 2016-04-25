@@ -1576,7 +1576,7 @@ public abstract class StringPrimitiveNodes {
                 return (int) value;
             } else if (object instanceof org.jruby.RubyBignum) {
                 final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
-                return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), value);
+                return createBignum(value);
             } else {
                 throw new UnsupportedOperationException();
             }

@@ -461,7 +461,7 @@ public abstract class FixnumNodes {
 
             if (mod < 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) > 0 || mod > 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) < 0) {
                 adjustProfile.enter();
-                return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), BigInteger.valueOf(mod).add(Layouts.BIGNUM.getValue(b)));
+                return createBignum(BigInteger.valueOf(mod).add(Layouts.BIGNUM.getValue(b)));
             }
 
             return mod;
@@ -1005,7 +1005,7 @@ public abstract class FixnumNodes {
         @Specialization(contains = "absInBounds")
         public Object abs(long n) {
             if (n == Long.MIN_VALUE) {
-                return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), BigInteger.valueOf(n).abs());
+                return createBignum(BigInteger.valueOf(n).abs());
             }
             return (n < 0) ? -n : n;
         }

@@ -57,7 +57,7 @@ public class FixnumOrBignumNode extends RubyBaseNode {
                 return longValue;
             }
         } else {
-            return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), value);
+            return createBignum(value);
         }
     }
 

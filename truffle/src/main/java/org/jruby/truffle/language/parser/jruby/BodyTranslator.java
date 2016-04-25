@@ -54,6 +54,7 @@ import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
+import org.jruby.truffle.core.numeric.BignumOperations;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.range.RangeNodesFactory;
 import org.jruby.truffle.core.regexp.InterpolatedRegexpNode;
@@ -168,7 +169,6 @@ import org.jruby.truffle.language.yield.YieldExpressionNode;
 import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
@@ -405,7 +405,7 @@ public class BodyTranslator extends Translator {
         final RubyNode ret;
 
         if (value.bitLength() >= 64) {
-            ret = new ObjectLiteralNode(context, sourceSection, Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), node.getValue()));
+            ret = new ObjectLiteralNode(context, sourceSection, BignumOperations.createBignum(context, node.getValue()));
         } else {
             ret = new LongFixnumLiteralNode(context, sourceSection, value.longValue());
         }

@@ -74,7 +74,7 @@ public abstract class BignumPrimitiveNodes {
                 return null; // Primitive failure
             } else {
                 // TODO CS 15-Feb-15 what about this cast?
-                return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), Layouts.BIGNUM.getValue(a).pow((int) b));
+                return createBignum(Layouts.BIGNUM.getValue(a).pow((int) b));
             }
         }
 
