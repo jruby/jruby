@@ -496,11 +496,22 @@ module Commands
   private :test_mri
 
   def test_compiler(*args)
+    jruby_opts = []
+    jruby_opts << '-J-Djvmci.Compiler=graal'
+    jruby_opts << '-Xtruffle.graal.warn_unless=false'
+    
+    if ENV['GRAAL_JS_JAR']
+      jruby_opts << '-J-classpath'
+      jruby_opts << Utilities.find_graal_js
+    end
+    
+    jruby_opts << '-Xtruffle.exceptions.print_java=true'
+    
     env_vars = {}
-    env_vars["JRUBY_OPTS"] = '-Xtruffle.graal.warn_unless=false'
     env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
-    env_vars["JRUBY_OPTS"] = '-J-Djvmci.Compiler=graal'
+    env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
+    
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
       sh env_vars, test_script
     end
