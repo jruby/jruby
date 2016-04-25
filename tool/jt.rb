@@ -41,6 +41,9 @@ module Utilities
     from_env = ENV['GRAAL_BIN']
     yield File.expand_path(from_env) if from_env
 
+    from_branch = ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"]
+    yield File.expand_path(from_branch) if from_branch
+
     rel_java_bin = "bin/java" # "jre/bin/javao"
     %w[dk re].each { |kind|
       ["", "../", "../../"].each { |prefix|
