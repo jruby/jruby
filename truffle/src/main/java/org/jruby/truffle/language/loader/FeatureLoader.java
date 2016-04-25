@@ -42,7 +42,11 @@ import java.util.concurrent.locks.ReentrantLock;
 public class FeatureLoader {
 
     private final RubyContext context;
+
     private final ConcurrentHashMap<String, ReentrantLock> fileLocks = new ConcurrentHashMap<>();
+
+    private final Object cextImplementationLock = new Object();
+    private boolean cextImplementationLoaded = false;
 
     public FeatureLoader(RubyContext context) {
         this.context = context;
@@ -194,6 +198,8 @@ public class FeatureLoader {
                 } break;
 
                 case RubyLanguage.CEXT_MIME_TYPE: {
+                    ensureCExtImplementationLoaded(frame, callNode);
+
                     final CallTarget callTarget;
 
                     try {
@@ -242,6 +248,26 @@ public class FeatureLoader {
             lock.unlock();
         }
 
+    }
+
+    private void ensureCExtImplementationLoaded(VirtualFrame frame, IndirectCallNode callNode) {
+        synchronized (cextImplementationLock) {
+            if (cextImplementationLoaded) {
+                return;
+            }
+
+            final CallTarget callTarget;
+
+            try {
+                callTarget = context.getEnv().parse(Source.fromFileName(context.getJRubyRuntime().getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            callNode.call(frame, callTarget, new Object[]{});
+
+            cextImplementationLoaded = true;
+        }
     }
 
     private String getBaseName(String path) {
