@@ -18,7 +18,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
-import java.math.BigInteger;
 import jnr.ffi.provider.MemoryManager;
 import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
@@ -31,12 +30,13 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.debug.DebugHelpers;
 import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
+
+import java.math.BigInteger;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)

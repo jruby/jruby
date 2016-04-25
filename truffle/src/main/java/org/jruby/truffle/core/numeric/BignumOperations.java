@@ -1,9 +1,10 @@
 package org.jruby.truffle.core.numeric;
 
 import com.oracle.truffle.api.object.DynamicObject;
-import java.math.BigInteger;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
+
+import java.math.BigInteger;
 
 public class BignumOperations {
 

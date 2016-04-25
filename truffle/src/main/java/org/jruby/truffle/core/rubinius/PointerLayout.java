@@ -11,9 +11,9 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.dsl.Layout;
 import jnr.ffi.Pointer;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
-import com.oracle.truffle.api.object.dsl.Layout;
 
 @Layout
 public interface PointerLayout extends BasicObjectLayout {

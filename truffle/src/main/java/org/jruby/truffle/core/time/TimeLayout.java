@@ -11,9 +11,9 @@ package org.jruby.truffle.core.time;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.dsl.Layout;
 import org.joda.time.DateTime;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
-import com.oracle.truffle.api.object.dsl.Layout;
 
 @Layout
 public interface TimeLayout extends BasicObjectLayout {

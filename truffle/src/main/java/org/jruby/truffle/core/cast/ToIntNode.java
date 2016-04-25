@@ -19,7 +19,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.cast.ToIntNodeGen;
 import org.jruby.truffle.core.numeric.FloatNodes;
 import org.jruby.truffle.core.numeric.FloatNodesFactory;
 import org.jruby.truffle.language.RubyGuards;

@@ -12,13 +12,13 @@ package org.jruby.truffle.core.thread;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
+import com.oracle.truffle.api.object.dsl.Layout;
+import com.oracle.truffle.api.object.dsl.Nullable;
+import com.oracle.truffle.api.object.dsl.Volatile;
 import org.jruby.RubyThread;
 import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.core.fiber.FiberManager;
-import com.oracle.truffle.api.object.dsl.Layout;
-import com.oracle.truffle.api.object.dsl.Nullable;
-import com.oracle.truffle.api.object.dsl.Volatile;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;

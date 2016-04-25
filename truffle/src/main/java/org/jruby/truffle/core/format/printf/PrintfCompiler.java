@@ -20,9 +20,6 @@ import org.jruby.truffle.core.format.FormatErrorListener;
 import org.jruby.truffle.core.format.FormatRootNode;
 import org.jruby.truffle.language.RubyNode;
 
-import org.jruby.truffle.core.format.printf.PrintfLexer;
-import org.jruby.truffle.core.format.printf.PrintfParser;
-
 public class PrintfCompiler {
 
     private final RubyContext context;

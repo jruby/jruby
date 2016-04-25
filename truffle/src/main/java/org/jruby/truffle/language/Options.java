@@ -48,7 +48,6 @@ import static org.jruby.util.cli.Options.TRUFFLE_METHOD_TO_PROC_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_RECOVER_LOOP_MIN;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_UNROLL_LIMIT;
-import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE;
 import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_AT_EXIT;
 import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_EXIT;
 import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_IO;

@@ -17,10 +17,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.kernel.TraceManager;
-import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.stdlib.CoverageManager;
 
 /**
  * Define a method from a module body (module/class/class << self ... end).

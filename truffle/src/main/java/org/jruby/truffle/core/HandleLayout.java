@@ -11,8 +11,8 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import com.oracle.truffle.api.object.dsl.Layout;
+import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 
 @Layout
 public interface HandleLayout extends BasicObjectLayout {

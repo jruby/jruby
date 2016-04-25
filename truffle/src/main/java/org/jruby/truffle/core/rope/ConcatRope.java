@@ -12,7 +12,6 @@ package org.jruby.truffle.core.rope;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
-import org.jruby.util.func.Function1;
 
 public class ConcatRope extends Rope {
 
