@@ -76,10 +76,10 @@ class MavenBuildTask(mx.BuildTask):
         mx.run_maven(['-Pcomplete', '-DskipTests', '-Dtruffle.version=' + truffle_commit], cwd=rubyDir)
         mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
-        shutil.rmtree(os.path.join(_suite.dir, "lib", "target"))
-        shutil.rmtree(os.path.join(_suite.dir, 'lib', 'lib', 'jni'))
+        shutil.rmtree(os.path.join(_suite.dir, "lib", "target"), True)
+        shutil.rmtree(os.path.join(_suite.dir, 'lib', 'lib', 'jni'), True)
         shutil.copytree(os.path.join(_suite.dir, 'lib', 'jni'), os.path.join(_suite.dir, 'lib', 'lib', 'jni'))
-        shutil.rmtree(os.path.join(_suite.dir, 'lib', 'jni'))
+        shutil.rmtree(os.path.join(_suite.dir, 'lib', 'jni'), True)
 
     def clean(self, forBuild=False):
         if forBuild:
