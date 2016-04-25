@@ -98,11 +98,13 @@ public class SnippetNode extends RubyBaseNode {
     }
 
     private boolean ensureConstantExpressionParameters(String expression, Object[] arguments) {
-        boolean test = this.expression == expression;
+        assert this.expression == expression :
+                "has to be always called with same expression: " + this.expression + " != " + expression;
         for (int n = 0; n < parameters.length; n++) {
-            test = test && parameters[n] == arguments[2 * n];
+            assert parameters[n] == arguments[2 * n] :
+                    "has to be always called with same parameter name at " + n + ": " + parameters[n] + " != " + arguments[2 * n];
         }
-        return test;
+        return true;
     }
 
     @ExplodeLoop
