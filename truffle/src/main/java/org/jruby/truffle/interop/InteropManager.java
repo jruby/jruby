@@ -27,17 +27,15 @@ public class InteropManager {
         this.context = context;
     }
 
-    public void exportObject(DynamicObject name, TruffleObject object) {
-        assert RubyGuards.isRubyString(name);
-        exported.put(name.toString(), object);
+    public void exportObject(String name, TruffleObject object) {
+        exported.put(name, object);
     }
 
     public Object findExportedObject(String name) {
         return exported.get(name);
     }
 
-    public Object importObject(DynamicObject name) {
-        assert RubyGuards.isRubyString(name);
+    public Object importObject(String name) {
         return context.getEnv().importSymbol(name.toString());
     }
 

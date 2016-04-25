@@ -566,7 +566,7 @@ public abstract class TruffleInteropNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(name) || isRubySymbol(name)")
         public Object export(DynamicObject name, TruffleObject object) {
-            getContext().getInteropManager().exportObject(name, object);
+            getContext().getInteropManager().exportObject(name.toString(), object);
             return object;
         }
 
@@ -578,7 +578,7 @@ public abstract class TruffleInteropNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(name) || isRubySymbol(name)")
         public Object importObject(DynamicObject name) {
-            return getContext().getInteropManager().importObject(name);
+            return getContext().getInteropManager().importObject(name.toString());
         }
 
     }
