@@ -278,12 +278,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean equal(DynamicObject a, int b) {
-            return Layouts.BIGNUM.getValue(a).equals(BigInteger.valueOf(b));
+            return false;
         }
 
         @Specialization
         public boolean equal(DynamicObject a, long b) {
-            return Layouts.BIGNUM.getValue(a).equals(BigInteger.valueOf(b));
+            return false;
         }
 
         @Specialization
@@ -491,7 +491,9 @@ public abstract class BignumNodes {
         public DynamicObject coerce(DynamicObject a, int b) {
             CompilerDirectives.transferToInterpreter();
 
-            Object[] store = new Object[] { Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), BigInteger.valueOf(b)), a };
+            // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
+            // b is converted to a Bignum here in other implementations.
+            Object[] store = new Object[] { b, a };
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
         }
 
@@ -499,7 +501,9 @@ public abstract class BignumNodes {
         public DynamicObject coerce(DynamicObject a, long b) {
             CompilerDirectives.transferToInterpreter();
 
-            Object[] store = new Object[] { Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), BigInteger.valueOf(b)), a };
+            // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
+            // b is converted to a Bignum here in other implementations.
+            Object[] store = new Object[] { b, a };
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
         }
 
