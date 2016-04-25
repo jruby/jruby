@@ -44,16 +44,16 @@ import org.jruby.truffle.core.cast.IntegerCastNodeGen;
 import org.jruby.truffle.core.cast.SplatCastNode;
 import org.jruby.truffle.core.cast.SplatCastNodeGen;
 import org.jruby.truffle.core.cast.StringToSymbolNodeGen;
+import org.jruby.truffle.core.cast.ToProcNodeGen;
 import org.jruby.truffle.core.cast.ToSNode;
 import org.jruby.truffle.core.cast.ToSNodeGen;
-import org.jruby.truffle.core.cast.ToProcNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
-import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
+import org.jruby.truffle.core.numeric.BignumOperations;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.range.RangeNodesFactory;
 import org.jruby.truffle.core.regexp.InterpolatedRegexpNode;
@@ -73,7 +73,6 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.debug.AssertConstantNodeGen;
 import org.jruby.truffle.debug.AssertNotCompiledNodeGen;
-import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -165,7 +164,6 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNode;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNodeGen;
 import org.jruby.truffle.language.threadlocal.WrapInThreadLocalNodeGen;
 import org.jruby.truffle.language.yield.YieldExpressionNode;
-import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
@@ -405,7 +403,7 @@ public class BodyTranslator extends Translator {
         final RubyNode ret;
 
         if (value.bitLength() >= 64) {
-            ret = new ObjectLiteralNode(context, sourceSection, Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), node.getValue()));
+            ret = new ObjectLiteralNode(context, sourceSection, BignumOperations.createBignum(context, node.getValue()));
         } else {
             ret = new LongFixnumLiteralNode(context, sourceSection, value.longValue());
         }

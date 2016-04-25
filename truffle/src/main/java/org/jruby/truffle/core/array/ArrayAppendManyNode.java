@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.core.array;
 
-import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
-import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -22,6 +20,9 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
+
+import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
+import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
 @NodeChildren({
         @NodeChild("array"),

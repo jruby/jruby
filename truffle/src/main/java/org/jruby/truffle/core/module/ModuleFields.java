@@ -26,12 +26,12 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.literal.ObjectLiteralNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.ObjectGraphNode;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
+
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;

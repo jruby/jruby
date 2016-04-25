@@ -14,12 +14,12 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
+import com.oracle.truffle.api.object.dsl.Layout;
+import com.oracle.truffle.api.object.dsl.Nullable;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.language.control.FrameOnStackMarker;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import com.oracle.truffle.api.object.dsl.Layout;
-import com.oracle.truffle.api.object.dsl.Nullable;
 
 // A instance of Proc behaves either as a proc or lambda (its type).
 // Kernel#lambda is the only primitive which can produce a lambda-semantics Proc from a proc-semantics one.

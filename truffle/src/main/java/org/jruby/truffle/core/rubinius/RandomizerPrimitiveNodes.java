@@ -12,9 +12,7 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyRandom;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.util.Random;
 
@@ -102,7 +100,7 @@ public abstract class RandomizerPrimitiveNodes {
         @Specialization
         public DynamicObject randomizerGenSeed(DynamicObject randomizerClass) {
             final BigInteger seed = RubyRandom.randomSeedBigInteger(getContext().getJRubyRuntime().getRandom());
-            return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), seed);
+            return createBignum(seed);
         }
     }
 

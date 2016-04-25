@@ -278,12 +278,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean equal(DynamicObject a, int b) {
-            return Layouts.BIGNUM.getValue(a).equals(BigInteger.valueOf(b));
+            return false;
         }
 
         @Specialization
         public boolean equal(DynamicObject a, long b) {
-            return Layouts.BIGNUM.getValue(a).equals(BigInteger.valueOf(b));
+            return false;
         }
 
         @Specialization
@@ -487,26 +487,24 @@ public abstract class BignumNodes {
     @CoreMethod(names = "coerce", required = 1)
     public abstract static class CoerceNode extends CoreMethodArrayArgumentsNode {
 
+        // NOTE (eregon, 16 Feb. 2015): In other implementations, b is converted to a Bignum here,
+        // even if it fits in a Fixnum. We avoid it for implementation sanity
+        // and to keep the representations strictly distinct over the range of values.
+
         @Specialization
         public DynamicObject coerce(DynamicObject a, int b) {
-            CompilerDirectives.transferToInterpreter();
-
-            Object[] store = new Object[] { Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), BigInteger.valueOf(b)), a };
+            Object[] store = new Object[] { b, a };
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
         }
 
         @Specialization
         public DynamicObject coerce(DynamicObject a, long b) {
-            CompilerDirectives.transferToInterpreter();
-
-            Object[] store = new Object[] { Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), BigInteger.valueOf(b)), a };
+            Object[] store = new Object[] { b, a };
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
         public DynamicObject coerce(DynamicObject a, DynamicObject b) {
-            CompilerDirectives.transferToInterpreter();
-
             Object[] store = new Object[] { b, a };
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
         }

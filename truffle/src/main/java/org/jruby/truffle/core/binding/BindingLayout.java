@@ -12,8 +12,8 @@ package org.jruby.truffle.core.binding;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import com.oracle.truffle.api.object.dsl.Layout;
+import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 
 @Layout
 public interface BindingLayout extends BasicObjectLayout {

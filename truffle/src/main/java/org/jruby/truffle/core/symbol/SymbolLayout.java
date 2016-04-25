@@ -14,7 +14,6 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.dsl.Layout;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.core.rope.Rope;
-import com.oracle.truffle.api.object.dsl.Nullable;
 
 @Layout
 public interface SymbolLayout extends BasicObjectLayout {

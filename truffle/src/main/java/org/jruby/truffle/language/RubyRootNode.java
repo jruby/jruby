@@ -17,7 +17,6 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 public class RubyRootNode extends RootNode {

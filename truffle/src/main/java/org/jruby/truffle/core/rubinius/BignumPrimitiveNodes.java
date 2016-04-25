@@ -13,8 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 
 import java.math.BigInteger;
@@ -74,7 +72,7 @@ public abstract class BignumPrimitiveNodes {
                 return null; // Primitive failure
             } else {
                 // TODO CS 15-Feb-15 what about this cast?
-                return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), Layouts.BIGNUM.getValue(a).pow((int) b));
+                return createBignum(Layouts.BIGNUM.getValue(a).pow((int) b));
             }
         }
 

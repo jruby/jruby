@@ -51,9 +51,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-import org.jruby.truffle.core.format.pack.PackParser;
-import org.jruby.truffle.core.format.pack.PackBaseListener;
-
 public class PackTreeBuilder extends PackBaseListener {
 
     private final RubyContext context;

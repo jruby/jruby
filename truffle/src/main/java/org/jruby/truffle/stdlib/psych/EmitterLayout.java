@@ -11,9 +11,9 @@ package org.jruby.truffle.stdlib.psych;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import com.oracle.truffle.api.object.dsl.Layout;
 import com.oracle.truffle.api.object.dsl.Nullable;
+import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.emitter.Emitter;
 
