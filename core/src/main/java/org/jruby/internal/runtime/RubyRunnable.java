@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -43,38 +43,38 @@ import org.jruby.util.log.LoggerFactory;
 
 public class RubyRunnable implements ThreadedRunnable {
 
-    private static final Logger LOG = LoggerFactory.getLogger("RubyRunnable");
+    private static final Logger LOG = LoggerFactory.getLogger(RubyRunnable.class);
 
     private final Ruby runtime;
     private final RubyProc proc;
     private final IRubyObject[] arguments;
     private final RubyThread rubyThread;
-    
+
     private Thread javaThread;
     private static boolean warnedAboutTC = false;
-    
+
     public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
         this.rubyThread = rubyThread;
         this.runtime = rubyThread.getRuntime();
-        
+
         proc = runtime.newProc(Block.Type.THREAD, currentBlock);
         this.arguments = args;
     }
-    
+
     @Deprecated
     public RubyThread getRubyThread() {
         return rubyThread;
     }
-    
+
     public Thread getJavaThread() {
         return javaThread;
     }
-    
+
     @Override
     public void run() {
         javaThread = Thread.currentThread();
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
-        
+
         // set thread context JRuby classloader here, for Ruby-owned thread
         ClassLoader oldContextClassLoader = null;
         try {
@@ -87,7 +87,7 @@ public class RubyRunnable implements ThreadedRunnable {
                 LOG.info("WARNING: Security restrictions disallowed setting context classloader for Ruby threads.");
             }
         }
-        
+
         rubyThread.beforeStart();
 
         // uber-ThreadKill catcher, since it should always just mean "be dead"

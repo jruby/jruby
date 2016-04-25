@@ -49,8 +49,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class MathLinker {
-    private static final Logger LOG = LoggerFactory.getLogger("MathLinker");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(MathLinker.class);
+
     public static CallSite fixnumOperatorBootstrap(Lookup lookup, String name, MethodType type, long value, String file, int line) throws NoSuchMethodException, IllegalAccessException {
         String[] names = name.split(":");
         String operator = JavaNameMangler.demangleMethodName(names[1]);

@@ -75,6 +75,10 @@ project 'JRuby Core' do
   jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
   jar 'joda-time:joda-time:${joda.time.version}'
 
+  # SLF4J only used within SLF4JLogger (JRuby logger impl) class
+  jar 'org.slf4j:slf4j-api:1.7.12', :scope => 'provided', :optional => true
+  jar 'org.slf4j:slf4j-simple:1.7.12', :scope => 'test'
+
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
             'lifecycleMappingMetadata' => {

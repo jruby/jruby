@@ -58,7 +58,7 @@ import static org.jruby.ir.IRFlags.*;
  * and so on ...
  */
 public abstract class IRScope implements ParseResult {
-    public static final Logger LOG = LoggerFactory.getLogger("IRScope");
+    public static final Logger LOG = LoggerFactory.getLogger(IRScope.class);
 
     private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
 

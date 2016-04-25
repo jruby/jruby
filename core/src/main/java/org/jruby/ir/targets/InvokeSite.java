@@ -56,7 +56,7 @@ public abstract class InvokeSite extends MutableCallSite {
     private boolean boundOnce;
     CacheEntry cache = CacheEntry.NULL_CACHE;
 
-    private static final Logger LOG = LoggerFactory.getLogger("InvokeSite");
+    private static final Logger LOG = LoggerFactory.getLogger(InvokeSite.class);
 
     public String name() {
         return methodName;
