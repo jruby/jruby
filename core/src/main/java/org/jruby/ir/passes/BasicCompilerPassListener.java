@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BasicCompilerPassListener implements CompilerPassListener {
-    private static final Logger LOG = LoggerFactory.getLogger("BasicCompilerPassListener");
+    private static final Logger LOG = LoggerFactory.getLogger(BasicCompilerPassListener.class);
 
     private Map<CompilerPass, Long> times = new HashMap<CompilerPass, Long>();
 

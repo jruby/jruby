@@ -25,7 +25,7 @@ import static org.objectweb.asm.Opcodes.*;
 // This class represents JVM as the target of compilation
 // and outputs bytecode
 public abstract class JVM {
-    private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
+    //private static final Logger LOG = LoggerFactory.getLogger(JVM.class);
 
     Stack<ClassData> clsStack = new Stack();
     ClassWriter writer;

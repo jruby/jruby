@@ -128,9 +128,9 @@ import static org.jruby.runtime.Visibility.*;
 @JRubyClass(name="Module")
 public class RubyModule extends RubyObject {
 
-    private static final Logger LOG = LoggerFactory.getLogger("RubyModule");
+    private static final Logger LOG = LoggerFactory.getLogger(RubyModule.class);
+    // static { LOG.setDebugEnable(true); } // enable DEBUG output
 
-    private static final boolean DEBUG = false;
     protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
 
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
@@ -1016,23 +1016,22 @@ public class RubyModule extends RubyObject {
     public static TypePopulator loadPopulatorFor(Class<?> type) {
         if (Options.DEBUG_FULLTRACE.load() || Options.REFLECTED_HANDLES.load()) {
             // we want non-generated invokers or need full traces, use default (slow) populator
-            if (DEBUG) LOG.info("trace mode, using default populator");
+            LOG.debug("trace mode, using default populator");
         } else {
             try {
                 String qualifiedName = "org.jruby.gen." + type.getCanonicalName().replace('.', '$');
                 String fullName = qualifiedName + AnnotationBinder.POPULATOR_SUFFIX;
                 String fullPath = fullName.replace('.', '/') + ".class";
-
-                if (DEBUG) LOG.info("looking for " + fullName);
+                if (LOG.isDebugEnabled()) LOG.debug("looking for populator " + fullName);
 
                 if (Ruby.getClassLoader().getResource(fullPath) == null) {
-                    if (DEBUG) LOG.info("Could not find it, using default populator");
+                    LOG.debug("could not find it, using default populator");
                 } else {
                     Class populatorClass = Class.forName(qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
                     return (TypePopulator) populatorClass.newInstance();
                 }
-            } catch (Throwable t) {
-                if (DEBUG) LOG.info("Could not find it, using default populator");
+            } catch (Throwable ex) {
+                if (LOG.isDebugEnabled()) LOG.debug("could not find populator, using default (" + ex + ')');
             }
         }
 
@@ -1439,7 +1438,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void invalidateCacheDescendants() {
-        if (DEBUG) LOG.debug("invalidating descendants: {}", baseName);
+        LOG.debug("{} invalidating descendants", baseName);
 
         if (includingHierarchies.isEmpty()) {
             // it's only us; just invalidate directly

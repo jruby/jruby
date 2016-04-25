@@ -138,7 +138,9 @@ class JRubyTruffleRunner
             load_path:        ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', ADD_TO_ARRAY, []],
             executable:       ['-S', '--executable NAME', 'finds and runs an executable of a gem', STORE_NEW_VALUE, nil],
             jexception:       ['--jexception', 'print Java exceptions', STORE_NEW_VALUE, false],
-            environment:      ['--environment NAME,VALUE', Array, 'Set environment variables', MERGE_TO_HASH, {}]
+            environment:      ['--environment NAME,VALUE', Array, 'Set environment variables', MERGE_TO_HASH, {}],
+            xmx:              ['--xmx SIZE', 'Max memory size', STORE_NEW_VALUE, '2G'],
+            no_asserts:       ['--no-asserts', 'Disable asserts -ea -esa', STORE_NEW_NEGATED_VALUE, false]
         },
         ci:     {
             batch:      ['--batch FILE', 'Run batch of ci tests supplied in a file. One ci command options per line. If FILE is in or stdin it reads from $stdin.',
@@ -457,7 +459,9 @@ class JRubyTruffleRunner
     puts "Core load path: #{core_load_path} does not exist, fallbacking to --no-use-fs-core" if missing_core_load_path
 
     truffle_options = [
-        ('-X+T'),
+        '-X+T',
+        "-J-Xmx#{@options[:run][:xmx]}",
+        *(%w[-J-ea -J-esa] unless @options[:run][:no_asserts]),
         ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core] && !missing_core_load_path),
         ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception])
     ]

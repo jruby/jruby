@@ -224,7 +224,10 @@ public final class Ruby implements Constantizable {
     /**
      * The logger used to log relevant bits.
      */
-    private static final Logger LOG = LoggerFactory.getLogger("Ruby");
+    private static final Logger LOG = LoggerFactory.getLogger(Ruby.class);
+    static { // enable DEBUG output
+        if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.setDebugEnable(true);
+    }
 
     /**
      * Create and initialize a new JRuby runtime. The properties of the
@@ -655,13 +658,15 @@ public final class Ruby implements Constantizable {
             try {
                 script = tryCompile(scriptNode);
                 if (Options.JIT_LOGGING.load()) {
-                    LOG.info("Successfully compiled: " + scriptNode.getFile());
+                    LOG.info("Successfully compiled: {}", scriptNode.getFile());
                 }
             } catch (Throwable e) {
                 if (Options.JIT_LOGGING.load()) {
-                    LOG.error("Failed to compile: " + scriptNode.getFile());
                     if (Options.JIT_LOGGING_VERBOSE.load()) {
-                        LOG.error(e);
+                        LOG.error("Failed to compile: " + scriptNode.getFile(), e);
+                    }
+                    else {
+                        LOG.error("Failed to compile: " + scriptNode.getFile());
                     }
                 }
             }
@@ -805,9 +810,12 @@ public final class Ruby implements Constantizable {
             return Compiler.getInstance().execute(this, root, classLoader);
         } catch (NotCompilableException e) {
             if (Options.JIT_LOGGING.load()) {
-                LOG.error("failed to compile target script " + root.getFile() + ": " + e.getLocalizedMessage());
-
-                if (Options.JIT_LOGGING_VERBOSE.load()) LOG.error(e);
+                if (Options.JIT_LOGGING_VERBOSE.load()) {
+                    LOG.error("failed to compile target script " + root.getFile() + ": ", e);
+                }
+                else {
+                    LOG.error("failed to compile target script " + root.getFile() + ": " + e.getLocalizedMessage());
+                }
             }
             return null;
         }
@@ -3016,22 +3024,22 @@ public final class Ruby implements Constantizable {
             Class contents;
             try {
                 contents = getJRubyClassLoader().loadClass(className);
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("found jitted code for " + filename + " at class: " + className);
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("found jitted code for " + filename + " at class: " + className);
                 }
                 script = (Script) contents.newInstance();
                 readStream = new ByteArrayInputStream(buffer);
             } catch (ClassNotFoundException cnfe) {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("no jitted code in classloader for file " + filename + " at class: " + className);
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("no jitted code in classloader for file " + filename + " at class: " + className);
                 }
-            } catch (InstantiationException ie) {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
+            } catch (InstantiationException ex) {
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("jitted code could not be instantiated for file " + filename + " at class: " + className + ' ' + ex);
                 }
-            } catch (IllegalAccessException iae) {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
+            } catch (IllegalAccessException ex) {
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("jitted code could not be instantiated for file " + filename + " at class: " + className + ' ' + ex);
                 }
             }
         } catch (IOException ioe) {
@@ -4018,9 +4026,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newSystemStackError(String message, StackOverflowError soe) {
-        if (getDebug().isTrue()) {
-            LOG.debug(soe.getMessage(), soe);
-        }
+        if ( isDebug() ) LOG.debug(soe);
         return newRaiseException(getSystemStackError(), message);
     }
 

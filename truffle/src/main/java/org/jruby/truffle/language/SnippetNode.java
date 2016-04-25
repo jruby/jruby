@@ -82,7 +82,7 @@ public class SnippetNode extends RubyBaseNode {
                     "number of arguments doesn't match number of parameters");
         }
 
-        ensureConstantExpressionParameters(expression, arguments);
+        assert ensureConstantExpressionParameters(expression, arguments);
 
         final Object[] callArguments = RubyArguments.pack(
                 parentFrame(frame, arguments),
@@ -97,12 +97,12 @@ public class SnippetNode extends RubyBaseNode {
         return directCallNode.call(frame, callArguments);
     }
 
-    @ExplodeLoop
-    private void ensureConstantExpressionParameters(String expression, Object[] arguments) {
-        assert this.expression == expression;
+    private boolean ensureConstantExpressionParameters(String expression, Object[] arguments) {
+        boolean test = this.expression == expression;
         for (int n = 0; n < parameters.length; n++) {
-            assert parameters[n] == arguments[2 * n];
+            test = test && parameters[n] == arguments[2 * n];
         }
+        return test;
     }
 
     @ExplodeLoop

@@ -21,7 +21,7 @@ import org.jruby.util.log.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 
 public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<DynamicMethod> {
-    private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
+    private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRMethod.class);
 
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
