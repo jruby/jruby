@@ -1,8 +1,9 @@
 require 'fileutils'
 
 project 'JRuby Complete' do
-
-  version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
+  
+  version = ENV['JRUBY_VERSION'] ||
+    File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby-complete:#{version}"

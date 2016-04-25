@@ -82,6 +82,7 @@ reference.txt
 rubyspec_temp
 .polyglot.pom.rb
 tool/truffle/jruby_truffle_runner/jruby+truffle_runner-*.gem
+test/truffle/cexts/**/Makefile
 
 # binaries
 !bin/gem
