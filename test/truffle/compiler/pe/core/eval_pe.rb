@@ -14,4 +14,4 @@ example "eval('[1, 2, 3]')[1]", 2
 
 example "eval([1, 2, 3].inspect)[1]", 2
 
-tagged_counter_example "eval(rand.to_s)"
+tagged counter example "eval(rand.to_s)"

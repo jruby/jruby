@@ -9,19 +9,19 @@
 # TODO CS 8-Nov-15 fail due to a boundary and control flow diverge
 
 # Kernel#binding
-tagged_example "x = 14; binding.local_variable_get(:x)", 14
+tagged example "x = 14; binding.local_variable_get(:x)", 14
 
 # Proc#binding
-tagged_example "x = 14; p = Proc.new { }; p.binding.local_variable_get(:x)", 14
+tagged example "x = 14; p = Proc.new { }; p.binding.local_variable_get(:x)", 14
 
 # set + get
-tagged_example "b = binding; b.local_variable_set(:x, 14); b.local_variable_get(:x)", 14
+tagged example "b = binding; b.local_variable_set(:x, 14); b.local_variable_get(:x)", 14
 
 # get (2 levels)
-tagged_example "x = 14; y = nil; 1.times { y = binding.local_variable_get(:x) }; y", 14
+tagged example "x = 14; y = nil; 1.times { y = binding.local_variable_get(:x) }; y", 14
 
 # set (2 levels)
-tagged_example "x = 14; 1.times { binding.local_variable_set(:x, 15) }; x", 15
+tagged example "x = 14; 1.times { binding.local_variable_set(:x, 15) }; x", 15
 
 # get + set (2 levels)
-tagged_example "x = 14; y = nil; 1.times { binding.local_variable_set(:x, 15); y = binding.local_variable_get(:x) }; y", 15
+tagged example "x = 14; y = nil; 1.times { binding.local_variable_set(:x, 15); y = binding.local_variable_get(:x) }; y", 15
