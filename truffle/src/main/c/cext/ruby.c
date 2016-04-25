@@ -48,27 +48,27 @@ VALUE get_rb_eRuntimeError() {
 }
 
 int NUM2INT(VALUE value) {
-  return *((int*) truffle_invoke(ruby_cext, "num2int", value));
+  return truffle_invoke_i(ruby_cext, "num2int", value);
 }
 
 unsigned int NUM2UINT(VALUE value) {
-  return *((unsigned int*) truffle_invoke(ruby_cext, "num2uint", value));
+  return (unsigned int) truffle_invoke_i(ruby_cext, "num2uint", value);
 }
 
 long NUM2LONG(VALUE value) {
-  return *((long*) truffle_invoke(ruby_cext, "num2long", value));
+  return truffle_invoke_l(ruby_cext, "num2long", value);
 }
 
 int FIX2INT(VALUE value) {
-  return *((int*) truffle_invoke(ruby_cext, "fix2int", value));
+  return truffle_invoke_i(ruby_cext, "fix2int", value);
 }
 
 unsigned int FIX2UINT(VALUE value) {
-  return *((unsigned int*) truffle_invoke(ruby_cext, "fix2uint", value));
+  return (unsigned int) truffle_invoke_i(ruby_cext, "fix2uint", value);
 }
 
 long FIX2LONG(VALUE value) {
-  return *((long*) truffle_invoke(ruby_cext, "fix2long", value));
+  return truffle_invoke_l(ruby_cext, "fix2long", value);
 }
 
 VALUE INT2NUM(int value) {
@@ -92,7 +92,7 @@ VALUE LONG2FIX(long value) {
 }
 
 int FIXNUM_P(VALUE value) {
-  return *((int*) truffle_invoke(ruby_cext, "fixnum?", value));
+  return truffle_invoke_i(ruby_cext, "fixnum?", value);
 }
 
 char *RSTRING_PTR(VALUE string) {
@@ -101,7 +101,7 @@ char *RSTRING_PTR(VALUE string) {
 }
 
 int RSTRING_LEN(VALUE string) {
-  return *((int*) truffle_get_size(string));
+  return truffle_get_size(string);
 }
 
 ID rb_intern(const char *string) {
@@ -117,7 +117,7 @@ void rb_str_cat(VALUE string, char *to_concat, long length) {
 }
 
 int RARRAY_LEN(VALUE array) {
-  return *((int*) truffle_get_size(array));
+  return truffle_get_size(array);
 }
 
 VALUE *RARRAY_PTR(VALUE array) {
@@ -142,11 +142,11 @@ void rb_ary_push(VALUE array, VALUE value) {
 }
 
 void rb_ary_store(VALUE array, long index, VALUE value) {
-  truffle_write(array, &index, value);
+  truffle_write_idx(array, (int) index, value);
 }
 
 VALUE rb_ary_entry(VALUE array, long index) {
-  return truffle_read(array, &index);
+  return truffle_read_idx(array, (int) index);
 }
 
 VALUE rb_hash_aref(VALUE hash, VALUE key) {
@@ -166,11 +166,11 @@ VALUE rb_funcall(VALUE object, ID name, int argc, ...) {
 }
 
 VALUE rb_iv_get(VALUE object, const char *name) {
-  return truffle_read(object, (void*) name);
+  return truffle_read(object, name);
 }
 
 VALUE rb_iv_set(VALUE object, const char *name, VALUE value) {
-  truffle_write(object, (void*) name, value);
+  truffle_write(object, name, value);
   return value;
 }
 
@@ -199,5 +199,5 @@ void rb_define_private_method(VALUE module, char *name, void *function, int args
 }
 
 int rb_define_module_function(VALUE module, char *name, void *function, int args) {
-  return *((int*) truffle_invoke(ruby_cext, "define_module_function", module, name, function, args));
+  return truffle_invoke_i(ruby_cext, "define_module_function", module, name, function, args);
 }
