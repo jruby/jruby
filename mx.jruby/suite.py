@@ -1,7 +1,7 @@
 suite = {
   "mxversion" : "5.6.6",
   "name" : "jrubytruffle",
-  "defaultLicense" : "GPLv2", # FIXME
+  "defaultLicense" : "EPL",
 
   "imports" : {
     "suites": [
@@ -21,13 +21,13 @@ suite = {
         "path": "lib/jruby.jar",
         "sha1": "NOCHECK",
         "optional" :"true",
-        "license" : "GPLv2"
+        "license" : "EPL"
     },
     "RUBY_TRUFFLE": {
         "path": "lib/jruby-truffle.jar",
         "sha1": "NOCHECK",
         "optional" :"true",
-        "license" : "GPLv2"
+        "license" : "EPL"
     },
   },
   "projects" : {
@@ -52,9 +52,9 @@ suite = {
 
   },
   "licenses" : {
-    "GPLv2" : {
-      "name" : "GPLv2",
-      "url" : "http://opensource.org/licenses/GPL-2.0",
+    "EPL" : {
+      "name" : "EPL",
+      "url" : "https://opensource.org/licenses/EPL-1.0",
     },
   },
   "distributions" : {
@@ -72,6 +72,7 @@ suite = {
           "truffle:TRUFFLE_DEBUG",
         ],
         "description" : "JRuby+Truffle",
+        "license": "EPL"
     },
     "RUBY-ZIP": {
         "dependencies": [
@@ -82,6 +83,7 @@ suite = {
         ],
         "distDependencies" : [],
         "description" : "JRuby+Truffle Native Libs",
+        "license": "EPL"
     },
 
   },
