@@ -66,6 +66,10 @@ public class CoreExceptions {
         return argumentError(coreStrings().OUT_OF_RANGE.getRope(), currentNode, null);
     }
 
+    public DynamicObject argumentErrorNegativeArraySize(Node currentNode) {
+        return argumentError(coreStrings().NEGATIVE_ARRAY_SIZE.getRope(), currentNode, null);
+    }
+
     @TruffleBoundary
     public DynamicObject argumentErrorUnknownKeyword(Object name, Node currentNode) {
         return argumentError("unknown keyword: " + name, currentNode);

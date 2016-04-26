@@ -86,9 +86,7 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
-
 import java.util.Arrays;
-
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
@@ -1624,6 +1622,8 @@ public abstract class ArrayNodes {
         @Child private ToIntNode toIntNode;
         @Child private ArrayPopOneNode popOneNode;
 
+        public abstract Object executePop(VirtualFrame frame, DynamicObject array, Object n);
+
         @Specialization
         public Object pop(DynamicObject array, NotProvided n) {
             if (popOneNode == null) {
@@ -1634,320 +1634,52 @@ public abstract class ArrayNodes {
             return popOneNode.executePopOne(array);
         }
 
-        @Specialization(guards = { "isEmptyArray(array)", "wasProvided(object)" })
-        public Object popNilWithNum(VirtualFrame frame, DynamicObject array, Object object) {
-            if (object instanceof Integer && ((Integer) object) < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            } else {
-                if (toIntNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-                }
-                final int n = toIntNode.doInt(frame, object);
-                if (n < 0) {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-                }
-            }
+        @Specialization(guards = "n < 0")
+        public Object popNNegative(VirtualFrame frame, DynamicObject array, int n) {
+            throw new RaiseException(coreExceptions().argumentErrorNegativeArraySize(this));
+        }
+
+        @Specialization(guards = { "!isInteger(n)", "!isLong(n)" })
+        public Object popNToInt(VirtualFrame frame, DynamicObject array, Object n) {
+            return executePop(frame, array, toInt(frame, n));
+        }
+
+        @Specialization(guards = { "n >= 0", "isEmptyArray(array)" })
+        public Object popEmpty(VirtualFrame frame, DynamicObject array, int n) {
             return createArray(getContext(), null, 0);
         }
 
-        @Specialization(guards = "isIntArray(array)", rewriteOn = UnexpectedResultException.class)
-        public DynamicObject popIntegerFixnumInBoundsWithNum(VirtualFrame frame, DynamicObject array, int num) throws UnexpectedResultException {
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final int[] store = ((int[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final int[] filler = new int[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;
-            }
+        @Specialization(guards = { "n == 0", "!isEmptyArray(array)" })
+        public Object popZeroNotEmpty(DynamicObject array, int n) {
+            return createArray(getContext(), null, 0);
         }
 
-        @Specialization(contains = "popIntegerFixnumInBoundsWithNum", guards = "isIntArray(array)")
-        public Object popIntegerFixnumWithNum(VirtualFrame frame, DynamicObject array, int num) {
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                return nil();
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final int[] store = ((int[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final int[] filler = new int[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;
-            }
+        @Specialization(guards = { "n > 0", "!isEmptyArray(array)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
+        public Object popNotEmpty(DynamicObject array, int n,
+                @Cached("of(array)") ArrayStrategy strategy,
+                @Cached("createBinaryProfile()") ConditionProfile minProfile) {
+            final int size = getSize(array);
+            final int numPop = minProfile.profile(size < n) ? size : n;
+            final ArrayMirror store = strategy.newMirror(array);
+
+            // Extract values in a new array
+            final ArrayMirror popped = store.extractRange(size - numPop, size);
+
+            // Null out the popped values from the store
+            final ArrayMirror filler = strategy.newArray(numPop);
+            filler.copyTo(store, 0, size - numPop, numPop);
+            Layouts.ARRAY.setSize(array, size - numPop);
+
+            return createArray(getContext(), popped.getArray(), numPop);
         }
 
-        @Specialization(guards = "isLongArray(array)", rewriteOn = UnexpectedResultException.class)
-        public DynamicObject popLongFixnumInBoundsWithNum(VirtualFrame frame, DynamicObject array, int num) throws UnexpectedResultException {
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final long[] store = ((long[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final long[] filler = new long[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;
-            }
-        }
-
-        @Specialization(contains = "popLongFixnumInBoundsWithNum", guards = "isLongArray(array)")
-        public Object popLongFixnumWithNum(VirtualFrame frame, DynamicObject array, int num) {
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                return nil();
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final long[] store = ((long[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final long[] filler = new long[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;            }
-        }
-
-        @Specialization(guards = "isDoubleArray(array)", rewriteOn = UnexpectedResultException.class)
-        public DynamicObject popFloatInBoundsWithNum(VirtualFrame frame, DynamicObject array, int num) throws UnexpectedResultException {
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final double[] store = ((double[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final double[] filler = new double[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;}
-        }
-
-        @Specialization(contains = "popFloatInBoundsWithNum", guards = "isDoubleArray(array)")
-        public Object popFloatWithNum(VirtualFrame frame, DynamicObject array, int num) {
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                return nil();
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final double[] store = ((double[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final double[] filler = new double[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;}
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public Object popObjectWithNum(VirtualFrame frame, DynamicObject array, int num) {
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                return nil();
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final Object[] store = ((Object[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final Object[] filler = new Object[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;
-            }
-        }
-
-        @Specialization(guards = { "isIntArray(array)", "!isInteger(object)", "wasProvided(object)" }, rewriteOn = UnexpectedResultException.class)
-        public DynamicObject popIntegerFixnumInBoundsWithNumObj(VirtualFrame frame, DynamicObject array, Object object) throws UnexpectedResultException {
+        private int toInt(VirtualFrame frame, Object indexObject) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.doInt(frame, object);
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final int[] store = ((int[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final int[] filler = new int[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;
-            }
+            return toIntNode.doInt(frame, indexObject);
         }
-
-        @Specialization(contains = "popIntegerFixnumInBoundsWithNumObj", guards = { "isIntArray(array)", "!isInteger(object)", "wasProvided(object)" })
-        public Object popIntegerFixnumWithNumObj(VirtualFrame frame, DynamicObject array, Object object) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            final int num = toIntNode.doInt(frame, object);
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                return nil();
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final int[] store = ((int[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final int[] filler = new int[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;
-            }
-        }
-
-        @Specialization(guards = { "isLongArray(array)", "!isInteger(object)", "wasProvided(object)" }, rewriteOn = UnexpectedResultException.class)
-        public DynamicObject popLongFixnumInBoundsWithNumObj(VirtualFrame frame, DynamicObject array, Object object) throws UnexpectedResultException {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            final int num = toIntNode.doInt(frame, object);
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final long[] store = ((long[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final long[] filler = new long[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;
-            }
-        }
-
-        @Specialization(contains = "popLongFixnumInBoundsWithNumObj", guards = { "isLongArray(array)", "!isInteger(object)", "wasProvided(object)" })
-        public Object popLongFixnumWithNumObj(VirtualFrame frame, DynamicObject array, Object object) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            final int num = toIntNode.doInt(frame, object);
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                return nil();
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final long[] store = ((long[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final long[] filler = new long[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;            }
-        }
-
-        @Specialization(guards = { "isDoubleArray(array)", "!isInteger(object)", "wasProvided(object)" }, rewriteOn = UnexpectedResultException.class)
-        public DynamicObject popFloatInBoundsWithNumObj(VirtualFrame frame, DynamicObject array, Object object) throws UnexpectedResultException {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            final int num = toIntNode.doInt(frame, object);
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final double[] store = ((double[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final double[] filler = new double[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;}
-        }
-
-        @Specialization(contains = "popFloatInBoundsWithNumObj", guards = { "isDoubleArray(array)", "!isInteger(object)", "wasProvided(object)" })
-        public Object popFloatWithNumObj(VirtualFrame frame, DynamicObject array, Object object) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            final int num = toIntNode.doInt(frame, object);
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                return nil();
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final double[] store = ((double[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final double[] filler = new double[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;}
-        }
-
-        @Specialization(guards = { "isObjectArray(array)", "!isInteger(object)", "wasProvided(object)" })
-        public Object popObjectWithNumObj(VirtualFrame frame, DynamicObject array, Object object) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            final int num = toIntNode.doInt(frame, object);
-            if (num < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError("negative array size", this));
-            }
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
-                return nil();
-            } else {
-                final int numPop = getSize(array) < num ? getSize(array) : num;
-                final Object[] store = ((Object[]) getStore(array));
-                final DynamicObject result = createArray(getContext(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
-                final Object[] filler = new Object[numPop];
-                System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
-                setStoreAndSize(array, store, getSize(array) - numPop);
-                return result;
-            }
-        }
-
 
     }
 
