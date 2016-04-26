@@ -294,3 +294,5 @@ def when_splat(cases, expression)
     c === expression
   end
 end
+
+Truffle::Interop.export(:ruby_cext, Truffle::CExt)

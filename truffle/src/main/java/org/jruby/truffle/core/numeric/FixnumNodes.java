@@ -380,8 +380,6 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = {"!isLongMinValue(a)", "isRubyBignum(b)"})
         public int div(long a, DynamicObject b) {
-            assert Layouts.BIGNUM.getValue(b).compareTo(BigInteger.valueOf(Long.MAX_VALUE)) == 1 ||
-                Layouts.BIGNUM.getValue(b).compareTo(BigInteger.valueOf(Long.MIN_VALUE)) == -1;
             return 0;
         }
 
