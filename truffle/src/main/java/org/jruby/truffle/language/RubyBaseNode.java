@@ -158,6 +158,10 @@ public abstract class RubyBaseNode extends Node {
 
     // Source section
 
+    public void unsafeSetSourceSection(SourceSection sourceSection) {
+        this.sourceSection = sourceSection;
+    }
+
     @Override
     public SourceSection getSourceSection() {
         return sourceSection;
