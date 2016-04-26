@@ -372,10 +372,9 @@ public abstract class ArrayNodes {
         // array[index] = object with non-int index
 
         @Specialization(guards = { "!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)" })
-        public Object set(VirtualFrame frame, DynamicObject array, Object indexObject, Object value, NotProvided unused,
-                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+        public Object set(VirtualFrame frame, DynamicObject array, Object indexObject, Object value, NotProvided unused) {
             final int index = toInt(frame, indexObject);
-            return set(array, index, value, unused, negativeIndexProfile);
+            return executeSet(frame, array, index, value, unused);
         }
 
         // array[start, end] = object
