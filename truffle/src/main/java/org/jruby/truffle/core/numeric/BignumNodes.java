@@ -450,6 +450,8 @@ public abstract class BignumNodes {
     @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
     public abstract static class RightShiftNode extends BignumCoreMethodNode {
 
+        public abstract Object executeRightShift(VirtualFrame frame, DynamicObject a, Object b);
+
         private final BranchProfile bLessThanZero = BranchProfile.create();
 
         @Specialization
@@ -462,22 +464,26 @@ public abstract class BignumNodes {
             }
         }
 
+        @Specialization
+        public Object rightShift(DynamicObject a, long b) {
+            if (b > Integer.MAX_VALUE || b < Integer.MIN_VALUE) {
+                return 0;
+            } else {
+                return rightShift(a, (int) b);
+            }
+        }
+
         @Specialization(guards = "isRubyBignum(b)")
         public int rightShift(DynamicObject a, DynamicObject b) {
             return 0;
         }
 
-        @Specialization(guards = {"!isRubyBignum(b)", "!isInteger(b)"})
+        @Specialization(guards = {"!isRubyBignum(b)", "!isInteger(b)", "!isLong(b)"})
         public Object rightShift(VirtualFrame frame,
                                  DynamicObject a,
                                  Object b,
                                  @Cached("new()") SnippetNode snippetNode) {
-            int bInt = (int) snippetNode.execute(frame, "Rubinius::Type.coerce_to(y, Integer, :to_int)", "y", b);
-            if (bInt >= 0) {
-                return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftRight(bInt));
-            } else {
-                return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftLeft(-bInt));
-            }
+            return executeRightShift(frame, a, snippetNode.execute(frame, "Rubinius::Type.coerce_to(y, Integer, :to_int)", "y", b));
         }
 
 
