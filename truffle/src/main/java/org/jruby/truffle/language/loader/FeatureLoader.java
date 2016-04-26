@@ -147,7 +147,7 @@ public class FeatureLoader {
         }
 
         while (true) {
-            final ReentrantLock lock = fileLocks.getLock(expandedPath);
+            final ReentrantLock lock = fileLocks.get(expandedPath);
 
             if (lock.isHeldByCurrentThread()) {
                 // circular require
@@ -155,10 +155,7 @@ public class FeatureLoader {
                 return false;
             }
 
-            fileLocks.lock(callNode, context, lock);
-
-            // Check that the lock is still correct, otherwise start over
-            if (!fileLocks.ensureCorrectLock(expandedPath, lock)) {
+            if (!fileLocks.lock(callNode, context.getThreadManager(), expandedPath, lock)) {
                 continue;
             }
 

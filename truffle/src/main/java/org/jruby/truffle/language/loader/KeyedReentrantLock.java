@@ -2,8 +2,8 @@ package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.thread.ThreadManager;
+import org.jruby.truffle.language.RubyNode;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -14,11 +14,11 @@ import java.util.concurrent.locks.ReentrantLock;
  *  KeyedReentrantLock<String> fileLocks = new KeyedReentrantLock<String>();
  *  while (true) {
  *      final ReentrantLock lock = fileLocks.getLock(key);
- *      fileLocks.lock(callNode, context, lock);
- *      // Check that the lock is still correct, otherwise start over, required!
- *      if (!fileLocks.correctLock(key, lock)) {
+ *
+ *      if (!fileLocks.lock(callNode, context, lock);) {
  *          continue;
  *      }
+ *
  *      try {
  *          doStuff
  *          return true;
@@ -36,7 +36,7 @@ public class KeyedReentrantLock<K> {
     }
 
     @TruffleBoundary
-    public ReentrantLock getLock(K key) {
+    public ReentrantLock get(K key) {
         final ReentrantLock currentLock = locks.get(key);
         final ReentrantLock lock;
 
@@ -50,19 +50,18 @@ public class KeyedReentrantLock<K> {
         return lock;
     }
 
-    @TruffleBoundary
-    public boolean ensureCorrectLock(K key, ReentrantLock lock) {
-        if (lock == locks.get(key)) {
-            return true;
-        } else {
-            lock.unlock();
-            return false;
-        }
+    public boolean lock(RubyNode currentNode, K key, final ReentrantLock lock) {
+        return lock(currentNode, currentNode.getContext().getThreadManager(), key, lock);
     }
 
     @TruffleBoundary
-    public void lock(Node currentNode, RubyContext context, final ReentrantLock lock) {
-        context.getThreadManager().runUntilResult(
+    public boolean lock(
+            Node currentNode,
+            ThreadManager threadManager,
+            K key,
+            final ReentrantLock lock) {
+
+        threadManager.runUntilResult(
                 currentNode,
                 new ThreadManager.BlockingAction<Boolean>() {
                     @Override
@@ -71,6 +70,13 @@ public class KeyedReentrantLock<K> {
                         return SUCCESS;
                     }
                 });
+        // ensure that we are no holding removed lock
+        if (lock == locks.get(key)) {
+            return true;
+        } else {
+            lock.unlock();
+            return false;
+        }
     }
 
     @TruffleBoundary
