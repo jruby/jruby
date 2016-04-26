@@ -99,21 +99,22 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
                 entryBB.insertInstr(insertIndex++, new UpdateBlockExecutionStateInstr(Self.SELF));
 
-                Signature sig = ((IRClosure)scope).getSignature();
+                BasicBlock prologueBB = createPrologueBlock(cfg);
 
                 // Add the right kind of arg preparation instruction
+                Signature sig = ((IRClosure)scope).getSignature();
                 int arityValue = sig.arityValue();
                 if (arityValue == 0) {
-                    entryBB.addInstr(PrepareNoBlockArgsInstr.INSTANCE);
+                    prologueBB.addInstr(PrepareNoBlockArgsInstr.INSTANCE);
                 } else {
                     if (sig.isFixed()) {
                         if (arityValue == 1) {
-                            entryBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
+                            prologueBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
                         } else {
-                            entryBB.addInstr(PrepareFixedBlockArgsInstr.INSTANCE);
+                            prologueBB.addInstr(PrepareFixedBlockArgsInstr.INSTANCE);
                         }
                     } else {
-                        entryBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
+                        prologueBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
                     }
                 }
             } else {
@@ -187,6 +188,30 @@ public class AddCallProtocolInstructions extends CompilerPass {
         (new LiveVariableAnalysis()).invalidate(scope);
 
         return null;
+    }
+
+    // We create an extra BB after entryBB for some ACP instructions which can possibly throw
+    // an exception.  We want to keep them out of entryBB so we have a safe place to put
+    // stuff before exception without needing to worry about weird flow control.
+    // FIXME: We need to centralize prologue logic in case there's other places we want to use it
+    private BasicBlock createPrologueBlock(CFG cfg) {
+        BasicBlock entryBB = cfg.getEntryBB();
+
+        BasicBlock oldStart = cfg.getOutgoingDestinationOfType(entryBB, CFG.EdgeType.FALL_THROUGH);
+        BasicBlock prologueBB = new BasicBlock(cfg, cfg.getScope().getNewLabel());
+        cfg.removeEdge(entryBB, oldStart);
+        cfg.addBasicBlock(prologueBB);
+        cfg.addEdge(entryBB, prologueBB, CFG.EdgeType.FALL_THROUGH);
+        cfg.addEdge(prologueBB, oldStart, CFG.EdgeType.FALL_THROUGH);
+
+        // If there's already a GEB, make sure we have an edge to it and use it to rescue these instrs
+        if (cfg.getGlobalEnsureBB() != null) {
+            BasicBlock geb = cfg.getGlobalEnsureBB();
+            cfg.addEdge(prologueBB, geb, CFG.EdgeType.EXCEPTION);
+            cfg.setRescuerBB(prologueBB, geb);
+        }
+
+        return prologueBB;
     }
 
     @Override

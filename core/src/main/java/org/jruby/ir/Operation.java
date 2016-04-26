@@ -221,10 +221,10 @@ public enum Operation {
     TOGGLE_BACKTRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     UPDATE_BLOCK_STATE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
 
-    PREPARE_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    PREPARE_SINGLE_BLOCK_ARG(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    PREPARE_FIXED_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
+    PREPARE_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    PREPARE_SINGLE_BLOCK_ARG(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    PREPARE_FIXED_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception);
 
     public final OpClass opClass;
     private int flags;
