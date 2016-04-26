@@ -171,7 +171,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
             @Child RubyNode child = node;
         }.adoptChildren();
 
-        return (boolean) node.executeIsFrozen(object);
+        return node.executeIsFrozen(object);
     }
 
     public void insertAfter(DynamicObject module) {
