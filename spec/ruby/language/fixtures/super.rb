@@ -471,4 +471,62 @@ module Super
     class C < A
     end
   end
+
+  module FromBasicObject
+    def __send__(name, *args, &block)
+      super
+    end
+  end
+
+  module IntermediateBasic
+    include FromBasicObject
+  end
+
+  class IncludesFromBasic
+    include FromBasicObject
+
+    def foobar; 43; end
+  end
+
+  class IncludesIntermediate
+    include IntermediateBasic
+
+    def foobar; 42; end
+  end
+
+  module SingletonCase
+    class Base
+      def foobar(array)
+        array << :base
+      end
+    end
+
+    class Foo < Base
+      def foobar(array)
+        array << :foo
+        super
+      end
+    end
+  end
+
+  module SingletonAliasCase
+    class Base
+      def foobar(array)
+        array << :base
+      end
+
+      def alias_on_singleton
+        object = self
+        singleton = (class << object; self; end)
+        singleton.__send__(:alias_method, :new_foobar, :foobar)
+      end
+    end
+
+    class Foo < Base
+      def foobar(array)
+        array << :foo
+        super
+      end
+    end
+  end
 end

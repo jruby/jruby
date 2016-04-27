@@ -20,9 +20,11 @@ describe "File::Stat#ftype" do
     end
   end
 
-  it "returns 'characterSpecial' when the file is a char"  do
-    FileSpecs.character_device do |char|
-      File.lstat(char).ftype.should == 'characterSpecial'
+  platform_is_not :windows do
+    it "returns 'characterSpecial' when the file is a char"  do
+      FileSpecs.character_device do |char|
+        File.lstat(char).ftype.should == 'characterSpecial'
+      end
     end
   end
 
@@ -36,25 +38,27 @@ describe "File::Stat#ftype" do
     end
   end
 
-  it "returns 'link' when the file is a link" do
-    FileSpecs.symlink do |link|
-      File.lstat(link).ftype.should == 'link'
+  platform_is_not :windows do
+    it "returns 'link' when the file is a link" do
+      FileSpecs.symlink do |link|
+        File.lstat(link).ftype.should == 'link'
+      end
     end
-  end
 
-  it "returns fifo when the file is a fifo" do
-    FileSpecs.fifo do |fifo|
-      File.lstat(fifo).ftype.should == 'fifo'
+    it "returns fifo when the file is a fifo" do
+      FileSpecs.fifo do |fifo|
+        File.lstat(fifo).ftype.should == 'fifo'
+      end
     end
-  end
 
-  # This will silently not execute the block if no socket
-  # can be found. However, if you are running X, there is
-  # a good chance that if nothing else, at least the X
-  # Server socket exists.
-  it "returns 'socket' when the file is a socket" do
-    FileSpecs.socket do |socket|
-      File.lstat(socket).ftype.should == 'socket'
+    # This will silently not execute the block if no socket
+    # can be found. However, if you are running X, there is
+    # a good chance that if nothing else, at least the X
+    # Server socket exists.
+    it "returns 'socket' when the file is a socket" do
+      FileSpecs.socket do |socket|
+        File.lstat(socket).ftype.should == 'socket'
+      end
     end
   end
 end

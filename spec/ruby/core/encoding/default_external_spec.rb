@@ -20,18 +20,9 @@ with_feature :encoding do
     end
 
     describe "with command line options" do
-      before :each do
-        @lc_all = ENV["LC_ALL"]
-        ENV["LC_ALL"] = "C"
-      end
-
-      after :each do
-        ENV["LC_ALL"] = @lc_all
-      end
-
       it "is not changed by the -U option" do
         result = ruby_exe("print Encoding.default_external", options: '-U')
-        result.should == "US-ASCII"
+        result.should == Encoding.default_external.name
       end
 
       it "returns the encoding specified by '-E external'" do

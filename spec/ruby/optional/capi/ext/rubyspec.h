@@ -72,8 +72,6 @@
 #define HAVE_RB_ARY_TO_S                   1
 #define HAVE_RB_ARY_UNSHIFT                1
 #define HAVE_RB_ASSOC_NEW                  1
-#define HAVE_RB_INSPECTING_P               1
-#define HAVE_RB_PROTECT_INSPECT            1
 
 #define HAVE_RB_EACH                       1
 #define HAVE_RB_ITERATE                    1
@@ -532,8 +530,6 @@
 #define HAVE_RB_STR_NEW4                   1
 #define HAVE_RB_STR_NEW5                   1
 #define HAVE_RB_STR_PLUS                   1
-#define HAVE_RB_STR_PTR                    1
-#define HAVE_RB_STR_PTR_READONLY           1
 #define HAVE_RB_STR_RESIZE                 1
 #define HAVE_RB_STR_SET_LEN                1
 #define HAVE_RB_STR_SPLIT                  1
@@ -612,16 +608,13 @@
  * is significant. The alternative implementations should define RUBY because
  * some extensions depend on that. But only one alternative implementation
  * macro should be defined at a time. The conditional is structured so that if
- * no alternative implementation is defined then MRI is assumed and "mri.h"
- * will be included.
+ * no alternative implementation is defined then MRI is assumed.
  */
 
 #if defined(RUBINIUS)
 #include "rubinius.h"
 #elif defined(JRUBY)
 #include "jruby.h"
-#else /* MRI */
-#include "mri.h"
 #endif
 
 #endif

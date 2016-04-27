@@ -41,7 +41,7 @@ describe 'Optional variable assignments' do
     before do
       Object.send(:remove_const, :A) if defined? Object::A
     end
-    
+
     it 'with ||= assignments' do
       Object::A ||= 10
       Object::A.should == 10

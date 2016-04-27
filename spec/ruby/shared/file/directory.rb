@@ -50,9 +50,11 @@ describe :file_directory_io, shared: true do
     @object.send(@method, STDIN).should be_false
   end
 
-  it "returns true if the argument is an IO that is a directory" do
-    File.open(@dir, "r") do |f|
-      @object.send(@method, f).should be_true
+  platform_is_not :windows do
+    it "returns true if the argument is an IO that is a directory" do
+      File.open(@dir, "r") do |f|
+        @object.send(@method, f).should be_true
+      end
     end
   end
 
