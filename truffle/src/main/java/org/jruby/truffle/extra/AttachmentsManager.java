@@ -72,14 +72,6 @@ public class AttachmentsManager {
             this.context = context;
             this.block = block;
             this.callNode = Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(block));
-
-            // (chumer): do we still want to clone and inline always? don't think so
-            if (callNode.isCallTargetCloningAllowed()) {
-                callNode.cloneCallTarget();
-            }
-            if (callNode.isInlinable()) {
-                callNode.forceInlining();
-            }
         }
 
         @Override
