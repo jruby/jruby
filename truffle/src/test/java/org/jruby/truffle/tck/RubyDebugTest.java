@@ -13,6 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -117,7 +118,7 @@ public class RubyDebugTest {
 
             @Override
             public void run() {
-                // the breakpoint should hit instead
+                fail("the breakpoint should hit instead");
             }
 
         });
@@ -131,7 +132,7 @@ public class RubyDebugTest {
         continueExecution();
 
         final Value main = engine.findGlobalSymbol("main");
-        Assert.assertNotNull( "main method found", main);
+        assertNotNull( "main method found", main);
         Value value = main.execute();
         Number n = value.as(Number.class);
         assertNotNull(n);
