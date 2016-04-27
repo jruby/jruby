@@ -1638,11 +1638,6 @@ public abstract class ArrayNodes {
             throw new RaiseException(coreExceptions().argumentErrorNegativeArraySize(this));
         }
 
-        @Specialization(guards = { "!isInteger(n)", "!isLong(n)" })
-        public Object popNToInt(VirtualFrame frame, DynamicObject array, Object n) {
-            return executePop(frame, array, toInt(frame, n));
-        }
-
         @Specialization(guards = { "n >= 0", "isEmptyArray(array)" })
         public Object popEmpty(VirtualFrame frame, DynamicObject array, int n) {
             return createArray(getContext(), null, 0);
@@ -1670,6 +1665,11 @@ public abstract class ArrayNodes {
             Layouts.ARRAY.setSize(array, size - numPop);
 
             return createArray(getContext(), popped.getArray(), numPop);
+        }
+
+        @Specialization(guards = { "wasProvided(n)", "!isInteger(n)", "!isLong(n)" })
+        public Object popNToInt(VirtualFrame frame, DynamicObject array, Object n) {
+            return executePop(frame, array, toInt(frame, n));
         }
 
         private int toInt(VirtualFrame frame, Object indexObject) {
@@ -1719,7 +1719,7 @@ public abstract class ArrayNodes {
             return appendOneNode.executeAppendOne(array, value);
         }
 
-        @Specialization(guards = "rest.length > 0")
+        @Specialization(guards = { "rest.length > 0", "wasProvided(n)" })
         public DynamicObject pushMany(VirtualFrame frame, DynamicObject array, Object value, Object[] rest) {
             // NOTE (eregon): Appending one by one here to avoid useless generalization to Object[]
             // if the arguments all fit in the current storage
