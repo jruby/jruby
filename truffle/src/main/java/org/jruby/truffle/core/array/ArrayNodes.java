@@ -42,7 +42,9 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayNodesFactory.MaxBlockNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.MinBlockNodeFactory;
+import org.jruby.truffle.core.array.ArrayNodesFactory.RejectInPlaceNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
+import org.jruby.truffle.core.array.ArrayNodesFactory.RejectInPlaceNodeFactory.RejectInPlaceNodeGen;
 import org.jruby.truffle.core.cast.ToAryNodeGen;
 import org.jruby.truffle.core.cast.ToIntNode;
 import org.jruby.truffle.core.cast.ToIntNodeGen;
@@ -1775,109 +1777,15 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteIfNode extends YieldingCoreMethodNode {
 
-        @Specialization(guards = "isNullArray(array)")
-        public Object rejectInPlaceNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        @Specialization
+        public Object deleteIf(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("createRejectInPlaceNode()") RejectInPlaceNode rejectInPlaceNode) {
+            rejectInPlaceNode.executeRejectInPlace(frame, array, block);
             return array;
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object rejectInPlaceInt(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final int[] store = (int[]) getStore(array);
-
-            int i = 0;
-            int n = 0;
-            for (; n < getSize(array); n++) {
-                if (yieldIsTruthy(frame, block, store[n])) {
-                    continue;
-                }
-
-                if (i != n) {
-                    store[i] = store[n];
-                }
-
-                i++;
-            }
-            if (i != n) {
-                final int[] filler = new int[n - i];
-                System.arraycopy(filler, 0, store, i, n - i);
-                setStoreAndSize(array, store, i);
-            }
-            return array;
-        }
-
-        @Specialization(guards = "isLongArray(array)")
-        public Object rejectInPlaceLong(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final long[] store = (long[]) getStore(array);
-
-            int i = 0;
-            int n = 0;
-            for (; n < getSize(array); n++) {
-                if (yieldIsTruthy(frame, block, store[n])) {
-                    continue;
-                }
-
-                if (i != n) {
-                    store[i] = store[n];
-                }
-
-                i++;
-            }
-            if (i != n) {
-                final long[] filler = new long[n - i];
-                System.arraycopy(filler, 0, store, i, n - i);
-                setStoreAndSize(array, store, i);
-            }
-            return array;
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object rejectInPlaceDouble(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final double[] store = (double[]) getStore(array);
-
-            int i = 0;
-            int n = 0;
-            for (; n < getSize(array); n++) {
-                if (yieldIsTruthy(frame, block, store[n])) {
-                    continue;
-                }
-
-                if (i != n) {
-                    store[i] = store[n];
-                }
-
-                i++;
-            }
-            if (i != n) {
-                final double[] filler = new double[n - i];
-                System.arraycopy(filler, 0, store, i, n - i);
-                setStoreAndSize(array, store, i);
-            }
-            return array;
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public Object rejectInPlaceObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final Object[] store = (Object[]) getStore(array);
-
-            int i = 0;
-            int n = 0;
-            for (; n < getSize(array); n++) {
-                if (yieldIsTruthy(frame, block, store[n])) {
-                    continue;
-                }
-
-                if (i != n) {
-                    store[i] = store[n];
-                }
-
-                i++;
-            }
-            if (i != n) {
-                final Object[] filler = new Object[n - i];
-                System.arraycopy(filler, 0, store, i, n - i);
-                setStoreAndSize(array, store, i);
-            }
-            return array;
+        protected RejectInPlaceNode createRejectInPlaceNode() {
+            return RejectInPlaceNodeFactory.create(null);
         }
 
     }
@@ -1887,113 +1795,45 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
+        public abstract Object executeRejectInPlace(VirtualFrame frame, DynamicObject array, DynamicObject block);
+
         @Specialization(guards = "isNullArray(array)")
-        public Object rejectInPlaceNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        public Object rejectInPlaceNull(DynamicObject array, DynamicObject block) {
             return nil();
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object rejectInPlaceInt(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final int[] store = (int[]) getStore(array);
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public Object rejectInPlaceOther(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror store = strategy.newMirror(array);
 
             int i = 0;
             int n = 0;
-            for (; n < getSize(array); n++) {
-                if (yieldIsTruthy(frame, block, store[n])) {
-                    continue;
-                }
+            try {
+                for (; n < getSize(array); n++) {
+                    final Object value = store.get(n);
+                    if (yieldIsTruthy(frame, block, value)) {
+                        continue;
+                    }
 
-                if (i != n) {
-                    store[i] = store[n];
-                }
+                    if (i != n) {
+                        store.set(i, store.get(n));
+                    }
 
-                i++;
+                    i++;
+                }
+            } finally {
+                // Null out the values behind the size
+                final ArrayMirror filler = strategy.newArray(n - i);
+                filler.copyTo(store, 0, i, n - i);
+                Layouts.ARRAY.setSize(array, i);
+
+                if (CompilerDirectives.inInterpreter()) {
+                    LoopNode.reportLoopCount(this, n);
+                }
             }
+
             if (i != n) {
-                final int[] filler = new int[n - i];
-                System.arraycopy(filler, 0, store, i, n - i);
-                setStoreAndSize(array, store, i);
-                return array;
-            } else {
-                return nil();
-            }
-        }
-
-        @Specialization(guards = "isLongArray(array)")
-        public Object rejectInPlaceLong(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final long[] store = (long[]) getStore(array);
-
-            int i = 0;
-            int n = 0;
-            for (; n < getSize(array); n++) {
-                if (yieldIsTruthy(frame, block, store[n])) {
-                    continue;
-                }
-
-                if (i != n) {
-                    store[i] = store[n];
-                }
-
-                i++;
-            }
-            if (i != n) {
-                final long[] filler = new long[n - i];
-                System.arraycopy(filler, 0, store, i, n - i);
-                setStoreAndSize(array, store, i);
-                return array;
-            } else {
-                return nil();
-            }
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object rejectInPlaceDouble(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final double[] store = (double[]) getStore(array);
-
-            int i = 0;
-            int n = 0;
-            for (; n < getSize(array); n++) {
-                if (yieldIsTruthy(frame, block, store[n])) {
-                    continue;
-                }
-
-                if (i != n) {
-                    store[i] = store[n];
-                }
-
-                i++;
-            }
-            if (i != n) {
-                final double[] filler = new double[n - i];
-                System.arraycopy(filler, 0, store, i, n - i);
-                setStoreAndSize(array, store, i);
-                return array;
-            } else {
-                return nil();
-            }
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public Object rejectInPlaceObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            final Object[] store = (Object[]) getStore(array);
-
-            int i = 0;
-            int n = 0;
-            for (; n < getSize(array); n++) {
-                if (yieldIsTruthy(frame, block, store[n])) {
-                    continue;
-                }
-
-                if (i != n) {
-                    store[i] = store[n];
-                }
-
-                i++;
-            }
-            if (i != n) {
-                final Object[] filler = new Object[n - i];
-                System.arraycopy(filler, 0, store, i, n - i);
-                setStoreAndSize(array, store, i);
                 return array;
             } else {
                 return nil();
