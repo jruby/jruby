@@ -6,17 +6,17 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative '../../../ruby/spec_helper'
+require_relative '../../../../ruby/spec_helper'
 
-describe "Truffle.assert_not_compiled" do
+describe "Truffle::Graal.assert_not_compiled" do
   
   it "raises a RuntimeError when called dynamically" do
-    lambda{ Truffle.send(:assert_not_compiled) }.should raise_error(RuntimeError)
+    lambda{ Truffle::Graal.send(:assert_not_compiled) }.should raise_error(RuntimeError)
   end
 
-  unless Truffle.graal?
+  unless Truffle::Graal.graal?
     it "returns nil" do
-      Truffle.assert_not_compiled.should be_nil
+      Truffle::Graal.assert_not_compiled.should be_nil
     end
   end
 

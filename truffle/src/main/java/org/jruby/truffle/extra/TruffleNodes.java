@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
@@ -43,7 +42,6 @@ import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayStrategy;
 import org.jruby.truffle.core.binding.BindingNodes;
-import org.jruby.truffle.core.hash.BucketsStrategy;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeBuffer;
@@ -60,9 +58,7 @@ import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.parser.ParserContext;
-import org.jruby.truffle.platform.Graal;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
@@ -73,9 +69,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @CoreClass(name = "Truffle")
 public abstract class TruffleNodes {
@@ -169,27 +163,6 @@ public abstract class TruffleNodes {
 
     }
 
-    @CoreMethod(names = "assert_constant", onSingleton = true, required = 1)
-    public abstract static class AssertConstantNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject assertConstant(Object value) {
-            throw new RaiseException(coreExceptions().runtimeError("Truffle.assert_constant can only be called lexically", this));
-        }
-
-    }
-
-    @CoreMethod(names = "assert_not_compiled", onSingleton = true)
-    public abstract static class AssertNotCompiledNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject assertNotCompiled() {
-            throw new RaiseException(coreExceptions().runtimeError("Truffle.assert_not_compiled can only be called lexically", this));
-        }
-
-    }
-
     @CoreMethod(names = "java_class_of", onSingleton = true, required = 1)
     public abstract static class JavaClassOfNode extends CoreMethodArrayArgumentsNode {
 
@@ -215,38 +188,6 @@ public abstract class TruffleNodes {
             }
 
             return createString(StringOperations.encodeRope(builder.toString(), UTF8Encoding.INSTANCE));
-        }
-
-    }
-
-    @CoreMethod(names = "graal?", onSingleton = true)
-    public abstract static class GraalNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization
-        public boolean graal() {
-            return Graal.isGraal();
-        }
-
-    }
-
-    @CoreMethod(names = "substrate?", onSingleton = true)
-    public abstract static class SubstrateNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public boolean substrate() {
-            return TruffleOptions.AOT;
-        }
-
-    }
-
-    @CoreMethod(names = "version", onSingleton = true)
-    public abstract static class GraalVersionNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject graalVersion() {
-            return createString(StringOperations.encodeRope(System.getProperty("graal.version", "unknown"), UTF8Encoding.INSTANCE));
         }
 
     }

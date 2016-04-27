@@ -6,17 +6,17 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative '../../../ruby/spec_helper'
+require_relative '../../../../ruby/spec_helper'
 
-describe "Truffle.assert_constant" do
+describe "Truffle::Graal.assert_constant" do
   
   it "raises a RuntimeError when called dynamically" do
-    lambda{ Truffle.send(:assert_constant, 14 + 2) }.should raise_error(RuntimeError)
+    lambda{ Truffle::Graal.send(:assert_constant, 14 + 2) }.should raise_error(RuntimeError)
   end
 
-  unless Truffle.graal?
+  unless Truffle::Graal.graal?
     it "returns the value of the argument" do
-      Truffle.assert_constant(14 + 2).should == 16
+      Truffle::Graal.assert_constant(14 + 2).should == 16
     end
   end
 

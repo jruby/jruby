@@ -36,7 +36,7 @@ module Rubinius
 
     Truffle.install_rubinius_primitive method(:module_mirror)
 
-    if Truffle.substrate?
+    if Truffle::Graal.substrate?
 
       def self.vm_gc_start(force)
         Truffle::Interop.execute(Truffle::Interop.read_property(Truffle::Java::System, :gc))

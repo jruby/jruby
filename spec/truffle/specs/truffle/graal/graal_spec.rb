@@ -6,12 +6,12 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative '../../../ruby/spec_helper'
+require_relative '../../../../ruby/spec_helper'
 
-describe "Truffle.version" do
+describe "Truffle::Graal.graal?" do
   
-  it "returns a String" do
-    Truffle.version.should be_kind_of(String)
+  it "returns a Boolean value" do
+    Truffle::Graal.graal?.should be_true_or_false
   end
   
 end

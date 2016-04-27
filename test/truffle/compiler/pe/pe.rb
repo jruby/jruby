@@ -19,14 +19,14 @@
 # do:
 #
 #   loop do
-#     Truffle.assert_constant expression
+#     Truffle::Graal.assert_constant expression
 #   end
 #
 # Run with:
 #
 #   jt run --graal -J-G:+TraceTruffleCompilation -J-G:+TruffleCompilationExceptionsAreFatal -J-G:+TruffleIterativePartialEscape test.rb
 
-unless Truffle.graal?
+unless Truffle::Graal.graal?
   puts 'not running Graal'
   exit 1
 end
@@ -119,16 +119,16 @@ EXAMPLES.each do |example|
       $value = nil
       eval "
       def test_pe_code
-        $value = Truffle.assert_constant(begin; #{example.code}; end)
-        Truffle.assert_not_compiled
+        $value = Truffle::Graal.assert_constant(begin; #{example.code}; end)
+        Truffle::Graal.assert_not_compiled
       end"
       while true
         test_pe_code
       end
     rescue RubyTruffleError => e
-      if e.message.include? 'Truffle.assert_not_compiled'
+      if e.message.include? 'Truffle::Graal.assert_not_compiled'
         constant = true
-      elsif e.message.include? 'Truffle.assert_constant'
+      elsif e.message.include? 'Truffle::Graal.assert_constant'
         constant = false
       else
         constant = nil

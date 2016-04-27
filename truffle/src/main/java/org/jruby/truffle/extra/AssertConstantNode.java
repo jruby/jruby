@@ -7,19 +7,20 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.debug;
+package org.jruby.truffle.extra;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
-public abstract class AssertNotCompiledNode extends RubyNode {
+@NodeChild("value")
+public abstract class AssertConstantNode extends RubyNode {
 
-    public AssertNotCompiledNode(RubyContext context, SourceSection sourceSection) {
+    public AssertConstantNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
@@ -27,19 +28,19 @@ public abstract class AssertNotCompiledNode extends RubyNode {
     private static volatile boolean[] sideEffect;
 
     @Specialization
-    public DynamicObject assertNotCompiled() {
-        final boolean[] compiled = new boolean[]{ CompilerDirectives.inCompiledCode() };
+    public Object assertCompilationConstant(Object value) {
+        final boolean[] compilationConstant = new boolean[]{ CompilerDirectives.isCompilationConstant(value) };
 
         // If we didn't cause the value to escape, the transfer would float above the isCompilationConstant
 
-        sideEffect = compiled;
+        sideEffect = compilationConstant;
 
-        if (compiled[0]) {
+        if (!compilationConstant[0]) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new RaiseException(coreExceptions().internalErrorAssertNotCompiledCompiled(this));
+            throw new RaiseException(coreExceptions().internalErrorAssertConstantNotConstant(this));
         }
 
-        return nil();
+        return value;
     }
 
 }
