@@ -515,20 +515,6 @@ public class JavaInterfaceTemplate {
 
     }
 
-    @JRubyMethod(name = "new", rest = true)
-    public static IRubyObject new_impl(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        final Ruby runtime = context.runtime;
-
-        RubyClass implClass = (RubyClass) self.getInstanceVariables().getInstanceVariable("@__implementation");
-        if (implClass == null) {
-            implClass = RubyClass.newClass(runtime, runtime.getClass("InterfaceJavaProxy"));
-            implClass.include(new IRubyObject[] { self });
-            Helpers.setInstanceVariable(implClass, self, "@__implementation");
-        }
-
-        return Helpers.invoke(context, implClass, "new", args, block);
-    }
-
     private static JavaClass getJavaClassForInterface(final IRubyObject module) {
         return (JavaClass) module.getInstanceVariables().getInstanceVariable("@java_class");
     }
