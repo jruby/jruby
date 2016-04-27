@@ -1844,8 +1844,8 @@ public abstract class ArrayNodes {
 
     @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true)
     @NodeChildren({
-        @NodeChild(type = RubyNode.class, value = "array"),
-        @NodeChild(type = RubyNode.class, value = "other")
+            @NodeChild(type = RubyNode.class, value = "array"),
+            @NodeChild(type = RubyNode.class, value = "other")
     })
     @ImportStatic(ArrayGuards.class)
     public abstract static class ReplaceNode extends CoreMethodNode {
@@ -1856,34 +1856,34 @@ public abstract class ArrayNodes {
             return ToAryNodeGen.create(null, null, index);
         }
 
-        @Specialization(guards = {"isRubyArray(other)", "isNullArray(other)"})
+        @Specialization(guards = { "isRubyArray(other)", "isNullArray(other)" })
         public DynamicObject replace(DynamicObject array, DynamicObject other) {
             setStoreAndSize(array, null, 0);
             return array;
         }
 
-        @Specialization(guards = {"isRubyArray(other)", "isIntArray(other)"})
+        @Specialization(guards = { "isRubyArray(other)", "isIntArray(other)" })
         public DynamicObject replaceIntegerFixnum(DynamicObject array, DynamicObject other) {
             final int[] store = (int[]) getStore(other);
             setStoreAndSize(array, store.clone(), getSize(other));
             return array;
         }
 
-        @Specialization(guards = {"isRubyArray(other)", "isLongArray(other)"})
+        @Specialization(guards = { "isRubyArray(other)", "isLongArray(other)" })
         public DynamicObject replaceLongFixnum(DynamicObject array, DynamicObject other) {
             final long[] store = (long[]) getStore(other);
             setStoreAndSize(array, store.clone(), getSize(other));
             return array;
         }
 
-        @Specialization(guards = {"isRubyArray(other)", "isDoubleArray(other)"})
+        @Specialization(guards = { "isRubyArray(other)", "isDoubleArray(other)" })
         public DynamicObject replaceFloat(DynamicObject array, DynamicObject other) {
             final double[] store = (double[]) getStore(other);
             setStoreAndSize(array, store.clone(), getSize(other));
             return array;
         }
 
-        @Specialization(guards = {"isRubyArray(other)", "isObjectArray(other)"})
+        @Specialization(guards = { "isRubyArray(other)", "isObjectArray(other)" })
         public DynamicObject replaceObject(DynamicObject array, DynamicObject other) {
             final Object[] store = (Object[]) getStore(other);
             setStoreAndSize(array, store.clone(), getSize(other));
