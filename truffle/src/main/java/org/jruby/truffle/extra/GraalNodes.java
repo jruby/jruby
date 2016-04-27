@@ -72,7 +72,7 @@ public abstract class GraalNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject graalVersion() {
-            return createString(StringOperations.encodeRope(System.getProperty("graal.version", "unknown"), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(Graal.getVersion(), UTF8Encoding.INSTANCE));
         }
 
     }

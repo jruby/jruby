@@ -19,4 +19,8 @@ public abstract class Graal {
         return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
     }
 
+    public static String getVersion() {
+        return System.getProperty("graal.version", "unknown");
+    }
+
 }
