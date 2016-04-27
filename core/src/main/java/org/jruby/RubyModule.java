@@ -1230,6 +1230,13 @@ public class RubyModule extends RubyObject {
         return searchWithCache(name).method;
     }
 
+    /**
+     * Search for the named method in this class and in superclasses, and if found return the CacheEntry representing
+     * the method and this class's serial number.
+     *
+     * @param name the method name
+     * @return the CacheEntry corresponding to the method and this class's serial number
+     */
     public CacheEntry searchWithCache(String name) {
         return searchWithCache(name, true);
     }
