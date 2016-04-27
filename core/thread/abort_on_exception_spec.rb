@@ -34,11 +34,12 @@ describe :thread_abort_on_exception, shared: true do
     begin
       ScratchPad << :before
 
+      @thread.abort_on_exception = true if @object
       lambda do
-        @thread.abort_on_exception = true if @object
         ThreadSpecs.state = :run
-        @thread.join
-      end.should raise_error(RuntimeError)
+        # Wait for the main thread to be interrupted
+        Thread.pass while @thread.alive?
+      end.should raise_error(RuntimeError, "Thread#abort_on_exception= specs")
 
       ScratchPad << :after
     rescue Object

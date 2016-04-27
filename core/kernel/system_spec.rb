@@ -7,11 +7,11 @@ describe :kernel_system, shared: true do
   end
 
   it "returns true when the command exits with a zero exit status" do
-    @object.system("true").should == true
+    @object.system("#{RUBY_EXE} -e 'exit 0'").should == true
   end
 
   it "returns false when the command exits with a non-zero exit status" do
-    @object.system("false").should == false
+    @object.system("#{RUBY_EXE} -e 'exit 1'").should == false
   end
 
   it "returns nil when command execution fails" do
@@ -48,14 +48,24 @@ describe :kernel_system, shared: true do
     lambda { @object.system("echo #{@shell_var}") }.should output_to_fd("foo\n")
   end
 
-  it "does not expand shell variables when given multiples arguments" do
-    lambda { @object.system("echo", @shell_var) }.should output_to_fd("#{@shell_var}\n")
+  platform_is_not :windows do
+    it "does not expand shell variables when given multiples arguments" do
+      lambda { @object.system("echo", @shell_var) }.should output_to_fd("#{@shell_var}\n")
+    end
   end
 
   platform_is :windows do
-    it "runs commands starting with @ using shell (as comments)" do
-      # unsure of a better way to confirm this, since success means it does nothing
-      @object.system('@does_not_exist').should == true
+    it "does expand shell variables when given multiples arguments" do
+      # See https://bugs.ruby-lang.org/issues/12231
+      lambda { @object.system("echo", @shell_var) }.should output_to_fd("foo\n")
+    end
+  end
+
+  platform_is :windows do
+    it "runs commands starting with any number of @ using shell" do
+      `#{RUBY_EXE} -e "p system 'does_not_exist'" 2>NUL`.chomp.should == "nil"
+      @object.system('@does_not_exist').should == false
+      @object.system("@@@#{RUBY_EXE} -e 'exit 0'").should == true
     end
   end
 end

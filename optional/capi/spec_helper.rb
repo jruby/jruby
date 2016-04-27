@@ -4,12 +4,16 @@ $extmk = false
 require 'rbconfig'
 require 'fileutils'
 
-objdir = File.expand_path("spec/rubyspec/optional/capi/ext")
+OBJDIR ||= File.expand_path("../../../ext/#{RUBY_NAME}/#{RUBY_VERSION}", __FILE__)
+FileUtils.makedirs(OBJDIR)
 
-define_method(:object_path) {objdir}
-FileUtils.makedirs(objdir)
+def extension_path
+  File.expand_path("../ext", __FILE__)
+end
 
-CAPI_RUBY_SIGNATURE = "#{RUBY_NAME}-#{RUBY_VERSION}"
+def object_path
+  OBJDIR
+end
 
 def compile_extension(name)
   preloadenv = RbConfig::CONFIG["PRELOADENV"] || "LD_PRELOAD"
@@ -46,18 +50,14 @@ def compile_extension(name)
   source    = File.join(path, "#{ext}.c")
   obj       = File.join(objdir, "#{ext}.#{RbConfig::CONFIG['OBJEXT']}")
   lib       = File.join(objdir, "#{ext}.#{RbConfig::CONFIG['DLEXT']}")
-  signature = File.join(objdir, "#{ext}.sig")
 
   ruby_header     = File.join(hdrdir, "ruby.h")
   rubyspec_header = File.join(path, "rubyspec.h")
-  mri_header      = File.join(path, "mri.h")
 
-  return lib if File.exist?(signature) and
-                IO.read(signature).chomp == CAPI_RUBY_SIGNATURE and
-                File.exist?(lib) and File.mtime(lib) > File.mtime(source) and
+  return lib if File.exist?(lib) and File.mtime(lib) > File.mtime(source) and
                 File.mtime(lib) > File.mtime(ruby_header) and
                 File.mtime(lib) > File.mtime(rubyspec_header) and
-                File.mtime(lib) > File.mtime(mri_header)
+                true            # sentinel
 
   # avoid problems where compilation failed but previous shlib exists
   File.delete lib if File.exist? lib
@@ -94,15 +94,9 @@ def compile_extension(name)
     raise "Unable to link \"#{source}\""
   end
 
-  File.open(signature, "w") { |f| f.puts CAPI_RUBY_SIGNATURE }
-
   lib
 ensure
   ENV[preloadenv] = preload if preloadenv
-end
-
-def extension_path
-  File.expand_path("../ext", __FILE__)
 end
 
 def load_extension(name)

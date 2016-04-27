@@ -1,40 +1,22 @@
 describe :file_stat, shared: true do
   before :each do
     @file = tmp('i_exist')
-    touch(@file) { |f| f.write 'rubinius' }
+    touch(@file)
   end
 
   after :each do
     rm_r @file
   end
 
-  # TODO: Fix
   it "returns a File::Stat object if the given file exists" do
     st = File.send(@method, @file)
-
-    st.file?.should == true
-    st.zero?.should == false
-    st.size.should == 8
-    st.size?.should == 8
-    st.blksize.should > 0
-    st.atime.should be_kind_of(Time)
-    st.ctime.should be_kind_of(Time)
-    st.mtime.should be_kind_of(Time)
+    st.should be_an_instance_of(File::Stat)
   end
 
-  # TODO: Fix
   it "returns a File::Stat object when called on an instance of File" do
     File.open(@file) do |f|
       st = f.send(@method)
-
-      st.file?.should == true
-      st.zero?.should == false
-      st.size.should == 8
-      st.size?.should == 8
-      st.blksize.should > 0
-      st.atime.should be_kind_of(Time)
-      st.ctime.should be_kind_of(Time)
-      st.mtime.should be_kind_of(Time)
+      st.should be_an_instance_of(File::Stat)
     end
   end
 

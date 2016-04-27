@@ -5,8 +5,11 @@ describe "Math.gamma" do
     Math.gamma(0).should == Float::INFINITY
   end
 
-  it "returns -infinity given -0.0" do
-    Math.gamma(-0.0).should == -Float::INFINITY
+  platform_is_not :windows do
+    # https://bugs.ruby-lang.org/issues/12249
+    it "returns -infinity given -0.0" do
+      Math.gamma(-0.0).should == -Float::INFINITY
+    end
   end
 
   it "returns Math.sqrt(Math::PI) given 0.5" do
@@ -51,7 +54,7 @@ describe "Math.gamma" do
     lambda { Math.gamma(-1) }.should raise_error(Math::DomainError)
   end
 
-  # See http://redmine.ruby-lang.org/issues/show/2189
+  # See https://bugs.ruby-lang.org/issues/10642
   it "returns +infinity given +infinity" do
     Math.gamma(infinity_value).infinite?.should == 1
   end

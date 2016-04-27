@@ -131,17 +131,19 @@ describe "File.open" do
     # it should be possible to write to such a file via returned descriptior,
     # even though the file permissions are r-r-r.
 
-    File.open(@file, "w", 0444) { |f| f.puts("test") }
-    @file.should have_data("test\n")
+    File.open(@file, "w", 0444) { |f| f.write("test") }
+    @file.should have_data("test")
   end
 
-  it "opens the existing file, does not change permissions even when they are specified" do
-    File.chmod(0664, @file)
-    orig_perms = File.stat(@file).mode.to_s(8)
-    File.open(@file, "w", 0444) { |f| f.puts("test") }
+  platform_is_not :windows do
+    it "opens the existing file, does not change permissions even when they are specified" do
+      File.chmod(0664, @file)
+      orig_perms = File.stat(@file).mode.to_s(8)
+      File.open(@file, "w", 0444) { |f| f.write("test") }
 
-    File.stat(@file).mode.to_s(8).should == orig_perms
-    @file.should have_data("test\n")
+      File.stat(@file).mode.to_s(8).should == orig_perms
+      @file.should have_data("test")
+    end
   end
 
   platform_is_not :windows do
@@ -196,20 +198,22 @@ describe "File.open" do
     lambda { File.open(@nonexistent, File::NONBLOCK) }.should raise_error(Errno::ENOENT)
   end
 
-  platform_is_not :openbsd do
+  platform_is_not :openbsd, :windows do
     it "opens a file that no exists when use File::TRUNC mode" do
       lambda { File.open(@nonexistent, File::TRUNC) }.should raise_error(Errno::ENOENT)
     end
   end
 
-  platform_is :openbsd do
-    it "opens a file that no exists when use File::TRUNC mode" do
+  platform_is :openbsd, :windows do
+    it "does not open a file that does no exists when using File::TRUNC mode" do
       lambda { File.open(@nonexistent, File::TRUNC) }.should raise_error(Errno::EINVAL)
     end
   end
 
-  it "opens a file that no exists when use File::NOCTTY mode" do
-    lambda { File.open(@nonexistent, File::NOCTTY) }.should raise_error(Errno::ENOENT)
+  platform_is_not :windows do
+    it "opens a file that no exists when use File::NOCTTY mode" do
+      lambda { File.open(@nonexistent, File::NOCTTY) }.should raise_error(Errno::ENOENT)
+    end
   end
 
   it "opens a file that no exists when use File::CREAT mode" do
@@ -398,8 +402,7 @@ describe "File.open" do
     }.should raise_error(IOError)
   end
 
-  platform_is_not :openbsd do
-
+  platform_is_not :openbsd, :windows do
     it "truncates the file when passed File::TRUNC mode" do
       File.open(@file, File::RDWR) { |f| f.puts "hello file" }
       @fh = File.open(@file, File::TRUNC)
@@ -411,7 +414,6 @@ describe "File.open" do
         f.gets.should == nil
       end
     end
-
   end
 
   it "opens a file when use File::WRONLY|File::TRUNC mode" do
@@ -425,7 +427,7 @@ describe "File.open" do
     end
   end
 
-  platform_is_not :openbsd do
+  platform_is_not :openbsd, :windows do
     it "can't write in a block when call open with File::TRUNC mode" do
       lambda {
         File.open(@file, File::TRUNC) do |f|
@@ -443,7 +445,7 @@ describe "File.open" do
     end
   end
 
-  platform_is :openbsd do
+  platform_is :openbsd, :windows do
     it "can't write in a block when call open with File::TRUNC mode" do
       lambda {
         File.open(@file, File::TRUNC) do |f|
@@ -605,7 +607,7 @@ describe "File.open when passed a file descriptor" do
   end
 
   it "opens a file" do
-    @file = File.open(@fd)
+    @file = File.open(@fd, "w")
     @file.should be_an_instance_of(File)
     @file.fileno.should equal(@fd)
     @file.write @content
@@ -614,7 +616,7 @@ describe "File.open when passed a file descriptor" do
   end
 
   it "opens a file when passed a block" do
-    @file = File.open(@fd) do |f|
+    @file = File.open(@fd, "w") do |f|
       f.should be_an_instance_of(File)
       f.fileno.should equal(@fd)
       f.write @content
@@ -624,6 +626,8 @@ describe "File.open when passed a file descriptor" do
   end
 end
 
-describe "File.open" do
-  it_behaves_like :open_directory, :open
+platform_is_not :windows do
+  describe "File.open" do
+    it_behaves_like :open_directory, :open
+  end
 end

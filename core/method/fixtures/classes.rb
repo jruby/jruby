@@ -86,6 +86,9 @@ module MethodSpecs
     define_method(:two_req_defined_method, Proc.new {|x, y|})
     define_method(:no_args_defined_method) {}
     define_method(:two_grouped_defined_method) {|(x1,x2)|}
+
+    attr_reader :reader
+    attr_writer :writer
   end
 
   module MyMod

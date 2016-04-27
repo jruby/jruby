@@ -20,8 +20,10 @@ describe "File.split" do
     File.split("").should == [".", ""]
   end
 
-  it "collapses multiple '/' characters and strips trailing ones" do
-    File.split("//foo////").should == ["/", "foo"]
+  platform_is_not :windows do
+    it "collapses multiple '/' characters and strips trailing ones" do
+      File.split("//foo////").should == ["/", "foo"]
+    end
   end
 
   platform_is_not os: :windows do
