@@ -68,11 +68,7 @@ public class RubyDebugTest {
                 suspendedEvent = null;
             }
         }).build();
-        engine.eval(Source.fromText(
-            "def nothing(n)\n" +
-            "end\n",
-            "init.rb").withMimeType("application/x-ruby")
-        );
+        engine.eval(Source.fromFileName("src/test/ruby/init.rb"));
         run.clear();
     }
 
@@ -83,28 +79,8 @@ public class RubyDebugTest {
         }
     }
 
-    private static Source createFactorial() {
-        return Source.fromText(
-            "def fac(n)\n" +
-            "  if n <= 1\n" +
-            "    1\n" +
-            "  else\n" +
-            "    nMinusOne = n - 1\n" +
-            "    nMOFact = fac(nMinusOne)\n" +
-            "    res = n * nMOFact\n" +
-            "    res\n" +
-            "  end\n" +
-            "end\n" +
-            "\n" +
-            "def main\n" +
-            "  res = fac(2)\n" +
-            "  puts res\n" +
-            "  res\n" +
-            "end\n" +
-            "Truffle::Interop.export_method(:main)\n" +
-            "\n",
-            "factorial.rb").withMimeType(
-        "application/x-ruby");
+    private static Source createFactorial() throws IOException {
+        return Source.fromFileName("src/test/ruby/factorial.rb");
     }
 
     protected final String getOut() {
