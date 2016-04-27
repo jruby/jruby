@@ -83,7 +83,7 @@ public class RubyDebugTest {
         return Source.fromFileName("src/test/ruby/factorial.rb");
     }
 
-    protected final String getErr() {
+    private final String getErr() {
         try {
             err.flush();
         } catch (IOException e) {
