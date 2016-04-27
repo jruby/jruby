@@ -1194,7 +1194,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public IRubyObject bit_length(ThreadContext context) {
         long tmpValue = value;
         if (value < 0) {
-            tmpValue = Math.abs(value);
+            tmpValue = ~value;
         }
 
         return context.runtime.newFixnum(64 - Long.numberOfLeadingZeros(tmpValue));
