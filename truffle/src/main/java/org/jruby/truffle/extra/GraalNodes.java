@@ -19,7 +19,7 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.platform.Graal;
+import org.jruby.truffle.platform.graal.Graal;
 
 @CoreClass(name = "Truffle::Graal")
 public abstract class GraalNodes {

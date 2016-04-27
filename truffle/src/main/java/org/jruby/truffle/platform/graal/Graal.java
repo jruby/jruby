@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.platform;
+package org.jruby.truffle.platform.graal;
 
 import com.oracle.truffle.api.Truffle;
 
