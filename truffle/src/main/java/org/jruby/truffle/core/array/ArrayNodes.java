@@ -1719,7 +1719,7 @@ public abstract class ArrayNodes {
             return appendOneNode.executeAppendOne(array, value);
         }
 
-        @Specialization(guards = { "rest.length > 0", "wasProvided(n)" })
+        @Specialization(guards = { "rest.length > 0", "wasProvided(value)" })
         public DynamicObject pushMany(VirtualFrame frame, DynamicObject array, Object value, Object[] rest) {
             // NOTE (eregon): Appending one by one here to avoid useless generalization to Object[]
             // if the arguments all fit in the current storage
