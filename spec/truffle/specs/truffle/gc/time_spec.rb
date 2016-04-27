@@ -6,21 +6,21 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative '../../../ruby/spec_helper'
+require_relative '../../../../ruby/spec_helper'
 
-describe "Truffle.gc_time" do
+describe "Truffle::GC.time" do
   
   it "returns an Integer" do
-    Truffle.gc_time.should be_kind_of(Integer)
+    Truffle::GC.time.should be_kind_of(Integer)
   end
   
   it "increases as collections are run" do
-    time_before = Truffle.gc_time
+    time_before = Truffle::GC.time
     escape = []
     100_000.times do
       escape << Time.now.to_s
     end
-    Truffle.gc_time.should > time_before
+    Truffle::GC.time.should > time_before
   end
 
 end

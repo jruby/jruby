@@ -141,28 +141,6 @@ public abstract class TruffleNodes {
 
     }
 
-    @CoreMethod(names = "gc_count", onSingleton = true)
-    public abstract static class GCCountNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization
-        public int gcCount() {
-            return RubyGC.getCollectionCount();
-        }
-
-    }
-
-    @CoreMethod(names = "gc_time", onSingleton = true)
-    public abstract static class GCTimeNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization
-        public long gcTime() {
-            return RubyGC.getCollectionTime();
-        }
-
-    }
-
     @CoreMethod(names = "java_class_of", onSingleton = true, required = 1)
     public abstract static class JavaClassOfNode extends CoreMethodArrayArgumentsNode {
 

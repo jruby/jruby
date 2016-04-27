@@ -568,6 +568,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Etc");
         defineModule(truffleModule, "Coverage");
         defineModule(truffleModule, "Graal");
+        defineModule(truffleModule, "GC");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");

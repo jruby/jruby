@@ -1,1 +1,1 @@
-slow:Truffle.gc_time increases as collections are run
+slow:Truffle.time increases as collections are run
