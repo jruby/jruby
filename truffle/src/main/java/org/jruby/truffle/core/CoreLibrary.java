@@ -72,7 +72,7 @@ import org.jruby.truffle.core.thread.ThreadBacktraceLocationNodesFactory;
 import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
-import org.jruby.truffle.extra.TrufflePrimitiveNodesFactory;
+import org.jruby.truffle.extra.TruffleNodesFactory;
 import org.jruby.truffle.interop.CExtNodesFactory;
 import org.jruby.truffle.interop.TruffleInteropNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
@@ -561,7 +561,6 @@ public class CoreLibrary {
         defineModule(truffleModule, "Interop");
         defineModule(truffleModule, "CExt");
         defineModule(truffleModule, "Debug");
-        final DynamicObject primitiveModule = defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
@@ -570,7 +569,7 @@ public class CoreLibrary {
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
         final DynamicObject psychEmitterClass = defineClass(psychModule, psychHandlerClass, "Emitter");
         Layouts.CLASS.setInstanceFactoryUnsafe(psychEmitterClass, Layouts.PSYCH_EMITTER.createEmitterShape(psychEmitterClass, psychEmitterClass));
-        handleClass = defineClass(primitiveModule, objectClass, "Handle");
+        handleClass = defineClass(truffleModule, objectClass, "Handle");
         handleFactory = Layouts.HANDLE.createHandleShape(handleClass, handleClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(handleClass, handleFactory);
 
@@ -690,7 +689,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(SymbolNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ThreadNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TrueClassNodesFactory.getFactories());
-        coreMethodNodeManager.addCoreMethodNodes(TrufflePrimitiveNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingConverterNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleInteropNodesFactory.getFactories());

@@ -55,7 +55,7 @@ module CG
     end
 
     def hidden?
-      source.file == 'run_jruby_root' || source.file == 'context' || name == 'Truffle::Primitive#run_jruby_root' || name == 'Truffle::Primitive#context'
+      source.file == 'run_jruby_root' || source.file == 'context' || name == 'Truffle#run_jruby_root' || name == 'Truffle#context'
     end
 
     def reachable

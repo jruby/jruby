@@ -16,20 +16,20 @@ module Truffle
     # String.
     # @return [String]
     def self.java_class_of(object)
-      Truffle::Primitive.java_class_of(object)
+      Truffle.java_class_of(object)
     end
 
     # Dump a string as a String of escaped literal bytes.
     # @return [String]
     def self.dump_string(string)
-      Truffle::Primitive.dump_string(string)
+      Truffle.dump_string(string)
     end
 
     # Print a String directly to stderr without going through the normal
     # Ruby and runtime IO systems.
     # @return [nil]
     def self.debug_print(string)
-      Truffle::Primitive.debug_print string
+      Truffle.debug_print string
     end
 
   end

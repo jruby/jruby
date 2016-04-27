@@ -10,13 +10,13 @@ timeout = Time.now + 30
 
 begin
   while Time.now < timeout
-    Truffle::Primitive.assert_not_compiled
+    Truffle.assert_not_compiled
   end
   
   puts "while loop optimisation timed out"
   exit 1
 rescue RubyTruffleError => e
-  if e.message.include? 'Truffle::Primitive.assert_not_compiled'
+  if e.message.include? 'Truffle.assert_not_compiled'
     puts "while loop optimising"
     exit 0
   else

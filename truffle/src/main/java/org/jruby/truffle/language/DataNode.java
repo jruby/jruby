@@ -36,7 +36,7 @@ public class DataNode extends RubyNode {
         }
 
         final Object data = snippetNode.execute(frame,
-                "Truffle::Primitive.get_data(file, offset)",
+                "Truffle.get_data(file, offset)",
                 "file", StringOperations.createString(getContext(),
                         ByteList.create(getEncapsulatingSourceSection().getSource().getPath())),
                 "offset", endPosition);

@@ -6,10 +6,12 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative '../../../../ruby/spec_helper'
+require_relative '../../../ruby/spec_helper'
 
-describe "Truffle::Primitive.simple_shell" do
+describe "Truffle.host_os" do
   
-  it "needs to be reviewed for spec completeness"
+  it "returns a String" do
+    Truffle.host_os.should be_kind_of(String)
+  end
 
 end

@@ -77,8 +77,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@CoreClass(name = "Truffle::Primitive")
-public abstract class TrufflePrimitiveNodes {
+@CoreClass(name = "Truffle")
+public abstract class TruffleNodes {
 
     @CoreMethod(names = "binding_of_caller", isModuleFunction = true)
     public abstract static class BindingOfCallerNode extends CoreMethodArrayArgumentsNode {
@@ -174,7 +174,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject assertConstant(Object value) {
-            throw new RaiseException(coreExceptions().runtimeError("Truffle::Primitive.assert_constant can only be called lexically", this));
+            throw new RaiseException(coreExceptions().runtimeError("Truffle.assert_constant can only be called lexically", this));
         }
 
     }
@@ -185,7 +185,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject assertNotCompiled() {
-            throw new RaiseException(coreExceptions().runtimeError("Truffle::Primitive.assert_not_compiled can only be called lexically", this));
+            throw new RaiseException(coreExceptions().runtimeError("Truffle.assert_not_compiled can only be called lexically", this));
         }
 
     }
@@ -240,7 +240,7 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(names = "graal_version", onSingleton = true)
+    @CoreMethod(names = "version", onSingleton = true)
     public abstract static class GraalVersionNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
@@ -756,7 +756,7 @@ public abstract class TrufflePrimitiveNodes {
     }
 
     /*
-     * Truffle::Primitive.create_simple_string creates a string 'test' without any part of the string escaping. Useful
+     * Truffle.create_simple_string creates a string 'test' without any part of the string escaping. Useful
      * for testing compilation of String becuase most other ways to construct a string can currently escape.
      */
 

@@ -20,7 +20,7 @@ class IO
 
 end
 
-if Truffle::Primitive.io_safe?
+if Truffle.io_safe?
   STDIN = File.new(0)
   STDOUT = File.new(1)
   STDERR = File.new(2)
@@ -40,11 +40,11 @@ class << STDIN
   end
 end
 
-if Truffle::Primitive.io_safe?
+if Truffle.io_safe?
   if STDOUT.tty?
     STDOUT.sync = true
   else
-    Truffle::Primitive.at_exit true do
+    Truffle.at_exit true do
       STDOUT.flush
     end
   end
@@ -52,7 +52,7 @@ if Truffle::Primitive.io_safe?
   if STDERR.tty?
     STDERR.sync = true
   else
-    Truffle::Primitive.at_exit true do
+    Truffle.at_exit true do
       STDERR.flush
     end
   end
@@ -129,11 +129,11 @@ end
 module Rubinius
 
   def self.synchronize(object, &block)
-    Truffle::Primitive.synchronized(object, &block)
+    Truffle.synchronized(object, &block)
   end
 
   def self.memory_barrier
-    Truffle::Primitive.full_memory_barrier
+    Truffle.full_memory_barrier
   end
 
 end
@@ -227,9 +227,9 @@ end
 
 ENV_JAVA = {}
 
-# Truffle::Primitive.get_data is used by RubyContext#execute to prepare the DATA constant
+# Truffle.get_data is used by RubyContext#execute to prepare the DATA constant
 
-module Truffle::Primitive
+module Truffle
   def self.get_data(path, offset)
     file = File.open(path)
     file.seek(offset)
@@ -237,7 +237,7 @@ module Truffle::Primitive
     # I think if the file can't be locked then we just silently ignore
     file.flock(File::LOCK_EX | File::LOCK_NB)
 
-    Truffle::Primitive.at_exit true do
+    Truffle.at_exit true do
       file.flock(File::LOCK_UN)
     end
 
@@ -245,7 +245,7 @@ module Truffle::Primitive
   end
 end
 
-module Truffle::Primitive
+module Truffle
   def self.load_arguments_from_array_kw_helper(array, kwrest_name, binding)
     array = array.dup
 

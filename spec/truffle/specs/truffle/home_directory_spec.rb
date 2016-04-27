@@ -6,14 +6,16 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-module Coverage
+require_relative '../../../ruby/spec_helper'
 
-  def self.start
-    Truffle.coverage_start
+describe "Truffle.home_directory" do
+  
+  it "returns a String" do
+    Truffle.home_directory.should be_kind_of(String)
   end
-
-  def self.result
-    Truffle.coverage_result
+  
+  it "returns a path to a directory" do
+    Dir.exist?(Truffle.home_directory).should be_true
   end
 
 end

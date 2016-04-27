@@ -50,7 +50,7 @@ module Truffle
     #
     # ```
     # > backtrace
-    #   ▶    at Truffle::Primitive#simple_shell
+    #   ▶    at Truffle#simple_shell
     #   1    at core:/core/truffle/debug.rb:14:in 'break'
     #   2    at test.rb:4:in 'foo'
     #   3    at test.rb:9:in 'bar'
@@ -66,29 +66,29 @@ module Truffle
     def self.break(file = nil, line = nil, condition = nil)
       if line.nil?
         raise 'must specify both a file and a line, or neither' unless file.nil?
-        Truffle::Primitive.simple_shell
+        Truffle.simple_shell
       elsif not condition.nil?
-        Truffle::Primitive.attach file, line do |binding|
+        Truffle.attach file, line do |binding|
           if binding.eval(condition)
-            Truffle::Primitive.simple_shell
+            Truffle.simple_shell
           end
         end
       elsif block_given?
-        Truffle::Primitive.attach file, line do |binding|
+        Truffle.attach file, line do |binding|
           if yield binding
-            Truffle::Primitive.simple_shell
+            Truffle.simple_shell
           end
         end
       else
-        Truffle::Primitive.attach file, line do |binding|
-          Truffle::Primitive.simple_shell
+        Truffle.attach file, line do |binding|
+          Truffle.simple_shell
         end
       end
     end
 
     # Remove a breakpoint set in {#break}.
     def self.clear(file, line)
-      Truffle::Primitive.detach file, line
+      Truffle.detach file, line
     end
 
   end

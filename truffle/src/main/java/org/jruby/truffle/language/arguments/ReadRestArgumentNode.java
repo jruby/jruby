@@ -90,7 +90,7 @@ public class ReadRestArgumentNode extends RubyNode {
             }
 
             getContext().getCodeLoader().inline(this,
-                    "Truffle::Primitive.add_rejected_kwargs_to_rest(rest, kwargs)",
+                    "Truffle.add_rejected_kwargs_to_rest(rest, kwargs)",
                     "rest", rest,
                     "kwargs", kwargsHash);
         }

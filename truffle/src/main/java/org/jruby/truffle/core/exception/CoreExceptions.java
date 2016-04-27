@@ -563,11 +563,11 @@ public class CoreExceptions {
     }
 
     public DynamicObject internalErrorAssertConstantNotConstant(Node currentNode) {
-        return internalError("Value in Truffle::Primitive.assert_constant was not constant", currentNode);
+        return internalError("Value in Truffle.assert_constant was not constant", currentNode);
     }
 
     public DynamicObject internalErrorAssertNotCompiledCompiled(Node currentNode) {
-        return internalError("Call to Truffle::Primitive.assert_not_compiled was compiled", currentNode);
+        return internalError("Call to Truffle.assert_not_compiled was compiled", currentNode);
     }
 
     @TruffleBoundary

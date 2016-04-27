@@ -33,7 +33,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
                 .build();
 
         try {
-            context = (RubyContext) engine.eval(Source.fromText("Truffle::Primitive.context", "context")
+            context = (RubyContext) engine.eval(Source.fromText("Truffle.context", "context")
                     .withMimeType(RubyLanguage.MIME_TYPE)).get();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -51,7 +51,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         context.setInitialJRubyRootNode(rootNode);
 
         try {
-            return engine.eval(Source.fromText("Truffle::Primitive.run_jruby_root", "run_jruby_root")
+            return engine.eval(Source.fromText("Truffle.run_jruby_root", "run_jruby_root")
                     .withMimeType(RubyLanguage.MIME_TYPE)).get();
         } catch (IOException e) {
             if (e.getCause() instanceof ExitException) {

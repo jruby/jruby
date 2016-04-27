@@ -11,7 +11,7 @@ require_relative '../../../../ruby/spec_helper'
 describe "Fixnum#&" do
   before :each do
     @long = (1 << 48) + 1
-    @mask = Truffle::Primitive.fixnum_lower((1 << 30) - 1)
+    @mask = Truffle.fixnum_lower((1 << 30) - 1)
   end
 
   it "returns an int for (int, int)" do

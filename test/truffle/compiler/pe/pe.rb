@@ -19,7 +19,7 @@
 # do:
 #
 #   loop do
-#     Truffle::Primitive.assert_constant expression
+#     Truffle.assert_constant expression
 #   end
 #
 # Run with:
@@ -119,16 +119,16 @@ EXAMPLES.each do |example|
       $value = nil
       eval "
       def test_pe_code
-        $value = Truffle::Primitive.assert_constant(begin; #{example.code}; end)
-        Truffle::Primitive.assert_not_compiled
+        $value = Truffle.assert_constant(begin; #{example.code}; end)
+        Truffle.assert_not_compiled
       end"
       while true
         test_pe_code
       end
     rescue RubyTruffleError => e
-      if e.message.include? 'Truffle::Primitive.assert_not_compiled'
+      if e.message.include? 'Truffle.assert_not_compiled'
         constant = true
-      elsif e.message.include? 'Truffle::Primitive.assert_constant'
+      elsif e.message.include? 'Truffle.assert_constant'
         constant = false
       else
         constant = nil

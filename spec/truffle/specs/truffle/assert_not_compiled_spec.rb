@@ -6,16 +6,18 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative '../../../../ruby/spec_helper'
+require_relative '../../../ruby/spec_helper'
 
-describe "Truffle::Primitive.home_directory" do
+describe "Truffle.assert_not_compiled" do
   
-  it "returns a String" do
-    Truffle::Primitive.home_directory.should be_kind_of(String)
+  it "raises a RuntimeError when called dynamically" do
+    lambda{ Truffle.send(:assert_not_compiled) }.should raise_error(RuntimeError)
   end
-  
-  it "returns a path to a directory" do
-    Dir.exist?(Truffle::Primitive.home_directory).should be_true
+
+  unless Truffle.graal?
+    it "returns nil" do
+      Truffle.assert_not_compiled.should be_nil
+    end
   end
 
 end

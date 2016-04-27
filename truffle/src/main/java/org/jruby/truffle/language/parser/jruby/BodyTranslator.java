@@ -522,20 +522,15 @@ public class BodyTranslator extends Translator {
                 final RubyNode ret = translateRubiniusCheckFrozen(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (receiver instanceof org.jruby.ast.Colon2ConstNode // Truffle::Primitive.<method>
-                && ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode() instanceof org.jruby.ast.ConstNode
-                && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode()).getName().equals("Truffle")
-                && ((org.jruby.ast.Colon2ConstNode) receiver).getName().equals("Primitive")) {
+        } else if (receiver instanceof org.jruby.ast.ConstNode
+                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Truffle")) {
             if (methodName.equals("assert_constant")) {
                 final RubyNode ret = AssertConstantNodeGen.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("assert_not_compiled")) {
                 final RubyNode ret = AssertNotCompiledNodeGen.create(context, sourceSection);
                 return addNewlineIfNeeded(node, ret);
-            }
-        } else if (receiver instanceof org.jruby.ast.ConstNode // Truffle.omit
-                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Truffle")) {
-            if (methodName.equals("omit")) {
+            } else if (methodName.equals("omit")) {
                 // We're never going to run the omitted code and it's never used as the RHS for anything, so just
                 // replace the call with nil.
                 final RubyNode ret = nilNode(sourceSection);

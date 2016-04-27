@@ -21,11 +21,11 @@ loop do
 
   test_thread = Thread.new do
     begin
-      eval "loop { Truffle::Primitive.assert_constant #{code}; Truffle::Primitive.assert_not_compiled; Thread.pass }"
+      eval "loop { Truffle.assert_constant #{code}; Truffle.assert_not_compiled; Thread.pass }"
     rescue RubyTruffleError => e
-      if e.message.include? 'Truffle::Primitive.assert_not_compiled'
+      if e.message.include? 'Truffle.assert_not_compiled'
         puts "Yes! Truffle can constant fold this to #{eval(code).inspect}"
-      elsif e.message.include? 'Truffle::Primitive.assert_constant'
+      elsif e.message.include? 'Truffle.assert_constant'
         puts "No :( Truffle can't constant fold that"
       else
         puts "There was an error executing that :("
