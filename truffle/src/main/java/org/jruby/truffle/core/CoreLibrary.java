@@ -93,6 +93,7 @@ import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory;
+import org.jruby.truffle.stdlib.CoverageNodesFactory;
 import org.jruby.truffle.stdlib.DigestLayoutImpl;
 import org.jruby.truffle.stdlib.DigestNodesFactory;
 import org.jruby.truffle.stdlib.EtcNodesFactory;
@@ -564,6 +565,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
+        defineModule(truffleModule, "Coverage");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -709,6 +711,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TracePointNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(CoverageNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 

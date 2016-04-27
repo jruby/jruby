@@ -9,11 +9,11 @@
 module Coverage
 
   def self.start
-    Truffle.coverage_start
+    Truffle::Coverage.start
   end
 
   def self.result
-    Truffle.coverage_result
+    Truffle::Coverage.result
   end
 
 end
