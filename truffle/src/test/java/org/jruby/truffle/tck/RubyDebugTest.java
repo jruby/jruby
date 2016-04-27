@@ -83,10 +83,6 @@ public class RubyDebugTest {
         return Source.fromFileName("src/test/ruby/factorial.rb");
     }
 
-    protected final String getOut() {
-        return new String(out.toByteArray());
-    }
-
     protected final String getErr() {
         try {
             err.flush();
