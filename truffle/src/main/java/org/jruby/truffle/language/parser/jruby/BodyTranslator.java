@@ -32,6 +32,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.IsRubiniusUndefinedNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
+import org.jruby.truffle.core.array.ArrayAppendOneNodeGen;
 import org.jruby.truffle.core.array.ArrayConcatNode;
 import org.jruby.truffle.core.array.ArrayDropTailNode;
 import org.jruby.truffle.core.array.ArrayDropTailNodeGen;
@@ -166,7 +167,6 @@ import org.jruby.truffle.language.threadlocal.WrapInThreadLocalNodeGen;
 import org.jruby.truffle.language.yield.YieldExpressionNode;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
@@ -295,14 +295,11 @@ public class BodyTranslator extends Translator {
     public RubyNode visitArgsPushNode(org.jruby.ast.ArgsPushNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode ret = ArrayNodesFactory.PushOneNodeFactory.create(new RubyNode[]{
-                KernelNodesFactory.DupNodeFactory.create(context, sourceSection, new RubyNode[]{
-                        node.getFirstNode().accept(this)
-                }),
-                node.getSecondNode().accept(this)
-        });
-
-        setSourceSection(ret, sourceSection);
+        final RubyNode args = node.getFirstNode().accept(this);
+        final RubyNode value = node.getSecondNode().accept(this);
+        final RubyNode ret = ArrayAppendOneNodeGen.create(context, sourceSection,
+                KernelNodesFactory.DupNodeFactory.create(context, sourceSection, new RubyNode[] { args }),
+                value);
 
         return addNewlineIfNeeded(node, ret);
     }
