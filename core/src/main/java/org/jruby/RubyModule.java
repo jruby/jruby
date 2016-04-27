@@ -82,6 +82,7 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -690,7 +691,7 @@ public class RubyModule extends RubyObject {
 
         // I pass the cref even though I don't need to so that the concept is simpler to read
         StaticScope staticScope = context.getCurrentStaticScope();
-        RubyModule overlayModule = staticScope.getOverlayModule(context);
+        RubyModule overlayModule = staticScope.getOverlayModuleForWrite(context);
         usingModule(context, overlayModule, refinedModule);
 
         return this;
@@ -1242,6 +1243,28 @@ public class RubyModule extends RubyObject {
     }
 
     /**
+     * Search for the named method in this class and in superclasses applying refinements from the given scope. If
+     * found return the method; otherwise, return UndefinedMethod.
+     *
+     * @param name the method name
+     * @param refinedScope the scope containing refinements to search
+     * @return the method or UndefinedMethod
+     */
+    public DynamicMethod searchWithRefinements(String name, StaticScope refinedScope) {
+        DynamicMethod method = searchMethodWithRefinementsInner(name, refinedScope);
+
+        if (method instanceof CacheableMethod) {
+            method = ((CacheableMethod) method).getMethodForCaching();
+        }
+
+        if (method != null) {
+            return method;
+        }
+
+        return UndefinedMethod.INSTANCE;
+    }
+
+    /**
      * Search through this module and supermodules for method definitions. Cache superclass definitions in this class.
      *
      * @param name The name of the method to search for
@@ -1427,6 +1450,23 @@ public class RubyModule extends RubyObject {
             // This way only the recursion needs to be handled differently on
             // IncludedModuleWrapper.
             DynamicMethod method = module.searchMethodCommon(name);
+            if (method != null) return method.isNull() ? null : method;
+        }
+        return null;
+    }
+
+    public DynamicMethod searchMethodWithRefinementsInner(String name, StaticScope refinedScope) {
+        // This flattens some of the recursion that would be otherwise be necessary.
+        // Used to recurse up the class hierarchy which got messy with prepend.
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            // Check for refinements in the given scope
+            DynamicMethod method = IRRuntimeHelpers.getRefinedMethodForClass(refinedScope, this.getNonIncludedClass(), name);
+            if (method != null && !method.isNull()) return method;
+
+            // Only recurs if module is an IncludedModuleWrapper.
+            // This way only the recursion needs to be handled differently on
+            // IncludedModuleWrapper.
+            method = module.searchMethodCommon(name);
             if (method != null) return method.isNull() ? null : method;
         }
         return null;
