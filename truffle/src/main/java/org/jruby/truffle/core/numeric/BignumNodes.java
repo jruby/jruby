@@ -435,16 +435,34 @@ public abstract class BignumNodes {
     @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
     public abstract static class LeftShiftNode extends BignumCoreMethodNode {
 
-        private final BranchProfile bLessThanZero = BranchProfile.create();
+        public abstract Object executeLeftShift(VirtualFrame frame, DynamicObject a, Object b);
 
         @Specialization
-        public Object leftShift(DynamicObject a, int b) {
-            if (b >= 0) {
+        public Object leftShift(DynamicObject a, int b,
+                                @Cached("createBinaryProfile()") ConditionProfile bPositive) {
+            if (bPositive.profile(b >= 0)) {
                 return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftLeft(b));
             } else {
-                bLessThanZero.enter();
                 return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftRight(-b));
             }
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
+        public Object leftShift(VirtualFrame frame, DynamicObject a, DynamicObject b,
+                                @Cached("create()") ToIntNode toIntNode) {
+            final BigInteger bBigInt = Layouts.BIGNUM.getValue(b);
+            if (bBigInt.signum() == -1) {
+                return 0;
+            } else {
+                // MRI would raise a NoMemoryError; JRuby would raise a coercion error.
+                return executeLeftShift(frame, a, toIntNode.doInt(frame, b));
+            }
+        }
+
+        @Specialization(guards = {"!isRubyBignum(b)", "!isInteger(b)", "!isLong(b)"})
+        public Object leftShift(VirtualFrame frame, DynamicObject a, Object b,
+                                @Cached("create()") ToIntNode toIntNode) {
+            return executeLeftShift(frame, a, toIntNode.doInt(frame, b));
         }
 
     }
