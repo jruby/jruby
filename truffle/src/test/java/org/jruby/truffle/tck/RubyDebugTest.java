@@ -44,9 +44,9 @@ public class RubyDebugTest {
     private SuspendedEvent suspendedEvent;
     private Throwable ex;
     private ExecutionEvent executionEvent;
-    protected PolyglotEngine engine;
-    protected final ByteArrayOutputStream out = new ByteArrayOutputStream();
-    protected final ByteArrayOutputStream err = new ByteArrayOutputStream();
+    private PolyglotEngine engine;
+    private final ByteArrayOutputStream out = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream err = new ByteArrayOutputStream();
 
     @Before
     public void before() throws IOException {
