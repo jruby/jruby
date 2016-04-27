@@ -1702,162 +1702,31 @@ public abstract class ArrayNodes {
     @CoreMethod(names = { "push", "__append__" }, rest = true, optional = 1, raiseIfFrozenSelf = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
-        private final BranchProfile extendBranch = BranchProfile.create();
+        @Child private ArrayAppendOneNode appendOneNode;
 
-        @Specialization(guards = { "isNullArray(array)", "values.length == 0" })
-        public DynamicObject pushNullEmptySingleIntegerFixnum(DynamicObject array, int value, Object[] values) {
-            setStoreAndSize(array, new int[] { value }, 1);
+        public PushNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            appendOneNode = ArrayAppendOneNodeGen.create(context, sourceSection, null, null);
+        }
+
+        @Specialization(guards = "rest.length == 0")
+        public DynamicObject pushZero(DynamicObject array, NotProvided unusedValue, Object[] rest) {
             return array;
         }
 
-        @Specialization(guards = { "isNullArray(array)", "values.length == 0" })
-        public DynamicObject pushNullEmptySingleIntegerLong(DynamicObject array, long value, Object[] values) {
-            setStoreAndSize(array, new long[] { value }, 1);
-            return array;
+        @Specialization(guards = { "rest.length == 0", "wasProvided(value)" })
+        public DynamicObject pushOne(DynamicObject array, Object value, Object[] rest) {
+            return appendOneNode.executeAppendOne(array, value);
         }
 
-        @Specialization(guards = "isNullArray(array)")
-        public DynamicObject pushNullEmptyObjects(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame);
-            setStoreAndSize(array, values, values.length);
-            return array;
-        }
-
-        @Specialization(guards = { "!isNullArray(array)", "isEmptyArray(array)" })
-        public DynamicObject pushEmptySingleIntegerFixnum(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            // TODO CS 20-Apr-15 in reality might be better reusing any current storage, but won't worry about that for now
-            final Object[] values = RubyArguments.getArguments(frame);
-            setStoreAndSize(array, values, values.length);
-            return array;
-        }
-
-        @Specialization(guards = { "isIntArray(array)", "values.length == 0" })
-        public DynamicObject pushIntegerFixnumSingleIntegerFixnum(DynamicObject array, int value, Object[] values) {
-            final int oldSize = getSize(array);
-            final int newSize = oldSize + 1;
-
-            int[] store = (int[]) getStore(array);
-
-            if (store.length < newSize) {
-                extendBranch.enter();
-                store = Arrays.copyOf(store, ArrayUtils.capacity(getContext(), store.length, newSize));
+        @Specialization(guards = "rest.length > 0")
+        public DynamicObject pushMany(VirtualFrame frame, DynamicObject array, Object value, Object[] rest) {
+            // NOTE (eregon): Appending one by one here to avoid useless generalization to Object[]
+            // if the arguments all fit in the current storage
+            appendOneNode.executeAppendOne(array, value);
+            for (int i = 0; i < rest.length; i++) {
+                appendOneNode.executeAppendOne(array, rest[i]);
             }
-
-            store[oldSize] = value;
-            setStoreAndSize(array, store, newSize);
-            return array;
-        }
-
-        @Specialization(guards = { "isIntArray(array)", "wasProvided(value)", "values.length == 0", "!isInteger(value)", "!isLong(value)" })
-        public DynamicObject pushIntegerFixnumSingleOther(DynamicObject array, Object value, Object[] values) {
-            final int oldSize = getSize(array);
-            final int newSize = oldSize + 1;
-
-            int[] oldStore = (int[]) getStore(array);
-            final Object[] store;
-
-            if (oldStore.length < newSize) {
-                extendBranch.enter();
-                store = ArrayUtils.boxExtra(oldStore, ArrayUtils.capacity(getContext(), oldStore.length, newSize) - oldStore.length);
-            } else {
-                store = ArrayUtils.box(oldStore);
-            }
-
-            store[oldSize] = value;
-            setStoreAndSize(array, store, newSize);
-            return array;
-        }
-
-        @Specialization(guards = { "isIntArray(array)", "wasProvided(value)", "rest.length != 0" })
-        public DynamicObject pushIntegerFixnum(VirtualFrame frame, DynamicObject array, Object value, Object[] rest) {
-            final Object[] values = RubyArguments.getArguments(frame);
-
-            final int oldSize = getSize(array);
-            final int newSize = oldSize + values.length;
-
-            int[] oldStore = (int[]) getStore(array);
-            final Object[] store;
-
-            if (oldStore.length < newSize) {
-                extendBranch.enter();
-                store = ArrayUtils.boxExtra(oldStore, ArrayUtils.capacity(getContext(), oldStore.length, newSize) - oldStore.length);
-            } else {
-                store = ArrayUtils.box(oldStore);
-            }
-
-            for (int n = 0; n < values.length; n++) {
-                store[oldSize + n] = values[n];
-            }
-
-            setStoreAndSize(array, store, newSize);
-            return array;
-        }
-
-        @Specialization(guards = { "isLongArray(array)", "values.length == 0" })
-        public DynamicObject pushLongFixnumSingleIntegerFixnum(DynamicObject array, int value, Object[] values) {
-            final int oldSize = getSize(array);
-            final int newSize = oldSize + 1;
-
-            long[] store = (long[]) getStore(array);
-
-            if (store.length < newSize) {
-                extendBranch.enter();
-                store = Arrays.copyOf(store, ArrayUtils.capacity(getContext(), store.length, newSize));
-            }
-
-            store[oldSize] = (long) value;
-            setStoreAndSize(array, store, newSize);
-            return array;
-        }
-
-        @Specialization(guards = { "isLongArray(array)", "values.length == 0" })
-        public DynamicObject pushLongFixnumSingleLongFixnum(DynamicObject array, long value, Object[] values) {
-            final int oldSize = getSize(array);
-            final int newSize = oldSize + 1;
-
-            long[] store = (long[]) getStore(array);
-
-            if (store.length < newSize) {
-                extendBranch.enter();
-                store = Arrays.copyOf(store, ArrayUtils.capacity(getContext(), store.length, newSize));
-            }
-
-            store[oldSize] = value;
-            setStoreAndSize(array, store, newSize);
-            return array;
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public DynamicObject pushFloat(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            // TODO CS 5-Feb-15 hack to get things working with empty double[] store
-            if (getSize(array) != 0) {
-                throw new UnsupportedOperationException();
-            }
-
-            final Object[] values = RubyArguments.getArguments(frame);
-            setStoreAndSize(array, values, values.length);
-            return array;
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public DynamicObject pushObject(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            final Object[] values = RubyArguments.getArguments(frame);
-
-            final int oldSize = getSize(array);
-            final int newSize = oldSize + values.length;
-
-            Object[] store = (Object[]) getStore(array);
-
-            if (store.length < newSize) {
-                extendBranch.enter();
-                store = ArrayUtils.grow(store, ArrayUtils.capacity(getContext(), store.length, newSize));
-            }
-            ;
-            for (int n = 0; n < values.length; n++) {
-                store[oldSize + n] = values[n];
-            }
-
-            setStoreAndSize(array, store, newSize);
             return array;
         }
 
