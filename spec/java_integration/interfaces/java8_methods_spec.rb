@@ -13,11 +13,24 @@ describe "an interface (Java 8+)" do
 
       abstract String bar() ;
       default CharSequence foo(Object prefix) { return prefix + "foo" + ' ' + bar(); }
+
+      public static CharSequence foo(Java8Interface impl) { return impl.foo(""); }
+      public static CharSequence bar(Java8Interface impl) { return impl.bar(); }
+
+      public static CharSequence subFoo(SubInterface impl) { return impl.foo(""); }
+      public static CharSequence subBar(SubInterface impl) { return impl.bar(); }
+      public static CharSequence subBaz(SubInterface impl) { return impl.baz(); }
+
+      interface SubInterface extends Java8Interface { abstract String baz() ; }
     }
     JAVA
     files << (file = "#{@tmpdir}/Java8Interface.java"); File.open(file, 'w') { |f| f.print(src) }
 
     src = <<-JAVA
+    import java.util.*;
+    import java.util.stream.*;
+    import java.util.function.*;
+
     public class Java8Implemtor implements Java8Interface {
       public String bar() { return getClass().getSimpleName(); }
 
@@ -61,6 +74,14 @@ describe "an interface (Java 8+)" do
           return "ambiguousWithBinaryOperator";
       }
 
+      public static <T> Function<Integer, Integer> composepp(Function<Integer, Integer> fx) {
+        return fx.compose(i -> i + 1);
+      }
+
+      public static <T> Function<Integer, Integer> compose10pp() {
+        return composepp(i -> i + 10);
+      }
+
     }
     JAVA
     files << (file = "#{@tmpdir}/Java8Implemtor.java"); File.open(file, 'w') { |f| f.print(src) }
@@ -102,13 +123,13 @@ describe "an interface (Java 8+)" do
     expect( method.bind(Java::Java8Implemtor.new).call '' ).to eql 'foo Java8Implemtor'
   end
 
-  it "java_send works on impl (default method)" do
+  it "java_send works on implemented interface (default method)" do
     impl = Java::Java8Implemtor.new
     expect(impl.java_send(:bar)).to eq("Java8Implemtor")
     expect(impl.java_send(:foo, [ java.lang.Object ], 11)).to eq("11foo Java8Implemtor")
   end
 
-  it "works with java.util.function-al interface with proc impl" do
+  it "works with java.util.function-al interface using proc implementation" do
     expect( Java::Java8Implemtor.withConsumerCall(1) do |i|
       expect(i).to eql 10
     end ).to eql 2
@@ -119,6 +140,59 @@ describe "an interface (Java 8+)" do
     expect( ret ).to be true
     ret = Java::Java8Implemtor.withPredicateCall('x') { |obj| obj.empty? }
     expect( ret ).to be false
+  end
+
+  it "does not override default methods using proc implementation" do
+    expect( Java::Java8Interface.bar { 'BAR' } ).to eq 'BAR'
+    expect( Java::Java8Interface.foo { 'BAR' } ).to eq 'foo BAR' # 'BAR' prior to 9.1
+
+    res = Java::Java8Implemtor.compose10pp # Java + 10 impl
+    expect( res.apply(1.to_java(:int)) ).to eql 12
+    # NOTE: has been failing prior to 9.1 as { ... } override #apply as well as #compose default method!
+    res = Java::Java8Implemtor.composepp { |i| i + 10 } # Ruby + 10 impl
+    expect( res.apply(1.to_java(:int)) ).to eql 12
+  end
+
+  it "does not override default methods using proc implementation (non-functional interface)" do
+    expect( Java::Java8Interface.subBar { |*args| "#{args.inspect}-SUB-BAR" } ).to eq '[]-SUB-BAR'
+    expect( Java::Java8Interface.subBaz { |*args| "#{args.inspect}-SUB-BAR" } ).to eq '[]-SUB-BAR'
+    expect( Java::Java8Interface.subFoo { |*args| "#{args.inspect}-SUB-BAR" } ).to eq 'foo []-SUB-BAR' # [""]-SUB-BAR prior to 9.1
+  end
+
+  it 'interface .impl() overrides all methods (by default)' do
+    impl = Java::Java8Interface.impl { |*args| "#{args.inspect}-IMPL" }
+    # NOTE: (historically) override every method (including default methods)
+    expect( Java::Java8Interface.bar(impl) ).to eq '[:bar]-IMPL'
+    expect( Java::Java8Interface.foo(impl) ).to eq '[:foo, ""]-IMPL'
+
+    impl = Java::Java8Interface.impl(true) { |*args| "#{args.inspect}-IMPL" }
+    expect( Java::Java8Interface.bar(impl) ).to eq '[:bar]-IMPL'
+    expect( Java::Java8Interface.foo(impl) ).to eq '[:foo, ""]-IMPL'
+  end
+
+  it 'interface .impl(false) only overrides abstract methods' do
+    impl = Java::Java8Interface.impl(false) { |*args| "#{args.inspect}-IMPL" }
+    expect( Java::Java8Interface.bar(impl) ).to eq '[:bar]-IMPL'
+    expect( Java::Java8Interface.foo(impl) ).to eq 'foo [:bar]-IMPL'
+
+    impl = Java::Java8Interface::SubInterface.impl(false) { |*args| "#{args.inspect}-IMPL" }
+    expect( Java::Java8Interface.bar(impl) ).to eq '[:bar]-IMPL'
+    expect( Java::Java8Interface.foo(impl) ).to eq 'foo [:bar]-IMPL'
+  end
+
+  it 'interface .impl(method_names) only generates those methods' do
+    impl = Java::Java8Interface.impl(:bar) { |*args| "#{args.inspect}-IMPL" }
+    expect( Java::Java8Interface.bar(impl) ).to eq '[:bar]-IMPL'
+    # NOTE: previously - NoMethodError: undefined method `foo' for Java::Default::Java8Interface:Module
+    expect( Java::Java8Interface.foo(impl) ).to eq 'foo [:bar]-IMPL'
+  end
+
+  it 'interface .impl with unknown methods passed in warns' do
+    output = with_stderr_captured do # prints a warning (since 9.1)
+      impl = Java::Java8Interface.impl(:baz) { |*args| "#{args.inspect}-IMPL" }
+      expect{ Java::Java8Interface.bar(impl) }.to raise_error(NoMethodError)
+    end
+    expect( output.index("`baz' is not a declared method in interface") ).to_not be nil
   end
 
   it "does not consider Map vs func-type Consumer ambiguous" do
