@@ -697,6 +697,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(ThreadNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TrueClassNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(GCNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(AttachmentsNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(GraalNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingNodesFactory.getFactories());

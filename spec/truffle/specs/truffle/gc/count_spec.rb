@@ -11,16 +11,16 @@ require_relative '../../../../ruby/spec_helper'
 describe "Truffle::GC.count" do
   
   it "returns an Integer" do
-    Truffle::GC.gc_count.should be_kind_of(Integer)
+    Truffle::GC.count.should be_kind_of(Integer)
   end
   
   it "increases as collections are run" do
-    count_before = Truffle::GC.gc_count
+    count_before = Truffle::GC.count
     escape = []
     100_000.times do
       escape << Time.now.to_s
     end
-    Truffle::GC.gc_count.should > count_before
+    Truffle::GC.count.should > count_before
   end
 
 end
