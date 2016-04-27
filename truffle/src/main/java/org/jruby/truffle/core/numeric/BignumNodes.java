@@ -16,22 +16,24 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
+import org.jruby.truffle.core.cast.ToIntNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-
 import java.math.BigInteger;
 
 @CoreClass(name = "Bignum")
@@ -452,24 +454,22 @@ public abstract class BignumNodes {
 
         public abstract Object executeRightShift(VirtualFrame frame, DynamicObject a, Object b);
 
-        private final BranchProfile bLessThanZero = BranchProfile.create();
-
         @Specialization
-        public Object rightShift(DynamicObject a, int b) {
-            if (b >= 0) {
+        public Object rightShift(DynamicObject a, int b,
+                @Cached("createBinaryProfile()") ConditionProfile bPositive) {
+            if (bPositive.profile(b >= 0)) {
                 return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftRight(b));
             } else {
-                bLessThanZero.enter();
                 return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftLeft(-b));
             }
         }
 
         @Specialization
-        public Object rightShift(DynamicObject a, long b) {
-            if (b > Integer.MAX_VALUE || b < Integer.MIN_VALUE) {
-                return 0;
+        public Object rightShift(VirtualFrame frame, DynamicObject a, long b) {
+            if (CoreLibrary.fitsIntoInteger(b)) {
+                return executeRightShift(frame, a, (int) b);
             } else {
-                return rightShift(a, (int) b);
+                return 0;
             }
         }
 
@@ -479,11 +479,9 @@ public abstract class BignumNodes {
         }
 
         @Specialization(guards = {"!isRubyBignum(b)", "!isInteger(b)", "!isLong(b)"})
-        public Object rightShift(VirtualFrame frame,
-                                 DynamicObject a,
-                                 Object b,
-                                 @Cached("new()") SnippetNode snippetNode) {
-            return executeRightShift(frame, a, snippetNode.execute(frame, "Rubinius::Type.coerce_to(y, Integer, :to_int)", "y", b));
+        public Object rightShift(VirtualFrame frame, DynamicObject a, Object b,
+                @Cached("create()") ToIntNode toIntNode) {
+            return executeRightShift(frame, a, toIntNode.doInt(frame, b));
         }
 
 
