@@ -182,30 +182,6 @@ public abstract class TruffleNodes {
 
     }
 
-    @CoreMethod(names = "attach", onSingleton = true, required = 2, needsBlock = true)
-    public abstract static class AttachNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(file)")
-        public DynamicObject attach(DynamicObject file, int line, DynamicObject block) {
-            return Layouts.HANDLE.createHandle(coreLibrary().getHandleFactory(), getContext().getAttachmentsManager().attach(file.toString(), line, block));
-        }
-
-    }
-
-    @CoreMethod(names = "detach", onSingleton = true, required = 1)
-    public abstract static class DetachNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization(guards = "isHandle(handle)")
-        public DynamicObject detach(DynamicObject handle) {
-            final EventBinding<?> binding = (EventBinding<?>) Layouts.HANDLE.getObject(handle);
-            binding.dispose();
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-    }
-
     @CoreMethod(names = "debug_print", onSingleton = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintNode extends CoreMethodArrayArgumentsNode {
 

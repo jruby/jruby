@@ -73,6 +73,7 @@ import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
 import org.jruby.truffle.extra.TruffleNodesFactory;
+import org.jruby.truffle.extra.AttachmentsNodesFactory;
 import org.jruby.truffle.extra.GraalNodesFactory;
 import org.jruby.truffle.interop.CExtNodesFactory;
 import org.jruby.truffle.interop.InteropNodesFactory;
@@ -569,6 +570,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Coverage");
         defineModule(truffleModule, "Graal");
         defineModule(truffleModule, "GC");
+        defineModule(truffleModule, "Attachments");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -695,6 +697,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(ThreadNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TrueClassNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(AttachmentsNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(GraalNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingConverterNodesFactory.getFactories());
