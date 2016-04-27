@@ -62,8 +62,11 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  */
 @JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
+
     protected RubyException(Ruby runtime, RubyClass rubyClass) {
-        this(runtime, rubyClass, null);
+        super(runtime, rubyClass);
+        // this.message = null; its an internal constructor for sub-classes
+        this.cause = RubyBasicObject.UNDEF;
     }
 
     public RubyException(Ruby runtime, RubyClass rubyClass, String message) {
@@ -133,10 +136,9 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        if (message.isNil()) {
-            return context.runtime.newString(getMetaClass().getRealClass().getName());
-        }
-        return message.asString();
+        final IRubyObject msg = getMessage();
+        if ( ! msg.isNil() ) return msg.asString();
+        return context.runtime.newString(getMetaClass().getRealClass().getName());
     }
 
     @Deprecated
@@ -343,8 +345,7 @@ public class RubyException extends RubyObject {
 
             marshalStream.registerLinkTarget(exc);
             List<Variable<Object>> attrs = exc.getVariableList();
-            attrs.add(new VariableEntry<Object>(
-                    "mesg", exc.message == null ? runtime.getNil() : exc.message));
+            attrs.add(new VariableEntry<Object>("mesg", exc.getMessage()));
             attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
         }
@@ -388,12 +389,24 @@ public class RubyException extends RubyObject {
         return exceptionClass.callMethod(context, "new", message.convertToString());
     }
 
+    /**
+     * @return error message if provided or nil
+     */
     public IRubyObject getMessage() {
-        return message;
+        return message == null ? getRuntime().getNil() : message;
+    }
+
+    public String getMessageAsJavaString() {
+        final IRubyObject msg = getMessage();
+        return msg.isNil() ? null : msg.toString();
     }
 
     private BacktraceData backtraceData;
     private IRubyObject backtrace;
+    /**
+     * @deprecated do not access the field directly
+     * @see #getMessage()
+     */
     public IRubyObject message;
     IRubyObject cause;
 
