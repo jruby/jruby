@@ -91,13 +91,11 @@ import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaInterfaceTemplate;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
-import org.jruby.java.util.BlankSlateWrapper;
 import org.jruby.java.util.SystemPropertiesMap;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.SafePropertyAccessor;
@@ -118,10 +116,19 @@ public class Java implements Library {
 
         JavaPackage.createJavaPackageClass(runtime, Java);
 
+        org.jruby.javasupport.ext.Kernel.define(runtime);
+
+        org.jruby.javasupport.ext.JavaLang.define(runtime);
+        org.jruby.javasupport.ext.JavaLangReflect.define(runtime);
+        org.jruby.javasupport.ext.JavaUtil.define(runtime);
+        org.jruby.javasupport.ext.JavaUtilRegex.define(runtime);
+        org.jruby.javasupport.ext.JavaIo.define(runtime);
+        org.jruby.javasupport.ext.JavaNet.define(runtime);
+
         // load Ruby parts of the 'java' library
         runtime.getLoadService().load("jruby/java.rb", false);
 
-        // rewite ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
+        // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
         final RubyClass ArrayJavaProxy = runtime.getClass("ArrayJavaProxy");
         ArrayJavaProxy.setSuperClass(runtime.getJavaSupport().getObjectJavaClass().getProxyClass());
         ArrayJavaProxy.includeModule(runtime.getEnumerable());
@@ -689,7 +696,7 @@ public class Java implements Library {
         return getJavaPackageModule(runtime, pkg == null ? "" : pkg.getName());
     }
 
-    private static RubyModule getJavaPackageModule(final Ruby runtime, final String packageString) {
+    public static RubyModule getJavaPackageModule(final Ruby runtime, final String packageString) {
         final String packageName; final int length;
         if ( ( length = packageString.length() ) == 0 ) {
             packageName = "Default";

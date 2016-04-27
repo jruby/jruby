@@ -5,6 +5,7 @@ require 'rspec'
 RSpec.configure do |config|
   require File.expand_path('../../../test/jruby/test_helper', __FILE__)
   config.include TestHelper
+  # config.extend TestHelper # so that TestHelper constants work
 end
 
 # Works like 'should include('str1', 'str2') but for arrays of

@@ -35,12 +35,8 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.common.RubyWarnings;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.util.concurrent.Callable;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
@@ -68,7 +64,7 @@ public class RubyComparable {
      *
      */
     public static int cmpint(ThreadContext context, IRubyObject val, IRubyObject a, IRubyObject b) {
-        if (val.isNil()) cmperr(a, b);
+        if (val == context.nil) cmperr(a, b);
         if (val instanceof RubyFixnum) {
             final int asInt = RubyNumeric.fix2int((RubyFixnum) val);
 

@@ -638,7 +638,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_values
      *
      */
-    @JRubyMethod(name = "values")
+    @JRubyMethod(name = { "values", "ruby_values" }) // collision with java.util.Map#values
     public RubyArray rb_values() {
         return getOrCreateRubyHashMap().rb_values();
     }
@@ -694,8 +694,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_clear
      *
      */
-    @JRubyMethod(name = "clear")
-    public RubyHash rb_clear() {
+    @JRubyMethod(name = { "clear", "ruby_clear" }) // collision with java.util.Map#clear (return type)
+    public IRubyObject rb_clear() {
         return getOrCreateRubyHashMap().rb_clear();
     }
 
@@ -710,7 +710,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_merge_bang
      *
      */
-    @JRubyMethod(name = {"merge!", "update"}, required = 1)
+    @JRubyMethod(name = { "merge!", "update" }, required = 1)
     public RubyHash merge_bang(final ThreadContext context, final IRubyObject other, final Block block) {
         return getOrCreateRubyHashMap().merge_bang(context, other, block);
     }
@@ -718,7 +718,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_merge
      *
      */
-    @JRubyMethod(name = "merge")
+    @JRubyMethod(name = { "merge", "ruby_merge" }) // collision with java.util.Map#merge on Java 8+
     public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
         return getOrCreateRubyHashMap().merge(context, other, block);
     }
@@ -734,7 +734,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_replace
      *
      */
-    @JRubyMethod(name = "replace", required = 1)
+    @JRubyMethod(name = { "replace", "ruby_replace" }, required = 1) // collision with java.util.Map#replace on Java 8+
     public RubyHash replace(final ThreadContext context, IRubyObject other) {
         return getOrCreateRubyHashMap().replace(context, other);
     }
