@@ -42,7 +42,7 @@ import org.jruby.util.ByteList;
 import java.io.IOException;
 
 @CoreClass(name = "Truffle::Interop")
-public abstract class TruffleInteropNodes {
+public abstract class InteropNodes {
 
     @CoreMethod(names = "executable?", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class IsExecutableNode extends CoreMethodArrayArgumentsNode {

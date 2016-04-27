@@ -74,7 +74,7 @@ import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
 import org.jruby.truffle.extra.TruffleNodesFactory;
 import org.jruby.truffle.interop.CExtNodesFactory;
-import org.jruby.truffle.interop.TruffleInteropNodesFactory;
+import org.jruby.truffle.interop.InteropNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -694,7 +694,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(TruffleNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingConverterNodesFactory.getFactories());
-        coreMethodNodeManager.addCoreMethodNodes(TruffleInteropNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(InteropNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(CExtNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(MethodNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(UnboundMethodNodesFactory.getFactories());
