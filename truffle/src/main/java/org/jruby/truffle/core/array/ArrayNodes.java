@@ -44,7 +44,6 @@ import org.jruby.truffle.core.array.ArrayNodesFactory.MaxBlockNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.MinBlockNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.RejectInPlaceNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
-import org.jruby.truffle.core.array.ArrayNodesFactory.RejectInPlaceNodeFactory.RejectInPlaceNodeGen;
 import org.jruby.truffle.core.cast.ToAryNodeGen;
 import org.jruby.truffle.core.cast.ToIntNode;
 import org.jruby.truffle.core.cast.ToIntNodeGen;
@@ -1897,27 +1896,23 @@ public abstract class ArrayNodes {
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
         @Specialization(guards = "isNullArray(array)")
-        public Object selectNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        public Object selectNull(DynamicObject array, DynamicObject block) {
             return createArray(getContext(), null, 0);
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object selectObject(VirtualFrame frame, DynamicObject array, DynamicObject block,
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public Object selectOther(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("of(array)") ArrayStrategy strategy,
                 @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
-            final Object[] store = (Object[]) getStore(array);
+            final ArrayMirror store = strategy.newMirror(array);
 
             Object selectedStore = arrayBuilder.start(getSize(array));
             int selectedSize = 0;
 
-            int count = 0;
-
+            int n = 0;
             try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    final Object value = store[n];
+                for (; n < getSize(array); n++) {
+                    final Object value = store.get(n);
 
                     if (yieldIsTruthy(frame, block, value)) {
                         selectedStore = arrayBuilder.appendValue(selectedStore, selectedSize, value);
@@ -1926,39 +1921,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
-                }
-            }
-
-            return createArray(getContext(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
-        }
-
-        @Specialization(guards = "isIntArray(array)")
-        public Object selectFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block,
-                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
-            final int[] store = (int[]) getStore(array);
-
-            Object selectedStore = arrayBuilder.start(getSize(array));
-            int selectedSize = 0;
-
-            int count = 0;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    final Object value = store[n];
-
-                    if (yieldIsTruthy(frame, block, value)) {
-                        selectedStore = arrayBuilder.appendValue(selectedStore, selectedSize, value);
-                        selectedSize++;
-                    }
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    LoopNode.reportLoopCount(this, count);
+                    LoopNode.reportLoopCount(this, n);
                 }
             }
 
