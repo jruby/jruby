@@ -83,8 +83,9 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
     }
 
     @Specialization(guards = { "!isInteger(value)", "!isLong(value)", "!isDouble(value)", "!isRubyBignum(value)", "!isRubyRange(value)" })
-    public Object coerce(VirtualFrame frame, DynamicObject value, @Cached("create(getContext(), getSourceSection())") ToIntNode coerceToIntNode) {
-        return coerceToIntNode.executeIntOrLong(frame, value);
+    public Object coerce(VirtualFrame frame, DynamicObject value,
+            @Cached("create()") ToIntNode toIntNode) {
+        return toIntNode.executeIntOrLong(frame, value);
     }
 
     @Fallback

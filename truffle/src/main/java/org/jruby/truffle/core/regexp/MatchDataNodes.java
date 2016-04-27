@@ -233,7 +233,7 @@ public abstract class MatchDataNodes {
         public Object getIndex(VirtualFrame frame, DynamicObject matchData, Object index, NotProvided length) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
 
             return getIndex(matchData, toIntNode.doInt(frame, index), NotProvided.INSTANCE);

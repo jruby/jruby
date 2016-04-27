@@ -240,7 +240,7 @@ public abstract class ArrayNodes {
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                    toIntNode = insert(ToIntNode.create());
                 }
                 final int count = toIntNode.doInt(frame, object);
                 return executeMul(frame, array, count);
@@ -544,7 +544,7 @@ public abstract class ArrayNodes {
         private int toInt(VirtualFrame frame, Object indexObject) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
             return toIntNode.doInt(frame, indexObject);
         }
@@ -561,8 +561,7 @@ public abstract class ArrayNodes {
         @Child private ArrayReadDenormalizedNode readNode;
 
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
-            return FixnumLowerNodeGen.create(null, null,
-                    ToIntNodeGen.create(null, null, index));
+            return FixnumLowerNodeGen.create(null, null, ToIntNodeGen.create(index));
         }
 
         @Specialization
@@ -752,7 +751,7 @@ public abstract class ArrayNodes {
     public abstract static class DeleteAtNode extends CoreMethodNode {
 
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
-            return ToIntNodeGen.create(null, null, index);
+            return ToIntNodeGen.create(index);
         }
 
         @Specialization(guards = "isEmptyArray(array)")
@@ -1051,7 +1050,7 @@ public abstract class ArrayNodes {
         protected int toInt(VirtualFrame frame, Object value) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
             return toIntNode.doInt(frame, value);
         }
@@ -1676,7 +1675,7 @@ public abstract class ArrayNodes {
         private int toInt(VirtualFrame frame, Object indexObject) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
             return toIntNode.doInt(frame, indexObject);
         }
@@ -2494,7 +2493,7 @@ public abstract class ArrayNodes {
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                    toIntNode = insert(ToIntNode.create());
                 }
                 final int n = toIntNode.doInt(frame, object);
                 if (n < 0) {
@@ -2649,7 +2648,7 @@ public abstract class ArrayNodes {
         public DynamicObject shiftIntegerFixnumInBoundsWithNumObj(VirtualFrame frame, DynamicObject array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -2674,7 +2673,7 @@ public abstract class ArrayNodes {
         public Object shiftIntegerFixnumWithNumObj(VirtualFrame frame, DynamicObject array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -2699,7 +2698,7 @@ public abstract class ArrayNodes {
         public DynamicObject shiftLongFixnumInBoundsWithNumObj(VirtualFrame frame, DynamicObject array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -2724,7 +2723,7 @@ public abstract class ArrayNodes {
         public Object shiftLongFixnumWithNumObj(VirtualFrame frame, DynamicObject array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -2748,7 +2747,7 @@ public abstract class ArrayNodes {
         public DynamicObject shiftFloatInBoundsWithNumObj(VirtualFrame frame, DynamicObject array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -2773,7 +2772,7 @@ public abstract class ArrayNodes {
         public Object shiftFloatWithNumObj(VirtualFrame frame, DynamicObject array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -2798,7 +2797,7 @@ public abstract class ArrayNodes {
         public Object shiftObjectWithNumObj(VirtualFrame frame, DynamicObject array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {

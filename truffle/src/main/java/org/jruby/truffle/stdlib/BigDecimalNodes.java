@@ -1618,7 +1618,7 @@ public abstract class BigDecimalNodes {
         public GetIntegerConstantNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             readConstantNode = new ReadConstantNode(context, sourceSection, false, false, null, null);
-            toIntNode = ToIntNodeGen.create(context, sourceSection, null);
+            toIntNode = ToIntNode.create();
             integerCastNode = IntegerCastNodeGen.create(context, sourceSection, null);
         }
 
