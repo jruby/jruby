@@ -6,12 +6,12 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative '../../../ruby/spec_helper'
+require_relative '../../../../ruby/spec_helper'
 
-describe "Truffle.binding_of_caller" do
+describe "Truffle::Binding.of_caller" do
 
   def binding_of_caller
-    Truffle.binding_of_caller
+    Truffle::Binding.of_caller
   end
 
   #it "returns nil if there is no caller"
@@ -34,7 +34,7 @@ describe "Truffle.binding_of_caller" do
   
   it "works through #send" do
     x = 14
-    Truffle.send(:binding_of_caller).local_variable_get(:x).should == 14
+    Truffle::Binding.send(:of_caller).local_variable_get(:x).should == 14
   end
 
 end

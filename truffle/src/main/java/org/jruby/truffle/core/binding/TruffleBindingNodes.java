@@ -7,13 +7,14 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.extra;
+package org.jruby.truffle.core.binding;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.core.CoreClass;
@@ -22,23 +23,28 @@ import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.Memo;
 
-@CoreClass(name = "Truffle")
-public abstract class TruffleNodes {
+@CoreClass(name = "Truffle::Binding")
+public abstract class TruffleBindingNodes {
 
-    @CoreMethod(names = "source_of_caller", isModuleFunction = true)
-    public abstract static class SourceOfCallerNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "of_caller", isModuleFunction = true)
+    public abstract static class OfCallerNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject sourceOfCaller() {
+        public DynamicObject ofCaller() {
+            /*
+             * When you use this method you're asking for the binding of the caller at the call site. When we get into
+             * this method, that is then the binding of the caller of the caller.
+             */
+
             final Memo<Integer> frameCount = new Memo<>(0);
 
-            final String source = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<String>() {
+            final MaterializedFrame frame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<MaterializedFrame>() {
 
                 @Override
-                public String visitFrame(FrameInstance frameInstance) {
+                public MaterializedFrame visitFrame(FrameInstance frameInstance) {
                     if (frameCount.get() == 2) {
-                        return frameInstance.getCallNode().getEncapsulatingSourceSection().getSource().getName();
+                        return frameInstance.getFrame(FrameInstance.FrameAccess.READ_WRITE, false).materialize();
                     } else {
                         frameCount.set(frameCount.get() + 1);
                         return null;
@@ -47,11 +53,11 @@ public abstract class TruffleNodes {
 
             });
 
-            if (source == null) {
+            if (frame == null) {
                 return nil();
             }
 
-            return createString(StringOperations.encodeRope(source, UTF8Encoding.INSTANCE));
+            return BindingNodes.createBinding(getContext(), frame);
         }
 
     }

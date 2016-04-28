@@ -33,6 +33,7 @@ import org.jruby.truffle.core.array.ArrayNodes;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.binding.BindingNodesFactory;
+import org.jruby.truffle.core.binding.TruffleBindingNodesFactory;
 import org.jruby.truffle.core.bool.FalseClassNodesFactory;
 import org.jruby.truffle.core.bool.TrueClassNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
@@ -584,6 +585,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "System");
         defineModule(truffleModule, "Kernel");
         defineModule(truffleModule, "Process");
+        defineModule(truffleModule, "Binding");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -741,6 +743,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(TruffleKernelNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleProcessNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleDebugNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleBindingNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 
