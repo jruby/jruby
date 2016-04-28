@@ -3,6 +3,12 @@
 set -e
 set -x
 
+if [[ -v JT ]] && [[ "$JT" = "check_ambiguous_arguments" ]]
+then
+  ruby tool/jt.rb $JT
+  exit $?
+fi
+
 ./mvnw install -B -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$'
 
 MVN_STATUS=${PIPESTATUS[0]}
