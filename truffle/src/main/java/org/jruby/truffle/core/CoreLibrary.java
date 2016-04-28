@@ -75,6 +75,7 @@ import org.jruby.truffle.core.thread.ThreadBacktraceLocationNodesFactory;
 import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
+import org.jruby.truffle.debug.TruffleDebugNodesFactory;
 import org.jruby.truffle.extra.TruffleNodesFactory;
 import org.jruby.truffle.extra.AttachmentsNodesFactory;
 import org.jruby.truffle.extra.TruffleGraalNodesFactory;
@@ -739,6 +740,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(TruffleSystemNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleKernelNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleProcessNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleDebugNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 

@@ -10,7 +10,7 @@ require_relative '../../../../ruby/spec_helper'
 
 describe "Array#[]=" do
   def storage(ary)
-    Truffle.array_storage(ary)
+    Truffle::Debug.array_storage(ary)
   end
 
   before :each do
@@ -111,4 +111,3 @@ describe "Array#[]=" do
     storage(ary).should == "Object[]"
   end
 end
-

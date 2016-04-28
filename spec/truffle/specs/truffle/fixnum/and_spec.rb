@@ -17,24 +17,24 @@ describe "Fixnum#&" do
   it "returns an int for (int, int)" do
     result = (1 & 3)
     result.should == 1
-    Truffle.java_class_of(result).should == 'Integer'
+    Truffle::Debug.java_class_of(result).should == 'Integer'
   end
 
   it "returns an int for (long, int)" do
-    Truffle.java_class_of(@long).should == 'Long'
-    Truffle.java_class_of(@mask).should == 'Integer'
+    Truffle::Debug.java_class_of(@long).should == 'Long'
+    Truffle::Debug.java_class_of(@mask).should == 'Integer'
 
     result = (@long & @mask)
     result.should == 1
-    Truffle.java_class_of(result).should == 'Integer'
+    Truffle::Debug.java_class_of(result).should == 'Integer'
   end
 
   it "returns an int for (int, long)" do
-    Truffle.java_class_of(@long).should == 'Long'
-    Truffle.java_class_of(@mask).should == 'Integer'
+    Truffle::Debug.java_class_of(@long).should == 'Long'
+    Truffle::Debug.java_class_of(@mask).should == 'Integer'
 
     result = (@mask & @long)
     result.should == 1
-    Truffle.java_class_of(result).should == 'Integer'
+    Truffle::Debug.java_class_of(result).should == 'Integer'
   end
 end

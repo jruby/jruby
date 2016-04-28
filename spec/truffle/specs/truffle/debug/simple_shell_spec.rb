@@ -6,9 +6,9 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative '../../../ruby/spec_helper'
+require_relative '../../../../ruby/spec_helper'
 
-describe "Truffle.simple_shell" do
+describe "Truffle::Debug.simple_shell" do
   
   it "needs to be reviewed for spec completeness"
 
