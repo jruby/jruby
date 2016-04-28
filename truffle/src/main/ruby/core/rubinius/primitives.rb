@@ -34,7 +34,7 @@ module Rubinius
       end
     end
 
-    Truffle.install_rubinius_primitive method(:module_mirror)
+    Truffle::Boot.install_rubinius_primitive method(:module_mirror)
 
     if Truffle::Graal.substrate?
 
@@ -42,7 +42,7 @@ module Rubinius
         Truffle::Interop.execute(Truffle::Interop.read_property(Truffle::Java::System, :gc))
       end
 
-      Truffle.install_rubinius_primitive method(:vm_gc_start)
+      Truffle::Boot.install_rubinius_primitive method(:vm_gc_start)
 
     end
 
@@ -60,6 +60,6 @@ module Rubinius
       Truffle.spawn_process command, arguments, env_array
     end
 
-    Truffle.install_rubinius_primitive method(:vm_spawn)
+    Truffle::Boot.install_rubinius_primitive method(:vm_spawn)
   end
 end

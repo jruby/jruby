@@ -6,11 +6,11 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-ARGV.push *Truffle.original_argv
+ARGV.push *Truffle::Boot.original_argv
 
-$LOAD_PATH.push *Truffle.original_load_path
+$LOAD_PATH.push *Truffle::Boot.original_load_path
 
-home = Truffle.jruby_home_directory_protocol
+home = Truffle::Boot.jruby_home_directory_protocol
 $LOAD_PATH.push home + '/lib/ruby/truffle/mri'
 $LOAD_PATH.push home + '/lib/ruby/truffle/truffle'
 $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-strscan/lib'
