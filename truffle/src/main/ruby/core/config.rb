@@ -10,7 +10,7 @@ module RbConfig
   CONFIG = {
     'exeext' => '',
     'EXEEXT' => '',
-    'host_os' => Truffle.host_os,
+    'host_os' => Truffle::System.host_os,
     'bindir' => "#{Truffle::Boot.jruby_home_directory}/bin",
     'libdir' => "#{Truffle::Boot.jruby_home_directory}/lib/ruby/truffle",
     'ruby_install_name' => 'jruby',

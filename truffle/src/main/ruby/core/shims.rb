@@ -129,11 +129,11 @@ end
 module Rubinius
 
   def self.synchronize(object, &block)
-    Truffle.synchronized(object, &block)
+    Truffle::System.synchronized(object, &block)
   end
 
   def self.memory_barrier
-    Truffle.full_memory_barrier
+    Truffle::System.full_memory_barrier
   end
 
 end

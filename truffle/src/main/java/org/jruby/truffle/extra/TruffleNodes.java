@@ -25,13 +25,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import jnr.posix.SpawnFileAction;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.CoreMethodNode;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayStrategy;
 import org.jruby.truffle.core.binding.BindingNodes;
@@ -47,7 +45,6 @@ import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import org.jruby.util.Memo;
-import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -147,16 +144,6 @@ public abstract class TruffleNodes {
 
     }
 
-    @CoreMethod(names = "host_os", onSingleton = true)
-    public abstract static class HostOSNode extends CoreMethodNode {
-
-        @Specialization
-        public DynamicObject hostOS() {
-            return createString(StringOperations.encodeRope(RbConfigLibrary.getOSName(), UTF8Encoding.INSTANCE));
-        }
-
-    }
-
     @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true, required = 1, unsafe = UnsafeGroup.AT_EXIT)
     public abstract static class AtExitSystemNode extends CoreMethodArrayArgumentsNode {
 
@@ -164,32 +151,6 @@ public abstract class TruffleNodes {
         @Specialization
         public Object atExit(boolean always, DynamicObject block) {
             getContext().getAtExitManager().add(block, always);
-            return nil();
-        }
-    }
-
-    @CoreMethod(names = "synchronized", isModuleFunction = true, required = 1, needsBlock = true)
-    public abstract static class SynchronizedPrimitiveNode extends YieldingCoreMethodNode {
-
-        // We must not allow to synchronize on boxed primitives.
-        @Specialization
-        public Object synchronize(VirtualFrame frame, DynamicObject self, DynamicObject block) {
-            synchronized (self) {
-                return yield(frame, block);
-            }
-        }
-    }
-
-    @CoreMethod(names = "full_memory_barrier", isModuleFunction = true)
-    public abstract static class FullMemoryBarrierPrimitiveNode extends CoreMethodNode {
-
-        @Specialization
-        public Object fullMemoryBarrier() {
-            if (UnsafeHolder.SUPPORTS_FENCES) {
-                UnsafeHolder.fullFence();
-            } else {
-                throw new UnsupportedOperationException();
-            }
             return nil();
         }
     }
@@ -344,16 +305,6 @@ public abstract class TruffleNodes {
         public boolean load(VirtualFrame frame, DynamicObject file, NotProvided wrap, @Cached("create()") IndirectCallNode callNode) {
             return load(frame, file, false, callNode);
         }
-    }
-
-    @CoreMethod(names = "logical_processors", onSingleton = true)
-    public abstract static class LogicalProcessorsNode extends CoreMethodNode {
-
-        @Specialization
-        public int logicalProcessors() {
-            return Runtime.getRuntime().availableProcessors();
-        }
-
     }
 
     @CoreMethod(names = "array_storage", onSingleton = true, required = 1)
