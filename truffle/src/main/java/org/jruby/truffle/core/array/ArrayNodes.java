@@ -2018,7 +2018,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"size", "length"})
+    @CoreMethod(names = { "size", "length" })
     public abstract static class SizeNode extends ArrayCoreMethodNode {
 
         @Specialization
@@ -2046,12 +2046,20 @@ public abstract class ArrayNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = {"isIntArray(array)", "isSmall(array)"})
-        public DynamicObject sortVeryShortIntegerFixnum(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            final int[] store = (int[]) getStore(array);
-            final int[] newStore = new int[store.length];
-
+        @Specialization(guards = { "!isNullArray(array)", "isSmall(array)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject sortVeryShort(VirtualFrame frame, DynamicObject array, NotProvided block,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror originalStore = strategy.newMirror(array);
+            final ArrayMirror store = strategy.newArray(getContext().getOptions().ARRAY_SMALL);
             final int size = getSize(array);
+
+            // Copy with a exploded loop for PE
+
+            for (int i = 0; i < getContext().getOptions().ARRAY_SMALL; i++) {
+                if (i < size) {
+                    store.set(i, originalStore.get(i));
+                }
+            }
 
             // Selection sort - written very carefully to allow PE
 
@@ -2059,92 +2067,35 @@ public abstract class ArrayNodes {
                 if (i < size) {
                     for (int j = i + 1; j < getContext().getOptions().ARRAY_SMALL; j++) {
                         if (j < size) {
-                            if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
-                                final int temp = store[j];
-                                store[j] = store[i];
-                                store[i] = temp;
+                            final Object a = store.get(i);
+                            final Object b = store.get(j);
+                            if (castSortValue(compareDispatchNode.call(frame, b, "<=>", null, a)) < 0) {
+                                store.set(j, a);
+                                store.set(i, b);
                             }
                         }
                     }
-                    newStore[i] = store[i];
                 }
             }
 
-            return createArray(getContext(), newStore, size);
-        }
-
-        @ExplodeLoop
-        @Specialization(guards = {"isLongArray(array)", "isSmall(array)"})
-        public DynamicObject sortVeryShortLongFixnum(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            final long[] store = (long[]) getStore(array);
-            final long[] newStore = new long[store.length];
-
-            final int size = getSize(array);
-
-            // Selection sort - written very carefully to allow PE
-
-            for (int i = 0; i < getContext().getOptions().ARRAY_SMALL; i++) {
-                if (i < size) {
-                    for (int j = i + 1; j < getContext().getOptions().ARRAY_SMALL; j++) {
-                        if (j < size) {
-                            if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
-                                final long temp = store[j];
-                                store[j] = store[i];
-                                store[i] = temp;
-                            }
-                        }
-                    }
-                    newStore[i] = store[i];
-                }
-            }
-
-            return createArray(getContext(), newStore, size);
-        }
-
-        @Specialization(guards = {"isObjectArray(array)", "isSmall(array)"})
-        public DynamicObject sortVeryShortObject(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            final Object[] oldStore = (Object[]) getStore(array);
-            final Object[] store = ArrayUtils.copy(oldStore);
-
-            // Insertion sort
-
-            final int size = getSize(array);
-
-            for (int i = 1; i < size; i++) {
-                final Object x = store[i];
-                int j = i;
-                // TODO(CS): node for this cast
-                while (j > 0 && castSortValue(compareDispatchNode.call(frame, store[j - 1], "<=>", null, x)) > 0) {
-                    store[j] = store[j - 1];
-                    j--;
-                }
-                store[j] = x;
-            }
-
-            return createArray(getContext(), store, size);
-        }
-
-        @Specialization(guards = { "!isNullArray(array)" })
-        public Object sortUsingRubinius(
-                VirtualFrame frame,
-                DynamicObject array,
-                DynamicObject block,
-                @Cached("new()") SnippetNode snippet) {
-
-            return snippet.execute(
-                    frame,
-                    "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted",
-                    "right", getSize(array),
-                    "block", block);
+            return createArray(getContext(), store.getArray(), size);
         }
 
         @Specialization(guards = { "!isNullArray(array)", "!isSmall(array)" })
-        public Object sortUsingRubinius(
-                VirtualFrame frame,
-                DynamicObject array,
-                NotProvided block,
+        public Object sortLargeArray(VirtualFrame frame, DynamicObject array, NotProvided block,
                 @Cached("new()") SnippetNode snippetNode) {
-            return snippetNode.execute(frame, "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", getSize(array));
+            return snippetNode.execute(frame,
+                    "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted",
+                    "right", getSize(array));
+        }
+
+        @Specialization(guards = { "!isNullArray(array)" })
+        public Object sortWithBlock(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("new()") SnippetNode snippet) {
+            return snippet.execute(frame,
+                    "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted",
+                    "right", getSize(array),
+                    "block", block);
         }
 
         private int castSortValue(Object value) {
