@@ -38,7 +38,7 @@ import java.io.File;
 import java.io.IOException;
 
 @CoreClass(name = "Truffle::Boot")
-public abstract class BootNodes {
+public abstract class TruffleBootNodes {
 
     @CoreMethod(names = "jruby_home_directory", onSingleton = true)
     public abstract static class JRubyHomeDirectoryNode extends CoreMethodNode {

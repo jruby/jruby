@@ -72,7 +72,7 @@ import java.util.Collections;
 import java.util.List;
 
 @CoreClass(name = "Truffle::GC")
-public abstract class GCNodes {
+public abstract class TruffleGCNodes {
 
     @CoreMethod(names = "count", onSingleton = true)
     public abstract static class CountNode extends CoreMethodArrayArgumentsNode {
