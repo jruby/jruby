@@ -294,7 +294,7 @@ module FFI
       raise PrimitiveFailure, "FFI::Pointer#pointer_autorelease_p primitive failed"
     end
 
-    if Truffle.memory_safe?
+    if Truffle::Safe.memory_safe?
       NULL = Pointer.new(0x0)
     else
       NULL = nil

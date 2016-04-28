@@ -20,7 +20,7 @@ class IO
 
 end
 
-if Truffle.io_safe?
+if Truffle::Safe.io_safe?
   STDIN = File.new(0)
   STDOUT = File.new(1)
   STDERR = File.new(2)
@@ -40,7 +40,7 @@ class << STDIN
   end
 end
 
-if Truffle.io_safe?
+if Truffle::Safe.io_safe?
   if STDOUT.tty?
     STDOUT.sync = true
   else

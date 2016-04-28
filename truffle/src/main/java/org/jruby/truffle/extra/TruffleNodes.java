@@ -27,12 +27,10 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.CoreMethodNode;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayStrategy;
@@ -145,31 +143,6 @@ public abstract class TruffleNodes {
         public DynamicObject simpleShell() {
             new SimpleShell(getContext()).run(getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), this);
             return nil();
-        }
-
-    }
-
-    @CoreMethod(names = "safe_puts", onSingleton = true, required = 1, unsafe = UnsafeGroup.SAFE_PUTS)
-    public abstract static class SafePutsNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(string)")
-        public DynamicObject safePuts(DynamicObject string) {
-            for (char c : string.toString().toCharArray()) {
-                if (isAsciiPrintable(c)) {
-                    System.out.print(c);
-                } else {
-                    System.out.print('?');
-                }
-            }
-
-            System.out.println();
-
-            return nil();
-        }
-
-        private boolean isAsciiPrintable(char c) {
-            return c >= 32 && c <= 126 || c == '\n' || c == '\t';
         }
 
     }
@@ -379,36 +352,6 @@ public abstract class TruffleNodes {
         @Specialization
         public int logicalProcessors() {
             return Runtime.getRuntime().availableProcessors();
-        }
-
-    }
-
-    @CoreMethod(names = "io_safe?", onSingleton = true)
-    public abstract static class IsIOSafeNode extends CoreMethodNode {
-
-        @Specialization
-        public boolean ioSafe() {
-            return getContext().getOptions().PLATFORM_SAFE_IO;
-        }
-
-    }
-
-    @CoreMethod(names = "memory_safe?", onSingleton = true)
-    public abstract static class IsMemorySafeNode extends CoreMethodNode {
-
-        @Specialization
-        public boolean memorySafe() {
-            return getContext().getOptions().PLATFORM_SAFE_MEMORY;
-        }
-
-    }
-
-    @CoreMethod(names = "signals_safe?", onSingleton = true)
-    public abstract static class AreSignalsSafeNode extends CoreMethodNode {
-
-        @Specialization
-        public boolean signalsSafe() {
-            return getContext().getOptions().PLATFORM_SAFE_SIGNALS;
         }
 
     }

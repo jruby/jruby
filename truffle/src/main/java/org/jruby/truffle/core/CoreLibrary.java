@@ -82,6 +82,7 @@ import org.jruby.truffle.interop.InteropNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.TruffleSafeNodesFactory;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
@@ -577,6 +578,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Attachments");
         defineModule(truffleModule, "Boot");
         defineModule(truffleModule, "Fixnum");
+        defineModule(truffleModule, "Safe");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -729,6 +731,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(CoverageNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleRopesNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleFixnumNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleSafeNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 

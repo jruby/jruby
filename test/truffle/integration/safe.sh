@@ -18,11 +18,11 @@ safe -e 14
 
 # Check our safe_puts is safe
 
-safe -e "Truffle.safe_puts 'hello, world'"
+safe -e "Truffle::Safe.puts 'hello, world'"
 
 # But we can make that unsafe as well if really don't want any output
 
-unsafe -Xtruffle.platform.safe_puts=false -e "Truffle.safe_puts 'hello, world'"
+unsafe -Xtruffle.platform.safe_puts=false -e "Truffle::Safe.puts 'hello, world'"
 
 # Try some unsafe operations
 
@@ -38,7 +38,7 @@ safe -Xtruffle.platform.safe.exit=true -e 'exit!'
 
 # Check that safe_puts sanitises correctly
 
-if [[ `run -e "Truffle.safe_puts 'foo © bar'"` != 'foo ? bar' ]]
+if [[ `run -e "Truffle::Safe.puts 'foo © bar'"` != 'foo ? bar' ]]
 then
   echo safe_puts is not sanitising output
   exit 1
