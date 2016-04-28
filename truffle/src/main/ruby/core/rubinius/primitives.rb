@@ -57,7 +57,7 @@ module Rubinius
         command, arguments = 'bash', ['bash', '-c', command]
       end
 
-      Truffle.spawn_process command, arguments, env_array
+      Truffle::Process.spawn command, arguments, env_array
     end
 
     Truffle::Boot.install_rubinius_primitive method(:vm_spawn)

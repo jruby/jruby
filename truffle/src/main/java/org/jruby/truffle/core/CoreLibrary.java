@@ -582,6 +582,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Safe");
         defineModule(truffleModule, "System");
         defineModule(truffleModule, "Kernel");
+        defineModule(truffleModule, "Process");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -737,6 +738,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(TruffleSafeNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleSystemNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleKernelNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleProcessNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 

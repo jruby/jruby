@@ -18,7 +18,6 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import jnr.posix.SpawnFileAction;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.core.CoreClass;
@@ -26,20 +25,16 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.CoreMethodNode;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayStrategy;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
-import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import org.jruby.util.Memo;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 @CoreClass(name = "Truffle")
@@ -203,58 +198,6 @@ public abstract class TruffleNodes {
         @Specialization
         public DynamicObject objectTypeOf(DynamicObject value) {
             return getSymbol(value.getShape().getObjectType().getClass().getSimpleName());
-        }
-    }
-
-    @CoreMethod(names = "spawn_process", onSingleton = true, required = 3, unsafe = UnsafeGroup.PROCESSES)
-    public abstract static class SpawnProcessNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization(guards = {
-                "isRubyString(command)",
-                "isRubyArray(arguments)",
-                "isRubyArray(environmentVariables)" })
-        public int spawn(DynamicObject command,
-                         DynamicObject arguments,
-                         DynamicObject environmentVariables) {
-
-            final long longPid = call(
-                    StringOperations.getString(getContext(), command),
-                    toStringArray(arguments),
-                    toStringArray(environmentVariables));
-            assert longPid <= Integer.MAX_VALUE;
-            // VMWaitPidPrimitiveNode accepts only int
-            final int pid = (int) longPid;
-
-            if (pid == -1) {
-                // TODO (pitr 07-Sep-2015): needs compatibility improvements
-                throw new RaiseException(coreExceptions().errnoError(getContext().getNativePlatform().getPosix().errno(), this));
-            }
-
-            return pid;
-        }
-
-        private String[] toStringArray(DynamicObject rubyStrings) {
-            final int size = Layouts.ARRAY.getSize(rubyStrings);
-            final Object[] unconvertedStrings = ArrayOperations.toObjectArray(rubyStrings);
-            final String[] strings = new String[size];
-
-            for (int i = 0; i < size; i++) {
-                assert Layouts.STRING.isString(unconvertedStrings[i]);
-                strings[i] = StringOperations.getString(getContext(), (DynamicObject) unconvertedStrings[i]);
-            }
-
-            return strings;
-        }
-
-        @TruffleBoundary
-        private long call(String command, String[] arguments, String[] environmentVariables) {
-            // TODO (pitr 04-Sep-2015): only simple implementation, does not support file actions or other options
-            return getContext().getNativePlatform().getPosix().posix_spawnp(
-                    command,
-                    Collections.<SpawnFileAction>emptyList(),
-                    Arrays.asList(arguments),
-                    Arrays.asList(environmentVariables));
-
         }
     }
 
