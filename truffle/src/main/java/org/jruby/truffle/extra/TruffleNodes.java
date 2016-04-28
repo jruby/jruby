@@ -9,17 +9,13 @@
  */
 package org.jruby.truffle.extra;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import jnr.posix.SpawnFileAction;
@@ -34,19 +30,13 @@ import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayStrategy;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.loader.CodeLoader;
-import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import org.jruby.util.Memo;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -142,17 +132,6 @@ public abstract class TruffleNodes {
             return nil();
         }
 
-    }
-
-    @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true, required = 1, unsafe = UnsafeGroup.AT_EXIT)
-    public abstract static class AtExitSystemNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization
-        public Object atExit(boolean always, DynamicObject block) {
-            getContext().getAtExitManager().add(block, always);
-            return nil();
-        }
     }
 
     @CoreMethod(names = "print_backtrace", onSingleton = true, unsafe = UnsafeGroup.IO)
@@ -276,34 +255,6 @@ public abstract class TruffleNodes {
                     Arrays.asList(arguments),
                     Arrays.asList(environmentVariables));
 
-        }
-    }
-
-
-    @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1, unsafe = UnsafeGroup.LOAD)
-    public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization(guards = "isRubyString(file)")
-        public boolean load(VirtualFrame frame, DynamicObject file, boolean wrap, @Cached("create()") IndirectCallNode callNode) {
-            if (wrap) {
-                throw new UnsupportedOperationException();
-            }
-
-            try {
-                final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceCache().getSource(StringOperations.getString(getContext(), file)), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
-                final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
-                deferredCall.call(frame, callNode);
-            } catch (IOException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().loadErrorCannotLoad(file.toString(), this));
-            }
-
-            return true;
-        }
-
-        @Specialization(guards = "isRubyString(file)")
-        public boolean load(VirtualFrame frame, DynamicObject file, NotProvided wrap, @Cached("create()") IndirectCallNode callNode) {
-            return load(frame, file, false, callNode);
         }
     }
 

@@ -44,7 +44,7 @@ if Truffle::Safe.io_safe?
   if STDOUT.tty?
     STDOUT.sync = true
   else
-    Truffle.at_exit true do
+    Truffle::Kernel.at_exit true do
       STDOUT.flush
     end
   end
@@ -52,7 +52,7 @@ if Truffle::Safe.io_safe?
   if STDERR.tty?
     STDERR.sync = true
   else
-    Truffle.at_exit true do
+    Truffle::Kernel.at_exit true do
       STDERR.flush
     end
   end
