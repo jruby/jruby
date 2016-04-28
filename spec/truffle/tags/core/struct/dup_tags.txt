@@ -1,0 +1,1 @@
+fails:Struct-based class#dup retains an included module in the ancestor chain for the struct's singleton class
