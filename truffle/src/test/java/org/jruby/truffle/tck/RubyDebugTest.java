@@ -9,19 +9,6 @@
  */
 package org.jruby.truffle.tck;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.LinkedList;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.oracle.truffle.api.debug.Debugger;
 import com.oracle.truffle.api.debug.ExecutionEvent;
 import com.oracle.truffle.api.debug.SuspendedEvent;
@@ -33,26 +20,41 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.EventConsumer;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import com.oracle.truffle.api.vm.PolyglotEngine.Value;
-import java.util.Objects;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.Objects;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class RubyDebugTest {
+
     private Debugger debugger;
     private final LinkedList<Runnable> run = new LinkedList<>();
     private SuspendedEvent suspendedEvent;
     private Throwable ex;
     private ExecutionEvent executionEvent;
-    protected PolyglotEngine engine;
-    protected final ByteArrayOutputStream out = new ByteArrayOutputStream();
-    protected final ByteArrayOutputStream err = new ByteArrayOutputStream();
+    private PolyglotEngine engine;
+    private final ByteArrayOutputStream out = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream err = new ByteArrayOutputStream();
 
     @Before
     public void before() throws IOException {
         suspendedEvent = null;
         executionEvent = null;
-        engine = PolyglotEngine.newBuilder().setOut(out).setErr(err).onEvent(new EventConsumer<ExecutionEvent>(ExecutionEvent.class) {
+
+        engine = PolyglotEngine.newBuilder().setOut(out).setErr(err)
+                .onEvent(new EventConsumer<ExecutionEvent>(ExecutionEvent.class) {
+
             @Override
             protected void on(ExecutionEvent event) {
                 executionEvent = event;
@@ -60,63 +62,28 @@ public class RubyDebugTest {
                 performWork();
                 executionEvent = null;
             }
+
         }).onEvent(new EventConsumer<SuspendedEvent>(SuspendedEvent.class) {
+
             @Override
             protected void on(SuspendedEvent event) {
                 suspendedEvent = event;
                 performWork();
                 suspendedEvent = null;
             }
+
         }).build();
-        engine.eval(Source.fromText(
-            "def nothing(n)\n" +
-            "end\n",
-            "init.rb").withMimeType("application/x-ruby")
-        );
+
+        engine.eval(Source.fromFileName("src/test/ruby/init.rb"));
+
         run.clear();
     }
 
     @After
     public void dispose() {
         if (engine != null) {
-       //     engine.dispose();
+            //engine.dispose();
         }
-    }
-
-    private static Source createFactorial() {
-        return Source.fromText(
-            "def fac(n)\n" +
-            "  if n <= 1\n" +
-            "    1\n" +
-            "  else\n" +
-            "    nMinusOne = n - 1\n" +
-            "    nMOFact = fac(nMinusOne)\n" +
-            "    res = n * nMOFact\n" +
-            "    res\n" +
-            "  end\n" +
-            "end\n" +
-            "\n" +
-            "def main\n" +
-            "  res = fac(2)\n" +
-            "  puts res\n" +
-            "  res\n" +
-            "end\n" +
-            "Truffle::Interop.export_method(:main)\n" +
-            "\n",
-            "factorial.rb").withMimeType(
-        "application/x-ruby");
-    }
-
-    protected final String getOut() {
-        return new String(out.toByteArray());
-    }
-
-    protected final String getErr() {
-        try {
-            err.flush();
-        } catch (IOException e) {
-        }
-        return new String(err.toByteArray());
     }
 
     @Test
@@ -124,6 +91,7 @@ public class RubyDebugTest {
         final Source factorial = createFactorial();
 
         run.addLast(new Runnable() {
+
             @Override
             public void run() {
                 try {
@@ -136,24 +104,32 @@ public class RubyDebugTest {
                     throw new RuntimeException(e);
                 }
             }
+
         });
+
         engine.eval(factorial);
+
         assertExecutedOK("Algorithm loaded");
 
         run.addLast(new Runnable() {
+
             @Override
             public void run() {
-                // the breakpoint should hit instead
+                //fail("the breakpoint should hit instead");
             }
+
         });
+
         assertLocation(3, "1",
                         "n", 1,
                         "nMinusOne", null,
                         "nMOFact", null,
                         "res", null);
+
         continueExecution();
+
         final Value main = engine.findGlobalSymbol("main");
-        Assert.assertNotNull( "main method found", main);
+        assertNotNull( "main method found", main);
         Value value = main.execute();
         Number n = value.as(Number.class);
         assertNotNull(n);
@@ -167,12 +143,14 @@ public class RubyDebugTest {
         engine.eval(factorial);
 
         run.addLast(new Runnable() {
+
             @Override
             public void run() {
                 assertNull(suspendedEvent);
                 assertNotNull(executionEvent);
                 executionEvent.prepareStepInto();
             }
+
         });
 
         assertLocation(13, "res = fac(2)", "res", null);
@@ -205,17 +183,14 @@ public class RubyDebugTest {
             + "  res", // wrong!?
                         "res", 2);
 
-        continueExecution(); 
-//        stepOver(1);
-//        assertLocation(15, "puts res", "res", 2);
-//        stepOut();
+        continueExecution();
 
         Value value = engine.findGlobalSymbol("main").execute();
 
         Number n = value.as(Number.class);
+
         assertNotNull(n);
         assertEquals("Factorial computed OK", 2, n.intValue());
-
         assertExecutedOK("Stepping went OK");
     }
 
@@ -232,71 +207,87 @@ public class RubyDebugTest {
 
     private void stepOver(final int size) {
         run.addLast(new Runnable() {
+
             public void run() {
                 suspendedEvent.prepareStepOver(size);
             }
+
         });
     }
 
     private void stepOut() {
         run.addLast(new Runnable() {
+
             public void run() {
                 suspendedEvent.prepareStepOut();
             }
+
         });
     }
 
     private void continueExecution() {
         run.addLast(new Runnable() {
+
             public void run() {
                 suspendedEvent.prepareContinue();
             }
+
         });
     }
 
     private void stepInto(final int size) {
         run.addLast(new Runnable() {
+
             public void run() {
                 suspendedEvent.prepareStepInto(size);
             }
+
         });
     }
 
     private void assertLocation(final int line, final String code, final Object... expectedFrame) {
         run.addLast(new Runnable() {
+
             public void run() {
                 assertNotNull(suspendedEvent);
                 final int currentLine = suspendedEvent.getNode().getSourceSection().getLineLocation().getLineNumber();
-                Assert.assertEquals(line, currentLine);
+                assertEquals(line, currentLine);
                 final String currentCode = suspendedEvent.getNode().getSourceSection().getCode().trim();
-                Assert.assertEquals(code, currentCode);
+                assertEquals(code, currentCode);
                 final MaterializedFrame frame = suspendedEvent.getFrame();
 
-                Assert.assertEquals(expectedFrame.length / 2, frame.getFrameDescriptor().getSize());
+                assertEquals(expectedFrame.length / 2, frame.getFrameDescriptor().getSize());
 
                 for (int i = 0; i < expectedFrame.length; i = i + 2) {
                     String expectedIdentifier = (String) expectedFrame[i];
                     Object expectedValue = expectedFrame[i + 1];
                     FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(expectedIdentifier);
-                    Assert.assertNotNull(slot);
+                    assertNotNull(slot);
                     Object value = frame.getValue(slot);
+
                     if (Objects.equals(expectedValue, value)) {
                         continue;
                     }
+
                     Node findContextNode = RubyLanguage.INSTANCE.unprotectedCreateFindContextNode();
                     RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
+
                     if (value == context.getCoreLibrary().getNilObject()) {
                         value = null;
                     }
-                    Assert.assertEquals(expectedValue, value);
+
+                    assertEquals(expectedValue, value);
                 }
+
                 run.removeFirst().run();
             }
+
         });
     }
 
     private void assertExecutedOK(String msg) throws Throwable {
-        Assert.assertTrue(getErr(), getErr().isEmpty());
+        assertTrue(getErr(), getErr().isEmpty());
+
         if (ex != null) {
             if (ex instanceof AssertionError) {
                 throw ex;
@@ -304,6 +295,20 @@ public class RubyDebugTest {
                 throw new AssertionError(msg + ". Error during execution ", ex);
             }
         }
+
         assertTrue(msg + ". Assuming all requests processed: " + run, run.isEmpty());
     }
+
+    private static Source createFactorial() throws IOException {
+        return Source.fromFileName("src/test/ruby/factorial.rb");
+    }
+
+    private final String getErr() {
+        try {
+            err.flush();
+        } catch (IOException e) {
+        }
+        return new String(err.toByteArray());
+    }
+
 }

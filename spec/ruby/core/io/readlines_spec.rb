@@ -104,7 +104,11 @@ describe "IO#readlines" do
 
   describe "when passed a string that starts with a |" do
     it "gets data from the standard out of the subprocess" do
-      lines = IO.readlines("|sh -c 'echo hello;echo line2'")
+      cmd = "|sh -c 'echo hello;echo line2'"
+      platform_is :windows do
+        cmd = "|cmd.exe /C echo hello&echo line2"
+      end
+      lines = IO.readlines(cmd)
       lines.should == ["hello\n", "line2\n"]
     end
 

@@ -536,7 +536,11 @@ public class StaticScope implements Serializable {
         return dupe;
     }
 
-    public RubyModule getOverlayModule(ThreadContext context) {
+    public RubyModule getOverlayModuleForRead() {
+        return overlayModule;
+    }
+
+    public RubyModule getOverlayModuleForWrite(ThreadContext context) {
         RubyModule omod = overlayModule;
         if (omod == null) {
             overlayModule = omod = RubyModule.newModule(context.runtime);

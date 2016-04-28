@@ -16,22 +16,24 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
+import org.jruby.truffle.core.cast.ToIntNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-
 import java.math.BigInteger;
 
 @CoreClass(name = "Bignum")
@@ -433,16 +435,34 @@ public abstract class BignumNodes {
     @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
     public abstract static class LeftShiftNode extends BignumCoreMethodNode {
 
-        private final BranchProfile bLessThanZero = BranchProfile.create();
+        public abstract Object executeLeftShift(VirtualFrame frame, DynamicObject a, Object b);
 
         @Specialization
-        public Object leftShift(DynamicObject a, int b) {
-            if (b >= 0) {
+        public Object leftShift(DynamicObject a, int b,
+                                @Cached("createBinaryProfile()") ConditionProfile bPositive) {
+            if (bPositive.profile(b >= 0)) {
                 return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftLeft(b));
             } else {
-                bLessThanZero.enter();
                 return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftRight(-b));
             }
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
+        public Object leftShift(VirtualFrame frame, DynamicObject a, DynamicObject b,
+                                @Cached("create()") ToIntNode toIntNode) {
+            final BigInteger bBigInt = Layouts.BIGNUM.getValue(b);
+            if (bBigInt.signum() == -1) {
+                return 0;
+            } else {
+                // MRI would raise a NoMemoryError; JRuby would raise a coercion error.
+                return executeLeftShift(frame, a, toIntNode.doInt(frame, b));
+            }
+        }
+
+        @Specialization(guards = {"!isRubyBignum(b)", "!isInteger(b)", "!isLong(b)"})
+        public Object leftShift(VirtualFrame frame, DynamicObject a, Object b,
+                                @Cached("create()") ToIntNode toIntNode) {
+            return executeLeftShift(frame, a, toIntNode.doInt(frame, b));
         }
 
     }
@@ -450,15 +470,24 @@ public abstract class BignumNodes {
     @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
     public abstract static class RightShiftNode extends BignumCoreMethodNode {
 
-        private final BranchProfile bLessThanZero = BranchProfile.create();
+        public abstract Object executeRightShift(VirtualFrame frame, DynamicObject a, Object b);
 
         @Specialization
-        public Object rightShift(DynamicObject a, int b) {
-            if (b >= 0) {
+        public Object rightShift(DynamicObject a, int b,
+                @Cached("createBinaryProfile()") ConditionProfile bPositive) {
+            if (bPositive.profile(b >= 0)) {
                 return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftRight(b));
             } else {
-                bLessThanZero.enter();
                 return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftLeft(-b));
+            }
+        }
+
+        @Specialization
+        public Object rightShift(VirtualFrame frame, DynamicObject a, long b) {
+            if (CoreLibrary.fitsIntoInteger(b)) {
+                return executeRightShift(frame, a, (int) b);
+            } else {
+                return 0;
             }
         }
 
@@ -467,17 +496,10 @@ public abstract class BignumNodes {
             return 0;
         }
 
-        @Specialization(guards = {"!isRubyBignum(b)", "!isInteger(b)"})
-        public Object rightShift(VirtualFrame frame,
-                                 DynamicObject a,
-                                 Object b,
-                                 @Cached("new()") SnippetNode snippetNode) {
-            int bInt = (int) snippetNode.execute(frame, "Rubinius::Type.coerce_to(y, Integer, :to_int)", "y", b);
-            if (bInt >= 0) {
-                return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftRight(bInt));
-            } else {
-                return fixnumOrBignum(Layouts.BIGNUM.getValue(a).shiftLeft(-bInt));
-            }
+        @Specialization(guards = {"!isRubyBignum(b)", "!isInteger(b)", "!isLong(b)"})
+        public Object rightShift(VirtualFrame frame, DynamicObject a, Object b,
+                @Cached("create()") ToIntNode toIntNode) {
+            return executeRightShift(frame, a, toIntNode.doInt(frame, b));
         }
 
 

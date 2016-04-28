@@ -28,7 +28,7 @@ module Truffle
     # attachment.detach
     # ```
     def self.attach(file, line, &block)
-      Attachment.new(Truffle::Primitive.attach(file, line, &block))
+      Attachment.new(attach_internal(file, line, &block))
     end
 
     # Represents a block which has been installed.
@@ -40,7 +40,7 @@ module Truffle
 
       # Detach the code which was attached.
       def detach
-        Truffle::Primitive.detach @handle
+        Attachments.detach_internal @handle
       end
 
     end

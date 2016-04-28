@@ -1,7 +1,10 @@
 describe :process_fork, shared: true do
   platform_is :windows do
     it "returns false from #respond_to?" do
-      @object.respond_to?(:fork).should be_false
+      # Workaround for Kernel::Method being public and losing the "non-respond_to? magic"
+      mod = @object.class.name == "KernelSpecs::Method" ? Object.new : @object
+      mod.respond_to?(:fork).should be_false
+      mod.respond_to?(:fork, true).should be_false
     end
 
     it "raises a NotImplementedError when called" do

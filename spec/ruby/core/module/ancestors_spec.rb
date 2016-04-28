@@ -23,12 +23,12 @@ describe "Module#ancestors" do
 
   describe "when called on a singleton class" do
     it "includes the singleton classes of ancestors" do
-      Parent  = Class.new
-      Child   = Class.new(Parent)
-      SChild  = Child.singleton_class
+      parent  = Class.new
+      child   = Class.new(parent)
+      schild  = child.singleton_class
 
-      SChild.ancestors.should include(SChild,
-                                      Parent.singleton_class,
+      schild.ancestors.should include(schild,
+                                      parent.singleton_class,
                                       Object.singleton_class,
                                       BasicObject.singleton_class,
                                       Class,
@@ -37,6 +37,34 @@ describe "Module#ancestors" do
                                       Kernel,
                                       BasicObject)
 
+    end
+
+    describe 'for a standalone module' do
+      it 'does not include Class' do
+        s_mod = ModuleSpecs.singleton_class
+        s_mod.ancestors.should_not include(Class)
+      end
+
+      it 'does not include other singleton classes' do
+        s_standalone_mod = ModuleSpecs.singleton_class
+        s_module = Module.singleton_class
+        s_object = Object.singleton_class
+        s_basic_object = BasicObject.singleton_class
+
+        s_standalone_mod.ancestors.should_not include(s_module, s_object, s_basic_object)
+      end
+
+      it 'includes its own singleton class' do
+        s_mod = ModuleSpecs.singleton_class
+
+        s_mod.ancestors.should include(s_mod)
+      end
+
+      it 'includes standard chain' do
+        s_mod = ModuleSpecs.singleton_class
+
+        s_mod.ancestors.should include(Module, Object, Kernel, BasicObject)
+      end
     end
   end
 end

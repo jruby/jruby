@@ -832,7 +832,7 @@ describe "Global variable $?" do
   end
 
   it "is thread-local" do
-    system("true")
+    system("#{RUBY_EXE} -e 'exit 0'")
     Thread.new { $?.should be_nil }.join
   end
 end

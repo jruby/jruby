@@ -70,6 +70,13 @@ describe "a java.util.Map instance" do
     expect( h.any? { |e| e[1] > 10 } ).to be true
   end
 
+  it 'returns self on clear like a Hash (if aliased)' do
+    java.util.concurrent.ConcurrentSkipListMap.class_eval { alias clear ruby_clear }
+    m = java.util.concurrent.ConcurrentSkipListMap.new({ '1' => 1, '2' => 2 })
+    expect( m.clear ).to_not be nil # Java's clear returns void
+    expect( m.empty? ).to be true
+  end
+
   it "supports Hash-like operations" do
     h = java.util.HashMap.new
     test_ok(h.kind_of? java.util.Map)
@@ -124,12 +131,8 @@ describe "a java.util.Map instance" do
     test_ok(h.clear.empty?)
 
     # Java 8 adds a replace method to Map that takes a key and value
-    if ENV_JAVA['java.specification.version'] < '1.8'
-      h.replace({1=>100})
-    else
-      h.clear
-      h[1]=100
-    end
+    h.ruby_replace({1=>100})
+
     test_equal({1=>100}, h)
     h[2]=200; h[3]=300
     test_equal(300, h.fetch(3))
@@ -160,9 +163,12 @@ describe "a java.util.Map instance" do
     # Java 8 adds a merge method to Map used for merging multiple values for a given key in-place
     if ENV_JAVA['java.specification.version'] < '1.8'
       test_equal({"a"=>100, "b"=>254, "c"=>300}, h1.merge(h2))
-      test_equal({"a"=>100, "b"=>454, "c"=>300}, h1.merge(h2) { |k, o, n| o+n })
-      test_equal("{\"a\"=>100, \"b\"=>200}", h1.inspect)
+    else
+      test_equal({"a"=>100, "b"=>254, "c"=>300}, h1.ruby_merge(h2))
     end
+    test_equal({"a"=>100, "b"=>454, "c"=>300}, h1.ruby_merge(h2) { |k, o, n| o+n })
+    test_equal("{\"a\"=>100, \"b\"=>200}", h1.inspect)
+
     h1.merge!(h2) { |k, o, n| o }
     test_equal("{\"a\"=>100, \"b\"=>200, \"c\"=>300}", h1.inspect)
     test_equal(Java::JavaUtil::LinkedHashMap, h1.class)
@@ -175,12 +181,7 @@ describe "a java.util.Map instance" do
     test_equal("{1=>100, 2=>200}", h.inspect)
 
     # Java 8 adds a replace method to Map that takes a key and value
-    if ENV_JAVA['java.specification.version'] < '1.8'
-      test_equal({"c"=>300, "d"=>400, "e"=>500}, h.replace({"c"=>300, "d"=>400, "e"=>500}))
-    else
-      h.clear
-      h.put_all({"c"=>300, "d"=>400, "e"=>500})
-    end
+    test_equal({"c"=>300, "d"=>400, "e"=>500}, h.ruby_replace({"c"=>300, "d"=>400, "e"=>500}))
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
 
     test_equal({"d"=>400, "e"=>500}, h.select {|k,v| k > "c"})
@@ -190,8 +191,7 @@ describe "a java.util.Map instance" do
     if ENV_JAVA['java.specification.version'] < '1.8'
       h.replace({"a"=>20, "d"=>10, "c"=>30, "b"=>0})
     else
-      h.clear
-      h.put_all({"a"=>20, "d"=>10, "c"=>30, "b"=>0})
+      h.ruby_replace({"a"=>20, "d"=>10, "c"=>30, "b"=>0})
     end
     test_equal([["a", 20], ["b", 0], ["c", 30], ["d", 10]], h.sort)
     test_equal([["b", 0], ["d", 10], ["a", 20], ["c", 30]], h.sort { |a, b| a[1]<=>b[1] })
@@ -211,12 +211,8 @@ describe "a java.util.Map instance" do
     test_equal([["a", 20], ["d", 10]], h.take(2))
 
     # Java 8 adds a replace method to Map that takes a key and value
-    if ENV_JAVA['java.specification.version'] < '1.8'
-      h.replace({"a"=>100, "b"=>200})
-    else
-      h.clear
-      h.put_all({"a"=>100, "b"=>200})
-    end
+    h.ruby_replace({"a"=>100, "b"=>200})
+
     h2 = {"b"=>254, "c"=>300}
     test_equal({"a"=>100, "b"=>200, "c"=>300}, h.update(h2) { |k, o, n| o })
     test_equal("{\"a\"=>100, \"b\"=>200, \"c\"=>300}", h.inspect)

@@ -54,6 +54,7 @@ describe "Kernel#open" do
       @io = open("|date /t")
       begin
         @io.should be_kind_of(IO)
+        @io.read
       ensure
         @io.close
       end

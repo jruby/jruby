@@ -83,7 +83,7 @@ public class RaiseException extends JumpException {
      * @param backtrace
      */
     public RaiseException(RubyException exception, IRubyObject backtrace) {
-        super(exception.message.toString());
+        super(exception.getMessageAsJavaString());
         if (DEBUG) {
             Thread.dumpStack();
         }
@@ -132,7 +132,7 @@ public class RaiseException extends JumpException {
     }
 
     public RaiseException(RubyException exception, boolean nativeException) {
-        super(exception.message.toString());
+        super(exception.getMessageAsJavaString());
         if (DEBUG) {
             Thread.dumpStack();
         }
@@ -142,16 +142,13 @@ public class RaiseException extends JumpException {
     }
 
     public RaiseException(Throwable cause, NativeException nativeException) {
-        super(buildMessage(cause), cause);
-        providedMessage = buildMessage(cause);
+        super(nativeException.getMessageAsJavaString(), cause);
+        providedMessage = super.getMessage(); // cause.getClass().getName() + ": " + message
         setException(nativeException, true);
         preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
         setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
     }
 
-    /**
-     * Method still in use by jruby-openssl <= 0.5.2
-     */
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
         return createNativeRaiseException(runtime, cause, null);
     }
@@ -164,22 +161,10 @@ public class RaiseException extends JumpException {
         return new RaiseException(cause, nativeException);
     }
 
-    private static String buildMessage(Throwable exception) {
-        StringBuilder sb = new StringBuilder();
-        StringWriter stackTrace = new StringWriter();
-        exception.printStackTrace(new PrintWriter(stackTrace));
-
-        sb.append("Native Exception: '").append(exception.getClass()).append("'; ");
-        sb.append("Message: ").append(exception.getMessage()).append("; ");
-        sb.append("StackTrace: ").append(stackTrace.getBuffer());
-
-        return sb.toString();
-    }
-
     @Override
     public String getMessage() {
         if (providedMessage == null) {
-            providedMessage = "(" + exception.getMetaClass().getBaseName() + ") " + exception.message(exception.getRuntime().getCurrentContext()).asJavaString();
+            providedMessage = '(' + exception.getMetaClass().getBaseName() + ") " + exception.message(exception.getRuntime().getCurrentContext()).asJavaString();
         }
         return providedMessage;
     }
@@ -209,10 +194,10 @@ public class RaiseException extends JumpException {
     }
 
     private boolean requiresBacktrace(ThreadContext context) {
-        IRubyObject debugMode = context.runtime.getGlobalVariables().get("$DEBUG");
+        IRubyObject debugMode;
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
         return context.exceptionRequiresBacktrace ||
-                (debugMode != null && debugMode.isTrue()) ||
+                ((debugMode = context.runtime.getGlobalVariables().get("$DEBUG")) != null && debugMode.isTrue()) ||
                 ! context.runtime.getStandardError().isInstance(exception);
     }
 

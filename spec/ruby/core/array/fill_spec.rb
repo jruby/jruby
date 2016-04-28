@@ -205,27 +205,11 @@ describe "Array#fill with (filler, index, length)" do
     lambda { [].fill('a', obj) }.should raise_error(TypeError)
   end
 
-  not_compliant_on :rubinius do
-    platform_is wordsize: 32 do
-      it "raises an ArgumentError or RangeError for too-large sizes" do
-        arr = [1, 2, 3]
-        lambda { arr.fill(10, 1, 2**31 - 1) }.should raise_error(ArgumentError)
-        lambda { arr.fill(10, 1, 2**31) }.should raise_error(RangeError)
-      end
-    end
-
-    platform_is wordsize: 64 do
-      it "raises an ArgumentError or RangeError for too-large sizes" do
-        arr = [1, 2, 3]
-        lambda { arr.fill(10, 1, 2**63 - 1) }.should raise_error(ArgumentError)
-        lambda { arr.fill(10, 1, 2**63) }.should raise_error(RangeError)
-      end
-    end
-  end
-
-  deviates_on :rubinius do
-    it "raises an ArgumentError if the length is not a Fixnum" do
-      lambda { [1, 2].fill(10, 1, bignum_value) }.should raise_error(ArgumentError)
+  not_supported_on :opal do
+    it "raises an ArgumentError or RangeError for too-large sizes" do
+      arr = [1, 2, 3]
+      lambda { arr.fill(10, 1, fixnum_max) }.should raise_error(ArgumentError)
+      lambda { arr.fill(10, 1, bignum_value) }.should raise_error(RangeError)
     end
   end
 end

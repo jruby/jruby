@@ -666,6 +666,11 @@ public class RubyBignum extends RubyInteger {
         return coerceBit(context, "|", other);
     }
 
+    @JRubyMethod
+    public IRubyObject bit_length(ThreadContext context) {
+        return context.runtime.newFixnum(value.bitLength());
+    }
+
     public IRubyObject op_or19(ThreadContext context, IRubyObject other) {
         return op_or(context, other);
     }

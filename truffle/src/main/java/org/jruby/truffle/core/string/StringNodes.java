@@ -231,7 +231,7 @@ public abstract class StringNodes {
         public DynamicObject multiply(VirtualFrame frame, DynamicObject string, Object times) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
 
             return executeInt(frame, string, toIntNode.doInt(frame, times));
@@ -557,7 +557,7 @@ public abstract class StringNodes {
         private ToIntNode getToIntNode() {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
 
             return toIntNode;
@@ -1274,7 +1274,7 @@ public abstract class StringNodes {
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
-            return ToIntNodeGen.create(null, null, index);
+            return ToIntNodeGen.create(index);
         }
 
         @CreateCast("otherString") public RubyNode coerceOtherToString(RubyNode other) {
@@ -1738,13 +1738,11 @@ public abstract class StringNodes {
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
-            return FixnumLowerNodeGen.create(null, null,
-                    ToIntNodeGen.create(null, null, index));
+            return FixnumLowerNodeGen.create(null, null, ToIntNodeGen.create(index));
         }
 
         @CreateCast("value") public RubyNode coerceValueToInt(RubyNode value) {
-            return FixnumLowerNodeGen.create(null, null,
-                    ToIntNodeGen.create(null, null, value));
+            return FixnumLowerNodeGen.create(null, null, ToIntNodeGen.create(value));
         }
 
         @Specialization(guards = "!isRopeBuffer(string)")

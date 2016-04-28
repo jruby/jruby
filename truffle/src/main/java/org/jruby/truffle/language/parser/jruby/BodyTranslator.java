@@ -32,6 +32,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.IsRubiniusUndefinedNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
+import org.jruby.truffle.core.array.ArrayAppendOneNodeGen;
 import org.jruby.truffle.core.array.ArrayConcatNode;
 import org.jruby.truffle.core.array.ArrayDropTailNode;
 import org.jruby.truffle.core.array.ArrayDropTailNodeGen;
@@ -71,8 +72,8 @@ import org.jruby.truffle.core.string.InterpolatedStringNode;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.TimeNodesFactory;
-import org.jruby.truffle.debug.AssertConstantNodeGen;
-import org.jruby.truffle.debug.AssertNotCompiledNodeGen;
+import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
+import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -166,7 +167,6 @@ import org.jruby.truffle.language.threadlocal.WrapInThreadLocalNodeGen;
 import org.jruby.truffle.language.yield.YieldExpressionNode;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
@@ -295,14 +295,11 @@ public class BodyTranslator extends Translator {
     public RubyNode visitArgsPushNode(org.jruby.ast.ArgsPushNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode ret = ArrayNodesFactory.PushOneNodeFactory.create(new RubyNode[]{
-                KernelNodesFactory.DupNodeFactory.create(context, sourceSection, new RubyNode[]{
-                        node.getFirstNode().accept(this)
-                }),
-                node.getSecondNode().accept(this)
-        });
-
-        setSourceSection(ret, sourceSection);
+        final RubyNode args = node.getFirstNode().accept(this);
+        final RubyNode value = node.getSecondNode().accept(this);
+        final RubyNode ret = ArrayAppendOneNodeGen.create(context, sourceSection,
+                KernelNodesFactory.DupNodeFactory.create(context, sourceSection, new RubyNode[] { args }),
+                value);
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -525,10 +522,10 @@ public class BodyTranslator extends Translator {
                 final RubyNode ret = translateRubiniusCheckFrozen(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (receiver instanceof org.jruby.ast.Colon2ConstNode // Truffle::Primitive.<method>
+        } else if (receiver instanceof org.jruby.ast.Colon2ConstNode // Truffle.<method>
                 && ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode() instanceof org.jruby.ast.ConstNode
                 && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode()).getName().equals("Truffle")
-                && ((org.jruby.ast.Colon2ConstNode) receiver).getName().equals("Primitive")) {
+                && ((org.jruby.ast.Colon2ConstNode) receiver).getName().equals("Graal")) {
             if (methodName.equals("assert_constant")) {
                 final RubyNode ret = AssertConstantNodeGen.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
                 return addNewlineIfNeeded(node, ret);

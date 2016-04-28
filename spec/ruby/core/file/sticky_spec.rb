@@ -7,17 +7,19 @@ describe "File.sticky?" do
 end
 
 describe "File.sticky?" do
-  it "returns false if file does not exist" do
-    File.sticky?("I_am_a_bogus_file").should == false
-  end
+  platform_is_not :windows do
+    it "returns false if file does not exist" do
+      File.sticky?("I_am_a_bogus_file").should == false
+    end
 
-  it "returns false if the file has not sticky bit set" do
-    filename = tmp("i_exist")
-    touch(filename)
+    it "returns false if the file has not sticky bit set" do
+      filename = tmp("i_exist")
+      touch(filename)
 
-    File.sticky?(filename).should == false
+      File.sticky?(filename).should == false
 
-    rm_r filename
+      rm_r filename
+    end
   end
 
   platform_is :linux, :darwin do

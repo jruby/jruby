@@ -26,7 +26,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ArrayJavaProxy extends JavaProxy {
+public final class ArrayJavaProxy extends JavaProxy {
 
     private final JavaUtil.JavaConverter converter;
 
@@ -341,6 +341,64 @@ public class ArrayJavaProxy extends JavaProxy {
             }
         }
         return 11 * Arrays.hashCode((Object[]) array);
+    }
+
+    @Override
+    public IRubyObject dup() {
+        final Ruby runtime = getRuntime();
+
+        RubyObject dup = new ArrayJavaProxy(runtime, getMetaClass(), cloneObject(), converter);
+
+        if (isTaint()) dup.setTaint(true);
+        initCopy(dup, this, "initialize_dup");
+
+        return dup;
+    }
+
+    private static void initCopy(IRubyObject clone, IRubyObject original, String method) {
+        original.copySpecialInstanceVariables(clone);
+        if (original.hasVariables()) clone.syncVariables(original);
+    }
+
+    @Override
+    @JRubyMethod(name = "clone")
+    public IRubyObject rbClone() {
+        final Ruby runtime = getRuntime();
+
+        RubyObject clone = new ArrayJavaProxy(runtime, getMetaClass(), cloneObject(), converter);
+        clone.setMetaClass(getSingletonClassClone());
+
+        if (isTaint()) clone.setTaint(true);
+        initCopy(clone, this, "initialize_clone");
+        if (isFrozen()) clone.setFrozen(true);
+
+        return clone;
+    }
+
+    @Override
+    protected Object cloneObject() {
+        final Object array = getObject();
+        final Class<?> componentType = array.getClass().getComponentType();
+        if ( componentType.isPrimitive() ) {
+            switch ( componentType.getName().charAt(0) ) {
+                case 'b':
+                    if (componentType == byte.class) return ((byte[]) array).clone();
+                    else /* if (componentType == boolean.class) */ return ((boolean[]) array).clone();
+                case 's':
+                    /* if (componentType == short.class) */ return ((short[]) array).clone();
+                case 'c':
+                    /* if (componentType == char.class) */ return ((char[]) array).clone();
+                case 'i':
+                    /* if (componentType == int.class) */ return ((int[]) array).clone();
+                case 'l':
+                    /* if (componentType == long.class) */ return ((long[]) array).clone();
+                case 'f':
+                    /* if (componentType == float.class) */ return ((float[]) array).clone();
+                case 'd':
+                    /* if (componentType == double.class) */ return ((double[]) array).clone();
+            }
+        }
+        return ((Object[]) array).clone();
     }
 
     public IRubyObject getRange(ThreadContext context, IRubyObject[] args) {

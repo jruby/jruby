@@ -36,6 +36,7 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaMethod;
 import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -171,8 +172,18 @@ public class JavaProxy extends RubyObject {
     public IRubyObject initialize_copy(IRubyObject original) {
         super.initialize_copy(original);
         // because we lazily init JavaObject in the data-wrapped slot, explicitly copy over the object
-        setObject( ((JavaProxy) original).getObject() );
+        setObject( ((JavaProxy) original).cloneObject() );
         return this;
+    }
+
+    protected Object cloneObject() {
+        final Object object = getObject();
+        if (object instanceof Cloneable) {
+            // sufficient for java.util collection classes e.g. HashSet, ArrayList
+            Object clone = JavaUtil.clone(object);
+            return clone == null ? object : clone;
+        }
+        return object; // this is what JRuby did prior to <= 9.0.5
     }
 
     /**

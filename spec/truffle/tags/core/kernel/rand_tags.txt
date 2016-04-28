@@ -2,3 +2,5 @@ fails:Kernel.rand returns a float for an range argument where max is < 1
 fails:Kernel.rand given an exclusive range returns a Float between the given Integer and Float
 fails:Kernel.rand given an exclusive range returns a Float between the given Float and Integer
 fails:Kernel.rand given an exclusive range returns a Float between the two given Floats
+fails:Kernel.rand returns nil when range is backwards
+fails:Kernel.rand returns the range start/end when Float range is 0

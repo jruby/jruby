@@ -7,13 +7,5 @@
 # GNU Lesser General Public License version 2.1
 
 module Coverage
-
-  def self.start
-    Truffle::Primitive.coverage_start
-  end
-
-  def self.result
-    Truffle::Primitive.coverage_result
-  end
-
+  include Truffle::Coverage
 end

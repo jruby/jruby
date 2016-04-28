@@ -1860,37 +1860,40 @@ public class IRRuntimeHelpers {
         return site.call(context, caller, target, keyStr.strDup(context.runtime));
     }
 
-    public static DynamicMethod getRefinedMethod(ThreadContext context, RubyClass selfType, String methodName) {
-        StaticScope refinedScope = context.getCurrentStaticScope();
+    public static DynamicMethod getRefinedMethodForClass(StaticScope refinedScope, RubyModule target, String methodName) {
         Map<RubyClass, RubyModule> refinements;
         RubyModule refinement;
         DynamicMethod method = null;
+        RubyModule overlay;
 
         while (true) {
             if (refinedScope == null) break;
 
-            refinements = refinedScope.getOverlayModule(context).getRefinements();
+            overlay = refinedScope.getOverlayModuleForRead();
 
-            if (!refinements.isEmpty()) {
+            if (overlay != null) {
 
-                for (Map.Entry<RubyClass, RubyModule> refinementEntry : refinements.entrySet()) {
+                refinements = overlay.getRefinements();
 
-                    if (selfType.isKindOfModule(refinementEntry.getKey())) {
+                if (!refinements.isEmpty()) {
 
-                        refinement = refinementEntry.getValue();
-                        method = refinement.searchMethod(methodName);
+                    refinement = refinements.get(target);
 
-                        if (!method.isUndefined()) {
+                    if (refinement != null) {
+
+                        DynamicMethod maybeMethod = refinement.searchMethod(methodName);
+
+                        if (!maybeMethod.isUndefined()) {
+                            method = maybeMethod;
                             break;
                         }
-
-                        method = null;
                     }
                 }
             }
 
             refinedScope = refinedScope.getEnclosingScope();
         }
+
         return method;
     }
 }

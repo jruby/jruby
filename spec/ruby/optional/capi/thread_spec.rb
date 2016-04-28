@@ -154,19 +154,17 @@ describe :rb_thread_blocking_region, shared: true do
 end
 
 describe "C-API Thread function" do
-  describe "rb_thread_blocking_region" do
-    extended_on :rubinius do
+  ruby_version_is ""..."2.2" do
+    describe "rb_thread_blocking_region_with_ubf_io" do
       it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region_with_ubf_io
-      it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region
     end
 
-    ruby_version_is ""..."2.2" do
-      it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region_with_ubf_io
+    describe "rb_thread_blocking_region" do
       it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region
     end
+  end
 
+  describe "rb_thread_call_without_gvl" do
     it_behaves_like :rb_thread_blocking_region, :rb_thread_call_without_gvl
-    it_behaves_like :rb_thread_blocking_region, :rb_thread_call_without_gvl2
   end
 end
-

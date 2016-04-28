@@ -35,7 +35,7 @@ module Kernel
   module_function :caller
 
   def at_exit(&block)
-    Truffle::Primitive.at_exit false, &block
+    Truffle.at_exit false, &block
   end
   module_function :at_exit
 

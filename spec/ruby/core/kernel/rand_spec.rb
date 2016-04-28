@@ -116,6 +116,22 @@ describe "Kernel.rand" do
       end
     end
   end
+
+  it "returns a numeric for an range argument where max is < 1" do
+    rand(0.25..0.75).should be_kind_of(Numeric)
+  end
+
+  it "returns nil when range is backwards" do
+    rand(1..0).should be_nil
+  end
+
+  it "returns the range start/end when Float range is 0" do
+    rand(1.0..1.0).should eql(1.0)
+  end
+
+  it "returns the range start/end when Integer range is 0" do
+    rand(42..42).should eql(42)
+  end
 end
 
 describe "Kernel#rand" do

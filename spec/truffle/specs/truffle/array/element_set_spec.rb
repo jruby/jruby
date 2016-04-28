@@ -10,7 +10,7 @@ require_relative '../../../../ruby/spec_helper'
 
 describe "Array#[]=" do
   def storage(ary)
-    Truffle::Primitive.array_storage(ary)
+    Truffle.array_storage(ary)
   end
 
   before :each do

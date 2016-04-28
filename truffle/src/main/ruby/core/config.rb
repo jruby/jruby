@@ -10,9 +10,9 @@ module RbConfig
   CONFIG = {
     'exeext' => '',
     'EXEEXT' => '',
-    'host_os' => Truffle::Primitive.host_os,
-    'bindir' => "#{Truffle::Primitive.jruby_home_directory}/bin",
-    'libdir' => "#{Truffle::Primitive.jruby_home_directory}/lib/ruby/truffle",
+    'host_os' => Truffle.host_os,
+    'bindir' => "#{Truffle::Boot.jruby_home_directory}/bin",
+    'libdir' => "#{Truffle::Boot.jruby_home_directory}/lib/ruby/truffle",
     'ruby_install_name' => 'jruby',
     'RUBY_INSTALL_NAME' => 'jruby',
     'ruby_version' => '2.2.0',

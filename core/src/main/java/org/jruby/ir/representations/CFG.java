@@ -475,6 +475,8 @@ public class CFG {
     }
 
     public void removeBB(BasicBlock b) {
+        if (b == globalEnsureBB) globalEnsureBB = null;
+
         graph.removeVertexFor(b);
         bbMap.remove(b.getLabel());
         rescuerMap.remove(b);
