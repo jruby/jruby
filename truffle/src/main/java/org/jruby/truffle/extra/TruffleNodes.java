@@ -195,30 +195,6 @@ public abstract class TruffleNodes {
         }
     }
 
-    @CoreMethod(names = "fixnum_lower", isModuleFunction = true, required = 1)
-    public abstract static class FixnumLowerPrimitiveNode extends UnaryCoreMethodNode {
-
-        @Specialization
-        public int lower(int value) {
-            return value;
-        }
-
-        @Specialization(guards = "canLower(value)")
-        public int lower(long value) {
-            return (int) value;
-        }
-
-        @Specialization(guards = "!canLower(value)")
-        public long lowerFails(long value) {
-            return value;
-        }
-
-        protected static boolean canLower(long value) {
-            return CoreLibrary.fitsIntoInteger(value);
-        }
-
-    }
-
     @CoreMethod(names = "synchronized", isModuleFunction = true, required = 1, needsBlock = true)
     public abstract static class SynchronizedPrimitiveNode extends YieldingCoreMethodNode {
 

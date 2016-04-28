@@ -34,7 +34,7 @@ class IO
 
   # Truffle: redefine setter to lower
   def mode=(value)
-    @mode = Truffle.fixnum_lower(value)
+    @mode = Truffle::Fixnum.lower(value)
   end
 
   #

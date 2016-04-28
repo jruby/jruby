@@ -53,6 +53,7 @@ import org.jruby.truffle.core.numeric.BignumNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
 import org.jruby.truffle.core.numeric.FloatNodesFactory;
 import org.jruby.truffle.core.numeric.IntegerNodesFactory;
+import org.jruby.truffle.core.numeric.TruffleFixnumNodesFactory;
 import org.jruby.truffle.core.objectspace.ObjectSpaceNodesFactory;
 import org.jruby.truffle.core.proc.ProcNodesFactory;
 import org.jruby.truffle.core.queue.QueueNodesFactory;
@@ -575,6 +576,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "GC");
         defineModule(truffleModule, "Attachments");
         defineModule(truffleModule, "Boot");
+        defineModule(truffleModule, "Fixnum");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -726,6 +728,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(TracePointNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(CoverageNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleRopesNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleFixnumNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 
