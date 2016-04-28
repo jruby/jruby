@@ -229,40 +229,8 @@ public class RubyStruct extends RubyObject {
             final String memberName = args[i].asJavaString();
             // if we are storing a name as well, index is one too high for values
             final int index = (name == null && !nilName) ? i : i - 1;
-            newStruct.addMethod(memberName, new DynamicMethod(newStruct, Visibility.PUBLIC) {
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    Arity.checkArgumentCount(context.runtime, name, args, 0, 0);
-                    return ((RubyStruct)self).get(index);
-                }
-
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                    return ((RubyStruct)self).get(index);
-                }
-
-                @Override
-                public DynamicMethod dup() {
-                    return this;
-                }
-            });
-            newStruct.addMethod(memberName + '=', new DynamicMethod(newStruct, Visibility.PUBLIC) {
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    Arity.checkArgumentCount(context.runtime, name, args, 1, 1);
-                    return ((RubyStruct)self).set(args[0], index);
-                }
-
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
-                    return ((RubyStruct)self).set(arg, index);
-                }
-
-                @Override
-                public DynamicMethod dup() {
-                    return this;
-                }
-            });
+            newStruct.addMethod(memberName, new Accessor(newStruct, index));
+            newStruct.addMethod(memberName + '=', new Mutator(newStruct, index));
         }
 
         if (block.isGiven()) {
@@ -849,4 +817,53 @@ public class RubyStruct extends RubyObject {
         return this;
     }
 
+    private static class Accessor extends DynamicMethod {
+        private final int index;
+
+        public Accessor(RubyClass newStruct, int index) {
+            super(newStruct, Visibility.PUBLIC);
+            this.index = index;
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            Arity.checkArgumentCount(context.runtime, name, args, 0, 0);
+            return ((RubyStruct)self).get(index);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+            return ((RubyStruct)self).get(index);
+        }
+
+        @Override
+        public DynamicMethod dup() {
+            return new Accessor((RubyClass) getImplementationClass(), index);
+        }
+    }
+
+    private static class Mutator extends DynamicMethod {
+        private final int index;
+
+        public Mutator(RubyClass newStruct, int index) {
+            super(newStruct, Visibility.PUBLIC);
+            this.index = index;
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            Arity.checkArgumentCount(context.runtime, name, args, 1, 1);
+            return ((RubyStruct)self).set(args[0], index);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
+            return ((RubyStruct)self).set(arg, index);
+        }
+
+        @Override
+        public DynamicMethod dup() {
+            return new Accessor((RubyClass) getImplementationClass(), index);
+        }
+    }
 }
