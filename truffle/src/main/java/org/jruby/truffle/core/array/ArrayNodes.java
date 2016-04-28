@@ -2115,23 +2115,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "unshift", rest = true, raiseIfFrozenSelf = true)
-    public abstract static class UnshiftNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject unshift(DynamicObject array, Object... args) {
-            CompilerDirectives.transferToInterpreter();
-
-            assert RubyGuards.isRubyArray(array);
-            final Object[] newStore = new Object[getSize(array) + args.length];
-            System.arraycopy(args, 0, newStore, 0, args.length);
-            ArrayUtils.copy(getStore(array), newStore, args.length, getSize(array));
-            setStoreAndSize(array, newStore, newStore.length);
-            return array;
-        }
-
-    }
-
     @CoreMethod(names = "zip", rest = true, required = 1, needsBlock = true)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
