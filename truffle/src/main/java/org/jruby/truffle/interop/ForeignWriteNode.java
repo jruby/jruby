@@ -20,7 +20,6 @@ import com.oracle.truffle.api.interop.AcceptMessage;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.rope.Rope;
@@ -38,19 +37,19 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 public final class ForeignWriteNode extends ForeignWriteBaseNode {
 
     @Child private Node findContextNode;
-    @Child private StringCachingHelperNode helperNode;
+    @Child private ForeignWriteStringCachingHelperNode helperNode;
 
     @Override
     public Object access(VirtualFrame frame, DynamicObject object, Object name, Object value) {
         return getHelperNode().executeStringCachingHelper(frame, object, name, value);
     }
 
-    private StringCachingHelperNode getHelperNode() {
+    private ForeignWriteStringCachingHelperNode getHelperNode() {
         if (helperNode == null) {
             CompilerDirectives.transferToInterpreter();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
             final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-            helperNode = insert(ForeignWriteNodeFactory.StringCachingHelperNodeGen.create(context, null, null, null));
+            helperNode = insert(ForeignWriteNodeFactory.ForeignWriteStringCachingHelperNodeGen.create(context, null, null, null));
         }
 
         return helperNode;
@@ -62,9 +61,9 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
             @NodeChild("name"),
             @NodeChild("value")
     })
-    protected static abstract class StringCachingHelperNode extends RubyNode {
+    protected static abstract class ForeignWriteStringCachingHelperNode extends RubyNode {
 
-        public StringCachingHelperNode(RubyContext context) {
+        public ForeignWriteStringCachingHelperNode(RubyContext context) {
             super(context, null);
         }
 
@@ -86,7 +85,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
                 @Cached("privatizeRope(name)") Rope cachedRope,
                 @Cached("ropeToString(cachedRope)") String cachedString,
                 @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignWriteStringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, name, cachedString, cachedStartsWithAt, value);
         }
 
@@ -99,7 +98,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
                 DynamicObject receiver,
                 DynamicObject name,
                 Object value,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignWriteStringCachedHelperNode nextHelper) {
             final String nameString = objectToString(name);
             return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString,
                     startsWithAt(nameString), value);
@@ -120,7 +119,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
                 @Cached("name") DynamicObject cachedName,
                 @Cached("objectToString(cachedName)") String cachedString,
                 @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignWriteStringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedString,
                     cachedStartsWithAt, value);
         }
@@ -134,7 +133,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
                 DynamicObject receiver,
                 DynamicObject name,
                 Object value,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignWriteStringCachedHelperNode nextHelper) {
             final String nameString = objectToString(name);
             return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString,
                     startsWithAt(nameString), value);
@@ -151,7 +150,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
                 Object value,
                 @Cached("name") String cachedName,
                 @Cached("startsWithAt(cachedName)") boolean cachedStartsWithAt,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignWriteStringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedName,
                     cachedStartsWithAt, value);
         }
@@ -162,12 +161,12 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
                 DynamicObject receiver,
                 String name,
                 Object value,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignWriteStringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, name, name, startsWithAt(name), value);
         }
 
-        protected StringCachedHelperNode createNextHelper() {
-            return ForeignWriteNodeFactory.StringCachedHelperNodeGen.create(null, null, null, null, null);
+        protected ForeignWriteStringCachedHelperNode createNextHelper() {
+            return ForeignWriteNodeFactory.ForeignWriteStringCachedHelperNodeGen.create(null, null, null, null, null);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -197,7 +196,7 @@ public final class ForeignWriteNode extends ForeignWriteBaseNode {
             @NodeChild("startsAt"),
             @NodeChild("value")
     })
-    protected static abstract class StringCachedHelperNode extends RubyNode {
+    protected static abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
 
         @Child private DoesRespondDispatchHeadNode definedNode;
         @Child private DoesRespondDispatchHeadNode indexDefinedNode;

@@ -34,19 +34,19 @@ import org.jruby.truffle.language.yield.CallBlockNodeGen;
 public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
 
     @Child private Node findContextNode;
-    @Child private HelperNode executeMethodNode;
+    @Child private ForeignExecuteHelperNode executeMethodNode;
 
     @Override
     public Object access(VirtualFrame frame, DynamicObject object, Object[] arguments) {
         return getHelperNode().executeCall(frame, object, arguments);
     }
 
-    private HelperNode getHelperNode() {
+    private ForeignExecuteHelperNode getHelperNode() {
         if (executeMethodNode == null) {
             CompilerDirectives.transferToInterpreter();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
             final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-            executeMethodNode = insert(ForeignExecuteNodeFactory.HelperNodeGen.create(context, null, null));
+            executeMethodNode = insert(ForeignExecuteNodeFactory.ForeignExecuteHelperNodeGen.create(context, null, null));
         }
 
         return executeMethodNode;
@@ -56,9 +56,9 @@ public final class ForeignExecuteNode extends ForeignExecuteBaseNode {
             @NodeChild("receiver"),
             @NodeChild("arguments")
     })
-    protected static abstract class HelperNode extends RubyNode {
+    protected static abstract class ForeignExecuteHelperNode extends RubyNode {
 
-        public HelperNode(RubyContext context) {
+        public ForeignExecuteHelperNode(RubyContext context) {
             super(context, null);
         }
 

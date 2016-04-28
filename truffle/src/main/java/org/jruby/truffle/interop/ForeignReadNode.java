@@ -21,7 +21,6 @@ import com.oracle.truffle.api.interop.AcceptMessage;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.Layouts;
@@ -40,19 +39,19 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 public final class ForeignReadNode extends ForeignReadBaseNode {
 
     @Child private Node findContextNode;
-    @Child private StringCachingHelperNode helperNode;
+    @Child private ForeignReadStringCachingHelperNode helperNode;
 
     @Override
     public Object access(VirtualFrame frame, DynamicObject object, Object name) {
         return getHelperNode().executeStringCachingHelper(frame, object, name);
     }
 
-    private StringCachingHelperNode getHelperNode() {
+    private ForeignReadStringCachingHelperNode getHelperNode() {
         if (helperNode == null) {
             CompilerDirectives.transferToInterpreter();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
             final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-            helperNode = insert(ForeignReadNodeFactory.StringCachingHelperNodeGen.create(context, null, null));
+            helperNode = insert(ForeignReadNodeFactory.ForeignReadStringCachingHelperNodeGen.create(context, null, null));
         }
 
         return helperNode;
@@ -63,9 +62,9 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             @NodeChild("receiver"),
             @NodeChild("name")
     })
-    protected static abstract class StringCachingHelperNode extends RubyNode {
+    protected static abstract class ForeignReadStringCachingHelperNode extends RubyNode {
 
-        public StringCachingHelperNode(RubyContext context) {
+        public ForeignReadStringCachingHelperNode(RubyContext context) {
             super(context, null);
         }
 
@@ -85,7 +84,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 @Cached("privatizeRope(name)") Rope cachedRope,
                 @Cached("ropeToString(cachedRope)") String cachedString,
                 @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, name, cachedString, cachedStartsWithAt);
         }
 
@@ -97,7 +96,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 VirtualFrame frame,
                 DynamicObject receiver,
                 DynamicObject name,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
             final String nameString = objectToString(name);
             return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString, startsWithAt(nameString));
         }
@@ -116,7 +115,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 @Cached("name") DynamicObject cachedName,
                 @Cached("objectToString(cachedName)") String cachedString,
                 @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedString, cachedStartsWithAt);
         }
 
@@ -128,7 +127,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 VirtualFrame frame,
                 DynamicObject receiver,
                 DynamicObject name,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
             final String nameString = objectToString(name);
             return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString, startsWithAt(nameString));
         }
@@ -143,7 +142,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 String name,
                 @Cached("name") String cachedName,
                 @Cached("startsWithAt(cachedName)") boolean cachedStartsWithAt,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedName, cachedStartsWithAt);
         }
 
@@ -152,12 +151,12 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
                 VirtualFrame frame,
                 DynamicObject receiver,
                 String name,
-                @Cached("createNextHelper()") StringCachedHelperNode nextHelper) {
+                @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
             return nextHelper.executeStringCachedHelper(frame, receiver, name, name, startsWithAt(name));
         }
 
-        protected StringCachedHelperNode createNextHelper() {
-            return ForeignReadNodeFactory.StringCachedHelperNodeGen.create(null, null, null, null);
+        protected ForeignReadStringCachedHelperNode createNextHelper() {
+            return ForeignReadNodeFactory.ForeignReadStringCachedHelperNodeGen.create(null, null, null, null);
         }
 
         @TruffleBoundary
@@ -216,7 +215,7 @@ public final class ForeignReadNode extends ForeignReadBaseNode {
             @NodeChild("stringName"),
             @NodeChild("startsAt")
     })
-    protected static abstract class StringCachedHelperNode extends RubyNode {
+    protected static abstract class ForeignReadStringCachedHelperNode extends RubyNode {
 
         @Child private DoesRespondDispatchHeadNode definedNode;
         @Child private DoesRespondDispatchHeadNode indexDefinedNode;
