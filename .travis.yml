@@ -82,8 +82,6 @@ matrix:
       jdk: oraclejdk8
   allow_failures:
     - env: PHASE='-Prake -Dtask=test:mri:fullint'
-    - env: JT=check_ambiguous_arguments SKIP_BUILD=true
-      jdk: oraclejdk8
     - env: JT='test mri'
     - env: PHASE='-Pj2ee --projects !truffle'
       jdk: oraclejdk7
