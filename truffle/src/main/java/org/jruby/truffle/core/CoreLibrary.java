@@ -60,6 +60,7 @@ import org.jruby.truffle.core.queue.SizedQueueNodesFactory;
 import org.jruby.truffle.core.range.RangeNodesFactory;
 import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory;
+import org.jruby.truffle.core.rope.TruffleRopesNodesFactory;
 import org.jruby.truffle.core.rubinius.AtomicReferenceNodesFactory;
 import org.jruby.truffle.core.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.core.rubinius.PosixNodesFactory;
@@ -570,6 +571,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Etc");
         defineModule(truffleModule, "Coverage");
         defineModule(truffleModule, "Graal");
+        defineModule(truffleModule, "Ropes");
         defineModule(truffleModule, "GC");
         defineModule(truffleModule, "Attachments");
         defineModule(truffleModule, "Boot");
@@ -723,6 +725,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TracePointNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(CoverageNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleRopesNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 

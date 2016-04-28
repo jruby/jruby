@@ -8,18 +8,18 @@
 
 require_relative '../../../../ruby/spec_helper'
 
-describe "Truffle::Runtime.dump_string" do
+describe "Truffle::Ropes.dump_string" do
 
   it "returns a String" do
-    Truffle::Runtime.dump_string('foo').should be_kind_of(String)
+    Truffle::Ropes.dump_string('foo').should be_kind_of(String)
   end
 
   it "returns a sequence of escaped bytes in lower case" do
-    Truffle::Runtime.dump_string('foo').should =~ /(\\x[0-9a-f][0-9a-f])+/
+    Truffle::Ropes.dump_string('foo').should =~ /(\\x[0-9a-f][0-9a-f])+/
   end
 
   it "returns correct bytes for the given string" do
-    Truffle::Runtime.dump_string('foo').should == "\\x66\\x6f\\x6f"
+    Truffle::Ropes.dump_string('foo').should == "\\x66\\x6f\\x6f"
   end
 
 end

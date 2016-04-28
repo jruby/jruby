@@ -22,12 +22,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.SpawnFileAction;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethod;
@@ -39,12 +37,6 @@ import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayStrategy;
 import org.jruby.truffle.core.binding.BindingNodes;
-import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.rope.RopeBuffer;
-import org.jruby.truffle.core.rope.RopeNodes;
-import org.jruby.truffle.core.rope.RopeNodesFactory;
-import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyRootNode;
@@ -145,25 +137,6 @@ public abstract class TruffleNodes {
 
     }
 
-    @CoreMethod(names = "dump_string", onSingleton = true, required = 1)
-    public abstract static class DumpStringNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(string)")
-        public DynamicObject dumpString(DynamicObject string) {
-            final StringBuilder builder = new StringBuilder();
-
-            final Rope rope = StringOperations.rope(string);
-
-            for (int i = 0; i < rope.byteLength(); i++) {
-                builder.append(String.format("\\x%02x", rope.get(i)));
-            }
-
-            return createString(StringOperations.encodeRope(builder.toString(), UTF8Encoding.INSTANCE));
-        }
-
-    }
-
     @CoreMethod(names = "simple_shell", onSingleton = true, unsafe = UnsafeGroup.IO)
     public abstract static class SimpleShellNode extends CoreMethodArrayArgumentsNode {
 
@@ -171,18 +144,6 @@ public abstract class TruffleNodes {
         @Specialization
         public DynamicObject simpleShell() {
             new SimpleShell(getContext()).run(getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), this);
-            return nil();
-        }
-
-    }
-
-    @CoreMethod(names = "debug_print", onSingleton = true, required = 1, unsafe = UnsafeGroup.IO)
-    public abstract static class DebugPrintNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(string)")
-        public DynamicObject debugPrint(DynamicObject string) {
-            System.err.println(string.toString());
             return nil();
         }
 
@@ -209,66 +170,6 @@ public abstract class TruffleNodes {
 
         private boolean isAsciiPrintable(char c) {
             return c >= 32 && c <= 126 || c == '\n' || c == '\t';
-        }
-
-    }
-
-    @CoreMethod(names = "convert_to_mutable_rope", onSingleton = true, required = 1)
-    public abstract static class ConvertToMutableRope extends CoreMethodArrayArgumentsNode {
-
-        @Specialization(guards = "isRubyString(string)")
-        public DynamicObject convertToMutableRope(DynamicObject string) {
-            final RopeBuffer ropeBuffer = new RopeBuffer(StringOperations.rope(string));
-            StringOperations.setRope(string, ropeBuffer);
-
-            return string;
-        }
-    }
-
-    @CoreMethod(names = "debug_print_rope", onSingleton = true, required = 1, optional = 1, unsafe = UnsafeGroup.IO)
-    public abstract static class DebugPrintRopeNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode;
-
-        public DebugPrintRopeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            debugPrintRopeNode = RopeNodesFactory.DebugPrintRopeNodeGen.create(null, null, null);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(string)")
-        public DynamicObject debugPrintDefault(DynamicObject string, NotProvided printString) {
-            return debugPrint(string, true);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(string)")
-        public DynamicObject debugPrint(DynamicObject string, boolean printString) {
-            System.err.println("Legend: ");
-            System.err.println("BN = Bytes Null? (byte[] not yet populated)");
-            System.err.println("BL = Byte Length");
-            System.err.println("CL = Character Length");
-            System.err.println("CR = Code Range");
-            System.err.println("O = Offset (SubstringRope only)");
-            System.err.println("T = Times (RepeatingRope only)");
-            System.err.println("D = Depth");
-            System.err.println("LD = Left Depth (ConcatRope only)");
-            System.err.println("RD = Right Depth (ConcatRope only)");
-
-            return debugPrintRopeNode.executeDebugPrint(StringOperations.rope(string), 0, printString);
-        }
-
-    }
-
-    @CoreMethod(names = "flatten_rope", onSingleton = true, required = 1)
-    public abstract static class FlattenRopeNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization(guards = "isRubyString(string)")
-        public DynamicObject flattenRope(DynamicObject string,
-                                         @Cached("create()") RopeNodes.FlattenNode flattenNode) {
-            final Rope flattened = flattenNode.executeFlatten(StringOperations.rope(string));
-
-            return createString(flattened);
         }
 
     }
@@ -493,19 +394,6 @@ public abstract class TruffleNodes {
         @Specialization(guards = "isRubyString(file)")
         public boolean load(VirtualFrame frame, DynamicObject file, NotProvided wrap, @Cached("create()") IndirectCallNode callNode) {
             return load(frame, file, false, callNode);
-        }
-    }
-    /*
-     * Truffle.create_simple_string creates a string 'test' without any part of the string escaping. Useful
-     * for testing compilation of String becuase most other ways to construct a string can currently escape.
-     */
-
-    @CoreMethod(names = "create_simple_string", onSingleton = true)
-    public abstract static class CreateSimpleStringNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject createSimpleString() {
-            return createString(RopeOperations.create(new byte[]{'t', 'e', 's', 't'}, UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
         }
     }
 

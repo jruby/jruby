@@ -6,36 +6,36 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative '../../../../ruby/spec_helper'
+require_relative '../../../ruby/spec_helper'
 
-describe "Truffle::Runtime.java_class_of" do
+describe "Truffle.java_class_of" do
 
   it "returns a String" do
-    Truffle::Runtime.java_class_of(14).should be_kind_of(String)
+    Truffle.java_class_of(14).should be_kind_of(String)
   end
 
   it "returns 'Boolean' for true" do
-    Truffle::Runtime.java_class_of(true).should == 'Boolean'
+    Truffle.java_class_of(true).should == 'Boolean'
   end
 
   it "returns 'Boolean' for false" do
-    Truffle::Runtime.java_class_of(false).should == 'Boolean'
+    Truffle.java_class_of(false).should == 'Boolean'
   end
 
   it "returns 'Integer' for a small Fixnum" do
-    Truffle::Runtime.java_class_of(14).should == 'Integer'
+    Truffle.java_class_of(14).should == 'Integer'
   end
 
   it "returns 'Long' for a large Fixnum" do
-    Truffle::Runtime.java_class_of(0xffffffffffff).should == 'Long'
+    Truffle.java_class_of(0xffffffffffff).should == 'Long'
   end
 
   it "returns 'Double' for a Float" do
-    Truffle::Runtime.java_class_of(3.14).should == 'Double'
+    Truffle.java_class_of(3.14).should == 'Double'
   end
 
   it "returns 'DynamicObject*' for a String" do
-    Truffle::Runtime.java_class_of('test').start_with?('DynamicObject').should be_true
+    Truffle.java_class_of('test').start_with?('DynamicObject').should be_true
   end
 
 end

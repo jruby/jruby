@@ -8,7 +8,7 @@
 
 require_relative '../../../../ruby/spec_helper'
 
-describe "Truffle::Runtime.debug_print" do
+describe "Truffle::Ropes.debug_print" do
   
   it "needs to be reviewed for spec completeness"
 
