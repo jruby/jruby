@@ -6,12 +6,12 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative '../../../ruby/spec_helper'
+require_relative '../../../../ruby/spec_helper'
 
-describe "Truffle.source_of_caller" do
+describe "Truffle::Boot.source_of_caller" do
 
   def source_of_caller
-    Truffle.source_of_caller
+    Truffle::Boot.source_of_caller
   end
 
   #it "returns nil if there is no caller"
@@ -27,7 +27,7 @@ describe "Truffle.source_of_caller" do
   
   it "works through #send" do
     x = 14
-    Truffle.send(:source_of_caller).should == __FILE__
+    Truffle::Boot.send(:source_of_caller).should == __FILE__
   end
 
 end

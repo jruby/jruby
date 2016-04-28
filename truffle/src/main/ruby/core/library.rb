@@ -58,7 +58,7 @@ module Rubinius::FFI::Library
     # The difference is we already have the methods available in our version of
     # the POSIX class
 
-    caller = Truffle::Binding.of_caller
+    caller = Truffle::Boot.source_of_caller
 
     suffixes = ['ruby/truffle/rubysl/rubysl-socket/lib/rubysl/socket.rb', 'core/rubinius/platform/env.rb']
 

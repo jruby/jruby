@@ -11,8 +11,11 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -33,6 +36,7 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.ByteList;
+import org.jruby.util.Memo;
 
 import java.io.File;
 import java.io.IOException;
@@ -195,6 +199,37 @@ public abstract class TruffleBootNodes {
 
             return true;
         }
+    }
+
+    @CoreMethod(names = "source_of_caller", isModuleFunction = true)
+    public abstract static class SourceOfCallerNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject sourceOfCaller() {
+            final Memo<Integer> frameCount = new Memo<>(0);
+
+            final String source = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<String>() {
+
+                @Override
+                public String visitFrame(FrameInstance frameInstance) {
+                    if (frameCount.get() == 2) {
+                        return frameInstance.getCallNode().getEncapsulatingSourceSection().getSource().getName();
+                    } else {
+                        frameCount.set(frameCount.get() + 1);
+                        return null;
+                    }
+                }
+
+            });
+
+            if (source == null) {
+                return nil();
+            }
+
+            return createString(StringOperations.encodeRope(source, UTF8Encoding.INSTANCE));
+        }
+
     }
 
 }
