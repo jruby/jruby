@@ -41,7 +41,7 @@ public class RubyObjectType extends ObjectType {
 
     @Override
     public ForeignAccess getForeignAccessFactory(DynamicObject object) {
-        return RubyObjectTypeForeign.ACCESS;
+        return null;
     }
 
     public static boolean isInstance(TruffleObject object) {
