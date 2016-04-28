@@ -78,7 +78,7 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
-    - env: JT=check_ambiguous_arguments
+    - env: JT=check_ambiguous_arguments SKIP_BUILD=true
       jdk: oraclejdk8
   allow_failures:
     - env: PHASE='-Prake -Dtask=test:mri:fullint'
