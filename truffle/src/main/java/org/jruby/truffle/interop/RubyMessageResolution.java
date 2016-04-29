@@ -199,19 +199,13 @@ public class RubyMessageResolution {
                 final Rope rope = Layouts.STRING.getRope(object);
 
                 if (emptyProfile.profile(rope.byteLength() == 0)) {
-                    unsuported();
-                    throw new IllegalStateException();
+                    throw UnsupportedMessageException.raise(Message.UNBOX);
                 } else {
                     return rope.get(0);
                 }
             } else {
                 return object;
             }
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        private void unsuported() {
-            UnsupportedMessageException.raise(Message.UNBOX);
         }
 
     }
