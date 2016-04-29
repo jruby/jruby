@@ -96,7 +96,7 @@ public class RubyMessageResolution {
     @Resolve(message = "HAS_SIZE")
     public static abstract class ForeignHasSizeNode extends Node {
 
-        protected Object access(VirtualFrame frame, DynamicObject object) {
+        protected Object access(DynamicObject object) {
             return RubyGuards.isRubyArray(object) || RubyGuards.isRubyHash(object) || RubyGuards.isRubyString(object);
         }
 
@@ -128,7 +128,7 @@ public class RubyMessageResolution {
     @Resolve(message = "IS_BOXED")
     public static abstract class ForeignIsBoxedNode extends Node {
 
-        protected Object access(VirtualFrame frame, DynamicObject object) {
+        protected Object access(DynamicObject object) {
             return RubyGuards.isRubyString(object) && StringOperations.rope(object).byteLength() == 1;
         }
 
@@ -149,7 +149,7 @@ public class RubyMessageResolution {
         @Child private Node findContextNode;
         @CompilationFinal RubyContext context;
 
-        protected Object access(VirtualFrame frame, DynamicObject object) {
+        protected Object access(DynamicObject object) {
             return object == getContext().getCoreLibrary().getNilObject();
         }
 
@@ -194,7 +194,7 @@ public class RubyMessageResolution {
         private final ConditionProfile stringProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile emptyProfile = ConditionProfile.createBinaryProfile();
 
-        protected Object access(VirtualFrame frame, DynamicObject object) {
+        protected Object access(DynamicObject object) {
             if (stringProfile.profile(RubyGuards.isRubyString(object))) {
                 final Rope rope = Layouts.STRING.getRope(object);
 
