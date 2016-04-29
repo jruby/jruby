@@ -17,8 +17,8 @@ suite = {
     ],
   },
   "libraries": {
-    "RUBY_CORE": {
-        "path": "lib/jruby.jar",
+    "RUBY_COMPLETE": {
+        "path": "maven/jruby-complete/target/jruby-complete-graal-vm.jar",
         "sha1": "NOCHECK",
         "optional" :"true",
         "license" : "EPL"
@@ -34,21 +34,24 @@ suite = {
 
     # ------------- Projects -------------
 
-    "jruby-truffle" : {
-      "subDir" : "truffle/target/classes",
+    "jruby-ruby" : {
+      "subDir" : "lib/ruby",
       "class" : "MavenProject",
-      "sourceDirs" : ["src/main/java"],
+      "prefix" : "lib/ruby/",
       "dependencies": [
         "truffle:TRUFFLE_API",
         "truffle:TRUFFLE_DEBUG",
       ],
     },
-    "jruby-lib" : {
-      "subDir" : "lib",
+    "jruby-lib-jni" : {
+      "subDir" : "lib/jni",
       "class" : "MavenProject",
-      "sourceDirs" : ["src/main/java"],
-      "dependencies": [],
-    },
+      "prefix" : "lib/jni/",
+      "dependencies": [
+        "truffle:TRUFFLE_API",
+        "truffle:TRUFFLE_DEBUG",
+    ],
+},
 
   },
   "licenses" : {
@@ -63,7 +66,10 @@ suite = {
 
     "RUBY": {
         "mainClass": "org.jruby.Main",
-        "dependencies": ["jruby-truffle", "RUBY_CORE", "RUBY_TRUFFLE"],
+        "dependencies": [
+          "RUBY_COMPLETE",
+          "RUBY_TRUFFLE"
+        ],
         "exclude" : [
           "truffle:JLINE",
         ],
@@ -76,12 +82,16 @@ suite = {
     },
     "RUBY-ZIP": {
         "dependencies": [
-            "jruby-lib",
+            "jruby-ruby",
+            "jruby-lib-jni",
         ],
         "exclude" : [
           "truffle:JLINE",
         ],
-        "distDependencies" : [],
+        "distDependencies": [
+            "truffle:TRUFFLE_API",
+            "truffle:TRUFFLE_DEBUG",
+        ],
         "description" : "JRuby+Truffle Native Libs",
         "license": "EPL"
     },

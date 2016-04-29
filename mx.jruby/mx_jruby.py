@@ -11,6 +11,7 @@ class MavenProject(mx.Project):
         mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
         self.javaCompliance = "1.7"
         self.subdir = args['subDir']
+        self.prefix = args['prefix']
 
     def output_dir(self):
         return os.path.join(_suite.dir, self.subdir)
@@ -29,6 +30,10 @@ class MavenProject(mx.Project):
 
     def isJavaProject(self):
         return True
+
+    def archive_prefix(self):
+        return self.prefix
+
 
 class MavenBuildTask(mx.BuildTask):
     def __init__(self, project, args, vmbuild, vm):
@@ -79,10 +84,10 @@ class MavenBuildTask(mx.BuildTask):
         mx.run_maven(['-Pcomplete', '-DskipTests', '-Dtruffle.version=' + truffle_commit], cwd=rubyDir)
         mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
-        shutil.rmtree(os.path.join(_suite.dir, "lib", "target"), True)
-        shutil.rmtree(os.path.join(_suite.dir, 'lib', 'lib', 'jni'), True)
-        shutil.copytree(os.path.join(_suite.dir, 'lib', 'jni'), os.path.join(_suite.dir, 'lib', 'lib', 'jni'))
-        shutil.rmtree(os.path.join(_suite.dir, 'lib', 'jni'), True)
+#        shutil.rmtree(os.path.join(_suite.dir, "lib", "target"), True)
+#        shutil.rmtree(os.path.join(_suite.dir, 'lib', 'lib', 'jni'), True)
+#        shutil.copytree(os.path.join(_suite.dir, 'lib', 'jni'), os.path.join(_suite.dir, 'lib', 'lib', 'jni'))
+#        shutil.rmtree(os.path.join(_suite.dir, 'lib', 'jni'), True)
 
     def clean(self, forBuild=False):
         if forBuild:
