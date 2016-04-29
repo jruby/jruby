@@ -29,22 +29,22 @@ public abstract class ObjSpaceNodes {
 
         @Specialization(guards = "isRubyArray(object)")
         public int memsizeOfArray(DynamicObject object) {
-            return 1 + object.getShape().getPropertyListInternal(false).size() + Layouts.ARRAY.getSize(object);
+            return memsizeOfObject(object) + Layouts.ARRAY.getSize(object);
         }
 
         @Specialization(guards = "isRubyHash(object)")
         public int memsizeOfHash(DynamicObject object) {
-            return 1 + object.getShape().getPropertyListInternal(false).size() + Layouts.HASH.getSize(object);
+            return memsizeOfObject(object) + Layouts.HASH.getSize(object);
         }
 
         @Specialization(guards = "isRubyString(object)")
         public int memsizeOfString(DynamicObject object) {
-            return 1 + object.getShape().getPropertyListInternal(false).size() + StringOperations.rope(object).byteLength();
+            return memsizeOfObject(object) + StringOperations.rope(object).byteLength();
         }
 
         @Specialization(guards = "isRubyMatchData(object)")
         public int memsizeOfMatchData(DynamicObject object) {
-            return 1 + object.getShape().getPropertyListInternal(false).size() + Layouts.MATCH_DATA.getValues(object).length;
+            return memsizeOfObject(object) + Layouts.MATCH_DATA.getValues(object).length;
         }
 
         @Specialization(guards = {
