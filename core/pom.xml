@@ -41,7 +41,7 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby.launch.memory>1024M</jruby.launch.memory>
     <jruby.compile.memory>2G</jruby.compile.memory>
     <version.ruby.major>2.3</version.ruby.major>
-    <unsafe.version>8.92</unsafe.version>
+    <unsafe.version>8.92.1-SNAPSHOT</unsafe.version>
     <release.dir>release</release.dir>
     <lib.dir>lib</lib.dir>
     <rails.dir>${test.dir}/rails</rails.dir>
