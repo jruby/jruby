@@ -65,7 +65,7 @@ public abstract class ArrayStrategy {
         CompilerAsserts.neverPartOfCompilation();
 
         if (!RubyGuards.isRubyArray(array)) {
-            return NullArrayStrategy.INSTANCE;
+            return FallbackArrayStrategy.INSTANCE;
         }
 
         if (ArrayGuards.isIntArray(array)) {
@@ -78,7 +78,7 @@ public abstract class ArrayStrategy {
             return ObjectArrayStrategy.INSTANCE;
         } else {
             assert ArrayGuards.isNullArray(array);
-            return NullArrayStrategy.INSTANCE;
+            return FallbackArrayStrategy.INSTANCE;
         }
     }
 
@@ -322,11 +322,11 @@ public abstract class ArrayStrategy {
 
     }
 
-    // Null-pattern strategy
+    // Fallback strategy
 
-    private static class NullArrayStrategy extends ArrayStrategy {
+    private static class FallbackArrayStrategy extends ArrayStrategy {
 
-        static final ArrayStrategy INSTANCE = new NullArrayStrategy();
+        static final ArrayStrategy INSTANCE = new FallbackArrayStrategy();
 
         public boolean accepts(Object value) {
             return false;
