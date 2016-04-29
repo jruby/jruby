@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.language;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
@@ -34,7 +33,6 @@ import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.parser.ParserContext;
-import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 

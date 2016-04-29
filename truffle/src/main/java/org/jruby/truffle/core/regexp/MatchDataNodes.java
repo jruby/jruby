@@ -30,7 +30,6 @@ import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.cast.ToIntNode;
-import org.jruby.truffle.core.cast.ToIntNodeGen;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringGuards;
 import org.jruby.truffle.core.string.StringOperations;

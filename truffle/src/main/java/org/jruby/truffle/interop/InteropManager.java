@@ -10,9 +10,7 @@
 package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.RubyGuards;
 
 import java.util.HashMap;
 import java.util.Map;
