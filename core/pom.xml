@@ -169,7 +169,7 @@
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>unsafe-mock</artifactId>
-      <version>8.0</version>
+      <version>${unsafe.version}</version>
       <type>jar</type>
       <scope>provided</scope>
     </dependency>
@@ -210,7 +210,8 @@
   </dependencies>
   <properties>
     <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
-    <unsafe.jar>${settings.localRepository}/com/headius/unsafe-mock/8.0/unsafe-mock-8.0.jar</unsafe.jar>
+    <unsafe.version>8.92</unsafe.version>
+    <unsafe.jar>${settings.localRepository}/com/headius/unsafe-mock/${unsafe.version}/unsafe-mock-${unsafe.version}.jar</unsafe.jar>
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     <build.date>${maven.build.timestamp}</build.date>
     <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
