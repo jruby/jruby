@@ -27,6 +27,9 @@ class MavenProject(mx.Project):
     def getBuildTask(self, args):
         return MavenBuildTask(self, args, None, None)
 
+    def isJavaProject(self):
+        return True
+
 class MavenBuildTask(mx.BuildTask):
     def __init__(self, project, args, vmbuild, vm):
         mx.BuildTask.__init__(self, project, args, 1)
