@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.extra;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -29,7 +28,7 @@ public abstract class TruffleGraalNodes {
 
         @Specialization
         public DynamicObject assertConstant(Object value) {
-            throw new RaiseException(coreExceptions().runtimeError("Truffle::Graal.assert_constant can only be called lexically", this));
+            throw new RaiseException(coreExceptions().runtimeErrorNotConstant(this));
         }
 
     }
@@ -37,10 +36,9 @@ public abstract class TruffleGraalNodes {
     @CoreMethod(names = "assert_not_compiled", onSingleton = true)
     public abstract static class AssertNotCompiledNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject assertNotCompiled() {
-            throw new RaiseException(coreExceptions().runtimeError("Truffle::Graal.assert_not_compiled can only be called lexically", this));
+            throw new RaiseException(coreExceptions().runtimeErrorCompiled(this));
         }
 
     }

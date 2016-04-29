@@ -125,6 +125,14 @@ public class CoreExceptions {
         return runtimeError(String.format("can't modify frozen %s", className), currentNode);
     }
 
+    public DynamicObject runtimeErrorNotConstant(Node currentNode) {
+        return runtimeError("Truffle::Graal.assert_constant can only be called lexically", currentNode);
+    }
+
+    public DynamicObject runtimeErrorCompiled(Node currentNode) {
+        return runtimeError("Truffle::Graal.assert_not_compiled can only be called lexically", currentNode);
+    }
+
     @TruffleBoundary
     public DynamicObject runtimeError(String message, Node currentNode) {
         return ExceptionOperations.createRubyException(
