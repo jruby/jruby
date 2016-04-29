@@ -18,10 +18,10 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 
-@CoreClass(name = "Truffle::Attachments")
-public abstract class AttachmentsNodes {
+@CoreClass(name = "Truffle::Attachments::Internal")
+public abstract class AttachmentsInternalNodes {
 
-    @CoreMethod(names = "attach_internal", onSingleton = true, required = 2, needsBlock = true)
+    @CoreMethod(names = "attach", onSingleton = true, required = 2, needsBlock = true)
     public abstract static class AttachNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
@@ -32,7 +32,7 @@ public abstract class AttachmentsNodes {
 
     }
 
-    @CoreMethod(names = "detach_internal", onSingleton = true, required = 1)
+    @CoreMethod(names = "detach", onSingleton = true, required = 1)
     public abstract static class DetachNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
