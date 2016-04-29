@@ -27,12 +27,13 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyObjectType;
 import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 
 @MessageResolution(
-        receiverType = DynamicObject.class,
+        receiverType = RubyObjectType.class,
         language = RubyLanguage.class
 )
 public class RubyMessageResolution {
@@ -40,14 +41,14 @@ public class RubyMessageResolution {
     @CanResolve
     public abstract static class Check extends Node {
 
-        protected static boolean test(DynamicObject receiver) {
+        protected static boolean test(TruffleObject receiver) {
             return RubyGuards.isRubyBasicObject(receiver);
         }
 
     }
 
     @Resolve(message = "EXECUTE")
-    public static final class ForeignExecuteNode extends Node {
+    public static abstract class ForeignExecuteNode extends Node {
 
         @Child private Node findContextNode;
         @Child private ForeignExecuteHelperNode executeMethodNode;
@@ -70,7 +71,7 @@ public class RubyMessageResolution {
     }
 
     @Resolve(message = "GET_SIZE")
-    public static final class ForeignGetSizeNode extends Node {
+    public static abstract class ForeignGetSizeNode extends Node {
 
         @Child private Node findContextNode;
         @Child private DispatchHeadNode dispatchNode;
@@ -93,16 +94,16 @@ public class RubyMessageResolution {
     }
 
     @Resolve(message = "HAS_SIZE")
-    public static final class ForeignHasSizeNode extends Node {
+    public static abstract class ForeignHasSizeNode extends Node {
 
-        public Object access(VirtualFrame frame, DynamicObject object) {
+        protected Object access(VirtualFrame frame, DynamicObject object) {
             return RubyGuards.isRubyArray(object) || RubyGuards.isRubyHash(object) || RubyGuards.isRubyString(object);
         }
 
     }
 
     @Resolve(message = "INVOKE")
-    public static final class ForeignInvokeNode extends Node {
+    public static abstract class ForeignInvokeNode extends Node {
 
         @Child private Node findContextNode;
         @Child private DispatchHeadNode dispatchHeadNode;
@@ -125,7 +126,7 @@ public class RubyMessageResolution {
     }
 
     @Resolve(message = "IS_BOXED")
-    public static final class ForeignIsBoxedNode extends Node {
+    public static abstract class ForeignIsBoxedNode extends Node {
 
         protected Object access(VirtualFrame frame, DynamicObject object) {
             return RubyGuards.isRubyString(object) && StringOperations.rope(object).byteLength() == 1;
@@ -134,7 +135,7 @@ public class RubyMessageResolution {
     }
 
     @Resolve(message = "IS_EXECUTABLE")
-    public static final class ForeignIsExecutableNode extends Node {
+    public static abstract class ForeignIsExecutableNode extends Node {
 
         protected Object access(VirtualFrame frame, DynamicObject object) {
             return RubyGuards.isRubyMethod(object) || RubyGuards.isRubyProc(object);
@@ -143,7 +144,7 @@ public class RubyMessageResolution {
     }
 
     @Resolve(message = "IS_NULL")
-    public static final class ForeignIsNullNode extends Node {
+    public static abstract class ForeignIsNullNode extends Node {
 
         @Child private Node findContextNode;
         @CompilationFinal RubyContext context;
@@ -165,7 +166,7 @@ public class RubyMessageResolution {
     }
 
     @Resolve(message = "READ")
-    public static final class ForeignReadNode extends Node {
+    public static abstract class ForeignReadNode extends Node {
 
         @Child private Node findContextNode;
         @Child private ForeignReadStringCachingHelperNode helperNode;
@@ -188,7 +189,7 @@ public class RubyMessageResolution {
     }
 
     @Resolve(message = "UNBOX")
-    public static final class ForeignUnboxNode extends Node {
+    public static abstract class ForeignUnboxNode extends Node {
 
         private final ConditionProfile stringProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile emptyProfile = ConditionProfile.createBinaryProfile();
@@ -216,7 +217,7 @@ public class RubyMessageResolution {
     }
 
     @Resolve(message = "WRITE")
-    public static final class ForeignWriteNode extends Node {
+    public static abstract class ForeignWriteNode extends Node {
 
         @Child private Node findContextNode;
         @Child private ForeignWriteStringCachingHelperNode helperNode;

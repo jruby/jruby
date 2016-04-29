@@ -106,7 +106,7 @@ DO NOT MODIFIY - GENERATED CODE
                 <annotationProcessor>com.oracle.truffle.object.dsl.processor.LayoutProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.InstrumentableProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
-                <annotationProcessor>com.oracle.truffle.dsl.processor.InteropProcessor</annotationProcessor>
+                <annotationProcessor>com.oracle.truffle.dsl.processor.interop.InteropDSLProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor</annotationProcessor>
               </annotationProcessors>

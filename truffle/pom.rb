@@ -45,7 +45,7 @@ project 'JRuby Truffle' do
                    'annotationProcessors' => [ 'com.oracle.truffle.object.dsl.processor.LayoutProcessor',
                                                'com.oracle.truffle.dsl.processor.InstrumentableProcessor',
                                                'com.oracle.truffle.dsl.processor.TruffleProcessor',
-                                               'com.oracle.truffle.dsl.processor.InteropProcessor',
+                                               'com.oracle.truffle.dsl.processor.interop.InteropDSLProcessor',
                                                'com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor',
                                                'com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor', ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
