@@ -2122,59 +2122,31 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode zipInternalCall;
 
-        @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isIntArray(other)", "others.length == 0" })
+        @Specialization(guards = {
+                "isRubyArray(other)", "aStrategy.matches(array)", "bStrategy.matches(other)", "others.length == 0"
+        }, limit = "ARRAY_STRATEGIES")
         public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others, NotProvided block,
-                @Cached("createBinaryProfile()") ConditionProfile sameLengthProfile) {
-            final Object[] a = (Object[]) getStore(array);
+                @Cached("of(array)") ArrayStrategy aStrategy,
+                @Cached("of(other)") ArrayStrategy bStrategy,
+                @Cached("aStrategy.generalize(bStrategy)") ArrayStrategy generalized,
+                @Cached("createBinaryProfile()") ConditionProfile bNotSmallerProfile) {
+            final ArrayMirror a = aStrategy.newMirror(array);
+            final ArrayMirror b = bStrategy.newMirror(other);
 
-            final int[] b = (int[]) getStore(other);
-            final int bLength = getSize(other);
-
+            final int bSize = getSize(other);
             final int zippedLength = getSize(array);
             final Object[] zipped = new Object[zippedLength];
 
-            if (sameLengthProfile.profile(zippedLength == bLength)) {
-                for (int n = 0; n < zippedLength; n++) {
-                    zipped[n] = createArray(getContext(), new Object[] { a[n], b[n] }, 2);
-                }
-            } else {
-                for (int n = 0; n < zippedLength; n++) {
-                    if (n < bLength) {
-                        zipped[n] = createArray(getContext(), new Object[] { a[n], b[n] }, 2);
-                    } else {
-                        zipped[n] = createArray(getContext(), new Object[] { a[n], nil() }, 2);
-                    }
+            for (int n = 0; n < zippedLength; n++) {
+                if (bNotSmallerProfile.profile(n < bSize)) {
+                    final ArrayMirror pair = generalized.newArray(2);
+                    pair.set(0, a.get(n));
+                    pair.set(1, b.get(n));
+                    zipped[n] = createArray(getContext(), pair.getArray(), 2);
+                } else {
+                    zipped[n] = createArray(getContext(), new Object[] { a.get(n), nil() }, 2);
                 }
             }
-
-            return createArray(getContext(), zipped, zippedLength);
-        }
-
-        @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isObjectArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others, NotProvided block,
-                @Cached("createBinaryProfile()") ConditionProfile sameLengthProfile) {
-            final Object[] a = (Object[]) getStore(array);
-
-            final Object[] b = (Object[]) getStore(other);
-            final int bLength = getSize(other);
-
-            final int zippedLength = getSize(array);
-            final Object[] zipped = new Object[zippedLength];
-
-            if (sameLengthProfile.profile(zippedLength == bLength)) {
-                for (int n = 0; n < zippedLength; n++) {
-                    zipped[n] = createArray(getContext(), new Object[] { a[n], b[n] }, 2);
-                }
-            } else {
-                for (int n = 0; n < zippedLength; n++) {
-                    if (n < bLength) {
-                        zipped[n] = createArray(getContext(), new Object[] { a[n], b[n] }, 2);
-                    } else {
-                        zipped[n] = createArray(getContext(), new Object[] { a[n], nil() }, 2);
-                    }
-                }
-            }
-
 
             return createArray(getContext(), zipped, zippedLength);
         }
@@ -2206,7 +2178,7 @@ public abstract class ArrayNodes {
         }
 
         protected static boolean fallback(DynamicObject array, DynamicObject other, Object[] others) {
-            return !ArrayGuards.isObjectArray(array) || ArrayGuards.isNullArray(other) || ArrayGuards.isLongArray(other) || others.length > 0;
+            return ArrayGuards.isNullArray(array) || ArrayGuards.isNullArray(other) || others.length > 0;
         }
 
     }
