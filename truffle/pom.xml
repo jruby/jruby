@@ -136,10 +136,8 @@ DO NOT MODIFIY - GENERATED CODE
           <verbose>false</verbose>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
-          <source>${base.java.version}</source>
-          <source>1.7</source>
-          <target>${base.javac.version}</target>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
       </plugin>

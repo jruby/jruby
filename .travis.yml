@@ -46,13 +46,6 @@ env:
     - PHASE='-Prake -Dtask=spec:jruby'
     - PHASE='-Prake -Dtask=spec:jrubyc'
     - PHASE='-Prake -Dtask=spec:profiler'
-    - JT='test specs :command_line'
-    - JT='test specs :language'
-    - JT='test specs :core'
-    - JT='test specs :library'
-    - JT='test specs :truffle'
-    - JT='test integration fast'
-    - JT='test integration long' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
 
 matrix:
   include:
@@ -78,11 +71,27 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
+    # JRuby+Truffle needs Java 8
+    - env: JT='test specs :command_line'
+      jdk: oraclejdk8
+    - env: JT='test specs :language'
+      jdk: oraclejdk8
+    - env: JT='test specs :core'
+      jdk: oraclejdk8
+    - env: JT='test specs :library'
+      jdk: oraclejdk8
+    - env: JT='test specs :truffle'
+      jdk: oraclejdk8
+    - env: JT='test integration fast'
+      jdk: oraclejdk8
+    - env: JT='test integration long' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
+      jdk: oraclejdk8
     - env: JT=check_ambiguous_arguments SKIP_BUILD=true
       jdk: oraclejdk8
   allow_failures:
     - env: PHASE='-Prake -Dtask=test:mri:fullint'
     - env: JT='test mri'
+      jdk: oraclejdk8
     - env: PHASE='-Pj2ee --projects !truffle'
       jdk: oraclejdk7
     - env: JT='test integration long' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
@@ -103,8 +112,12 @@ branches:
     - ruby-2.3
 
 script: tool/travis_runner.sh
-install:
-  - if [ -z "$SKIP_BUILD" ]; then travis_retry ./mvnw -Pbootstrap clean install -B -Dinvoker.skip -Dmaven.test.skip; fi
+install: |
+  if [ -n "$PHASE" ]; then
+    travis_retry ./mvnw -Pbootstrap clean install -B --projects '!truffle' -Dinvoker.skip -Dmaven.test.skip;
+  else
+    if [ -z "$SKIP_BUILD" ]; then travis_retry ./mvnw package -B -Dinvoker.skip -Dmaven.test.skip; fi
+  fi
 
 notifications:
   irc:

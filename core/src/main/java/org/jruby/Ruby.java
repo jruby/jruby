@@ -912,6 +912,14 @@ public final class Ruby implements Constantizable {
     private JRubyTruffleInterface loadTruffle() {
         Main.printTruffleTimeMetric("before-load-context");
 
+        String javaVersion = System.getProperty("java.version");
+        String[] parts = javaVersion.split("\\D+");
+        int firstPart = Integer.valueOf(parts[0]);
+        if (!(firstPart >= 9 || Integer.valueOf(parts[1]) >= 8)) {
+            System.err.println("JRuby+Truffle needs Java 8 to run (found " + javaVersion + ").");
+            System.exit(1);
+        }
+
         final Class<?> clazz;
 
         try {
