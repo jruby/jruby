@@ -114,7 +114,7 @@ branches:
 script: tool/travis_runner.sh
 install: |
   if [ -n "$PHASE" ]; then
-    travis_retry ./mvnw -Pbootstrap clean install -B --projects '!truffle' -Dinvoker.skip -Dmaven.test.skip;
+    travis_retry ./mvnw package -B --projects '!truffle' -Dinvoker.skip -Dmaven.test.skip;
   else
     if [ -z "$SKIP_BUILD" ]; then travis_retry ./mvnw package -B -Dinvoker.skip -Dmaven.test.skip; fi
   fi
