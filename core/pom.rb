@@ -13,7 +13,7 @@ project 'JRuby Core' do
               'tzdata.version' => '2013d',
               'tzdata.scope' => 'provided',
 
-              'unsafe.version' => '8.0',
+              'unsafe.version' => '8.92',
               'unsafe.jar' => '${settings.localRepository}/com/headius/unsafe-mock/${unsafe.version}/unsafe-mock-${unsafe.version}.jar',
 
               'maven.build.timestamp.format' => 'yyyy-MM-dd',
