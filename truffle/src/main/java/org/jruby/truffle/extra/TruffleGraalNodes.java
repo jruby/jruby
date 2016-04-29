@@ -46,7 +46,6 @@ public abstract class TruffleGraalNodes {
     @CoreMethod(names = "graal?", onSingleton = true)
     public abstract static class GraalNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public boolean graal() {
             return Graal.isGraal();
@@ -67,7 +66,6 @@ public abstract class TruffleGraalNodes {
     @CoreMethod(names = "version", onSingleton = true)
     public abstract static class GraalVersionNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject graalVersion() {
             return createString(StringOperations.encodeRope(Graal.getVersion(), UTF8Encoding.INSTANCE));

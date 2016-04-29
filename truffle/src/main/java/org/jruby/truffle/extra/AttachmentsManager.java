@@ -19,7 +19,6 @@ import com.oracle.truffle.api.instrumentation.ExecutionEventNodeFactory;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.RubyContext;
@@ -76,7 +75,8 @@ public class AttachmentsManager {
 
         @Override
         public void onEnter(VirtualFrame frame) {
-            callNode.call(frame, ProcOperations.packArguments(block, BindingNodes.createBinding(context, frame.materialize())));
+            callNode.call(frame,
+                    ProcOperations.packArguments(block, BindingNodes.createBinding(context, frame.materialize())));
         }
 
     }
