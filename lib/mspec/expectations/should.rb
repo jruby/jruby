@@ -5,7 +5,8 @@ class Object
     MSpec.actions :expectation, MSpec.current.state
     unless matcher.equal?(NO_MATCHER_GIVEN)
       unless matcher.matches?(self)
-        SpecExpectation.fail_with(*matcher.failure_message)
+        expected, actual = matcher.failure_message
+        SpecExpectation.fail_with(expected, actual)
       end
     else
       SpecPositiveOperatorMatcher.new(self)
@@ -17,7 +18,8 @@ class Object
     MSpec.actions :expectation, MSpec.current.state
     unless matcher.equal?(NO_MATCHER_GIVEN)
       if matcher.matches?(self)
-        SpecExpectation.fail_with(*matcher.negative_failure_message)
+        expected, actual = matcher.negative_failure_message
+        SpecExpectation.fail_with(expected, actual)
       end
     else
       SpecNegativeOperatorMatcher.new(self)

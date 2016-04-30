@@ -18,7 +18,7 @@ class BeComputedByFunctionMatcher
   def function_call
     function_call = "#{@function}"
     unless @arguments.empty?
-      function_call << "(#{@arguments.map { |x| x.inspect }.join(", ")})"
+      function_call = "#{function_call}(#{@arguments.map { |x| x.inspect }.join(", ")})"
     end
     function_call
   end
