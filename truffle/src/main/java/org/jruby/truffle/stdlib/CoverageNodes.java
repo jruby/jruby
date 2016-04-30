@@ -44,10 +44,6 @@ public abstract class CoverageNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject coverageResult() {
-            if (getContext().getCoverageManager() == null) {
-                throw new UnsupportedOperationException("coverage is disabled");
-            }
-
             final Map<Object, Object> converted = new HashMap<>();
 
             for (Map.Entry<Source, long[]> source : getContext().getCoverageManager().getCounts().entrySet()) {
