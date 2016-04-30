@@ -237,7 +237,7 @@ module Truffle
     # I think if the file can't be locked then we just silently ignore
     file.flock(File::LOCK_EX | File::LOCK_NB)
 
-    Truffle.at_exit true do
+    Truffle::Kernel.at_exit true do
       file.flock(File::LOCK_UN)
     end
 
