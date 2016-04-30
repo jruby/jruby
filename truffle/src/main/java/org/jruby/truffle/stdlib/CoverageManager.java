@@ -61,6 +61,7 @@ public class CoverageManager {
         bitmap.set(line.getLineNumber() - 1);
     }
 
+    @CompilerDirectives.TruffleBoundary
     public void enable() {
         if (enabled) {
             throw new UnsupportedOperationException();

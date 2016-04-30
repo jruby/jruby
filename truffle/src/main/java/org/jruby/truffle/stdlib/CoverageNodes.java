@@ -30,7 +30,6 @@ public abstract class CoverageNodes {
     @CoreMethod(names = "start", needsSelf = false)
     public abstract static class CoverageStartNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject coverageStart() {
             getContext().getCoverageManager().enable();
