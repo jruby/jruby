@@ -66,29 +66,29 @@ module Truffle
     def self.break(file = nil, line = nil, condition = nil)
       if line.nil?
         raise 'must specify both a file and a line, or neither' unless file.nil?
-        Truffle.simple_shell
+        Truffle::Debug.simple_shell
       elsif not condition.nil?
-        Truffle.attach file, line do |binding|
+        Truffle::Attachments.attach file, line do |binding|
           if binding.eval(condition)
-            Truffle.simple_shell
+            Truffle::Debug.simple_shell
           end
         end
       elsif block_given?
-        Truffle.attach file, line do |binding|
+        Truffle::Attachments.attach file, line do |binding|
           if yield binding
-            Truffle.simple_shell
+            Truffle::Debug.simple_shell
           end
         end
       else
-        Truffle.attach file, line do |binding|
-          Truffle.simple_shell
+        Truffle::Attachments.attach file, line do |binding|
+          Truffle::Debug.simple_shell
         end
       end
     end
 
     # Remove a breakpoint set in {#break}.
     def self.clear(file, line)
-      Truffle.detach file, line
+      Truffle::Attachments.detach file, line
     end
 
   end

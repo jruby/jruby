@@ -227,7 +227,7 @@ end
 
 ENV_JAVA = {}
 
-# Truffle.get_data is used by RubyContext#execute to prepare the DATA constant
+# The translator adds a call to Truffle.get_data to set up the DATA constant
 
 module Truffle
   def self.get_data(path, offset)
