@@ -20,7 +20,7 @@ class BeComputedByMatcher
   def method_call
     method_call = "#{@receiver.inspect}.#{@method}"
     unless @arguments.empty?
-      method_call << " from #{@arguments.map { |x| x.inspect }.join(", ")}"
+      method_call = "#{method_call} from #{@arguments.map { |x| x.inspect }.join(", ")}"
     end
     method_call
   end

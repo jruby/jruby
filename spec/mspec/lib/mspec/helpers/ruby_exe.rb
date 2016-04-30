@@ -108,7 +108,9 @@ class Object
       exe, *rest = cmd.split(" ")
 
       if File.file?(exe) and File.executable?(exe)
-        return [File.expand_path(exe), *rest].join(" ")
+        exe = File.expand_path(exe)
+        exe = exe.tr('/', '\\') if PlatformGuard.windows?
+        return [exe, *rest].join(" ")
       end
     end
     nil
