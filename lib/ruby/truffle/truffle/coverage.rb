@@ -7,5 +7,5 @@
 # GNU Lesser General Public License version 2.1
 
 module Coverage
-  include Truffle::Coverage
+  extend Truffle::Coverage
 end
