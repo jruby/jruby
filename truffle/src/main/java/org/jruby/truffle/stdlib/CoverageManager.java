@@ -30,7 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 public class CoverageManager {
-    public @interface LineTag {
+
+    public class LineTag {
     }
 
     public static final long NO_CODE = -1;
