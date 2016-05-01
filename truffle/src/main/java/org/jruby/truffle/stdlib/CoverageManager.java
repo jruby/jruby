@@ -136,7 +136,7 @@ public class CoverageManager {
     public void print(PrintStream out) {
         final int maxCountDigits = Long.toString(getMaxCount()).length();
 
-        final String countFormat = "% " + maxCountDigits + "d";
+        final String countFormat = "%" + maxCountDigits + "d";
 
         final char[] noCodeChars = new char[maxCountDigits];
         Arrays.fill(noCodeChars, ' ');
