@@ -138,7 +138,6 @@ public abstract class DigestNodes {
     @CoreMethod(names = "reset", onSingleton = true, required = 1)
     public abstract static class ResetNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject reset(DynamicObject digestObject) {
             DigestLayoutImpl.INSTANCE.getDigest(digestObject).reset();
