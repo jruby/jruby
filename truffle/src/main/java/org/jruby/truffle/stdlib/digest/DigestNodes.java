@@ -41,7 +41,7 @@ public abstract class DigestNodes {
     }
 
     private static DynamicObject createDigest(RubyContext context, DigestAlgorithm algorithm) {
-        return DigestLayoutImpl.INSTANCE.createDigest(
+        return Layouts.DIGEST.createDigest(
                 Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getDigestClass()),
                 getMessageDigestInstance(algorithm.getName()));
     }
@@ -101,7 +101,7 @@ public abstract class DigestNodes {
 
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject update(DynamicObject digestObject, DynamicObject message) {
-            final MessageDigest digest = DigestLayoutImpl.INSTANCE.getDigest(digestObject);
+            final MessageDigest digest = Layouts.DIGEST.getDigest(digestObject);
 
             RopeOperations.visitBytes(StringOperations.rope(message), new BytesVisitor() {
 
@@ -122,7 +122,7 @@ public abstract class DigestNodes {
 
         @Specialization
         public DynamicObject reset(DynamicObject digestObject) {
-            DigestLayoutImpl.INSTANCE.getDigest(digestObject).reset();
+            Layouts.DIGEST.getDigest(digestObject).reset();
             return digestObject;
         }
 
@@ -133,7 +133,7 @@ public abstract class DigestNodes {
 
         @Specialization
         public DynamicObject digest(DynamicObject digestObject) {
-            final MessageDigest digest = DigestLayoutImpl.INSTANCE.getDigest(digestObject);
+            final MessageDigest digest = Layouts.DIGEST.getDigest(digestObject);
 
             return createString(RopeOperations.create(
                     cloneAndDigest(digest), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID));
@@ -160,7 +160,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization
         public int digestLength(DynamicObject digestObject) {
-            return DigestLayoutImpl.INSTANCE.getDigest(digestObject).getDigestLength();
+            return Layouts.DIGEST.getDigest(digestObject).getDigestLength();
         }
 
     }

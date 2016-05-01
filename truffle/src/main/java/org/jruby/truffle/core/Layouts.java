@@ -82,6 +82,8 @@ import org.jruby.truffle.core.tracepoint.TracePointLayout;
 import org.jruby.truffle.core.tracepoint.TracePointLayoutImpl;
 import org.jruby.truffle.stdlib.BigDecimalLayout;
 import org.jruby.truffle.stdlib.BigDecimalLayoutImpl;
+import org.jruby.truffle.stdlib.digest.DigestLayout;
+import org.jruby.truffle.stdlib.digest.DigestLayoutImpl;
 import org.jruby.truffle.stdlib.psych.EmitterLayout;
 import org.jruby.truffle.stdlib.psych.EmitterLayoutImpl;
 
@@ -127,6 +129,7 @@ public abstract class Layouts {
     public static final AtomicReferenceLayout ATOMIC_REFERENCE = AtomicReferenceLayoutImpl.INSTANCE;
     public static final HandleLayout HANDLE = HandleLayoutImpl.INSTANCE;
     public static final TracePointLayout TRACE_POINT = TracePointLayoutImpl.INSTANCE;
+    public static final DigestLayout DIGEST = DigestLayoutImpl.INSTANCE;
 
     // Other standard identifiers
 

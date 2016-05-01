@@ -102,7 +102,6 @@ import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.stdlib.BigDecimalNodesFactory;
 import org.jruby.truffle.stdlib.CoverageNodesFactory;
-import org.jruby.truffle.stdlib.digest.DigestLayoutImpl;
 import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.EtcNodesFactory;
 import org.jruby.truffle.stdlib.ObjSpaceNodesFactory;
@@ -643,7 +642,7 @@ public class CoreLibrary {
         globalVariables = new GlobalVariables(nilObject);
 
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
-        Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, DigestLayoutImpl.INSTANCE.createDigestShape(digestClass, digestClass));
+        Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, Layouts.DIGEST.createDigestShape(digestClass, digestClass));
 
         // No need for new version since it's null before which is not cached
         assert Layouts.CLASS.getSuperclass(basicObjectClass) == null;
