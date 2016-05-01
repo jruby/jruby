@@ -31,24 +31,6 @@ import java.security.NoSuchAlgorithmException;
 @CoreClass(name = "Truffle::Digest")
 public abstract class DigestNodes {
 
-    private enum Algorithm {
-        MD5("MD5"),
-        SHA1("SHA1"),
-        SHA256("SHA-256"),
-        SHA384("SHA-384"),
-        SHA512("SHA-512");
-
-        private final String name;
-
-        Algorithm(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
     @TruffleBoundary
     private static MessageDigest getMessageDigestInstance(String name) {
         try {
@@ -58,7 +40,7 @@ public abstract class DigestNodes {
         }
     }
 
-    private static DynamicObject createDigest(RubyContext context, Algorithm algorithm) {
+    private static DynamicObject createDigest(RubyContext context, DigestAlgorithm algorithm) {
         return DigestLayoutImpl.INSTANCE.createDigest(
                 Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getDigestClass()),
                 getMessageDigestInstance(algorithm.getName()));
@@ -69,7 +51,7 @@ public abstract class DigestNodes {
 
         @Specialization
         public DynamicObject md5() {
-            return createDigest(getContext(), Algorithm.MD5);
+            return createDigest(getContext(), DigestAlgorithm.MD5);
         }
 
     }
@@ -79,7 +61,7 @@ public abstract class DigestNodes {
 
         @Specialization
         public DynamicObject sha1() {
-            return createDigest(getContext(), Algorithm.SHA1);
+            return createDigest(getContext(), DigestAlgorithm.SHA1);
         }
 
     }
@@ -89,7 +71,7 @@ public abstract class DigestNodes {
 
         @Specialization
         public DynamicObject sha256() {
-            return createDigest(getContext(), Algorithm.SHA256);
+            return createDigest(getContext(), DigestAlgorithm.SHA256);
         }
 
     }
@@ -99,7 +81,7 @@ public abstract class DigestNodes {
 
         @Specialization
         public DynamicObject sha384() {
-            return createDigest(getContext(), Algorithm.SHA384);
+            return createDigest(getContext(), DigestAlgorithm.SHA384);
         }
 
     }
@@ -109,7 +91,7 @@ public abstract class DigestNodes {
 
         @Specialization
         public DynamicObject sha512() {
-            return createDigest(getContext(), Algorithm.SHA512);
+            return createDigest(getContext(), DigestAlgorithm.SHA512);
         }
 
     }
