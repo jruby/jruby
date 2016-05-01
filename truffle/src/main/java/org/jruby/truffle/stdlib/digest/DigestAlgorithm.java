@@ -10,20 +10,25 @@
 package org.jruby.truffle.stdlib.digest;
 
 enum DigestAlgorithm {
-    MD5("MD5"),
-    SHA1("SHA1"),
-    SHA256("SHA-256"),
-    SHA384("SHA-384"),
-    SHA512("SHA-512");
+    MD5("MD5", 16),
+    SHA1("SHA1", 20),
+    SHA256("SHA-256", 32),
+    SHA384("SHA-384", 48),
+    SHA512("SHA-512", 64);
 
     private final String name;
+    private final int length;
 
-    DigestAlgorithm(String name) {
+    DigestAlgorithm(String name, int length) {
         this.name = name;
+        this.length = length;
     }
 
     public String getName() {
         return name;
     }
 
+    public int getLength() {
+        return length;
+    }
 }

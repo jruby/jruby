@@ -25,7 +25,10 @@ public interface DigestLayout extends BasicObjectLayout {
 
     DynamicObject createDigest(
             DynamicObjectFactory factory,
+            DigestAlgorithm algorithm,
             MessageDigest digest);
+
+    DigestAlgorithm getAlgorithm(DynamicObject object);
 
     MessageDigest getDigest(DynamicObject object);
 
