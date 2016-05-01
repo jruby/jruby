@@ -149,12 +149,17 @@ public abstract class DigestNodes {
     @CoreMethod(names = "digest", onSingleton = true, required = 1)
     public abstract static class DigestNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject digest(DynamicObject digestObject) {
             final MessageDigest digest = DigestLayoutImpl.INSTANCE.getDigest(digestObject);
 
-            // TODO CS 18-May-15 this cloning isn't ideal for the key operation
+            return createString(RopeOperations.create(
+                    cloneAndDigest(digest), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID));
+        }
+
+        @TruffleBoundary
+        private static byte[] cloneAndDigest(MessageDigest digest) {
+            // TODO CS 18-May-15 this cloning isn't ideal!
 
             final MessageDigest clonedDigest;
 
@@ -164,8 +169,7 @@ public abstract class DigestNodes {
                 throw new RuntimeException(e);
             }
 
-            return createString(RopeOperations.create(
-                    clonedDigest.digest(), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID));
+            return clonedDigest.digest();
         }
 
     }
