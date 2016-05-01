@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.stdlib;
+package org.jruby.truffle.stdlib.digest;
 
 enum DigestAlgorithm {
     MD5("MD5"),
