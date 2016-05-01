@@ -27,7 +27,7 @@ import java.util.Map;
 @CoreClass(name = "Truffle::Coverage")
 public abstract class CoverageNodes {
 
-    @CoreMethod(names = "start", onSingleton = true, needsSelf = false)
+    @CoreMethod(names = "start", onSingleton = true)
     public abstract static class CoverageStartNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -38,7 +38,7 @@ public abstract class CoverageNodes {
 
     }
 
-    @CoreMethod(names = "result_array", onSingleton = true, needsSelf = false)
+    @CoreMethod(names = "result_array", onSingleton = true)
     public abstract static class CoverageResultNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
