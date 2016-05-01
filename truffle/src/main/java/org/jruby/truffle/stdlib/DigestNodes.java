@@ -49,24 +49,24 @@ public abstract class DigestNodes {
         }
     }
 
-    private static DynamicObject createDigest(RubyContext context, Algorithm algorithm) {
-        final MessageDigest digest;
-
+    @TruffleBoundary
+    private static MessageDigest getMessageDigestInstance(String name) {
         try {
-            digest = MessageDigest.getInstance(algorithm.getName());
+            return MessageDigest.getInstance(name);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+    }
 
-        final DynamicObject rubyClass = context.getCoreLibrary().getDigestClass();
-
-        return DigestLayoutImpl.INSTANCE.createDigest(Layouts.CLASS.getInstanceFactory(rubyClass), digest);
+    private static DynamicObject createDigest(RubyContext context, Algorithm algorithm) {
+        return DigestLayoutImpl.INSTANCE.createDigest(
+                Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getDigestClass()),
+                getMessageDigestInstance(algorithm.getName()));
     }
 
     @CoreMethod(names = "md5", onSingleton = true)
     public abstract static class MD5Node extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject md5() {
             return createDigest(getContext(), Algorithm.MD5);
@@ -77,7 +77,6 @@ public abstract class DigestNodes {
     @CoreMethod(names = "sha1", onSingleton = true)
     public abstract static class SHA1Node extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject sha1() {
             return createDigest(getContext(), Algorithm.SHA1);
@@ -88,7 +87,6 @@ public abstract class DigestNodes {
     @CoreMethod(names = "sha256", onSingleton = true)
     public abstract static class SHA256Node extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject sha256() {
             return createDigest(getContext(), Algorithm.SHA256);
@@ -99,7 +97,6 @@ public abstract class DigestNodes {
     @CoreMethod(names = "sha384", onSingleton = true)
     public abstract static class SHA384Node extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject sha384() {
             return createDigest(getContext(), Algorithm.SHA384);
@@ -110,7 +107,6 @@ public abstract class DigestNodes {
     @CoreMethod(names = "sha512", onSingleton = true)
     public abstract static class SHA512Node extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject sha512() {
             return createDigest(getContext(), Algorithm.SHA512);
