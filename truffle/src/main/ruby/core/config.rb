@@ -11,6 +11,7 @@ module RbConfig
     'exeext' => '',
     'EXEEXT' => '',
     'host_os' => Truffle::System.host_os,
+    'host_cpu' => Truffle::System.host_cpu,
     'bindir' => "#{Truffle::Boot.jruby_home_directory}/bin",
     'libdir' => "#{Truffle::Boot.jruby_home_directory}/lib/ruby/truffle",
     'ruby_install_name' => 'jruby',

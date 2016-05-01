@@ -20,6 +20,16 @@ import org.jruby.util.unsafe.UnsafeHolder;
 @CoreClass(name = "Truffle::System")
 public abstract class TruffleSystemNodes {
 
+    @CoreMethod(names = "host_cpu", onSingleton = true)
+    public abstract static class HostCPUNode extends CoreMethodNode {
+
+        @Specialization
+        public DynamicObject hostCPU() {
+            return createString(StringOperations.encodeRope(RbConfigLibrary.getArchitecture(), UTF8Encoding.INSTANCE));
+        }
+
+    }
+
     @CoreMethod(names = "host_os", onSingleton = true)
     public abstract static class HostOSNode extends CoreMethodNode {
 
