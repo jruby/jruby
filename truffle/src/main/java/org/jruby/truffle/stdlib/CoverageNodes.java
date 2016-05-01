@@ -52,11 +52,15 @@ public abstract class CoverageNodes {
                 final Object[] countsStore = new Object[countsArray.length];
 
                 for (int n = 0; n < countsArray.length; n++) {
+                    final Object countObject;
+
                     if (countsArray[n] == CoverageManager.NO_CODE) {
-                        countsStore[n] = nil();
+                        countObject = nil();
                     } else {
-                        countsStore[n] = countsArray[n];
+                        countObject = countsArray[n];
                     }
+
+                    countsStore[n] = countObject;
                 }
 
                 results.add(Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
