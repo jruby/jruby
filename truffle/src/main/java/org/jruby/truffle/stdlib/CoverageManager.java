@@ -24,6 +24,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -133,6 +134,15 @@ public class CoverageManager {
     }
 
     public void print(PrintStream out) {
+        final int maxCountDigits = Long.toString(getMaxCount()).length();
+
+        final String countFormat = "% " + maxCountDigits + "d";
+
+        final char[] noCodeChars = new char[maxCountDigits];
+        Arrays.fill(noCodeChars, ' ');
+        noCodeChars[maxCountDigits - 1] = '-';
+        final String noCodeString = new String(noCodeChars);
+
         for (Map.Entry<Source, AtomicLongArray> entry : counters.entrySet()) {
             final BitSet hasCode = linesHaveCode.get(entry.getKey());
 
@@ -148,14 +158,26 @@ public class CoverageManager {
                 out.print("  ");
 
                 if (hasCode != null && hasCode.get(n)) {
-                    out.printf("% 12d", entry.getValue().get(n));
+                    out.printf(countFormat, entry.getValue().get(n));
                 } else {
-                    out.print("           -");
+                    out.print(noCodeString);
                 }
 
                 out.printf("  %s%n", line);
             }
         }
+    }
+
+    private long getMaxCount() {
+        long max = 0;
+
+        for (Map.Entry<Source, AtomicLongArray> entry : counters.entrySet()) {
+            for (int n = 0; n < entry.getValue().length(); n++) {
+                max = Math.max(max, entry.getValue().get(n));
+            }
+        }
+
+        return max;
     }
 
 }
