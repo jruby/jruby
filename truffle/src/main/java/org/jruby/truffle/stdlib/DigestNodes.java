@@ -117,7 +117,6 @@ public abstract class DigestNodes {
     @CoreMethod(names = "update", onSingleton = true, required = 2)
     public abstract static class UpdateNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject update(DynamicObject digestObject, DynamicObject message) {
             final MessageDigest digest = DigestLayoutImpl.INSTANCE.getDigest(digestObject);
