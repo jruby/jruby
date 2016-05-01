@@ -12,6 +12,7 @@ package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.core.Layouts;
 
@@ -30,8 +31,11 @@ public abstract class ShapeCachingGuards {
         return Layouts.QUEUE.isQueue(shape.getObjectType());
     }
 
+    private static final ObjectType BASIC_OBJECT_OBJECT_TYPE =
+            Layouts.BASIC_OBJECT.createBasicObjectShape(null, null).getShape().getObjectType();
+
     public static boolean isBasicObjectShape(Shape shape) {
-        return shape.getObjectType().getClass().getName().endsWith(".BasicObjectType"); // FIXME
+        return shape.getObjectType().getClass() == BASIC_OBJECT_OBJECT_TYPE.getClass();
     }
 
 }
