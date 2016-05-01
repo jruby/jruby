@@ -158,10 +158,9 @@ public abstract class DigestNodes {
     @CoreMethod(names = "digest_length", onSingleton = true, required = 1)
     public abstract static class DigestLengthNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public int digestLength(DynamicObject digestObject) {
-            return Layouts.DIGEST.getDigest(digestObject).getDigestLength();
+            return Layouts.DIGEST.getAlgorithm(digestObject).getLength();
         }
 
     }
