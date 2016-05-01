@@ -65,7 +65,7 @@ public class CoverageManager {
     @CompilerDirectives.TruffleBoundary
     public void enable() {
         if (enabled) {
-            throw new UnsupportedOperationException();
+            return;
         }
 
         instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(), new ExecutionEventNodeFactory() {
