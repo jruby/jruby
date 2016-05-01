@@ -63,7 +63,7 @@ public class CoverageManager {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void enable() {
+    public synchronized void enable() {
         if (enabled) {
             return;
         }
