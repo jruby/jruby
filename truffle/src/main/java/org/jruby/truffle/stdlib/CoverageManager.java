@@ -38,7 +38,7 @@ public class CoverageManager {
 
     private final Instrumenter instrumenter;
 
-    private boolean enabled = false;
+    private boolean enabled;
 
     private final Map<Source, AtomicLongArray> counters = new ConcurrentHashMap<>();
     private final Map<Source, BitSet> codeMap = new HashMap<>();
