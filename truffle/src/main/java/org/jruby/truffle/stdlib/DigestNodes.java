@@ -159,8 +159,6 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         private static byte[] cloneAndDigest(MessageDigest digest) {
-            // TODO CS 18-May-15 this cloning isn't ideal!
-
             final MessageDigest clonedDigest;
 
             try {
