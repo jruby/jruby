@@ -8,9 +8,14 @@
 
 module Truffle
   module CExt
+    module_function
 
-    def self.supported?
+    def supported?
       Interop.mime_type_supported?('application/x-sulong-library')
+    end
+    
+    def rb_define_module(name)
+      Object.const_set(name, Module.new)
     end
   
   end
