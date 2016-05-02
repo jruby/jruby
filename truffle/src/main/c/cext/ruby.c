@@ -112,7 +112,7 @@ ID rb_intern(const char *string) {
 }
 
 VALUE rb_str_new2(const char *string) {
-  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new2", string);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new2", truffle_read_string(string));
 }
 
 VALUE rb_intern_str(VALUE string) {
@@ -124,7 +124,7 @@ VALUE ID2SYM(ID id) {
 }
 
 void rb_str_cat(VALUE string, const char *to_concat, long length) {
-  truffle_invoke(RUBY_CEXT, "rb_str_cat", string, to_concat, length);
+  truffle_invoke(RUBY_CEXT, "rb_str_cat", string, truffle_read_string(to_concat), length);
 }
 
 int RARRAY_LEN(VALUE array) {
@@ -185,11 +185,11 @@ VALUE rb_funcall(VALUE object, ID name, int argc, ...) {
 }
 
 VALUE rb_iv_get(VALUE object, const char *name) {
-  return truffle_read(object, name);
+  return truffle_read(object, truffle_read_string(name));
 }
 
 VALUE rb_iv_set(VALUE object, const char *name, VALUE value) {
-  truffle_write(object, name, value);
+  truffle_write(object, truffle_read_string(name), value);
   return value;
 }
 
@@ -210,13 +210,13 @@ VALUE rb_define_module_under(VALUE module, const char *name) {
 }
 
 void rb_define_method(VALUE module, const char *name, void *function, int args) {
-  truffle_invoke(RUBY_CEXT, "rb_define_method", module, name, function, args);
+  truffle_invoke(RUBY_CEXT, "rb_define_method", module, truffle_read_string(name), function, args);
 }
 
 void rb_define_private_method(VALUE module, const char *name, void *function, int args) {
-  truffle_invoke(RUBY_CEXT, "rb_define_private_method", module, name, function, args);
+  truffle_invoke(RUBY_CEXT, "rb_define_private_method", module, truffle_read_string(name), function, args);
 }
 
 int rb_define_module_function(VALUE module, const char *name, void *function, int args) {
-  return truffle_invoke_i(RUBY_CEXT, "rb_define_module_function", module, name, function, args);
+  return truffle_invoke_i(RUBY_CEXT, "rb_define_module_function", module, truffle_read_string(name), function, args);
 }
