@@ -536,13 +536,18 @@ module Kernel
       return Truffle::Kernel.load File.expand_path(filename), wrap
     end
 
-    # try relative
+    # if path starts with . only try relative paths
     if filename.start_with? '.'
-      return Truffle::Kernel.load File.expand_path(File.join(Dir.pwd, filename)), wrap
+      return Truffle::Kernel.load File.expand_path(filename), wrap
+    end
+
+    # try to resolve with current working directory
+    if File.exist? filename
+      return Truffle::Kernel.load File.expand_path(filename), wrap
     end
 
     # try to find relative path in $LOAD_PATH
-    [Dir.pwd, *$LOAD_PATH].each do |dir|
+    $LOAD_PATH.each do |dir|
       path = File.expand_path(File.join(dir, filename))
       if File.exist? path
         return Truffle::Kernel.load path, wrap
