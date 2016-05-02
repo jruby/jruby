@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'method'
+
+puts MethodExtension.add(14, 2)
