@@ -206,6 +206,7 @@ public class CoreLibrary {
     private final DynamicObjectFactory unboundMethodFactory;
     private final DynamicObject byteArrayClass;
     private final DynamicObjectFactory byteArrayFactory;
+    private final DynamicObjectFactory statFactory;
     private final DynamicObject fiberErrorClass;
     private final DynamicObject threadErrorClass;
     private final DynamicObject internalBufferClass;
@@ -609,6 +610,10 @@ public class CoreLibrary {
         rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
         defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
+
+        DynamicObject statClass = defineClass(rubiniusModule, objectClass, "Stat");
+        statFactory = Layouts.STAT.createStatShape(statClass, statClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(statClass, statFactory);
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
         byteArrayFactory = Layouts.BYTE_ARRAY.createByteArrayShape(byteArrayClass, byteArrayClass);
@@ -1201,6 +1206,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getByteArrayFactory() {
         return byteArrayFactory;
+    }
+
+    public DynamicObjectFactory getStatFactory() {
+        return statFactory;
     }
 
     public DynamicObject getLookupTableClass() {
