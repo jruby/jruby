@@ -26,11 +26,6 @@
 
 class Exception
 
-  # Indicates if the Exception has a backtrace set
-  def backtrace?
-    backtrace ? true : false # Truffle: simplified
-  end
-
   def set_backtrace(bt)
     if false # bt.kind_of? Rubinius::Backtrace # Truffle: not supported
       @backtrace = bt

@@ -26,13 +26,11 @@
 
 class Exception
 
-  attr_accessor :locations
   attr_accessor :parent
   attr_accessor :custom_backtrace
 
   def initialize(message = nil)
     @reason_message = message
-    @locations = nil
     @backtrace = nil
     @custom_backtrace = nil
   end
@@ -81,7 +79,7 @@ class Exception
 
   # Indicates if the Exception has a backtrace set
   def backtrace?
-    (@backtrace || @locations) ? true : false
+    backtrace ? true : false
   end
 
   def set_backtrace(bt)
