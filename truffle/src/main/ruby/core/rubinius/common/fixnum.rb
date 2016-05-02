@@ -53,10 +53,6 @@ class Fixnum < Integer
   # see README-DEVELOPERS regarding safe math compiler plugin
   #++
 
-  Truffle.omit(":divide is a Rubinius internal detail. We define :/ directly in Java") do
-    alias_method :/, :divide
-  end
-
   alias_method :modulo, :%
 
   def fdiv(n)
@@ -69,17 +65,6 @@ class Fixnum < Integer
 
   def imaginary
     0
-  end
-
-  Truffle.omit(":divide is a Rubinius internal detail. We define :/ directly in Java") do
-    # Must be it's own method, so that super calls the correct method
-    # on Numeric
-    def div(o)
-      if o.is_a?(Float) && o == 0.0
-        raise ZeroDivisionError, "division by zero"
-      end
-      divide(o).floor
-    end
   end
 
   def **(o)
