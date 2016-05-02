@@ -28,6 +28,7 @@
 package org.jruby.ext.socket;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -158,6 +159,9 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
         catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "bind: name or service not known");
+        }
+        catch (BindException e) {
+            throw runtime.newErrnoEADDRFromBindException(e);
         }
         catch (SocketException e) {
             final String message = e.getMessage();
