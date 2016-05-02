@@ -48,7 +48,7 @@ project 'JRuby Truffle' do
                    'annotationProcessors' => [ 'com.oracle.truffle.object.dsl.processor.LayoutProcessor',
                                                'com.oracle.truffle.dsl.processor.InstrumentableProcessor',
                                                'com.oracle.truffle.dsl.processor.TruffleProcessor',
-                                               'com.oracle.truffle.dsl.processor.InteropProcessor',
+                                               'com.oracle.truffle.dsl.processor.interop.InteropDSLProcessor',
                                                'com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor',
                                                'com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor', ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
@@ -72,6 +72,12 @@ project 'JRuby Truffle' do
       directory 'src/main/ruby'
       includes '**/*rb'
       target_path '${project.build.directory}/classes/jruby-truffle'
+    end
+
+    resource do
+      directory '${project.basedir}/..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
     end
   end
 

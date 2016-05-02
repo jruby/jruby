@@ -21,6 +21,7 @@ default_gems =
    ImportedGem.new( 'json', '${json.version}' ),
    ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' ),
    ImportedGem.new( 'racc', '${racc.version}'),
+   ImportedGem.new( 'net-telnet', '0.1.1'),
    #ImportedGem.new( 'did_you_mean', '1.0.0'),
   ]
 
@@ -275,6 +276,12 @@ project 'JRuby Lib Setup' do
         'lib/ruby/stdlib/rubygems/defaults/jruby_native.rb',
         'lib/ruby/stdlib/gauntlet*.rb' # gauntlet_rdoc.rb, gauntlet_rubygems.rb
       target_path '${jruby.complete.home}'
+    end
+
+    resource do
+      directory '${project.basedir}/..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
     end
   end
 end

@@ -44,7 +44,7 @@ if Truffle::Safe.io_safe?
   if STDOUT.tty?
     STDOUT.sync = true
   else
-    Truffle.at_exit true do
+    Truffle::Kernel.at_exit true do
       STDOUT.flush
     end
   end
@@ -52,7 +52,7 @@ if Truffle::Safe.io_safe?
   if STDERR.tty?
     STDERR.sync = true
   else
-    Truffle.at_exit true do
+    Truffle::Kernel.at_exit true do
       STDERR.flush
     end
   end
@@ -129,11 +129,11 @@ end
 module Rubinius
 
   def self.synchronize(object, &block)
-    Truffle.synchronized(object, &block)
+    Truffle::System.synchronized(object, &block)
   end
 
   def self.memory_barrier
-    Truffle.full_memory_barrier
+    Truffle::System.full_memory_barrier
   end
 
 end
@@ -176,16 +176,6 @@ end
 
 class Exception
 
-  def locations
-    # These should be Rubinius::Location
-    # and use the internal backtrace, never the custom one.
-    backtrace.each do |s|
-      def s.position
-        self
-      end
-    end
-  end
-
   def to_s
     if message.nil?
       self.class.to_s
@@ -227,7 +217,7 @@ end
 
 ENV_JAVA = {}
 
-# Truffle.get_data is used by RubyContext#execute to prepare the DATA constant
+# The translator adds a call to Truffle.get_data to set up the DATA constant
 
 module Truffle
   def self.get_data(path, offset)
@@ -237,7 +227,7 @@ module Truffle
     # I think if the file can't be locked then we just silently ignore
     file.flock(File::LOCK_EX | File::LOCK_NB)
 
-    Truffle.at_exit true do
+    Truffle::Kernel.at_exit true do
       file.flock(File::LOCK_UN)
     end
 

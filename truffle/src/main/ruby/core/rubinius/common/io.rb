@@ -1,3 +1,11 @@
+# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -92,6 +100,11 @@ class IO
     attr_reader :total
     attr_reader :start
     attr_reader :used
+
+    def initialize
+      # Truffle: other fields are initialized in Java.
+      @start = 0
+    end
 
     ##
     # Returns +true+ if the buffer can be filled.
@@ -300,6 +313,11 @@ class IO
   attr_accessor :external
   attr_accessor :internal
   attr_accessor :mode
+
+  # Truffle: redefine setter to lower
+  def mode=(value)
+    @mode = Truffle::Fixnum.lower(value)
+  end
 
   def self.binread(file, length=nil, offset=0)
     raise ArgumentError, "Negative length #{length} given" if !length.nil? && length < 0
@@ -992,33 +1010,43 @@ class IO
   #
   # The +sync+ attribute will also be set.
   #
-  Truffle.omit("This method is completely redefined in api/shims/io.rb. A simple override doesn't work due to bootstrapping issues, so the method must be omitted here.") do
-    def self.setup(io, fd, mode=nil, sync=false)
+  def self.setup(io, fd, mode=nil, sync=false)
+    if Truffle::Safe.io_safe?
       cur_mode = FFI::Platform::POSIX.fcntl(fd, F_GETFL, 0)
-      Errno.handle if cur_mode < 0
+    else
+      cur_mode = RDONLY if fd == 0
+      cur_mode = WRONLY if fd == 1
+      cur_mode = WRONLY if fd == 2
+    end
 
-      cur_mode &= ACCMODE
+    Errno.handle if cur_mode < 0
 
-      if mode
-        mode = parse_mode(mode)
-        mode &= ACCMODE
+    cur_mode &= ACCMODE
 
-        if (cur_mode == RDONLY or cur_mode == WRONLY) and mode != cur_mode
-          raise Errno::EINVAL, "Invalid new mode for existing descriptor #{fd}"
-        end
+    if mode
+      mode = parse_mode(mode)
+      mode &= ACCMODE
+
+      if (cur_mode == RDONLY or cur_mode == WRONLY) and mode != cur_mode
+        raise Errno::EINVAL, "Invalid new mode for existing descriptor #{fd}"
       end
+    end
 
-      io.descriptor = fd
-      io.mode       = mode || cur_mode
-      io.sync       = !!sync
+    # Close old descriptor if there was already one associated
+    io.close if io.descriptor
 
-      if STDOUT.respond_to?(:fileno) and not STDOUT.closed?
-        io.sync ||= STDOUT.fileno == fd
-      end
+    io.descriptor = fd
+    io.mode       = mode || cur_mode
+    io.sync       = !!sync
 
-      if STDERR.respond_to?(:fileno) and not STDERR.closed?
-        io.sync ||= STDERR.fileno == fd
-      end
+    # Truffle: STDOUT isn't defined by the time this call is made during bootstrap, so we need to guard it.
+    if defined? STDOUT and STDOUT.respond_to?(:fileno) and not STDOUT.closed?
+      io.sync ||= STDOUT.fileno == fd
+    end
+
+    # Truffle: STDERR isn't defined by the time this call is made during bootstrap, so we need to guard it.
+    if defined? STDERR and STDERR.respond_to?(:fileno) and not STDERR.closed?
+      io.sync ||= STDERR.fileno == fd
     end
   end
 
@@ -1833,8 +1861,11 @@ class IO
         end
 
         if str
+          # Truffle: write the string + record separator (\n) atomically so multithreaded #puts is bearable
+          unless str.suffix?(DEFAULT_RECORD_SEPARATOR)
+            str += DEFAULT_RECORD_SEPARATOR
+          end
           write str
-          write DEFAULT_RECORD_SEPARATOR unless str.suffix?(DEFAULT_RECORD_SEPARATOR)
         end
       end
     end

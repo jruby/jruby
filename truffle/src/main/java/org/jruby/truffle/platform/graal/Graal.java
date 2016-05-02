@@ -9,12 +9,14 @@
  */
 package org.jruby.truffle.platform.graal;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 
 import java.util.Locale;
 
 public abstract class Graal {
 
+    @TruffleBoundary
     public static boolean isGraal() {
         return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
     }

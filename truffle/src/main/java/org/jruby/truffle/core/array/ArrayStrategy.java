@@ -3,6 +3,7 @@ package org.jruby.truffle.core.array;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.language.RubyGuards;
 
 public abstract class ArrayStrategy {
 
@@ -62,6 +63,11 @@ public abstract class ArrayStrategy {
 
     public static ArrayStrategy of(DynamicObject array) {
         CompilerAsserts.neverPartOfCompilation();
+
+        if (!RubyGuards.isRubyArray(array)) {
+            return FallbackArrayStrategy.INSTANCE;
+        }
+
         if (ArrayGuards.isIntArray(array)) {
             return IntArrayStrategy.INSTANCE;
         } else if (ArrayGuards.isLongArray(array)) {
@@ -72,7 +78,7 @@ public abstract class ArrayStrategy {
             return ObjectArrayStrategy.INSTANCE;
         } else {
             assert ArrayGuards.isNullArray(array);
-            return NullArrayStrategy.INSTANCE;
+            return FallbackArrayStrategy.INSTANCE;
         }
     }
 
@@ -316,11 +322,11 @@ public abstract class ArrayStrategy {
 
     }
 
-    // Null-pattern strategy
+    // Fallback strategy
 
-    private static class NullArrayStrategy extends ArrayStrategy {
+    private static class FallbackArrayStrategy extends ArrayStrategy {
 
-        static final ArrayStrategy INSTANCE = new NullArrayStrategy();
+        static final ArrayStrategy INSTANCE = new FallbackArrayStrategy();
 
         public boolean accepts(Object value) {
             return false;

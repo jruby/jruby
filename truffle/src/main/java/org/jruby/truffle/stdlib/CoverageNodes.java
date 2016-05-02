@@ -18,19 +18,18 @@ import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.hash.BucketsStrategy;
 import org.jruby.truffle.core.string.StringOperations;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @CoreClass(name = "Truffle::Coverage")
 public abstract class CoverageNodes {
 
-    @CoreMethod(names = "coverage_start", onSingleton = true)
+    @CoreMethod(names = "start", onSingleton = true)
     public abstract static class CoverageStartNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject coverageStart() {
             getContext().getCoverageManager().enable();
@@ -39,42 +38,38 @@ public abstract class CoverageNodes {
 
     }
 
-    @CoreMethod(names = "coverage_result", onSingleton = true)
+    @CoreMethod(names = "result_array", onSingleton = true)
     public abstract static class CoverageResultNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
         public DynamicObject coverageResult() {
-            if (getContext().getCoverageManager() == null) {
-                throw new UnsupportedOperationException("coverage is disabled");
-            }
-
-            final Map<Object, Object> converted = new HashMap<>();
+            final List<DynamicObject> results = new ArrayList<>();
 
             for (Map.Entry<Source, long[]> source : getContext().getCoverageManager().getCounts().entrySet()) {
-                final Object[] store = lineCountsStore(source.getValue());
-                final DynamicObject array = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+                final long[] countsArray = source.getValue();
 
-                if (source.getKey().getPath() != null) {
-                    converted.put(createString(StringOperations.encodeRope(source.getKey().getPath(), UTF8Encoding.INSTANCE)), array);
+                final Object[] countsStore = new Object[countsArray.length];
+
+                for (int n = 0; n < countsArray.length; n++) {
+                    final Object countObject;
+
+                    if (countsArray[n] == CoverageManager.NO_CODE) {
+                        countObject = nil();
+                    } else {
+                        countObject = countsArray[n];
+                    }
+
+                    countsStore[n] = countObject;
                 }
+
+                results.add(Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
+                        createString(StringOperations.encodeRope(source.getKey().getPath(), UTF8Encoding.INSTANCE)),
+                        Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), countsStore, countsStore.length)
+                }, 2));
             }
 
-            return BucketsStrategy.create(getContext(), converted.entrySet(), false);
-        }
-
-        private Object[] lineCountsStore(long[] array) {
-            final Object[] store = new Object[array.length];
-
-            for (int n = 0; n < array.length; n++) {
-                if (array[n] == CoverageManager.NO_CODE) {
-                    store[n] = nil();
-                } else {
-                    store[n] = array[n];
-                }
-            }
-
-            return store;
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), results.toArray(), results.size());
         }
 
     }

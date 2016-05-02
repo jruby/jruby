@@ -86,7 +86,9 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
+
 import java.util.Arrays;
+
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
@@ -1854,37 +1856,18 @@ public abstract class ArrayNodes {
             return ToAryNodeGen.create(null, null, index);
         }
 
-        @Specialization(guards = { "isRubyArray(other)", "isNullArray(other)" })
+        @Specialization(guards = "isNullArray(other)")
         public DynamicObject replace(DynamicObject array, DynamicObject other) {
             setStoreAndSize(array, null, 0);
             return array;
         }
 
-        @Specialization(guards = { "isRubyArray(other)", "isIntArray(other)" })
-        public DynamicObject replaceIntegerFixnum(DynamicObject array, DynamicObject other) {
-            final int[] store = (int[]) getStore(other);
-            setStoreAndSize(array, store.clone(), getSize(other));
-            return array;
-        }
-
-        @Specialization(guards = { "isRubyArray(other)", "isLongArray(other)" })
-        public DynamicObject replaceLongFixnum(DynamicObject array, DynamicObject other) {
-            final long[] store = (long[]) getStore(other);
-            setStoreAndSize(array, store.clone(), getSize(other));
-            return array;
-        }
-
-        @Specialization(guards = { "isRubyArray(other)", "isDoubleArray(other)" })
-        public DynamicObject replaceFloat(DynamicObject array, DynamicObject other) {
-            final double[] store = (double[]) getStore(other);
-            setStoreAndSize(array, store.clone(), getSize(other));
-            return array;
-        }
-
-        @Specialization(guards = { "isRubyArray(other)", "isObjectArray(other)" })
-        public DynamicObject replaceObject(DynamicObject array, DynamicObject other) {
-            final Object[] store = (Object[]) getStore(other);
-            setStoreAndSize(array, store.clone(), getSize(other));
+        @Specialization(guards = "strategy.matches(other)", limit = "ARRAY_STRATEGIES")
+        public DynamicObject replace(DynamicObject array, DynamicObject other,
+                @Cached("of(other)") ArrayStrategy strategy) {
+            final int size = getSize(other);
+            final ArrayMirror copy = strategy.newMirror(other).copyArrayAndMirror();
+            setStoreAndSize(array, copy.getArray(), size);
             return array;
         }
 
@@ -2018,7 +2001,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"size", "length"})
+    @CoreMethod(names = { "size", "length" })
     public abstract static class SizeNode extends ArrayCoreMethodNode {
 
         @Specialization
@@ -2046,12 +2029,20 @@ public abstract class ArrayNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = {"isIntArray(array)", "isSmall(array)"})
-        public DynamicObject sortVeryShortIntegerFixnum(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            final int[] store = (int[]) getStore(array);
-            final int[] newStore = new int[store.length];
-
+        @Specialization(guards = { "!isNullArray(array)", "isSmall(array)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
+        public DynamicObject sortVeryShort(VirtualFrame frame, DynamicObject array, NotProvided block,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            final ArrayMirror originalStore = strategy.newMirror(array);
+            final ArrayMirror store = strategy.newArray(getContext().getOptions().ARRAY_SMALL);
             final int size = getSize(array);
+
+            // Copy with a exploded loop for PE
+
+            for (int i = 0; i < getContext().getOptions().ARRAY_SMALL; i++) {
+                if (i < size) {
+                    store.set(i, originalStore.get(i));
+                }
+            }
 
             // Selection sort - written very carefully to allow PE
 
@@ -2059,92 +2050,35 @@ public abstract class ArrayNodes {
                 if (i < size) {
                     for (int j = i + 1; j < getContext().getOptions().ARRAY_SMALL; j++) {
                         if (j < size) {
-                            if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
-                                final int temp = store[j];
-                                store[j] = store[i];
-                                store[i] = temp;
+                            final Object a = store.get(i);
+                            final Object b = store.get(j);
+                            if (castSortValue(compareDispatchNode.call(frame, b, "<=>", null, a)) < 0) {
+                                store.set(j, a);
+                                store.set(i, b);
                             }
                         }
                     }
-                    newStore[i] = store[i];
                 }
             }
 
-            return createArray(getContext(), newStore, size);
-        }
-
-        @ExplodeLoop
-        @Specialization(guards = {"isLongArray(array)", "isSmall(array)"})
-        public DynamicObject sortVeryShortLongFixnum(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            final long[] store = (long[]) getStore(array);
-            final long[] newStore = new long[store.length];
-
-            final int size = getSize(array);
-
-            // Selection sort - written very carefully to allow PE
-
-            for (int i = 0; i < getContext().getOptions().ARRAY_SMALL; i++) {
-                if (i < size) {
-                    for (int j = i + 1; j < getContext().getOptions().ARRAY_SMALL; j++) {
-                        if (j < size) {
-                            if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
-                                final long temp = store[j];
-                                store[j] = store[i];
-                                store[i] = temp;
-                            }
-                        }
-                    }
-                    newStore[i] = store[i];
-                }
-            }
-
-            return createArray(getContext(), newStore, size);
-        }
-
-        @Specialization(guards = {"isObjectArray(array)", "isSmall(array)"})
-        public DynamicObject sortVeryShortObject(VirtualFrame frame, DynamicObject array, NotProvided block) {
-            final Object[] oldStore = (Object[]) getStore(array);
-            final Object[] store = ArrayUtils.copy(oldStore);
-
-            // Insertion sort
-
-            final int size = getSize(array);
-
-            for (int i = 1; i < size; i++) {
-                final Object x = store[i];
-                int j = i;
-                // TODO(CS): node for this cast
-                while (j > 0 && castSortValue(compareDispatchNode.call(frame, store[j - 1], "<=>", null, x)) > 0) {
-                    store[j] = store[j - 1];
-                    j--;
-                }
-                store[j] = x;
-            }
-
-            return createArray(getContext(), store, size);
-        }
-
-        @Specialization(guards = { "!isNullArray(array)" })
-        public Object sortUsingRubinius(
-                VirtualFrame frame,
-                DynamicObject array,
-                DynamicObject block,
-                @Cached("new()") SnippetNode snippet) {
-
-            return snippet.execute(
-                    frame,
-                    "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted",
-                    "right", getSize(array),
-                    "block", block);
+            return createArray(getContext(), store.getArray(), size);
         }
 
         @Specialization(guards = { "!isNullArray(array)", "!isSmall(array)" })
-        public Object sortUsingRubinius(
-                VirtualFrame frame,
-                DynamicObject array,
-                NotProvided block,
+        public Object sortLargeArray(VirtualFrame frame, DynamicObject array, NotProvided block,
                 @Cached("new()") SnippetNode snippetNode) {
-            return snippetNode.execute(frame, "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", getSize(array));
+            return snippetNode.execute(frame,
+                    "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted",
+                    "right", getSize(array));
+        }
+
+        @Specialization(guards = { "!isNullArray(array)" })
+        public Object sortWithBlock(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("new()") SnippetNode snippet) {
+            return snippet.execute(frame,
+                    "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted",
+                    "right", getSize(array),
+                    "block", block);
         }
 
         private int castSortValue(Object value) {
@@ -2164,81 +2098,36 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "unshift", rest = true, raiseIfFrozenSelf = true)
-    public abstract static class UnshiftNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject unshift(DynamicObject array, Object... args) {
-            CompilerDirectives.transferToInterpreter();
-
-            assert RubyGuards.isRubyArray(array);
-            final Object[] newStore = new Object[getSize(array) + args.length];
-            System.arraycopy(args, 0, newStore, 0, args.length);
-            ArrayUtils.copy(getStore(array), newStore, args.length, getSize(array));
-            setStoreAndSize(array, newStore, newStore.length);
-            return array;
-        }
-
-    }
-
     @CoreMethod(names = "zip", rest = true, required = 1, needsBlock = true)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode zipInternalCall;
 
-        @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isIntArray(other)", "others.length == 0" })
+        @Specialization(guards = {
+                "isRubyArray(other)", "aStrategy.matches(array)", "bStrategy.matches(other)", "others.length == 0"
+        }, limit = "ARRAY_STRATEGIES")
         public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others, NotProvided block,
-                @Cached("createBinaryProfile()") ConditionProfile sameLengthProfile) {
-            final Object[] a = (Object[]) getStore(array);
+                @Cached("of(array)") ArrayStrategy aStrategy,
+                @Cached("of(other)") ArrayStrategy bStrategy,
+                @Cached("aStrategy.generalize(bStrategy)") ArrayStrategy generalized,
+                @Cached("createBinaryProfile()") ConditionProfile bNotSmallerProfile) {
+            final ArrayMirror a = aStrategy.newMirror(array);
+            final ArrayMirror b = bStrategy.newMirror(other);
 
-            final int[] b = (int[]) getStore(other);
-            final int bLength = getSize(other);
-
+            final int bSize = getSize(other);
             final int zippedLength = getSize(array);
             final Object[] zipped = new Object[zippedLength];
 
-            if (sameLengthProfile.profile(zippedLength == bLength)) {
-                for (int n = 0; n < zippedLength; n++) {
-                    zipped[n] = createArray(getContext(), new Object[] { a[n], b[n] }, 2);
-                }
-            } else {
-                for (int n = 0; n < zippedLength; n++) {
-                    if (n < bLength) {
-                        zipped[n] = createArray(getContext(), new Object[] { a[n], b[n] }, 2);
-                    } else {
-                        zipped[n] = createArray(getContext(), new Object[] { a[n], nil() }, 2);
-                    }
+            for (int n = 0; n < zippedLength; n++) {
+                if (bNotSmallerProfile.profile(n < bSize)) {
+                    final ArrayMirror pair = generalized.newArray(2);
+                    pair.set(0, a.get(n));
+                    pair.set(1, b.get(n));
+                    zipped[n] = createArray(getContext(), pair.getArray(), 2);
+                } else {
+                    zipped[n] = createArray(getContext(), new Object[] { a.get(n), nil() }, 2);
                 }
             }
-
-            return createArray(getContext(), zipped, zippedLength);
-        }
-
-        @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isObjectArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others, NotProvided block,
-                @Cached("createBinaryProfile()") ConditionProfile sameLengthProfile) {
-            final Object[] a = (Object[]) getStore(array);
-
-            final Object[] b = (Object[]) getStore(other);
-            final int bLength = getSize(other);
-
-            final int zippedLength = getSize(array);
-            final Object[] zipped = new Object[zippedLength];
-
-            if (sameLengthProfile.profile(zippedLength == bLength)) {
-                for (int n = 0; n < zippedLength; n++) {
-                    zipped[n] = createArray(getContext(), new Object[] { a[n], b[n] }, 2);
-                }
-            } else {
-                for (int n = 0; n < zippedLength; n++) {
-                    if (n < bLength) {
-                        zipped[n] = createArray(getContext(), new Object[] { a[n], b[n] }, 2);
-                    } else {
-                        zipped[n] = createArray(getContext(), new Object[] { a[n], nil() }, 2);
-                    }
-                }
-            }
-
 
             return createArray(getContext(), zipped, zippedLength);
         }
@@ -2270,7 +2159,7 @@ public abstract class ArrayNodes {
         }
 
         protected static boolean fallback(DynamicObject array, DynamicObject other, Object[] others) {
-            return !ArrayGuards.isObjectArray(array) || ArrayGuards.isNullArray(other) || ArrayGuards.isLongArray(other) || others.length > 0;
+            return ArrayGuards.isNullArray(array) || ArrayGuards.isNullArray(other) || others.length > 0;
         }
 
     }

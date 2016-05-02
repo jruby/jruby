@@ -68,6 +68,8 @@ import org.jruby.truffle.core.rubinius.PointerLayout;
 import org.jruby.truffle.core.rubinius.PointerLayoutImpl;
 import org.jruby.truffle.core.rubinius.RandomizerLayout;
 import org.jruby.truffle.core.rubinius.RandomizerLayoutImpl;
+import org.jruby.truffle.core.rubinius.StatLayout;
+import org.jruby.truffle.core.rubinius.StatLayoutImpl;
 import org.jruby.truffle.core.rubinius.WeakRefLayout;
 import org.jruby.truffle.core.rubinius.WeakRefLayoutImpl;
 import org.jruby.truffle.core.string.StringLayout;
@@ -82,6 +84,8 @@ import org.jruby.truffle.core.tracepoint.TracePointLayout;
 import org.jruby.truffle.core.tracepoint.TracePointLayoutImpl;
 import org.jruby.truffle.stdlib.BigDecimalLayout;
 import org.jruby.truffle.stdlib.BigDecimalLayoutImpl;
+import org.jruby.truffle.stdlib.digest.DigestLayout;
+import org.jruby.truffle.stdlib.digest.DigestLayoutImpl;
 import org.jruby.truffle.stdlib.psych.EmitterLayout;
 import org.jruby.truffle.stdlib.psych.EmitterLayoutImpl;
 
@@ -127,6 +131,8 @@ public abstract class Layouts {
     public static final AtomicReferenceLayout ATOMIC_REFERENCE = AtomicReferenceLayoutImpl.INSTANCE;
     public static final HandleLayout HANDLE = HandleLayoutImpl.INSTANCE;
     public static final TracePointLayout TRACE_POINT = TracePointLayoutImpl.INSTANCE;
+    public static final DigestLayout DIGEST = DigestLayoutImpl.INSTANCE;
+    public static final StatLayout STAT = StatLayoutImpl.INSTANCE;
 
     // Other standard identifiers
 

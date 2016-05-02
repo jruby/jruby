@@ -28,8 +28,12 @@ class Object
   end
 
   def home_directory
-    return ENV['HOME'] unless PlatformGuard.windows?
-    windows_env_echo('HOMEDRIVE') + windows_env_echo('HOMEPATH')
+    if PlatformGuard.windows?
+      path = windows_env_echo('HOMEDRIVE') + windows_env_echo('HOMEPATH')
+      path.tr('\\', '/').chomp('/')
+    else
+      ENV['HOME']
+    end
   end
 
   def dev_null

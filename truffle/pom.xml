@@ -83,6 +83,16 @@ DO NOT MODIFIY - GENERATED CODE
           <include>**/*rb</include>
         </includes>
       </resource>
+      <resource>
+        <targetPath>${project.build.outputDirectory}/META-INF/</targetPath>
+        <directory>${project.basedir}/..</directory>
+        <includes>
+          <include>BSDL</include>
+          <include>COPYING</include>
+          <include>LEGAL</include>
+          <include>LICENSE.RUBY</include>
+        </includes>
+      </resource>
     </resources>
     <plugins>
       <plugin>
@@ -112,7 +122,7 @@ DO NOT MODIFIY - GENERATED CODE
                 <annotationProcessor>com.oracle.truffle.object.dsl.processor.LayoutProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.InstrumentableProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
-                <annotationProcessor>com.oracle.truffle.dsl.processor.InteropProcessor</annotationProcessor>
+                <annotationProcessor>com.oracle.truffle.dsl.processor.interop.InteropDSLProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor</annotationProcessor>
               </annotationProcessors>

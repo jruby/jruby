@@ -41,7 +41,7 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby.launch.memory>1024M</jruby.launch.memory>
     <jruby.compile.memory>2G</jruby.compile.memory>
     <version.ruby.major>2.3</version.ruby.major>
-    <unsafe.version>8.0</unsafe.version>
+    <unsafe.version>8.92.1</unsafe.version>
     <release.dir>release</release.dir>
     <lib.dir>lib</lib.dir>
     <rails.dir>${test.dir}/rails</rails.dir>
@@ -147,7 +147,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.9.2-SNAPSHOT</version>
+      <version>0.9.2</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -298,6 +298,16 @@ DO NOT MODIFIY - GENERATED CODE
         <directory>${project.basedir}/src/main/resources</directory>
         <includes>
           <include>${Constants.java}</include>
+        </includes>
+      </resource>
+      <resource>
+        <targetPath>${project.build.outputDirectory}/META-INF/</targetPath>
+        <directory>${project.basedir}/..</directory>
+        <includes>
+          <include>BSDL</include>
+          <include>COPYING</include>
+          <include>LEGAL</include>
+          <include>LICENSE.RUBY</include>
         </includes>
       </resource>
     </resources>

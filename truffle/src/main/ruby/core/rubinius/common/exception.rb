@@ -1,4 +1,12 @@
- # Copyright (c) 2007-2015, Evan Phoenix and contributors
+# Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,13 +34,11 @@
 
 class Exception
 
-  attr_accessor :locations
   attr_accessor :parent
   attr_accessor :custom_backtrace
 
   def initialize(message = nil)
     @reason_message = message
-    @locations = nil
     @backtrace = nil
     @custom_backtrace = nil
   end
@@ -81,83 +87,23 @@ class Exception
 
   # Indicates if the Exception has a backtrace set
   def backtrace?
-    (@backtrace || @locations) ? true : false
-  end
-
-  Truffle.omit("We use MRI backtraces") do
-    def awesome_backtrace
-      @backtrace ||= Rubinius::Backtrace.backtrace(@locations)
-    end
-
-    def render(header="An exception occurred", io=STDERR, color=true)
-      message_lines = message.to_s.split("\n")
-
-      io.puts header
-      io.puts
-      io.puts "    #{message_lines.shift} (#{self.class})"
-
-      message_lines.each do |line|
-        io.puts "    #{line}"
-      end
-
-      if @custom_backtrace
-        io.puts "\nUser defined backtrace:"
-        io.puts
-        @custom_backtrace.each do |line|
-          io.puts "    #{line}"
-        end
-      end
-
-      io.puts "\nBacktrace:"
-      io.puts
-      io.puts awesome_backtrace.show("\n", color)
-
-      extra = @parent
-      while extra
-        io.puts "\nCaused by: #{extra.message} (#{extra.class})"
-
-        if @custom_backtrace
-          io.puts "\nUser defined backtrace:"
-          io.puts
-          @custom_backtrace.each do |line|
-            io.puts "    #{line}"
-          end
-        end
-
-        io.puts "\nBacktrace:"
-        io.puts
-        io.puts extra.awesome_backtrace.show
-
-        extra = extra.parent
-      end
-
-    end
+    backtrace ? true : false
   end
 
   def set_backtrace(bt)
-    if bt.kind_of? Rubinius::Backtrace
-      @backtrace = bt
-    else
-      # See if we stashed a Backtrace object away, and use it.
-      if hidden_bt = Rubinius::Backtrace.detect_backtrace(bt)
-        @backtrace = hidden_bt
+    case bt
+    when Array
+      if bt.all? { |s| s.kind_of? String }
+        @custom_backtrace = bt
       else
-        type_error = TypeError.new "backtrace must be Array of String"
-        case bt
-        when Array
-          if bt.all? { |s| s.kind_of? String }
-            @custom_backtrace = bt
-          else
-            raise type_error
-          end
-        when String
-          @custom_backtrace = [bt]
-        when nil
-          @custom_backtrace = nil
-        else
-          raise type_error
-        end
+        raise TypeError, "backtrace must be Array of String"
       end
+    when String
+      @custom_backtrace = [bt]
+    when nil
+      @custom_backtrace = nil
+    else
+      raise TypeError, "backtrace must be Array of String"
     end
   end
 
@@ -196,7 +142,9 @@ class Exception
         # Exception#initialize (via __initialize__) is exactly what MRI
         # does.
         e = clone
-        e.__initialize__(message)
+        Rubinius.privately do
+          e.__initialize__(message)
+        end
         return e
       end
     end
@@ -279,9 +227,7 @@ end
 class RuntimeError < StandardError
 end
 
-Truffle.omit("Wrong superclass") do
-  class SecurityError < StandardError
-  end
+class SecurityError < Exception
 end
 
 class ThreadError < StandardError
@@ -539,24 +485,4 @@ end
 # the bounds of an object.
 
 class Rubinius::ObjectBoundsExceededError < Rubinius::VMException
-end
-
-# Defined by the VM itself
-Truffle.omit("Not applicable in Truffle") do
-  class Rubinius::InvalidBytecode < Rubinius::Internal
-    attr_reader :compiled_code
-    attr_reader :ip
-
-    def message
-      if @compiled_code
-        if @ip and @ip >= 0
-          "#{super} - at #{@compiled_code.name}+#{@ip}"
-        else
-          "#{super} - method #{@compiled_code.name}"
-        end
-      else
-        super
-      end
-    end
-  end
 end

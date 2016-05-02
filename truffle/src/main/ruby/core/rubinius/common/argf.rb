@@ -1,3 +1,11 @@
+# Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -38,6 +46,8 @@ module Rubinius
   class ARGFClass
     include Enumerable
 
+    attr_reader :argv
+
     # :internal:
     #
     # Create a stateless ARGF.
@@ -46,7 +56,8 @@ module Rubinius
     #
     # @see  #advance!
     #
-    def initialize
+    def initialize(argv = ARGV, *others)
+      @argv = argv.equal?(ARGV) ? ARGV : [argv, *others]
       @lineno = 0
       @advance = true
       @init = false
@@ -517,7 +528,7 @@ module Rubinius
 
       unless @init
 
-        if ARGV.empty?
+        if @argv.empty?
           @advance = false
           @stream = STDIN
           @filename = "-"
@@ -529,12 +540,12 @@ module Rubinius
 
       File.unlink(@backup_filename) if @backup_filename && $-i == ""
 
-      return false if @use_stdin_only || ARGV.empty?
+      return false if @use_stdin_only || @argv.empty?
 
       @advance = false
 
-      file = ARGV.shift
-      @stream = stream(file) 
+      file = @argv.shift
+      @stream = stream(file)
       @filename = file
 
       if $-i && @stream != STDIN
@@ -555,6 +566,4 @@ end
 # The virtual concatenation file of the files given on command line (or
 # from $stdin if no files were given.) Usable like an IO.
 #
-Truffle.omit("We define this in api/shims/argf with an additional argument to the constructor") do
-  ARGF = Rubinius::ARGFClass.new
-end
+ARGF = Rubinius::ARGFClass.new(ARGV)

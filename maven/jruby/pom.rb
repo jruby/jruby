@@ -22,6 +22,14 @@ project 'JRuby Main Maven Artifact' do
 
   plugin( :invoker, :properties => { 'localRepository' => '${settings.localRepository}' } )
 
+  build do
+    resource do
+      directory '${project.basedir}/../..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
+    end
+  end
+
   profile :apps do
     activation do
       property :name => 'invoker.test'

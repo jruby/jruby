@@ -218,17 +218,18 @@ public class TranslatorDriver implements Parser {
         truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
 
         if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
-            truffleNode = new TopLevelRaiseHandler(context, sourceSection,
-                    Translator.sequence(context, sourceSection, Arrays.asList(
-                            new SetTopLevelBindingNode(context, sourceSection),
-                            new LoadRequiredLibrariesNode(context, sourceSection),
-                            truffleNode)));
+            truffleNode = Translator.sequence(context, sourceSection, Arrays.asList(
+                    new SetTopLevelBindingNode(context, sourceSection),
+                    new LoadRequiredLibrariesNode(context, sourceSection),
+                    truffleNode));
 
             if (node.hasEndPosition()) {
                 truffleNode = Translator.sequence(context, sourceSection, Arrays.asList(
                         new DataNode(context, sourceSection, node.getEndPosition()),
                         truffleNode));
             }
+
+            truffleNode = new TopLevelRaiseHandler(context, sourceSection, truffleNode);
         }
 
         return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());

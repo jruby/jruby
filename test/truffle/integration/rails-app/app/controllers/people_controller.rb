@@ -1,7 +1,7 @@
 class PeopleController < ApplicationController
 
   PLATFORM = if defined? Truffle
-               Truffle.graal? ? :graal : :truffle
+               Truffle::Graal.graal? ? :graal : :truffle
              else
                :jruby
              end

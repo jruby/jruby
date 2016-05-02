@@ -92,12 +92,17 @@ public class RubyRunnable implements ThreadedRunnable {
 
         // uber-ThreadKill catcher, since it should always just mean "be dead"
         try {
+            // Push a frame for the toplevel of the thread
+
             // Call the thread's code
-            RubyModule frameClass = proc.getBlock().getFrame().getKlazz();
+            Block threadBlock = proc.getBlock();
+            RubyModule frameClass = threadBlock.getFrame().getKlazz();
+            String file = threadBlock.getBinding().getFile();
+            int line = threadBlock.getBinding().getLine();
             try {
-                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_BEGIN, null, frameClass);
+                if (runtime.hasEventHooks()) context.trace(RubyEvent.THREAD_BEGIN, null, frameClass, file, line);
                 IRubyObject result = proc.call(context, arguments);
-                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_END, null, frameClass);
+                if (runtime.hasEventHooks()) context.trace(RubyEvent.THREAD_END, null, frameClass, file, line);
                 rubyThread.cleanTerminate(result);
             } catch (MainExitException mee) {
                 // Someone called exit!, so we need to kill the main thread

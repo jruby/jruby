@@ -51,6 +51,8 @@ lib/ruby/stdlib/jar*
 lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*
 lib/ruby/stdlib/krypt*
+lib/ruby/stdlib/net-telnet.rb
+lib/ruby/stdlib/net/telnet*
 lib/ruby/stdlib/openssl*
 lib/ruby/stdlib/org/
 lib/ruby/stdlib/readline/*readline*.jar

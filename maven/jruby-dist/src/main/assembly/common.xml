@@ -50,6 +50,8 @@
       <includes>
         <include>LICENSE*</include>
         <include>COPYING*</include>
+        <include>BSDL</include>
+        <include>LEGAL</include>
         <include>lib/jni/**/*</include>
         <include>samples/**/*</include>
         <include>docs/**/*</include>
