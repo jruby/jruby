@@ -83,11 +83,11 @@ class Exception
   end
 
   def set_backtrace(bt)
-    if bt.kind_of? Rubinius::Backtrace
+    if false # bt.kind_of? Rubinius::Backtrace # Truffle: not supported
       @backtrace = bt
     else
       # See if we stashed a Backtrace object away, and use it.
-      if hidden_bt = Rubinius::Backtrace.detect_backtrace(bt)
+      if false # hidden_bt = Rubinius::Backtrace.detect_backtrace(bt) # Truffle: not supported
         @backtrace = hidden_bt
       else
         type_error = TypeError.new "backtrace must be Array of String"
