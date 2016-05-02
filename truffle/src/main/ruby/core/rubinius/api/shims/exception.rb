@@ -58,22 +58,4 @@ class Exception
     end
   end
 
-  def exception(message=nil)
-    if message
-      unless message.equal? self
-        # As strange as this might seem, this IS actually the protocol
-        # that MRI implements for this. The explicit call to
-        # Exception#initialize (via __initialize__) is exactly what MRI
-        # does.
-        e = clone
-        Rubinius.privately do # Truffle: added the privately block as Exception#initialize (and its alias) should be private
-          e.__initialize__(message)
-        end
-        return e
-      end
-    end
-
-    self
-  end
-
 end

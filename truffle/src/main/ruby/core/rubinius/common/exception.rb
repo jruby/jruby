@@ -146,7 +146,9 @@ class Exception
         # Exception#initialize (via __initialize__) is exactly what MRI
         # does.
         e = clone
-        e.__initialize__(message)
+        Rubinius.privately do
+          e.__initialize__(message)
+        end
         return e
       end
     end
