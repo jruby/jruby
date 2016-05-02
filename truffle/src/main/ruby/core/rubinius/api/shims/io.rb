@@ -37,56 +37,6 @@ class IO
     @mode = Truffle::Fixnum.lower(value)
   end
 
-  #
-  # Internally associate +io+ with the given descriptor.
-  #
-  # The +mode+ will be checked and set as the current mode if
-  # the underlying descriptor allows it.
-  #
-  # The +sync+ attribute will also be set.
-  #
-  def self.setup(io, fd, mode=nil, sync=false)
-    if Truffle::Safe.io_safe?
-      cur_mode = FFI::Platform::POSIX.fcntl(fd, F_GETFL, 0)
-    else
-      cur_mode = RDONLY if fd == 0
-      cur_mode = WRONLY if fd == 1
-      cur_mode = WRONLY if fd == 2
-    end
-
-    Errno.handle if cur_mode < 0
-
-    cur_mode &= ACCMODE
-
-    if mode
-      mode = parse_mode(mode)
-      mode &= ACCMODE
-
-      if (cur_mode == RDONLY or cur_mode == WRONLY) and mode != cur_mode
-        raise Errno::EINVAL, "Invalid new mode for existing descriptor #{fd}"
-      end
-    end
-
-    # Truffle: close old descriptor if there was already one associated
-    io.close if io.descriptor
-
-    io.descriptor = fd
-    io.mode       = mode || cur_mode
-    io.sync       = !!sync
-
-    # Truffle: STDOUT isn't defined by the time this call is made during bootstrap, so we need to guard it.
-    # if STDOUT.respond_to?(:fileno) and not STDOUT.closed?
-    if defined? STDOUT and STDOUT.respond_to?(:fileno) and not STDOUT.closed?
-      io.sync ||= STDOUT.fileno == fd
-    end
-
-    # Truffle: STDERR isn't defined by the time this call is made during bootstrap, so we need to guard it.
-    # if STDERR.respond_to?(:fileno) and not STDERR.closed?
-    if defined? STDERR and STDERR.respond_to?(:fileno) and not STDERR.closed?
-      io.sync ||= STDERR.fileno == fd
-    end
-  end
-
   ##
   # Writes the given objects to ios as with IO#print.
   # Writes a record separator (typically a newline)

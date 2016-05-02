@@ -1,3 +1,11 @@
+# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -993,7 +1001,14 @@ class IO
   # The +sync+ attribute will also be set.
   #
   def self.setup(io, fd, mode=nil, sync=false)
-    cur_mode = FFI::Platform::POSIX.fcntl(fd, F_GETFL, 0)
+    if Truffle::Safe.io_safe?
+      cur_mode = FFI::Platform::POSIX.fcntl(fd, F_GETFL, 0)
+    else
+      cur_mode = RDONLY if fd == 0
+      cur_mode = WRONLY if fd == 1
+      cur_mode = WRONLY if fd == 2
+    end
+
     Errno.handle if cur_mode < 0
 
     cur_mode &= ACCMODE
@@ -1007,15 +1022,20 @@ class IO
       end
     end
 
+    # Close old descriptor if there was already one associated
+    io.close if io.descriptor
+
     io.descriptor = fd
     io.mode       = mode || cur_mode
     io.sync       = !!sync
 
-    if STDOUT.respond_to?(:fileno) and not STDOUT.closed?
+    # Truffle: STDOUT isn't defined by the time this call is made during bootstrap, so we need to guard it.
+    if defined? STDOUT and STDOUT.respond_to?(:fileno) and not STDOUT.closed?
       io.sync ||= STDOUT.fileno == fd
     end
 
-    if STDERR.respond_to?(:fileno) and not STDERR.closed?
+    # Truffle: STDERR isn't defined by the time this call is made during bootstrap, so we need to guard it.
+    if defined? STDERR and STDERR.respond_to?(:fileno) and not STDERR.closed?
       io.sync ||= STDERR.fileno == fd
     end
   end
