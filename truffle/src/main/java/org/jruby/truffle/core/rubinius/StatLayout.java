@@ -26,6 +26,6 @@ public interface StatLayout extends BasicObjectLayout {
                              @Nullable FileStat stat);
 
     FileStat getStat(DynamicObject object);
-    void setStat(DynamicObject object, FileStat stat);
+    void setStat(DynamicObject object, FileStat value);
 
 }
