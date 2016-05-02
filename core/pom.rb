@@ -251,6 +251,12 @@ project 'JRuby Core' do
       target_path '${project.build.sourceDirectory}'
       filtering 'true'
     end
+
+    resource do
+      directory '${project.basedir}/..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
+    end
   end
 
 

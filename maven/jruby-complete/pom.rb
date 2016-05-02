@@ -10,6 +10,14 @@ project 'JRuby Complete' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'bundle'
 
+  build do
+    resource do
+      directory '${project.basedir}/../..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
+    end
+  end
+
   plugin_repository( :id => 'rubygems-releases',
                      :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )
 
