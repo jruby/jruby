@@ -83,29 +83,20 @@ class Exception
   end
 
   def set_backtrace(bt)
-    if false # bt.kind_of? Rubinius::Backtrace # Truffle: not supported
-      @backtrace = bt
-    else
-      # See if we stashed a Backtrace object away, and use it.
-      if false # hidden_bt = Rubinius::Backtrace.detect_backtrace(bt) # Truffle: not supported
-        @backtrace = hidden_bt
+    type_error = TypeError.new "backtrace must be Array of String"
+    case bt
+    when Array
+      if bt.all? { |s| s.kind_of? String }
+        @custom_backtrace = bt
       else
-        type_error = TypeError.new "backtrace must be Array of String"
-        case bt
-        when Array
-          if bt.all? { |s| s.kind_of? String }
-            @custom_backtrace = bt
-          else
-            raise type_error
-          end
-        when String
-          @custom_backtrace = [bt]
-        when nil
-          @custom_backtrace = nil
-        else
-          raise type_error
-        end
+        raise type_error
       end
+    when String
+      @custom_backtrace = [bt]
+    when nil
+      @custom_backtrace = nil
+    else
+      raise type_error
     end
   end
 
