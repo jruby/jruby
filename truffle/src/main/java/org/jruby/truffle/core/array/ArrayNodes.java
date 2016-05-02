@@ -1856,37 +1856,18 @@ public abstract class ArrayNodes {
             return ToAryNodeGen.create(null, null, index);
         }
 
-        @Specialization(guards = { "isRubyArray(other)", "isNullArray(other)" })
+        @Specialization(guards = "isNullArray(other)")
         public DynamicObject replace(DynamicObject array, DynamicObject other) {
             setStoreAndSize(array, null, 0);
             return array;
         }
 
-        @Specialization(guards = { "isRubyArray(other)", "isIntArray(other)" })
-        public DynamicObject replaceIntegerFixnum(DynamicObject array, DynamicObject other) {
-            final int[] store = (int[]) getStore(other);
-            setStoreAndSize(array, store.clone(), getSize(other));
-            return array;
-        }
-
-        @Specialization(guards = { "isRubyArray(other)", "isLongArray(other)" })
-        public DynamicObject replaceLongFixnum(DynamicObject array, DynamicObject other) {
-            final long[] store = (long[]) getStore(other);
-            setStoreAndSize(array, store.clone(), getSize(other));
-            return array;
-        }
-
-        @Specialization(guards = { "isRubyArray(other)", "isDoubleArray(other)" })
-        public DynamicObject replaceFloat(DynamicObject array, DynamicObject other) {
-            final double[] store = (double[]) getStore(other);
-            setStoreAndSize(array, store.clone(), getSize(other));
-            return array;
-        }
-
-        @Specialization(guards = { "isRubyArray(other)", "isObjectArray(other)" })
-        public DynamicObject replaceObject(DynamicObject array, DynamicObject other) {
-            final Object[] store = (Object[]) getStore(other);
-            setStoreAndSize(array, store.clone(), getSize(other));
+        @Specialization(guards = "strategy.matches(other)", limit = "ARRAY_STRATEGIES")
+        public DynamicObject replace(DynamicObject array, DynamicObject other,
+                @Cached("of(other)") ArrayStrategy strategy) {
+            final int size = getSize(other);
+            final ArrayMirror copy = strategy.newMirror(other).copyArrayAndMirror();
+            setStoreAndSize(array, copy.getArray(), size);
             return array;
         }
 
