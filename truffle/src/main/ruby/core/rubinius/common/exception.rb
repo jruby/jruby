@@ -83,20 +83,19 @@ class Exception
   end
 
   def set_backtrace(bt)
-    type_error = TypeError.new "backtrace must be Array of String"
     case bt
     when Array
       if bt.all? { |s| s.kind_of? String }
         @custom_backtrace = bt
       else
-        raise type_error
+        raise TypeError, "backtrace must be Array of String"
       end
     when String
       @custom_backtrace = [bt]
     when nil
       @custom_backtrace = nil
     else
-      raise type_error
+      raise TypeError, "backtrace must be Array of String"
     end
   end
 
