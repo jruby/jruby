@@ -84,56 +84,6 @@ class Exception
     (@backtrace || @locations) ? true : false
   end
 
-  Truffle.omit("We use MRI backtraces") do
-    def awesome_backtrace
-      @backtrace ||= Rubinius::Backtrace.backtrace(@locations)
-    end
-
-    def render(header="An exception occurred", io=STDERR, color=true)
-      message_lines = message.to_s.split("\n")
-
-      io.puts header
-      io.puts
-      io.puts "    #{message_lines.shift} (#{self.class})"
-
-      message_lines.each do |line|
-        io.puts "    #{line}"
-      end
-
-      if @custom_backtrace
-        io.puts "\nUser defined backtrace:"
-        io.puts
-        @custom_backtrace.each do |line|
-          io.puts "    #{line}"
-        end
-      end
-
-      io.puts "\nBacktrace:"
-      io.puts
-      io.puts awesome_backtrace.show("\n", color)
-
-      extra = @parent
-      while extra
-        io.puts "\nCaused by: #{extra.message} (#{extra.class})"
-
-        if @custom_backtrace
-          io.puts "\nUser defined backtrace:"
-          io.puts
-          @custom_backtrace.each do |line|
-            io.puts "    #{line}"
-          end
-        end
-
-        io.puts "\nBacktrace:"
-        io.puts
-        io.puts extra.awesome_backtrace.show
-
-        extra = extra.parent
-      end
-
-    end
-  end
-
   def set_backtrace(bt)
     if bt.kind_of? Rubinius::Backtrace
       @backtrace = bt
@@ -279,9 +229,7 @@ end
 class RuntimeError < StandardError
 end
 
-Truffle.omit("Wrong superclass") do
-  class SecurityError < StandardError
-  end
+class SecurityError < Exception
 end
 
 class ThreadError < StandardError
@@ -539,24 +487,4 @@ end
 # the bounds of an object.
 
 class Rubinius::ObjectBoundsExceededError < Rubinius::VMException
-end
-
-# Defined by the VM itself
-Truffle.omit("Not applicable in Truffle") do
-  class Rubinius::InvalidBytecode < Rubinius::Internal
-    attr_reader :compiled_code
-    attr_reader :ip
-
-    def message
-      if @compiled_code
-        if @ip and @ip >= 0
-          "#{super} - at #{@compiled_code.name}+#{@ip}"
-        else
-          "#{super} - method #{@compiled_code.name}"
-        end
-      else
-        super
-      end
-    end
-  end
 end
