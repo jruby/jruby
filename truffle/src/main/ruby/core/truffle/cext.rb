@@ -18,8 +18,108 @@ module Truffle
       false
     end
     
+    def Qtrue
+      true
+    end
+    
+    def Qnil
+      nil
+    end
+    
+    def rb_cObject
+      Object
+    end
+    
+    def rb_cArray
+      Array
+    end
+    
+    def rb_cHash
+      Hash
+    end
+    
+    def rb_eRuntimeError
+      raise 'not implemented'
+    end
+    
+    def FIXNUM_P(value)
+      value.is_a?(Fixnum)
+    end
+    
+    def rb_float_new(value)
+      value.to_f
+    end
+    
+    def RSTRING_PTR(string)
+      string
+    end
+    
+    def rb_intern
+      raise 'not implemented'
+    end
+    
+    def rb_str_new2(string)
+      string
+    end
+    
+    def rb_intern_str(string)
+      string.intern
+    end
+    
+    def ID2SYM(id)
+      id
+    end
+    
+    def rb_str_cat(string, to_concat, length)
+      raise 'not implemented'
+    end
+    
+    def RARRAY_PTR(array)
+      array
+    end
+    
+    def rb_ary_new_capa(capacity)
+      []
+    end
+    
+    def rb_ary_new2
+      []
+    end
+    
+    def rb_ary_new
+      []
+    end
+    
+    def rb_hash_new
+      {}
+    end
+    
+    def rb_scan_args
+      raise 'not implemented'
+    end
+    
+    def rb_raise(object, name)
+      raise 'not implemented'
+    end
+    
     def rb_define_module(name)
       Object.const_set(name, Module.new)
+    end
+    
+    def rb_define_module_under(mod, name)
+      mod.const_set(name, Module.new)
+    end
+    
+    def rb_define_method(mod, name, function, args)
+      raise 'not implemented'
+    end
+    
+    def rb_define_private_method(mod, name, function, args)
+      raise 'not implemented'
+    end
+    
+    def rb_define_module_function(mod, name, function, args)
+      raise 'not implemented'
     end
   
   end
