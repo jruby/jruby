@@ -7,9 +7,11 @@
 # GNU Lesser General Public License version 2.1
 
 module Truffle
+  module CExt
 
-  def self.cexts?
-    Interop.mime_type_supported?('application/x-sulong-library')
+    def self.supported?
+      Interop.mime_type_supported?('application/x-sulong-library')
+    end
+  
   end
-
 end
