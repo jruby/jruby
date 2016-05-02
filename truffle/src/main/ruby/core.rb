@@ -140,7 +140,6 @@ Truffle::Boot.require_core 'core/hash' # Our changes
 Truffle::Boot.require_core 'core/rubinius/common/array'
 Truffle::Boot.require_core 'core/rubinius/api/shims/array'
 Truffle::Boot.require_core 'core/rubinius/common/kernel'
-Truffle::Boot.require_core 'core/rubinius/api/shims/kernel'
 Truffle::Boot.require_core 'core/rubinius/common/identity_map'
 #Truffle::Boot.require_core 'core/rubinius/common/loaded_features'
 #Truffle::Boot.require_core 'core/rubinius/common/global'
