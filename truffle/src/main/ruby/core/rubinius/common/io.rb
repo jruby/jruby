@@ -101,6 +101,11 @@ class IO
     attr_reader :start
     attr_reader :used
 
+    def initialize
+      # Truffle: other fields are initialized in Java.
+      @start = 0
+    end
+
     ##
     # Returns +true+ if the buffer can be filled.
     def empty?
@@ -308,6 +313,11 @@ class IO
   attr_accessor :external
   attr_accessor :internal
   attr_accessor :mode
+
+  # Truffle: redefine setter to lower
+  def mode=(value)
+    @mode = Truffle::Fixnum.lower(value)
+  end
 
   def self.binread(file, length=nil, offset=0)
     raise ArgumentError, "Negative length #{length} given" if !length.nil? && length < 0
@@ -1851,8 +1861,11 @@ class IO
         end
 
         if str
+          # Truffle: write the string + record separator (\n) atomically so multithreaded #puts is bearable
+          unless str.suffix?(DEFAULT_RECORD_SEPARATOR)
+            str += DEFAULT_RECORD_SEPARATOR
+          end
           write str
-          write DEFAULT_RECORD_SEPARATOR unless str.suffix?(DEFAULT_RECORD_SEPARATOR)
         end
       end
     end
