@@ -279,7 +279,7 @@ Truffle::Boot.require_core 'core/truffle/interop'
 
 # Start running Ruby code outside classes
 
-Truffle::Boot.require_core 'core/config'
+Truffle::Boot.require_core 'core/rbconfig'
 Truffle::Boot.require_core 'core/main'
 
 Truffle::Boot.require_core 'core/post'
