@@ -14,6 +14,10 @@ module Truffle
       Interop.mime_type_supported?('application/x-sulong-library')
     end
     
+    def Qfalse
+      false
+    end
+    
     def rb_define_module(name)
       Object.const_set(name, Module.new)
     end

@@ -9,28 +9,9 @@
  */
 package org.jruby.truffle.interop;
 
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 
 @CoreClass(name = "Truffle::CExt")
 public class CExtNodes {
-
-    @CoreMethod(names = "qfalse", isModuleFunction = true, needsSelf = false)
-    public abstract static class QFalseNode extends CoreMethodArrayArgumentsNode {
-
-        public QFalseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public boolean qfalse() {
-            return false;
-        }
-
-    }
 
 }
