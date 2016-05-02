@@ -194,7 +194,7 @@ VALUE rb_iv_set(VALUE object, const char *name, VALUE value) {
 }
 
 VALUE rb_const_get(VALUE object, ID name) {
-  return truffle_invoke(RUBY_CEXT, "rb_const_get", object, name);
+  return truffle_invoke(object, "const_get", name);
 }
 
 void rb_raise(VALUE exception, const char *format, ...) {
