@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #include <ruby.h>
 
 VALUE add(VALUE self, VALUE a, VALUE b) {
