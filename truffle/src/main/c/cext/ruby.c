@@ -202,7 +202,7 @@ void rb_raise(VALUE exception, const char *format, ...) {
 }
 
 VALUE rb_define_module(const char *name) {
-  return truffle_invoke(RUBY_CEXT, "rb_define_module", name);
+  return truffle_invoke(RUBY_CEXT, "rb_define_module", truffle_read_string(name));
 }
 
 VALUE rb_define_module_under(VALUE module, const char *name) {
