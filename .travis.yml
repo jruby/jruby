@@ -85,6 +85,7 @@ matrix:
     - env: JT='test mri'
     - env: PHASE='-Pj2ee --projects !truffle'
       jdk: oraclejdk7
+    - env: JT='test integration long' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required
