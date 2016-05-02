@@ -168,7 +168,26 @@ public class IRDumper extends IRVisitor {
             BasicBlock[] bbs = ((FullInterpreterContext)ic).getLinearizedBBList();
 
             for (BasicBlock bb : bbs) {
-                printAnsi(BLOCK_COLOR, "\nbasic_block #" + bb.getID() + ": " + bb.getLabel() + "\n");
+                printAnsi(BLOCK_COLOR, "\nblock #" + bb.getID());
+
+                Iterable<BasicBlock> outs;
+                if (scope.getCFG() != null &&
+                        (outs = scope.getCFG().getOutgoingDestinations(bb)) != null &&
+                        outs.iterator().hasNext()) {
+
+                    printAnsi(BLOCK_COLOR, " (out: ");
+
+                    boolean first = true;
+                    for (BasicBlock out : outs) {
+                        if (!first) printAnsi(BLOCK_COLOR, ",");
+                        first = false;
+                        printAnsi(BLOCK_COLOR, "" + out.getID());
+                    }
+
+                    printAnsi(BLOCK_COLOR, ")");
+                }
+
+                printAnsi(BLOCK_COLOR, ": " + bb.getLabel() + "\n");
 
                 List<Instr> instrList = bb.getInstrs();
 
