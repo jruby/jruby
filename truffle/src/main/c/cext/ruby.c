@@ -123,7 +123,7 @@ VALUE ID2SYM(ID id) {
   return truffle_invoke(RUBY_CEXT, "ID2SYM", id);
 }
 
-void rb_str_cat(VALUE string, char *to_concat, long length) {
+void rb_str_cat(VALUE string, const char *to_concat, long length) {
   truffle_invoke(RUBY_CEXT, "rb_str_cat", string, to_concat, length);
 }
 
@@ -176,7 +176,7 @@ void rb_hash_aset(VALUE hash, VALUE key, VALUE value) {
   truffle_write(hash, key, value);
 }
 
-void rb_scan_args(int argc, VALUE *argv, char *format, ...) {
+void rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
   truffle_invoke(RUBY_CEXT, "rb_scan_args", argc, argv, format /*, where to get args? */);
 }
 
@@ -201,22 +201,22 @@ void rb_raise(VALUE exception, const char *format, ...) {
   truffle_invoke(RUBY_CEXT, "rb_raise", format /*, where to get args? */);
 }
 
-VALUE rb_define_module(char *name) {
+VALUE rb_define_module(const char *name) {
   return truffle_invoke(RUBY_CEXT, "rb_define_module", name);
 }
 
-VALUE rb_define_module_under(VALUE module, char *name) {
+VALUE rb_define_module_under(VALUE module, const char *name) {
   return truffle_invoke(RUBY_CEXT, "rb_define_module_under", module, name);
 }
 
-void rb_define_method(VALUE module, char *name, void *function, int args) {
+void rb_define_method(VALUE module, const char *name, void *function, int args) {
   truffle_invoke(RUBY_CEXT, "rb_define_method", module, name, function, args);
 }
 
-void rb_define_private_method(VALUE module, char *name, void *function, int args) {
+void rb_define_private_method(VALUE module, const char *name, void *function, int args) {
   truffle_invoke(RUBY_CEXT, "rb_define_private_method", module, name, function, args);
 }
 
-int rb_define_module_function(VALUE module, char *name, void *function, int args) {
+int rb_define_module_function(VALUE module, const char *name, void *function, int args) {
   return truffle_invoke_i(RUBY_CEXT, "rb_define_module_function", module, name, function, args);
 }

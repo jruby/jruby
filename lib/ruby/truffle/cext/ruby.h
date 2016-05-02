@@ -73,7 +73,7 @@ ID rb_intern(const char *string);
 VALUE rb_str_new2(const char *string);
 VALUE ID2SYM(ID id);
 VALUE rb_intern_str(VALUE string);
-void rb_str_cat(VALUE string, char *to_concat, long length);
+void rb_str_cat(VALUE string, const char *to_concat, long length);
 
 int RARRAY_LEN(VALUE array);
 VALUE *RARRAY_PTR(VALUE array);
@@ -90,7 +90,7 @@ VALUE rb_hash_new();
 VALUE rb_hash_aref(VALUE hash, VALUE key);
 void rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 
-void rb_scan_args(int argc, VALUE *argv, char *format, ...);
+void rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
 VALUE rb_funcall(VALUE object, ID name, int argc, ...);
 
@@ -101,12 +101,12 @@ VALUE rb_const_get(VALUE object, ID name);
 
 void rb_raise(VALUE exception, const char *format, ...);
 
-VALUE rb_define_module(char *name);
-VALUE rb_define_module_under(VALUE module, char *name);
+VALUE rb_define_module(const char *name);
+VALUE rb_define_module_under(VALUE module, const char *name);
 
-void rb_define_method(VALUE module, char *name, void *function, int args);
-void rb_define_private_method(VALUE module, char *name, void *function, int args);
-int rb_define_module_function(VALUE module, char *name, void *function, int args);
+void rb_define_method(VALUE module, const char *name, void *function, int args);
+void rb_define_private_method(VALUE module, const char *name, void *function, int args);
+int rb_define_module_function(VALUE module, const char *name, void *function, int args);
 
 #if defined(__cplusplus)
 }
