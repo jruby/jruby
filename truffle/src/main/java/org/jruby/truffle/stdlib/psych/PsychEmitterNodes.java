@@ -286,19 +286,39 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_sequence", required = 4)
     public abstract static class StartSequenceNode extends CoreMethodArrayArgumentsNode {
 
+        private final int SEQUENCE_BLOCK = 1;
+
         @TruffleBoundary
         @Specialization
-        public DynamicObject startSequence(DynamicObject emitter, Object anchor, Object tag, boolean implicit, int style) {
-            final int SEQUENCE_BLOCK = 1; // see psych/nodes/sequence.rb
+        public DynamicObject startSequence(
+                DynamicObject emitter,
+                Object anchor,
+                Object tag,
+                boolean implicit,
+                int style) {
+            final String anchorString;
 
-            SequenceStartEvent event = new SequenceStartEvent(
-                    isNil(anchor) ? null : anchor.toString(),
-                    isNil(tag) ? null : tag.toString(),
+            if (isNil(anchor)) {
+                anchorString = null;
+            } else {
+                anchorString = anchor.toString();
+            }
+
+            final String tagString;
+
+            if (isNil(tag)) {
+                tagString = null;
+            } else {
+                tagString = tag.toString();
+            }
+
+            emit(emitter, new SequenceStartEvent(
+                    anchorString,
+                    tagString,
                     implicit,
                     NULL_MARK,
                     NULL_MARK,
-                    SEQUENCE_BLOCK != style);
-            emit(emitter, event);
+                    SEQUENCE_BLOCK != style));
 
             return emitter;
         }
