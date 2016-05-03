@@ -11,6 +11,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.parser.StaticScope;
@@ -163,6 +164,12 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     }
 
     @Override
+    public void encode(LocalVariable variable) {
+        encode(variable.getName());
+        encode(variable.getOffset()); // No need to write depth..it is zero.
+    }
+
+    @Override
     public void encode(Operand operand) {
         operand.encode(this);
     }
@@ -201,6 +208,14 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     public void encode(RubyEvent event) {
         encode((byte) event.ordinal());
     }
+
+    @Override
+    public void encode(StaticScope staticScope) {
+        encode(staticScope.getType());
+        encode(staticScope.getVariables());
+        encode(staticScope.getSignature());
+    }
+
 
     @Override
     public void encode(StaticScope.Type value) {

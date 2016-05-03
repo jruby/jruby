@@ -421,6 +421,10 @@ public abstract class IRScope implements ParseResult {
             if (problem != null) throw new IllegalStateException("LVP being stored when no FIC");
             return;
         }
+        if ("foo".equals(name) && problem != null) {
+            System.out.println("CFG: " + getCFG().toStringInstrs());
+            System.out.println("PROB: " + problem);
+        }
         fullInterpreterContext.getDataFlowProblems().put(LiveVariablesProblem.NAME, problem);
     }
 

@@ -29,25 +29,47 @@ import org.jruby.util.KeyValuePair;
  * @author enebo
  */
 public class IRReader implements IRPersistenceValues {
+    protected IRManager manager;
+    protected IRReaderDecoder decoder;
+
+    @Deprecated
+    public IRReader() {
+        // This is so anyone who might have extended this pre-OOd will not fail to compile.
+        throw new RuntimeException("Old format was all static so this noarg constructor should not get called.");
+    }
+
+    public IRReader(IRManager manager, final IRReaderDecoder file) {
+        this.manager = manager;
+        this.decoder = file;
+    }
+
     public static IRScope load(IRManager manager, final IRReaderDecoder file) throws IOException {
-        int version = file.decodeIntRaw();
+        return new IRReader(manager, file).load();
+    }
+
+    protected void loadPrelude() throws IOException {
+        int version = decoder.decodeIntRaw();
 
         if (version != VERSION) {
             throw new IOException("Trying to read incompatable persistence format (version found: " +
                     version + ", version expected: " + VERSION);
         }
-        int headersOffset = file.decodeIntRaw();
+        int headersOffset = decoder.decodeIntRaw();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("header_offset = " + headersOffset);
-        int poolOffset = file.decodeIntRaw();
+        int poolOffset = decoder.decodeIntRaw();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("pool_offset = " + headersOffset);
+        decoder.seek(headersOffset);
+    }
 
-        file.seek(headersOffset);
-        int scopesToRead  = file.decodeInt();
+    protected IRScope load() throws IOException {
+        loadPrelude();
+
+        int scopesToRead  = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("scopes to read = " + scopesToRead);
 
         KeyValuePair<IRScope, Integer>[] scopes = new KeyValuePair[scopesToRead];
         for (int i = 0; i < scopesToRead; i++) {
-            scopes[i] = decodeScopeHeader(manager, file);
+            scopes[i] = decodeScopeHeader();
         }
 
         // Lifecycle woes.  All IRScopes need to exist before we can decodeInstrs.
@@ -60,7 +82,7 @@ public class IRReader implements IRPersistenceValues {
                 @Override
                 public List<Instr> call() throws Exception {
 //                    System.out.println("eager");
-                    return file.decodeInstructionsAt(scope, instructionsOffset);
+                    return decoder.decodeInstructionsAt(scope, instructionsOffset);
                 }
             });
         }
@@ -75,7 +97,7 @@ public class IRReader implements IRPersistenceValues {
         return scopes[0].getKey(); // topmost scope;
     }
 
-    private static KeyValuePair<IRScope, Integer> decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
+    private KeyValuePair<IRScope, Integer> decodeScopeHeader() {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
         IRScopeType type = decoder.decodeIRScopeType();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("IRScopeType = " + type);
@@ -85,7 +107,7 @@ public class IRReader implements IRPersistenceValues {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("LINE = " + line);
         int tempVarsCount = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("# of Temp Vars = " + tempVarsCount);
-        Map<String, Integer> indices = decodeScopeLabelIndices(decoder);
+        Map<String, Integer> indices = decodeScopeLabelIndices();
 
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
         Signature signature;
@@ -98,8 +120,8 @@ public class IRReader implements IRPersistenceValues {
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
         // FIXME: It seems wrong we have static scope + local vars both being persisted.  They must have the same values
         // and offsets?
-        StaticScope staticScope = decodeStaticScope(decoder, parentScope);
-        IRScope scope = createScope(manager, type, name, line, parent, signature, staticScope);
+        StaticScope staticScope = decodeStaticScope(parentScope);
+        IRScope scope = createScope(type, name, line, parent, signature, staticScope);
 
         scope.setTemporaryVariableCount(tempVarsCount);
         // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
@@ -107,7 +129,7 @@ public class IRReader implements IRPersistenceValues {
 
         // FIXME: This is odd, but ClosureLocalVariable wants it's defining closure...feels wrong.
         // But because of this we have to push decoding lvars to the end of the scope info.
-        scope.setLocalVariables(decodeScopeLocalVariables(decoder, scope));
+        scope.setLocalVariables(decodeScopeLocalVariables(scope));
 
         decoder.addScope(scope);
 
@@ -116,7 +138,7 @@ public class IRReader implements IRPersistenceValues {
         return new KeyValuePair<>(scope, instructionsOffset);
     }
 
-    private static Map<String, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
+    private Map<String, LocalVariable> decodeScopeLocalVariables(IRScope scope) {
         int size = decoder.decodeInt();
         Map<String, LocalVariable> localVariables = new HashMap(size);
         for (int i = 0; i < size; i++) {
@@ -131,7 +153,7 @@ public class IRReader implements IRPersistenceValues {
         return localVariables;
     }
 
-    private static Map<String, Integer> decodeScopeLabelIndices(IRReaderDecoder decoder) {
+    private Map<String, Integer> decodeScopeLabelIndices() {
         int labelIndicesSize = decoder.decodeInt();
         Map<String, Integer> indices = new HashMap<String, Integer>(labelIndicesSize);
         for (int i = 0; i < labelIndicesSize; i++) {
@@ -140,7 +162,7 @@ public class IRReader implements IRPersistenceValues {
         return indices;
     }
 
-    private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
+    private StaticScope decodeStaticScope(StaticScope parentScope) {
         StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeStringArray());
 
         scope.setSignature(decoder.decodeSignature());
@@ -148,7 +170,7 @@ public class IRReader implements IRPersistenceValues {
         return scope;
     }
 
-    public static IRScope createScope(IRManager manager, IRScopeType type, String name, int line,
+    public IRScope createScope(IRScopeType type, String name, int line,
             IRScope lexicalParent, Signature signature, StaticScope staticScope) {
 
         switch (type) {

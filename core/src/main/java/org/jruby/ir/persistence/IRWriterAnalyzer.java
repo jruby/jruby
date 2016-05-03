@@ -11,6 +11,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.parser.StaticScope;
@@ -74,6 +75,10 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
     }
 
     @Override
+    public void encode(LocalVariable value) {
+    }
+
+    @Override
     public void encode(Operation value) {
     }
 
@@ -123,6 +128,10 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
 
     @Override
     public void encode(RubyEvent event) {
+    }
+
+    @Override
+    public void encode(StaticScope scope) {
     }
 
     @Override

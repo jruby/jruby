@@ -12,6 +12,7 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Signature;
 
 public class IREvalScript extends IRClosure {
     private List<IRClosure> beginBlocks;
@@ -69,6 +70,11 @@ public class IREvalScript extends IRClosure {
 
     public boolean isModuleOrInstanceEval() {
         return evalType == EvalType.MODULE_EVAL || evalType == EvalType.INSTANCE_EVAL;
+    }
+
+    @Override
+    public Signature getSignature() {
+        return Signature.OPTIONAL;
     }
 
     /* Record a begin block -- not all scope implementations can handle them */

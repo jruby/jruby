@@ -305,6 +305,26 @@ public class CFG {
             }
         }
 
+        // Insert starts with false edges for each exception region so we can account
+        // for begin; a = 1; rescue; p a; end and that Java is scoped differently.
+        for (ExceptionRegion rr: allExceptionRegions) {
+            BasicBlock newStart = createBB(nestedExceptionRegions);
+            BasicBlock oldStart = rr.getStartBB();
+
+            // move all incoming edges from oldStart to our new one
+            for (Edge<BasicBlock> edge: graph.findOrCreateVertexFor(oldStart).getIncomingEdges()) {
+                graph.removeEdge(edge);
+                graph.addEdge(edge.getSource().getData(), newStart, edge.getType());
+            }
+
+            addEdge(newStart, oldStart, EdgeType.FALL_THROUGH);
+
+            Label rescueLabel = rr.getFirstRescueBlockLabel();
+            if (!Label.UNRESCUED_REGION_LABEL.equals(rescueLabel)) {
+                addEdge(newStart, bbMap.get(rr.getFirstRescueBlockLabel()), EdgeType.EXCEPTION);
+            }
+        }
+
         // Process all rescued regions
         for (ExceptionRegion rr: allExceptionRegions) {
             // When this exception region represents an unrescued region
