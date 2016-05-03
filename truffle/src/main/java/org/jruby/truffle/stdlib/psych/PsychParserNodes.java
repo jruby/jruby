@@ -147,7 +147,7 @@ public abstract class PsychParserNodes {
 
             Parser parser = new ParserImpl(readerFor(frame, yaml));
             try {
-                if (isNil(path) && respondToPathNode.doesRespondTo(frame, yaml, "path")) {
+                if (isNil(path) && respondToPathNode.doesRespondTo(frame, "path", yaml)) {
                     path = (DynamicObject) callPathNode.call(frame, yaml, "path", null);
                 }
 
@@ -202,7 +202,7 @@ public abstract class PsychParserNodes {
         }
 
         protected ReadObjectFieldNode createReadHandlerNode() {
-            return ReadObjectFieldNodeGen.create("handler", nil());
+            return ReadObjectFieldNodeGen.create("@handler", nil());
         }
 
         private StreamReader readerFor(VirtualFrame frame, DynamicObject yaml) {
