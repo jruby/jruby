@@ -38,7 +38,6 @@
  */
 package org.jruby.truffle.stdlib.psych;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -156,7 +155,7 @@ public abstract class PsychEmitterNodes {
                                     charset),
                     Layouts.PSYCH_EMITTER.getOptions(emitter)));
 
-            emit(getContext(), emitter, new StreamStartEvent(NULL_MARK, NULL_MARK));
+            emit(emitter, new StreamStartEvent(NULL_MARK, NULL_MARK));
 
             return emitter;
         }
@@ -170,7 +169,7 @@ public abstract class PsychEmitterNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject endStream(DynamicObject emitter) {
-            emit(getContext(), emitter, new StreamEndEvent(NULL_MARK, NULL_MARK));
+            emit(emitter, new StreamEndEvent(NULL_MARK, NULL_MARK));
             return emitter;
         }
 
@@ -225,7 +224,7 @@ public abstract class PsychEmitterNodes {
             }
 
             DocumentStartEvent event = new DocumentStartEvent(NULL_MARK, NULL_MARK, !implicitBool, version, tagsMap);
-            emit(getContext(), emitter, event);
+            emit(emitter, event);
             return emitter;
         }
 
@@ -237,7 +236,7 @@ public abstract class PsychEmitterNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject endDocument(DynamicObject emitter, boolean implicit) {
-            emit(getContext(), emitter, new DocumentEndEvent(NULL_MARK, NULL_MARK, !implicit));
+            emit(emitter, new DocumentEndEvent(NULL_MARK, NULL_MARK, !implicit));
             return emitter;
         }
 
@@ -258,7 +257,7 @@ public abstract class PsychEmitterNodes {
                     NULL_MARK,
                     NULL_MARK,
                     SCALAR_STYLES[style]);
-            emit(getContext(), emitter, event);
+            emit(emitter, event);
             return emitter;
         }
 
@@ -280,7 +279,7 @@ public abstract class PsychEmitterNodes {
                     NULL_MARK,
                     NULL_MARK,
                     SEQUENCE_BLOCK != style);
-            emit(getContext(), emitter, event);
+            emit(emitter, event);
 
             return emitter;
         }
@@ -293,7 +292,7 @@ public abstract class PsychEmitterNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject endSequence(DynamicObject emitter) {
-            emit(getContext(), emitter, new SequenceEndEvent(NULL_MARK, NULL_MARK));
+            emit(emitter, new SequenceEndEvent(NULL_MARK, NULL_MARK));
             return emitter;
         }
 
@@ -315,7 +314,7 @@ public abstract class PsychEmitterNodes {
                     NULL_MARK,
                     MAPPING_BLOCK != style);
 
-            emit(getContext(), emitter, event);
+            emit(emitter, event);
 
             return emitter;
         }
@@ -328,7 +327,7 @@ public abstract class PsychEmitterNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject endMapping(DynamicObject emitter) {
-            emit(getContext(), emitter, new MappingEndEvent(NULL_MARK, NULL_MARK));
+            emit(emitter, new MappingEndEvent(NULL_MARK, NULL_MARK));
             return emitter;
         }
 
@@ -340,7 +339,7 @@ public abstract class PsychEmitterNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject alias(DynamicObject emitter, Object anchor) {
-            emit(getContext(), emitter, new AliasEvent(anchor.toString(), NULL_MARK, NULL_MARK));
+            emit(emitter, new AliasEvent(anchor.toString(), NULL_MARK, NULL_MARK));
             return emitter;
         }
 
@@ -409,7 +408,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    private static void emit(RubyContext context, DynamicObject emitter, Event event) {
+    private static void emit(DynamicObject emitter, Event event) {
         try {
             if (Layouts.PSYCH_EMITTER.getEmitter(emitter) == null) {
                 throw new UnsupportedOperationException();
