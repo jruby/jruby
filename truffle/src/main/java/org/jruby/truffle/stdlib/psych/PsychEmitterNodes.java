@@ -54,6 +54,7 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.adapaters.OutputStreamAdapter;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
@@ -139,9 +140,7 @@ public abstract class PsychEmitterNodes {
         @Specialization
         public DynamicObject startStream(DynamicObject emitter, int encoding) {
             if (Layouts.PSYCH_EMITTER.getEmitter(emitter) != null) {
-                throw new UnsupportedOperationException();
-                // TODO CS 28-Sep-15 implement this code path
-                //throw context.runtime.newRuntimeError("already initialized emitter");
+                throw new RaiseException(getContext().getCoreExceptions().runtimeError("already initialized emitter", this));
             }
 
             Encoding encoding1 = PsychParserNodes.YAMLEncoding.values()[encoding].encoding;
