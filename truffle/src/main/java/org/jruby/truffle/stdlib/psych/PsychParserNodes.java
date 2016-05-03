@@ -93,19 +93,6 @@ import java.util.Map;
 @CoreClass(name = "Psych::Parser")
 public abstract class PsychParserNodes {
 
-    public enum YAMLEncoding {
-        YAML_ANY_ENCODING(UTF8Encoding.INSTANCE),
-        YAML_UTF8_ENCODING(UTF8Encoding.INSTANCE),
-        YAML_UTF16LE_ENCODING(UTF16LEEncoding.INSTANCE),
-        YAML_UTF16BE_ENCODING(UTF16BEEncoding.INSTANCE);
-
-        YAMLEncoding(Encoding encoding) {
-            this.encoding = encoding;
-        }
-
-        public final Encoding encoding;
-    }
-
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 

@@ -108,6 +108,7 @@ import org.jruby.truffle.stdlib.ObjSpaceNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodes;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
+import org.jruby.truffle.stdlib.psych.YAMLEncoding;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
@@ -823,10 +824,10 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(context, node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(context, node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
 
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "ANY", PsychParserNodes.YAMLEncoding.YAML_ANY_ENCODING.ordinal());
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF8", PsychParserNodes.YAMLEncoding.YAML_UTF8_ENCODING.ordinal());
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16LE", PsychParserNodes.YAMLEncoding.YAML_UTF16LE_ENCODING.ordinal());
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16BE", PsychParserNodes.YAMLEncoding.YAML_UTF16BE_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "ANY", YAMLEncoding.YAML_ANY_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF8", YAMLEncoding.YAML_UTF8_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16LE", YAMLEncoding.YAML_UTF16LE_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16BE", YAMLEncoding.YAML_UTF16BE_ENCODING.ordinal());
 
         // Java interop
         final DynamicObject javaModule = defineModule(truffleModule, "Java");
