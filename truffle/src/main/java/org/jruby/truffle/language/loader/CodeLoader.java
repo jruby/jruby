@@ -100,57 +100,6 @@ public class CodeLoader {
                 new Object[]{}));
     }
 
-    @TruffleBoundary
-    public Object inline(Node currentNode, String expression, Object... arguments) {
-        final Frame frame = Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true);
-        return inline(currentNode, frame, expression, arguments);
-    }
-
-    public Object inline(Node currentNode, Frame frame, String expression, Object... arguments) {
-        final Object[] packedArguments = RubyArguments.pack(
-                null,
-                null,
-                RubyArguments.getMethod(frame),
-                DeclarationContext.INSTANCE_EVAL,
-                null,
-                RubyArguments.getSelf(frame),
-                null,
-                new Object[]{});
-
-        final FrameDescriptor frameDescriptor = new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue());
-
-        final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
-                packedArguments,
-                frameDescriptor);
-
-        if (arguments.length % 2 == 1) {
-            throw new UnsupportedOperationException("odd number of name-value pairs for arguments");
-        }
-
-        for (int n = 0; n < arguments.length; n += 2) {
-            evalFrame.setObject(evalFrame.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
-        }
-
-        final Source source = Source.fromText(StringOperations.createByteList(expression), "inline-ruby");
-
-        final RubyRootNode rootNode = context.getCodeLoader().parse(
-                source,
-                UTF8Encoding.INSTANCE,
-                ParserContext.INLINE,
-                evalFrame,
-                true,
-                currentNode);
-
-        final DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
-                ParserContext.INLINE,
-                DeclarationContext.INSTANCE_EVAL,
-                rootNode,
-                evalFrame,
-                RubyArguments.getSelf(evalFrame));
-
-        return deferredCall.callWithoutCallNode();
-    }
-
     public static class DeferredCall {
 
         private final CallTarget callTarget;
