@@ -143,7 +143,7 @@ public abstract class PsychEmitterNodes {
                 throw new RaiseException(getContext().getCoreExceptions().runtimeError("already initialized emitter", this));
             }
 
-            Encoding encoding1 = YAMLEncoding.values()[encoding].encoding;
+            Encoding encoding1 = YAMLEncoding.values()[encoding].getEncoding();
             // TODO CS 24-Sep-15 uses JRuby's encoding service
             Charset charset = getContext().getJRubyRuntime().getEncodingService().charsetForEncoding(encoding1);
 

@@ -53,6 +53,10 @@ public enum YAMLEncoding {
         this.encoding = encoding;
     }
 
-    public final Encoding encoding;
+    private final Encoding encoding;
+
+    public Encoding getEncoding() {
+        return encoding;
+    }
 
 }
