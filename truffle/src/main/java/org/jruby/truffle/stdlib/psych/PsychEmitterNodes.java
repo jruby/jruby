@@ -242,6 +242,17 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "scalar", required = 6)
     public abstract static class ScalarNode extends CoreMethodArrayArgumentsNode {
 
+        // Map style constants from Psych values (ANY = 0 ... FOLDED = 5)
+        // to SnakeYaml values; see psych/nodes/scalar.rb.
+        private static final Character[] SCALAR_STYLES = new Character[] {
+                null, // ANY; we'll choose plain
+                null, // PLAIN
+                '\'', // SINGLE_QUOTED
+                '"',  // DOUBLE_QUOTED
+                '|',  // LITERAL
+                '>',  // FOLDED
+        };
+
         @TruffleBoundary
         @Specialization(guards = "isRubyString(value)")
         public DynamicObject scalar(
@@ -479,16 +490,5 @@ public abstract class PsychEmitterNodes {
     }
 
     private static final Mark NULL_MARK = new Mark(null, 0, 0, 0, null, 0);
-
-    // Map style constants from Psych values (ANY = 0 ... FOLDED = 5)
-    // to SnakeYaml values; see psych/nodes/scalar.rb.
-    private static final Character[] SCALAR_STYLES = new Character[] {
-            null, // ANY; we'll choose plain
-            null, // PLAIN
-            '\'', // SINGLE_QUOTED
-            '"',  // DOUBLE_QUOTED
-            '|',  // LITERAL
-            '>',  // FOLDED
-    };
 
 }
