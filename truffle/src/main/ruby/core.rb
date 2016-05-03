@@ -269,7 +269,7 @@ Truffle::Boot.require_core 'core/shims'
 
 Truffle::Boot.require_core 'core/truffle/attachments'
 Truffle::Boot.require_core 'core/truffle/debug'
-Truffle::Boot.require_core 'core/truffle/truffle'
+Truffle::Boot.require_core 'core/truffle/cext'
 Truffle::Boot.require_core 'core/truffle/interop'
 
 # Start running Ruby code outside classes

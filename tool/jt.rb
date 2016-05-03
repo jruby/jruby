@@ -59,6 +59,17 @@ module Utilities
     end
     raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
   end
+  
+  def self.find_sulong_graal(dir)
+    jvmci = File.join(dir, '..', 'jvmci')
+    Dir.entries(jvmci).each do |entry|
+      child = File.join(jvmci, entry)
+      if File.directory?(child) && entry.start_with?('jdk')
+        return File.join(child, 'product', 'bin', 'java')
+      end
+    end
+    raise "couldn't find the Java build in the Sulong repository - you need to check it out and build it"
+  end
 
   def self.find_graal_js
     jar = ENV['GRAAL_JS_JAR']
@@ -279,7 +290,7 @@ module Commands
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
-    puts '    --sulong        add Sulong to the classpath (set SULONG_DIR, implies --graal)'
+    puts '    --sulong        add Sulong to the classpath (set SULONG_DIR, implies --graal but finds it from the SULONG_DIR)'
     puts '    --asm           show assembly (implies --graal)'
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
@@ -394,6 +405,7 @@ module Commands
 
     if args.delete('--sulong')
       dir = Utilities.find_sulong_dir
+      env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
       jruby_args << '-J-classpath'
       jruby_args << File.join(dir, 'lib', '*')
       jruby_args << '-J-classpath'
