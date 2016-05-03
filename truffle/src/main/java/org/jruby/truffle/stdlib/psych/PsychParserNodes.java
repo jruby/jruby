@@ -70,6 +70,8 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 import org.yaml.snakeyaml.DumperOptions;
@@ -140,7 +142,8 @@ public abstract class PsychParserNodes {
                 DynamicObject path,
                 @Cached("new()") SnippetNode taintedNode,
                 @Cached("create()") DoesRespondDispatchHeadNode respondToPathNode,
-                @Cached("createMethodCall()") CallDispatchHeadNode callPathNode) {
+                @Cached("createMethodCall()") CallDispatchHeadNode callPathNode,
+                @Cached("createReadHandlerNode()") ReadObjectFieldNode readHandlerNode) {
             CompilerDirectives.bailout("Psych parsing cannot be compiled");
 
             boolean tainted = (boolean) taintedNode.execute(frame, "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
@@ -151,7 +154,7 @@ public abstract class PsychParserNodes {
                     path = (DynamicObject) callPathNode.call(frame, yaml, "path", null);
                 }
 
-                Object handler = DebugHelpers.eval(getContext(), "@handler");
+                Object handler = readHandlerNode.execute(parserObject);
 
                 while (true) {
                     Event event = parser.getEvent();
@@ -199,6 +202,10 @@ public abstract class PsychParserNodes {
             }
 
             return parserObject;
+        }
+
+        protected ReadObjectFieldNode createReadHandlerNode() {
+            return ReadObjectFieldNodeGen.create("handler", nil());
         }
 
         private StreamReader readerFor(VirtualFrame frame, DynamicObject yaml) {
