@@ -286,7 +286,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_sequence", required = 4)
     public abstract static class StartSequenceNode extends CoreMethodArrayArgumentsNode {
 
-        private final int SEQUENCE_BLOCK = 1;
+        private static final int SEQUENCE_BLOCK = 1;
 
         @TruffleBoundary
         @Specialization
