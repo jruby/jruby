@@ -138,22 +138,24 @@ public abstract class PsychEmitterNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public DynamicObject startStream(DynamicObject emitter, int encoding) {
+        public DynamicObject startStream(DynamicObject emitter, int encodingOrdinal) {
             if (Layouts.PSYCH_EMITTER.getEmitter(emitter) != null) {
                 throw new RaiseException(getContext().getCoreExceptions().runtimeError("already initialized emitter", this));
             }
 
-            Encoding encoding1 = YAMLEncoding.values()[encoding].getEncoding();
-            // TODO CS 24-Sep-15 uses JRuby's encoding service
-            Charset charset = getContext().getJRubyRuntime().getEncodingService().charsetForEncoding(encoding1);
+            final Encoding encoding = YAMLEncoding.values()[encodingOrdinal].getEncoding();
+            final Charset charset = getContext().getJRubyRuntime().getEncodingService().charsetForEncoding(encoding);
 
-            Layouts.PSYCH_EMITTER.setEmitter(emitter, new Emitter(new OutputStreamWriter(
-                    new OutputStreamAdapter(getContext(), (DynamicObject) Layouts.PSYCH_EMITTER.getIo(emitter), encoding1), charset),
+            Layouts.PSYCH_EMITTER.setEmitter(emitter,
+                    new Emitter(
+                            new OutputStreamWriter(
+                                    new OutputStreamAdapter(
+                                            getContext(),
+                                            (DynamicObject) Layouts.PSYCH_EMITTER.getIo(emitter), encoding),
+                                    charset),
                     Layouts.PSYCH_EMITTER.getOptions(emitter)));
 
-            StreamStartEvent event = new StreamStartEvent(NULL_MARK, NULL_MARK);
-
-            emit(getContext(), emitter, event);
+            emit(getContext(), emitter, new StreamStartEvent(NULL_MARK, NULL_MARK));
 
             return emitter;
         }
