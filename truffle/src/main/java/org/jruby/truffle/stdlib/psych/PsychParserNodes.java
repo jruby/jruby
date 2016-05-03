@@ -140,46 +140,52 @@ public abstract class PsychParserNodes {
                 @Cached("new()") SnippetNode taintedNode,
                 @Cached("create()") DoesRespondDispatchHeadNode respondToPathNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callPathNode,
-                @Cached("createReadHandlerNode()") ReadObjectFieldNode readHandlerNode) {
+                @Cached("createReadHandlerNode()") ReadObjectFieldNode readHandlerNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callStartStreamNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callEndDocumentNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callAliasNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callEndSequenceNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callEndMappingNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callEndStreamNode) {
             CompilerDirectives.bailout("Psych parsing cannot be compiled");
 
-            boolean tainted = (boolean) taintedNode.execute(frame, "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
+            final boolean tainted = (boolean) taintedNode.execute(frame, "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
 
-            Parser parser = new ParserImpl(readerFor(frame, yaml));
+            final Parser parser = new ParserImpl(readerFor(frame, yaml));
+
             try {
                 if (isNil(path) && respondToPathNode.doesRespondTo(frame, "path", yaml)) {
                     path = (DynamicObject) callPathNode.call(frame, yaml, "path", null);
                 }
 
-                Object handler = readHandlerNode.execute(parserObject);
+                final Object handler = readHandlerNode.execute(parserObject);
 
                 while (true) {
                     Event event = parser.getEvent();
 
                     // FIXME: Event should expose a getID, so it can be switched
                     if (event.is(Event.ID.StreamStart)) {
-                        invoke(handler, "start_stream", YAMLEncoding.YAML_ANY_ENCODING.ordinal());
+                        callStartStreamNode.call(frame, handler, "start_stream", null, YAMLEncoding.YAML_ANY_ENCODING.ordinal());
                     } else if (event.is(Event.ID.DocumentStart)) {
                         handleDocumentStart((DocumentStartEvent) event, tainted, handler);
                     } else if (event.is(Event.ID.DocumentEnd)) {
                         Object notExplicit = !((DocumentEndEvent) event).getExplicit();
-                        invoke(handler, "end_document", notExplicit);
+                        callEndDocumentNode.call(frame, handler, "end_document", null, notExplicit);
                     } else if (event.is(Event.ID.Alias)) {
                         Object alias = stringOrNilFor(((AliasEvent) event).getAnchor(), tainted);
-                        invoke(handler, "alias", alias);
+                        callAliasNode.call(frame, handler, "alias", null, alias);
                     } else if (event.is(Event.ID.Scalar)) {
                         handleScalar((ScalarEvent) event, tainted, handler);
                     } else if (event.is(Event.ID.SequenceStart)) {
                         handleSequenceStart((SequenceStartEvent) event, tainted, handler);
                     } else if (event.is(Event.ID.SequenceEnd)) {
-                        invoke(handler, "end_sequence");
+                        callEndSequenceNode.call(frame, handler, "end_sequence", null);
                     } else if (event.is(Event.ID.MappingStart)) {
                         handleMappingStart((MappingStartEvent) event, tainted, handler);
                     } else if (event.is(Event.ID.MappingEnd)) {
-                        invoke(handler, "end_mapping");
+                        callEndMappingNode.call(frame, handler, "end_mapping", null);
                     } else if (event.is(Event.ID.StreamEnd)) {
-                        invoke(handler, "end_stream");
-
+                        callEndStreamNode.call(frame, handler, "end_stream", null);
                         break;
                     }
                 }
