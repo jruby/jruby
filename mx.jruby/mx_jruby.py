@@ -10,11 +10,11 @@ class MavenProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
         mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
         self.javaCompliance = "1.7"
-        self.subdir = args['subDir']
+        self.build = hasattr(args, 'build')
         self.prefix = args['prefix']
 
     def output_dir(self):
-        return os.path.join(_suite.dir, self.subdir)
+        return os.path.join(_suite.dir, 'target')
 
     def source_gen_dir(self):
         return None
@@ -48,6 +48,9 @@ class MavenBuildTask(mx.BuildTask):
         return None
 
     def build(self):
+        if not self.subject.build:
+            mx.log("Not building {}".format(self.subject))
+            return
         mx.log('Building JRuby via Maven')
 
         rubyDir = _suite.dir

@@ -37,6 +37,7 @@ suite = {
     "jruby-ruby" : {
       "subDir" : "lib/ruby",
       "class" : "MavenProject",
+      "build" : "true",
       "prefix" : "lib/ruby/",
       "dependencies": [
         "truffle:TRUFFLE_API",
