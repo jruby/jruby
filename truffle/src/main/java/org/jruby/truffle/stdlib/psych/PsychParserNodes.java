@@ -149,7 +149,8 @@ public abstract class PsychParserNodes {
                 @Cached("createMethodCall()") CallDispatchHeadNode callEndSequenceNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callStartMappingNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callEndMappingNode,
-                @Cached("createMethodCall()") CallDispatchHeadNode callEndStreamNode) {
+                @Cached("createMethodCall()") CallDispatchHeadNode callEndStreamNode,
+                @Cached("new()") SnippetNode raiseSyntaxErrorSnippetNode) {
             CompilerDirectives.bailout("Psych parsing cannot be compiled");
 
             final boolean tainted = (boolean) taintedNode.execute(frame, "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
@@ -263,7 +264,7 @@ public abstract class PsychParserNodes {
                 final Mark mark = pe.getProblemMark();
 
                 Object[] arguments = new Object[]{"file", path, "line", mark.getLine(), "col", mark.getColumn(), "offset", mark.getIndex(), "problem", pe.getProblem() == null ? nil() : createString(new ByteList(pe.getProblem().getBytes(StandardCharsets.UTF_8))), "context", pe.getContext() == null ? nil() : createString(new ByteList(pe.getContext().getBytes(StandardCharsets.UTF_8)))};
-                DebugHelpers.eval(getContext(), "raise Psych::SyntaxError.new(file, line, col, offset, problem, context)", arguments);
+                raiseSyntaxErrorSnippetNode.execute(frame, "raise Psych::SyntaxError.new(file, line, col, offset, problem, context)", arguments);
             } catch (ScannerException se) {
                 StringBuilder message = new StringBuilder("syntax error");
                 if (se.getProblemMark() != null) {
@@ -272,10 +273,10 @@ public abstract class PsychParserNodes {
                 final Mark mark = se.getProblemMark();
 
                 Object[] arguments = new Object[]{"file", path, "line", mark.getLine(), "col", mark.getColumn(), "offset", mark.getIndex(), "problem", se.getProblem() == null ? nil() : createString(new ByteList(se.getProblem().getBytes(StandardCharsets.UTF_8))), "context", se.getContext() == null ? nil() : createString(new ByteList(se.getContext().getBytes(StandardCharsets.UTF_8)))};
-                DebugHelpers.eval(getContext(), "raise Psych::SyntaxError.new(file, line, col, offset, problem, context)", arguments);
+                raiseSyntaxErrorSnippetNode.execute(frame, "raise Psych::SyntaxError.new(file, line, col, offset, problem, context)", arguments);
             } catch (ReaderException re) {
                 Object[] arguments = new Object[]{"file", path, "line", 0, "col", 0, "offset", re.getPosition(), "problem", re.getName() == null ? nil() : createString(new ByteList(re.getName().getBytes(StandardCharsets.UTF_8))), "context", re.toString() == null ? nil() : createString(new ByteList(re.toString().getBytes(StandardCharsets.UTF_8)))};
-                DebugHelpers.eval(getContext(), "raise Psych::SyntaxError.new(file, line, col, offset, problem, context)", arguments);
+                raiseSyntaxErrorSnippetNode.execute(frame, "raise Psych::SyntaxError.new(file, line, col, offset, problem, context)", arguments);
             } catch (Throwable t) {
                 Helpers.throwException(t);
                 return parserObject;
