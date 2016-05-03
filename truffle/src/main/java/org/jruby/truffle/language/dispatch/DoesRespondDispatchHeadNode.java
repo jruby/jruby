@@ -14,8 +14,8 @@ import org.jruby.truffle.RubyContext;
 
 public class DoesRespondDispatchHeadNode extends DispatchHeadNode {
 
-    public static DoesRespondDispatchHeadNode create(boolean ignoreVisibilty) {
-        return new DoesRespondDispatchHeadNode(null, ignoreVisibilty);
+    public static DoesRespondDispatchHeadNode create() {
+        return new DoesRespondDispatchHeadNode(null, false);
     }
 
     public DoesRespondDispatchHeadNode(RubyContext context, boolean ignoreVisibility) {

@@ -66,6 +66,7 @@ import org.jruby.truffle.debug.DebugHelpers;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
@@ -138,15 +139,16 @@ public abstract class PsychParserNodes {
                 DynamicObject yaml,
                 DynamicObject path,
                 @Cached("new()") SnippetNode taintedNode,
-                @Cached("create(false)") DoesRespondDispatchHeadNode respondToPath) {
+                @Cached("create()") DoesRespondDispatchHeadNode respondToPathNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callPathNode) {
             CompilerDirectives.bailout("Psych parsing cannot be compiled");
 
             boolean tainted = (boolean) taintedNode.execute(frame, "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
 
             Parser parser = new ParserImpl(readerFor(frame, yaml));
             try {
-                if (isNil(path) && respondToPath.doesRespondTo(frame, yaml, "path")) {
-                    path = (DynamicObject) DebugHelpers.eval(getContext(), "yaml.path", "yaml", yaml);
+                if (isNil(path) && respondToPathNode.doesRespondTo(frame, yaml, "path")) {
+                    path = (DynamicObject) callPathNode.call(frame, yaml, "path", null);
                 }
 
                 Object handler = DebugHelpers.eval(getContext(), "@handler");
