@@ -40,6 +40,7 @@ package org.jruby.truffle.stdlib.psych;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
@@ -64,6 +65,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.debug.DebugHelpers;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.util.ByteList;
@@ -121,16 +123,23 @@ public abstract class PsychParserNodes {
             toStrNode = ToStrNodeGen.create(getContext(), getSourceSection(), null);
         }
 
+        public abstract Object executeParse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, Object path);
+
         @Specialization
         public Object parse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, NotProvided path) {
-            return parse(frame, parserObject, yaml, nil());
+            return executeParse(frame, parserObject, yaml, nil());
         }
 
         @Specialization
-        public Object parse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, DynamicObject path) {
+        public Object parse(
+                VirtualFrame frame,
+                DynamicObject parserObject,
+                DynamicObject yaml,
+                DynamicObject path,
+                @Cached("new()") SnippetNode taintedNode) {
             CompilerDirectives.bailout("Psych parsing cannot be compiled");
 
-            boolean tainted = (boolean) DebugHelpers.eval(getContext(), "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
+            boolean tainted = (boolean) taintedNode.execute(frame, "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
 
             Parser parser = new ParserImpl(readerFor(frame, yaml));
             try {
