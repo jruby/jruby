@@ -39,6 +39,7 @@
 package org.jruby.truffle.stdlib.psych;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -136,7 +137,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_stream", required = 1)
     public abstract static class StartStreamNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject startStream(DynamicObject emitter, int encodingOrdinal) {
             if (Layouts.PSYCH_EMITTER.getEmitter(emitter) != null) {
@@ -166,7 +167,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_stream")
     public abstract static class EndStreamNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject endStream(DynamicObject emitter) {
             emit(getContext(), emitter, new StreamEndEvent(NULL_MARK, NULL_MARK));
@@ -179,7 +180,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_document", required = 3)
     public abstract static class StartDocumentNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = {"isRubyArray(_version)", "isRubyArray(tags)"})
         public DynamicObject startDocument(DynamicObject emitter, DynamicObject _version, DynamicObject tags, boolean implicit) {
             DumperOptions.Version version = null;
@@ -233,7 +234,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_document", required = 1)
     public abstract static class EndDocumentNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject endDocument(DynamicObject emitter, boolean implicit) {
             emit(getContext(), emitter, new DocumentEndEvent(NULL_MARK, NULL_MARK, !implicit));
@@ -245,7 +246,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "scalar", required = 6)
     public abstract static class ScalarNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(value)")
         public DynamicObject scalar(DynamicObject emitter, DynamicObject value, Object anchor, Object tag, boolean plain, boolean quoted, int style) {
             ScalarEvent event = new ScalarEvent(
@@ -267,7 +268,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_sequence", required = 4)
     public abstract static class StartSequenceNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject startSequence(DynamicObject emitter, Object anchor, Object tag, boolean implicit, int style) {
             final int SEQUENCE_BLOCK = 1; // see psych/nodes/sequence.rb
@@ -289,7 +290,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_sequence")
     public abstract static class EndSequenceNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject endSequence(DynamicObject emitter) {
             emit(getContext(), emitter, new SequenceEndEvent(NULL_MARK, NULL_MARK));
@@ -301,7 +302,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_mapping", required = 4)
     public abstract static class StartMappingNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject startMapping(DynamicObject emitter, Object anchor, Object tag, boolean implicit, int style) {
             final int MAPPING_BLOCK = 1; // see psych/nodes/mapping.rb
@@ -324,7 +325,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_mapping")
     public abstract static class EndMappingNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject endMapping(DynamicObject emitter) {
             emit(getContext(), emitter, new MappingEndEvent(NULL_MARK, NULL_MARK));
@@ -336,7 +337,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "alias", required = 1)
     public abstract static class AliasNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public DynamicObject alias(DynamicObject emitter, Object anchor) {
             emit(getContext(), emitter, new AliasEvent(anchor.toString(), NULL_MARK, NULL_MARK));
