@@ -318,7 +318,7 @@ public abstract class PsychEmitterNodes {
                     implicit,
                     NULL_MARK,
                     NULL_MARK,
-                    SEQUENCE_BLOCK != style));
+                    style != SEQUENCE_BLOCK));
 
             return emitter;
         }
@@ -339,20 +339,39 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_mapping", required = 4)
     public abstract static class StartMappingNode extends CoreMethodArrayArgumentsNode {
 
+        private static final int MAPPING_BLOCK = 1;
+
         @TruffleBoundary
         @Specialization
-        public DynamicObject startMapping(DynamicObject emitter, Object anchor, Object tag, boolean implicit, int style) {
-            final int MAPPING_BLOCK = 1; // see psych/nodes/mapping.rb
+        public DynamicObject startMapping(
+                DynamicObject emitter,
+                Object anchor,
+                Object tag,
+                boolean implicit,
+                int style) {
+            final String anchorString;
 
-            MappingStartEvent event = new MappingStartEvent(
-                    isNil(anchor) ? null : anchor.toString(),
-                    isNil(tag) ? null : tag.toString(),
+            if (isNil(anchor)) {
+                anchorString = null;
+            } else {
+                anchorString = anchor.toString();
+            }
+
+            final String tagString;
+
+            if (isNil(tag)) {
+                tagString = null;
+            } else {
+                tagString = tag.toString();
+            }
+
+            emit(emitter, new MappingStartEvent(
+                    anchorString,
+                    tagString,
                     implicit,
                     NULL_MARK,
                     NULL_MARK,
-                    MAPPING_BLOCK != style);
-
-            emit(emitter, event);
+                    style != MAPPING_BLOCK));
 
             return emitter;
         }
