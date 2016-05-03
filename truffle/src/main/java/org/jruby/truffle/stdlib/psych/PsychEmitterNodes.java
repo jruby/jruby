@@ -244,17 +244,39 @@ public abstract class PsychEmitterNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(value)")
-        public DynamicObject scalar(DynamicObject emitter, DynamicObject value, Object anchor, Object tag, boolean plain, boolean quoted, int style) {
-            ScalarEvent event = new ScalarEvent(
-                    isNil(anchor) ? null : anchor.toString(),
-                    isNil(tag) ? null : tag.toString(),
-                    new ImplicitTuple(plain,
-                            quoted),
+        public DynamicObject scalar(
+                DynamicObject emitter,
+                DynamicObject value,
+                Object anchor,
+                Object tag,
+                boolean plain,
+                boolean quoted,
+                int style) {
+            final String anchorString;
+
+            if (isNil(anchor)) {
+                anchorString = null;
+            } else {
+                anchorString = anchor.toString();
+            }
+
+            final String tagString;
+
+            if (isNil(tag)) {
+                tagString = null;
+            } else {
+                tagString = tag.toString();
+            }
+
+            emit(emitter, new ScalarEvent(
+                    anchorString,
+                    tagString,
+                    new ImplicitTuple(plain, quoted),
                     value.toString(),
                     NULL_MARK,
                     NULL_MARK,
-                    SCALAR_STYLES[style]);
-            emit(emitter, event);
+                    SCALAR_STYLES[style]));
+
             return emitter;
         }
 
