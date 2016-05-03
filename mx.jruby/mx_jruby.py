@@ -78,10 +78,16 @@ class MavenBuildTask(mx.BuildTask):
 
         # Build jruby-truffle and
 
+        mx.run(['find', '.'], nonZeroIsFatal=False, cwd=rubyDir)
         mx.run_maven(['--version'], nonZeroIsFatal=False, cwd=rubyDir)
 
-        mx.run_maven(['-DskipTests', '-Dtruffle.version=' + truffle_commit], cwd=rubyDir)
-        mx.run_maven(['-Pcomplete', '-DskipTests', '-Dtruffle.version=' + truffle_commit], cwd=rubyDir)
+        mx.log('Building without tests')
+
+        mx.run_maven(['-DskipTests', '-X', '-Dtruffle.version=' + truffle_commit], cwd=rubyDir)
+
+        mx.log('Building complete version')
+
+        mx.run_maven(['-Pcomplete', '-X', '-DskipTests', '-Dtruffle.version=' + truffle_commit], cwd=rubyDir)
         mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
 #        shutil.rmtree(os.path.join(_suite.dir, "lib", "target"), True)
