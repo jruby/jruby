@@ -38,6 +38,7 @@
  */
 package org.jruby.truffle.stdlib.psych;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -125,9 +126,10 @@ public abstract class PsychParserNodes {
             return parse(frame, parserObject, yaml, nil());
         }
 
-        @TruffleBoundary
         @Specialization
         public Object parse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, DynamicObject path) {
+            CompilerDirectives.bailout("Psych parsing cannot be compiled");
+
             boolean tainted = (boolean) DebugHelpers.eval(getContext(), "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
 
             Parser parser = new ParserImpl(readerFor(frame, yaml));
