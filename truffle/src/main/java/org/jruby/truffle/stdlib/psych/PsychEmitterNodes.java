@@ -136,7 +136,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_stream", required = 1)
     public abstract static class StartStreamNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject startStream(DynamicObject emitter, int encodingOrdinal) {
             if (Layouts.PSYCH_EMITTER.getEmitter(emitter) != null) {
@@ -166,7 +165,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_stream")
     public abstract static class EndStreamNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject endStream(DynamicObject emitter) {
             emit(emitter, new StreamEndEvent(NULL_MARK, NULL_MARK));
@@ -233,7 +231,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_document", required = 1)
     public abstract static class EndDocumentNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject endDocument(DynamicObject emitter, boolean implicit) {
             emit(emitter, new DocumentEndEvent(NULL_MARK, NULL_MARK, !implicit));
@@ -289,7 +286,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_sequence")
     public abstract static class EndSequenceNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject endSequence(DynamicObject emitter) {
             emit(emitter, new SequenceEndEvent(NULL_MARK, NULL_MARK));
@@ -324,7 +320,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_mapping")
     public abstract static class EndMappingNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject endMapping(DynamicObject emitter) {
             emit(emitter, new MappingEndEvent(NULL_MARK, NULL_MARK));
@@ -336,7 +331,6 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "alias", required = 1)
     public abstract static class AliasNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject alias(DynamicObject emitter, Object anchor) {
             emit(emitter, new AliasEvent(anchor.toString(), NULL_MARK, NULL_MARK));
@@ -408,6 +402,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
+    @TruffleBoundary
     private static void emit(DynamicObject emitter, Event event) {
         try {
             if (Layouts.PSYCH_EMITTER.getEmitter(emitter) == null) {
