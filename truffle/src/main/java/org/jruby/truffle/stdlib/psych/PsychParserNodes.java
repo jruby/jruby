@@ -137,6 +137,7 @@ public abstract class PsychParserNodes {
                 DynamicObject yaml,
                 DynamicObject path,
                 @Cached("new()") SnippetNode taintedNode,
+                @Cached("create()") DoesRespondDispatchHeadNode respondToReadNode,
                 @Cached("create()") DoesRespondDispatchHeadNode respondToPathNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callPathNode,
                 @Cached("createReadHandlerNode()") ReadObjectFieldNode readHandlerNode,
@@ -158,7 +159,7 @@ public abstract class PsychParserNodes {
             final StreamReader reader;
 
             // fall back on IOInputStream, using default charset
-            if (!RubyGuards.isRubyString(yaml) && (boolean) DebugHelpers.eval(getContext(), "yaml.respond_to? :read", "yaml", yaml)) {
+            if (!RubyGuards.isRubyString(yaml) && respondToReadNode.doesRespondTo(frame, "read", yaml)) {
                 //final boolean isIO = (boolean) ruby("yaml.is_a? IO", "yaml", yaml);
                 //Encoding enc = isIO
                 //        ? UTF8Encoding.INSTANCE // ((RubyIO)yaml).getReadEncoding()
