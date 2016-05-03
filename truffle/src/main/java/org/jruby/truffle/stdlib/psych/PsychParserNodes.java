@@ -69,6 +69,8 @@ import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.TaintNode;
+import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 import org.yaml.snakeyaml.DumperOptions;
@@ -151,7 +153,9 @@ public abstract class PsychParserNodes {
                 @Cached("createMethodCall()") CallDispatchHeadNode callStartMappingNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callEndMappingNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callEndStreamNode,
-                @Cached("new()") SnippetNode raiseSyntaxErrorSnippetNode) {
+                @Cached("new()") SnippetNode raiseSyntaxErrorSnippetNode,
+                @Cached("new()") SnippetNode tagPushNode,
+                @Cached("createTaintNode()") TaintNode taintNode) {
             CompilerDirectives.bailout("Psych parsing cannot be compiled");
 
             final boolean tainted = (boolean) taintedNode.execute(frame, "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
@@ -214,9 +218,9 @@ public abstract class PsychParserNodes {
                         DynamicObject tags = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
                         if (tagsMap != null && tagsMap.size() > 0) {
                             for (Map.Entry<String, String> tag : tagsMap.entrySet()) {
-                                Object key = stringFor(tag.getKey(), tainted);
-                                Object value = stringFor(tag.getValue(), tainted);
-                                DebugHelpers.eval(getContext(), "tags.push [key, value]", "tags", tags, "key", key, "value", value);
+                                Object key = stringFor(tag.getKey(), tainted, taintNode);
+                                Object value = stringFor(tag.getValue(), tainted, taintNode);
+                                tagPushNode.execute(frame, "tags.push [key, value]", "tags", tags, "key", key, "value", value);
                             }
                         }
                         Object notExplicit = !((DocumentStartEvent) event).getExplicit();
@@ -226,21 +230,21 @@ public abstract class PsychParserNodes {
                         Object notExplicit = !((DocumentEndEvent) event).getExplicit();
                         callEndDocumentNode.call(frame, handler, "end_document", null, notExplicit);
                     } else if (event.is(Event.ID.Alias)) {
-                        Object alias = stringOrNilFor(((AliasEvent) event).getAnchor(), tainted);
+                        Object alias = stringOrNilFor(((AliasEvent) event).getAnchor(), tainted, taintNode);
                         callAliasNode.call(frame, handler, "alias", null, alias);
                     } else if (event.is(Event.ID.Scalar)) {
-                        Object anchor = stringOrNilFor(((ScalarEvent) event).getAnchor(), tainted);
-                        Object tag = stringOrNilFor(((ScalarEvent) event).getTag(), tainted);
+                        Object anchor = stringOrNilFor(((ScalarEvent) event).getAnchor(), tainted, taintNode);
+                        Object tag = stringOrNilFor(((ScalarEvent) event).getTag(), tainted, taintNode);
                         Object plain_implicit = ((ScalarEvent) event).getImplicit().canOmitTagInPlainScalar();
                         Object quoted_implicit = ((ScalarEvent) event).getImplicit().canOmitTagInNonPlainScalar();
                         Object style = translateStyle(((ScalarEvent) event).getStyle());
-                        Object val = stringFor(((ScalarEvent) event).getValue(), tainted);
+                        Object val = stringFor(((ScalarEvent) event).getValue(), tainted, taintNode);
 
                         callScalarNode.call(frame, handler, "scalar", null, val, anchor, tag, plain_implicit,
                                 quoted_implicit, style);
                     } else if (event.is(Event.ID.SequenceStart)) {
-                        Object anchor = stringOrNilFor(((SequenceStartEvent) event).getAnchor(), tainted);
-                        Object tag = stringOrNilFor(((SequenceStartEvent) event).getTag(), tainted);
+                        Object anchor = stringOrNilFor(((SequenceStartEvent) event).getAnchor(), tainted, taintNode);
+                        Object tag = stringOrNilFor(((SequenceStartEvent) event).getTag(), tainted, taintNode);
                         Object implicit = ((SequenceStartEvent) event).getImplicit();
                         Object style = translateFlowStyle(((SequenceStartEvent) event).getFlowStyle());
 
@@ -248,8 +252,8 @@ public abstract class PsychParserNodes {
                     } else if (event.is(Event.ID.SequenceEnd)) {
                         callEndSequenceNode.call(frame, handler, "end_sequence", null);
                     } else if (event.is(Event.ID.MappingStart)) {
-                        Object anchor = stringOrNilFor(((MappingStartEvent) event).getAnchor(), tainted);
-                        Object tag = stringOrNilFor(((MappingStartEvent) event).getTag(), tainted);
+                        Object anchor = stringOrNilFor(((MappingStartEvent) event).getAnchor(), tainted, taintNode);
+                        Object tag = stringOrNilFor(((MappingStartEvent) event).getTag(), tainted, taintNode);
                         Object implicit = ((MappingStartEvent) event).getImplicit();
                         Object style = translateFlowStyle(((MappingStartEvent) event).getFlowStyle());
 
@@ -290,6 +294,10 @@ public abstract class PsychParserNodes {
             return ReadObjectFieldNodeGen.create("@handler", nil());
         }
 
+        protected TaintNode createTaintNode() {
+            return TaintNodeGen.create(getContext(), null, null);
+        }
+
         private static int translateStyle(Character style) {
             if (style == null) return 0; // any
 
@@ -316,13 +324,13 @@ public abstract class PsychParserNodes {
             return 1;
         }
 
-        private Object stringOrNilFor(String value, boolean tainted) {
+        private Object stringOrNilFor(String value, boolean tainted, TaintNode taintNode) {
             if (value == null) return nil(); // No need to taint nil
 
-            return stringFor(value, tainted);
+            return stringFor(value, tainted, taintNode);
         }
 
-        private Object stringFor(String value, boolean tainted) {
+        private Object stringFor(String value, boolean tainted, TaintNode taintNode) {
             // TODO CS 23-Sep-15 this is JRuby's internal encoding, not ours
             Encoding encoding = getContext().getJRubyRuntime().getDefaultInternalEncoding();
 
@@ -339,7 +347,7 @@ public abstract class PsychParserNodes {
             Object string = createString(bytes);
 
             if (tainted) {
-                DebugHelpers.eval(getContext(), "string.taint", "string", string);
+                taintNode.executeTaint(string);
             }
 
             return string;
