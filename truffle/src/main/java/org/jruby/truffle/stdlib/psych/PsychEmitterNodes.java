@@ -138,7 +138,20 @@ public abstract class PsychEmitterNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject startStream(DynamicObject emitter, int encoding) {
-            initEmitter(getContext(), emitter, encoding);
+            RubyContext context = getContext();
+            if (Layouts.PSYCH_EMITTER.getEmitter(emitter) != null) {
+                throw new UnsupportedOperationException();
+                // TODO CS 28-Sep-15 implement this code path
+                //throw context.runtime.newRuntimeError("already initialized emitter");
+            }
+
+            Encoding encoding1 = PsychParserNodes.YAMLEncoding.values()[encoding].encoding;
+            // TODO CS 24-Sep-15 uses JRuby's encoding service
+            Charset charset = context.getJRubyRuntime().getEncodingService().charsetForEncoding(encoding1);
+
+            Layouts.PSYCH_EMITTER.setEmitter(emitter, new Emitter(new OutputStreamWriter(
+                    new OutputStreamAdapter(context, (DynamicObject) Layouts.PSYCH_EMITTER.getIo(emitter), encoding1), charset),
+                    Layouts.PSYCH_EMITTER.getOptions(emitter)));
 
             StreamStartEvent event = new StreamStartEvent(NULL_MARK, NULL_MARK);
 
@@ -413,22 +426,6 @@ public abstract class PsychEmitterNodes {
             // TODO CS 28-Sep-15 implement this code path
             //throw context.runtime.newRuntimeError(ee.toString());
         }
-    }
-
-    private static void initEmitter(RubyContext context, DynamicObject emitter, int _encoding) {
-        if (Layouts.PSYCH_EMITTER.getEmitter(emitter) != null) {
-            throw new UnsupportedOperationException();
-            // TODO CS 28-Sep-15 implement this code path
-            //throw context.runtime.newRuntimeError("already initialized emitter");
-        }
-
-        Encoding encoding = PsychParserNodes.YAMLEncoding.values()[_encoding].encoding;
-        // TODO CS 24-Sep-15 uses JRuby's encoding service
-        Charset charset = context.getJRubyRuntime().getEncodingService().charsetForEncoding(encoding);
-
-        Layouts.PSYCH_EMITTER.setEmitter(emitter, new Emitter(new OutputStreamWriter(
-                new OutputStreamAdapter(context, (DynamicObject) Layouts.PSYCH_EMITTER.getIo(emitter), encoding), charset),
-                Layouts.PSYCH_EMITTER.getOptions(emitter)));
     }
 
     private static final Mark NULL_MARK = new Mark(null, 0, 0, 0, null, 0);
