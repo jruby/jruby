@@ -120,7 +120,6 @@ public abstract class PsychParserNodes {
             toStrNode = ToStrNodeGen.create(getContext(), getSourceSection(), null);
         }
 
-        @TruffleBoundary
         @Specialization
         public Object parse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, NotProvided path) {
             return parse(frame, parserObject, yaml, nil());
@@ -129,13 +128,9 @@ public abstract class PsychParserNodes {
         @TruffleBoundary
         @Specialization
         public Object parse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, DynamicObject path) {
-            return doParse(parserObject, yaml, path, readerFor(frame, yaml));
-        }
-
-        private Object doParse(DynamicObject parserObject, DynamicObject yaml, DynamicObject path, StreamReader streamReader) {
             boolean tainted = (boolean) DebugHelpers.eval(getContext(), "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
 
-            Parser parser = new ParserImpl(streamReader);
+            Parser parser = new ParserImpl(readerFor(frame, yaml));
             try {
                 if (isNil(path) && (boolean) DebugHelpers.eval(getContext(), "yaml.respond_to? :path", "yaml", yaml)) {
                     path = (DynamicObject) DebugHelpers.eval(getContext(), "yaml.path", "yaml", yaml);
