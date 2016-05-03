@@ -178,51 +178,51 @@ public abstract class PsychEmitterNodes {
     public abstract static class StartDocumentNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubyArray(_version)", "isRubyArray(tags)"})
-        public DynamicObject startDocument(DynamicObject emitter, DynamicObject _version, DynamicObject tags, boolean implicit) {
-            DumperOptions.Version version = null;
-            boolean implicitBool = implicit;
+        @Specialization(guards = {"isRubyArray(version)", "isRubyArray(tags)"})
+        public DynamicObject startDocument(DynamicObject emitter, DynamicObject version, DynamicObject tags, boolean implicit) {
+            // TODO CS 3-May-16 this method should probably be implemented mainly in Ruby
+
+            DumperOptions.Version optionsVersion = null;
+
+            final Object[] versionArray = ArrayOperations.toObjectArray(version);
+
+            if (versionArray.length == 2) {
+                if (!(versionArray[0] instanceof Integer && versionArray[1] instanceof Integer)) {
+                    throw new UnsupportedOperationException();
+                }
+
+                final int versionInt0 = (int) versionArray[0];
+                final int versionInt1 = (int) versionArray[1];
+
+                if (versionInt0 == 1 && versionInt1 == 0) {
+                    optionsVersion = DumperOptions.Version.V1_0;
+                } else if (versionInt0 == 1 && versionInt1 == 1) {
+                    optionsVersion = DumperOptions.Version.V1_1;
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+            }
+
             Map<String, String> tagsMap = null;
 
-            Object[] versionAry = ArrayOperations.toObjectArray(_version);
-            if (versionAry.length == 2) {
-                int versionInt0 = (int)versionAry[0];
-                int versionInt1 = (int)versionAry[1];
+            final Object[] tagsArray = ArrayOperations.toObjectArray(tags);
 
-                if (versionInt0 == 1) {
-                    if (versionInt1 == 0) {
-                        version = DumperOptions.Version.V1_0;
-                    } else if (versionInt1 == 1) {
-                        version = DumperOptions.Version.V1_1;
-                    }
-                }
-                if (version == null) {
-                    // TODO CS 28-Sep-15 implement this code path
-                    throw new UnsupportedOperationException();
-                    //throw context.runtime.newArgumentError("invalid YAML version: " + versionAry);
-                }
-            }
+            if (tagsArray.length > 0) {
+                tagsMap = new HashMap<>(tagsArray.length);
 
-            Object[] tagsAry = ArrayOperations.toObjectArray(tags);
-            if (tagsAry.length > 0) {
-                tagsMap = new HashMap<String, String>(tagsAry.length);
-                for (int i = 0; i < tagsAry.length; i++) {
-                    Object[] tagsTuple = ArrayOperations.toObjectArray((DynamicObject) tagsAry[i]);
+                for (int i = 0; i < tagsArray.length; i++) {
+                    final Object[] tagsTuple = ArrayOperations.toObjectArray((DynamicObject) tagsArray[i]);
+
                     if (tagsTuple.length != 2) {
-                        // TODO CS 28-Sep-15 implement this code path
                         throw new UnsupportedOperationException();
-                        //throw context.runtime.newRuntimeError("tags tuple must be of length 2");
                     }
-                    Object key = tagsTuple[0];
-                    Object value = tagsTuple[1];
-                    tagsMap.put(
-                            key.toString(),
-                            value.toString());
+
+                    tagsMap.put(tagsTuple[0].toString(), tagsTuple[1].toString());
                 }
             }
 
-            DocumentStartEvent event = new DocumentStartEvent(NULL_MARK, NULL_MARK, !implicitBool, version, tagsMap);
-            emit(emitter, event);
+            emit(emitter, new DocumentStartEvent(NULL_MARK, NULL_MARK, !implicit, optionsVersion, tagsMap));
+
             return emitter;
         }
 
