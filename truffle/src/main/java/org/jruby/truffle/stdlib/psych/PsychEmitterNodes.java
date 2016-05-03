@@ -413,19 +413,13 @@ public abstract class PsychEmitterNodes {
         try {
             if (Layouts.PSYCH_EMITTER.getEmitter(emitter) == null) {
                 throw new UnsupportedOperationException();
-                // TODO CS 28-Sep-15 implement this code path
-                //throw context.getRuntime().newRuntimeError("uninitialized emitter");
             }
 
             Layouts.PSYCH_EMITTER.getEmitter(emitter).emit(event);
         } catch (IOException ioe) {
             throw new UnsupportedOperationException();
-            // TODO CS 28-Sep-15 implement this code path
-            //throw context.runtime.newIOErrorFromException(ioe);
         } catch (EmitterException ee) {
             throw new UnsupportedOperationException();
-            // TODO CS 28-Sep-15 implement this code path
-            //throw context.runtime.newRuntimeError(ee.toString());
         }
     }
 
