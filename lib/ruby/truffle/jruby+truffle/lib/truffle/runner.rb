@@ -672,7 +672,7 @@ module Truffle
       end
 
       def cancel_ci!(result = false)
-        throw cancel_ci!, result
+        throw :cancel_ci!, result
       end
 
       def has_to_succeed(result)
