@@ -141,9 +141,13 @@ public abstract class PsychParserNodes {
                 @Cached("createMethodCall()") CallDispatchHeadNode callPathNode,
                 @Cached("createReadHandlerNode()") ReadObjectFieldNode readHandlerNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callStartStreamNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callStartDocumentNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callEndDocumentNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callAliasNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callScalarNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callStartSequenceNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callEndSequenceNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callStartMappingNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callEndMappingNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode callEndStreamNode) {
             CompilerDirectives.bailout("Psych parsing cannot be compiled");
@@ -215,7 +219,7 @@ public abstract class PsychParserNodes {
                         }
                         Object notExplicit = !((DocumentStartEvent) event).getExplicit();
 
-                        invoke(handler, "start_document", version, tags, notExplicit);
+                        callStartDocumentNode.call(frame, handler, "start_document", null, version, tags, notExplicit);
                     } else if (event.is(Event.ID.DocumentEnd)) {
                         Object notExplicit = !((DocumentEndEvent) event).getExplicit();
                         callEndDocumentNode.call(frame, handler, "end_document", null, notExplicit);
@@ -230,7 +234,7 @@ public abstract class PsychParserNodes {
                         Object style = translateStyle(((ScalarEvent) event).getStyle());
                         Object val = stringFor(((ScalarEvent) event).getValue(), tainted);
 
-                        invoke(handler, "scalar", val, anchor, tag, plain_implicit,
+                        callScalarNode.call(frame, handler, "scalar", null, val, anchor, tag, plain_implicit,
                                 quoted_implicit, style);
                     } else if (event.is(Event.ID.SequenceStart)) {
                         Object anchor = stringOrNilFor(((SequenceStartEvent) event).getAnchor(), tainted);
@@ -238,7 +242,7 @@ public abstract class PsychParserNodes {
                         Object implicit = ((SequenceStartEvent) event).getImplicit();
                         Object style = translateFlowStyle(((SequenceStartEvent) event).getFlowStyle());
 
-                        invoke(handler, "start_sequence", anchor, tag, implicit, style);
+                        callStartSequenceNode.call(frame, handler, "start_sequence", null, anchor, tag, implicit, style);
                     } else if (event.is(Event.ID.SequenceEnd)) {
                         callEndSequenceNode.call(frame, handler, "end_sequence", null);
                     } else if (event.is(Event.ID.MappingStart)) {
@@ -247,7 +251,7 @@ public abstract class PsychParserNodes {
                         Object implicit = ((MappingStartEvent) event).getImplicit();
                         Object style = translateFlowStyle(((MappingStartEvent) event).getFlowStyle());
 
-                        invoke(handler, "start_mapping", anchor, tag, implicit, style);
+                        callStartMappingNode.call(frame, handler, "start_mapping", null, anchor, tag, implicit, style);
                     } else if (event.is(Event.ID.MappingEnd)) {
                         callEndMappingNode.call(frame, handler, "end_mapping", null);
                     } else if (event.is(Event.ID.StreamEnd)) {
@@ -282,10 +286,6 @@ public abstract class PsychParserNodes {
 
         protected ReadObjectFieldNode createReadHandlerNode() {
             return ReadObjectFieldNodeGen.create("@handler", nil());
-        }
-
-        private Object invoke(Object receiver, String name, Object... args) {
-            return DebugHelpers.eval(getContext(), "receiver.send(name, *args)", "receiver", receiver, "name", getSymbol(name), "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
         }
 
         private static int translateStyle(Character style) {
