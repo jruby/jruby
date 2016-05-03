@@ -60,27 +60,7 @@
                                    TimeZoneTest:              :test_map_srednekolymsk_to_tzinfo }
 
 
-                      undefine = if ENV['CI']
-                                   failures
-                                 else
-                                   {}
-                                 end
-
-                      undefine.each do |mod_name, tests|
-                        unless Object.const_defined? mod_name
-                          warn "#{mod_name} not found"
-                          next
-                        end
-                        mod = Object.const_get mod_name
-                        Array(tests).each do |test|
-                          begin
-                            puts "Undefining: #{mod}##{test}"
-                            mod.send :undef_method, test
-                          rescue NoMethodError => e
-                            p e
-                          end
-                        end
-                      end
+                      Truffle.exclude_rspec_examples failures
 
   # do not let bundler to install db gem group
   :without:
@@ -93,5 +73,6 @@
     - bigdecimal
     - pathname
     - openssl-stubs
+    - truffle/exclude_rspec_examples
   :environment:
     N: 1

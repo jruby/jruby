@@ -136,7 +136,7 @@ module Truffle
               require:          ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', ADD_TO_ARRAY, []],
               require_pattern:  ['--require-pattern DIR_GLOB_PATTERN', 'Files matching the pattern will be required', apply_pattern, []],
               exclude_pattern:  ['--exclude-pattern REGEXP', 'Files matching the regexp will not be required by --require-pattern (applies to subsequent --require-pattern options)', ADD_TO_ARRAY, []],
-              load_path:        ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', ADD_TO_ARRAY, []],
+              load_path:        ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', ADD_TO_ARRAY, [ROOT.join('lib').to_s]],
               executable:       ['-S', '--executable NAME', 'finds and runs an executable of a gem', STORE_NEW_VALUE, nil],
               jexception:       ['--jexception', 'print Java exceptions', STORE_NEW_VALUE, false],
               environment:      ['--environment NAME,VALUE', Array, 'Set environment variables', MERGE_TO_HASH, {}],
