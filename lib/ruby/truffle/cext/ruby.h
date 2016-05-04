@@ -106,7 +106,7 @@ VALUE rb_define_module_under(VALUE module, const char *name);
 
 void rb_define_method(VALUE module, const char *name, void *function, int args);
 void rb_define_private_method(VALUE module, const char *name, void *function, int args);
-int rb_define_module_function(VALUE module, const char *name, void *function, int args);
+void rb_define_module_function(VALUE module, const char *name, void *function, int args);
 
 #if defined(__cplusplus)
 }
