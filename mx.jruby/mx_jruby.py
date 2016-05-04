@@ -14,10 +14,10 @@ class MavenProject(mx.Project):
         self.prefix = args['prefix']
 
     def source_dirs(self):
-        return [os.path.join(_suite.dir, 'truffle', 'src')]
+        return []
 
     def output_dir(self):
-        return os.path.join(_suite.dir, 'target')
+        return os.path.join(_suite.dir, self.prefix)
 
     def source_gen_dir(self):
         return None
