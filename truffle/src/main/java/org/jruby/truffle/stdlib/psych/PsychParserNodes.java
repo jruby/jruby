@@ -297,31 +297,38 @@ public abstract class PsychParserNodes {
         protected TaintNode createTaintNode() {
             return TaintNodeGen.create(getContext(), null, null);
         }
+        
+        private static final int STYLE_PLAIN = 1;
+        private static final int STYLE_SINGLE_QUOTED = 2;
+        private static final int STYLE_DOUBLE_QUOTED = 3;
+        private static final int STYLE_LITERAL = 4;
+        private static final int STYLE_FOLDED = 5;
+        private static final int STYLE_ANY = 0;
+        private static final int STYLE_FLOW = 2;
+        private static final int STYLE_NOT_FLOW = 1;
 
         private static int translateStyle(Character style) {
-            if (style == null) return 0; // any
-
             switch (style) {
                 case 0:
-                    return 1; // plain
+                    return STYLE_PLAIN;
                 case '\'':
-                    return 2; // single-quoted
+                    return STYLE_SINGLE_QUOTED;
                 case '"':
-                    return 3; // double-quoted
+                    return STYLE_DOUBLE_QUOTED;
                 case '|':
-                    return 4; // literal
+                    return STYLE_LITERAL;
                 case '>':
-                    return 5; // folded
+                    return STYLE_FOLDED;
                 default:
-                    return 0; // any
+                    return STYLE_ANY;
             }
         }
 
         private static int translateFlowStyle(Boolean flowStyle) {
-            if (flowStyle == null) return 0; // any
+            if (flowStyle == null) return STYLE_ANY; // any
 
-            if (flowStyle) return 2;
-            return 1;
+            if (flowStyle) return STYLE_FLOW;
+            return STYLE_NOT_FLOW;
         }
 
         private Object stringOrNilFor(String value, boolean tainted, TaintNode taintNode) {
