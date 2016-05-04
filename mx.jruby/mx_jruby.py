@@ -13,6 +13,9 @@ class MavenProject(mx.Project):
         self.build = hasattr(args, 'build')
         self.prefix = args['prefix']
 
+    def source_dirs(self):
+        return [os.path.join(_suite.dir, 'truffle', 'src')]
+
     def output_dir(self):
         return os.path.join(_suite.dir, 'target')
 
@@ -42,16 +45,19 @@ class MavenBuildTask(mx.BuildTask):
         self.vmbuild = vmbuild
 
     def __str__(self):
-        return 'Building Maven[{}, {}]'.format(self.vmbuild, self.vm)
+        return 'Building Maven for {}'.format(self.subject)
+
+    def needsBuild(self, newestInput):
+        return (True, 'Let us re-build everytime')
 
     def newestOutput(self):
         return None
 
     def build(self):
         if not self.subject.build:
-            mx.log("Not building {}".format(self.subject))
+            mx.log("...skip build of {}".format(self.subject))
             return
-        mx.log('Building JRuby via Maven')
+        mx.log('...perform build of {}'.format(self.subject))
 
         rubyDir = _suite.dir
 
