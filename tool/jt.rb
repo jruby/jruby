@@ -61,14 +61,9 @@ module Utilities
   end
   
   def self.find_sulong_graal(dir)
-    jvmci = File.join(dir, '..', 'jvmci')
-    Dir.entries(jvmci).each do |entry|
-      child = File.join(jvmci, entry)
-      if File.directory?(child) && entry.start_with?('jdk')
-        return File.join(child, 'product', 'bin', 'java')
-      end
-    end
-    raise "couldn't find the Java build in the Sulong repository - you need to check it out and build it"
+    jvmci = File.expand_path("../jvmci", dir)
+    Dir["#{jvmci}/jdk*/product/bin/java"].first or
+      raise "couldn't find the Java build in the Sulong repository - you need to check it out and build it"
   end
 
   def self.find_graal_js
