@@ -84,7 +84,6 @@ DO NOT MODIFIY - GENERATED CODE
     </mailingList>
   </mailingLists>
   <modules>
-    <module>truffle</module>
     <module>core</module>
     <module>lib</module>
   </modules>
@@ -889,6 +888,15 @@ DO NOT MODIFIY - GENERATED CODE
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>truffle</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <modules>
+        <module>truffle</module>
+      </modules>
     </profile>
   </profiles>
 </project>

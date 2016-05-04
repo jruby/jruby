@@ -88,7 +88,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'bouncy-castle.version' => '1.47',
               'joda.time.version' => '2.8.2' )
 
-  modules [ 'truffle', 'core', 'lib' ]
+  modules [ 'core', 'lib' ]
 
   plugin_management do
     jar( 'junit:junit:4.11',
@@ -317,6 +317,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       jdk '1.8'
     end
     plugin :javadoc, :additionalparam => '-Xdoclint:none'
+  end
+
+  profile 'truffle' do
+    activation do
+      jdk '[1.8,)' # 1.8+
+    end
+    modules [ 'truffle' ]
   end
 
   reporting do
