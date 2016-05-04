@@ -17,7 +17,8 @@ class MavenProject(mx.Project):
         return []
 
     def output_dir(self):
-        return os.path.join(_suite.dir, self.prefix)
+        dir = os.path.join(_suite.dir, self.prefix)
+        return dir[0:len(dir) - 1]
 
     def source_gen_dir(self):
         return None
