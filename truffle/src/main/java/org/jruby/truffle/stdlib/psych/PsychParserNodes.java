@@ -297,7 +297,7 @@ public abstract class PsychParserNodes {
         protected TaintNode createTaintNode() {
             return TaintNodeGen.create(getContext(), null, null);
         }
-        
+
         private static final int STYLE_PLAIN = 1;
         private static final int STYLE_SINGLE_QUOTED = 2;
         private static final int STYLE_DOUBLE_QUOTED = 3;
@@ -325,20 +325,24 @@ public abstract class PsychParserNodes {
         }
 
         private static int translateFlowStyle(Boolean flowStyle) {
-            if (flowStyle == null) return STYLE_ANY; // any
-
-            if (flowStyle) return STYLE_FLOW;
-            return STYLE_NOT_FLOW;
+            if (flowStyle == null) {
+                return STYLE_ANY;
+            } else if (flowStyle) {
+                return STYLE_FLOW;
+            } else {
+                return STYLE_NOT_FLOW;
+            }
         }
 
         private Object stringOrNilFor(String value, boolean tainted, TaintNode taintNode) {
-            if (value == null) return nil(); // No need to taint nil
-
-            return stringFor(value, tainted, taintNode);
+            if (value == null) {
+                return nil();
+            } else {
+                return stringFor(value, tainted, taintNode);
+            }
         }
 
         private Object stringFor(String value, boolean tainted, TaintNode taintNode) {
-            // TODO CS 23-Sep-15 this is JRuby's internal encoding, not ours
             Encoding encoding = getContext().getJRubyRuntime().getDefaultInternalEncoding();
 
             if (encoding == null) {
@@ -346,12 +350,12 @@ public abstract class PsychParserNodes {
             }
 
             Charset charset = RubyEncoding.UTF8;
+
             if (encoding.getCharset() != null) {
                 charset = encoding.getCharset();
             }
 
-            ByteList bytes = new ByteList(value.getBytes(charset), encoding);
-            Object string = createString(bytes);
+            final Object string = createString(value.getBytes(charset), encoding);
 
             if (tainted) {
                 taintNode.executeTaint(string);
