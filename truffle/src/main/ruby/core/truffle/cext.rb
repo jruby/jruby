@@ -111,7 +111,7 @@ module Truffle
     end
     
     def rb_define_method(mod, name, function, args)
-      y = mod.send(:define_method, name) do |*args|
+      mod.send(:define_method, name) do |*args|
         Truffle::Interop.execute(function, self, *args)
       end
     end
