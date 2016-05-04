@@ -68,18 +68,6 @@ public abstract class BigDecimalNodes {
 
     // TODO (pitr 2015-jun-16): lazy setup when required, see https://github.com/jruby/jruby/pull/3048#discussion_r32413656
 
-    public static BigDecimal getBigDecimalValue(long v) {
-        return BigDecimal.valueOf(v);
-    }
-
-    public static BigDecimal getBigDecimalValue(double v) {
-        return BigDecimal.valueOf(v);
-    }
-
-    public static BigDecimal getBignumBigDecimalValue(DynamicObject v) {
-        return new BigDecimal(Layouts.BIGNUM.getValue(v));
-    }
-
     public static RoundingMode toRoundingMode(int constValue) {
         switch (constValue) {
             case 1:
@@ -232,7 +220,7 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = "isRubyBignum(value)")
         public DynamicObject createBignum(VirtualFrame frame, DynamicObject value, DynamicObject self, int digits) {
             setBigDecimalValue(self,
-                    getBignumBigDecimalValue(value).round(new MathContext(digits, getRoundMode(frame))));
+                    new BigDecimal(Layouts.BIGNUM.getValue(value)).round(new MathContext(digits, getRoundMode(frame))));
             return self;
         }
 
@@ -1364,17 +1352,17 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "isNormal(a)")
         public int compare(DynamicObject a, long b) {
-            return compareBigDecimal(a, getBigDecimalValue(b));
+            return compareBigDecimal(a, BigDecimal.valueOf(b));
         }
 
         @Specialization(guards = "isNormal(a)")
         public int compare(DynamicObject a, double b) {
-            return compareBigDecimal(a, getBigDecimalValue(b));
+            return compareBigDecimal(a, BigDecimal.valueOf(b));
         }
 
         @Specialization(guards = { "isNormal(a)", "isRubyBignum(b)" })
         public int compare(DynamicObject a, DynamicObject b) {
-            return compareBigDecimal(a, getBignumBigDecimalValue(b));
+            return compareBigDecimal(a, new BigDecimal(Layouts.BIGNUM.getValue(b)));
         }
 
         @Specialization(guards = {
@@ -1386,17 +1374,17 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "!isNormal(a)")
         public Object compareSpecial(VirtualFrame frame, DynamicObject a, long b) {
-            return compareSpecial(a, createBigDecimal(frame, getBigDecimalValue(b)));
+            return compareSpecial(a, createBigDecimal(frame, BigDecimal.valueOf(b)));
         }
 
         @Specialization(guards = "!isNormal(a)")
         public Object compareSpecial(VirtualFrame frame, DynamicObject a, double b) {
-            return compareSpecial(a, createBigDecimal(frame, getBigDecimalValue(b)));
+            return compareSpecial(a, createBigDecimal(frame, BigDecimal.valueOf(b)));
         }
 
         @Specialization(guards = { "!isNormal(a)", "isRubyBignum(b)" })
         public Object compareSpecialBignum(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            return compareSpecial(a, createBigDecimal(frame, getBignumBigDecimalValue(b)));
+            return compareSpecial(a, createBigDecimal(frame, new BigDecimal(Layouts.BIGNUM.getValue(b))));
         }
 
         @Specialization(guards = {
