@@ -401,12 +401,10 @@ module Commands
     if args.delete('--sulong')
       dir = Utilities.find_sulong_dir
       env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
-      jruby_args << '-J-classpath'
-      jruby_args << File.join(dir, 'lib', '*')
-      jruby_args << '-J-classpath'
-      jruby_args << File.join(dir, 'build', 'sulong.jar')
-      jruby_args << '-J-classpath'
-      jruby_args << File.join(dir, '..', 'graal-core', 'mxbuild', 'graal', 'com.oracle.nfi', 'bin')
+      jruby_args << '-J-classpath' << "#{dir}/lib/*"
+      jruby_args << '-J-classpath' << "#{dir}/build/sulong.jar"
+      nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
+      jruby_args << '-J-classpath' << nfi_classes
       jruby_args << '-J-XX:-UseJVMCIClassLoader'
     end
 
@@ -533,8 +531,8 @@ module Commands
     Dir["#{JRUBY_DIR}/test/truffle/cexts/*"].each do |dir|
       sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", dir
       name = File.basename(dir)
-      run '--sulong', '-I', File.join(dir, 'lib'), File.join(dir, 'bin', name), :out => output_file
-      unless File.read(output_file) == File.read(File.join(dir, 'expected.txt'))
+      run '--sulong', '-I', "#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
+      unless File.read(output_file) == File.read("#{dir}/expected.txt")
         abort "c extension #{dir} didn't work as expected"
       end
     end
@@ -565,7 +563,7 @@ module Commands
 
     env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     integration_path       = "#{JRUBY_DIR}/test/truffle/integration"
-    long_tests             = File.read(File.join(integration_path, 'long-tests.txt')).lines.map(&:chomp)
+    long_tests             = File.read("#{integration_path}/long-tests.txt").lines.map(&:chomp)
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
