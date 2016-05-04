@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.stdlib;
+package org.jruby.truffle.stdlib.bigdecimal;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -51,10 +51,11 @@ import org.jruby.truffle.language.constants.ReadConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.stdlib.BigDecimalNodesFactory.BigDecimalCastNodeGen;
-import org.jruby.truffle.stdlib.BigDecimalNodesFactory.BigDecimalCoerceNodeGen;
-import org.jruby.truffle.stdlib.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
-import org.jruby.truffle.stdlib.BigDecimalNodesFactory.GetIntegerConstantNodeGen;
+import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory;
+import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory.BigDecimalCastNodeGen;
+import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory.BigDecimalCoerceNodeGen;
+import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
+import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory.GetIntegerConstantNodeGen;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -251,7 +252,7 @@ public abstract class BigDecimalNodes {
             @NodeChild(value = "self", type = RubyNode.class),
             @NodeChild(value = "digits", type = RubyNode.class)
     })
-    @ImportStatic(org.jruby.truffle.stdlib.BigDecimalNodes.Type.class)
+    @ImportStatic(BigDecimalNodes.Type.class)
     public abstract static class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
         private final static Pattern NUMBER_PATTERN;
