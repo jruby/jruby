@@ -111,15 +111,19 @@ module Truffle
     end
     
     def rb_define_method(mod, name, function, args)
-      raise 'not implemented'
+      y = mod.send(:define_method, name) do |*args|
+        Truffle::Interop.execute(function, self, *args)
+      end
     end
     
     def rb_define_private_method(mod, name, function, args)
-      raise 'not implemented'
+      rb_define_method mod, name, function, args
+      mod.send :private, name
     end
     
     def rb_define_module_function(mod, name, function, args)
-      raise 'not implemented'
+      rb_define_method mod, name, function, args
+      mod.send :module_function, name
     end
   
   end
