@@ -113,7 +113,7 @@ branches:
 
 script: tool/travis_runner.sh
 install: |
-  if [ -n "$PHASE" ]; then
+  if [[ -n "$PHASE" && $JAVA_HOME == *"java-8"* ]]; then
     travis_retry ./mvnw package -B --projects '!truffle' -Dinvoker.skip -Dmaven.test.skip;
   else
     if [ -z "$SKIP_BUILD" ]; then travis_retry ./mvnw package -B -Dinvoker.skip -Dmaven.test.skip; fi
