@@ -51,7 +51,6 @@ import org.jruby.truffle.language.constants.ReadConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory;
 import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory.BigDecimalCastNodeGen;
 import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory.BigDecimalCoerceNodeGen;
 import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
@@ -116,25 +115,6 @@ public abstract class BigDecimalNodes {
         return defaultDivisionPrecision(a.precision(), b.precision(), limit);
     }
 
-    public enum Type {
-        NEGATIVE_INFINITY("-Infinity"),
-        POSITIVE_INFINITY("Infinity"),
-        NAN("NaN"),
-        NEGATIVE_ZERO("-0"),
-        NORMAL(null);
-
-        private final String representation;
-
-        Type(String representation) {
-            this.representation = representation;
-        }
-
-        public String getRepresentation() {
-            assert representation != null;
-            return representation;
-        }
-    }
-
     public abstract static class BigDecimalCoreMethodNode extends CoreMethodNode {
 
         @Child private CreateBigDecimalNode createBigDecimal;
@@ -151,15 +131,15 @@ public abstract class BigDecimalNodes {
         }
 
         public static boolean isNormal(DynamicObject value) {
-            return Layouts.BIG_DECIMAL.getType(value) == Type.NORMAL;
+            return Layouts.BIG_DECIMAL.getType(value) == BigDecimalType.NORMAL;
         }
 
         public static boolean isNormalRubyBigDecimal(DynamicObject value) {
-            return RubyGuards.isRubyBigDecimal(value) && Layouts.BIG_DECIMAL.getType(value) == Type.NORMAL;
+            return RubyGuards.isRubyBigDecimal(value) && Layouts.BIG_DECIMAL.getType(value) == BigDecimalType.NORMAL;
         }
 
         public static boolean isSpecialRubyBigDecimal(DynamicObject value) {
-            return RubyGuards.isRubyBigDecimal(value) && Layouts.BIG_DECIMAL.getType(value) != Type.NORMAL;
+            return RubyGuards.isRubyBigDecimal(value) && Layouts.BIG_DECIMAL.getType(value) != BigDecimalType.NORMAL;
         }
 
         public static boolean isNormalZero(DynamicObject value) {
@@ -167,7 +147,7 @@ public abstract class BigDecimalNodes {
         }
 
         public static boolean isNan(DynamicObject value) {
-            return Layouts.BIG_DECIMAL.getType(value) == Type.NAN;
+            return Layouts.BIG_DECIMAL.getType(value) == BigDecimalType.NAN;
         }
 
         private void setupCreateBigDecimal() {
@@ -252,7 +232,7 @@ public abstract class BigDecimalNodes {
             @NodeChild(value = "self", type = RubyNode.class),
             @NodeChild(value = "digits", type = RubyNode.class)
     })
-    @ImportStatic(BigDecimalNodes.Type.class)
+    @ImportStatic(BigDecimalType.class)
     public abstract static class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
         private final static Pattern NUMBER_PATTERN;
@@ -279,7 +259,7 @@ public abstract class BigDecimalNodes {
             Layouts.BIG_DECIMAL.setValue(bigdecimal, value);
         }
 
-        private void setBigDecimalValue(DynamicObject bigdecimal, Type type) {
+        private void setBigDecimalValue(DynamicObject bigdecimal, BigDecimalType type) {
             Layouts.BIG_DECIMAL.setType(bigdecimal, type);
         }
 
@@ -321,17 +301,17 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "value == NEGATIVE_INFINITY || value == POSITIVE_INFINITY")
-        public DynamicObject createInfinity(VirtualFrame frame, Type value, DynamicObject self, Object digits) {
+        public DynamicObject createInfinity(VirtualFrame frame, BigDecimalType value, DynamicObject self, Object digits) {
             return createWithMode(frame, value, self, "EXCEPTION_INFINITY", "Computation results to 'Infinity'");
         }
 
         @Specialization(guards = "value == NAN")
-        public DynamicObject createNaN(VirtualFrame frame, Type value, DynamicObject self, Object digits) {
+        public DynamicObject createNaN(VirtualFrame frame, BigDecimalType value, DynamicObject self, Object digits) {
             return createWithMode(frame, value, self, "EXCEPTION_NaN", "Computation results to 'NaN'(Not a Number)");
         }
 
         @Specialization(guards = "value == NEGATIVE_ZERO")
-        public DynamicObject createNegativeZero(VirtualFrame frame, Type value, DynamicObject self, Object digits) {
+        public DynamicObject createNegativeZero(VirtualFrame frame, BigDecimalType value, DynamicObject self, Object digits) {
             setBigDecimalValue(self, value);
             return self;
         }
@@ -396,7 +376,7 @@ public abstract class BigDecimalNodes {
 
         // TODO (pitr 21-Jun-2015): raise on underflow
 
-        private DynamicObject createWithMode(VirtualFrame frame, Type value, DynamicObject self,
+        private DynamicObject createWithMode(VirtualFrame frame, BigDecimalType value, DynamicObject self,
                                              String constantName, String errorMessage) {
             setupModeCall();
             setupGetIntegerConstant();
@@ -443,14 +423,14 @@ public abstract class BigDecimalNodes {
 
             switch (strValue) {
                 case "NaN":
-                    return Type.NAN;
+                    return BigDecimalType.NAN;
                 case "Infinity":
                 case "+Infinity":
-                    return Type.POSITIVE_INFINITY;
+                    return BigDecimalType.POSITIVE_INFINITY;
                 case "-Infinity":
-                    return Type.NEGATIVE_INFINITY;
+                    return BigDecimalType.NEGATIVE_INFINITY;
                 case "-0":
-                    return Type.NEGATIVE_ZERO;
+                    return BigDecimalType.NEGATIVE_ZERO;
             }
 
             // Convert String to Java understandable format (for BigDecimal).
@@ -467,7 +447,7 @@ public abstract class BigDecimalNodes {
             try {
                 final BigDecimal value = new BigDecimal(strValue, new MathContext(digits));
                 if (value.compareTo(BigDecimal.ZERO) == 0 && strValue.startsWith("-")) {
-                    return Type.NEGATIVE_ZERO;
+                    return BigDecimalType.NEGATIVE_ZERO;
                 } else {
                     return value;
                 }
@@ -479,7 +459,7 @@ public abstract class BigDecimalNodes {
 
                 final BigInteger exponent = new BigInteger(result.group(3));
                 if (exponent.signum() == 1) {
-                    return Type.POSITIVE_INFINITY;
+                    return BigDecimalType.POSITIVE_INFINITY;
                 }
                 // TODO (pitr 21-Jun-2015): raise on underflow
                 if (exponent.signum() == -1) {
@@ -532,21 +512,21 @@ public abstract class BigDecimalNodes {
         }
 
         protected Object addSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
-            final Type aType = Layouts.BIG_DECIMAL.getType(a);
-            final Type bType = Layouts.BIG_DECIMAL.getType(b);
+            final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
+            final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-            if (aType == Type.NAN || bType == Type.NAN ||
-                    (aType == Type.POSITIVE_INFINITY && bType == Type.NEGATIVE_INFINITY) ||
-                    (aType == Type.NEGATIVE_INFINITY && bType == Type.POSITIVE_INFINITY)) {
-                return createBigDecimal(frame, Type.NAN);
+            if (aType == BigDecimalType.NAN || bType == BigDecimalType.NAN ||
+                    (aType == BigDecimalType.POSITIVE_INFINITY && bType == BigDecimalType.NEGATIVE_INFINITY) ||
+                    (aType == BigDecimalType.NEGATIVE_INFINITY && bType == BigDecimalType.POSITIVE_INFINITY)) {
+                return createBigDecimal(frame, BigDecimalType.NAN);
             }
 
-            if (aType == Type.POSITIVE_INFINITY || bType == Type.POSITIVE_INFINITY) {
-                return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+            if (aType == BigDecimalType.POSITIVE_INFINITY || bType == BigDecimalType.POSITIVE_INFINITY) {
+                return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
             }
 
-            if (aType == Type.NEGATIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) {
-                return createBigDecimal(frame, Type.NEGATIVE_INFINITY);
+            if (aType == BigDecimalType.NEGATIVE_INFINITY || bType == BigDecimalType.NEGATIVE_INFINITY) {
+                return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
             }
 
             // one is NEGATIVE_ZERO and second is NORMAL
@@ -608,21 +588,21 @@ public abstract class BigDecimalNodes {
         }
 
         protected Object subSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
-            final Type aType = Layouts.BIG_DECIMAL.getType(a);
-            final Type bType = Layouts.BIG_DECIMAL.getType(b);
+            final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
+            final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-            if (aType == Type.NAN || bType == Type.NAN ||
-                    (aType == Type.POSITIVE_INFINITY && bType == Type.POSITIVE_INFINITY) ||
-                    (aType == Type.NEGATIVE_INFINITY && bType == Type.NEGATIVE_INFINITY)) {
-                return createBigDecimal(frame, Type.NAN);
+            if (aType == BigDecimalType.NAN || bType == BigDecimalType.NAN ||
+                    (aType == BigDecimalType.POSITIVE_INFINITY && bType == BigDecimalType.POSITIVE_INFINITY) ||
+                    (aType == BigDecimalType.NEGATIVE_INFINITY && bType == BigDecimalType.NEGATIVE_INFINITY)) {
+                return createBigDecimal(frame, BigDecimalType.NAN);
             }
 
-            if (aType == Type.POSITIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) {
-                return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+            if (aType == BigDecimalType.POSITIVE_INFINITY || bType == BigDecimalType.NEGATIVE_INFINITY) {
+                return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
             }
 
-            if (aType == Type.NEGATIVE_INFINITY || bType == Type.POSITIVE_INFINITY) {
-                return createBigDecimal(frame, Type.NEGATIVE_INFINITY);
+            if (aType == BigDecimalType.NEGATIVE_INFINITY || bType == BigDecimalType.POSITIVE_INFINITY) {
+                return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
             }
 
             // one is NEGATIVE_ZERO and second is NORMAL
@@ -685,16 +665,16 @@ public abstract class BigDecimalNodes {
                 "isNormal(value)",
                 "isNormalZero(value)" })
         public Object negNormalZero(VirtualFrame frame, DynamicObject value) {
-            return createBigDecimal(frame, Type.NEGATIVE_ZERO);
+            return createBigDecimal(frame, BigDecimalType.NEGATIVE_ZERO);
         }
 
         @Specialization(guards = "!isNormal(value)")
         public Object negSpecial(VirtualFrame frame, DynamicObject value) {
             switch (Layouts.BIG_DECIMAL.getType(value)) {
                 case POSITIVE_INFINITY:
-                    return createBigDecimal(frame, Type.NEGATIVE_INFINITY);
+                    return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
                 case NEGATIVE_INFINITY:
-                    return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                    return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                 case NEGATIVE_ZERO:
                     return createBigDecimal(frame, BigDecimal.ZERO);
                 case NAN:
@@ -714,7 +694,7 @@ public abstract class BigDecimalNodes {
             final BigDecimal bBigDecimal = Layouts.BIG_DECIMAL.getValue(b);
 
             if (zeroNormal.profile(isNormalZero(a) && bBigDecimal.signum() == -1)) {
-                return Type.NEGATIVE_ZERO;
+                return BigDecimalType.NEGATIVE_ZERO;
             }
 
             return multBigDecimal(Layouts.BIG_DECIMAL.getValue(a), bBigDecimal, mathContext);
@@ -736,32 +716,32 @@ public abstract class BigDecimalNodes {
         protected Object multSpecialNormal(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
             switch (Layouts.BIG_DECIMAL.getType(a)) {
                 case NAN:
-                    return createBigDecimal(frame, Type.NAN);
+                    return createBigDecimal(frame, BigDecimalType.NAN);
                 case NEGATIVE_ZERO:
                     switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                         case 1:
                         case 0:
-                            return createBigDecimal(frame, Type.NEGATIVE_ZERO);
+                            return createBigDecimal(frame, BigDecimalType.NEGATIVE_ZERO);
                         case -1:
                             return createBigDecimal(frame, BigDecimal.ZERO);
                     }
                 case POSITIVE_INFINITY:
                     switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                         case 1:
-                            return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                            return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                         case 0:
-                            return createBigDecimal(frame, Type.NAN);
+                            return createBigDecimal(frame, BigDecimalType.NAN);
                         case -1:
-                            return createBigDecimal(frame, Type.NEGATIVE_INFINITY);
+                            return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
                     }
                 case NEGATIVE_INFINITY:
                     switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                         case 1:
-                            return createBigDecimal(frame, Type.NEGATIVE_INFINITY);
+                            return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
                         case 0:
-                            return createBigDecimal(frame, Type.NAN);
+                            return createBigDecimal(frame, BigDecimalType.NAN);
                         case -1:
-                            return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                            return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                     }
                 default:
                     throw new UnsupportedOperationException("unreachable code branch");
@@ -769,26 +749,26 @@ public abstract class BigDecimalNodes {
         }
 
         protected Object multSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
-            final Type aType = Layouts.BIG_DECIMAL.getType(a);
-            final Type bType = Layouts.BIG_DECIMAL.getType(b);
+            final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
+            final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-            if (aType == Type.NAN || bType == Type.NAN) {
-                return createBigDecimal(frame, Type.NAN);
+            if (aType == BigDecimalType.NAN || bType == BigDecimalType.NAN) {
+                return createBigDecimal(frame, BigDecimalType.NAN);
             }
-            if (aType == Type.NEGATIVE_ZERO && bType == Type.NEGATIVE_ZERO) {
+            if (aType == BigDecimalType.NEGATIVE_ZERO && bType == BigDecimalType.NEGATIVE_ZERO) {
                 return createBigDecimal(frame, BigDecimal.ZERO);
             }
-            if (aType == Type.NEGATIVE_ZERO || bType == Type.NEGATIVE_ZERO) {
-                return createBigDecimal(frame, Type.NAN);
+            if (aType == BigDecimalType.NEGATIVE_ZERO || bType == BigDecimalType.NEGATIVE_ZERO) {
+                return createBigDecimal(frame, BigDecimalType.NAN);
             }
 
             // a and b are only +-Infinity
 
-            if (aType == Type.POSITIVE_INFINITY) {
-                return bType == Type.POSITIVE_INFINITY ? a : createBigDecimal(frame, Type.NEGATIVE_INFINITY);
+            if (aType == BigDecimalType.POSITIVE_INFINITY) {
+                return bType == BigDecimalType.POSITIVE_INFINITY ? a : createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
             }
-            if (aType == Type.NEGATIVE_INFINITY) {
-                return bType == Type.POSITIVE_INFINITY ? a : createBigDecimal(frame, (Type.POSITIVE_INFINITY));
+            if (aType == BigDecimalType.NEGATIVE_INFINITY) {
+                return bType == BigDecimalType.POSITIVE_INFINITY ? a : createBigDecimal(frame, (BigDecimalType.POSITIVE_INFINITY));
             }
 
             throw new UnsupportedOperationException("unreachable code branch");
@@ -870,11 +850,11 @@ public abstract class BigDecimalNodes {
             if (normalZero.profile(bBigDecimal.signum() == 0)) {
                 switch (aBigDecimal.signum()) {
                     case 1:
-                        return Type.POSITIVE_INFINITY;
+                        return BigDecimalType.POSITIVE_INFINITY;
                     case 0:
-                        return Type.NAN;
+                        return BigDecimalType.NAN;
                     case -1:
-                        return Type.NEGATIVE_INFINITY;
+                        return BigDecimalType.NEGATIVE_INFINITY;
                     default:
                         throw new UnsupportedOperationException("unreachable code branch for value: " + aBigDecimal.signum());
                 }
@@ -895,15 +875,15 @@ public abstract class BigDecimalNodes {
         protected Object divNormalSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
             switch (Layouts.BIG_DECIMAL.getType(b)) {
                 case NAN:
-                    return createBigDecimal(frame, Type.NAN);
+                    return createBigDecimal(frame, BigDecimalType.NAN);
                 case NEGATIVE_ZERO:
                     switch (Layouts.BIG_DECIMAL.getValue(a).signum()) {
                         case 1:
-                            return createBigDecimal(frame, Type.NEGATIVE_INFINITY);
+                            return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
                         case 0:
-                            return createBigDecimal(frame, Type.NAN);
+                            return createBigDecimal(frame, BigDecimalType.NAN);
                         case -1:
-                            return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                            return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                     }
                 case POSITIVE_INFINITY:
                     switch (Layouts.BIG_DECIMAL.getValue(a).signum()) {
@@ -911,12 +891,12 @@ public abstract class BigDecimalNodes {
                         case 0:
                             return createBigDecimal(frame, BigDecimal.ZERO);
                         case -1:
-                            return createBigDecimal(frame, Type.NEGATIVE_ZERO);
+                            return createBigDecimal(frame, BigDecimalType.NEGATIVE_ZERO);
                     }
                 case NEGATIVE_INFINITY:
                     switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                         case 1:
-                            return createBigDecimal(frame, Type.NEGATIVE_ZERO);
+                            return createBigDecimal(frame, BigDecimalType.NEGATIVE_ZERO);
                         case 0:
                         case -1:
                             return createBigDecimal(frame, BigDecimal.ZERO);
@@ -929,13 +909,13 @@ public abstract class BigDecimalNodes {
         protected Object divSpecialNormal(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
             switch (Layouts.BIG_DECIMAL.getType(a)) {
                 case NAN:
-                    return createBigDecimal(frame, Type.NAN);
+                    return createBigDecimal(frame, BigDecimalType.NAN);
                 case NEGATIVE_ZERO:
                     switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                         case 1:
-                            return createBigDecimal(frame, Type.NEGATIVE_ZERO);
+                            return createBigDecimal(frame, BigDecimalType.NEGATIVE_ZERO);
                         case 0:
-                            return createBigDecimal(frame, Type.NAN);
+                            return createBigDecimal(frame, BigDecimalType.NAN);
                         case -1:
                             return createBigDecimal(frame, BigDecimal.ZERO);
                     }
@@ -943,17 +923,17 @@ public abstract class BigDecimalNodes {
                     switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                         case 1:
                         case 0:
-                            return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                            return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                         case -1:
-                            return createBigDecimal(frame, Type.NEGATIVE_INFINITY);
+                            return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
                     }
                 case NEGATIVE_INFINITY:
                     switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                         case 1:
                         case 0:
-                            return createBigDecimal(frame, Type.NEGATIVE_INFINITY);
+                            return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
                         case -1:
-                            return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                            return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                     }
                 default:
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(a));
@@ -961,32 +941,32 @@ public abstract class BigDecimalNodes {
         }
 
         protected Object divSpecialSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
-            final Type aType = Layouts.BIG_DECIMAL.getType(a);
-            final Type bType = Layouts.BIG_DECIMAL.getType(b);
+            final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
+            final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-            if (aType == Type.NAN || bType == Type.NAN ||
-                    (aType == Type.NEGATIVE_ZERO && bType == Type.NEGATIVE_ZERO)) {
-                return createBigDecimal(frame, Type.NAN);
+            if (aType == BigDecimalType.NAN || bType == BigDecimalType.NAN ||
+                    (aType == BigDecimalType.NEGATIVE_ZERO && bType == BigDecimalType.NEGATIVE_ZERO)) {
+                return createBigDecimal(frame, BigDecimalType.NAN);
             }
 
-            if (aType == Type.NEGATIVE_ZERO) {
-                if (bType == Type.POSITIVE_INFINITY) {
-                    return createBigDecimal(frame, Type.NEGATIVE_ZERO);
+            if (aType == BigDecimalType.NEGATIVE_ZERO) {
+                if (bType == BigDecimalType.POSITIVE_INFINITY) {
+                    return createBigDecimal(frame, BigDecimalType.NEGATIVE_ZERO);
                 } else {
-                    return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                    return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                 }
             }
 
-            if (bType == Type.NEGATIVE_ZERO) {
-                if (aType == Type.POSITIVE_INFINITY) {
-                    return createBigDecimal(frame, Type.NEGATIVE_INFINITY);
+            if (bType == BigDecimalType.NEGATIVE_ZERO) {
+                if (aType == BigDecimalType.POSITIVE_INFINITY) {
+                    return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
                 } else {
-                    return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                    return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                 }
             }
 
             // a and b are only +-Infinity
-            return createBigDecimal(frame, Type.NAN);
+            return createBigDecimal(frame, BigDecimalType.NAN);
         }
     }
 
@@ -1069,10 +1049,10 @@ public abstract class BigDecimalNodes {
                 "isNormal(a)",
                 "isSpecialRubyBigDecimal(b)" })
         public Object divNormalSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, NotProvided precision) {
-            if (Layouts.BIG_DECIMAL.getType(b) == Type.NEGATIVE_ZERO) {
+            if (Layouts.BIG_DECIMAL.getType(b) == BigDecimalType.NEGATIVE_ZERO) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
-            } else if (Layouts.BIG_DECIMAL.getType(b) == Type.NAN) {
+            } else if (Layouts.BIG_DECIMAL.getType(b) == BigDecimalType.NAN) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
             } else {
@@ -1094,10 +1074,10 @@ public abstract class BigDecimalNodes {
             if (isNormalZero(b)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
-            } else if (Layouts.BIG_DECIMAL.getType(a) == Type.NAN) {
+            } else if (Layouts.BIG_DECIMAL.getType(a) == BigDecimalType.NAN) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
-            } else if (Layouts.BIG_DECIMAL.getType(a) == Type.POSITIVE_INFINITY || Layouts.BIG_DECIMAL.getType(a) == Type.NEGATIVE_INFINITY) {
+            } else if (Layouts.BIG_DECIMAL.getType(a) == BigDecimalType.POSITIVE_INFINITY || Layouts.BIG_DECIMAL.getType(a) == BigDecimalType.NEGATIVE_INFINITY) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'Infinity'", this));
             } else {
@@ -1116,10 +1096,10 @@ public abstract class BigDecimalNodes {
                 "!isNormal(a)",
                 "isSpecialRubyBigDecimal(b)" })
         public Object divSpecialSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, NotProvided precision) {
-            if (Layouts.BIG_DECIMAL.getType(b) == Type.NEGATIVE_ZERO) {
+            if (Layouts.BIG_DECIMAL.getType(b) == BigDecimalType.NEGATIVE_ZERO) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
-            } else if (Layouts.BIG_DECIMAL.getType(a) == Type.NAN || Layouts.BIG_DECIMAL.getType(b) == Type.NAN) {
+            } else if (Layouts.BIG_DECIMAL.getType(a) == BigDecimalType.NAN || Layouts.BIG_DECIMAL.getType(b) == BigDecimalType.NAN) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
             } else {
@@ -1201,39 +1181,39 @@ public abstract class BigDecimalNodes {
                 "isRubyBigDecimal(b)",
                 "!isNormal(a) || !isNormal(b)" })
         public Object divmodSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            final Type aType = Layouts.BIG_DECIMAL.getType(a);
-            final Type bType = Layouts.BIG_DECIMAL.getType(b);
+            final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
+            final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-            if (aType == Type.NAN || bType == Type.NAN) {
-                Object[] store = new Object[]{ createBigDecimal(frame, Type.NAN), createBigDecimal(frame, Type.NAN) };
+            if (aType == BigDecimalType.NAN || bType == BigDecimalType.NAN) {
+                Object[] store = new Object[]{ createBigDecimal(frame, BigDecimalType.NAN), createBigDecimal(frame, BigDecimalType.NAN) };
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
             }
 
-            if (bType == Type.NEGATIVE_ZERO || (bType == Type.NORMAL && isNormalZero(b))) {
+            if (bType == BigDecimalType.NEGATIVE_ZERO || (bType == BigDecimalType.NORMAL && isNormalZero(b))) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 
-            if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
+            if (aType == BigDecimalType.NEGATIVE_ZERO || (aType == BigDecimalType.NORMAL && isNormalZero(a))) {
                 Object[] store = new Object[]{ createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO) };
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
             }
 
-            if (aType == Type.POSITIVE_INFINITY || aType == Type.NEGATIVE_INFINITY) {
+            if (aType == BigDecimalType.POSITIVE_INFINITY || aType == BigDecimalType.NEGATIVE_INFINITY) {
                 setupSignCall();
                 setupLimitIntegerCast();
 
-                final int signA = aType == Type.POSITIVE_INFINITY ? 1 : -1;
+                final int signA = aType == BigDecimalType.POSITIVE_INFINITY ? 1 : -1;
                 final int signB = Integer.signum(signIntegerCast.executeCastInt(signCall.call(frame, b, "sign", null)));
                 final int sign = signA * signB; // is between -1 and 1, 0 when nan
 
-                final Type type = new Type[]{ Type.NEGATIVE_INFINITY, Type.NAN, Type.POSITIVE_INFINITY }[sign + 1];
+                final BigDecimalType type = new BigDecimalType[]{ BigDecimalType.NEGATIVE_INFINITY, BigDecimalType.NAN, BigDecimalType.POSITIVE_INFINITY }[sign + 1];
 
-                Object[] store = new Object[]{ createBigDecimal(frame, type), createBigDecimal(frame, Type.NAN) };
+                Object[] store = new Object[]{ createBigDecimal(frame, type), createBigDecimal(frame, BigDecimalType.NAN) };
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
             }
 
-            if (bType == Type.POSITIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) {
+            if (bType == BigDecimalType.POSITIVE_INFINITY || bType == BigDecimalType.NEGATIVE_INFINITY) {
                 Object[] store = new Object[]{ createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a) };
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
             }
@@ -1263,21 +1243,21 @@ public abstract class BigDecimalNodes {
                 "isNormalRubyBigDecimal(b)",
                 "isNormalZero(b)" })
         public Object remainderZero(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            return createBigDecimal(frame, Type.NAN);
+            return createBigDecimal(frame, BigDecimalType.NAN);
         }
 
         @Specialization(guards = {
                 "isRubyBigDecimal(b)",
                 "!isNormal(a) || !isNormal(b)" })
         public Object remainderSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            final Type aType = Layouts.BIG_DECIMAL.getType(a);
-            final Type bType = Layouts.BIG_DECIMAL.getType(b);
+            final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
+            final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-            if (aType == Type.NEGATIVE_ZERO && bType == Type.NORMAL) {
+            if (aType == BigDecimalType.NEGATIVE_ZERO && bType == BigDecimalType.NORMAL) {
                 return createBigDecimal(frame, BigDecimal.ZERO);
             }
 
-            return createBigDecimal(frame, Type.NAN);
+            return createBigDecimal(frame, BigDecimalType.NAN);
         }
     }
 
@@ -1316,27 +1296,27 @@ public abstract class BigDecimalNodes {
                 "isRubyBigDecimal(b)",
                 "!isNormal(a) || !isNormal(b)" })
         public Object moduloSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            final Type aType = Layouts.BIG_DECIMAL.getType(a);
-            final Type bType = Layouts.BIG_DECIMAL.getType(b);
+            final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
+            final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-            if (aType == Type.NAN || bType == Type.NAN) {
-                return createBigDecimal(frame, Type.NAN);
+            if (aType == BigDecimalType.NAN || bType == BigDecimalType.NAN) {
+                return createBigDecimal(frame, BigDecimalType.NAN);
             }
 
-            if (bType == Type.NEGATIVE_ZERO || (bType == Type.NORMAL && isNormalZero(b))) {
+            if (bType == BigDecimalType.NEGATIVE_ZERO || (bType == BigDecimalType.NORMAL && isNormalZero(b))) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 
-            if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
+            if (aType == BigDecimalType.NEGATIVE_ZERO || (aType == BigDecimalType.NORMAL && isNormalZero(a))) {
                 return createBigDecimal(frame, BigDecimal.ZERO);
             }
 
-            if (aType == Type.POSITIVE_INFINITY || aType == Type.NEGATIVE_INFINITY) {
-                return createBigDecimal(frame, Type.NAN);
+            if (aType == BigDecimalType.POSITIVE_INFINITY || aType == BigDecimalType.NEGATIVE_INFINITY) {
+                return createBigDecimal(frame, BigDecimalType.NAN);
             }
 
-            if (bType == Type.POSITIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) {
+            if (bType == BigDecimalType.POSITIVE_INFINITY || bType == BigDecimalType.NEGATIVE_INFINITY) {
                 return createBigDecimal(frame, a);
             }
 
@@ -1379,7 +1359,7 @@ public abstract class BigDecimalNodes {
                         return createBigDecimal(frame, BigDecimal.ZERO);
                     }
                 } else {
-                    return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                    return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                 }
             } else {
                 final int newPrecision;
@@ -1405,14 +1385,14 @@ public abstract class BigDecimalNodes {
         public Object power(VirtualFrame frame, DynamicObject a, int exponent, Object unusedPrecision) {
             switch (Layouts.BIG_DECIMAL.getType(a)) {
                 case NAN:
-                    return createBigDecimal(frame, Type.NAN);
+                    return createBigDecimal(frame, BigDecimalType.NAN);
                 case POSITIVE_INFINITY:
-                    return createBigDecimal(frame, exponent >= 0 ? Type.POSITIVE_INFINITY : BigDecimal.ZERO);
+                    return createBigDecimal(frame, exponent >= 0 ? BigDecimalType.POSITIVE_INFINITY : BigDecimal.ZERO);
                 case NEGATIVE_INFINITY:
                     return createBigDecimal(frame,
-                            Integer.signum(exponent) == 1 ? (exponent % 2 == 0 ? Type.POSITIVE_INFINITY : Type.NEGATIVE_INFINITY) : BigDecimal.ZERO);
+                            Integer.signum(exponent) == 1 ? (exponent % 2 == 0 ? BigDecimalType.POSITIVE_INFINITY : BigDecimalType.NEGATIVE_INFINITY) : BigDecimal.ZERO);
                 case NEGATIVE_ZERO:
-                    return createBigDecimal(frame, Integer.signum(exponent) == 1 ? BigDecimal.ZERO : Type.NAN);
+                    return createBigDecimal(frame, Integer.signum(exponent) == 1 ? BigDecimal.ZERO : BigDecimalType.NAN);
                 default:
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(a));
             }
@@ -1464,7 +1444,7 @@ public abstract class BigDecimalNodes {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(coreExceptions().floatDomainError("(VpSqrt) SQRT(NaN value)", this));
                 case POSITIVE_INFINITY:
-                    return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                    return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                 case NEGATIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(coreExceptions().floatDomainError("(VpSqrt) SQRT(negative value)", this));
@@ -1534,19 +1514,19 @@ public abstract class BigDecimalNodes {
                 "!isNormal(a) || !isNormal(b)",
                 "isNormal(a) || !isNan(a)" })
         public Object compareSpecial(DynamicObject a, DynamicObject b) {
-            final Type aType = Layouts.BIG_DECIMAL.getType(a);
-            final Type bType = Layouts.BIG_DECIMAL.getType(b);
+            final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
+            final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-            if (aType == Type.NAN || bType == Type.NAN) {
+            if (aType == BigDecimalType.NAN || bType == BigDecimalType.NAN) {
                 return nil();
             }
             if (aType == bType) {
                 return 0;
             }
-            if (aType == Type.POSITIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) {
+            if (aType == BigDecimalType.POSITIVE_INFINITY || bType == BigDecimalType.NEGATIVE_INFINITY) {
                 return 1;
             }
-            if (aType == Type.NEGATIVE_INFINITY || bType == Type.POSITIVE_INFINITY) {
+            if (aType == BigDecimalType.NEGATIVE_INFINITY || bType == BigDecimalType.POSITIVE_INFINITY) {
                 return -1;
             }
 
@@ -1555,12 +1535,12 @@ public abstract class BigDecimalNodes {
             final BigDecimal aCompare;
             final BigDecimal bCompare;
 
-            if (aType == Type.NEGATIVE_ZERO) {
+            if (aType == BigDecimalType.NEGATIVE_ZERO) {
                 aCompare = BigDecimal.ZERO;
             } else {
                 aCompare = Layouts.BIG_DECIMAL.getValue(a);
             }
-            if (bType == Type.NEGATIVE_ZERO) {
+            if (bType == BigDecimalType.NEGATIVE_ZERO) {
                 bCompare = BigDecimal.ZERO;
             } else {
                 bCompare = Layouts.BIG_DECIMAL.getValue(b);
@@ -1688,7 +1668,7 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "!isNormal(value)")
         public boolean nanSpecial(DynamicObject value) {
-            return Layouts.BIG_DECIMAL.getType(value) == Type.NAN;
+            return Layouts.BIG_DECIMAL.getType(value) == BigDecimalType.NAN;
         }
 
     }
@@ -1734,10 +1714,10 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "!isNormal(value)")
         public Object absSpecial(VirtualFrame frame, DynamicObject value) {
-            final Type type = Layouts.BIG_DECIMAL.getType(value);
+            final BigDecimalType type = Layouts.BIG_DECIMAL.getType(value);
             switch (type) {
                 case NEGATIVE_INFINITY:
-                    return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                    return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                 case NEGATIVE_ZERO:
                     return createBigDecimal(frame, BigDecimal.ZERO);
                 case POSITIVE_INFINITY:
@@ -1951,7 +1931,7 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "!isNormal(value)")
         public int toISpecial(DynamicObject value) {
-            final Type type = Layouts.BIG_DECIMAL.getType(value);
+            final BigDecimalType type = Layouts.BIG_DECIMAL.getType(value);
             switch (type) {
                 case NEGATIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();
@@ -2129,7 +2109,7 @@ public abstract class BigDecimalNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return Layouts.BIG_DECIMAL.createBigDecimal(Layouts.CLASS.getInstanceFactory(rubyClass), BigDecimal.ZERO, Type.NORMAL);
+            return Layouts.BIG_DECIMAL.createBigDecimal(Layouts.CLASS.getInstanceFactory(rubyClass), BigDecimal.ZERO, BigDecimalType.NORMAL);
         }
 
     }
