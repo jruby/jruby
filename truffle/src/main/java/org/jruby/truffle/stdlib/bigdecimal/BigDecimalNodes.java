@@ -33,7 +33,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.RubiniusOnly;
 import org.jruby.truffle.core.cast.BooleanCastNode;
@@ -113,107 +112,6 @@ public abstract class BigDecimalNodes {
 
     public static int defaultDivisionPrecision(BigDecimal a, BigDecimal b, int limit) {
         return defaultDivisionPrecision(a.precision(), b.precision(), limit);
-    }
-
-    public abstract static class BigDecimalCoreMethodNode extends CoreMethodNode {
-
-        @Child private CreateBigDecimalNode createBigDecimal;
-        @Child private CallDispatchHeadNode limitCall;
-        @Child private IntegerCastNode limitIntegerCast;
-        @Child private CallDispatchHeadNode roundModeCall;
-        @Child private IntegerCastNode roundModeIntegerCast;
-
-        public BigDecimalCoreMethodNode() {
-        }
-
-        public BigDecimalCoreMethodNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public static boolean isNormal(DynamicObject value) {
-            return Layouts.BIG_DECIMAL.getType(value) == BigDecimalType.NORMAL;
-        }
-
-        public static boolean isNormalRubyBigDecimal(DynamicObject value) {
-            return RubyGuards.isRubyBigDecimal(value) && Layouts.BIG_DECIMAL.getType(value) == BigDecimalType.NORMAL;
-        }
-
-        public static boolean isSpecialRubyBigDecimal(DynamicObject value) {
-            return RubyGuards.isRubyBigDecimal(value) && Layouts.BIG_DECIMAL.getType(value) != BigDecimalType.NORMAL;
-        }
-
-        public static boolean isNormalZero(DynamicObject value) {
-            return Layouts.BIG_DECIMAL.getValue(value).compareTo(BigDecimal.ZERO) == 0;
-        }
-
-        public static boolean isNan(DynamicObject value) {
-            return Layouts.BIG_DECIMAL.getType(value) == BigDecimalType.NAN;
-        }
-
-        private void setupCreateBigDecimal() {
-            if (createBigDecimal == null) {
-                CompilerDirectives.transferToInterpreter();
-                createBigDecimal = insert(CreateBigDecimalNodeFactory.create(getContext(), getSourceSection(), null, null, null));
-            }
-        }
-
-        protected DynamicObject createBigDecimal(VirtualFrame frame, Object value) {
-            setupCreateBigDecimal();
-            return createBigDecimal.executeCreate(frame, value);
-        }
-
-        protected DynamicObject initializeBigDecimal(VirtualFrame frame, Object value, DynamicObject self, Object digits) {
-            setupCreateBigDecimal();
-            return createBigDecimal.executeInitialize(frame, value, self, digits);
-        }
-
-        private void setupLimitCall() {
-            if (limitCall == null) {
-                CompilerDirectives.transferToInterpreter();
-                limitCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-        }
-
-        private void setupLimitIntegerCast() {
-            if (limitIntegerCast == null) {
-                CompilerDirectives.transferToInterpreter();
-                limitIntegerCast = insert(IntegerCastNodeGen.create(getContext(), getSourceSection(), null));
-            }
-        }
-
-        protected int getLimit(VirtualFrame frame) {
-            setupLimitCall();
-            setupLimitIntegerCast();
-
-            return limitIntegerCast.executeCastInt(limitCall.call(frame, getBigDecimalClass(), "limit", null));
-        }
-
-        private void setupRoundModeCall() {
-            if (roundModeCall == null) {
-                CompilerDirectives.transferToInterpreter();
-                roundModeCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-        }
-
-        private void setupRoundModeIntegerCast() {
-            if (roundModeIntegerCast == null) {
-                CompilerDirectives.transferToInterpreter();
-                roundModeIntegerCast = insert(IntegerCastNodeGen.create(getContext(), getSourceSection(), null));
-            }
-        }
-
-        protected RoundingMode getRoundMode(VirtualFrame frame) {
-            setupRoundModeCall();
-            setupRoundModeIntegerCast();
-
-            return toRoundingMode(roundModeIntegerCast.executeCastInt(
-                    // TODO (pitr 21-Jun-2015): read the actual constant
-                    roundModeCall.call(frame, getBigDecimalClass(), "mode", null, 256)));
-        }
-
-        protected DynamicObject getBigDecimalClass() {
-            return coreLibrary().getBigDecimalClass();
-        }
     }
 
     @NodeChild(value = "arguments", type = RubyNode[].class)
