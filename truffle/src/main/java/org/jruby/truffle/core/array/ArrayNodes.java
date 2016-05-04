@@ -924,8 +924,8 @@ public abstract class ArrayNodes {
         @Child private ToIntNode toIntNode;
         @Child private CallDispatchHeadNode toAryNode;
         @Child private KernelNodes.RespondToNode respondToToAryNode;
-        
-        public abstract DynamicObject executeInitialize(VirtualFrame frame, DynamicObject array, Object size, Object value, Object block);
+
+        public abstract DynamicObject executeInitialize(VirtualFrame frame, DynamicObject array, Object size, Object defaultValue, Object block);
 
         @Specialization
         public DynamicObject initializeNoArgs(DynamicObject array, NotProvided size, NotProvided unusedValue, NotProvided block) {
