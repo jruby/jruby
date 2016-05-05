@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
+import org.jruby.truffle.builtins.RubiniusPrimitive;
 import org.jruby.truffle.platform.RubiniusTypes;
 
 public abstract class NativeFunctionPrimitiveNodes {

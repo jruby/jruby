@@ -20,6 +20,7 @@ import org.joni.Matcher;
 import org.joni.Regex;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.RubiniusPrimitive;
 import org.jruby.truffle.core.regexp.RegexpGuards;
 import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.rope.Rope;

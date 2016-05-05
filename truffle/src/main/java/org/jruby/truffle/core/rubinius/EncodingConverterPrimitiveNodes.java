@@ -22,6 +22,7 @@ import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.RubiniusPrimitive;
 import org.jruby.truffle.core.encoding.EncodingConverterNodes;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;

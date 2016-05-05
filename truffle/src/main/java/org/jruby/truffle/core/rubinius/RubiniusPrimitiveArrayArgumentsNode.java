@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.builtins.RubiniusPrimitiveNode;
 import org.jruby.truffle.language.RubyNode;
 
 @GenerateNodeFactory

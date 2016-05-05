@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.RubyRandom;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.RubiniusPrimitive;
 import org.jruby.util.Random;
 
 import java.math.BigInteger;

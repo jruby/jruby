@@ -12,6 +12,7 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.builtins.RubiniusPrimitive;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Symbol} class.

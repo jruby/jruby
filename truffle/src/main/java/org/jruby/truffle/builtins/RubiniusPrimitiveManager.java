@@ -7,12 +7,36 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.builtins;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.core.rubinius.ArrayPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.BignumPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.DirPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.EncodingConverterPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.EncodingPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.ExceptionPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.FixnumPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.FloatPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.IOBufferPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.IOPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.NativeFunctionPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.PointerPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.RandomizerPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.StatPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.SymbolPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.ThreadPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.TimePrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodes;
+import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.VMPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.WeakRefPrimitiveNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 

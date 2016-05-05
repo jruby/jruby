@@ -65,7 +65,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
-import org.jruby.truffle.core.rubinius.RubiniusPrimitiveConstructor;
+import org.jruby.truffle.builtins.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.core.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
 import org.jruby.truffle.core.string.StringNodesFactory;

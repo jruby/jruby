@@ -60,6 +60,7 @@ import org.joda.time.tz.FixedDateTimeZone;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.RubiniusPrimitive;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.ReadTimeZoneNode;
 import org.jruby.truffle.language.RubyGuards;

@@ -24,7 +24,7 @@ import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
 import org.jruby.truffle.core.rope.RopeTable;
-import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
+import org.jruby.truffle.builtins.RubiniusPrimitiveManager;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.FrozenStrings;
 import org.jruby.truffle.core.symbol.SymbolTable;
