@@ -10,14 +10,14 @@
 package org.jruby.truffle.stdlib.bigdecimal;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
@@ -42,37 +42,11 @@ import java.util.regex.Pattern;
 @ImportStatic(BigDecimalType.class)
 public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
-    private final static Pattern NUMBER_PATTERN;
-    private final static Pattern ZERO_PATTERN;
+    private static final String exponent = "([eE][+-]?)?(\\d*)";
+    private final static Pattern NUMBER_PATTERN = Pattern.compile("^([+-]?\\d*\\.?\\d*" + exponent + ").*");
+    private final static Pattern ZERO_PATTERN = Pattern.compile("^[+-]?0*\\.?0*" + exponent);
 
-    static {
-        final String exponent = "([eE][+-]?)?(\\d*)";
-        NUMBER_PATTERN = Pattern.compile("^([+-]?\\d*\\.?\\d*" + exponent + ").*");
-        ZERO_PATTERN = Pattern.compile("^[+-]?0*\\.?0*" + exponent);
-    }
-
-    @Child
-    private BigDecimalCastNode bigDecimalCast;
-    @Child
-    private CallDispatchHeadNode modeCall;
-    @Child
-    private GetIntegerConstantNode getIntegerConstant;
-    @Child
-    private BooleanCastNode booleanCast;
-    @Child
-    private CallDispatchHeadNode allocateNode;
-
-    public CreateBigDecimalNode() {
-        bigDecimalCast = BigDecimalCastNodeGen.create(null, null);
-    }
-
-    private void setBigDecimalValue(DynamicObject bigdecimal, BigDecimal value) {
-        Layouts.BIG_DECIMAL.setValue(bigdecimal, value);
-    }
-
-    private void setBigDecimalValue(DynamicObject bigdecimal, BigDecimalType type) {
-        Layouts.BIG_DECIMAL.setType(bigdecimal, type);
-    }
+    @Child private CallDispatchHeadNode allocateNode;
 
     public abstract DynamicObject executeInitialize(VirtualFrame frame, Object value, DynamicObject alreadyAllocatedSelf, Object digits);
 
@@ -82,19 +56,22 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
             allocateNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
         }
 
-        DynamicObject rubyClass = (getBigDecimalClass());
-        return executeInitialize(frame, value, (DynamicObject) allocateNode.call(frame, rubyClass, "allocate", null), NotProvided.INSTANCE);
+        return executeInitialize(frame, value, (DynamicObject) allocateNode.call(frame, getBigDecimalClass(), "allocate", null), NotProvided.INSTANCE);
     }
 
     @Specialization
     public DynamicObject create(VirtualFrame frame, long value, DynamicObject self, NotProvided digits) {
-        return create(frame, value, self, 0);
+        return executeInitialize(frame, value, self, 0);
     }
 
     @Specialization
-    public DynamicObject create(VirtualFrame frame, long value, DynamicObject self, int digits) {
-        setBigDecimalValue(self,
-                bigDecimalCast.executeBigDecimal(frame, value, getRoundMode(frame)).round(new MathContext(digits, getRoundMode(frame))));
+    public DynamicObject create(
+            VirtualFrame frame,
+            long value,
+            DynamicObject self,
+            int digits,
+            @Cached("createBigDecimalCastNode()") BigDecimalCastNode bigDecimalCastNode) {
+        Layouts.BIG_DECIMAL.setValue(self, bigDecimalCastNode.executeBigDecimal(frame, value, getRoundMode(frame)).round(new MathContext(digits, getRoundMode(frame))));
         return self;
     }
 
@@ -105,25 +82,65 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
     }
 
     @Specialization
-    public DynamicObject create(VirtualFrame frame, double value, DynamicObject self, int digits) {
-        setBigDecimalValue(self,
-                bigDecimalCast.executeBigDecimal(frame, value, getRoundMode(frame)).round(new MathContext(digits, getRoundMode(frame))));
+    public DynamicObject create(
+            VirtualFrame frame,
+            double value,
+            DynamicObject self,
+            int digits,
+            @Cached("createBigDecimalCastNode()") BigDecimalCastNode bigDecimalCastNode) {
+        Layouts.BIG_DECIMAL.setValue(self, bigDecimalCastNode.executeBigDecimal(frame, value, getRoundMode(frame)).round(new MathContext(digits, getRoundMode(frame))));
         return self;
     }
 
     @Specialization(guards = "value == NEGATIVE_INFINITY || value == POSITIVE_INFINITY")
-    public DynamicObject createInfinity(VirtualFrame frame, BigDecimalType value, DynamicObject self, Object digits) {
-        return createWithMode(frame, value, self, "EXCEPTION_INFINITY", "Computation results to 'Infinity'");
+    public DynamicObject createInfinity(
+            VirtualFrame frame,
+            BigDecimalType value,
+            DynamicObject self,
+            Object digits,
+            @Cached("createBooleanCastNode()") BooleanCastNode booleanCastNode,
+            @Cached("createGetIntegerConstantNode()") GetIntegerConstantNode getIntegerConstantNode,
+            @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode modeCallNode) {
+        // TODO (pitr 21-Jun-2015): raise on underflow
+
+        final int exceptionConstant = getIntegerConstantNode.executeGetIntegerConstant(frame, getBigDecimalClass(), "EXCEPTION_INFINITY");
+        final boolean raise = booleanCastNode.executeBoolean(frame,
+                modeCallNode.call(frame, getBigDecimalClass(), "boolean_mode", null, exceptionConstant));
+        if (raise) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'Infinity'", this));
+        }
+
+        Layouts.BIG_DECIMAL.setType(self, value);
+        return self;
     }
 
     @Specialization(guards = "value == NAN")
-    public DynamicObject createNaN(VirtualFrame frame, BigDecimalType value, DynamicObject self, Object digits) {
-        return createWithMode(frame, value, self, "EXCEPTION_NaN", "Computation results to 'NaN'(Not a Number)");
+    public DynamicObject createNaN(
+            VirtualFrame frame,
+            BigDecimalType value,
+            DynamicObject self,
+            Object digits,
+            @Cached("createBooleanCastNode()") BooleanCastNode booleanCastNode,
+            @Cached("createGetIntegerConstantNode()") GetIntegerConstantNode getIntegerConstantNode,
+            @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode modeCallNode) {
+        // TODO (pitr 21-Jun-2015): raise on underflow
+
+        final int exceptionConstant = getIntegerConstantNode.executeGetIntegerConstant(frame, getBigDecimalClass(), "EXCEPTION_NaN");
+        final boolean raise = booleanCastNode.executeBoolean(frame,
+                modeCallNode.call(frame, getBigDecimalClass(), "boolean_mode", null, exceptionConstant));
+        if (raise) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+        }
+
+        Layouts.BIG_DECIMAL.setType(self, value);
+        return self;
     }
 
     @Specialization(guards = "value == NEGATIVE_ZERO")
     public DynamicObject createNegativeZero(VirtualFrame frame, BigDecimalType value, DynamicObject self, Object digits) {
-        setBigDecimalValue(self, value);
+        Layouts.BIG_DECIMAL.setType(self, value);
         return self;
     }
 
@@ -134,7 +151,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
     @Specialization
     public DynamicObject create(VirtualFrame frame, BigDecimal value, DynamicObject self, int digits) {
-        setBigDecimalValue(self, value.round(new MathContext(digits, getRoundMode(frame))));
+        Layouts.BIG_DECIMAL.setValue(self, value.round(new MathContext(digits, getRoundMode(frame))));
         return self;
     }
 
@@ -145,8 +162,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
     @Specialization(guards = "isRubyBignum(value)")
     public DynamicObject createBignum(VirtualFrame frame, DynamicObject value, DynamicObject self, int digits) {
-        setBigDecimalValue(self,
-                new BigDecimal(Layouts.BIGNUM.getValue(value)).round(new MathContext(digits, getRoundMode(frame))));
+        Layouts.BIG_DECIMAL.setValue(self, new BigDecimal(Layouts.BIGNUM.getValue(value)).round(new MathContext(digits, getRoundMode(frame))));
         return self;
     }
 
@@ -157,8 +173,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
     @Specialization(guards = "isRubyBigDecimal(value)")
     public DynamicObject createBigDecimal(VirtualFrame frame, DynamicObject value, DynamicObject self, int digits) {
-        setBigDecimalValue(self,
-                Layouts.BIG_DECIMAL.getValue(value).round(new MathContext(digits, getRoundMode(frame))));
+        Layouts.BIG_DECIMAL.setValue(self, Layouts.BIG_DECIMAL.getValue(value).round(new MathContext(digits, getRoundMode(frame))));
         return self;
     }
 
@@ -172,62 +187,28 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
         return executeInitialize(frame, getValueFromString(value.toString(), digits), self, digits);
     }
 
-    @Specialization(guards = {"!isRubyBignum(value)", "!isRubyBigDecimal(value)", "!isRubyString(value)"})
-    public DynamicObject create(VirtualFrame frame, DynamicObject value, DynamicObject self, int digits) {
-        final Object castedValue = bigDecimalCast.executeObject(frame, value, getRoundMode(frame));
+    @Specialization(guards = {
+            "!isRubyBignum(value)",
+            "!isRubyBigDecimal(value)",
+            "!isRubyString(value)"
+    })
+    public DynamicObject create(
+            VirtualFrame frame,
+            DynamicObject value,
+            DynamicObject self,
+            int digits,
+            @Cached("createBigDecimalCastNode()") BigDecimalCastNode bigDecimalCastNode) {
+        final Object castedValue = bigDecimalCastNode.executeObject(frame, value, getRoundMode(frame));
         if (castedValue == nil()) {
             throw new RaiseException(coreExceptions().typeError("could not be casted to BigDecimal", this));
         }
 
-        setBigDecimalValue(
-                self,
-                ((BigDecimal) castedValue).round(new MathContext(digits, getRoundMode(frame))));
+        Layouts.BIG_DECIMAL.setValue(self, ((BigDecimal) castedValue).round(new MathContext(digits, getRoundMode(frame))));
 
         return self;
     }
 
-    // TODO (pitr 21-Jun-2015): raise on underflow
-
-    private DynamicObject createWithMode(VirtualFrame frame, BigDecimalType value, DynamicObject self,
-                                         String constantName, String errorMessage) {
-        setupModeCall();
-        setupGetIntegerConstant();
-        setupBooleanCast();
-
-        final int exceptionConstant = getIntegerConstant.executeGetIntegerConstant(frame, getBigDecimalClass(), constantName);
-        final boolean raise = booleanCast.executeBoolean(frame,
-                modeCall.call(frame, getBigDecimalClass(), "boolean_mode", null, exceptionConstant));
-        if (raise) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().floatDomainError(errorMessage, this));
-        }
-
-        setBigDecimalValue(self, value);
-        return self;
-    }
-
-    private void setupBooleanCast() {
-        if (booleanCast == null) {
-            CompilerDirectives.transferToInterpreter();
-            booleanCast = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
-        }
-    }
-
-    private void setupGetIntegerConstant() {
-        if (getIntegerConstant == null) {
-            CompilerDirectives.transferToInterpreter();
-            getIntegerConstant = insert(GetIntegerConstantNodeGen.create(null, null));
-        }
-    }
-
-    private void setupModeCall() {
-        if (modeCall == null) {
-            CompilerDirectives.transferToInterpreter();
-            modeCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-        }
-    }
-
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private Object getValueFromString(String string, int digits) {
         String strValue = string.trim();
 
@@ -281,4 +262,17 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
             throw e;
         }
     }
+
+    protected BigDecimalCastNode createBigDecimalCastNode() {
+        return BigDecimalCastNodeGen.create(null, null);
+    }
+
+    protected BooleanCastNode createBooleanCastNode() {
+        return BooleanCastNodeGen.create(getContext(), getSourceSection(), null);
+    }
+
+    protected GetIntegerConstantNode createGetIntegerConstantNode() {
+        return GetIntegerConstantNodeGen.create(null, null);
+    }
+
 }
