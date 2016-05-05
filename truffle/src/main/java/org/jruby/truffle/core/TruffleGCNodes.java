@@ -12,6 +12,9 @@ package org.jruby.truffle.core;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.RubyGC;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 
 @CoreClass(name = "Truffle::GC")
 public abstract class TruffleGCNodes {

@@ -12,7 +12,7 @@ package org.jruby.truffle.stdlib.bigdecimal;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.cast.IntegerCastNode;
 import org.jruby.truffle.core.cast.IntegerCastNodeGen;

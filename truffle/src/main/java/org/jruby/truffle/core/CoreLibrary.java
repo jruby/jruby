@@ -29,6 +29,8 @@ import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.builtins.CoreMethodNodeManager;
+import org.jruby.truffle.builtins.CoreSourceSection;
 import org.jruby.truffle.core.array.ArrayNodes;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
