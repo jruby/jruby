@@ -12,20 +12,76 @@ package org.jruby.truffle.debug;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.source.Source;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.loader.CodeLoader;
+import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.language.parser.ParserContext;
 
+@SuppressWarnings("deprecation")
+@Deprecated
 public abstract class DebugHelpers {
 
+    @Deprecated
     public static Object eval(String code, Object... arguments) {
         return eval(RubyContext.getLatestInstance(), code, arguments);
     }
 
+    @Deprecated
     public static Object eval(RubyContext context, String code, Object... arguments) {
-        CompilerAsserts.neverPartOfCompilation();
         final FrameInstance currentFrameInstance = Truffle.getRuntime().getCurrentFrame();
+
         final Frame currentFrame = currentFrameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true);
-        return context.getCodeLoader().inline(null, currentFrame, code, arguments);
+
+        final Object[] packedArguments = RubyArguments.pack(
+                null,
+                null,
+                RubyArguments.getMethod(currentFrame),
+                DeclarationContext.INSTANCE_EVAL,
+                null,
+                RubyArguments.getSelf(currentFrame),
+                null,
+                new Object[]{});
+
+        final FrameDescriptor frameDescriptor = new FrameDescriptor(currentFrame.getFrameDescriptor().getDefaultValue());
+
+        final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
+                packedArguments,
+                frameDescriptor);
+
+        if (arguments.length % 2 == 1) {
+            throw new UnsupportedOperationException("odd number of name-value pairs for arguments");
+        }
+
+        for (int n = 0; n < arguments.length; n += 2) {
+            evalFrame.setObject(evalFrame.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
+        }
+
+        final Source source = Source.fromText(StringOperations.createByteList(code), "debug-eval");
+
+        final RubyRootNode rootNode = context.getCodeLoader().parse(
+                source,
+                UTF8Encoding.INSTANCE,
+                ParserContext.INLINE,
+                evalFrame,
+                true,
+                null);
+
+        final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
+                ParserContext.INLINE,
+                DeclarationContext.INSTANCE_EVAL,
+                rootNode,
+                evalFrame,
+                RubyArguments.getSelf(evalFrame));
+
+        return deferredCall.callWithoutCallNode();
     }
 
 }

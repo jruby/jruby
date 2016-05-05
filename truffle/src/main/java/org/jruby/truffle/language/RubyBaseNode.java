@@ -28,6 +28,7 @@ import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.numeric.BignumOperations;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.extra.AttachmentsManager;
@@ -87,6 +88,10 @@ public abstract class RubyBaseNode extends Node {
 
     protected DynamicObject createString(ByteList bytes) {
         return StringOperations.createString(getContext(), bytes);
+    }
+
+    protected DynamicObject createString(byte[] bytes, Encoding encoding) {
+        return StringOperations.createString(getContext(), RopeOperations.create(bytes, encoding, CodeRange.CR_7BIT));
     }
 
     protected DynamicObject create7BitString(CharSequence value, Encoding encoding) {

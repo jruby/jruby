@@ -520,6 +520,22 @@ public class CoreExceptions {
                 context.getCallStack().getBacktrace(currentNode));
     }
 
+    public DynamicObject floatDomainErrorResultsToNaN(Node currentNode) {
+        return floatDomainError("Computation results to 'NaN'(Not a Number)", currentNode);
+    }
+
+    public DynamicObject floatDomainErrorResultsToInfinity(Node currentNode) {
+        return floatDomainError("Computation results to 'Infinity'", currentNode);
+    }
+
+    public DynamicObject floatDomainErrorResultsToNegInfinity(Node currentNode) {
+        return floatDomainError("Computation results to '-Infinity'", currentNode);
+    }
+
+    public DynamicObject floatDomainErrorSqrtNegative(Node currentNode) {
+        return floatDomainError("(VpSqrt) SQRT(negative value)", currentNode);
+    }
+
     // IOError
 
     @TruffleBoundary

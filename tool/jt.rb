@@ -61,14 +61,9 @@ module Utilities
   end
   
   def self.find_sulong_graal(dir)
-    jvmci = File.join(dir, '..', 'jvmci')
-    Dir.entries(jvmci).each do |entry|
-      child = File.join(jvmci, entry)
-      if File.directory?(child) && entry.start_with?('jdk')
-        return File.join(child, 'product', 'bin', 'java')
-      end
-    end
-    raise "couldn't find the Java build in the Sulong repository - you need to check it out and build it"
+    jvmci = File.expand_path("../jvmci", dir)
+    Dir["#{jvmci}/jdk*/product/bin/java"].first or
+      raise "couldn't find the Java build in the Sulong repository - you need to check it out and build it"
   end
 
   def self.find_graal_js
@@ -406,12 +401,10 @@ module Commands
     if args.delete('--sulong')
       dir = Utilities.find_sulong_dir
       env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
-      jruby_args << '-J-classpath'
-      jruby_args << File.join(dir, 'lib', '*')
-      jruby_args << '-J-classpath'
-      jruby_args << File.join(dir, 'build', 'sulong.jar')
-      jruby_args << '-J-classpath'
-      jruby_args << File.join(dir, '..', 'graal-core', 'mxbuild', 'graal', 'com.oracle.nfi', 'bin')
+      jruby_args << '-J-classpath' << "#{dir}/lib/*"
+      jruby_args << '-J-classpath' << "#{dir}/build/sulong.jar"
+      nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
+      jruby_args << '-J-classpath' << nfi_classes
       jruby_args << '-J-XX:-UseJVMCIClassLoader'
     end
 
@@ -472,7 +465,7 @@ module Commands
       test_tck
       test_specs('run')
       # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled
-      test_integration({'CI' => 'true', 'HAS_REDIS' => 'true'}, 'all')
+      test_integration({'HAS_REDIS' => 'true'}, 'all')
       test_compiler
       test_cexts if ENV['SULONG_DIR']
     when 'compiler' then test_compiler(*rest)
@@ -538,8 +531,8 @@ module Commands
     Dir["#{JRUBY_DIR}/test/truffle/cexts/*"].each do |dir|
       sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", dir
       name = File.basename(dir)
-      run '--sulong', '-I', File.join(dir, 'lib'), File.join(dir, 'bin', name), :out => output_file
-      unless File.read(output_file) == File.read(File.join(dir, 'expected.txt'))
+      run '--sulong', '-I', "#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
+      unless File.read(output_file) == File.read("#{dir}/expected.txt")
         abort "c extension #{dir} didn't work as expected"
       end
     end
@@ -570,7 +563,7 @@ module Commands
 
     env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     integration_path       = "#{JRUBY_DIR}/test/truffle/integration"
-    long_tests             = File.read(File.join(integration_path, 'long-tests.txt')).lines.map(&:chomp)
+    long_tests             = File.read("#{integration_path}/long-tests.txt").lines.map(&:chomp)
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 

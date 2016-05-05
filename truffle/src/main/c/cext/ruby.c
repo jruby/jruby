@@ -217,6 +217,6 @@ void rb_define_private_method(VALUE module, const char *name, void *function, in
   truffle_invoke(RUBY_CEXT, "rb_define_private_method", module, truffle_read_string(name), function, args);
 }
 
-int rb_define_module_function(VALUE module, const char *name, void *function, int args) {
-  return truffle_invoke_i(RUBY_CEXT, "rb_define_module_function", module, truffle_read_string(name), function, args);
+void rb_define_module_function(VALUE module, const char *name, void *function, int args) {
+  truffle_invoke(RUBY_CEXT, "rb_define_module_function", module, truffle_read_string(name), truffle_address_to_function(function), args);
 }

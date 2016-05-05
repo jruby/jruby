@@ -10,8 +10,6 @@
 package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
@@ -19,7 +17,7 @@ import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 @CoreClass(name = "Truffle::CExt")
 public class CExtNodes {
 
-    @CoreMethod(names = "NUM2INT", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "NUM2INT", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class NUM2INTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -29,7 +27,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "NUM2UINT", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "NUM2UINT", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class NUM2UINTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -40,7 +38,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "NUM2LONG", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "NUM2LONG", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class NUM2LONGNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -50,7 +48,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "FIX2INT", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "FIX2INT", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class FIX2INTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -60,7 +58,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "FIX2UINT", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "FIX2UINT", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class FIX2UINTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -71,7 +69,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "FIX2LONG", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "FIX2LONG", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class FIX2LONGNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -81,7 +79,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "INT2NUM", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "INT2NUM", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class INT2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -91,7 +89,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "INT2FIX", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "INT2FIX", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class INT2FIXNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -101,7 +99,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "UINT2NUM", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "UINT2NUM", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class UINT2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -112,7 +110,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "LONG2NUM", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "LONG2NUM", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class LONG2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -122,7 +120,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "LONG2FIX", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "LONG2FIX", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class LONG2FIXNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization

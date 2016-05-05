@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.stdlib;
+package org.jruby.truffle.stdlib.bigdecimal;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
@@ -26,14 +26,14 @@ public interface BigDecimalLayout extends BasicObjectLayout {
     DynamicObject createBigDecimal(
             DynamicObjectFactory factory,
             BigDecimal value,
-            BigDecimalNodes.Type type);
+            BigDecimalType type);
 
     boolean isBigDecimal(DynamicObject object);
 
     BigDecimal getValue(DynamicObject object);
     void setValue(DynamicObject object, BigDecimal value);
 
-    BigDecimalNodes.Type getType(DynamicObject object);
-    void setType(DynamicObject object, BigDecimalNodes.Type value);
+    BigDecimalType getType(DynamicObject object);
+    void setType(DynamicObject object, BigDecimalType value);
 
 }
