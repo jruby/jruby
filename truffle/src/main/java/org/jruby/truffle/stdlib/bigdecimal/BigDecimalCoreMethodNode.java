@@ -28,7 +28,7 @@ import java.math.RoundingMode;
 public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
 
     @Child
-    private BigDecimalNodes.CreateBigDecimalNode createBigDecimal;
+    private CreateBigDecimalNode createBigDecimal;
     @Child
     private CallDispatchHeadNode limitCall;
     @Child
@@ -68,7 +68,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
     private void setupCreateBigDecimal() {
         if (createBigDecimal == null) {
             CompilerDirectives.transferToInterpreter();
-            createBigDecimal = insert(BigDecimalNodesFactory.CreateBigDecimalNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+            createBigDecimal = insert(CreateBigDecimalNodeFactory.create(getContext(), getSourceSection(), null, null, null));
         }
     }
 
