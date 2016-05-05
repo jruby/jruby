@@ -24,6 +24,9 @@
 build
 build.properties
 build_graph.png
+mx*/*pyc
+mx*/env
+mxbuild
 core/src/main/java/org/jruby/runtime/Constants.java
 dependency-reduced-pom.xml
 dev_null
