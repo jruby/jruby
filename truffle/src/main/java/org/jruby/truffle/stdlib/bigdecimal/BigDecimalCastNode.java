@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.stdlib.bigdecimal;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
@@ -52,6 +53,7 @@ public abstract class BigDecimalCastNode extends RubyNode {
         return BigDecimal.valueOf(value);
     }
 
+    @TruffleBoundary
     @Specialization
     public BigDecimal doDouble(double value, Object roundingMode) {
         return BigDecimal.valueOf(value);
@@ -67,7 +69,10 @@ public abstract class BigDecimalCastNode extends RubyNode {
         return Layouts.BIG_DECIMAL.getValue(value);
     }
 
-    @Specialization(guards = {"!isRubyBignum(value)", "!isRubyBigDecimal(value)"})
+    @Specialization(guards = {
+            "!isRubyBignum(value)",
+            "!isRubyBigDecimal(value)"
+    })
     public Object doOther(
             VirtualFrame frame,
             DynamicObject value,
@@ -77,49 +82,27 @@ public abstract class BigDecimalCastNode extends RubyNode {
             @Cached("createMethodCall()") CallDispatchHeadNode denominatorCallNode,
             @Cached("createMethodCall()") CallDispatchHeadNode toFCallNode) {
         if (roundingMode instanceof RoundingMode && (boolean) isRationalSnippet.execute(frame, "value.is_a?(Rational)", "value", value)) {
-
             final Object numerator = numeratorCallNode.call(frame, value, "numerator", null);
-
-            final IRubyObject numeratorValue;
-
-            if (numerator instanceof Integer) {
-                numeratorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (int) numerator);
-            } else if (numerator instanceof Long) {
-                numeratorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (long) numerator);
-            } else if (RubyGuards.isRubyBignum(numerator)) {
-                numeratorValue = RubyBignum.newBignum(getContext().getJRubyRuntime(), Layouts.BIGNUM.getValue((DynamicObject) numerator));
-            } else {
-                throw new UnsupportedOperationException(numerator.toString());
-            }
-
             final Object denominator = denominatorCallNode.call(frame, value, "denominator", null);
 
-            final IRubyObject denominatorValue;
-
-            if (denominator instanceof Integer) {
-                denominatorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (int) denominator);
-            } else if (denominator instanceof Long) {
-                denominatorValue = RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (long) denominator);
-            } else if (RubyGuards.isRubyBignum(denominator)) {
-                denominatorValue = RubyBignum.newBignum(getContext().getJRubyRuntime(), Layouts.BIGNUM.getValue((DynamicObject) denominator));
-            } else {
-                throw new UnsupportedOperationException(denominator.toString());
-            }
-
-            final RubyRational rubyRationalValue = RubyRational.newRationalRaw(getContext().getJRubyRuntime(), numeratorValue, denominatorValue);
-
-            final RubyBigDecimal rubyBigDecimalValue;
+            final RubyRational rubyRationalValue = RubyRational.newRationalRaw(
+                    getContext().getJRubyRuntime(),
+                    toJRubyInteger(numerator),
+                    toJRubyInteger(denominator));
 
             try {
-                rubyBigDecimalValue = RubyBigDecimal.getVpRubyObjectWithPrec19Inner(getContext().getJRubyRuntime().getCurrentContext(), rubyRationalValue, (RoundingMode) roundingMode);
+                return RubyBigDecimal
+                        .getVpRubyObjectWithPrec19Inner(
+                                getContext().getJRubyRuntime().getCurrentContext(),
+                                rubyRationalValue,
+                                (RoundingMode) roundingMode)
+                        .getBigDecimalValue();
             } catch (Exception e) {
-                e.printStackTrace();
                 throw e;
             }
-
-            return rubyBigDecimalValue.getBigDecimalValue();
         } else {
             final Object result = toFCallNode.call(frame, value, "to_f", null);
+
             if (result != nil()) {
                 return new BigDecimal((double) result);
             } else {
@@ -128,9 +111,23 @@ public abstract class BigDecimalCastNode extends RubyNode {
         }
     }
 
+    @TruffleBoundary
+    private IRubyObject toJRubyInteger(Object value) {
+        if (value instanceof Integer) {
+            return RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (int) value);
+        } else if (value instanceof Long) {
+            return RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (long) value);
+        } else if (RubyGuards.isRubyBignum(value)) {
+            return RubyBignum.newBignum(getContext().getJRubyRuntime(), Layouts.BIGNUM.getValue((DynamicObject) value));
+        } else {
+            throw new UnsupportedOperationException(value.toString());
+        }
+    }
+
     @Fallback
     public Object doBigDecimalFallback(Object value, Object roundingMode) {
+        // TODO (pitr 22-Jun-2015): How to better communicate failure without throwing
         return nil();
     }
-    // TODO (pitr 22-Jun-2015): How to better communicate failure without throwing
+
 }
