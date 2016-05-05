@@ -149,10 +149,10 @@ platform_is :windows do
     end
 
     it "normalizes line endings in text mode" do
-      @io = new_io(@fname, "w")
-      @io.write "a\r\nb\r\nc"
+      @io = new_io(@fname, "wt")
+      @io.write "a\nb\nc"
       @io.close
-      @fname.should have_data("a\nb\nc")
+      @fname.should have_data("a\r\nb\r\nc")
     end
 
     it "does not normalize line endings in binary mode" do

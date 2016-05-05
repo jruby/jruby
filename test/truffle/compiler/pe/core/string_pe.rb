@@ -8,9 +8,9 @@
 
 simple_string = 'test'
 
-example "Truffle::Primitive.create_simple_string.length", simple_string.length
-example "Truffle::Primitive.create_simple_string.getbyte(0)", simple_string.getbyte(0)
-example "Truffle::Primitive.create_simple_string.ord", simple_string.ord
+example "Truffle::Ropes.create_simple_string.length", simple_string.length
+example "Truffle::Ropes.create_simple_string.getbyte(0)", simple_string.getbyte(0)
+example "Truffle::Ropes.create_simple_string.ord", simple_string.ord
 
 example "'abc'.length", 3
 example "'こにちわ'.length", 4
@@ -51,4 +51,4 @@ example "'abc'.getbyte(-1) == 99", true
 example "'abc'.getbyte(10_000) == nil", true
 
 example "14.to_s.length", 2
-counter_example "14.to_s.getbyte(0)" # Doesn't work becuase the bytes are only populated on demand and so aren't constant
+counter example "14.to_s.getbyte(0)" # Doesn't work becuase the bytes are only populated on demand and so aren't constant

@@ -6,6 +6,7 @@ import shutil
 
 _suite = mx.suite('jruby')
 
+
 class MavenProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
         mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
@@ -18,7 +19,7 @@ class MavenProject(mx.Project):
 
     def output_dir(self):
         dir = os.path.join(_suite.dir, self.prefix)
-        return dir[0:len(dir) - 1]
+        return dir.rstrip('/')
 
     def source_gen_dir(self):
         return None
@@ -38,6 +39,8 @@ class MavenProject(mx.Project):
     def archive_prefix(self):
         return self.prefix
 
+    def annotation_processors(self):
+        return []
 
 class MavenBuildTask(mx.BuildTask):
     def __init__(self, project, args, vmbuild, vm):
@@ -79,12 +82,7 @@ class MavenBuildTask(mx.BuildTask):
 
         mx.run_mx(['maven-install'], suite=truffle)
 
-        # Ruby version
-        def apply_to_file(filename, function):
-            contents = open(filename).read()
-            contents = function(contents)
-            open(filename, 'w').write(contents)
-        apply_to_file(join(rubyDir, 'VERSION'), lambda version: 'graal-vm\n')
+        open(join(rubyDir, 'VERSION'), 'w').write('graal-vm\n')
 
         # Build jruby-truffle and
 

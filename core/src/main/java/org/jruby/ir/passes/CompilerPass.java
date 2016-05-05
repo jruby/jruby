@@ -99,7 +99,7 @@ public abstract class CompilerPass {
             listener.startExecute(this, scope, childScope);
         }
 
-        // Record this pass 
+        // Record this pass
         scope.getExecutedPasses().add(this);
 
         Object passData = execute(scope, data);
@@ -137,17 +137,17 @@ public abstract class CompilerPass {
         try {
             return (CompilerPass) passClass.getDeclaredConstructor().newInstance();
         } catch (InstantiationException ex) {
-            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
+            LoggerFactory.getLogger(CompilerPass.class).error(ex);
         } catch (IllegalAccessException ex) {
-            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
+            LoggerFactory.getLogger(CompilerPass.class).error(ex);
         } catch (IllegalArgumentException ex) {
-            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
+            LoggerFactory.getLogger(CompilerPass.class).error(ex);
         } catch (InvocationTargetException ex) {
-            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
+            LoggerFactory.getLogger(CompilerPass.class).error(ex);
         } catch (NoSuchMethodException ex) {
-            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
+            LoggerFactory.getLogger(CompilerPass.class).error(ex);
         } catch (SecurityException ex) {
-            LoggerFactory.getLogger(CompilerPass.class.getName()).error(null, ex);
+            LoggerFactory.getLogger(CompilerPass.class).error(ex);
         }
 
         return null;

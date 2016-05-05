@@ -30,7 +30,6 @@ import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.cast.ToIntNode;
-import org.jruby.truffle.core.cast.ToIntNodeGen;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringGuards;
 import org.jruby.truffle.core.string.StringOperations;
@@ -233,7 +232,7 @@ public abstract class MatchDataNodes {
         public Object getIndex(VirtualFrame frame, DynamicObject matchData, Object index, NotProvided length) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
 
             return getIndex(matchData, toIntNode.doInt(frame, index), NotProvided.INSTANCE);

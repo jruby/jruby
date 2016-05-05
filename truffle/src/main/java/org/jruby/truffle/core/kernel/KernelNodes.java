@@ -52,11 +52,11 @@ import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
-import org.jruby.truffle.core.cast.NumericToFloatNode;
-import org.jruby.truffle.core.cast.NumericToFloatNodeGen;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.cast.NameToSymbolOrStringNodeGen;
+import org.jruby.truffle.core.cast.NumericToFloatNode;
+import org.jruby.truffle.core.cast.NumericToFloatNodeGen;
 import org.jruby.truffle.core.cast.ToPathNodeGen;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
@@ -141,7 +141,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -1442,36 +1441,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "rand", isModuleFunction = true, optional = 1)
-    public abstract static class RandNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public double rand(NotProvided max) {
-            return ThreadLocalRandom.current().nextDouble();
-        }
-
-        @Specialization(guards = "max == 0")
-        public double randZero(int max) {
-            return ThreadLocalRandom.current().nextDouble();
-        }
-
-        @Specialization(guards = "max != 0")
-        public int randNonZero(int max) {
-            return ThreadLocalRandom.current().nextInt(max);
-        }
-
-        @Specialization(guards = "max == 0")
-        public double randZero(long max) {
-            return ThreadLocalRandom.current().nextDouble();
-        }
-
-        @Specialization(guards = "max != 0")
-        public long randNonZero(long max) {
-            return ThreadLocalRandom.current().nextLong(max);
-        }
-
-    }
-
     @CoreMethod(names = "require", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.LOAD)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "feature")
@@ -1720,28 +1689,6 @@ public abstract class KernelNodes {
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterSingletonMethods(getContext(), includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
-        }
-
-    }
-
-    @CoreMethod(names = "String", isModuleFunction = true, required = 1)
-    public abstract static class StringNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode toS;
-
-        public StringNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toS = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization(guards = "isRubyString(value)")
-        public DynamicObject string(DynamicObject value) {
-            return value;
-        }
-
-        @Specialization(guards = "!isRubyString(value)")
-        public Object string(VirtualFrame frame, Object value) {
-            return toS.call(frame, value, "to_s", null);
         }
 
     }
@@ -2012,7 +1959,6 @@ public abstract class KernelNodes {
 
         public UntaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
             writeTaintNode = WriteObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
         }
@@ -2023,13 +1969,17 @@ public abstract class KernelNodes {
                 return object;
             }
 
-            if (isFrozenNode.executeIsFrozen(object)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().frozenError(Layouts.MODULE.getFields(coreLibrary().getLogicalClass(object)).getName(), this));
-            }
-
+            checkFrozen(object);
             writeTaintNode.execute(object, false);
             return object;
+        }
+
+        protected void checkFrozen(Object object) {
+            if (isFrozenNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            isFrozenNode.raiseIfFrozen(object);
         }
 
     }

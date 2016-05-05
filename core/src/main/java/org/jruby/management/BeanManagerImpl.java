@@ -20,36 +20,36 @@ import org.jruby.util.log.LoggerFactory;
 
 public class BeanManagerImpl implements BeanManager {
 
-    private static final Logger LOG = LoggerFactory.getLogger("BeanManagerImpl");
+    private static final Logger LOG = LoggerFactory.getLogger(BeanManagerImpl.class);
 
     private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyyMMddHHmmssSSS");
 
     public final String base;
-    
+
     private final boolean managementEnabled;
-    
+
     public BeanManagerImpl(Ruby ruby, boolean managementEnabled) {
         this.managementEnabled = managementEnabled;
         this.base = "org.jruby:type=Runtime,name=" + FORMAT.format(new Date()) +
                 ruby.getRuntimeNumber() + ",";
     }
-    
+
     public void register(JITCompilerMBean jitCompiler) {
         if (managementEnabled) register(base + "service=JITCompiler", jitCompiler);
     }
-    
+
     public void register(ConfigMBean config) {
         if (managementEnabled) register(base + "service=Config", config);
     }
-    
+
     public void register(ParserStatsMBean parserStats) {
         if (managementEnabled) register(base + "service=ParserStats", parserStats);
     }
-    
+
     public void register(MethodCacheMBean methodCache) {
         if (managementEnabled) register(base + "service=MethodCache", methodCache);
     }
-    
+
     public void register(Runtime runtime) {
         if (managementEnabled) register(base + "service=Runtime", runtime);
     }
@@ -94,7 +94,7 @@ public class BeanManagerImpl implements BeanManager {
     private void register(String name, Object bean) {
         try {
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            
+
             ObjectName beanName = new ObjectName(name);
             mbs.registerMBean(bean, beanName);
         } catch (InstanceAlreadyExistsException ex) {
@@ -123,7 +123,7 @@ public class BeanManagerImpl implements BeanManager {
     private void unregister(String name) {
         try {
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            
+
             ObjectName beanName = new ObjectName(name);
             mbs.unregisterMBean(beanName);
         } catch (InstanceNotFoundException ex) {

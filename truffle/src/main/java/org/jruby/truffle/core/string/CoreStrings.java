@@ -27,10 +27,12 @@ public class CoreStrings {
     public final CoreString LINE;
     public final CoreString LOCAL_VARIABLE;
     public final CoreString METHOD;
+    public final CoreString NEGATIVE_ARRAY_SIZE;
     public final CoreString NIL;
     public final CoreString ONE_HASH_REQUIRED;
     public final CoreString OUT_OF_RANGE;
     public final CoreString PROC_WITHOUT_BLOCK;
+    public final CoreString RESOURCE_TEMP_UNAVAIL;
     public final CoreString UNKNOWN;
     public final CoreString SELF;
     public final CoreString TIME_INTERVAL_MUST_BE_POS;
@@ -55,10 +57,12 @@ public class CoreStrings {
         LINE = new CoreString(context, "line");
         LOCAL_VARIABLE = new CoreString(context, "local-variable");
         METHOD = new CoreString(context, "method");
+        NEGATIVE_ARRAY_SIZE = new CoreString(context, "negative array size");
         NIL = new CoreString(context, "nil");
         ONE_HASH_REQUIRED = new CoreString(context, "one hash required");
         OUT_OF_RANGE = new CoreString(context, "out of range");
         PROC_WITHOUT_BLOCK = new CoreString(context, "tried to create Proc object without a block");
+        RESOURCE_TEMP_UNAVAIL = new CoreString(context, "Resource temporarily unavailable");
         UNKNOWN = new CoreString(context, "(unknown)");
         SELF = new CoreString(context, "self");
         TIME_INTERVAL_MUST_BE_POS = new CoreString(context, "time interval must be positive");

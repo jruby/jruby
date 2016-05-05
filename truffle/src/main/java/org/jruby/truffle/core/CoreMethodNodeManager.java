@@ -219,22 +219,22 @@ public class CoreMethodNodeManager {
 
         if (signature.size() == 0) {
             methodNode = nodeFactory.createNode();
-        } else if (signature.size() == 1 && signature.get(0) == RubyNode[].class) {
-            Object[] args = argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]);
-            methodNode = nodeFactory.createNode(new Object[]{args});
-        } else if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
-            Object[] args = argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]);
-            methodNode = nodeFactory.createNode(context, sourceSection, args);
-        } else if (signature.get(0) != RubyContext.class) {
-            Object[] args = new Object[argumentsNodes.size()];
-            System.arraycopy(argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]), 0, args, 0, argumentsNodes.size());
-            methodNode = nodeFactory.createNode(args);
         } else {
-            Object[] args = new Object[2 + argumentsNodes.size()];
-            args[0] = context;
-            args[1] = sourceSection;
-            System.arraycopy(argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]), 0, args, 2, argumentsNodes.size());
-            methodNode = nodeFactory.createNode(args);
+            final RubyNode[] argumentsArray = argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]);
+            if (signature.size() == 1 && signature.get(0) == RubyNode[].class) {
+                methodNode = nodeFactory.createNode(new Object[] { argumentsArray });
+            } else if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
+                methodNode = nodeFactory.createNode(context, sourceSection, argumentsArray);
+            } else if (signature.get(0) != RubyContext.class) {
+                Object[] args = argumentsArray;
+                methodNode = nodeFactory.createNode(args);
+            } else {
+                Object[] args = new Object[2 + argumentsNodes.size()];
+                args[0] = context;
+                args[1] = sourceSection;
+                System.arraycopy(argumentsArray, 0, args, 2, argumentsNodes.size());
+                methodNode = nodeFactory.createNode(args);
+            }
         }
 
         if (System.getenv("TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS") != null) {

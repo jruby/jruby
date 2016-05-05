@@ -1,13 +1,22 @@
 require 'fileutils'
 
 project 'JRuby Complete' do
-
-  version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
+  
+  version = ENV['JRUBY_VERSION'] ||
+    File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby-complete:#{version}"
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'bundle'
+
+  build do
+    resource do
+      directory '${project.basedir}/../..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
+    end
+  end
 
   plugin_repository( :id => 'rubygems-releases',
                      :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )

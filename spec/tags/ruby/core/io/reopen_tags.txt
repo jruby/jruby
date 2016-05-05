@@ -12,3 +12,4 @@ windows:IO#reopen with an IO does not change the object_id
 windows:IO#reopen with an IO reads from the beginning if the other IO has not been read from
 windows:IO#reopen with an IO reads from the current position of the other IO's stream
 windows:IO#reopen with an IO associates the IO instance with the other IO's stream
+fails:IO#reopen with a String affects exec/system/fork performed after it

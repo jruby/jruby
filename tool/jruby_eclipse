@@ -4,7 +4,7 @@
 
 M2REPO = "#{Dir.home}/.m2/repository"
 
-TRUFFLE_VERSION = "0.11"
+TRUFFLE_VERSION = "0.13"
 
 TRUFFLEJARS = %W[
   com/oracle/truffle/truffle-api/#{TRUFFLE_VERSION}/truffle-api-#{TRUFFLE_VERSION}.jar
@@ -12,7 +12,7 @@ TRUFFLEJARS = %W[
 ].map { |jar| "#{M2REPO}/#{jar}" }
 
 SNAKEYAMLJAR = "#{M2REPO}/org/yaml/snakeyaml/1.14/snakeyaml-1.14.jar"
-ANTLR4JAR = "#{M2REPO}/org/antlr/antlr4-runtime/4.5/antlr4-runtime-4.5.jar"
+ANTLR4JAR = "#{M2REPO}/org/antlr/antlr4-runtime/4.5.1-1/antlr4-runtime-4.5.1-1.jar"
 
 GRAAL_OPTIONS_PREFIX = "graal."
 

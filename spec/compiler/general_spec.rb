@@ -1112,5 +1112,27 @@ modes.each do |mode|
         $VERBOSE = verbose
       end
     end
+
+    it "maintains frame stack integrity through a bare lambda (GH #3643)" do
+      code = '
+        module GH3643
+          class A
+            def x(proc)
+              instance_eval(&proc) rescue nil
+              :ok
+            end
+          end
+          A.prepend(Module.new { def x(proc); super; super; end })
+          def self.foo
+            A.new.x(lambda{})
+          end
+          foo
+        end
+      '
+
+      run(code) do |x|
+        x.should == :ok
+      end
+    end
   end
 end

@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.array;
 
-import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -19,6 +18,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+
+import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 
 /**
  * Concatenate argument arrays (translating a org.jruby.ast.ArgsCatNode).

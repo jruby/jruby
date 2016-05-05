@@ -70,8 +70,8 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodes.MakeRepeatingNode;
@@ -231,7 +231,7 @@ public abstract class StringNodes {
         public DynamicObject multiply(VirtualFrame frame, DynamicObject string, Object times) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
 
             return executeInt(frame, string, toIntNode.doInt(frame, times));
@@ -514,14 +514,23 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {"isRubyRegexp(regexp)", "wasNotProvided(capture) || isRubiniusUndefined(capture)"})
-        public Object slice1(VirtualFrame frame, DynamicObject string, DynamicObject regexp, Object capture) {
-            return sliceCapture(string, regexp, 0);
+        public Object slice1(
+                VirtualFrame frame,
+                DynamicObject string,
+                DynamicObject regexp,
+                Object capture,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "match, str = subpattern(index, 0); Regexp.last_match = match; str", "index", regexp);
         }
 
         @Specialization(guards = {"isRubyRegexp(regexp)", "wasProvided(capture)"})
-        public Object sliceCapture(DynamicObject string, DynamicObject regexp, Object capture) {
-            // Extracted from Rubinius's definition of String#[].
-            return ruby("match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
+        public Object sliceCapture(
+                VirtualFrame frame,
+                DynamicObject string,
+                DynamicObject regexp,
+                Object capture,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
         }
 
         @Specialization(guards = {"wasNotProvided(length) || isRubiniusUndefined(length)", "isRubyString(matchStr)"})
@@ -548,7 +557,7 @@ public abstract class StringNodes {
         private ToIntNode getToIntNode() {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNode.create());
             }
 
             return toIntNode;
@@ -611,11 +620,11 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "bytes")
-    public abstract static class BytesNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "bytes", needsBlock = true)
+    public abstract static class BytesNode extends YieldingCoreMethodNode {
 
         @Specialization
-        public DynamicObject bytes(DynamicObject string) {
+        public DynamicObject bytes(VirtualFrame frame, DynamicObject string, NotProvided block) {
             final Rope rope = rope(string);
             final byte[] bytes = rope.getBytes();
 
@@ -626,6 +635,18 @@ public abstract class StringNodes {
             }
 
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+        }
+
+        @Specialization
+        public DynamicObject bytes(VirtualFrame frame, DynamicObject string, DynamicObject block) {
+            Rope rope = rope(string);
+            byte[] bytes = rope.getBytes();
+
+            for (int i = 0; i < bytes.length; i++) {
+                yield(frame, block, bytes[i] & 0xff);
+            }
+
+            return string;
         }
 
     }
@@ -1177,15 +1198,9 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRubyString(from)")
         public DynamicObject initialize(DynamicObject self, DynamicObject from) {
-            if (isFrozenNode == null) {
+            if (isFrozen(self)) {
                 CompilerDirectives.transferToInterpreter();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
-            }
-
-            if (isFrozenNode.executeIsFrozen(self)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(
-                        coreExceptions().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(self)).getName(), this));
+                throw new RaiseException(coreExceptions().frozenError(self, this));
             }
 
             StringOperations.setRope(self, rope(from));
@@ -1202,6 +1217,15 @@ public abstract class StringNodes {
 
             return initialize(self, toStrNode.executeToStr(frame, from));
         }
+
+        protected boolean isFrozen(Object object) {
+            if (isFrozenNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return isFrozenNode.executeIsFrozen(object);
+        }
+
     }
 
     @CoreMethod(names = "initialize_copy", required = 1)
@@ -1250,7 +1274,7 @@ public abstract class StringNodes {
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
-            return ToIntNodeGen.create(null, null, index);
+            return ToIntNodeGen.create(index);
         }
 
         @CreateCast("otherString") public RubyNode coerceOtherToString(RubyNode other) {
@@ -1714,13 +1738,11 @@ public abstract class StringNodes {
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
-            return FixnumLowerNodeGen.create(null, null,
-                    ToIntNodeGen.create(null, null, index));
+            return FixnumLowerNodeGen.create(null, null, ToIntNodeGen.create(index));
         }
 
         @CreateCast("value") public RubyNode coerceValueToInt(RubyNode value) {
-            return FixnumLowerNodeGen.create(null, null,
-                    ToIntNodeGen.create(null, null, value));
+            return FixnumLowerNodeGen.create(null, null, ToIntNodeGen.create(value));
         }
 
         @Specialization(guards = "!isRopeBuffer(string)")
@@ -1966,8 +1988,11 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!isInteger(bits)", "!isLong(bits)", "wasProvided(bits)" })
-        public Object sum(DynamicObject string, Object bits) {
-            return ruby("sum Rubinius::Type.coerce_to(bits, Fixnum, :to_int)", "bits", bits);
+        public Object sum(VirtualFrame frame,
+                          DynamicObject string,
+                          Object bits,
+                          @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "sum Rubinius::Type.coerce_to(bits, Fixnum, :to_int)", "bits", bits);
         }
 
     }
@@ -2000,8 +2025,11 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isStringSubclass(string)")
-        public Object toSOnSubclass(DynamicObject string) {
-            return ruby("''.replace(self)", "self", string);
+        public Object toSOnSubclass(
+                VirtualFrame frame,
+                DynamicObject string,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "''.replace(self)", "self", string);
         }
 
         public boolean isStringSubclass(DynamicObject string) {
@@ -2244,8 +2272,12 @@ public abstract class StringNodes {
                 "!isInteger(format)",
                 "!isLong(format)",
                 "!isNil(format)"})
-        public Object unpack(DynamicObject array, Object format) {
-            return ruby("unpack(format.to_str)", "format", format);
+        public Object unpack(
+                VirtualFrame frame,
+                DynamicObject array,
+                Object format,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "unpack(format.to_str)", "format", format);
         }
 
         @TruffleBoundary

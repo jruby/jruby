@@ -2,3 +2,5 @@ fails:IO#reopen with a String effects exec/system/fork performed after it
 fails:IO#reopen with a String opens a path after writing to the original file descriptor
 fails:IO#reopen with a String positions an instance that has been read from at the beginning of the new stream
 slow:IO#reopen with a String effects exec/system/fork performed after it
+slow:IO#reopen with a String affects exec/system/fork performed after it
+fails:IO#reopen with a String affects exec/system/fork performed after it

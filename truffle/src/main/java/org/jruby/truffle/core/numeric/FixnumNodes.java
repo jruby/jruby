@@ -28,9 +28,9 @@ import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.LazyIntRope;
-import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -90,8 +90,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object addCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby("redo_coerced :+, b", "b", b);
+        public Object addCoerced(
+                VirtualFrame frame,
+                int a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :+, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -115,8 +119,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object addCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby("redo_coerced :+, b", "b", b);
+        public Object addCoerced(
+                VirtualFrame frame,
+                long a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :+, b", "b", b);
         }
 
     }
@@ -135,8 +143,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object subCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby("redo_coerced :-, b", "b", b);
+        public Object subCoerced(
+                VirtualFrame frame,
+                int a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :-, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -160,8 +172,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object subCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby("redo_coerced :-, b", "b", b);
+        public Object subCoerced(
+                VirtualFrame frame,
+                long a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :-, b", "b", b);
         }
 
     }
@@ -180,8 +196,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object mulCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby("redo_coerced :*, b", "b", b);
+        public Object mulCoerced(
+                VirtualFrame frame,
+                int a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :*, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -207,8 +227,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object mulCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby("redo_coerced :*, b", "b", b);
+        public Object mulCoerced(
+                VirtualFrame frame,
+                long a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :*, b", "b", b);
         }
     }
 
@@ -283,8 +307,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object divCoerced(VirtualFrame frame, int a, DynamicObject b) {
-            return ruby("redo_coerced :/, b", "b", b);
+        public Object divCoerced(
+                VirtualFrame frame,
+                int a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :/, b", "b", b);
         }
 
         @Specialization(rewriteOn = UnexpectedResultException.class)
@@ -350,14 +378,27 @@ public abstract class FixnumNodes {
             return a / b;
         }
 
-        @Specialization(guards = "isRubyBignum(b)")
+        @Specialization(guards = {"!isLongMinValue(a)", "isRubyBignum(b)"})
         public int div(long a, DynamicObject b) {
             return 0;
         }
 
+        @Specialization(guards = {"isLongMinValue(a)", "isRubyBignum(b)"})
+        public int divEdgeCase(long a, DynamicObject b) {
+            return -(Layouts.BIGNUM.getValue(b).signum());
+        }
+
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object divCoerced(VirtualFrame frame, long a, DynamicObject b) {
-            return ruby("redo_coerced :/, b", "b", b);
+        public Object divCoerced(
+                VirtualFrame frame,
+                long a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "redo_coerced :/, b", "b", b);
+        }
+
+        public static boolean isLongMinValue(long a) {
+            return a == Long.MIN_VALUE;
         }
 
     }
@@ -417,7 +458,7 @@ public abstract class FixnumNodes {
 
             if (mod < 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) > 0 || mod > 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) < 0) {
                 adjustProfile.enter();
-                return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), BigInteger.valueOf(mod).add(Layouts.BIGNUM.getValue(b)));
+                return createBignum(BigInteger.valueOf(mod).add(Layouts.BIGNUM.getValue(b)));
             }
 
             return mod;
@@ -485,8 +526,12 @@ public abstract class FixnumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object lessCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a < b", "other", b);
+        public Object lessCoerced(
+                VirtualFrame frame,
+                long a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
     }
 
@@ -523,8 +568,12 @@ public abstract class FixnumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object lessEqualCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a <= b", "other", b);
+        public Object lessEqualCoerced(
+                VirtualFrame frame,
+                long a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -606,8 +655,12 @@ public abstract class FixnumNodes {
                 "!isLong(b)",
                 "!isDouble(b)",
                 "!isRubyBignum(b)" })
-        public Object compare(VirtualFrame frame, Object a, Object b) {
-            return ruby("begin; b, a = math_coerce(other, :compare_error); a <=> b; rescue ArgumentError; nil; end", "other", b);
+        public Object compare(
+                VirtualFrame frame,
+                Object a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "begin; b, a = math_coerce(other, :compare_error); a <=> b; rescue ArgumentError; nil; end", "other", b);
         }
 
     }
@@ -645,8 +698,12 @@ public abstract class FixnumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object greaterEqualCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby("b, a = math_coerce other, :compare_error; a >= b", "other", b);
+        public Object greaterEqualCoerced(
+                VirtualFrame frame,
+                long a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
     }
 
@@ -684,8 +741,12 @@ public abstract class FixnumNodes {
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isDouble(b)" })
-        public Object greaterCoerced(VirtualFrame frame, long a, Object b) {
-            return ruby("b, a = math_coerce(other, :compare_error); a > b", "other", b);
+        public Object greaterCoerced(
+                VirtualFrame frame,
+                long a,
+                Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
         }
     }
 
@@ -771,8 +832,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object bitXOr(VirtualFrame frame, Object a, DynamicObject b) {
-            return ruby("a ^ Rubinius::Type.coerce_to_bitwise_operand(b)", "a", a, "b", b);
+        public Object bitXOr(
+                VirtualFrame frame,
+                Object a,
+                DynamicObject b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "a ^ Rubinius::Type.coerce_to_bitwise_operand(b)", "a", a, "b", b);
         }
 
     }
@@ -937,7 +1002,7 @@ public abstract class FixnumNodes {
         @Specialization(contains = "absInBounds")
         public Object abs(long n) {
             if (n == Long.MIN_VALUE) {
-                return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), BigInteger.valueOf(n).abs());
+                return createBignum(BigInteger.valueOf(n).abs());
             }
             return (n < 0) ? -n : n;
         }

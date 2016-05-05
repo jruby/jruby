@@ -30,7 +30,7 @@ public class CFG {
         EXIT           // Edge to dummy exit BB
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger("CFG");
+    private static final Logger LOG = LoggerFactory.getLogger(CFG.class);
 
     private IRScope scope;
     private Map<Label, BasicBlock> bbMap;
@@ -475,6 +475,8 @@ public class CFG {
     }
 
     public void removeBB(BasicBlock b) {
+        if (b == globalEnsureBB) globalEnsureBB = null;
+
         graph.removeVertexFor(b);
         bbMap.remove(b.getLabel());
         rescuerMap.remove(b);

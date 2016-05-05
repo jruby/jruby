@@ -76,7 +76,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author  jpetersen
  */
 public class Main {
-    private static final Logger LOG = LoggerFactory.getLogger("Main");
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     public Main(RubyInstanceConfig config) {
         this(config, false);
@@ -143,11 +143,14 @@ public class Main {
             for (Map.Entry entry : newProps.entrySet()) {
                 sysProps.put("jruby." + entry.getKey(), entry.getValue());
             }
-        } catch (IOException ioe) {
-            LOG.debug("exception loading " + dotfile, ioe);
-        } catch (SecurityException se) {
-            LOG.debug("exception loading " + dotfile, se);
-        } finally {
+        }
+        catch (IOException ioe) {
+            if (LOG.isDebugEnabled()) LOG.debug("exception loading " + dotfile, ioe);
+        }
+        catch (SecurityException se) {
+            if (LOG.isDebugEnabled()) LOG.debug("exception loading " + dotfile, se);
+        }
+        finally {
             if (fis != null) try {fis.close();} catch (Exception e) {}
         }
     }

@@ -71,17 +71,8 @@ describe 'Coverage.result' do
     result.should == { @config_file => [1, 1, 1] }
   end
 
-  it 'should list coverage for the required file starting coverage' do
+  it 'does not include the file starting coverage since it is not tracked' do
     require @config_file.chomp('.rb')
-    result = Coverage.result.select { |k, v| v.any? || k == @config_file }
-
-    result.should == { @config_file => [] }
-  end
-
-  it 'should list coverage for the loaded file starting coverage' do
-    load @config_file
-    result = Coverage.result.select { |k, v| v.any? || k == @config_file }
-
-    result.should == { @config_file => [] }
+    CoverageSpecs.filtered_result.should_not include(@config_file)
   end
 end

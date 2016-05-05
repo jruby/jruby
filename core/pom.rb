@@ -13,7 +13,7 @@ project 'JRuby Core' do
               'tzdata.version' => '2013d',
               'tzdata.scope' => 'provided',
 
-              'unsafe.version' => '8.0',
+              'unsafe.version' => '8.92.1',
               'unsafe.jar' => '${settings.localRepository}/com/headius/unsafe-mock/${unsafe.version}/unsafe-mock-${unsafe.version}.jar',
 
               'maven.build.timestamp.format' => 'yyyy-MM-dd',
@@ -48,7 +48,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-unixsocket:0.12', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-posix:3.0.29', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.9.2-SNAPSHOT', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.9.2', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-ffi:2.0.9'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
@@ -74,6 +74,10 @@ project 'JRuby Core' do
   # joda timezone must be before joda-time to be packed correctly
   jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
   jar 'joda-time:joda-time:${joda.time.version}'
+
+  # SLF4J only used within SLF4JLogger (JRuby logger impl) class
+  jar 'org.slf4j:slf4j-api:1.7.12', :scope => 'provided', :optional => true
+  jar 'org.slf4j:slf4j-simple:1.7.12', :scope => 'test'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -246,6 +250,12 @@ project 'JRuby Core' do
       includes '${Constants.java}'
       target_path '${project.build.sourceDirectory}'
       filtering 'true'
+    end
+
+    resource do
+      directory '${project.basedir}/..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
     end
   end
 

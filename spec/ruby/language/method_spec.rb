@@ -1171,3 +1171,61 @@ describe "A method" do
     end
   end
 end
+
+describe "A method call with a space between method name and parentheses" do
+  before(:each) do
+    def m(*args)
+      args
+    end
+
+    def n(value, &block)
+      [value, block.call]
+    end
+  end
+
+  context "when no arguments provided" do
+    it "assigns nil" do
+      args = m ()
+      args.should == [nil]
+    end
+  end
+
+  context "when a single argument provided" do
+    it "assigns it" do
+      args = m (1 == 1 ? true : false)
+      args.should == [true]
+    end
+  end
+
+  context "when 2+ arguments provided" do
+    it "raises a syntax error" do
+      lambda {
+        eval("m (1, 2)")
+      }.should raise_error(SyntaxError)
+
+      lambda {
+        eval("m (1, 2, 3)")
+      }.should raise_error(SyntaxError)
+    end
+  end
+
+  it "allows to pass a block with curly braces" do
+    args = n () { :block_value }
+    args.should == [nil, :block_value]
+
+    args = n (1) { :block_value }
+    args.should == [1, :block_value]
+  end
+
+  it "allows to pass a block with do/end" do
+    args = n () do
+      :block_value
+    end
+    args.should == [nil, :block_value]
+
+    args = n (1) do
+      :block_value
+    end
+    args.should == [1, :block_value]
+  end
+end

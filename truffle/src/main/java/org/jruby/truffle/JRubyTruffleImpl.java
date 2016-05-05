@@ -15,7 +15,7 @@ import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
 import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.control.ExitException;
-import org.jruby.truffle.platform.Graal;
+import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
                 .build();
 
         try {
-            context = (RubyContext) engine.eval(Source.fromText("Truffle::Primitive.context", "context")
+            context = (RubyContext) engine.eval(Source.fromText("Truffle::Boot.context", "context")
                     .withMimeType(RubyLanguage.MIME_TYPE)).get();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -51,7 +51,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         context.setInitialJRubyRootNode(rootNode);
 
         try {
-            return engine.eval(Source.fromText("Truffle::Primitive.run_jruby_root", "run_jruby_root")
+            return engine.eval(Source.fromText("Truffle::Boot.run_jruby_root", "run_jruby_root")
                     .withMimeType(RubyLanguage.MIME_TYPE)).get();
         } catch (IOException e) {
             if (e.getCause() instanceof ExitException) {

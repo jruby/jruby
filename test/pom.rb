@@ -1,4 +1,5 @@
-version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
+version = ENV['JRUBY_VERSION'] ||
+  File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
 project 'JRuby Integration Tests' do
 

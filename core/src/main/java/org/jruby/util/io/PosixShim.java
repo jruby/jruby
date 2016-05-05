@@ -67,7 +67,7 @@ public class PosixShim {
         } else if (fd.chNative != null) {
             // native channel, use native lseek
             int ret = posix.lseek(fd.chNative.getFD(), offset, type);
-            if (ret < 0) errno = Errno.valueOf(posix.errno());
+            if (ret == -1) errno = Errno.valueOf(posix.errno());
             return ret;
         }
 

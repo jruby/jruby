@@ -9,14 +9,11 @@
  */
 package org.jruby.truffle.core;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.java.JavaInterop;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Layout;
@@ -30,36 +27,35 @@ import org.jruby.Main;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayNodes;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.binding.BindingNodesFactory;
+import org.jruby.truffle.core.binding.TruffleBindingNodesFactory;
 import org.jruby.truffle.core.bool.FalseClassNodesFactory;
 import org.jruby.truffle.core.bool.TrueClassNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
-import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.exception.ExceptionNodesFactory;
-import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.core.fiber.FiberNodesFactory;
 import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
+import org.jruby.truffle.core.kernel.TruffleKernelNodesFactory;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.core.klass.ClassNodesFactory;
 import org.jruby.truffle.core.method.MethodNodesFactory;
 import org.jruby.truffle.core.method.UnboundMethodNodesFactory;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
-import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.mutex.MutexNodesFactory;
 import org.jruby.truffle.core.numeric.BignumNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
 import org.jruby.truffle.core.numeric.FloatNodesFactory;
 import org.jruby.truffle.core.numeric.IntegerNodesFactory;
+import org.jruby.truffle.core.numeric.TruffleFixnumNodesFactory;
 import org.jruby.truffle.core.objectspace.ObjectSpaceNodesFactory;
 import org.jruby.truffle.core.proc.ProcNodesFactory;
 import org.jruby.truffle.core.queue.QueueNodesFactory;
@@ -67,6 +63,7 @@ import org.jruby.truffle.core.queue.SizedQueueNodesFactory;
 import org.jruby.truffle.core.range.RangeNodesFactory;
 import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory;
+import org.jruby.truffle.core.rope.TruffleRopesNodesFactory;
 import org.jruby.truffle.core.rubinius.AtomicReferenceNodesFactory;
 import org.jruby.truffle.core.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.core.rubinius.PosixNodesFactory;
@@ -79,12 +76,16 @@ import org.jruby.truffle.core.thread.ThreadBacktraceLocationNodesFactory;
 import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
-import org.jruby.truffle.extra.TrufflePrimitiveNodesFactory;
+import org.jruby.truffle.debug.TruffleDebugNodesFactory;
+import org.jruby.truffle.extra.AttachmentsInternalNodesFactory;
+import org.jruby.truffle.extra.TruffleGraalNodesFactory;
 import org.jruby.truffle.interop.CExtNodesFactory;
-import org.jruby.truffle.interop.TruffleInteropNodesFactory;
+import org.jruby.truffle.interop.InteropNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.TruffleBootNodesFactory;
+import org.jruby.truffle.language.TruffleSafeNodesFactory;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
@@ -99,14 +100,14 @@ import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.truffle.stdlib.BigDecimalNodesFactory;
-import org.jruby.truffle.stdlib.DigestLayoutImpl;
-import org.jruby.truffle.stdlib.DigestNodesFactory;
+import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory;
+import org.jruby.truffle.stdlib.CoverageNodesFactory;
 import org.jruby.truffle.stdlib.EtcNodesFactory;
 import org.jruby.truffle.stdlib.ObjSpaceNodesFactory;
+import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
-import org.jruby.truffle.stdlib.psych.PsychParserNodes;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
+import org.jruby.truffle.stdlib.psych.YAMLEncoding;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
@@ -205,6 +206,7 @@ public class CoreLibrary {
     private final DynamicObjectFactory unboundMethodFactory;
     private final DynamicObject byteArrayClass;
     private final DynamicObjectFactory byteArrayFactory;
+    private final DynamicObjectFactory statFactory;
     private final DynamicObject fiberErrorClass;
     private final DynamicObject threadErrorClass;
     private final DynamicObject internalBufferClass;
@@ -218,6 +220,7 @@ public class CoreLibrary {
     private final DynamicObject atomicReferenceClass;
     private final DynamicObject handleClass;
     private final DynamicObjectFactory handleFactory;
+    private final DynamicObject ioClass;
 
     private final DynamicObject argv;
     private final GlobalVariables globalVariables;
@@ -225,6 +228,8 @@ public class CoreLibrary {
     private final DynamicObject nilObject;
     private final DynamicObject rubiniusUndefined;
     private final DynamicObject digestClass;
+
+    @CompilationFinal private DynamicObject eagainWaitReadable;
 
     @CompilationFinal private ArrayNodes.MinBlock arrayMinBlock;
     @CompilationFinal private ArrayNodes.MaxBlock arrayMaxBlock;
@@ -316,6 +321,10 @@ public class CoreLibrary {
 
     public DynamicObject getSystemCallErrorClass() {
         return systemCallErrorClass;
+    }
+
+    public DynamicObject getEagainWaitReadable() {
+        return eagainWaitReadable;
     }
 
     private enum State {
@@ -529,7 +538,7 @@ public class CoreLibrary {
         unboundMethodClass = defineClass("UnboundMethod");
         unboundMethodFactory = Layouts.UNBOUND_METHOD.createUnboundMethodShape(unboundMethodClass, unboundMethodClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(unboundMethodClass, unboundMethodFactory);
-        final DynamicObject ioClass = defineClass("IO");
+        ioClass = defineClass("IO");
         Layouts.CLASS.setInstanceFactoryUnsafe(ioClass, Layouts.IO.createIOShape(ioClass, ioClass));
         internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
         Layouts.CLASS.setInstanceFactoryUnsafe(internalBufferClass, Layouts.IO_BUFFER.createIOBufferShape(internalBufferClass, internalBufferClass));
@@ -561,16 +570,28 @@ public class CoreLibrary {
         defineModule(truffleModule, "Interop");
         defineModule(truffleModule, "CExt");
         defineModule(truffleModule, "Debug");
-        final DynamicObject primitiveModule = defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
+        defineModule(truffleModule, "Coverage");
+        defineModule(truffleModule, "Graal");
+        defineModule(truffleModule, "Ropes");
+        defineModule(truffleModule, "GC");
+        final DynamicObject attachments = defineModule(truffleModule, "Attachments");
+        defineModule(attachments, "Internal");
+        defineModule(truffleModule, "Boot");
+        defineModule(truffleModule, "Fixnum");
+        defineModule(truffleModule, "Safe");
+        defineModule(truffleModule, "System");
+        defineModule(truffleModule, "Kernel");
+        defineModule(truffleModule, "Process");
+        defineModule(truffleModule, "Binding");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
         final DynamicObject psychEmitterClass = defineClass(psychModule, psychHandlerClass, "Emitter");
         Layouts.CLASS.setInstanceFactoryUnsafe(psychEmitterClass, Layouts.PSYCH_EMITTER.createEmitterShape(psychEmitterClass, psychEmitterClass));
-        handleClass = defineClass(primitiveModule, objectClass, "Handle");
+        handleClass = defineClass(truffleModule, objectClass, "Handle");
         handleFactory = Layouts.HANDLE.createHandleShape(handleClass, handleClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(handleClass, handleFactory);
 
@@ -589,6 +610,10 @@ public class CoreLibrary {
         rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
         defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
+
+        DynamicObject statClass = defineClass(rubiniusModule, objectClass, "Stat");
+        statFactory = Layouts.STAT.createStatShape(statClass, statClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(statClass, statFactory);
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
         byteArrayFactory = Layouts.BYTE_ARRAY.createByteArrayShape(byteArrayClass, byteArrayClass);
@@ -622,7 +647,7 @@ public class CoreLibrary {
         globalVariables = new GlobalVariables(nilObject);
 
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
-        Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, DigestLayoutImpl.INSTANCE.createDigestShape(digestClass, digestClass));
+        Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, Layouts.DIGEST.createDigestShape(digestClass, digestClass));
 
         // No need for new version since it's null before which is not cached
         assert Layouts.CLASS.getSuperclass(basicObjectClass) == null;
@@ -690,10 +715,13 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(SymbolNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ThreadNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TrueClassNodesFactory.getFactories());
-        coreMethodNodeManager.addCoreMethodNodes(TrufflePrimitiveNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleGCNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleBootNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(AttachmentsInternalNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleGraalNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingConverterNodesFactory.getFactories());
-        coreMethodNodeManager.addCoreMethodNodes(TruffleInteropNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(InteropNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(CExtNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(MethodNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(UnboundMethodNodesFactory.getFactories());
@@ -710,6 +738,15 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TracePointNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(CoverageNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleRopesNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleFixnumNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleSafeNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleSystemNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleKernelNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleProcessNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleDebugNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleBindingNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 
@@ -786,10 +823,10 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(context, node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(context, node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
 
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "ANY", PsychParserNodes.YAMLEncoding.YAML_ANY_ENCODING.ordinal());
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF8", PsychParserNodes.YAMLEncoding.YAML_UTF8_ENCODING.ordinal());
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16LE", PsychParserNodes.YAMLEncoding.YAML_UTF16LE_ENCODING.ordinal());
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16BE", PsychParserNodes.YAMLEncoding.YAML_UTF16BE_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "ANY", YAMLEncoding.YAML_ANY_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF8", YAMLEncoding.YAML_UTF8_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16LE", YAMLEncoding.YAML_UTF16LE_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16BE", YAMLEncoding.YAML_UTF16BE_ENCODING.ordinal());
 
         // Java interop
         final DynamicObject javaModule = defineModule(truffleModule, "Java");
@@ -858,6 +895,10 @@ public class CoreLibrary {
         } finally {
             state = State.LOADED;
         }
+
+        // Get some references to things defined in the Ruby core
+
+        eagainWaitReadable = (DynamicObject) Layouts.MODULE.getFields(ioClass).getConstant("EAGAINWaitReadable").getValue();
     }
 
     private void initializeRubiniusFFI() {
@@ -1165,6 +1206,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getByteArrayFactory() {
         return byteArrayFactory;
+    }
+
+    public DynamicObjectFactory getStatFactory() {
+        return statFactory;
     }
 
     public DynamicObject getLookupTableClass() {

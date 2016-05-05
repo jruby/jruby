@@ -4198,6 +4198,90 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
     }
 
+    @JRubyMethod(name = "max")
+    public IRubyObject max(ThreadContext context, Block block) {
+        // TODO: check for overwritten <=> on Fixnum and String
+//        struct cmp_opt_data cmp_opt = { 0, 0 };
+        IRubyObject result = UNDEF, v;
+        int i;
+
+        if (block.isGiven()) {
+            for (i = 0; i < realLength; i++) {
+                v = eltOk(i);
+                if (result == UNDEF || RubyComparable.cmpint(context, block.yieldSpecific(context, v, result), v, result) > 0) {
+                    result = v;
+                }
+            }
+        } else {
+            for (i = 0; i < realLength; i++) {
+                v = eltOk(i);
+                if (result == UNDEF || optimizedCmp(context, v, result/*, cmp_opt*/) > 0) {
+                    result = v;
+                }
+            }
+        }
+        if (result == UNDEF) return context.nil;
+        return result;
+    }
+
+    @JRubyMethod(name = "max")
+    public IRubyObject max(ThreadContext context, IRubyObject num, Block block) {
+        if (!num.isNil()) {
+            return RubyEnumerable.max(context, this, num, block);
+        }
+
+        return max(context, block);
+    }
+
+    @JRubyMethod(name = "min")
+    public IRubyObject min(ThreadContext context, Block block) {
+        // TODO: check for overwritten <=> on Fixnum and String
+//        struct cmp_opt_data cmp_opt = { 0, 0 };
+        IRubyObject result = UNDEF, v;
+        int i;
+
+        if (block.isGiven()) {
+            for (i = 0; i < realLength; i++) {
+                v = eltOk(i);
+                if (result == UNDEF || RubyComparable.cmpint(context, block.yieldSpecific(context, v, result), v, result) < 0) {
+                    result = v;
+                }
+            }
+        }
+        else {
+            for (i = 0; i < realLength; i++) {
+                v = eltOk(i);
+                if (result == UNDEF || optimizedCmp(context, v, result/*, cmp_opt*/) < 0) {
+                    result = v;
+                }
+            }
+        }
+        if (result == UNDEF) return context.nil;
+        return result;
+    }
+
+    @JRubyMethod(name = "min")
+    public IRubyObject min(ThreadContext context, IRubyObject num, Block block) {
+        if (!num.isNil()) {
+            return RubyEnumerable.min(context, this, num, block);
+        }
+
+        return min(context, block);
+    }
+
+    private static final int optimizedCmp(ThreadContext context, IRubyObject a, IRubyObject b/*, IRubyObject data*/) {
+        // TODO: check for overwritten <=> on Fixnum and String
+        if (a instanceof RubyFixnum && b instanceof RubyFixnum /*&& CMP_OPTIMIZABLE(data, Fixnum)*/) {
+            long aLong = ((RubyFixnum)a).getLongValue();
+            long bLong = ((RubyFixnum)b).getLongValue();
+            return aLong > bLong ? 1 : aLong < bLong ? -1 : 0;
+        } else if (a instanceof RubyString && b instanceof RubyString /*&& CMP_OPTIMIZABLE(data, String)*/) {
+            return ((RubyString)a).op_cmp((RubyString)b);
+        }
+
+        return RubyComparable.cmpint(context, invokedynamic(context, a, OP_CMP, b), a, b);
+    }
+
     @Override
     public Class getJavaClass() {
         return List.class;

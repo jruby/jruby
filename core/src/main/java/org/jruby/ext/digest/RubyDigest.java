@@ -81,7 +81,7 @@ public class RubyDigest {
         }
     }
 
-    private static Logger logger() { return LoggerFactory.getLogger("RubyDigest"); }
+    private static Logger logger() { return LoggerFactory.getLogger(RubyDigest.class); }
 
     private static final String PROVIDER = "org.bouncycastle.jce.provider.BouncyCastleProvider";
     private static Provider provider = null;

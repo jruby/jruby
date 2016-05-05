@@ -28,7 +28,7 @@ describe "C-API Proc function" do
       @prc.inspect.should =~ /^#<Proc:([^ :@]*?)>$/
     end
 
-    it "returns a Proc instance with #aricy == -1" do
+    it "returns a Proc instance with #arity == -1" do
       @prc.arity.should == -1
     end
 

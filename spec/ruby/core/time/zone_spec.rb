@@ -1,10 +1,12 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Time#zone" do
-  it "returns the time zone used for time" do
-    # Testing with Asia/Kuwait here because it doesn't have DST.
-    with_timezone("Asia/Kuwait") do
-      Time.now.zone.should == "AST"
+  platform_is_not :windows do
+    it "returns the time zone used for time" do
+      # Testing with Asia/Kuwait here because it doesn't have DST.
+      with_timezone("Asia/Kuwait") do
+        Time.now.zone.should == "AST"
+      end
     end
   end
 
@@ -12,11 +14,13 @@ describe "Time#zone" do
     Time.new(2001, 1, 1, 0, 0, 0, "+05:00").zone.should == nil
   end
 
-  it "returns the correct timezone for a local time" do
-    t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
+  platform_is_not :windows do
+    it "returns the correct timezone for a local time" do
+      t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
 
-    with_timezone("America/New_York") do
-      t.getlocal.zone.should == "EST"
+      with_timezone("America/New_York") do
+        t.getlocal.zone.should == "EST"
+      end
     end
   end
 

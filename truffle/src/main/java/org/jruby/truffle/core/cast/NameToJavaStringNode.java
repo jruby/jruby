@@ -40,6 +40,11 @@ public abstract class NameToJavaStringNode extends RubyNode {
 
     public abstract String executeToJavaString(VirtualFrame frame, Object name);
 
+    @Specialization
+    public String passThroughJavaString(String string) {
+        return string;
+    }
+
     @Specialization(guards = "isRubySymbol(symbol)")
     public String coerceRubySymbol(DynamicObject symbol) {
         return Layouts.SYMBOL.getString(symbol);
@@ -50,7 +55,7 @@ public abstract class NameToJavaStringNode extends RubyNode {
         return string.toString();
     }
 
-    @Specialization(guards = { "!isRubySymbol(object)", "!isRubyString(object)" })
+    @Specialization(guards = { "!isString(object)", "!isRubySymbol(object)", "!isRubyString(object)" })
     public String coerceObject(VirtualFrame frame, Object object) {
         final Object coerced;
         try {

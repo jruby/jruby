@@ -24,6 +24,7 @@ public abstract class ArrayHelpers {
     }
 
     public static void setStoreAndSize(DynamicObject array, Object store, int size) {
+        assert !(store instanceof ArrayMirror);
         Layouts.ARRAY.setStore(array, store);
         Layouts.ARRAY.setSize(array, size);
     }

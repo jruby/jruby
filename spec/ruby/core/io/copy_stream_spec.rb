@@ -36,9 +36,11 @@ describe :io_copy_stream_to_file, shared: true do
 end
 
 describe :io_copy_stream_to_file_with_offset, shared: true do
-  it "copies only length bytes from the offset" do
-    IO.copy_stream(@object.from, @to_name, 8, 4).should == 8
-    @to_name.should have_data(" one\n\nLi")
+  platform_is_not :windows do
+    it "copies only length bytes from the offset" do
+      IO.copy_stream(@object.from, @to_name, 8, 4).should == 8
+      @to_name.should have_data(" one\n\nLi")
+    end
   end
 end
 
@@ -84,9 +86,11 @@ describe :io_copy_stream_to_io, shared: true do
 end
 
 describe :io_copy_stream_to_io_with_offset, shared: true do
-  it "copies only length bytes from the offset" do
-    IO.copy_stream(@object.from, @to_io, 8, 4).should == 8
-    @to_name.should have_data(" one\n\nLi")
+  platform_is_not :windows do
+    it "copies only length bytes from the offset" do
+      IO.copy_stream(@object.from, @to_io, 8, 4).should == 8
+      @to_name.should have_data(" one\n\nLi")
+    end
   end
 end
 
@@ -129,10 +133,12 @@ describe "IO.copy_stream" do
       @from_io.closed?.should be_false
     end
 
-    it "does not change the IO offset when an offset is specified" do
-      @from_io.pos = 10
-      IO.copy_stream(@from_io, @to_name, 8, 4)
-      @from_io.pos.should == 10
+    platform_is_not :windows do
+      it "does not change the IO offset when an offset is specified" do
+        @from_io.pos = 10
+        IO.copy_stream(@from_io, @to_name, 8, 4)
+        @from_io.pos.should == 10
+      end
     end
 
     it "does change the IO offset when an offset is not specified" do
@@ -214,8 +220,10 @@ describe "IO.copy_stream" do
       @from_io.closed?.should be_false
     end
 
-    it "raises an error when an offset is specified" do
-      lambda { IO.copy_stream(@from_io, @to_name, 8, 4) }.should raise_error(Errno::ESPIPE)
+    platform_is_not :windows do
+      it "raises an error when an offset is specified" do
+        lambda { IO.copy_stream(@from_io, @to_name, 8, 4) }.should raise_error(Errno::ESPIPE)
+      end
     end
 
     describe "to a file name" do

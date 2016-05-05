@@ -100,7 +100,7 @@ import org.objectweb.asm.FieldVisitor;
 @JRubyClass(name="Class", parent="Module")
 public class RubyClass extends RubyModule {
 
-    private static final Logger LOG = LoggerFactory.getLogger("RubyClass");
+    private static final Logger LOG = LoggerFactory.getLogger(RubyClass.class);
 
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
         classClass.setClassIndex(ClassIndex.CLASS);
@@ -1634,9 +1634,8 @@ public class RubyClass extends RubyModule {
 
     private void logReifyException(final Throwable failure, final boolean error) {
         if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
-            final String msg = "failed to reify class " + getName() + " due to: ";
-            if ( error ) LOG.error(msg, failure);
-            else LOG.info(msg, failure);
+            if ( error ) LOG.error("failed to reify class " + getName() + " due to: ", failure);
+            else LOG.info("failed to reify class " + getName() + " due to: ", failure);
         }
     }
 

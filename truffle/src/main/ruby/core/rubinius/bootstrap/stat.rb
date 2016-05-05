@@ -27,6 +27,11 @@
 module Rubinius
   class Stat
 
+    def self.allocate
+      Rubinius.primitive :stat_allocate
+      raise PrimitiveFailure, "Rubinius::Stat.allocate primitive failed"
+    end
+
     def setup(path)
       Rubinius.primitive :stat_stat
       path = Rubinius::Type.coerce_to_path(path)

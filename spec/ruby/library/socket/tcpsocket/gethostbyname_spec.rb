@@ -28,10 +28,12 @@ describe "TCPSocket#gethostbyname" do
   end
 
   platform_is :windows do
-    it "returns the canonical name as first value" do
-      host = "#{ENV['COMPUTERNAME'].downcase}"
-      host << ".#{ENV['USERDNSDOMAIN'].downcase}" if ENV['USERDNSDOMAIN']
-      @host_info[0].should == host
+    quarantine! do # name lookup seems not working on Windows CI
+      it "returns the canonical name as first value" do
+        host = "#{ENV['COMPUTERNAME'].downcase}"
+        host << ".#{ENV['USERDNSDOMAIN'].downcase}" if ENV['USERDNSDOMAIN']
+        @host_info[0].should == host
+      end
     end
 
     it "returns the address type as the third value" do

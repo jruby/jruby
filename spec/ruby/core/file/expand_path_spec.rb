@@ -181,18 +181,22 @@ describe "File.expand_path" do
       File.expand_path(weird_path).encoding.should equal(Encoding::ASCII_8BIT)
     end
 
-    it "expands a path when the default external encoding is ASCII-8BIT" do
-      Encoding.default_external = Encoding::ASCII_8BIT
-      File.expand_path("\xde\xad\xbe\xaf", "/").should == "/\xde\xad\xbe\xaf"
+    platform_is_not :windows do
+      it "expands a path when the default external encoding is ASCII-8BIT" do
+        Encoding.default_external = Encoding::ASCII_8BIT
+        File.expand_path("\xde\xad\xbe\xaf", @rootdir).should == "#{@rootdir}\xde\xad\xbe\xaf"
+      end
     end
 
     it "expands a path with multi-byte characters" do
       File.expand_path("Ångström").should == "#{@base}/Ångström"
     end
 
-    it "raises an Encoding::CompatibilityError if the external encoding is not compatible" do
-      Encoding.default_external = Encoding::UTF_16BE
-      lambda { File.expand_path("./a") }.should raise_error(Encoding::CompatibilityError)
+    platform_is_not :windows do
+      it "raises an Encoding::CompatibilityError if the external encoding is not compatible" do
+        Encoding.default_external = Encoding::UTF_16BE
+        lambda { File.expand_path("./a") }.should raise_error(Encoding::CompatibilityError)
+      end
     end
   end
 

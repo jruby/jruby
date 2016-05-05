@@ -414,14 +414,16 @@ public class MethodTranslator extends BodyTranslator {
 
         final String indentationOnFirstLine = indentation(source.getCode(sourceSection.getStartLine()));
 
-        final int lineAfter = sourceSection.getEndLine() + 1;
-        final String lineAfterString = source.getCode(lineAfter).replaceAll("\\s+$","");
-
-        if (lineAfterString.equals(indentationOnFirstLine + "end") || lineAfterString.equals(indentationOnFirstLine + "}")) {
-            return source.createSection(sourceSection.getIdentifier(), sourceSection.getCharIndex(), sourceSection.getCharLength() + 1 + source.getLineLength(lineAfter));
+        int lineAfter = sourceSection.getEndLine() + 1;
+        for (;;) {
+            final String lineAfterString = source.getCode(lineAfter).replaceAll("\\s+$","");
+            if (lineAfterString.equals(indentationOnFirstLine + "end") || lineAfterString.equals(indentationOnFirstLine + "}")) {
+                return source.createSection(sourceSection.getIdentifier(), sourceSection.getCharIndex(), sourceSection.getCharLength() + 1 + source.getLineLength(lineAfter));
+            }
+            if (++lineAfter >= source.getLineCount()) {
+                return sourceSection;
+            }
         }
-
-        return sourceSection;
     }
 
     private static String indentation(String line) {

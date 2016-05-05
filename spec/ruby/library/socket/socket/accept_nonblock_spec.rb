@@ -16,11 +16,16 @@ describe "Socket#accept_nonblock" do
     @socket.close
   end
 
-  it "raises Errno::EAGAIN if the connection is not accepted yet" do
-    lambda { @socket.accept_nonblock }.should raise_error(Errno::EAGAIN)
-  end
-
   it "raises IO::WaitReadable if the connection is not accepted yet" do
-    lambda { @socket.accept_nonblock }.should raise_error(IO::WaitReadable)
+    lambda {
+      @socket.accept_nonblock
+    }.should raise_error(IO::WaitReadable) { |e|
+      platform_is_not :windows do
+        e.should be_kind_of(Errno::EAGAIN)
+      end
+      platform_is :windows do
+        e.should be_kind_of(Errno::EWOULDBLOCK)
+      end
+    }
   end
 end

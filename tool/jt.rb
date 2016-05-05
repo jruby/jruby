@@ -14,7 +14,7 @@
 require 'fileutils'
 require 'digest/sha1'
 
-GRAALVM_VERSION = "0.10"
+GRAALVM_VERSION = "0.11"
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 
@@ -31,28 +31,39 @@ module Utilities
 
   def self.truffle_version
     File.foreach("#{JRUBY_DIR}/truffle/pom.rb") do |line|
-      if /\btruffle_version = '(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
+      if /'truffle\.version' => '(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
         break $1
       end
     end
   end
 
-  def self.find_graal
-    graal_locations = [
-      ENV['GRAAL_BIN'],
-      ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
-      "GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
-      "../GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
-      "../../GraalVM-#{GRAALVM_VERSION}/jre/bin/javao",
-    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
+  def self.graal_locations
+    from_env = ENV['GRAAL_BIN']
+    yield File.expand_path(from_env) if from_env
 
-    not_found = -> {
-      raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
+    from_branch = ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"]
+    yield File.expand_path(from_branch) if from_branch
+
+    rel_java_bin = "bin/java" # "jre/bin/javao"
+    %w[dk re].each { |kind|
+      ["", "../", "../../"].each { |prefix|
+        path = "#{prefix}graalvm-#{GRAALVM_VERSION}-#{kind}/#{rel_java_bin}"
+        yield File.expand_path(path, JRUBY_DIR)
+      }
     }
+  end
 
-    graal_locations.find(not_found) do |location|
-      File.executable?(location)
+  def self.find_graal
+    graal_locations do |location|
+      return location if File.executable?(location)
     end
+    raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
+  end
+  
+  def self.find_sulong_graal(dir)
+    jvmci = File.expand_path("../jvmci", dir)
+    Dir["#{jvmci}/jdk*/product/bin/java"].first or
+      raise "couldn't find the Java build in the Sulong repository - you need to check it out and build it"
   end
 
   def self.find_graal_js
@@ -274,7 +285,7 @@ module Commands
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
-    puts '    --sulong        add Sulong to the classpath (set SULONG_DIR, implies --graal)'
+    puts '    --sulong        add Sulong to the classpath (set SULONG_DIR, implies --graal but finds it from the SULONG_DIR)'
     puts '    --asm           show assembly (implies --graal)'
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
@@ -295,6 +306,7 @@ module Commands
     puts '    --no-java-cmd   don\'t set JAVACMD - rely on bin/jruby or RUBY_BIN to have Graal already'
     puts 'jt test integration [fast|long|all]            runs bigger integration tests (fast is default)'
     puts '    --no-gems       don\'t run tests that install gems'
+    puts 'jt test cexts                                  run C extension tests (set SULONG_DIR)'
     puts 'jt tag spec/ruby/language                      tag failing specs in this directory'
     puts 'jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file'
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
@@ -388,12 +400,11 @@ module Commands
 
     if args.delete('--sulong')
       dir = Utilities.find_sulong_dir
-      jruby_args << '-J-classpath'
-      jruby_args << File.join(dir, 'lib', '*')
-      jruby_args << '-J-classpath'
-      jruby_args << File.join(dir, 'build', 'sulong.jar')
-      jruby_args << '-J-classpath'
-      jruby_args << File.join(dir, '..', 'graal-core', 'mxbuild', 'graal', 'com.oracle.nfi', 'bin')
+      env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
+      jruby_args << '-J-classpath' << "#{dir}/lib/*"
+      jruby_args << '-J-classpath' << "#{dir}/build/sulong.jar"
+      nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
+      jruby_args << '-J-classpath' << nfi_classes
       jruby_args << '-J-XX:-UseJVMCIClassLoader'
     end
 
@@ -454,9 +465,11 @@ module Commands
       test_tck
       test_specs('run')
       # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled
-      test_integration({'CI' => 'true', 'HAS_REDIS' => 'true'}, 'all')
+      test_integration({'HAS_REDIS' => 'true'}, 'all')
       test_compiler
+      test_cexts if ENV['SULONG_DIR']
     when 'compiler' then test_compiler(*rest)
+    when 'cexts' then test_cexts(*rest)
     when 'integration' then test_integration({}, *rest)
     when 'specs' then test_specs('run', *rest)
     when 'tck' then
@@ -491,16 +504,42 @@ module Commands
   private :test_mri
 
   def test_compiler(*args)
+    jruby_opts = []
+    jruby_opts << '-J-Djvmci.Compiler=graal'
+    jruby_opts << '-Xtruffle.graal.warn_unless=false'
+    
+    if ENV['GRAAL_JS_JAR']
+      jruby_opts << '-J-classpath'
+      jruby_opts << Utilities.find_graal_js
+    end
+    
+    jruby_opts << '-Xtruffle.exceptions.print_java=true'
+    
     env_vars = {}
-    env_vars["JRUBY_OPTS"] = '-Xtruffle.graal.warn_unless=false'
     env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
-    env_vars["JRUBY_OPTS"] = '-J-Djvmci.Compiler=graal'
+    env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
+    
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
       sh env_vars, test_script
     end
   end
   private :test_compiler
+
+  def test_cexts(*args)
+    output_file = 'cext-output.txt'
+    Dir["#{JRUBY_DIR}/test/truffle/cexts/*"].each do |dir|
+      sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", dir
+      name = File.basename(dir)
+      run '--sulong', '-I', "#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
+      unless File.read(output_file) == File.read("#{dir}/expected.txt")
+        abort "c extension #{dir} didn't work as expected"
+      end
+    end
+  ensure
+    File.delete output_file
+  end
+  private :test_cexts
 
   def test_integration(env, *args)
     no_gems = args.delete('--no-gems')
@@ -524,7 +563,7 @@ module Commands
 
     env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     integration_path       = "#{JRUBY_DIR}/test/truffle/integration"
-    long_tests             = File.read(File.join(integration_path, 'long-tests.txt')).lines.map(&:chomp)
+    long_tests             = File.read("#{integration_path}/long-tests.txt").lines.map(&:chomp)
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 

@@ -52,19 +52,22 @@ describe "File.new" do
     File.read(@file).should == "test\n"
   end
 
-  it "opens the existing file, does not change permissions even when they are specified" do
-    File.chmod(0664, @file)           # r-w perms
-    orig_perms = File.stat(@file).mode.to_s(8)
-    begin
-      f = File.new(@file, "w", 0444)    # r-o perms, but they should be ignored
-      f.puts("test")
-    ensure
-      f.close
-    end
-    File.stat(@file).mode.to_s(8).should == orig_perms
+  platform_is_not :windows do
+    it "opens the existing file, does not change permissions even when they are specified" do
+      File.chmod(0644, @file)           # r-w perms
+      orig_perms = File.stat(@file).mode & 0777
+      begin
+        f = File.new(@file, "w", 0444)    # r-o perms, but they should be ignored
+        f.puts("test")
+      ensure
+        f.close
+      end
+      perms = File.stat(@file).mode & 0777
+      perms.should == orig_perms
 
-    # it should be still possible to read from the file
-    File.read(@file).should == "test\n"
+      # it should be still possible to read from the file
+      File.read(@file).should == "test\n"
+    end
   end
 
   it "returns a new File with modus fd" do
@@ -143,10 +146,17 @@ describe "File.new" do
     lambda { File.new(-1) }.should raise_error(Errno::EBADF)
   end
 
-  it "can't alter mode or permissions when opening a file" do
-    @fh = File.new(@file)
-    lambda { File.new(@fh.fileno, @flags) }.should raise_error(Errno::EINVAL)
+  platform_is_not :windows do
+    it "can't alter mode or permissions when opening a file" do
+      @fh = File.new(@file)
+      lambda {
+        f = File.new(@fh.fileno, @flags)
+        f.autoclose = false
+      }.should raise_error(Errno::EINVAL)
+    end
   end
 
-  it_behaves_like :open_directory, :new
+  platform_is_not :windows do
+    it_behaves_like :open_directory, :new
+  end
 end

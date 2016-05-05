@@ -9,13 +9,16 @@ project 'JRuby Truffle' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
-              'truffle.version' => '0.12',
+              'truffle.version' => '0.13',
               'jruby.basedir' => '${basedir}/..' )
 
   jar 'org.yaml:snakeyaml:1.14'
   jar 'org.antlr:antlr4-runtime:4.5.1-1'
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
+
+  repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
+              :id => 'truffle' )
 
   truffle_version = '${truffle.version}'
   jar 'com.oracle.truffle:truffle-api:' + truffle_version
@@ -45,7 +48,7 @@ project 'JRuby Truffle' do
                    'annotationProcessors' => [ 'com.oracle.truffle.object.dsl.processor.LayoutProcessor',
                                                'com.oracle.truffle.dsl.processor.InstrumentableProcessor',
                                                'com.oracle.truffle.dsl.processor.TruffleProcessor',
-                                               'com.oracle.truffle.dsl.processor.InteropProcessor',
+                                               'com.oracle.truffle.dsl.processor.interop.InteropDSLProcessor',
                                                'com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor',
                                                'com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor', ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
@@ -69,6 +72,12 @@ project 'JRuby Truffle' do
       directory 'src/main/ruby'
       includes '**/*rb'
       target_path '${project.build.directory}/classes/jruby-truffle'
+    end
+
+    resource do
+      directory '${project.basedir}/..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
     end
   end
 

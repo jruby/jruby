@@ -832,6 +832,9 @@ class Date
         :_parse_year, :_parse_mon, :_parse_mday, :_parse_ddd
 
   def self._parse(str, comp=true)
+    # Newer MRI version (written in C converts non-strings to strings
+    # and also has other checks like all ascii.
+    str = str.to_str if !str.kind_of?(::String) && str.respond_to?(:to_str)
     str = str.dup
 
     e = Format::Bag.new

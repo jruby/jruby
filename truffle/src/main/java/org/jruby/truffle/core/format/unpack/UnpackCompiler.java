@@ -21,9 +21,6 @@ import org.jruby.truffle.core.format.pack.PackLexer;
 import org.jruby.truffle.core.format.pack.PackParser;
 import org.jruby.truffle.language.RubyNode;
 
-import org.jruby.truffle.core.format.pack.PackLexer;
-import org.jruby.truffle.core.format.pack.PackParser;
-
 public class UnpackCompiler {
 
     private final RubyContext context;

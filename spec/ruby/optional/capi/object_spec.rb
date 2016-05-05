@@ -565,18 +565,16 @@ describe "CApiObject" do
     end
   end
 
-  extended_on :rubinius do
-    describe "rb_obj_frozen_p" do
-      it "returns true if object passed to it is frozen" do
-        obj = ""
-        obj.freeze
-        @o.rb_obj_frozen_p(obj).should == true
-      end
+  describe "rb_obj_frozen_p" do
+    it "returns true if object passed to it is frozen" do
+      obj = ""
+      obj.freeze
+      @o.rb_obj_frozen_p(obj).should == true
+    end
 
-      it "returns false if object passed to it is not frozen" do
-        obj = ""
-        @o.rb_obj_frozen_p(obj).should == false
-      end
+    it "returns false if object passed to it is not frozen" do
+      obj = ""
+      @o.rb_obj_frozen_p(obj).should == false
     end
   end
 

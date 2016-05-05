@@ -11,6 +11,7 @@ package org.jruby.truffle.stdlib;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.EventContext;
 import com.oracle.truffle.api.instrumentation.ExecutionEventNode;
@@ -23,6 +24,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,17 +32,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 public class CoverageManager {
-    public @interface LineTag {
+
+    public class LineTag {
     }
 
     public static final long NO_CODE = -1;
 
     private final Instrumenter instrumenter;
-
-    private boolean enabled = false;
-
     private final Map<Source, AtomicLongArray> counters = new ConcurrentHashMap<>();
-    private final Map<Source, BitSet> codeMap = new HashMap<>();
+    private final Map<Source, BitSet> linesHaveCode = new HashMap<>();
+
+    private boolean enabled;
 
     public CoverageManager(RubyContext context, Instrumenter instrumenter) {
         this.instrumenter = instrumenter;
@@ -51,22 +53,25 @@ public class CoverageManager {
     }
 
     public synchronized void setLineHasCode(LineLocation line) {
-        BitSet bitmap = codeMap.get(line.getSource());
+        BitSet bitmap = linesHaveCode.get(line.getSource());
 
         if (bitmap == null) {
             bitmap = new BitSet(line.getSource().getLineCount());
-            codeMap.put(line.getSource(), bitmap);
+            linesHaveCode.put(line.getSource(), bitmap);
         }
 
         bitmap.set(line.getLineNumber() - 1);
     }
 
-    public void enable() {
+    @TruffleBoundary
+    public synchronized void enable() {
         if (enabled) {
-            throw new UnsupportedOperationException();
+            return;
         }
 
-        instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(), new ExecutionEventNodeFactory() {
+        instrumenter.attachFactory(SourceSectionFilter.newBuilder()
+                .tagIs(LineTag.class)
+                .build(), new ExecutionEventNodeFactory() {
 
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
@@ -110,7 +115,7 @@ public class CoverageManager {
         final Map<Source, long[]> counts = new HashMap<>();
 
         for (Map.Entry<Source, AtomicLongArray> entry : counters.entrySet()) {
-            final BitSet hasCode = codeMap.get(entry.getKey());
+            final BitSet hasCode = linesHaveCode.get(entry.getKey());
 
             final long[] array = new long[entry.getValue().length()];
 
@@ -129,8 +134,17 @@ public class CoverageManager {
     }
 
     public void print(PrintStream out) {
+        final int maxCountDigits = Long.toString(getMaxCount()).length();
+
+        final String countFormat = "%" + maxCountDigits + "d";
+
+        final char[] noCodeChars = new char[maxCountDigits];
+        Arrays.fill(noCodeChars, ' ');
+        noCodeChars[maxCountDigits - 1] = '-';
+        final String noCodeString = new String(noCodeChars);
+
         for (Map.Entry<Source, AtomicLongArray> entry : counters.entrySet()) {
-            final BitSet hasCode = codeMap.get(entry.getKey());
+            final BitSet hasCode = linesHaveCode.get(entry.getKey());
 
             out.println(entry.getKey().getName());
 
@@ -144,14 +158,26 @@ public class CoverageManager {
                 out.print("  ");
 
                 if (hasCode != null && hasCode.get(n)) {
-                    out.printf("% 12d", entry.getValue().get(n));
+                    out.printf(countFormat, entry.getValue().get(n));
                 } else {
-                    out.print("           -");
+                    out.print(noCodeString);
                 }
 
                 out.printf("  %s%n", line);
             }
         }
+    }
+
+    private long getMaxCount() {
+        long max = 0;
+
+        for (Map.Entry<Source, AtomicLongArray> entry : counters.entrySet()) {
+            for (int n = 0; n < entry.getValue().length(); n++) {
+                max = Math.max(max, entry.getValue().get(n));
+            }
+        }
+
+        return max;
     }
 
 }

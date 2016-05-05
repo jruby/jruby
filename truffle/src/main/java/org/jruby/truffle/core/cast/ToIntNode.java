@@ -15,11 +15,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.cast.ToIntNodeGen;
 import org.jruby.truffle.core.numeric.FloatNodes;
 import org.jruby.truffle.core.numeric.FloatNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
@@ -38,12 +35,8 @@ public abstract class ToIntNode extends RubyNode {
     private final ConditionProfile wasLong = ConditionProfile.createBinaryProfile();
     private final ConditionProfile wasLongInRange = ConditionProfile.createBinaryProfile();
 
-    public static ToIntNode create(RubyContext context, SourceSection sourceSection) {
-        return ToIntNodeGen.create(context, sourceSection, null);
-    }
-
-    public ToIntNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public static ToIntNode create() {
+        return ToIntNodeGen.create(null);
     }
 
     public int doInt(VirtualFrame frame, Object object) {

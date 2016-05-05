@@ -19,7 +19,6 @@ import com.oracle.truffle.api.instrumentation.ExecutionEventNodeFactory;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.RubyContext;
@@ -29,7 +28,8 @@ import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.language.RubyGuards;
 
 public class AttachmentsManager {
-    public @interface LineTag {
+
+    public class LineTag {
     }
 
     private final RubyContext context;
@@ -44,44 +44,42 @@ public class AttachmentsManager {
         assert RubyGuards.isRubyProc(block);
 
         final Source source = context.getSourceCache().getBestSourceFuzzily(file);
-        SourceSectionFilter filter = SourceSectionFilter.newBuilder().sourceIs(source).lineIs(line).tagIs(LineTag.class).build();
+
+        final SourceSectionFilter filter = SourceSectionFilter.newBuilder()
+                .sourceIs(source)
+                .lineIs(line)
+                .tagIs(LineTag.class)
+                .build();
+
         return instrumenter.attachFactory(filter, new ExecutionEventNodeFactory() {
+
             public ExecutionEventNode create(EventContext eventContext) {
                 return new AttachmentEventNode(context, block);
             }
+
         });
-
-        // with the new API you are not notified if a statement is not actually installed
-        // because wrappers and installing is lazy. Is that a problem?
-
-        // throw new RuntimeException("couldn't find a statement!");
     }
 
     private static class AttachmentEventNode extends ExecutionEventNode {
 
         private final RubyContext context;
         private final DynamicObject block;
-        @Node.Child
-        private DirectCallNode callNode;
+
+        @Child private DirectCallNode callNode;
 
         public AttachmentEventNode(RubyContext context, DynamicObject block) {
             this.context = context;
             this.block = block;
             this.callNode = Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(block));
-
-            // (chumer): do we still want to clone and inline always? don't think so
-            if (callNode.isCallTargetCloningAllowed()) {
-                callNode.cloneCallTarget();
-            }
-            if (callNode.isInlinable()) {
-                callNode.forceInlining();
-            }
         }
 
         @Override
         public void onEnter(VirtualFrame frame) {
-            callNode.call(frame, ProcOperations.packArguments(block, new Object[] {  BindingNodes.createBinding(context, frame.materialize())}));
+            callNode.call(frame,
+                    ProcOperations.packArguments(block, BindingNodes.createBinding(context, frame.materialize())));
         }
+
     }
+
 
 }

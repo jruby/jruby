@@ -38,6 +38,7 @@ import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -85,7 +86,11 @@ public abstract class HashNodes {
 
         @ExplodeLoop
         @Specialization(guards = "isSmallArrayOfPairs(args)")
-        public Object construct(VirtualFrame frame, DynamicObject hashClass, Object[] args) {
+        public Object construct(
+                VirtualFrame frame,
+                DynamicObject hashClass,
+                Object[] args,
+                @Cached("new()") SnippetNode snippetNode) {
             final DynamicObject array = (DynamicObject) args[0];
 
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
@@ -98,18 +103,18 @@ public abstract class HashNodes {
                     final Object pair = store[n];
 
                     if (!RubyGuards.isRubyArray(pair)) {
-                        return constructFallback(frame, hashClass, args);
+                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
                     }
 
                     final DynamicObject pairArray = (DynamicObject) pair;
                     final Object pairStore = Layouts.ARRAY.getStore(pairArray);
 
                     if (pairStore != null && pairStore.getClass() != Object[].class) {
-                        return constructFallback(frame, hashClass, args);
+                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
                     }
 
                     if (Layouts.ARRAY.getSize(pairArray) != 2) {
-                        return constructFallback(frame, hashClass, args);
+                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
                     }
 
                     final Object[] pairObjectStore = (Object[]) pairStore;
@@ -127,8 +132,12 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "!isSmallArrayOfPairs(args)")
-        public Object constructFallback(VirtualFrame frame, DynamicObject hashClass, Object[] args) {
-            return ruby("_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
+        public Object constructFallback(
+                VirtualFrame frame,
+                DynamicObject hashClass,
+                Object[] args,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
         }
 
         public boolean isSmallArrayOfPairs(Object[] args) {
@@ -769,8 +778,12 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "!isRubyHash(other)")
-        public Object replaceBuckets(VirtualFrame frame, DynamicObject self, Object other) {
-            return ruby("replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
+        public Object replaceBuckets(
+                VirtualFrame frame,
+                DynamicObject self,
+                Object other,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
         }
         
         private void copyOtherFields(DynamicObject self, DynamicObject from) {

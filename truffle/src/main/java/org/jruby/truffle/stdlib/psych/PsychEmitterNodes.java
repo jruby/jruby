@@ -38,8 +38,10 @@
  */
 package org.jruby.truffle.stdlib.psych;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
@@ -52,6 +54,8 @@ import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.adapaters.OutputStreamAdapter;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.yaml.snakeyaml.DumperOptions;
@@ -105,23 +109,25 @@ public abstract class PsychEmitterNodes {
             final DumperOptions options = new DumperOptions();
             options.setIndent(2);
             Layouts.PSYCH_EMITTER.setOptions(emitter, options);
-
             Layouts.PSYCH_EMITTER.setIo(emitter, io);
-
             return nil();
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
-        public DynamicObject initialize(DynamicObject emitter, DynamicObject io, DynamicObject optionsSet) {
+        public DynamicObject initialize(
+                VirtualFrame frame,
+                DynamicObject emitter,
+                DynamicObject io,
+                DynamicObject optionsSet,
+                @Cached("createMethodCall()") CallDispatchHeadNode lineWidthCallNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode canonicalCallNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode indentationCallNode) {
             final DumperOptions options = new DumperOptions();
-            options.setWidth((int) ruby("options_set.line_width", "options_set", optionsSet));
-            options.setCanonical((boolean) ruby("options_set.canonical", "options_set", optionsSet));
-            options.setIndent((int) ruby("options_set.indentation", "options_set", optionsSet));
+            options.setWidth((int) lineWidthCallNode.call(frame, optionsSet, "line_width", null));
+            options.setCanonical((boolean) canonicalCallNode.call(frame, optionsSet, "canonical", null));
+            options.setIndent((int) indentationCallNode.call(frame, optionsSet, "indentation", null));
             Layouts.PSYCH_EMITTER.setOptions(emitter, options);
-
             Layouts.PSYCH_EMITTER.setIo(emitter, io);
-
             return nil();
         }
 
@@ -130,14 +136,25 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_stream", required = 1)
     public abstract static class StartStreamNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
-        public DynamicObject startStream(DynamicObject emitter, int encoding) {
-            initEmitter(getContext(), emitter, encoding);
+        public DynamicObject startStream(DynamicObject emitter, int encodingOrdinal) {
+            if (Layouts.PSYCH_EMITTER.getEmitter(emitter) != null) {
+                throw new RaiseException(getContext().getCoreExceptions().runtimeError("already initialized emitter", this));
+            }
 
-            StreamStartEvent event = new StreamStartEvent(NULL_MARK, NULL_MARK);
+            final Encoding encoding = YAMLEncoding.values()[encodingOrdinal].getEncoding();
+            final Charset charset = getContext().getJRubyRuntime().getEncodingService().charsetForEncoding(encoding);
 
-            emit(getContext(), emitter, event);
+            Layouts.PSYCH_EMITTER.setEmitter(emitter,
+                    new Emitter(
+                            new OutputStreamWriter(
+                                    new OutputStreamAdapter(
+                                            getContext(),
+                                            (DynamicObject) Layouts.PSYCH_EMITTER.getIo(emitter), encoding),
+                                    charset),
+                    Layouts.PSYCH_EMITTER.getOptions(emitter)));
+
+            emit(emitter, new StreamStartEvent(NULL_MARK, NULL_MARK));
 
             return emitter;
         }
@@ -148,10 +165,9 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_stream")
     public abstract static class EndStreamNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject endStream(DynamicObject emitter) {
-            emit(getContext(), emitter, new StreamEndEvent(NULL_MARK, NULL_MARK));
+            emit(emitter, new StreamEndEvent(NULL_MARK, NULL_MARK));
             return emitter;
         }
 
@@ -161,52 +177,52 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_document", required = 3)
     public abstract static class StartDocumentNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
-        @Specialization(guards = {"isRubyArray(_version)", "isRubyArray(tags)"})
-        public DynamicObject startDocument(DynamicObject emitter, DynamicObject _version, DynamicObject tags, boolean implicit) {
-            DumperOptions.Version version = null;
-            boolean implicitBool = implicit;
+        @TruffleBoundary
+        @Specialization(guards = {"isRubyArray(version)", "isRubyArray(tags)"})
+        public DynamicObject startDocument(DynamicObject emitter, DynamicObject version, DynamicObject tags, boolean implicit) {
+            // TODO CS 3-May-16 this method should probably be implemented mainly in Ruby
+
+            DumperOptions.Version optionsVersion = null;
+
+            final Object[] versionArray = ArrayOperations.toObjectArray(version);
+
+            if (versionArray.length == 2) {
+                if (!(versionArray[0] instanceof Integer && versionArray[1] instanceof Integer)) {
+                    throw new UnsupportedOperationException();
+                }
+
+                final int versionInt0 = (int) versionArray[0];
+                final int versionInt1 = (int) versionArray[1];
+
+                if (versionInt0 == 1 && versionInt1 == 0) {
+                    optionsVersion = DumperOptions.Version.V1_0;
+                } else if (versionInt0 == 1 && versionInt1 == 1) {
+                    optionsVersion = DumperOptions.Version.V1_1;
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+            }
+
             Map<String, String> tagsMap = null;
 
-            Object[] versionAry = ArrayOperations.toObjectArray(_version);
-            if (versionAry.length == 2) {
-                int versionInt0 = (int)versionAry[0];
-                int versionInt1 = (int)versionAry[1];
+            final Object[] tagsArray = ArrayOperations.toObjectArray(tags);
 
-                if (versionInt0 == 1) {
-                    if (versionInt1 == 0) {
-                        version = DumperOptions.Version.V1_0;
-                    } else if (versionInt1 == 1) {
-                        version = DumperOptions.Version.V1_1;
-                    }
-                }
-                if (version == null) {
-                    // TODO CS 28-Sep-15 implement this code path
-                    throw new UnsupportedOperationException();
-                    //throw context.runtime.newArgumentError("invalid YAML version: " + versionAry);
-                }
-            }
+            if (tagsArray.length > 0) {
+                tagsMap = new HashMap<>(tagsArray.length);
 
-            Object[] tagsAry = ArrayOperations.toObjectArray(tags);
-            if (tagsAry.length > 0) {
-                tagsMap = new HashMap<String, String>(tagsAry.length);
-                for (int i = 0; i < tagsAry.length; i++) {
-                    Object[] tagsTuple = ArrayOperations.toObjectArray((DynamicObject) tagsAry[i]);
+                for (int i = 0; i < tagsArray.length; i++) {
+                    final Object[] tagsTuple = ArrayOperations.toObjectArray((DynamicObject) tagsArray[i]);
+
                     if (tagsTuple.length != 2) {
-                        // TODO CS 28-Sep-15 implement this code path
                         throw new UnsupportedOperationException();
-                        //throw context.runtime.newRuntimeError("tags tuple must be of length 2");
                     }
-                    Object key = tagsTuple[0];
-                    Object value = tagsTuple[1];
-                    tagsMap.put(
-                            key.toString(),
-                            value.toString());
+
+                    tagsMap.put(tagsTuple[0].toString(), tagsTuple[1].toString());
                 }
             }
 
-            DocumentStartEvent event = new DocumentStartEvent(NULL_MARK, NULL_MARK, !implicitBool, version, tagsMap);
-            emit(getContext(), emitter, event);
+            emit(emitter, new DocumentStartEvent(NULL_MARK, NULL_MARK, !implicit, optionsVersion, tagsMap));
+
             return emitter;
         }
 
@@ -215,10 +231,9 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_document", required = 1)
     public abstract static class EndDocumentNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject endDocument(DynamicObject emitter, boolean implicit) {
-            emit(getContext(), emitter, new DocumentEndEvent(NULL_MARK, NULL_MARK, !implicit));
+            emit(emitter, new DocumentEndEvent(NULL_MARK, NULL_MARK, !implicit));
             return emitter;
         }
 
@@ -227,19 +242,52 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "scalar", required = 6)
     public abstract static class ScalarNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        // Map style constants from Psych values (ANY = 0 ... FOLDED = 5)
+        // to SnakeYaml values; see psych/nodes/scalar.rb.
+        private static final Character[] SCALAR_STYLES = new Character[] {
+                null, // ANY; we'll choose plain
+                null, // PLAIN
+                '\'', // SINGLE_QUOTED
+                '"',  // DOUBLE_QUOTED
+                '|',  // LITERAL
+                '>',  // FOLDED
+        };
+
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(value)")
-        public DynamicObject scalar(DynamicObject emitter, DynamicObject value, Object anchor, Object tag, boolean plain, boolean quoted, int style) {
-            ScalarEvent event = new ScalarEvent(
-                    isNil(anchor) ? null : anchor.toString(),
-                    isNil(tag) ? null : tag.toString(),
-                    new ImplicitTuple(plain,
-                            quoted),
+        public DynamicObject scalar(
+                DynamicObject emitter,
+                DynamicObject value,
+                Object anchor,
+                Object tag,
+                boolean plain,
+                boolean quoted,
+                int style) {
+            final String anchorString;
+
+            if (isNil(anchor)) {
+                anchorString = null;
+            } else {
+                anchorString = anchor.toString();
+            }
+
+            final String tagString;
+
+            if (isNil(tag)) {
+                tagString = null;
+            } else {
+                tagString = tag.toString();
+            }
+
+            emit(emitter, new ScalarEvent(
+                    anchorString,
+                    tagString,
+                    new ImplicitTuple(plain, quoted),
                     value.toString(),
                     NULL_MARK,
                     NULL_MARK,
-                    SCALAR_STYLES[style]);
-            emit(getContext(), emitter, event);
+                    SCALAR_STYLES[style]));
+
             return emitter;
         }
 
@@ -249,19 +297,39 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_sequence", required = 4)
     public abstract static class StartSequenceNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public DynamicObject startSequence(DynamicObject emitter, Object anchor, Object tag, boolean implicit, int style) {
-            final int SEQUENCE_BLOCK = 1; // see psych/nodes/sequence.rb
+        private static final int SEQUENCE_BLOCK = 1;
 
-            SequenceStartEvent event = new SequenceStartEvent(
-                    isNil(anchor) ? null : anchor.toString(),
-                    isNil(tag) ? null : tag.toString(),
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject startSequence(
+                DynamicObject emitter,
+                Object anchor,
+                Object tag,
+                boolean implicit,
+                int style) {
+            final String anchorString;
+
+            if (isNil(anchor)) {
+                anchorString = null;
+            } else {
+                anchorString = anchor.toString();
+            }
+
+            final String tagString;
+
+            if (isNil(tag)) {
+                tagString = null;
+            } else {
+                tagString = tag.toString();
+            }
+
+            emit(emitter, new SequenceStartEvent(
+                    anchorString,
+                    tagString,
                     implicit,
                     NULL_MARK,
                     NULL_MARK,
-                    SEQUENCE_BLOCK != style);
-            emit(getContext(), emitter, event);
+                    style != SEQUENCE_BLOCK));
 
             return emitter;
         }
@@ -271,10 +339,9 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_sequence")
     public abstract static class EndSequenceNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject endSequence(DynamicObject emitter) {
-            emit(getContext(), emitter, new SequenceEndEvent(NULL_MARK, NULL_MARK));
+            emit(emitter, new SequenceEndEvent(NULL_MARK, NULL_MARK));
             return emitter;
         }
 
@@ -283,20 +350,39 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_mapping", required = 4)
     public abstract static class StartMappingNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public DynamicObject startMapping(DynamicObject emitter, Object anchor, Object tag, boolean implicit, int style) {
-            final int MAPPING_BLOCK = 1; // see psych/nodes/mapping.rb
+        private static final int MAPPING_BLOCK = 1;
 
-            MappingStartEvent event = new MappingStartEvent(
-                    isNil(anchor) ? null : anchor.toString(),
-                    isNil(tag) ? null : tag.toString(),
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject startMapping(
+                DynamicObject emitter,
+                Object anchor,
+                Object tag,
+                boolean implicit,
+                int style) {
+            final String anchorString;
+
+            if (isNil(anchor)) {
+                anchorString = null;
+            } else {
+                anchorString = anchor.toString();
+            }
+
+            final String tagString;
+
+            if (isNil(tag)) {
+                tagString = null;
+            } else {
+                tagString = tag.toString();
+            }
+
+            emit(emitter, new MappingStartEvent(
+                    anchorString,
+                    tagString,
                     implicit,
                     NULL_MARK,
                     NULL_MARK,
-                    MAPPING_BLOCK != style);
-
-            emit(getContext(), emitter, event);
+                    style != MAPPING_BLOCK));
 
             return emitter;
         }
@@ -306,10 +392,9 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "end_mapping")
     public abstract static class EndMappingNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject endMapping(DynamicObject emitter) {
-            emit(getContext(), emitter, new MappingEndEvent(NULL_MARK, NULL_MARK));
+            emit(emitter, new MappingEndEvent(NULL_MARK, NULL_MARK));
             return emitter;
         }
 
@@ -318,10 +403,9 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "alias", required = 1)
     public abstract static class AliasNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject alias(DynamicObject emitter, Object anchor) {
-            emit(getContext(), emitter, new AliasEvent(anchor.toString(), NULL_MARK, NULL_MARK));
+            emit(emitter, new AliasEvent(anchor.toString(), NULL_MARK, NULL_MARK));
             return emitter;
         }
 
@@ -390,53 +474,21 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    private static void emit(RubyContext context, DynamicObject emitter, Event event) {
+    @TruffleBoundary
+    private static void emit(DynamicObject emitter, Event event) {
         try {
             if (Layouts.PSYCH_EMITTER.getEmitter(emitter) == null) {
                 throw new UnsupportedOperationException();
-                // TODO CS 28-Sep-15 implement this code path
-                //throw context.getRuntime().newRuntimeError("uninitialized emitter");
             }
 
             Layouts.PSYCH_EMITTER.getEmitter(emitter).emit(event);
         } catch (IOException ioe) {
             throw new UnsupportedOperationException();
-            // TODO CS 28-Sep-15 implement this code path
-            //throw context.runtime.newIOErrorFromException(ioe);
         } catch (EmitterException ee) {
             throw new UnsupportedOperationException();
-            // TODO CS 28-Sep-15 implement this code path
-            //throw context.runtime.newRuntimeError(ee.toString());
         }
-    }
-
-    private static void initEmitter(RubyContext context, DynamicObject emitter, int _encoding) {
-        if (Layouts.PSYCH_EMITTER.getEmitter(emitter) != null) {
-            throw new UnsupportedOperationException();
-            // TODO CS 28-Sep-15 implement this code path
-            //throw context.runtime.newRuntimeError("already initialized emitter");
-        }
-
-        Encoding encoding = PsychParserNodes.YAMLEncoding.values()[_encoding].encoding;
-        // TODO CS 24-Sep-15 uses JRuby's encoding service
-        Charset charset = context.getJRubyRuntime().getEncodingService().charsetForEncoding(encoding);
-
-        Layouts.PSYCH_EMITTER.setEmitter(emitter, new Emitter(new OutputStreamWriter(
-                new OutputStreamAdapter(context, (DynamicObject) Layouts.PSYCH_EMITTER.getIo(emitter), encoding), charset),
-                Layouts.PSYCH_EMITTER.getOptions(emitter)));
     }
 
     private static final Mark NULL_MARK = new Mark(null, 0, 0, 0, null, 0);
-
-    // Map style constants from Psych values (ANY = 0 ... FOLDED = 5)
-    // to SnakeYaml values; see psych/nodes/scalar.rb.
-    private static final Character[] SCALAR_STYLES = new Character[] {
-            null, // ANY; we'll choose plain
-            null, // PLAIN
-            '\'', // SINGLE_QUOTED
-            '"',  // DOUBLE_QUOTED
-            '|',  // LITERAL
-            '>',  // FOLDED
-    };
 
 }

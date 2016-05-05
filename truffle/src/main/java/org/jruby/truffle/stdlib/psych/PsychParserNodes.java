@@ -38,15 +38,14 @@
  */
 package org.jruby.truffle.stdlib.psych;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
-import org.jcodings.specific.UTF16BEEncoding;
-import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.RubyEncoding;
@@ -62,13 +61,19 @@ import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.TaintNode;
+import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
-import org.yaml.snakeyaml.error.MarkedYAMLException;
 import org.yaml.snakeyaml.events.AliasEvent;
 import org.yaml.snakeyaml.events.DocumentEndEvent;
 import org.yaml.snakeyaml.events.DocumentStartEvent;
@@ -91,19 +96,6 @@ import java.util.Map;
 
 @CoreClass(name = "Psych::Parser")
 public abstract class PsychParserNodes {
-
-    public enum YAMLEncoding {
-        YAML_ANY_ENCODING(UTF8Encoding.INSTANCE),
-        YAML_UTF8_ENCODING(UTF8Encoding.INSTANCE),
-        YAML_UTF16LE_ENCODING(UTF16LEEncoding.INSTANCE),
-        YAML_UTF16BE_ENCODING(UTF16BEEncoding.INSTANCE);
-
-        YAMLEncoding(Encoding encoding) {
-            this.encoding = encoding;
-        }
-
-        public final Encoding encoding;
-    }
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
@@ -132,68 +124,190 @@ public abstract class PsychParserNodes {
             toStrNode = ToStrNodeGen.create(getContext(), getSourceSection(), null);
         }
 
+        public abstract Object executeParse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, Object path);
+
         @Specialization
         public Object parse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, NotProvided path) {
-            return parse(frame, parserObject, yaml, nil());
+            return executeParse(frame, parserObject, yaml, nil());
         }
 
         @Specialization
-        public Object parse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, DynamicObject path) {
-            return doParse(parserObject, yaml, path, readerFor(frame, yaml));
-        }
+        public Object parse(
+                VirtualFrame frame,
+                DynamicObject parserObject,
+                DynamicObject yaml,
+                DynamicObject path,
+                @Cached("new()") SnippetNode taintedNode,
+                @Cached("create()") DoesRespondDispatchHeadNode respondToReadNode,
+                @Cached("create()") DoesRespondDispatchHeadNode respondToPathNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callPathNode,
+                @Cached("createReadHandlerNode()") ReadObjectFieldNode readHandlerNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callStartStreamNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callStartDocumentNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callEndDocumentNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callAliasNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callScalarNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callStartSequenceNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callEndSequenceNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callStartMappingNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callEndMappingNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode callEndStreamNode,
+                @Cached("new()") SnippetNode raiseSyntaxErrorSnippetNode,
+                @Cached("new()") SnippetNode tagPushNode,
+                @Cached("createTaintNode()") TaintNode taintNode) {
+            CompilerDirectives.bailout("Psych parsing cannot be compiled");
 
-        @TruffleBoundary
-        private Object doParse(DynamicObject parserObject, DynamicObject yaml, DynamicObject path, StreamReader streamReader) {
-            boolean tainted = (boolean) ruby("yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
+            final boolean tainted = (boolean) taintedNode.execute(frame, "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
 
-            Parser parser = new ParserImpl(streamReader);
-            try {
-                if (isNil(path) && (boolean) ruby("yaml.respond_to? :path", "yaml", yaml)) {
-                    path = (DynamicObject) ruby("yaml.path", "yaml", yaml);
+            final StreamReader reader;
+
+            if (!RubyGuards.isRubyString(yaml) && respondToReadNode.doesRespondTo(frame, "read", yaml)) {
+                final Encoding enc = UTF8Encoding.INSTANCE;
+                final Charset charset = enc.getCharset();
+                reader = new StreamReader(new InputStreamReader(new InputStreamAdapter(getContext(), yaml), charset));
+            } else {
+                ByteList byteList = StringOperations.getByteListReadOnly(toStrNode.coerceObject(frame, yaml));
+                Encoding encoding = byteList.getEncoding();
+
+                if (!(encoding instanceof UnicodeEncoding)) {
+                    byteList = EncodingUtils.strConvEnc(getContext().getJRubyRuntime().getCurrentContext(),
+                            byteList, encoding, UTF8Encoding.INSTANCE);
+
+                    encoding = UTF8Encoding.INSTANCE;
                 }
 
-                Object handler = getInstanceVariable("@handler");
+                reader = new StreamReader(
+                        new InputStreamReader(
+                                new ByteArrayInputStream(
+                                        byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize()),
+                                encoding.getCharset()));
+            }
+
+            final Parser parser = new ParserImpl(reader);
+
+            try {
+                if (isNil(path) && respondToPathNode.doesRespondTo(frame, "path", yaml)) {
+                    path = (DynamicObject) callPathNode.call(frame, yaml, "path", null);
+                }
+
+                final Object handler = readHandlerNode.execute(parserObject);
 
                 while (true) {
                     Event event = parser.getEvent();
 
-                    // FIXME: Event should expose a getID, so it can be switched
                     if (event.is(Event.ID.StreamStart)) {
-                        invoke(handler, "start_stream", YAMLEncoding.YAML_ANY_ENCODING.ordinal());
+                        callStartStreamNode.call(frame, handler, "start_stream", null, YAMLEncoding.YAML_ANY_ENCODING.ordinal());
                     } else if (event.is(Event.ID.DocumentStart)) {
-                        handleDocumentStart((DocumentStartEvent) event, tainted, handler);
-                    } else if (event.is(Event.ID.DocumentEnd)) {
-                        Object notExplicit = !((DocumentEndEvent) event).getExplicit();
-                        invoke(handler, "end_document", notExplicit);
-                    } else if (event.is(Event.ID.Alias)) {
-                        Object alias = stringOrNilFor(((AliasEvent) event).getAnchor(), tainted);
-                        invoke(handler, "alias", alias);
-                    } else if (event.is(Event.ID.Scalar)) {
-                        handleScalar((ScalarEvent) event, tainted, handler);
-                    } else if (event.is(Event.ID.SequenceStart)) {
-                        handleSequenceStart((SequenceStartEvent) event, tainted, handler);
-                    } else if (event.is(Event.ID.SequenceEnd)) {
-                        invoke(handler, "end_sequence");
-                    } else if (event.is(Event.ID.MappingStart)) {
-                        handleMappingStart((MappingStartEvent) event, tainted, handler);
-                    } else if (event.is(Event.ID.MappingEnd)) {
-                        invoke(handler, "end_mapping");
-                    } else if (event.is(Event.ID.StreamEnd)) {
-                        invoke(handler, "end_stream");
+                        final DocumentStartEvent startEvent = (DocumentStartEvent) event;
 
+                        final DumperOptions.Version versionOptions = startEvent.getVersion();
+                        final Integer[] versionInts = versionOptions == null ? null : versionOptions.getArray();
+
+                        final DynamicObject versionArray;
+
+                        if (versionInts == null) {
+                            versionArray = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+                        } else {
+                            versionArray = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
+                                    versionInts[0], versionInts[1]
+                            }, 2);
+                        }
+
+                        Map<String, String> tagsMap = startEvent.getTags();
+                        DynamicObject tags = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+
+                        if (tagsMap != null && tagsMap.size() > 0) {
+                            for (Map.Entry<String, String> tag : tagsMap.entrySet()) {
+                                Object key = stringFor(tag.getKey(), tainted, taintNode);
+                                Object value = stringFor(tag.getValue(), tainted, taintNode);
+                                tagPushNode.execute(frame,
+                                        "tags.push [key, value]",
+                                        "tags", tags,
+                                        "key", key,
+                                        "value", value);
+                            }
+                        }
+
+                        Object notExplicit = !startEvent.getExplicit();
+                        callStartDocumentNode.call(frame, handler, "start_document", null, versionArray, tags, notExplicit);
+                    } else if (event.is(Event.ID.DocumentEnd)) {
+                        final DocumentEndEvent endEvent = (DocumentEndEvent) event;
+                        Object notExplicit = !endEvent.getExplicit();
+                        callEndDocumentNode.call(frame, handler, "end_document", null, notExplicit);
+                    } else if (event.is(Event.ID.Alias)) {
+                        final AliasEvent aliasEvent = (AliasEvent) event;
+                        Object alias = stringOrNilFor(aliasEvent.getAnchor(), tainted, taintNode);
+                        callAliasNode.call(frame, handler, "alias", null, alias);
+                    } else if (event.is(Event.ID.Scalar)) {
+                        final ScalarEvent scalarEvent = (ScalarEvent) event;
+
+                        Object anchor = stringOrNilFor(scalarEvent.getAnchor(), tainted, taintNode);
+                        Object tag = stringOrNilFor(scalarEvent.getTag(), tainted, taintNode);
+                        Object plain_implicit = scalarEvent.getImplicit().canOmitTagInPlainScalar();
+                        Object quoted_implicit = scalarEvent.getImplicit().canOmitTagInNonPlainScalar();
+                        Object style = translateStyle(scalarEvent.getStyle());
+                        Object val = stringFor(scalarEvent.getValue(), tainted, taintNode);
+
+                        callScalarNode.call(frame, handler, "scalar", null, val, anchor, tag, plain_implicit,
+                                quoted_implicit, style);
+                    } else if (event.is(Event.ID.SequenceStart)) {
+                        final SequenceStartEvent sequenceStartEvent = (SequenceStartEvent) event;
+
+                        Object anchor = stringOrNilFor(sequenceStartEvent.getAnchor(), tainted, taintNode);
+                        Object tag = stringOrNilFor(sequenceStartEvent.getTag(), tainted, taintNode);
+                        Object implicit = sequenceStartEvent.getImplicit();
+                        Object style = translateFlowStyle(sequenceStartEvent.getFlowStyle());
+
+                        callStartSequenceNode.call(frame, handler, "start_sequence", null, anchor, tag, implicit, style);
+                    } else if (event.is(Event.ID.SequenceEnd)) {
+                        callEndSequenceNode.call(frame, handler, "end_sequence", null);
+                    } else if (event.is(Event.ID.MappingStart)) {
+                        final MappingStartEvent mappingStartEvent = (MappingStartEvent) event;
+
+                        Object anchor = stringOrNilFor(mappingStartEvent.getAnchor(), tainted, taintNode);
+                        Object tag = stringOrNilFor(mappingStartEvent.getTag(), tainted, taintNode);
+                        Object implicit = mappingStartEvent.getImplicit();
+                        Object style = translateFlowStyle(mappingStartEvent.getFlowStyle());
+
+                        callStartMappingNode.call(frame, handler, "start_mapping", null, anchor, tag, implicit, style);
+                    } else if (event.is(Event.ID.MappingEnd)) {
+                        callEndMappingNode.call(frame, handler, "end_mapping", null);
+                    } else if (event.is(Event.ID.StreamEnd)) {
+                        callEndStreamNode.call(frame, handler, "end_stream", null);
                         break;
                     }
                 }
             } catch (ParserException pe) {
-                raiseParserException(yaml, pe, path);
+                final Mark mark = pe.getProblemMark();
+
+                raiseSyntaxErrorSnippetNode.execute(frame,
+                        "raise Psych::SyntaxError.new(file, line, col, offset, problem, context)",
+                        "file", path,
+                        "line", mark.getLine(),
+                        "col", mark.getColumn(),
+                        "offset", mark.getIndex(),
+                        "problem", pe.getProblem() == null ? nil() : createString(new ByteList(pe.getProblem().getBytes(StandardCharsets.UTF_8))),
+                        "context", pe.getContext() == null ? nil() : createString(new ByteList(pe.getContext().getBytes(StandardCharsets.UTF_8))));
             } catch (ScannerException se) {
-                StringBuilder message = new StringBuilder("syntax error");
-                if (se.getProblemMark() != null) {
-                    message.append(se.getProblemMark().toString());
-                }
-                raiseParserException(yaml, se, path);
+                final Mark mark = se.getProblemMark();
+
+                raiseSyntaxErrorSnippetNode.execute(frame,
+                        "raise Psych::SyntaxError.new(file, line, col, offset, problem, context)",
+                        "file", path,
+                        "line", mark.getLine(),
+                        "col", mark.getColumn(),
+                        "offset", mark.getIndex(),
+                        "problem", se.getProblem() == null ? nil() : createString(new ByteList(se.getProblem().getBytes(StandardCharsets.UTF_8))),
+                        "context", se.getContext() == null ? nil() : createString(new ByteList(se.getContext().getBytes(StandardCharsets.UTF_8))));
             } catch (ReaderException re) {
-                raiseParserException(yaml, re, path);
+                raiseSyntaxErrorSnippetNode.execute(frame,
+                        "raise Psych::SyntaxError.new(file, line, col, offset, problem, context)",
+                        "file", path,
+                        "line", 0,
+                        "col", 0,
+                        "offset", re.getPosition(),
+                        "problem", re.getName() == null ? nil() : createString(new ByteList(re.getName().getBytes(StandardCharsets.UTF_8))),
+                        "context", re.toString() == null ? nil() : createString(new ByteList(re.toString().getBytes(StandardCharsets.UTF_8))));
             } catch (Throwable t) {
                 Helpers.throwException(t);
                 return parserObject;
@@ -202,150 +316,59 @@ public abstract class PsychParserNodes {
             return parserObject;
         }
 
-        private StreamReader readerFor(VirtualFrame frame, DynamicObject yaml) {
-            // fall back on IOInputStream, using default charset
-            if (!RubyGuards.isRubyString(yaml) && (boolean) ruby("yaml.respond_to? :read", "yaml", yaml)) {
-                //final boolean isIO = (boolean) ruby("yaml.is_a? IO", "yaml", yaml);
-                //Encoding enc = isIO
-                //        ? UTF8Encoding.INSTANCE // ((RubyIO)yaml).getReadEncoding()
-                //        : UTF8Encoding.INSTANCE;
-                final Encoding enc = UTF8Encoding.INSTANCE;
-                Charset charset = enc.getCharset();
-                return new StreamReader(new InputStreamReader(new InputStreamAdapter(getContext(), yaml), charset));
-            }
-
-            ByteList byteList = StringOperations.getByteListReadOnly(toStrNode.coerceObject(frame, yaml));
-            Encoding enc = byteList.getEncoding();
-
-            // if not unicode, transcode to UTF8
-            if (!(enc instanceof UnicodeEncoding)) {
-                byteList = EncodingUtils.strConvEnc(getContext().getJRubyRuntime().getCurrentContext(), byteList, enc, UTF8Encoding.INSTANCE);
-                enc = UTF8Encoding.INSTANCE;
-            }
-
-            ByteArrayInputStream bais = new ByteArrayInputStream(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-
-            Charset charset = enc.getCharset();
-
-            assert charset != null : "charset for encoding " + enc + " should not be null";
-
-            InputStreamReader isr = new InputStreamReader(bais, charset);
-
-            return new StreamReader(isr);
+        protected ReadObjectFieldNode createReadHandlerNode() {
+            return ReadObjectFieldNodeGen.create("@handler", nil());
         }
 
-        private void handleDocumentStart(DocumentStartEvent dse, boolean tainted, Object handler) {
-            DumperOptions.Version _version = dse.getVersion();
-            Integer[] versionInts = _version == null ? null : _version.getArray();
-            Object version = versionInts == null ?
-                    Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) :
-                    Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{ versionInts[0], versionInts[1] }, 2);
-
-            Map<String, String> tagsMap = dse.getTags();
-            DynamicObject tags = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
-            if (tagsMap != null && tagsMap.size() > 0) {
-                for (Map.Entry<String, String> tag : tagsMap.entrySet()) {
-                    Object key = stringFor(tag.getKey(), tainted);
-                    Object value = stringFor(tag.getValue(), tainted);
-                    ruby("tags.push [key, value]", "tags", tags, "key", key, "value", value);
-                }
-            }
-            Object notExplicit = !dse.getExplicit();
-
-            invoke(handler, "start_document", version, tags, notExplicit);
+        protected TaintNode createTaintNode() {
+            return TaintNodeGen.create(getContext(), null, null);
         }
 
-        private void handleMappingStart(MappingStartEvent mse, boolean tainted, Object handler) {
-            Object anchor = stringOrNilFor(mse.getAnchor(), tainted);
-            Object tag = stringOrNilFor(mse.getTag(), tainted);
-            Object implicit = mse.getImplicit();
-            Object style = translateFlowStyle(mse.getFlowStyle());
-
-            invoke(handler, "start_mapping", anchor, tag, implicit, style);
-        }
-
-        private void handleScalar(ScalarEvent se, boolean tainted, Object handler) {
-            Object anchor = stringOrNilFor(se.getAnchor(), tainted);
-            Object tag = stringOrNilFor(se.getTag(), tainted);
-            Object plain_implicit = se.getImplicit().canOmitTagInPlainScalar();
-            Object quoted_implicit = se.getImplicit().canOmitTagInNonPlainScalar();
-            Object style = translateStyle(se.getStyle());
-            Object val = stringFor(se.getValue(), tainted);
-
-            invoke(handler, "scalar", val, anchor, tag, plain_implicit,
-                    quoted_implicit, style);
-        }
-
-        private void handleSequenceStart(SequenceStartEvent sse, boolean tainted, Object handler) {
-            Object anchor = stringOrNilFor(sse.getAnchor(), tainted);
-            Object tag = stringOrNilFor(sse.getTag(), tainted);
-            Object implicit = sse.getImplicit();
-            Object style = translateFlowStyle(sse.getFlowStyle());
-
-            invoke(handler, "start_sequence", anchor, tag, implicit, style);
-        }
-
-        private void raiseParserException(DynamicObject yaml, ReaderException re, DynamicObject rbPath) {
-            ruby("raise Psych::SyntaxError.new(file, line, col, offset, problem, context)",
-                    "file", rbPath,
-                    "line", 0,
-                    "col", 0,
-                    "offset", re.getPosition(),
-                    "problem", re.getName() == null ? nil() : createString(new ByteList(re.getName().getBytes(StandardCharsets.UTF_8))),
-                    "context", re.toString() == null ? nil() : createString(new ByteList(re.toString().getBytes(StandardCharsets.UTF_8))));
-        }
-
-        private void raiseParserException(DynamicObject yaml, MarkedYAMLException mye, DynamicObject rbPath) {
-            final Mark mark = mye.getProblemMark();
-
-            ruby("raise Psych::SyntaxError.new(file, line, col, offset, problem, context)",
-                    "file", rbPath,
-                    "line", mark.getLine(),
-                    "col", mark.getColumn(),
-                    "offset", mark.getIndex(),
-                    "problem", mye.getProblem() == null ? nil() : createString(new ByteList(mye.getProblem().getBytes(StandardCharsets.UTF_8))),
-                    "context", mye.getContext() == null ? nil() : createString(new ByteList(mye.getContext().getBytes(StandardCharsets.UTF_8))));
-        }
-
-        private Object invoke(Object receiver, String name, Object... args) {
-            return ruby("receiver.send(name, *args)", "receiver", receiver, "name", getSymbol(name),
-                    "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
-        }
+        private static final int STYLE_PLAIN = 1;
+        private static final int STYLE_SINGLE_QUOTED = 2;
+        private static final int STYLE_DOUBLE_QUOTED = 3;
+        private static final int STYLE_LITERAL = 4;
+        private static final int STYLE_FOLDED = 5;
+        private static final int STYLE_ANY = 0;
+        private static final int STYLE_FLOW = 2;
+        private static final int STYLE_NOT_FLOW = 1;
 
         private static int translateStyle(Character style) {
-            if (style == null) return 0; // any
-
             switch (style) {
                 case 0:
-                    return 1; // plain
+                    return STYLE_PLAIN;
                 case '\'':
-                    return 2; // single-quoted
+                    return STYLE_SINGLE_QUOTED;
                 case '"':
-                    return 3; // double-quoted
+                    return STYLE_DOUBLE_QUOTED;
                 case '|':
-                    return 4; // literal
+                    return STYLE_LITERAL;
                 case '>':
-                    return 5; // folded
+                    return STYLE_FOLDED;
                 default:
-                    return 0; // any
+                    return STYLE_ANY;
             }
         }
 
         private static int translateFlowStyle(Boolean flowStyle) {
-            if (flowStyle == null) return 0; // any
-
-            if (flowStyle) return 2;
-            return 1;
+            if (flowStyle == null) {
+                return STYLE_ANY;
+            } else if (flowStyle) {
+                return STYLE_FLOW;
+            } else {
+                return STYLE_NOT_FLOW;
+            }
         }
 
-        private Object stringOrNilFor(String value, boolean tainted) {
-            if (value == null) return nil(); // No need to taint nil
-
-            return stringFor(value, tainted);
+        private Object stringOrNilFor(String value, boolean tainted, TaintNode taintNode) {
+            if (value == null) {
+                return nil();
+            } else {
+                return stringFor(value, tainted, taintNode);
+            }
         }
 
-        private Object stringFor(String value, boolean tainted) {
-            // TODO CS 23-Sep-15 this is JRuby's internal encoding, not ours
+        private Object stringFor(String value, boolean tainted, TaintNode taintNode) {
             Encoding encoding = getContext().getJRubyRuntime().getDefaultInternalEncoding();
 
             if (encoding == null) {
@@ -353,22 +376,18 @@ public abstract class PsychParserNodes {
             }
 
             Charset charset = RubyEncoding.UTF8;
+
             if (encoding.getCharset() != null) {
                 charset = encoding.getCharset();
             }
 
-            ByteList bytes = new ByteList(value.getBytes(charset), encoding);
-            Object string = createString(bytes);
+            final Object string = createString(value.getBytes(charset), encoding);
 
             if (tainted) {
-                ruby("string.taint", "string", string);
+                taintNode.executeTaint(string);
             }
 
             return string;
-        }
-
-        private Object getInstanceVariable(String name) {
-            return ruby(name);
         }
 
     }

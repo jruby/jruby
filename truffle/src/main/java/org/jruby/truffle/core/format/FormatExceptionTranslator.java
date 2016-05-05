@@ -10,7 +10,6 @@
 package org.jruby.truffle.core.format;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
 import org.jruby.truffle.core.format.exceptions.CantConvertException;

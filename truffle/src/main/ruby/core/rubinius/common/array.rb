@@ -1848,23 +1848,8 @@ class Array
   def unshift(*values)
     Rubinius.check_frozen
 
-    return self if values.empty?
+    self[0, 0] = values
 
-    m = Rubinius::Mirror::Array.reflect values
-
-    if @start > values.size
-      # fit the new values in between 0 and @start if possible
-      @start -= values.size
-      @tuple.copy_from(m.tuple, 0, values.size, @start)
-    else
-      new_tuple = Rubinius::Tuple.new @total + values.size
-      new_tuple.copy_from m.tuple, 0, values.size, 0
-      new_tuple.copy_from @tuple, @start, @total, values.size
-      @start = 0
-      @tuple = new_tuple
-    end
-
-    @total += values.size
     self
   end
 

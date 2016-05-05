@@ -8,6 +8,10 @@ describe "Array#sort" do
   end
 
   it "does not affect the original Array" do
+    a = [3, 1, 2]
+    a.sort.should == [1, 2, 3]
+    a.should == [3, 1, 2]
+
     a = [0, 15, 2, 3, 4, 6, 14, 5, 7, 12, 8, 9, 1, 10, 11, 13]
     b = a.sort
     a.should == [0, 15, 2, 3, 4, 6, 14, 5, 7, 12, 8, 9, 1, 10, 11, 13]

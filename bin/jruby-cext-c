@@ -12,12 +12,6 @@
 
 require 'yaml'
 
-MX_DIR = ENV['MX_DIR']
-
-unless MX_DIR
-  abort 'You need to set MX_DIR to a checkout of the mx repository'
-end
-
 SULONG_DIR = ENV['SULONG_DIR']
 
 unless SULONG_DIR
@@ -25,7 +19,7 @@ unless SULONG_DIR
 end
 
 def mx(command, *args)
-  command = "#{MX_DIR}/mx.py -p #{SULONG_DIR} --vm server #{command} #{args.join(' ')}"
+  command = "mx -p #{SULONG_DIR} --vm server #{command} #{args.join(' ')}"
   puts "$ #{command}"
   `#{command}`
 end
@@ -52,6 +46,7 @@ LL = []
 SRC.each do |src|
   ll = File.join(File.dirname(src), File.basename(src, '.*') + '.ll')
   mx 'su-clang', "-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', src, '-o', ll
+  mx 'su-opt', '-S', '-mem2reg', ll, '-o', ll
   LL.push ll
 end
 

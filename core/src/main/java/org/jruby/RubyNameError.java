@@ -45,6 +45,7 @@ import org.jruby.util.Sprintf;
 @JRubyClass(name="NameError", parent="StandardError")
 public class RubyNameError extends RubyException {
     private IRubyObject name;
+    private IRubyObject receiver;
 
     /**
      * Nested class whose instances act as thunks reacting to to_str method
@@ -207,6 +208,7 @@ public class RubyNameError extends RubyException {
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if ( args.length > 0 ) this.message = args[0];
+        if (message instanceof RubyNameErrorMessage) this.receiver = ((RubyNameErrorMessage) message).object;
         if ( args.length > 1 ) this.name = args[1];
         else this.name = getRuntime().getNil();
         super.initialize(NULL_ARRAY, block); // message already set
@@ -231,8 +233,8 @@ public class RubyNameError extends RubyException {
 
     @JRubyMethod
     public IRubyObject receiver(ThreadContext context) {
-        if (message instanceof RubyNameErrorMessage) {
-            return ((RubyNameErrorMessage) message).object;
+        if (receiver != null) {
+            return receiver;
         }
 
         throw context.runtime.newArgumentError("no receiver is available");

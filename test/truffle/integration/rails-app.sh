@@ -14,6 +14,12 @@ then
 
 else
 
+    if [ -f tmp/pids/server.pid ]
+    then
+        kill $(cat tmp/pids/server.pid) || true
+        rm tmp/pids/server.pid
+    fi
+
     $JRUBY $JRUBY_BIN/gem install bundler
 
     $JTR setup
@@ -23,8 +29,8 @@ else
 
     while ! curl -s "$url/people.json";
     do
-      echo -n .
-      sleep 1
+        echo -n .
+        sleep 1
     done
 
     echo Server is up

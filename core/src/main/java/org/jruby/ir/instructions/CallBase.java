@@ -252,8 +252,17 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         String mname = getName();
         // checking for "call" is conservative.  It can be eval only if the receiver is a Method
         // CON: Removed "call" check because we didn't do it in 1.7 and it deopts all callers of Method or Proc objects.
-        if (/*mname.equals("call") ||*/ mname.equals("eval") || mname.equals("module_eval") ||
-                mname.equals("class_eval") || mname.equals("instance_eval")) return true;
+        // CON: eval forms with no arguments are block or block pass, and do not need to deopt
+        if (
+                (mname.equals("eval") ||
+                        mname.equals("module_eval") ||
+                        mname.equals("class_eval") ||
+                        mname.equals("instance_eval")
+                ) &&
+                        getArgsCount() != 0) {
+
+            return true;
+        }
 
         // Calls to 'send' where the first arg is either unknown or is eval or send (any others?)
         if (potentiallySend(mname) && argsCount >= 1) {

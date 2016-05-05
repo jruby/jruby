@@ -25,8 +25,10 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.TraceManager;
+import org.jruby.truffle.core.numeric.BignumOperations;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.extra.AttachmentsManager;
@@ -34,6 +36,8 @@ import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
+
+import java.math.BigInteger;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
@@ -86,12 +90,20 @@ public abstract class RubyBaseNode extends Node {
         return StringOperations.createString(getContext(), bytes);
     }
 
+    protected DynamicObject createString(byte[] bytes, Encoding encoding) {
+        return StringOperations.createString(getContext(), RopeOperations.create(bytes, encoding, CodeRange.CR_7BIT));
+    }
+
     protected DynamicObject create7BitString(CharSequence value, Encoding encoding) {
         return StringOperations.createString(getContext(), StringOperations.encodeRope(value, encoding, CodeRange.CR_7BIT));
     }
 
     protected DynamicObject createString(Rope rope) {
         return StringOperations.createString(getContext(), rope);
+    }
+
+    protected DynamicObject createBignum(BigInteger value) {
+        return BignumOperations.createBignum(getContext(), value);
     }
 
     protected CoreStrings coreStrings() {
@@ -118,8 +130,8 @@ public abstract class RubyBaseNode extends Node {
         return getContext().getNativePlatform().getMemoryManager();
     }
 
-    protected Object ruby(String expression, Object... arguments) {
-        return getContext().getCodeLoader().inline(this, expression, arguments);
+    protected DynamicObject handle(Object object) {
+        return Layouts.HANDLE.createHandle(coreLibrary().getHandleFactory(), object);
     }
 
     // Accessors
@@ -154,6 +166,10 @@ public abstract class RubyBaseNode extends Node {
     }
 
     // Source section
+
+    public void unsafeSetSourceSection(SourceSection sourceSection) {
+        this.sourceSection = sourceSection;
+    }
 
     @Override
     public SourceSection getSourceSection() {

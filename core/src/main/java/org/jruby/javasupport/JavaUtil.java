@@ -36,14 +36,16 @@ package org.jruby.javasupport;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ReflectPermission;
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.isUpperCase;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.toLowerCase;
 
-import java.lang.reflect.ReflectPermission;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.security.AccessController;
@@ -242,7 +244,18 @@ public class JavaUtil {
             // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
             // no matter what method is called on the interface
             final RubyClass singletonClass = rubyObject.getSingletonClass();
-            singletonClass.addMethod("method_missing", new Java.ProcToInterface(singletonClass));
+            final Java.ProcToInterface procToIface = new Java.ProcToInterface(singletonClass);
+            singletonClass.addMethod("method_missing", procToIface);
+            // similar to Iface.impl { ... } - bind interface method(s) to avoid Java-Ruby conflicts
+            // ... e.g. calling a Ruby implemented Predicate#test should not dispatch to Kernel#test
+            final Java.ProcToInterface.ConcreteMethod implMethod = procToIface.getConcreteMethod();
+            // getMethods for interface returns all methods (including ones from super-interfaces)
+            for ( Method method : targetType.getMethods() ) {
+                if ( Modifier.isAbstract(method.getModifiers()) ) {
+                    singletonClass.addMethodInternal(method.getName(), implMethod);
+                }
+            }
+
         }
         JavaObject javaObject = (JavaObject) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
         return (T) javaObject.getValue();
@@ -504,6 +517,41 @@ public class JavaUtil {
                 nameSet.add(javaName + '?');
                 nameSet.add(rubyName + '?');
             }
+        }
+    }
+
+    public static Object[] convertArguments(final IRubyObject[] args, final Class<?>[] types) {
+        return convertArguments(args, types, 0);
+    }
+
+    public static Object[] convertArguments(final IRubyObject[] args, final Class<?>[] types, int offset) {
+        final Object[] arguments = new Object[ args.length - offset ];
+        for ( int i = arguments.length; --i >= 0; ) {
+            arguments[i] = args[ i + offset ].toJava( types[i] );
+        }
+        return arguments;
+    }
+
+    /**
+     * Clone a Java object, assuming its class has an accessible <code>clone</code> method.
+     * @param object
+     * @return cloned object or null (if method is not found or inaccessible)
+     */
+    public static <T> T clone(final Object object) {
+        return (T) clone(object, false);
+    }
+
+    static Object clone(final Object object, final boolean silent) {
+        try {
+            final Method clone = object.getClass().getMethod("clone");
+            return clone.invoke(object);
+        }
+        catch (NoSuchMethodException|IllegalAccessException e) {
+            return null;
+        }
+        catch (InvocationTargetException e) {
+            if ( ! silent ) Helpers.throwException(e.getTargetException());
+            return null;
         }
     }
 

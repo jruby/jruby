@@ -47,9 +47,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.util.Arrays;
+import java.util.Map;
 
 public class IRRuntimeHelpers {
-    private static final Logger LOG = LoggerFactory.getLogger("IRRuntimeHelpers");
+    private static final Logger LOG = LoggerFactory.getLogger(IRRuntimeHelpers.class);
 
     public static boolean inProfileMode() {
         return RubyInstanceConfig.IR_PROFILE;
@@ -1857,5 +1858,42 @@ public class IRRuntimeHelpers {
         }
 
         return site.call(context, caller, target, keyStr.strDup(context.runtime));
+    }
+
+    public static DynamicMethod getRefinedMethodForClass(StaticScope refinedScope, RubyModule target, String methodName) {
+        Map<RubyClass, RubyModule> refinements;
+        RubyModule refinement;
+        DynamicMethod method = null;
+        RubyModule overlay;
+
+        while (true) {
+            if (refinedScope == null) break;
+
+            overlay = refinedScope.getOverlayModuleForRead();
+
+            if (overlay != null) {
+
+                refinements = overlay.getRefinements();
+
+                if (!refinements.isEmpty()) {
+
+                    refinement = refinements.get(target);
+
+                    if (refinement != null) {
+
+                        DynamicMethod maybeMethod = refinement.searchMethod(methodName);
+
+                        if (!maybeMethod.isUndefined()) {
+                            method = maybeMethod;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            refinedScope = refinedScope.getEnclosingScope();
+        }
+
+        return method;
     }
 }

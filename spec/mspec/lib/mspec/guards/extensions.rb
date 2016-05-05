@@ -1,4 +1,5 @@
 require 'mspec/guards/guard'
+require 'mspec/utils/deprecate'
 
 class ExtensionsGuard < SpecGuard
   def match?
@@ -11,6 +12,7 @@ end
 
 class Object
   def extended_on(*args)
+    MSpec.deprecate "extended_on", "implementation-specific specs"
     g = ExtensionsGuard.new(*args)
     g.name = :extended_on
     yield if g.yield?

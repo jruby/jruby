@@ -53,6 +53,14 @@ describe "The super keyword" do
     Super::MS3::B.bar([]).should == ["B.bar","ModA#bar","B.foo","ModA#foo"]
   end
 
+  it "searches BasicObject from a module for methods defined there" do
+    Super::IncludesFromBasic.new.__send__(:foobar).should == 43
+  end
+
+  it "searches BasicObject through another module for methods defined there" do
+    Super::IncludesIntermediate.new.__send__(:foobar).should == 42
+  end
+
   it "calls the correct method when the method visibility is modified" do
     Super::MS4::A.new.example.should == 5
   end
@@ -157,6 +165,22 @@ describe "The super keyword" do
 
   it "sees the included version of a module a method is alias from" do
     Super::AliasWithSuper::Trigger.foo.should == [:b, :a]
+  end
+
+  it "find super from a singleton class" do
+    obj = Super::SingletonCase::Foo.new
+    def obj.foobar(array)
+      array << :singleton
+      super
+    end
+    obj.foobar([]).should == [:singleton, :foo, :base]
+  end
+
+  it "finds super on other objects if a singleton class aliased the method" do
+    orig_obj = Super::SingletonAliasCase::Foo.new
+    orig_obj.alias_on_singleton
+    orig_obj.new_foobar([]).should == [:foo, :base]
+    Super::SingletonAliasCase::Foo.new.foobar([]).should == [:foo, :base]
   end
 
   it "passes along modified rest args when they weren't originally empty" do

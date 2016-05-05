@@ -283,8 +283,10 @@ describe :io_new_errors, shared: true do
     lambda { IO.send(@method, IOSpecs.closed_io.fileno, 'w') }.should raise_error(IOError)
   end
 
-  it "raises an Errno::EINVAL if the new mode is not compatible with the descriptor's current mode" do
-    lambda { IO.send(@method, @fd, "r") }.should raise_error(Errno::EINVAL)
+  platform_is_not :windows do
+    it "raises an Errno::EINVAL if the new mode is not compatible with the descriptor's current mode" do
+      lambda { IO.send(@method, @fd, "r") }.should raise_error(Errno::EINVAL)
+    end
   end
 
   it "raises ArgumentError if passed an empty mode string" do

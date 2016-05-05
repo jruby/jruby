@@ -26,7 +26,7 @@ University Linz](http://ssw.jku.at).
 * Aditya Bhardwaj
 
 The best way to get in touch with us is to join us in `#jruby` on Freenode, but 
-you can also Tweet to @chrisgseaton, @nirvdrum or @eregontp, or email
+you can also Tweet to @chrisgseaton, @nirvdrum, @eregontp or @pitr-ch, or email
 chris.seaton@oracle.com.
 
 ## Using Truffle

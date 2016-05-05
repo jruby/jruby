@@ -1530,7 +1530,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         boolean locked = fptr.lock();
         try {
             long pos = fptr.tell(context);
-            if (pos < 0 && fptr.errno() != null) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+            if (pos == -1 && fptr.errno() != null) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
             pos -= fptr.rbuf.len;
             return context.runtime.newFixnum(pos);
         } finally {
@@ -1550,7 +1550,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         boolean locked = fptr.lock();
         try {
             pos = fptr.seek(context, pos, PosixShim.SEEK_SET);
-            if (pos < 0 && fptr.errno() != null) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+            if (pos == -1 && fptr.errno() != null) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         } finally {
             if (locked) fptr.unlock();
         }
@@ -1733,7 +1733,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr = getOpenFileChecked();
         boolean locked = fptr.lock();
         try {
-            if (fptr.seek(context, 0L, 0) < 0 && fptr.errno() != null)
+            if (fptr.seek(context, 0L, 0) == -1 && fptr.errno() != null)
                 throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
             RubyArgsFile.ArgsFileData data = RubyArgsFile.ArgsFileData.getDataFrom(runtime.getArgsFile());
             if (this == data.currentFile) {
@@ -1887,7 +1887,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             fd = orig.fd().dup();
             fptr.setFD(fd);
             pos = orig.tell(context);
-            if (0 <= pos)
+            if (pos == -1)
                 fptr.seek(context, pos, PosixShim.SEEK_SET);
         } finally {
             if (locked2) fptr.unlock();

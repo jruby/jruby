@@ -44,7 +44,7 @@ import org.jruby.runtime.EventHookTest;
 import org.jruby.util.JRubyThreadContextTest;
 import org.jruby.util.ShellLauncherTest;
 import org.jruby.util.RubyTimeOutputFormatterTest;
-import org.jruby.util.log.ParameterizedWriterTest;
+import org.jruby.util.log.ParameterSubstitutionTest;
 import org.jruby.util.log.StandardErrorLoggerTest;
 
 /**
@@ -89,7 +89,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestRubyString.class);
         suite.addTestSuite(TestRubyNKF.class);
         suite.addTestSuite(StandardErrorLoggerTest.class);
-        suite.addTestSuite(ParameterizedWriterTest.class);
+        suite.addTestSuite(ParameterSubstitutionTest.class);
         suite.addTestSuite(TestRubyRational.class);
         suite.addTestSuite(TestRecursiveCheck.class);
         suite.addTestSuite(TestEncodingAPI.class);

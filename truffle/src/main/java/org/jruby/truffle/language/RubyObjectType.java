@@ -18,6 +18,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.interop.RubyMessageResolutionAccessor;
 
 public class RubyObjectType extends ObjectType {
 
@@ -41,7 +42,7 @@ public class RubyObjectType extends ObjectType {
 
     @Override
     public ForeignAccess getForeignAccessFactory(DynamicObject object) {
-        return RubyObjectTypeForeign.ACCESS;
+        return RubyMessageResolutionAccessor.ACCESS;
     }
 
     public static boolean isInstance(TruffleObject object) {

@@ -16,7 +16,11 @@ describe "IO.foreach" do
 
   describe "when the filename starts with |" do
     it "gets data from the standard out of the subprocess" do
-      IO.foreach("|sh -c 'echo hello;echo line2'") { |l| ScratchPad << l }
+      cmd = "|sh -c 'echo hello;echo line2'"
+      platform_is :windows do
+        cmd = "|cmd.exe /C echo hello&echo line2"
+      end
+      IO.foreach(cmd) { |l| ScratchPad << l }
       ScratchPad.recorded.should == ["hello\n", "line2\n"]
     end
 

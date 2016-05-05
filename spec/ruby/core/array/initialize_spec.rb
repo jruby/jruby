@@ -92,6 +92,10 @@ describe "Array#initialize with (size, object=nil)" do
     a.send(:initialize, 2, obj).should == [obj, obj]
     a[0].should equal(obj)
     a[1].should equal(obj)
+
+    b = []
+    b.send(:initialize, 3, 14).should == [14, 14, 14]
+    b.should == [14, 14, 14]
   end
 
   it "sets the array to size and fills with nil when object is omitted" do

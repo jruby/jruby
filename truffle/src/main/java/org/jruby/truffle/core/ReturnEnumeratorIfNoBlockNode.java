@@ -23,13 +23,13 @@ public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
 
     @Child private RubyNode method;
     @Child private CallDispatchHeadNode toEnumNode;
-    private final String methodName;
+    private final DynamicObject methodSymbol;
     private final ConditionProfile noBlockProfile = ConditionProfile.createBinaryProfile();
 
     public ReturnEnumeratorIfNoBlockNode(String methodName, RubyNode method) {
         super(method.getContext(), method.getEncapsulatingSourceSection());
         this.method = method;
-        this.methodName = methodName;
+        this.methodSymbol = getSymbol(methodName);
     }
 
     @Override
@@ -42,13 +42,10 @@ public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object[] arguments = ArrayUtils.unshift(RubyArguments.getArguments(frame), getSymbol(methodName));
+            final Object[] arguments = ArrayUtils.unshift(RubyArguments.getArguments(frame), methodSymbol);
             return toEnumNode.call(frame, RubyArguments.getSelf(frame), "to_enum", null, arguments);
-
         } else {
-
             return method.execute(frame);
-
         }
     }
 

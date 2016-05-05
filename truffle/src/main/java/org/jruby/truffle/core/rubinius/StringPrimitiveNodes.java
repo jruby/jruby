@@ -752,7 +752,9 @@ public abstract class StringPrimitiveNodes {
         }
 
         protected boolean isSimple(int code, DynamicObject encoding) {
-            return EncodingOperations.getEncoding(encoding) == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
+            final Encoding enc = EncodingOperations.getEncoding(encoding);
+
+            return (enc.isAsciiCompatible() && code >= 0x00 && code < 0x80) || (enc == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF);
         }
 
     }
@@ -792,7 +794,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             // Rubinius will pass in a byte index for the `start` value, but StringSupport.index requires a character index.
-            final int charIndex = byteIndexToCharIndexNode.executeStringBytCharacterIndex(frame, string, start, 0);
+            final int charIndex = byteIndexToCharIndexNode.executeStringByteCharacterIndex(frame, string, start, 0);
 
             final int index = index(rope(string), rope(pattern), charIndex, encoding(string));
 
@@ -893,7 +895,7 @@ public abstract class StringPrimitiveNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringByteCharacterIndexNode extends RubiniusPrimitiveArrayArgumentsNode {
 
-        public abstract int executeStringBytCharacterIndex(VirtualFrame frame, DynamicObject string, int index, int start);
+        public abstract int executeStringByteCharacterIndex(VirtualFrame frame, DynamicObject string, int index, int start);
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public int stringByteCharacterIndexSingleByte(DynamicObject string, int index, int start) {
@@ -1446,7 +1448,9 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)", "!isRopeBuffer(string)" })
-        public DynamicObject splice(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding) {
+        public DynamicObject splice(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding,
+                                    @Cached("createBinaryProfile()") ConditionProfile insertStringIsEmptyProfile,
+                                    @Cached("createBinaryProfile()") ConditionProfile splitRightIsEmptyProfile) {
             if (leftMakeSubstringNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 leftMakeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null));
@@ -1474,8 +1478,20 @@ public abstract class StringPrimitiveNodes {
 
             final Rope splitLeft = leftMakeSubstringNode.executeMake(source, 0, spliceByteIndex);
             final Rope splitRight = rightMakeSubstringNode.executeMake(source, rightSideStartingIndex, source.byteLength() - rightSideStartingIndex);
-            final Rope joinedLeft = leftMakeConcatNode.executeMake(splitLeft, insert, encoding);
-            final Rope joinedRight = rightMakeConcatNode.executeMake(joinedLeft, splitRight, encoding);
+
+            final Rope joinedLeft;
+            if (insertStringIsEmptyProfile.profile(insert.isEmpty())) {
+                joinedLeft = splitLeft;
+            } else {
+                joinedLeft = leftMakeConcatNode.executeMake(splitLeft, insert, encoding);
+            }
+
+            final Rope joinedRight;
+            if (splitRightIsEmptyProfile.profile(splitRight.isEmpty())) {
+                joinedRight = joinedLeft;
+            } else {
+                joinedRight = rightMakeConcatNode.executeMake(joinedLeft, splitRight, encoding);
+            }
 
             StringOperations.setRope(string, joinedRight);
 
@@ -1560,7 +1576,7 @@ public abstract class StringPrimitiveNodes {
                 return (int) value;
             } else if (object instanceof org.jruby.RubyBignum) {
                 final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
-                return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), value);
+                return createBignum(value);
             } else {
                 throw new UnsupportedOperationException();
             }

@@ -2,7 +2,6 @@ require 'erb'
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "ERB#filename" do
-  # TODO: why does this fail on rubinius?
   it "raises an exception if there are errors processing content" do
     filename = 'foobar.rhtml'
     erb = ERB.new('<% if true %>')   # will raise SyntaxError
@@ -20,15 +19,8 @@ describe "ERB#filename" do
     @ex.message =~ /^(.*?):(\d+): /
     $1.should == expected
     $2.to_i.should == 1
-
-    # TODO: why is this different on rubinius?
-    extended_on :rubinius do
-      @ex.file.should == expected
-      @ex.line.should == 1
-    end
   end
 
-  # TODO: why does this fail on rubinius?
   it "uses '(erb)' as filename when filename is not set" do
     erb = ERB.new('<% if true %>')   # will raise SyntaxError
     lambda {
@@ -44,11 +36,5 @@ describe "ERB#filename" do
     @ex.message =~ /^(.*?):(\d+): /
     $1.should == expected
     $2.to_i.should == 1
-
-    # TODO: why is this different on rubinius?
-    extended_on :rubinius do
-      @ex.file.should == expected
-      @ex.line.should == 1
-    end
   end
 end

@@ -66,6 +66,10 @@ public class CoreExceptions {
         return argumentError(coreStrings().OUT_OF_RANGE.getRope(), currentNode, null);
     }
 
+    public DynamicObject argumentErrorNegativeArraySize(Node currentNode) {
+        return argumentError(coreStrings().NEGATIVE_ARRAY_SIZE.getRope(), currentNode, null);
+    }
+
     @TruffleBoundary
     public DynamicObject argumentErrorUnknownKeyword(Object name, Node currentNode) {
         return argumentError("unknown keyword: " + name, currentNode);
@@ -116,8 +120,17 @@ public class CoreExceptions {
     // RuntimeError
 
     @TruffleBoundary
-    public DynamicObject frozenError(String className, Node currentNode) {
+    public DynamicObject frozenError(Object object, Node currentNode) {
+        String className = Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(object)).getName();
         return runtimeError(String.format("can't modify frozen %s", className), currentNode);
+    }
+
+    public DynamicObject runtimeErrorNotConstant(Node currentNode) {
+        return runtimeError("Truffle::Graal.assert_constant can only be called lexically", currentNode);
+    }
+
+    public DynamicObject runtimeErrorCompiled(Node currentNode) {
+        return runtimeError("Truffle::Graal.assert_not_compiled can only be called lexically", currentNode);
     }
 
     @TruffleBoundary
@@ -507,6 +520,22 @@ public class CoreExceptions {
                 context.getCallStack().getBacktrace(currentNode));
     }
 
+    public DynamicObject floatDomainErrorResultsToNaN(Node currentNode) {
+        return floatDomainError("Computation results to 'NaN'(Not a Number)", currentNode);
+    }
+
+    public DynamicObject floatDomainErrorResultsToInfinity(Node currentNode) {
+        return floatDomainError("Computation results to 'Infinity'", currentNode);
+    }
+
+    public DynamicObject floatDomainErrorResultsToNegInfinity(Node currentNode) {
+        return floatDomainError("Computation results to '-Infinity'", currentNode);
+    }
+
+    public DynamicObject floatDomainErrorSqrtNegative(Node currentNode) {
+        return floatDomainError("(VpSqrt) SQRT(negative value)", currentNode);
+    }
+
     // IOError
 
     @TruffleBoundary
@@ -558,11 +587,11 @@ public class CoreExceptions {
     }
 
     public DynamicObject internalErrorAssertConstantNotConstant(Node currentNode) {
-        return internalError("Value in Truffle::Primitive.assert_constant was not constant", currentNode);
+        return internalError("Value in Truffle::Graal.assert_constant was not constant", currentNode);
     }
 
     public DynamicObject internalErrorAssertNotCompiledCompiled(Node currentNode) {
-        return internalError("Call to Truffle::Primitive.assert_not_compiled was compiled", currentNode);
+        return internalError("Call to Truffle::Graal.assert_not_compiled was compiled", currentNode);
     }
 
     @TruffleBoundary

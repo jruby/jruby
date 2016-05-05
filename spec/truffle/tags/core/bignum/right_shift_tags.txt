@@ -1,3 +1,0 @@
-fails:Bignum#>> with n >> m returns 0 when m is a Bignum
-fails:Bignum#>> with n >> m calls #to_int to convert the argument to an Integer
-fails:Bignum#>> with n >> m raises a TypeError when #to_int does not return an Integer

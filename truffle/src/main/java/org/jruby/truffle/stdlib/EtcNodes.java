@@ -9,10 +9,7 @@
  */
 package org.jruby.truffle.stdlib;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreClass;
 import org.jruby.truffle.core.CoreMethod;
 import org.jruby.truffle.core.CoreMethodNode;
@@ -23,7 +20,6 @@ public abstract class EtcNodes {
     @CoreMethod(names = "nprocessors", needsSelf = false)
     public abstract static class NProcessors extends CoreMethodNode {
 
-        @TruffleBoundary
         @Specialization
         public int nprocessors() {
             return Runtime.getRuntime().availableProcessors();

@@ -24,4 +24,8 @@ describe "Module#===" do
     (ModuleSpecs::Basic === mock('z')).should == false
     (ModuleSpecs::Super === mock('a')).should == false
   end
+
+  it "does not let a module singleton class interfere when its on the RHS" do
+    (Class === ModuleSpecs::CaseCompareOnSingleton).should == false
+  end
 end
