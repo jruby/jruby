@@ -10,6 +10,7 @@
 package org.jruby.truffle.stdlib.bigdecimal;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -22,7 +23,7 @@ public abstract class AbstractMultNode extends BigDecimalOpNode {
 
     private final ConditionProfile zeroNormal = ConditionProfile.createBinaryProfile();
 
-    private Object multBigDecimalWithProfile(DynamicObject a, DynamicObject b, MathContext mathContext) {
+    private Object multBigDecimalConsideringSignum(DynamicObject a, DynamicObject b, MathContext mathContext) {
         final BigDecimal bBigDecimal = Layouts.BIG_DECIMAL.getValue(b);
 
         if (zeroNormal.profile(isNormalZero(a) && bBigDecimal.signum() == -1)) {
@@ -32,13 +33,13 @@ public abstract class AbstractMultNode extends BigDecimalOpNode {
         return multBigDecimal(Layouts.BIG_DECIMAL.getValue(a), bBigDecimal, mathContext);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private Object multBigDecimal(BigDecimal a, BigDecimal b, MathContext mathContext) {
         return a.multiply(b, mathContext);
     }
 
     protected Object mult(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
-        return createBigDecimal(frame, multBigDecimalWithProfile(a, b, new MathContext(precision, getRoundMode(frame))));
+        return createBigDecimal(frame, multBigDecimalConsideringSignum(a, b, new MathContext(precision, getRoundMode(frame))));
     }
 
     protected Object multNormalSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
@@ -46,38 +47,55 @@ public abstract class AbstractMultNode extends BigDecimalOpNode {
     }
 
     protected Object multSpecialNormal(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
+        Object value = null;
+
         switch (Layouts.BIG_DECIMAL.getType(a)) {
             case NAN:
-                return createBigDecimal(frame, BigDecimalType.NAN);
+                value = BigDecimalType.NAN;
+                break;
             case NEGATIVE_ZERO:
                 switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                     case 1:
                     case 0:
-                        return createBigDecimal(frame, BigDecimalType.NEGATIVE_ZERO);
+                        value = BigDecimalType.NEGATIVE_ZERO;
+                        break;
                     case -1:
-                        return createBigDecimal(frame, BigDecimal.ZERO);
+                        value = BigDecimal.ZERO;
+                        break;
                 }
+                break;
             case POSITIVE_INFINITY:
                 switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                     case 1:
-                        return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
+                        value = BigDecimalType.POSITIVE_INFINITY;
+                        break;
                     case 0:
-                        return createBigDecimal(frame, BigDecimalType.NAN);
+                        value = BigDecimalType.NAN;
+                        break;
                     case -1:
-                        return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
+                        value = BigDecimalType.NEGATIVE_INFINITY;
+                        break;
                 }
+                break;
             case NEGATIVE_INFINITY:
                 switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                     case 1:
-                        return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
+                        value = BigDecimalType.NEGATIVE_INFINITY;
+                        break;
                     case 0:
-                        return createBigDecimal(frame, BigDecimalType.NAN);
+                        value = BigDecimalType.NAN;
+                        break;
                     case -1:
-                        return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
+                        value = BigDecimalType.POSITIVE_INFINITY;
+                        break;
                 }
+                break;
             default:
+                CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException("unreachable code branch");
         }
+
+        return createBigDecimal(frame, value);
     }
 
     protected Object multSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
@@ -86,21 +104,26 @@ public abstract class AbstractMultNode extends BigDecimalOpNode {
 
         if (aType == BigDecimalType.NAN || bType == BigDecimalType.NAN) {
             return createBigDecimal(frame, BigDecimalType.NAN);
-        }
-        if (aType == BigDecimalType.NEGATIVE_ZERO && bType == BigDecimalType.NEGATIVE_ZERO) {
+        } else if (aType == BigDecimalType.NEGATIVE_ZERO && bType == BigDecimalType.NEGATIVE_ZERO) {
             return createBigDecimal(frame, BigDecimal.ZERO);
-        }
-        if (aType == BigDecimalType.NEGATIVE_ZERO || bType == BigDecimalType.NEGATIVE_ZERO) {
+        } else if (aType == BigDecimalType.NEGATIVE_ZERO || bType == BigDecimalType.NEGATIVE_ZERO) {
             return createBigDecimal(frame, BigDecimalType.NAN);
         }
 
         // a and b are only +-Infinity
 
         if (aType == BigDecimalType.POSITIVE_INFINITY) {
-            return bType == BigDecimalType.POSITIVE_INFINITY ? a : createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
-        }
-        if (aType == BigDecimalType.NEGATIVE_INFINITY) {
-            return bType == BigDecimalType.POSITIVE_INFINITY ? a : createBigDecimal(frame, (BigDecimalType.POSITIVE_INFINITY));
+            if (bType == BigDecimalType.POSITIVE_INFINITY) {
+                return a;
+            } else {
+                return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
+            }
+        } else if (aType == BigDecimalType.NEGATIVE_INFINITY) {
+            if (bType == BigDecimalType.POSITIVE_INFINITY) {
+                return a;
+            } else {
+                return createBigDecimal(frame, (BigDecimalType.POSITIVE_INFINITY));
+            }
         }
 
         throw new UnsupportedOperationException("unreachable code branch");
