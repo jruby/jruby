@@ -10,6 +10,7 @@
 package org.jruby.truffle.stdlib.bigdecimal;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -22,9 +23,10 @@ public abstract class AbstractDivNode extends BigDecimalOpNode {
 
     private final ConditionProfile normalZero = ConditionProfile.createBinaryProfile();
 
-    private Object divBigDecimalWithProfile(DynamicObject a, DynamicObject b, MathContext mathContext) {
+    private Object divBigDecimalConsideringSignum(DynamicObject a, DynamicObject b, MathContext mathContext) {
         final BigDecimal aBigDecimal = Layouts.BIG_DECIMAL.getValue(a);
         final BigDecimal bBigDecimal = Layouts.BIG_DECIMAL.getValue(b);
+
         if (normalZero.profile(bBigDecimal.signum() == 0)) {
             switch (aBigDecimal.signum()) {
                 case 1:
@@ -34,6 +36,7 @@ public abstract class AbstractDivNode extends BigDecimalOpNode {
                 case -1:
                     return BigDecimalType.NEGATIVE_INFINITY;
                 default:
+                    CompilerDirectives.transferToInterpreter();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + aBigDecimal.signum());
             }
         } else {
@@ -41,81 +44,113 @@ public abstract class AbstractDivNode extends BigDecimalOpNode {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private BigDecimal divBigDecimal(BigDecimal a, BigDecimal b, MathContext mathContext) {
         return a.divide(b, mathContext);
     }
 
     protected Object div(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
-        return createBigDecimal(frame, divBigDecimalWithProfile(a, b, new MathContext(precision, getRoundMode(frame))));
+        return createBigDecimal(frame, divBigDecimalConsideringSignum(a, b, new MathContext(precision, getRoundMode(frame))));
     }
 
     protected Object divNormalSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
+        Object value = null;
+
         switch (Layouts.BIG_DECIMAL.getType(b)) {
             case NAN:
-                return createBigDecimal(frame, BigDecimalType.NAN);
+                value = BigDecimalType.NAN;
+                break;
             case NEGATIVE_ZERO:
                 switch (Layouts.BIG_DECIMAL.getValue(a).signum()) {
                     case 1:
-                        return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
+                        value = BigDecimalType.NEGATIVE_INFINITY;
+                        break;
                     case 0:
-                        return createBigDecimal(frame, BigDecimalType.NAN);
+                        value = BigDecimalType.NAN;
+                        break;
                     case -1:
-                        return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
+                        value = BigDecimalType.POSITIVE_INFINITY;
+                        break;
                 }
+                break;
             case POSITIVE_INFINITY:
                 switch (Layouts.BIG_DECIMAL.getValue(a).signum()) {
                     case 1:
                     case 0:
-                        return createBigDecimal(frame, BigDecimal.ZERO);
+                        value = BigDecimal.ZERO;
+                        break;
                     case -1:
-                        return createBigDecimal(frame, BigDecimalType.NEGATIVE_ZERO);
+                        value = BigDecimalType.NEGATIVE_ZERO;
+                        break;
                 }
+                break;
             case NEGATIVE_INFINITY:
                 switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                     case 1:
-                        return createBigDecimal(frame, BigDecimalType.NEGATIVE_ZERO);
+                        value = BigDecimalType.NEGATIVE_ZERO;
+                        break;
                     case 0:
                     case -1:
-                        return createBigDecimal(frame, BigDecimal.ZERO);
+                        value = BigDecimal.ZERO;
+                        break;
                 }
+                break;
             default:
+                CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(b));
         }
+
+        return createBigDecimal(frame, value);
     }
 
     protected Object divSpecialNormal(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
+        Object value = null;
+
         switch (Layouts.BIG_DECIMAL.getType(a)) {
             case NAN:
-                return createBigDecimal(frame, BigDecimalType.NAN);
+                value = BigDecimalType.NAN;
+                break;
             case NEGATIVE_ZERO:
                 switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                     case 1:
-                        return createBigDecimal(frame, BigDecimalType.NEGATIVE_ZERO);
+                        value = BigDecimalType.NEGATIVE_ZERO;
+                        break;
                     case 0:
-                        return createBigDecimal(frame, BigDecimalType.NAN);
+                        value = BigDecimalType.NAN;
+                        break;
                     case -1:
-                        return createBigDecimal(frame, BigDecimal.ZERO);
+                        value = BigDecimal.ZERO;
+                        break;
                 }
+                break;
             case POSITIVE_INFINITY:
                 switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                     case 1:
                     case 0:
-                        return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
+                        value = BigDecimalType.POSITIVE_INFINITY;
+                        break;
                     case -1:
-                        return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
+                        value = BigDecimalType.NEGATIVE_INFINITY;
+                        break;
                 }
+                break;
             case NEGATIVE_INFINITY:
                 switch (Layouts.BIG_DECIMAL.getValue(b).signum()) {
                     case 1:
                     case 0:
-                        return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
+                        value = BigDecimalType.NEGATIVE_INFINITY;
+                        break;
                     case -1:
-                        return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
+                        value = BigDecimalType.POSITIVE_INFINITY;
+                        break;
                 }
+                break;
             default:
+                CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(a));
         }
+
+        return createBigDecimal(frame, value);
     }
 
     protected Object divSpecialSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b, int precision) {
