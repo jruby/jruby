@@ -48,40 +48,6 @@ public abstract class BigDecimalNodes {
 
     // TODO (pitr 2015-jun-16): lazy setup when required, see https://github.com/jruby/jruby/pull/3048#discussion_r32413656
 
-    public static RoundingMode toRoundingMode(int constValue) {
-        switch (constValue) {
-            case 1:
-                return RoundingMode.UP;
-            case 2:
-                return RoundingMode.DOWN;
-            case 3:
-                return RoundingMode.HALF_UP;
-            case 4:
-                return RoundingMode.HALF_DOWN;
-            case 5:
-                return RoundingMode.CEILING;
-            case 6:
-                return RoundingMode.FLOOR;
-            case 7:
-                return RoundingMode.HALF_EVEN;
-            default:
-                throw new UnsupportedOperationException("unknown value: " + constValue);
-        }
-    }
-
-    private static int nearestBiggerMultipleOf4(int value) {
-        return ((value / 4) + 1) * 4;
-    }
-
-    public static int defaultDivisionPrecision(int precisionA, int precisionB, int limit) {
-        final int combination = nearestBiggerMultipleOf4(precisionA + precisionB) * 4;
-        return (limit > 0 && limit < combination) ? limit : combination;
-    }
-
-    public static int defaultDivisionPrecision(BigDecimal a, BigDecimal b, int limit) {
-        return defaultDivisionPrecision(a.precision(), b.precision(), limit);
-    }
-
     // TODO (pitr 21-Jun-2015): Check for missing coerce on OpNodes
 
     @CoreMethod(names = "initialize", required = 1, optional = 1)

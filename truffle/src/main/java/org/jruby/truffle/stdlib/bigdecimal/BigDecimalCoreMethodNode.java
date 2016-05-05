@@ -121,7 +121,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
         setupRoundModeCall();
         setupRoundModeIntegerCast();
 
-        return BigDecimalNodes.toRoundingMode(roundModeIntegerCast.executeCastInt(
+        return toRoundingMode(roundModeIntegerCast.executeCastInt(
                 // TODO (pitr 21-Jun-2015): read the actual constant
                 roundModeCall.call(frame, getBigDecimalClass(), "mode", null, 256)));
     }
@@ -129,4 +129,39 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
     protected DynamicObject getBigDecimalClass() {
         return coreLibrary().getBigDecimalClass();
     }
+
+    protected static RoundingMode toRoundingMode(int constValue) {
+        switch (constValue) {
+            case 1:
+                return RoundingMode.UP;
+            case 2:
+                return RoundingMode.DOWN;
+            case 3:
+                return RoundingMode.HALF_UP;
+            case 4:
+                return RoundingMode.HALF_DOWN;
+            case 5:
+                return RoundingMode.CEILING;
+            case 6:
+                return RoundingMode.FLOOR;
+            case 7:
+                return RoundingMode.HALF_EVEN;
+            default:
+                throw new UnsupportedOperationException("unknown value: " + constValue);
+        }
+    }
+
+    protected static int nearestBiggerMultipleOf4(int value) {
+        return ((value / 4) + 1) * 4;
+    }
+
+    protected static int defaultDivisionPrecision(int precisionA, int precisionB, int limit) {
+        final int combination = nearestBiggerMultipleOf4(precisionA + precisionB) * 4;
+        return (limit > 0 && limit < combination) ? limit : combination;
+    }
+
+    protected static int defaultDivisionPrecision(BigDecimal a, BigDecimal b, int limit) {
+        return defaultDivisionPrecision(a.precision(), b.precision(), limit);
+    }
+
 }
