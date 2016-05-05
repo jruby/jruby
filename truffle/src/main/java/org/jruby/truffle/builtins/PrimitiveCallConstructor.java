@@ -23,11 +23,11 @@ import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.language.literal.ObjectLiteralNode;
 
-public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstructor {
+public class PrimitiveCallConstructor implements PrimitiveConstructor {
 
     private final DynamicObject method;
 
-    public RubiniusPrimitiveCallConstructor(DynamicObject method) {
+    public PrimitiveCallConstructor(DynamicObject method) {
         assert RubyGuards.isRubyMethod(method);
         this.method = method;
     }
@@ -39,7 +39,7 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
 
     @Override
     public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID) {
-        return new CallRubiniusPrimitiveNode(context, sourceSection,
+        return new CallPrimitiveNode(context, sourceSection,
                 MethodNodesFactory.CallNodeFactory.create(context, sourceSection, new RubyNode[] {
                     new ObjectLiteralNode(context, sourceSection, method),
                     new ReadAllArgumentsNode(),

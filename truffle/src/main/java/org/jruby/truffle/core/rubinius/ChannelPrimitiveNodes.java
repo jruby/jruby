@@ -12,12 +12,13 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 
 public abstract class ChannelPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "channel_new")
-    public static abstract class ChannelNewPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "channel_new")
+    public static abstract class ChannelNewPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject channelNew() {

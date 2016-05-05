@@ -60,7 +60,8 @@ import org.joda.time.tz.FixedDateTimeZone;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.ReadTimeZoneNode;
 import org.jruby.truffle.language.RubyGuards;
@@ -81,8 +82,8 @@ import java.util.regex.Pattern;
  */
 public abstract class TimePrimitiveNodes {
 
-    @RubiniusPrimitive(name = "time_s_now")
-    public static abstract class TimeSNowPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "time_s_now")
+    public static abstract class TimeSNowPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
         @Child private ReadTimeZoneNode readTimeZoneNode;
@@ -107,8 +108,8 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_s_specific", needsSelf = false, lowerFixnumParameters = { 1 })
-    public static abstract class TimeSSpecificPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "time_s_specific", needsSelf = false, lowerFixnumParameters = { 1 })
+    public static abstract class TimeSSpecificPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private ReadTimeZoneNode readTimeZoneNode;
 
@@ -166,8 +167,8 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_seconds")
-    public static abstract class TimeSecondsPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "time_seconds")
+    public static abstract class TimeSecondsPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public long timeSeconds(DynamicObject time) {
@@ -176,8 +177,8 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_useconds")
-    public static abstract class TimeUSecondsPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "time_useconds")
+    public static abstract class TimeUSecondsPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
@@ -187,8 +188,8 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_decompose")
-    public static abstract class TimeDecomposePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "time_decompose")
+    public static abstract class TimeDecomposePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private ReadTimeZoneNode readTimeZoneNode;
 
@@ -236,8 +237,8 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_strftime")
-    public static abstract class TimeStrftimePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "time_strftime")
+    public static abstract class TimeStrftimePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(format)")
@@ -249,8 +250,8 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_s_from_array", needsSelf = true, lowerFixnumParameters = { 0 /*sec*/, 1 /* min */, 2 /* hour */, 3 /* mday */, 4 /* month */, 5 /* year */, 6 /*nsec*/, 7 /*isdst*/ })
-    public static abstract class TimeSFromArrayPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "time_s_from_array", needsSelf = true, lowerFixnumParameters = { 0 /*sec*/, 1 /* min */, 2 /* hour */, 3 /* mday */, 4 /* month */, 5 /* year */, 6 /*nsec*/, 7 /*isdst*/ })
+    public static abstract class TimeSFromArrayPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child ReadTimeZoneNode readTimeZoneNode;
         @Child AllocateObjectNode allocateObjectNode;
@@ -367,8 +368,8 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_nseconds")
-    public static abstract class TimeNSecondsPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "time_nseconds")
+    public static abstract class TimeNSecondsPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
@@ -378,8 +379,8 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_set_nseconds", lowerFixnumParameters = 0)
-    public static abstract class TimeSetNSecondsPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "time_set_nseconds", lowerFixnumParameters = 0)
+    public static abstract class TimeSetNSecondsPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
@@ -391,8 +392,8 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_utc_offset")
-    public static abstract class TimeUTCOffsetPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "time_utc_offset")
+    public static abstract class TimeUTCOffsetPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization

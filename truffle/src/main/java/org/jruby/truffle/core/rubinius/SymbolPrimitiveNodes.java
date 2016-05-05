@@ -12,15 +12,16 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Symbol} class.
  */
 public abstract class SymbolPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "symbol_is_constant")
-    public static abstract class SymbolIsConstantPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "symbol_is_constant")
+    public static abstract class SymbolIsConstantPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(symbol)")

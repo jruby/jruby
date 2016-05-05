@@ -82,7 +82,7 @@ public abstract class TruffleBootNodes {
         @Specialization(guards = "isRubyMethod(rubyMethod)")
         public Object installRubiniusPrimitive(DynamicObject rubyMethod) {
             String name = Layouts.METHOD.getMethod(rubyMethod).getName();
-            getContext().getRubiniusPrimitiveManager().installPrimitive(name, rubyMethod);
+            getContext().getPrimitiveManager().installPrimitive(name, rubyMethod);
             return nil();
         }
     }

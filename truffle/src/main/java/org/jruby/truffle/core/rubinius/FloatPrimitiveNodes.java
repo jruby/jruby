@@ -18,7 +18,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -29,8 +30,8 @@ import java.util.Locale;
  */
 public abstract class FloatPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "float_dtoa")
-    public static abstract class FloatDToAPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "float_dtoa")
+    public static abstract class FloatDToAPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
@@ -74,8 +75,8 @@ public abstract class FloatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "float_signbit_p")
-    public static abstract class FloatSignBitNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "float_signbit_p")
+    public static abstract class FloatSignBitNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public boolean floatSignBit(double value) {
@@ -85,8 +86,8 @@ public abstract class FloatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "float_round")
-    public static abstract class FloatRoundPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "float_round")
+    public static abstract class FloatRoundPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 

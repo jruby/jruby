@@ -18,7 +18,8 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
@@ -34,8 +35,8 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
  */
 public abstract class ObjectPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "object_id")
-    public abstract static class ObjectIDPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "object_id")
+    public abstract static class ObjectIDPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
 
@@ -104,8 +105,8 @@ public abstract class ObjectPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "object_infect", needsSelf = false)
-    public static abstract class ObjectInfectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "object_infect", needsSelf = false)
+    public static abstract class ObjectInfectPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private IsTaintedNode isTaintedNode;
         @Child private TaintNode taintNode;

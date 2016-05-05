@@ -11,15 +11,16 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Exception} class.
  */
 public abstract class ExceptionPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "exception_errno_error", needsSelf = false)
-    public static abstract class ExceptionErrnoErrorPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "exception_errno_error", needsSelf = false)
+    public static abstract class ExceptionErrnoErrorPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject exceptionErrnoError(DynamicObject message, int errno) {

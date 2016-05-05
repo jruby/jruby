@@ -18,17 +18,17 @@ import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ReturnID;
 
 /**
- * Node which wraps a {@link RubiniusPrimitiveNode}, providing the implicit control flow that you get with calls to
+ * Node which wraps a {@link PrimitiveNode}, providing the implicit control flow that you get with calls to
  * Rubinius primitives.
  */
-public class CallRubiniusPrimitiveNode extends RubyNode {
+public class CallPrimitiveNode extends RubyNode {
 
     @Child private RubyNode primitive;
     private final ReturnID returnID;
 
     private final ConditionProfile primitiveSucceededCondition = ConditionProfile.createBinaryProfile();
 
-    public CallRubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive, ReturnID returnID) {
+    public CallPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive, ReturnID returnID) {
         super(context, sourceSection);
         this.primitive = primitive;
         this.returnID = returnID;

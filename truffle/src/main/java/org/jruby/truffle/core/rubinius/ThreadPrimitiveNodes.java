@@ -16,7 +16,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
@@ -32,8 +33,8 @@ import static org.jruby.RubyThread.rubyPriorityToJavaPriority;
  */
 public class ThreadPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "thread_raise", unsafe = UnsafeGroup.THREADS)
-    public static abstract class ThreadRaisePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "thread_raise", unsafe = UnsafeGroup.THREADS)
+    public static abstract class ThreadRaisePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = { "isRubyThread(thread)", "isRubyException(exception)" })
         public DynamicObject raise(DynamicObject thread, final DynamicObject exception) {
@@ -59,8 +60,8 @@ public class ThreadPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "thread_get_priority", unsafe = UnsafeGroup.THREADS)
-    public static abstract class ThreadGetPriorityPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "thread_get_priority", unsafe = UnsafeGroup.THREADS)
+    public static abstract class ThreadGetPriorityPrimitiveNode extends PrimitiveArrayArgumentsNode {
         public ThreadGetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -77,8 +78,8 @@ public class ThreadPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "thread_set_priority", unsafe = UnsafeGroup.THREADS)
-    public static abstract class ThreadSetPriorityPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "thread_set_priority", unsafe = UnsafeGroup.THREADS)
+    public static abstract class ThreadSetPriorityPrimitiveNode extends PrimitiveArrayArgumentsNode {
         public ThreadSetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }

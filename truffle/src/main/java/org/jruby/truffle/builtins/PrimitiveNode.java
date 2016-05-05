@@ -16,12 +16,12 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 @GenerateNodeFactory
-public abstract class RubiniusPrimitiveNode extends RubyNode {
+public abstract class PrimitiveNode extends RubyNode {
 
-    public RubiniusPrimitiveNode() {
+    public PrimitiveNode() {
     }
 
-    public RubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+    public PrimitiveNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 

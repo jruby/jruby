@@ -23,12 +23,12 @@ import org.jruby.truffle.language.objects.SelfNode;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstructor {
+public class PrimitiveNodeConstructor implements PrimitiveConstructor {
 
-    private final RubiniusPrimitive annotation;
+    private final Primitive annotation;
     private final NodeFactory<? extends RubyNode> factory;
 
-    public RubiniusPrimitiveNodeConstructor(RubiniusPrimitive annotation, NodeFactory<? extends RubyNode> factory) {
+    public PrimitiveNodeConstructor(Primitive annotation, NodeFactory<? extends RubyNode> factory) {
         this.annotation = annotation;
         this.factory = factory;
     }
@@ -62,25 +62,25 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
         }
 
         if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
-            return new CallRubiniusPrimitiveNode(context, sourceSection,
+            return new CallPrimitiveNode(context, sourceSection,
                     factory.createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])), returnID);
         } else if (signature.size() == 1 && signature.get(0) == RubyNode[].class) {
-            return new CallRubiniusPrimitiveNode(context, sourceSection,
+            return new CallPrimitiveNode(context, sourceSection,
                     factory.createNode(new Object[]{arguments.toArray(new RubyNode[arguments.size()])}), returnID);
         } else if (signature.size() == 0) {
-            return new CallRubiniusPrimitiveNode(context, sourceSection,
+            return new CallPrimitiveNode(context, sourceSection,
                     factory.createNode(), returnID);
         } else if (signature.get(0) != RubyContext.class) {
             final Object[] varargs = new Object[arguments.size()];
             System.arraycopy(arguments.toArray(new RubyNode[arguments.size()]), 0, varargs, 0, arguments.size());
-            return new CallRubiniusPrimitiveNode(context, sourceSection, factory.createNode(varargs), returnID);
+            return new CallPrimitiveNode(context, sourceSection, factory.createNode(varargs), returnID);
         } else {
             final Object[] varargs = new Object[2 + arguments.size()];
             varargs[0] = context;
             varargs[1] = sourceSection;
             System.arraycopy(arguments.toArray(new RubyNode[arguments.size()]), 0, varargs, 2, arguments.size());
 
-            return new CallRubiniusPrimitiveNode(context, sourceSection, factory.createNode(varargs), returnID);
+            return new CallPrimitiveNode(context, sourceSection, factory.createNode(varargs), returnID);
         }
     }
 

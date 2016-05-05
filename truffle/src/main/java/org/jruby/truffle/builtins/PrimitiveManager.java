@@ -48,12 +48,12 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Manages the available Rubinius primitive calls.
  */
-public class RubiniusPrimitiveManager {
+public class PrimitiveManager {
 
-    private final ConcurrentMap<String, RubiniusPrimitiveConstructor> primitives = new ConcurrentHashMap<String, RubiniusPrimitiveConstructor>();
+    private final ConcurrentMap<String, PrimitiveConstructor> primitives = new ConcurrentHashMap<String, PrimitiveConstructor>();
 
-    public RubiniusPrimitiveConstructor getPrimitive(String name) {
-        final RubiniusPrimitiveConstructor constructor = primitives.get(name);
+    public PrimitiveConstructor getPrimitive(String name) {
+        final PrimitiveConstructor constructor = primitives.get(name);
 
         if (constructor == null) {
             return primitives.get(UndefinedPrimitiveNodes.NAME);
@@ -94,14 +94,14 @@ public class RubiniusPrimitiveManager {
         for (NodeFactory<? extends RubyNode> nodeFactory : nodeFactories) {
             final GeneratedBy generatedBy = nodeFactory.getClass().getAnnotation(GeneratedBy.class);
             final Class<?> nodeClass = generatedBy.value();
-            final RubiniusPrimitive annotation = nodeClass.getAnnotation(RubiniusPrimitive.class);
-            primitives.putIfAbsent(annotation.name(), new RubiniusPrimitiveNodeConstructor(annotation, nodeFactory));
+            final Primitive annotation = nodeClass.getAnnotation(Primitive.class);
+            primitives.putIfAbsent(annotation.name(), new PrimitiveNodeConstructor(annotation, nodeFactory));
         }
     }
 
     @TruffleBoundary
     public void installPrimitive(String name, DynamicObject method) {
         assert RubyGuards.isRubyMethod(method);
-        primitives.put(name, new RubiniusPrimitiveCallConstructor(method));
+        primitives.put(name, new PrimitiveCallConstructor(method));
     }
 }

@@ -14,7 +14,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.ReturnID;
 
-public interface RubiniusPrimitiveConstructor {
+public interface PrimitiveConstructor {
     public int getPrimitiveArity();
 
     public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID);

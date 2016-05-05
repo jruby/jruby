@@ -18,7 +18,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.FileStat;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.platform.UnsafeGroup;
@@ -29,8 +30,8 @@ public abstract class StatPrimitiveNodes {
         return Layouts.STAT.getStat(rubyStat);
     }
 
-    @RubiniusPrimitive(name = "stat_allocate", unsafe = UnsafeGroup.IO)
-    public static abstract class StatAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_allocate", unsafe = UnsafeGroup.IO)
+    public static abstract class StatAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject allocate(DynamicObject classToAllocate) {
@@ -39,8 +40,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_atime", unsafe = UnsafeGroup.IO)
-    public static abstract class StatAtimePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_atime", unsafe = UnsafeGroup.IO)
+    public static abstract class StatAtimePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object atime(
@@ -53,8 +54,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_ctime", unsafe = UnsafeGroup.IO)
-    public static abstract class StatCtimePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_ctime", unsafe = UnsafeGroup.IO)
+    public static abstract class StatCtimePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object ctime(
@@ -67,8 +68,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_mtime", unsafe = UnsafeGroup.IO)
-    public static abstract class StatMtimePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_mtime", unsafe = UnsafeGroup.IO)
+    public static abstract class StatMtimePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object mtime(
@@ -81,8 +82,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_nlink", unsafe = UnsafeGroup.IO)
-    public static abstract class NlinkPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_nlink", unsafe = UnsafeGroup.IO)
+    public static abstract class NlinkPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public int nlink(DynamicObject rubyStat) {
@@ -91,8 +92,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_rdev", unsafe = UnsafeGroup.IO)
-    public static abstract class RdevPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_rdev", unsafe = UnsafeGroup.IO)
+    public static abstract class RdevPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public long rdev(DynamicObject rubyStat) {
@@ -101,8 +102,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_blksize", unsafe = UnsafeGroup.IO)
-    public static abstract class StatBlksizePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_blksize", unsafe = UnsafeGroup.IO)
+    public static abstract class StatBlksizePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public long blksize(DynamicObject rubyStat) {
@@ -111,8 +112,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_blocks", unsafe = UnsafeGroup.IO)
-    public static abstract class StatBlocksPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_blocks", unsafe = UnsafeGroup.IO)
+    public static abstract class StatBlocksPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public long blocks(DynamicObject rubyStat) {
@@ -121,8 +122,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_dev", unsafe = UnsafeGroup.IO)
-    public static abstract class StatDevPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_dev", unsafe = UnsafeGroup.IO)
+    public static abstract class StatDevPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public long dev(DynamicObject rubyStat) {
@@ -131,8 +132,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_ino", unsafe = UnsafeGroup.IO)
-    public static abstract class StatInoPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_ino", unsafe = UnsafeGroup.IO)
+    public static abstract class StatInoPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public long ino(DynamicObject rubyStat) {
@@ -141,8 +142,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_stat", unsafe = UnsafeGroup.IO)
-    public static abstract class StatStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_stat", unsafe = UnsafeGroup.IO)
+    public static abstract class StatStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         public StatStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -168,8 +169,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_fstat", unsafe = UnsafeGroup.IO)
-    public static abstract class StatFStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_fstat", unsafe = UnsafeGroup.IO)
+    public static abstract class StatFStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         public StatFStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -190,8 +191,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_lstat", unsafe = UnsafeGroup.IO)
-    public static abstract class StatLStatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_lstat", unsafe = UnsafeGroup.IO)
+    public static abstract class StatLStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         public StatLStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -217,8 +218,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_size", unsafe = UnsafeGroup.IO)
-    public static abstract class StatSizePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_size", unsafe = UnsafeGroup.IO)
+    public static abstract class StatSizePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public long size(DynamicObject rubyStat) {
@@ -227,8 +228,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_mode", unsafe = UnsafeGroup.IO)
-    public static abstract class StatModePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_mode", unsafe = UnsafeGroup.IO)
+    public static abstract class StatModePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public int mode(DynamicObject rubyStat) {
@@ -237,8 +238,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_gid", unsafe = UnsafeGroup.IO)
-    public static abstract class StatGIDPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_gid", unsafe = UnsafeGroup.IO)
+    public static abstract class StatGIDPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public int gid(DynamicObject rubyStat) {
@@ -247,8 +248,8 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_uid", unsafe = UnsafeGroup.IO)
-    public static abstract class StatUIDPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "stat_uid", unsafe = UnsafeGroup.IO)
+    public static abstract class StatUIDPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public int uid(DynamicObject rubyStat) {

@@ -20,7 +20,8 @@ import org.joni.Matcher;
 import org.joni.Regex;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.regexp.RegexpGuards;
 import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.rope.Rope;
@@ -37,8 +38,8 @@ import org.jruby.util.RegexpSupport;
  */
 public abstract class RegexpPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "regexp_fixed_encoding_p")
-    public static abstract class RegexpFixedEncodingPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "regexp_fixed_encoding_p")
+    public static abstract class RegexpFixedEncodingPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public boolean fixedEncoding(DynamicObject regexp) {
@@ -47,9 +48,9 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "regexp_initialize", lowerFixnumParameters = 1)
+    @Primitive(name = "regexp_initialize", lowerFixnumParameters = 1)
     @ImportStatic(RegexpGuards.class)
-    public static abstract class RegexpInitializePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    public static abstract class RegexpInitializePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = {"isRegexpLiteral(regexp)", "isRubyString(pattern)"})
         public DynamicObject initializeRegexpLiteral(DynamicObject regexp, DynamicObject pattern, int options) {
@@ -71,9 +72,9 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "regexp_options")
+    @Primitive(name = "regexp_options")
     @ImportStatic(RegexpGuards.class)
-    public static abstract class RegexpOptionsPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    public static abstract class RegexpOptionsPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isInitialized(regexp)")
         public int options(DynamicObject regexp) {
@@ -88,8 +89,8 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "regexp_propagate_last_match")
-    public static abstract class RegexpPropagateLastMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "regexp_propagate_last_match")
+    public static abstract class RegexpPropagateLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject propagateLastMatch(DynamicObject regexpClass) {
@@ -99,9 +100,9 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
+    @Primitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
     @ImportStatic(RegexpGuards.class)
-    public static abstract class RegexpSearchRegionPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    public static abstract class RegexpSearchRegionPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = {"!isInitialized(regexp)", "isRubyString(string)"})
         public Object searchRegionNotInitialized(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
@@ -139,8 +140,8 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "regexp_set_last_match")
-    public static abstract class RegexpSetLastMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "regexp_set_last_match")
+    public static abstract class RegexpSetLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object setLastMatchData(DynamicObject regexpClass, Object matchData) {
@@ -156,8 +157,8 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "regexp_set_block_last_match")
-    public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "regexp_set_block_last_match")
+    public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject setBlockLastMatch(DynamicObject regexpClass) {

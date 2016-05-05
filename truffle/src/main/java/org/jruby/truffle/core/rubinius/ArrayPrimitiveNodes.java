@@ -10,12 +10,13 @@
 package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 
 public abstract class ArrayPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "tuple_copy_from")
-    public static abstract class TupleCopyFromPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "tuple_copy_from")
+    public static abstract class TupleCopyFromPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object tupleCopyFrom() {

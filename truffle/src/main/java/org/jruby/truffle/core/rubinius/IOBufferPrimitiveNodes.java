@@ -46,7 +46,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
@@ -61,8 +62,8 @@ public abstract class IOBufferPrimitiveNodes {
     private static final int IOBUFFER_SIZE = 32768;
     private static final int STACK_BUF_SZ = 8192;
 
-    @RubiniusPrimitive(name = "iobuffer_allocate", unsafe = UnsafeGroup.IO)
-    public static abstract class IOBufferAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "iobuffer_allocate", unsafe = UnsafeGroup.IO)
+    public static abstract class IOBufferAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
 
@@ -82,8 +83,8 @@ public abstract class IOBufferPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "iobuffer_unshift", lowerFixnumParameters = 1, unsafe = UnsafeGroup.IO)
-    public static abstract class IOBufferUnshiftPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "iobuffer_unshift", lowerFixnumParameters = 1, unsafe = UnsafeGroup.IO)
+    public static abstract class IOBufferUnshiftPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(string)")
         public int unshift(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject string, int startPosition) {
@@ -110,8 +111,8 @@ public abstract class IOBufferPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "iobuffer_fill", unsafe = UnsafeGroup.IO)
-    public static abstract class IOBufferFillPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "iobuffer_fill", unsafe = UnsafeGroup.IO)
+    public static abstract class IOBufferFillPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public int fill(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject io) {

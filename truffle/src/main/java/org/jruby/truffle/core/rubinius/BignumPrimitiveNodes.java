@@ -14,7 +14,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 
 import java.math.BigInteger;
 
@@ -23,8 +24,8 @@ import java.math.BigInteger;
  */
 public abstract class BignumPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "bignum_compare")
-    public abstract static class BignumCompareNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "bignum_compare")
+    public abstract static class BignumCompareNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public int compare(DynamicObject a, long b) {
@@ -57,8 +58,8 @@ public abstract class BignumPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "bignum_pow")
-    public static abstract class BignumPowPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "bignum_pow")
+    public static abstract class BignumPowPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         private final ConditionProfile negativeProfile = ConditionProfile.createBinaryProfile();
 

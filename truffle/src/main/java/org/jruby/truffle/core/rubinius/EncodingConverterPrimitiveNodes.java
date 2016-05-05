@@ -22,7 +22,8 @@ import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.encoding.EncodingConverterNodes;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
@@ -44,8 +45,8 @@ import static org.jruby.truffle.core.string.StringOperations.rope;
  */
 public abstract class EncodingConverterPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "encoding_converter_allocate")
-    public static abstract class EncodingConverterAllocateNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "encoding_converter_allocate")
+    public static abstract class EncodingConverterAllocateNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object encodingConverterAllocate(DynamicObject encodingConverterClass, NotProvided unused1, NotProvided unused2) {
@@ -54,8 +55,8 @@ public abstract class EncodingConverterPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "encoding_converter_primitive_convert")
-    public static abstract class PrimitiveConvertNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "encoding_converter_primitive_convert")
+    public static abstract class PrimitiveConvertNode extends PrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
 
@@ -170,8 +171,8 @@ public abstract class EncodingConverterPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "encoding_converter_putback")
-    public static abstract class EncodingConverterPutbackNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "encoding_converter_putback")
+    public static abstract class EncodingConverterPutbackNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject encodingConverterPutback(DynamicObject encodingConverter, int maxBytes) {
@@ -211,8 +212,8 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "encoding_converter_last_error")
-    public static abstract class EncodingConverterLastErrorNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "encoding_converter_last_error")
+    public static abstract class EncodingConverterLastErrorNode extends PrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode newLookupTableNode;
         @Child private CallDispatchHeadNode lookupTableWriteNode;
@@ -266,8 +267,8 @@ public abstract class EncodingConverterPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "encoding_converter_primitive_errinfo")
-    public static abstract class EncodingConverterErrinfoNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "encoding_converter_primitive_errinfo")
+    public static abstract class EncodingConverterErrinfoNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object encodingConverterLastError(DynamicObject encodingConverter) {

@@ -12,14 +12,15 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 
 import java.lang.ref.WeakReference;
 
 public abstract class WeakRefPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "weakref_new", needsSelf = false)
-    public static abstract class WeakRefNewPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "weakref_new", needsSelf = false)
+    public static abstract class WeakRefNewPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject weakRefNew(Object object) {
@@ -28,8 +29,8 @@ public abstract class WeakRefPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "weakref_set_object")
-    public static abstract class WeakRefSetObjectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "weakref_set_object")
+    public static abstract class WeakRefSetObjectPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object weakRefSetObject(DynamicObject weakRef, Object object) {
@@ -39,8 +40,8 @@ public abstract class WeakRefPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "weakref_object")
-    public static abstract class WeakRefObjectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "weakref_object")
+    public static abstract class WeakRefObjectPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object weakRefObject(DynamicObject weakRef) {

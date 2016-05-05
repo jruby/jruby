@@ -10,13 +10,14 @@
 package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.platform.RubiniusTypes;
 
 public abstract class NativeFunctionPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "nativefunction_type_size", needsSelf = false)
-    public static abstract class NativeFunctionTypeSizePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "nativefunction_type_size", needsSelf = false)
+    public static abstract class NativeFunctionTypeSizePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public long typeSize(int type) {

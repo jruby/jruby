@@ -45,7 +45,8 @@ import jnr.constants.platform.Errno;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusPrimitive;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
@@ -56,8 +57,8 @@ import java.io.File;
 
 public abstract class DirPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "dir_allocate")
-    public static abstract class DirAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "dir_allocate")
+    public static abstract class DirAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
 
@@ -73,8 +74,8 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_open", unsafe = UnsafeGroup.IO)
-    public static abstract class DirOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "dir_open", unsafe = UnsafeGroup.IO)
+    public static abstract class DirOpenPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(path)", "isNil(encoding)"})
@@ -108,8 +109,8 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_read", unsafe = UnsafeGroup.IO)
-    public static abstract class DirReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "dir_read", unsafe = UnsafeGroup.IO)
+    public static abstract class DirReadPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
@@ -136,8 +137,8 @@ public abstract class DirPrimitiveNodes {
     }
 
 
-    @RubiniusPrimitive(name = "dir_control", unsafe = UnsafeGroup.IO)
-    public static abstract class DirControlPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "dir_control", unsafe = UnsafeGroup.IO)
+    public static abstract class DirControlPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
@@ -158,8 +159,8 @@ public abstract class DirPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "dir_close", unsafe = UnsafeGroup.IO)
-    public static abstract class DirClosePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "dir_close", unsafe = UnsafeGroup.IO)
+    public static abstract class DirClosePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
