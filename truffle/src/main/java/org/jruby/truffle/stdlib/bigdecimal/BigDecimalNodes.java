@@ -991,48 +991,67 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "sign")
     public abstract static class SignNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile positive = ConditionProfile.createBinaryProfile();
         @Child private GetIntegerConstantNode sign;
-
-        public SignNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            sign = GetIntegerConstantNodeGen.create(context, sourceSection, null, null);
-        }
 
         @Specialization(guards = {
                 "isNormal(value)",
                 "isNormalZero(value)"
         })
         public int signNormalZero(VirtualFrame frame, DynamicObject value) {
-            return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_POSITIVE_ZERO");
+            return getConstant(frame, "SIGN_POSITIVE_ZERO");
         }
 
         @Specialization(guards = {
                 "isNormal(value)",
                 "!isNormalZero(value)"
         })
-        public int signNormal(VirtualFrame frame, DynamicObject value) {
-            if (positive.profile(Layouts.BIG_DECIMAL.getValue(value).signum() > 0)) {
-                return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_POSITIVE_FINITE");
+        public int signNormal(
+                VirtualFrame frame,
+                DynamicObject value,
+                @Cached("createBinaryProfile()") ConditionProfile positiveProfile) {
+            final String name;
+
+            if (positiveProfile.profile(Layouts.BIG_DECIMAL.getValue(value).signum() > 0)) {
+                name = "SIGN_POSITIVE_FINITE";
             } else {
-                return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_NEGATIVE_FINITE");
+                name = "SIGN_NEGATIVE_FINITE";
             }
+
+            return getConstant(frame, name);
         }
 
         @Specialization(guards = "!isNormal(value)")
         public int signSpecial(VirtualFrame frame, DynamicObject value) {
+            final String name;
+
             switch (Layouts.BIG_DECIMAL.getType(value)) {
                 case NEGATIVE_INFINITY:
-                    return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_NEGATIVE_INFINITE");
+                    name = "SIGN_NEGATIVE_INFINITE";
+                    break;
                 case POSITIVE_INFINITY:
-                    return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_POSITIVE_INFINITE");
+                    name = "SIGN_POSITIVE_INFINITE";
+                    break;
                 case NEGATIVE_ZERO:
-                    return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_NEGATIVE_ZERO");
+                    name = "SIGN_NEGATIVE_ZERO";
+                    break;
                 case NAN:
-                    return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_NaN");
+                    name = "SIGN_NaN";
+                    break;
                 default:
+                    CompilerDirectives.transferToInterpreter();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
             }
+
+            return getConstant(frame, name);
+        }
+
+        private int getConstant(VirtualFrame frame, String name) {
+            if (sign == null) {
+                CompilerDirectives.transferToInterpreter();
+                sign = insert(GetIntegerConstantNodeGen.create(null, null, null, null));
+            }
+
+            return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), name);
         }
 
     }
