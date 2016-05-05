@@ -21,7 +21,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
 import org.jruby.truffle.core.ReturnEnumeratorIfNoBlockNode;
-import org.jruby.truffle.core.UnsafeNode;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.module.ModuleOperations;

@@ -13,7 +13,7 @@ import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
-import org.jruby.truffle.core.UnsafeNode;
+import org.jruby.truffle.builtins.UnsafeNode;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.RubyNode;
