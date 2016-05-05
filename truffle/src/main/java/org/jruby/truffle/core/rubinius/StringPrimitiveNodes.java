@@ -81,7 +81,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.cast.ArrayAttributeCastNodeGen;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.encoding.EncodingNodes;

@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.FrameOnStackMarker;

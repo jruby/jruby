@@ -19,7 +19,7 @@ import com.oracle.truffle.api.profiles.LoopConditionProfile;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;

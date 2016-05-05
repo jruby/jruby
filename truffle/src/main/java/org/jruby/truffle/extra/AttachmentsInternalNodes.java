@@ -16,7 +16,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 
 @CoreClass(name = "Truffle::Attachments::Internal")
 public abstract class AttachmentsInternalNodes {

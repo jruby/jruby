@@ -18,7 +18,7 @@ import jnr.posix.Timeval;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.InterruptMode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.core.proc.ProcOperations;

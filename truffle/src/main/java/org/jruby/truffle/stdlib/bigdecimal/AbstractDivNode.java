@@ -14,7 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 
 import java.math.BigDecimal;
 import java.math.MathContext;

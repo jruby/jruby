@@ -37,7 +37,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.CoreSourceSection;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayNodesFactory.MaxBlockNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.MinBlockNodeFactory;

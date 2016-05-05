@@ -17,7 +17,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.FileStat;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.platform.UnsafeGroup;

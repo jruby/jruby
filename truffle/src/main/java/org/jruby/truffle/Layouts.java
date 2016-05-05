@@ -7,9 +7,11 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle;
 
 import com.oracle.truffle.api.object.HiddenKey;
+import org.jruby.truffle.core.HandleLayout;
+import org.jruby.truffle.core.HandleLayoutImpl;
 import org.jruby.truffle.core.array.ArrayLayout;
 import org.jruby.truffle.core.array.ArrayLayoutImpl;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;

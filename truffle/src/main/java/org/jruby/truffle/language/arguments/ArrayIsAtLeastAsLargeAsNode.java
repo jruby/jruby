@@ -11,7 +11,7 @@ package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
 public class ArrayIsAtLeastAsLargeAsNode extends RubyNode {

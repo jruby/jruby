@@ -22,7 +22,7 @@ import jnr.ffi.provider.MemoryManager;
 import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.numeric.BignumOperations;
