@@ -38,6 +38,9 @@ class MavenProject(mx.Project):
     def archive_prefix(self):
         return self.prefix
 
+    def annotation_processors(self):
+        return []
+
 
 class MavenBuildTask(mx.BuildTask):
     def __init__(self, project, args, vmbuild, vm):
