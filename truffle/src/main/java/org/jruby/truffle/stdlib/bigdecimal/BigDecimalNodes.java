@@ -678,7 +678,7 @@ public abstract class BigDecimalNodes {
     })
     public abstract static class PowerNode extends BigDecimalCoreMethodNode {
 
-        public abstract Object executePower(VirtualFrame frame, DynamicObject a, Object exponent, Object precision);
+        public abstract Object executePower(VirtualFrame frame, Object a, Object exponent, Object precision);
 
         @TruffleBoundary
         private BigDecimal power(BigDecimal value, int exponent, MathContext mathContext) {
@@ -741,6 +741,7 @@ public abstract class BigDecimalNodes {
                 VirtualFrame frame,
                 DynamicObject a,
                 int exponent,
+                Object unusedPrecision,
                 @Cached("create()") BranchProfile nanProfile,
                 @Cached("create()") BranchProfile posInfinityProfile,
                 @Cached("create()") BranchProfile negInfinityProfile,
