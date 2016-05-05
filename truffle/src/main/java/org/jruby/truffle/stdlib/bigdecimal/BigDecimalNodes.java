@@ -983,12 +983,7 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "!isNormal(value)")
         public boolean zeroSpecial(DynamicObject value) {
-            switch (Layouts.BIG_DECIMAL.getType(value)) {
-                case NEGATIVE_ZERO:
-                    return true;
-                default:
-                    return false;
-            }
+            return Layouts.BIG_DECIMAL.getType(value) == BigDecimalType.NEGATIVE_ZERO;
         }
     }
 
