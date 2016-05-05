@@ -17,10 +17,4 @@ import org.jruby.truffle.language.RubyNode;
 @NodeChild(value = "arguments", type = RubyNode[].class)
 public abstract class BigDecimalCoreMethodArrayArgumentsNode extends BigDecimalCoreMethodNode {
 
-    public BigDecimalCoreMethodArrayArgumentsNode() {
-    }
-
-    public BigDecimalCoreMethodArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 }

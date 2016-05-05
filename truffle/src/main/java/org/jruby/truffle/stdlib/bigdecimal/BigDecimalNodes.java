@@ -1347,10 +1347,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = { "to_i", "to_int" })
     public abstract static class ToINode extends BigDecimalCoreMethodArrayArgumentsNode {
 
-        public ToINode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         private BigInteger toBigInteger(BigDecimal bigDecimal) {
             return bigDecimal.toBigInteger();
         }
