@@ -1150,8 +1150,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "round", optional = 2)
     public abstract static class RoundNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
-        @Child private FixnumOrBignumNode fixnumOrBignumNode;
-
         @TruffleBoundary
         private BigDecimal round(DynamicObject value, int digit, RoundingMode roundingMode) {
             final BigDecimal valueBigDecimal = Layouts.BIG_DECIMAL.getValue(value);
@@ -1162,18 +1160,18 @@ public abstract class BigDecimalNodes {
                         setScale(0, roundingMode).
                         movePointLeft(digit);
             } else {
-                // do not perform rounding when not required;
+                // Do not perform rounding when not required
                 return valueBigDecimal;
             }
         }
 
         @Specialization(guards = "isNormal(value)")
-        public Object round(VirtualFrame frame, DynamicObject value, NotProvided digit, NotProvided roundingMode) {
-            if (fixnumOrBignumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                fixnumOrBignumNode = insert(FixnumOrBignumNode.create(getContext(), getSourceSection()));
-            }
-
+        public Object round(
+                VirtualFrame frame,
+                DynamicObject value,
+                NotProvided digit,
+                NotProvided roundingMode,
+                @Cached("new()") FixnumOrBignumNode fixnumOrBignumNode) {
             return fixnumOrBignumNode.fixnumOrBignum(round(value, 0, getRoundMode(frame)));
         }
 
@@ -1188,28 +1186,30 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "!isNormal(value)")
-        public Object roundSpecial(VirtualFrame frame, DynamicObject value, NotProvided precision, Object unusedRoundingMode) {
-            if (fixnumOrBignumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                fixnumOrBignumNode = insert(FixnumOrBignumNode.create(getContext(), getSourceSection()));
-            }
-
+        public Object roundSpecial(
+                DynamicObject value,
+                NotProvided precision,
+                Object unusedRoundingMode,
+                @Cached("new()") FixnumOrBignumNode fixnumOrBignumNode,
+                @Cached("create()") BranchProfile negInfinityProfile,
+                @Cached("create()") BranchProfile posInfinityProfile,
+                @Cached("create()") BranchProfile negZeroProfile,
+                @Cached("create()") BranchProfile nanProfile) {
             switch (Layouts.BIG_DECIMAL.getType(value)) {
                 case NEGATIVE_INFINITY:
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreExceptions().
-                            floatDomainError("Computation results to '-Infinity'", this));
+                    negInfinityProfile.enter();
+                    throw new RaiseException(coreExceptions().floatDomainErrorResultsToNegInfinity(this));
                 case POSITIVE_INFINITY:
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreExceptions().
-                            floatDomainError("Computation results to 'Infinity'", this));
+                    posInfinityProfile.enter();
+                    throw new RaiseException(coreExceptions().floatDomainErrorResultsToInfinity(this));
                 case NEGATIVE_ZERO:
+                    negZeroProfile.enter();
                     return fixnumOrBignumNode.fixnumOrBignum(Layouts.BIG_DECIMAL.getValue(value));
                 case NAN:
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreExceptions().
-                            floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+                    nanProfile.enter();
+                    throw new RaiseException(coreExceptions().floatDomainErrorResultsToNaN(this));
                 default:
+                    CompilerDirectives.transferToInterpreter();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
 
             }
@@ -1219,7 +1219,7 @@ public abstract class BigDecimalNodes {
                 "!isNormal(value)",
                 "wasProvided(precision)"
         })
-        public Object roundSpecial(VirtualFrame frame, DynamicObject value, Object precision, Object unusedRoundingMode) {
+        public Object roundSpecial(DynamicObject value, Object precision, Object unusedRoundingMode) {
             return value;
         }
     }

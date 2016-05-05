@@ -28,6 +28,10 @@ public class FixnumOrBignumNode extends RubyBaseNode {
         return new FixnumOrBignumNode(context, sourceSection);
     }
 
+    public FixnumOrBignumNode() {
+        this(null, null);
+    }
+
     public FixnumOrBignumNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
