@@ -377,7 +377,7 @@ public abstract class ArrayNodes {
             return executeSet(frame, array, index, value, unused);
         }
 
-        // array[start, end] = object
+        // array[start, length] = object
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "strategy.specializesFor(value)" }, limit = "ARRAY_STRATEGIES")
         public Object setObject(VirtualFrame frame, DynamicObject array, int start, int length, Object value,
@@ -396,7 +396,7 @@ public abstract class ArrayNodes {
             return executeSet(frame, array, start, length, ary);
         }
 
-        // array[start, end] = other_array, with length == other_array.size
+        // array[start, length] = other_array, with length == other_array.size
 
         @Specialization(guards = {
                 "isRubyArray(replacement)",
@@ -413,7 +413,7 @@ public abstract class ArrayNodes {
             return replacement;
         }
 
-        // array[start, end] = other_array, with length != other_array.size
+        // array[start, length] = other_array, with length != other_array.size
 
         @Specialization(guards = {
                 "isRubyArray(replacement)",
@@ -467,7 +467,7 @@ public abstract class ArrayNodes {
             return replacement;
         }
 
-        // array[start, end] = object_or_array with non-int start or end
+        // array[start, length] = object_or_array with non-int start or length
 
         @Specialization(guards = { "!isInteger(startObject) || !isInteger(lengthObject)", "wasProvided(value)" })
         public Object setStartLengthNotInt(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, Object value,
