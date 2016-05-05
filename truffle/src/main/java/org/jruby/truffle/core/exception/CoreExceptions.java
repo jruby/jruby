@@ -296,6 +296,11 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject typeErrorIsNotAClassModule(Object value, Node currentNode) {
+        return typeError(String.format("%s is not a class/module", value), currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject typeErrorNoImplicitConversion(Object from, String to, Node currentNode) {
         return typeError(String.format("no implicit conversion of %s into %s", Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(from)).getName(), to), currentNode);
     }

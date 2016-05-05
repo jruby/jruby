@@ -1114,7 +1114,9 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final RubyNode ret = new WriteConstantNode(context, sourceSection, node.getName(), moduleNode, rhs);
+        final RubyNode ret = new WriteConstantNode(node.getName(), moduleNode, rhs);
+        ret.unsafeSetSourceSection(sourceSection);
+
         return addNewlineIfNeeded(node, ret);
     }
 
