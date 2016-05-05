@@ -784,8 +784,6 @@ public abstract class BigDecimalNodes {
     })
     public abstract static class SqrtNode extends BigDecimalCoreMethodNode {
 
-        private final ConditionProfile positiveValueProfile = ConditionProfile.createBinaryProfile();
-
         public abstract Object executeSqrt(VirtualFrame frame, DynamicObject value, int precision);
 
         @TruffleBoundary
@@ -804,31 +802,50 @@ public abstract class BigDecimalNodes {
             return executeSqrt(frame, a, 1);
         }
 
-        @Specialization(guards = { "isNormal(a)", "precision > 0" })
-        public Object sqrt(VirtualFrame frame, DynamicObject a, int precision) {
+        @Specialization(guards = {
+                "isNormal(a)",
+                "precision > 0"
+        })
+        public Object sqrt(
+                VirtualFrame frame,
+                DynamicObject a,
+                int precision,
+                @Cached("createBinaryProfile()") ConditionProfile positiveValueProfile) {
             final BigDecimal valueBigDecimal = Layouts.BIG_DECIMAL.getValue(a);
             if (positiveValueProfile.profile(valueBigDecimal.signum() >= 0)) {
                 return createBigDecimal(frame, sqrt(valueBigDecimal, new MathContext(precision, getRoundMode(frame))));
             } else {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().floatDomainError("(VpSqrt) SQRT(negative value)", this));
+                throw new RaiseException(coreExceptions().floatDomainErrorSqrtNegative(this));
             }
         }
 
-        @Specialization(guards = { "!isNormal(a)", "precision > 0" })
-        public Object sqrtSpecial(VirtualFrame frame, DynamicObject a, int precision) {
+        @Specialization(guards = {
+                "!isNormal(a)",
+                "precision > 0"
+        })
+        public Object sqrtSpecial(
+                VirtualFrame frame,
+                DynamicObject a,
+                int precision,
+                @Cached("create()") BranchProfile nanProfile,
+                @Cached("create()") BranchProfile posInfProfile,
+                @Cached("create()") BranchProfile negInfProfile,
+                @Cached("create()") BranchProfile negZeroProfile) {
             switch (Layouts.BIG_DECIMAL.getType(a)) {
                 case NAN:
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreExceptions().floatDomainError("(VpSqrt) SQRT(NaN value)", this));
+                    nanProfile.enter();
+                    throw new RaiseException(coreExceptions().floatDomainErrorSqrtNegative(this));
                 case POSITIVE_INFINITY:
+                    posInfProfile.enter();
                     return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
                 case NEGATIVE_INFINITY:
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreExceptions().floatDomainError("(VpSqrt) SQRT(negative value)", this));
+                    negInfProfile.enter();
+                    throw new RaiseException(coreExceptions().floatDomainErrorSqrtNegative(this));
                 case NEGATIVE_ZERO:
+                    negZeroProfile.enter();
                     return createBigDecimal(frame, sqrt(BigDecimal.ZERO, new MathContext(precision, getRoundMode(frame))));
                 default:
+                    CompilerDirectives.transferToInterpreter();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(a));
             }
         }

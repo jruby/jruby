@@ -528,6 +528,10 @@ public class CoreExceptions {
         return floatDomainError("Computation results to 'Infinity'", currentNode);
     }
 
+    public DynamicObject floatDomainErrorSqrtNegative(Node currentNode) {
+        return floatDomainError("(VpSqrt) SQRT(negative value)", currentNode);
+    }
+
     // IOError
 
     @TruffleBoundary
