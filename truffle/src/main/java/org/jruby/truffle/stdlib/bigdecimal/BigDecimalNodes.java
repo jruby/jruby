@@ -1113,19 +1113,36 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "!isNormal(value)")
-        public Object absSpecial(VirtualFrame frame, DynamicObject value) {
+        public Object absSpecial(
+                VirtualFrame frame,
+                DynamicObject value,
+                @Cached("create()") BranchProfile negInfProfile,
+                @Cached("create()") BranchProfile negZeroProfile,
+                @Cached("create()") BranchProfile posInfProfile) {
             final BigDecimalType type = Layouts.BIG_DECIMAL.getType(value);
+
+            final Object result;
+
             switch (type) {
                 case NEGATIVE_INFINITY:
-                    return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
+                    negInfProfile.enter();
+                    result = BigDecimalType.POSITIVE_INFINITY;
+                    break;
                 case NEGATIVE_ZERO:
-                    return createBigDecimal(frame, BigDecimal.ZERO);
+                    negZeroProfile.enter();
+                    result = BigDecimal.ZERO;
+                    break;
                 case POSITIVE_INFINITY:
                 case NAN:
-                    return createBigDecimal(frame, type);
+                    posInfProfile.enter();
+                    result = type;
+                    break;
                 default:
+                    CompilerDirectives.transferToInterpreter();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + type);
             }
+
+            return createBigDecimal(frame, result);
         }
 
     }
