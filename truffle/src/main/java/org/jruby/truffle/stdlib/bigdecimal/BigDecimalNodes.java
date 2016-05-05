@@ -38,9 +38,9 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
 
@@ -1297,17 +1297,27 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "!isNormal(value)")
-        public double toFSpecial(DynamicObject value) {
+        public double toFSpecial(
+                DynamicObject value,
+                @Cached("create()") BranchProfile negInfinityProfile,
+                @Cached("create()") BranchProfile posInfinityProfile,
+                @Cached("create()") BranchProfile negZeroProfile,
+                @Cached("create()") BranchProfile nanProfile) {
             switch (Layouts.BIG_DECIMAL.getType(value)) {
                 case NEGATIVE_INFINITY:
+                    negInfinityProfile.enter();
                     return Double.NEGATIVE_INFINITY;
                 case POSITIVE_INFINITY:
+                    posInfinityProfile.enter();
                     return Double.POSITIVE_INFINITY;
                 case NEGATIVE_ZERO:
-                    return 0.0D;
+                    negZeroProfile.enter();
+                    return 0.0;
                 case NAN:
+                    nanProfile.enter();
                     return Double.NaN;
                 default:
+                    CompilerDirectives.transferToInterpreter();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
             }
         }
@@ -1324,6 +1334,7 @@ public abstract class BigDecimalNodes {
             return createString(StringOperations.encodeRope(Layouts.BIG_DECIMAL.getValue(value).abs().stripTrailingZeros().unscaledValue().toString(), UTF8Encoding.INSTANCE));
         }
 
+        @TruffleBoundary
         @Specialization(guards = "!isNormal(value)")
         public Object unscaledSpecial(DynamicObject value) {
             final String type = Layouts.BIG_DECIMAL.getType(value).getRepresentation();
@@ -1336,38 +1347,37 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = { "to_i", "to_int" })
     public abstract static class ToINode extends BigDecimalCoreMethodArrayArgumentsNode {
 
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
+        }
+
+        private BigInteger toBigInteger(BigDecimal bigDecimal) {
+            return bigDecimal.toBigInteger();
+        }
+
+        @Specialization(guards = "isNormal(value)")
+        public Object toINormal(
+                DynamicObject value,
+                @Cached("new()") FixnumOrBignumNode fixnumOrBignumNode) {
+            return fixnumOrBignumNode.fixnumOrBignum(toBigInteger(Layouts.BIG_DECIMAL.getValue(value)));
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isNormal(value)")
-        public Object toINormal(DynamicObject value) {
-            return fixnumOrBignum.fixnumOrBignum(Layouts.BIG_DECIMAL.getValue(value).toBigInteger());
-        }
-
         @Specialization(guards = "!isNormal(value)")
-        public int toISpecial(DynamicObject value) {
+        public int toISpecial(
+                DynamicObject value) {
             final BigDecimalType type = Layouts.BIG_DECIMAL.getType(value);
             switch (type) {
                 case NEGATIVE_INFINITY:
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreExceptions().
-                            floatDomainError(type.getRepresentation(), this));
+                    throw new RaiseException(coreExceptions().floatDomainError(type.getRepresentation(), this));
                 case POSITIVE_INFINITY:
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreExceptions().
-                            floatDomainError(type.getRepresentation(), this));
+                    throw new RaiseException(coreExceptions().floatDomainError(type.getRepresentation(), this));
                 case NAN:
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreExceptions().
-                            floatDomainError(type.getRepresentation(), this));
+                    throw new RaiseException(coreExceptions().floatDomainError(type.getRepresentation(), this));
                 case NEGATIVE_ZERO:
                     return 0;
                 default:
+                    CompilerDirectives.transferToInterpreter();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
             }
         }
