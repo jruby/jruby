@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
@@ -677,35 +678,49 @@ public abstract class BigDecimalNodes {
     })
     public abstract static class PowerNode extends BigDecimalCoreMethodNode {
 
-        private final ConditionProfile positiveExponentProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile zeroExponentProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile zeroProfile = ConditionProfile.createBinaryProfile();
+        public abstract Object executePower(VirtualFrame frame, DynamicObject a, Object exponent, Object precision);
 
         @TruffleBoundary
         private BigDecimal power(BigDecimal value, int exponent, MathContext mathContext) {
             return value.pow(exponent, mathContext);
         }
 
-        @Specialization(guards = "isNormal(a)")
-        public Object power(VirtualFrame frame, DynamicObject a, int exponent, NotProvided precision) {
-            return power(frame, a, exponent, getLimit(frame));
+        @TruffleBoundary
+        private int getDigits(BigDecimal value) {
+            return value.abs().unscaledValue().toString().length();
         }
 
         @Specialization(guards = "isNormal(a)")
-        public Object power(VirtualFrame frame, DynamicObject a, int exponent, int precision) {
+        public Object power(VirtualFrame frame, DynamicObject a, int exponent, NotProvided precision) {
+            return executePower(frame, a, exponent, getLimit(frame));
+        }
+
+        @Specialization(guards = "isNormal(a)")
+        public Object power(
+                VirtualFrame frame,
+                DynamicObject a,
+                int exponent,
+                int precision,
+                @Cached("createBinaryProfile()") ConditionProfile positiveExponentProfile,
+                @Cached("createBinaryProfile()") ConditionProfile zeroProfile,
+                @Cached("createBinaryProfile()") ConditionProfile zeroExponentProfile) {
             final BigDecimal aBigDecimal = Layouts.BIG_DECIMAL.getValue(a);
             final boolean positiveExponent = positiveExponentProfile.profile(exponent >= 0);
 
             if (zeroProfile.profile(aBigDecimal.compareTo(BigDecimal.ZERO) == 0)) {
+                final Object value;
+
                 if (positiveExponent) {
                     if (zeroExponentProfile.profile(exponent == 0)) {
-                        return createBigDecimal(frame, BigDecimal.ONE);
+                        value = BigDecimal.ONE;
                     } else {
-                        return createBigDecimal(frame, BigDecimal.ZERO);
+                        value = BigDecimal.ZERO;
                     }
                 } else {
-                    return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
+                    value = BigDecimalType.POSITIVE_INFINITY;
                 }
+
+                return createBigDecimal(frame, value);
             } else {
                 final int newPrecision;
 
@@ -721,26 +736,44 @@ public abstract class BigDecimalNodes {
             }
         }
 
-        @TruffleBoundary
-        private int getDigits(BigDecimal value) {
-            return value.abs().unscaledValue().toString().length();
-        }
-
         @Specialization(guards = "!isNormal(a)")
-        public Object power(VirtualFrame frame, DynamicObject a, int exponent, Object unusedPrecision) {
+        public Object power(
+                VirtualFrame frame,
+                DynamicObject a,
+                int exponent,
+                @Cached("create()") BranchProfile nanProfile,
+                @Cached("create()") BranchProfile posInfinityProfile,
+                @Cached("create()") BranchProfile negInfinityProfile,
+                @Cached("create()") BranchProfile negZeroProfile) {
+            final Object value;
+
             switch (Layouts.BIG_DECIMAL.getType(a)) {
                 case NAN:
-                    return createBigDecimal(frame, BigDecimalType.NAN);
+                    nanProfile.enter();
+                    value = BigDecimalType.NAN;
+                    break;
                 case POSITIVE_INFINITY:
-                    return createBigDecimal(frame, exponent >= 0 ? BigDecimalType.POSITIVE_INFINITY : BigDecimal.ZERO);
+                    posInfinityProfile.enter();
+                    value = exponent >= 0 ? BigDecimalType.POSITIVE_INFINITY : BigDecimal.ZERO;
+                    break;
                 case NEGATIVE_INFINITY:
-                    return createBigDecimal(frame,
-                            Integer.signum(exponent) == 1 ? (exponent % 2 == 0 ? BigDecimalType.POSITIVE_INFINITY : BigDecimalType.NEGATIVE_INFINITY) : BigDecimal.ZERO);
+                    negInfinityProfile.enter();
+                    value = Integer.signum(exponent) == 1
+                            ? (exponent % 2 == 0
+                                ? BigDecimalType.POSITIVE_INFINITY
+                                : BigDecimalType.NEGATIVE_INFINITY)
+                            : BigDecimal.ZERO;
+                    break;
                 case NEGATIVE_ZERO:
-                    return createBigDecimal(frame, Integer.signum(exponent) == 1 ? BigDecimal.ZERO : BigDecimalType.NAN);
+                    negZeroProfile.enter();
+                    value = Integer.signum(exponent) == 1 ? BigDecimal.ZERO : BigDecimalType.NAN;
+                    break;
                 default:
+                    CompilerDirectives.transferToInterpreter();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(a));
             }
+
+            return createBigDecimal(frame, value);
         }
     }
 
