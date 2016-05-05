@@ -575,15 +575,19 @@ public abstract class BigDecimalNodes {
                 "isRubyBigDecimal(b)",
                 "!isNormal(a) || !isNormal(b)"
         })
-        public Object remainderSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b) {
+        public Object remainderSpecial(
+                VirtualFrame frame,
+                DynamicObject a,
+                DynamicObject b,
+                @Cached("createBinaryProfile()") ConditionProfile zeroProfile) {
             final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
             final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-            if (aType == BigDecimalType.NEGATIVE_ZERO && bType == BigDecimalType.NORMAL) {
+            if (zeroProfile.profile(aType == BigDecimalType.NEGATIVE_ZERO && bType == BigDecimalType.NORMAL)) {
                 return createBigDecimal(frame, BigDecimal.ZERO);
+            } else {
+                return createBigDecimal(frame, BigDecimalType.NAN);
             }
-
-            return createBigDecimal(frame, BigDecimalType.NAN);
         }
     }
 
