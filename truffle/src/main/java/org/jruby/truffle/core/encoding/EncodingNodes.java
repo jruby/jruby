@@ -27,7 +27,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusOnly;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
@@ -303,7 +303,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "default_external_jruby=", onSingleton = true, required = 1)
     public abstract static class SetDefaultExternalNode extends CoreMethodArrayArgumentsNode {
 
@@ -344,7 +344,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "default_internal_jruby=", onSingleton = true, required = 1)
     public abstract static class SetDefaultInternalNode extends CoreMethodArrayArgumentsNode {
 
@@ -414,7 +414,7 @@ public abstract class EncodingNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "encoding_map", onSingleton = true)
     public abstract static class EncodingMapNode extends CoreMethodArrayArgumentsNode {
 

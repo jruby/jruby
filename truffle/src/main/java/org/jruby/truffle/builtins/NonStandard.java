@@ -14,10 +14,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * A method that only exists in Rubinius but not in normal Ruby.
- */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
-public @interface RubiniusOnly {
+public @interface NonStandard {
 }

@@ -26,7 +26,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusOnly;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.cast.IntegerCastNode;
 import org.jruby.truffle.core.cast.IntegerCastNodeGen;
 import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
@@ -1322,7 +1322,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "unscaled", visibility = Visibility.PRIVATE)
     public abstract static class UnscaledNode extends BigDecimalCoreMethodArrayArgumentsNode {
 

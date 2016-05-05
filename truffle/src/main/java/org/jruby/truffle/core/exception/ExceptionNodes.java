@@ -22,7 +22,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusOnly;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.backtrace.Backtrace;
@@ -87,7 +87,7 @@ public abstract class ExceptionNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "capture_backtrace!", optional = 1)
     public abstract static class CaptureBacktraceNode extends CoreMethodArrayArgumentsNode {
 

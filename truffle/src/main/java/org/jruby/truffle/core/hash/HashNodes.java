@@ -30,7 +30,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusOnly;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
@@ -1404,7 +1404,7 @@ public abstract class HashNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChild(type = RubyNode.class, value = "self")
     public abstract static class DefaultValueNode extends CoreMethodNode {
 
@@ -1420,7 +1420,7 @@ public abstract class HashNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "defaultValue")
@@ -1435,7 +1435,7 @@ public abstract class HashNodes {
         
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "defaultProc")

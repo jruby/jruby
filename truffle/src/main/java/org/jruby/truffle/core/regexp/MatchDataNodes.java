@@ -24,7 +24,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusOnly;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -303,7 +303,7 @@ public abstract class MatchDataNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "full")
     public abstract static class FullNode extends CoreMethodArrayArgumentsNode {
 
@@ -416,7 +416,7 @@ public abstract class MatchDataNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChild(value = "self")
     public abstract static class RubiniusSourceNode extends RubyNode {
 

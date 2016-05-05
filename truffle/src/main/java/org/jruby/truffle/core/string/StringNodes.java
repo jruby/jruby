@@ -50,7 +50,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusOnly;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayCoreMethodNode;
 import org.jruby.truffle.core.cast.CmpIntNode;
@@ -1429,7 +1429,7 @@ public abstract class StringNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "modify!", raiseIfFrozenSelf = true)
     public abstract static class ModifyBangNode extends CoreMethodArrayArgumentsNode {
 
@@ -1440,7 +1440,7 @@ public abstract class StringNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "num_bytes=", lowerFixnumParameters = 0, required = 1)
     public abstract static class SetNumBytesNode extends CoreMethodArrayArgumentsNode {
 

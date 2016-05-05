@@ -29,7 +29,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusOnly;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
@@ -45,7 +45,7 @@ public abstract class EncodingConverterNodes {
         return Layouts.ENCODING_CONVERTER.createEncodingConverter(Layouts.CLASS.getInstanceFactory(rubyClass), econv);
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "initialize_jruby", required = 2, optional = 1, visibility = Visibility.PRIVATE)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
@@ -123,7 +123,7 @@ public abstract class EncodingConverterNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "transcoding_map", onSingleton = true)
     public abstract static class TranscodingMapNode extends CoreMethodArrayArgumentsNode {
 

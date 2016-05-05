@@ -28,7 +28,7 @@ import org.jruby.truffle.builtins.BinaryCoreMethodNode;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.builtins.RubiniusOnly;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
@@ -224,7 +224,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "__instance_variables__")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 

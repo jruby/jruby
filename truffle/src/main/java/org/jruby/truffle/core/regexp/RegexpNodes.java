@@ -46,7 +46,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.RubiniusOnly;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
@@ -457,7 +457,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "match_start", required = 2)
     public abstract static class MatchStartNode extends CoreMethodArrayArgumentsNode {
 
@@ -497,7 +497,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "search_from", required = 2)
     public abstract static class SearchFromNode extends CoreMethodArrayArgumentsNode {
 
@@ -535,7 +535,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChild(value = "self")
     public abstract static class RubiniusNamesNode extends RubyNode {
 
