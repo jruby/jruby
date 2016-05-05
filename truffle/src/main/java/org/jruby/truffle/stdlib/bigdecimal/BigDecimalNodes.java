@@ -445,9 +445,6 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends BigDecimalOpNode {
 
-        @Child private CallDispatchHeadNode signCall;
-        @Child private IntegerCastNode signIntegerCast;
-
         @TruffleBoundary
         private BigDecimal[] divmodBigDecimal(BigDecimal a, BigDecimal b) {
             final BigDecimal[] result = a.divideAndRemainder(b);
@@ -460,20 +457,6 @@ public abstract class BigDecimalNodes {
             return result;
         }
 
-        private void setupSignCall() {
-            if (signCall == null) {
-                CompilerDirectives.transferToInterpreter();
-                signCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-        }
-
-        private void setupLimitIntegerCast() {
-            if (signIntegerCast == null) {
-                CompilerDirectives.transferToInterpreter();
-                signIntegerCast = insert(IntegerCastNodeGen.create(getContext(), getSourceSection(), null));
-            }
-        }
-
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)",
@@ -482,7 +465,7 @@ public abstract class BigDecimalNodes {
         })
         public Object divmod(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             final BigDecimal[] result = divmodBigDecimal(Layouts.BIG_DECIMAL.getValue(a), Layouts.BIG_DECIMAL.getValue(b));
-            Object[] store = new Object[]{ createBigDecimal(frame, result[0]), createBigDecimal(frame, result[1]) };
+            final Object[] store = new Object[]{ createBigDecimal(frame, result[0]), createBigDecimal(frame, result[1]) };
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
         }
 
@@ -493,7 +476,7 @@ public abstract class BigDecimalNodes {
                 "!isNormalZero(b)"
         })
         public Object divmodZeroDividend(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            Object[] store = new Object[]{ createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO) };
+            final Object[] store = new Object[]{ createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO) };
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
         }
 
@@ -502,8 +485,7 @@ public abstract class BigDecimalNodes {
                 "isNormalRubyBigDecimal(b)",
                 "isNormalZero(b)"
         })
-        public Object divmodZeroDivisor(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            CompilerDirectives.transferToInterpreter();
+        public Object divmodZeroDivisor(DynamicObject a, DynamicObject b) {
             throw new RaiseException(coreExceptions().zeroDivisionError(this));
         }
 
@@ -511,46 +493,56 @@ public abstract class BigDecimalNodes {
                 "isRubyBigDecimal(b)",
                 "!isNormal(a) || !isNormal(b)"
         })
-        public Object divmodSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b) {
+        public Object divmodSpecial(
+                VirtualFrame frame,
+                DynamicObject a,
+                DynamicObject b,
+                @Cached("createMethodCall()") CallDispatchHeadNode signCall,
+                @Cached("createIntegerCastNode()") IntegerCastNode signIntegerCast,
+                @Cached("createBinaryProfile()") ConditionProfile nanProfile,
+                @Cached("createBinaryProfile()") ConditionProfile normalNegProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negNormalProfile,
+                @Cached("createBinaryProfile()") ConditionProfile infinityProfile) {
             final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
             final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-            if (aType == BigDecimalType.NAN || bType == BigDecimalType.NAN) {
-                Object[] store = new Object[]{ createBigDecimal(frame, BigDecimalType.NAN), createBigDecimal(frame, BigDecimalType.NAN) };
+            if (nanProfile.profile(aType == BigDecimalType.NAN || bType == BigDecimalType.NAN)) {
+                final Object[] store = new Object[]{ createBigDecimal(frame, BigDecimalType.NAN), createBigDecimal(frame, BigDecimalType.NAN) };
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
             }
 
-            if (bType == BigDecimalType.NEGATIVE_ZERO || (bType == BigDecimalType.NORMAL && isNormalZero(b))) {
-                CompilerDirectives.transferToInterpreter();
+            if (nanProfile.profile(bType == BigDecimalType.NEGATIVE_ZERO || (bType == BigDecimalType.NORMAL && isNormalZero(b)))) {
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 
-            if (aType == BigDecimalType.NEGATIVE_ZERO || (aType == BigDecimalType.NORMAL && isNormalZero(a))) {
-                Object[] store = new Object[]{ createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO) };
+            if (normalNegProfile.profile(aType == BigDecimalType.NEGATIVE_ZERO || (aType == BigDecimalType.NORMAL && isNormalZero(a)))) {
+                final Object[] store = new Object[]{ createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO) };
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
             }
 
-            if (aType == BigDecimalType.POSITIVE_INFINITY || aType == BigDecimalType.NEGATIVE_INFINITY) {
-                setupSignCall();
-                setupLimitIntegerCast();
-
+            if (negNormalProfile.profile(aType == BigDecimalType.POSITIVE_INFINITY || aType == BigDecimalType.NEGATIVE_INFINITY)) {
                 final int signA = aType == BigDecimalType.POSITIVE_INFINITY ? 1 : -1;
                 final int signB = Integer.signum(signIntegerCast.executeCastInt(signCall.call(frame, b, "sign", null)));
                 final int sign = signA * signB; // is between -1 and 1, 0 when nan
 
                 final BigDecimalType type = new BigDecimalType[]{ BigDecimalType.NEGATIVE_INFINITY, BigDecimalType.NAN, BigDecimalType.POSITIVE_INFINITY }[sign + 1];
 
-                Object[] store = new Object[]{ createBigDecimal(frame, type), createBigDecimal(frame, BigDecimalType.NAN) };
+                final Object[] store = new Object[]{ createBigDecimal(frame, type), createBigDecimal(frame, BigDecimalType.NAN) };
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
             }
 
-            if (bType == BigDecimalType.POSITIVE_INFINITY || bType == BigDecimalType.NEGATIVE_INFINITY) {
-                Object[] store = new Object[]{ createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a) };
+            if (infinityProfile.profile(bType == BigDecimalType.POSITIVE_INFINITY || bType == BigDecimalType.NEGATIVE_INFINITY)) {
+                final Object[] store = new Object[]{ createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a) };
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
             }
 
             throw new UnsupportedOperationException("unreachable code branch");
         }
+
+        protected IntegerCastNode createIntegerCastNode() {
+            return IntegerCastNodeGen.create(null, null, null);
+        }
+
     }
 
     @CoreMethod(names = "remainder", required = 1)
