@@ -9,9 +9,10 @@
  */
 package org.jruby.truffle.stdlib.bigdecimal;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.core.Layouts;
 
 import java.math.BigDecimal;
@@ -19,7 +20,12 @@ import java.math.MathContext;
 
 public abstract class AbstractSubNode extends BigDecimalOpNode {
 
-    @CompilerDirectives.TruffleBoundary
+    private final ConditionProfile nanProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile posInfinityProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile negInfinityProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile normalProfile = ConditionProfile.createBinaryProfile();
+
+    @TruffleBoundary
     private BigDecimal subBigDecimal(DynamicObject a, DynamicObject b, MathContext mathContext) {
         return Layouts.BIG_DECIMAL.getValue(a).subtract(Layouts.BIG_DECIMAL.getValue(b), mathContext);
     }
@@ -32,22 +38,25 @@ public abstract class AbstractSubNode extends BigDecimalOpNode {
         final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
         final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-        if (aType == BigDecimalType.NAN || bType == BigDecimalType.NAN ||
+        if (nanProfile.profile(aType == BigDecimalType.NAN || bType == BigDecimalType.NAN ||
                 (aType == BigDecimalType.POSITIVE_INFINITY && bType == BigDecimalType.POSITIVE_INFINITY) ||
-                (aType == BigDecimalType.NEGATIVE_INFINITY && bType == BigDecimalType.NEGATIVE_INFINITY)) {
+                (aType == BigDecimalType.NEGATIVE_INFINITY && bType == BigDecimalType.NEGATIVE_INFINITY))) {
             return createBigDecimal(frame, BigDecimalType.NAN);
         }
 
-        if (aType == BigDecimalType.POSITIVE_INFINITY || bType == BigDecimalType.NEGATIVE_INFINITY) {
+        if (posInfinityProfile.profile(aType == BigDecimalType.POSITIVE_INFINITY
+                || bType == BigDecimalType.NEGATIVE_INFINITY)) {
             return createBigDecimal(frame, BigDecimalType.POSITIVE_INFINITY);
         }
 
-        if (aType == BigDecimalType.NEGATIVE_INFINITY || bType == BigDecimalType.POSITIVE_INFINITY) {
+        if (negInfinityProfile.profile(aType == BigDecimalType.NEGATIVE_INFINITY
+                || bType == BigDecimalType.POSITIVE_INFINITY)) {
             return createBigDecimal(frame, BigDecimalType.NEGATIVE_INFINITY);
         }
 
-        // one is NEGATIVE_ZERO and second is NORMAL
-        if (isNormal(a)) {
+        // One is NEGATIVE_ZERO and second is NORMAL
+
+        if (normalProfile.profile(isNormal(a))) {
             return a;
         } else {
             return createBigDecimal(frame, Layouts.BIG_DECIMAL.getValue(b).negate());
