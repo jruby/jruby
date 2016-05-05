@@ -64,7 +64,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
     public CreateBigDecimalNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        bigDecimalCast = BigDecimalCastNodeGen.create(context, sourceSection, null, null);
+        bigDecimalCast = BigDecimalCastNodeGen.create(null, null);
     }
 
     private void setBigDecimalValue(DynamicObject bigdecimal, BigDecimal value) {

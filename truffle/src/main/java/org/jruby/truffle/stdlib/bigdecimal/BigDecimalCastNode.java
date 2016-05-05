@@ -40,9 +40,6 @@ import java.math.RoundingMode;
 })
 @ImportStatic(BigDecimalCoreMethodNode.class)
 public abstract class BigDecimalCastNode extends RubyNode {
-    public BigDecimalCastNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 
     public abstract BigDecimal executeBigDecimal(VirtualFrame frame, Object value, RoundingMode roundingMode);
 
