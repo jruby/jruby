@@ -6,6 +6,7 @@ import shutil
 
 _suite = mx.suite('jruby')
 
+
 class MavenProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
         mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
@@ -40,7 +41,6 @@ class MavenProject(mx.Project):
 
     def annotation_processors(self):
         return []
-
 
 class MavenBuildTask(mx.BuildTask):
     def __init__(self, project, args, vmbuild, vm):

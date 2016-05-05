@@ -31,9 +31,6 @@ suite = {
         },
     },
     "projects": {
-
-        # ------------- Projects -------------
-
         "jruby-ruby": {
             "subDir": "lib/ruby",
             "class": "MavenProject",
@@ -61,9 +58,6 @@ suite = {
         },
     },
     "distributions": {
-
-        # ------------- Distributions -------------
-
         "RUBY": {
             "mainClass": "org.jruby.Main",
             "dependencies": [
@@ -96,6 +90,5 @@ suite = {
             "description": "JRuby+Truffle Native Libs",
             "license": "EPL"
         },
-
     },
 }
