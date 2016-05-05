@@ -62,8 +62,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
     @Child
     private CallDispatchHeadNode allocateNode;
 
-    public CreateBigDecimalNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public CreateBigDecimalNode() {
         bigDecimalCast = BigDecimalCastNodeGen.create(null, null);
     }
 

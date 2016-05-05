@@ -39,7 +39,7 @@ public abstract class BigDecimalCoerceNode extends RubyNode {
     protected DynamicObject createBigDecimal(VirtualFrame frame, Object value) {
         if (createBigDecimal == null) {
             CompilerDirectives.transferToInterpreter();
-            createBigDecimal = insert(CreateBigDecimalNodeFactory.create(null, null, null, null, null));
+            createBigDecimal = insert(CreateBigDecimalNodeFactory.create(null, null, null));
         }
 
         return createBigDecimal.executeCreate(frame, value);
