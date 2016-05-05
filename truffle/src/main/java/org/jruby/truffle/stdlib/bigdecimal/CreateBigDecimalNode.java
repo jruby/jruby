@@ -216,7 +216,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
     private void setupGetIntegerConstant() {
         if (getIntegerConstant == null) {
             CompilerDirectives.transferToInterpreter();
-            getIntegerConstant = insert(GetIntegerConstantNodeGen.create(getContext(), getSourceSection(), null, null));
+            getIntegerConstant = insert(GetIntegerConstantNodeGen.create(null, null));
         }
     }
 
