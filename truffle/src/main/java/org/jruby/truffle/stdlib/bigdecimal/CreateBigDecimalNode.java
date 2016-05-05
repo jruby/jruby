@@ -18,6 +18,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
@@ -48,7 +49,11 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
     @Child private CallDispatchHeadNode allocateNode;
 
-    public abstract DynamicObject executeInitialize(VirtualFrame frame, Object value, DynamicObject alreadyAllocatedSelf, Object digits);
+    public abstract DynamicObject executeInitialize(
+            VirtualFrame frame,
+            Object value,
+            DynamicObject alreadyAllocatedSelf,
+            Object digits);
 
     public final DynamicObject executeCreate(VirtualFrame frame, Object value) {
         if (allocateNode == null) {
@@ -56,7 +61,11 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
             allocateNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
         }
 
-        return executeInitialize(frame, value, (DynamicObject) allocateNode.call(frame, getBigDecimalClass(), "allocate", null), NotProvided.INSTANCE);
+        return executeInitialize(
+                frame,
+                value,
+                (DynamicObject) allocateNode.call(frame, getBigDecimalClass(), "allocate", null),
+                NotProvided.INSTANCE);
     }
 
     @Specialization
@@ -71,14 +80,15 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
             DynamicObject self,
             int digits,
             @Cached("createBigDecimalCastNode()") BigDecimalCastNode bigDecimalCastNode) {
-        Layouts.BIG_DECIMAL.setValue(self, bigDecimalCastNode.executeBigDecimal(frame, value, getRoundMode(frame)).round(new MathContext(digits, getRoundMode(frame))));
+        Layouts.BIG_DECIMAL.setValue(self,
+                bigDecimalCastNode.executeBigDecimal(frame, value, getRoundMode(frame))
+                        .round(new MathContext(digits, getRoundMode(frame))));
         return self;
     }
 
     @Specialization
-    public DynamicObject create(VirtualFrame frame, double value, DynamicObject self, NotProvided digits) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreExceptions().argumentError("can't omit precision for a Float.", this));
+    public DynamicObject create(double value, DynamicObject self, NotProvided digits) {
+        throw new RaiseException(coreExceptions().argumentErrorCantOmitPrecision(this));
     }
 
     @Specialization
@@ -88,7 +98,9 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
             DynamicObject self,
             int digits,
             @Cached("createBigDecimalCastNode()") BigDecimalCastNode bigDecimalCastNode) {
-        Layouts.BIG_DECIMAL.setValue(self, bigDecimalCastNode.executeBigDecimal(frame, value, getRoundMode(frame)).round(new MathContext(digits, getRoundMode(frame))));
+        Layouts.BIG_DECIMAL.setValue(self, bigDecimalCastNode
+                .executeBigDecimal(frame, value, getRoundMode(frame))
+                .round(new MathContext(digits, getRoundMode(frame))));
         return self;
     }
 
@@ -100,15 +112,19 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
             Object digits,
             @Cached("createBooleanCastNode()") BooleanCastNode booleanCastNode,
             @Cached("createGetIntegerConstantNode()") GetIntegerConstantNode getIntegerConstantNode,
-            @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode modeCallNode) {
+            @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode modeCallNode,
+            @Cached("createBinaryProfile()") ConditionProfile raiseProfile) {
         // TODO (pitr 21-Jun-2015): raise on underflow
 
-        final int exceptionConstant = getIntegerConstantNode.executeGetIntegerConstant(frame, getBigDecimalClass(), "EXCEPTION_INFINITY");
-        final boolean raise = booleanCastNode.executeBoolean(frame,
+        final int exceptionConstant = getIntegerConstantNode
+                .executeGetIntegerConstant(frame, getBigDecimalClass(), "EXCEPTION_INFINITY");
+
+        final boolean raise = booleanCastNode.executeBoolean(
+                frame,
                 modeCallNode.call(frame, getBigDecimalClass(), "boolean_mode", null, exceptionConstant));
-        if (raise) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'Infinity'", this));
+
+        if (raiseProfile.profile(raise)) {
+            throw new RaiseException(coreExceptions().floatDomainErrorResultsToInfinity(this));
         }
 
         Layouts.BIG_DECIMAL.setType(self, value);
@@ -123,15 +139,19 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
             Object digits,
             @Cached("createBooleanCastNode()") BooleanCastNode booleanCastNode,
             @Cached("createGetIntegerConstantNode()") GetIntegerConstantNode getIntegerConstantNode,
-            @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode modeCallNode) {
+            @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode modeCallNode,
+            @Cached("createBinaryProfile()") ConditionProfile raiseProfile) {
         // TODO (pitr 21-Jun-2015): raise on underflow
 
-        final int exceptionConstant = getIntegerConstantNode.executeGetIntegerConstant(frame, getBigDecimalClass(), "EXCEPTION_NaN");
-        final boolean raise = booleanCastNode.executeBoolean(frame,
+        final int exceptionConstant = getIntegerConstantNode.executeGetIntegerConstant
+                (frame, getBigDecimalClass(), "EXCEPTION_NaN");
+
+        final boolean raise = booleanCastNode.executeBoolean(
+                frame,
                 modeCallNode.call(frame, getBigDecimalClass(), "boolean_mode", null, exceptionConstant));
-        if (raise) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+
+        if (raiseProfile.profile(raise)) {
+            throw new RaiseException(coreExceptions().floatDomainErrorResultsToNaN(this));
         }
 
         Layouts.BIG_DECIMAL.setType(self, value);
@@ -162,7 +182,9 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
     @Specialization(guards = "isRubyBignum(value)")
     public DynamicObject createBignum(VirtualFrame frame, DynamicObject value, DynamicObject self, int digits) {
-        Layouts.BIG_DECIMAL.setValue(self, new BigDecimal(Layouts.BIGNUM.getValue(value)).round(new MathContext(digits, getRoundMode(frame))));
+        Layouts.BIG_DECIMAL.setValue(self,
+                new BigDecimal(Layouts.BIGNUM.getValue(value))
+                        .round(new MathContext(digits, getRoundMode(frame))));
         return self;
     }
 
@@ -173,7 +195,9 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
     @Specialization(guards = "isRubyBigDecimal(value)")
     public DynamicObject createBigDecimal(VirtualFrame frame, DynamicObject value, DynamicObject self, int digits) {
-        Layouts.BIG_DECIMAL.setValue(self, Layouts.BIG_DECIMAL.getValue(value).round(new MathContext(digits, getRoundMode(frame))));
+        Layouts.BIG_DECIMAL.setValue(self,
+                Layouts.BIG_DECIMAL.getValue(value)
+                        .round(new MathContext(digits, getRoundMode(frame))));
         return self;
     }
 
@@ -197,10 +221,12 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
             DynamicObject value,
             DynamicObject self,
             int digits,
-            @Cached("createBigDecimalCastNode()") BigDecimalCastNode bigDecimalCastNode) {
+            @Cached("createBigDecimalCastNode()") BigDecimalCastNode bigDecimalCastNode,
+            @Cached("createBinaryProfile()") ConditionProfile nilProfile) {
         final Object castedValue = bigDecimalCastNode.executeObject(frame, value, getRoundMode(frame));
-        if (castedValue == nil()) {
-            throw new RaiseException(coreExceptions().typeError("could not be casted to BigDecimal", this));
+
+        if (nilProfile.profile(castedValue == nil())) {
+            throw new RaiseException(coreExceptions().typeErrorCantBeCastedToBigDecimal(this));
         }
 
         Layouts.BIG_DECIMAL.setValue(self, ((BigDecimal) castedValue).round(new MathContext(digits, getRoundMode(frame))));
@@ -251,9 +277,11 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
             }
 
             final BigInteger exponent = new BigInteger(result.group(3));
+
             if (exponent.signum() == 1) {
                 return BigDecimalType.POSITIVE_INFINITY;
             }
+
             // TODO (pitr 21-Jun-2015): raise on underflow
             if (exponent.signum() == -1) {
                 return BigDecimal.ZERO;

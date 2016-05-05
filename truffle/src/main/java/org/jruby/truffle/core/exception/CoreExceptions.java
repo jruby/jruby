@@ -70,6 +70,10 @@ public class CoreExceptions {
         return argumentError(coreStrings().NEGATIVE_ARRAY_SIZE.getRope(), currentNode, null);
     }
 
+    public DynamicObject argumentErrorCantOmitPrecision(Node currentNode) {
+        return argumentError("can't omit precision for a Float.", currentNode);
+    }
+
     @TruffleBoundary
     public DynamicObject argumentErrorUnknownKeyword(Object name, Node currentNode) {
         return argumentError("unknown keyword: " + name, currentNode);
@@ -258,6 +262,10 @@ public class CoreExceptions {
 
     public DynamicObject typeErrorCantDefineSingleton(Node currentNode) {
         return typeError("can't define singleton", currentNode);
+    }
+
+    public DynamicObject typeErrorCantBeCastedToBigDecimal(Node currentNode) {
+        return typeError("could not be casted to BigDecimal", currentNode);
     }
 
     @TruffleBoundary
