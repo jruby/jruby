@@ -619,8 +619,7 @@ public abstract class BigDecimalNodes {
                 "isNormalRubyBigDecimal(b)",
                 "isNormalZero(b)"
         })
-        public Object moduloZero(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            CompilerDirectives.transferToInterpreter();
+        public Object moduloZero(DynamicObject a, DynamicObject b) {
             throw new RaiseException(coreExceptions().zeroDivisionError(this));
         }
 
@@ -628,28 +627,41 @@ public abstract class BigDecimalNodes {
                 "isRubyBigDecimal(b)",
                 "!isNormal(a) || !isNormal(b)"
         })
-        public Object moduloSpecial(VirtualFrame frame, DynamicObject a, DynamicObject b) {
+        public Object moduloSpecial(
+                VirtualFrame frame,
+                DynamicObject a,
+                DynamicObject b,
+                @Cached("createBinaryProfile()") ConditionProfile nanProfile,
+                @Cached("createBinaryProfile()") ConditionProfile normalNegProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negNormalProfile,
+                @Cached("createBinaryProfile()") ConditionProfile posNegInfProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negPosInfProfile) {
             final BigDecimalType aType = Layouts.BIG_DECIMAL.getType(a);
             final BigDecimalType bType = Layouts.BIG_DECIMAL.getType(b);
 
-            if (aType == BigDecimalType.NAN || bType == BigDecimalType.NAN) {
+            if (nanProfile.profile(aType == BigDecimalType.NAN
+                    || bType == BigDecimalType.NAN)) {
                 return createBigDecimal(frame, BigDecimalType.NAN);
             }
 
-            if (bType == BigDecimalType.NEGATIVE_ZERO || (bType == BigDecimalType.NORMAL && isNormalZero(b))) {
+            if (normalNegProfile.profile(bType == BigDecimalType.NEGATIVE_ZERO
+                    || (bType == BigDecimalType.NORMAL && isNormalZero(b)))) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 
-            if (aType == BigDecimalType.NEGATIVE_ZERO || (aType == BigDecimalType.NORMAL && isNormalZero(a))) {
+            if (negNormalProfile.profile(aType == BigDecimalType.NEGATIVE_ZERO
+                    || (aType == BigDecimalType.NORMAL && isNormalZero(a)))) {
                 return createBigDecimal(frame, BigDecimal.ZERO);
             }
 
-            if (aType == BigDecimalType.POSITIVE_INFINITY || aType == BigDecimalType.NEGATIVE_INFINITY) {
+            if (posNegInfProfile.profile(aType == BigDecimalType.POSITIVE_INFINITY
+                    || aType == BigDecimalType.NEGATIVE_INFINITY)) {
                 return createBigDecimal(frame, BigDecimalType.NAN);
             }
 
-            if (bType == BigDecimalType.POSITIVE_INFINITY || bType == BigDecimalType.NEGATIVE_INFINITY) {
+            if (negPosInfProfile.profile(bType == BigDecimalType.POSITIVE_INFINITY
+                    || bType == BigDecimalType.NEGATIVE_INFINITY)) {
                 return createBigDecimal(frame, a);
             }
 
