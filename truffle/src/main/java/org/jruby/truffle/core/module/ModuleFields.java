@@ -158,20 +158,9 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     // TODO (eregon, 12 May 2015): ideally all callers would be nodes and check themselves.
     public void checkFrozen(RubyContext context, Node currentNode) {
-        if (context.getCoreLibrary() != null && verySlowIsFrozen(context, rubyModuleObject)) {
-            CompilerDirectives.transferToInterpreter();
+        if (context.getCoreLibrary() != null && IsFrozenNode.isFrozen(rubyModuleObject)) {
             throw new RaiseException(context.getCoreExceptions().frozenError(rubyModuleObject, currentNode));
         }
-    }
-
-    // TODO CS 20-Aug-15 this needs to go
-    public static boolean verySlowIsFrozen(RubyContext context, Object object) {
-        final IsFrozenNode node = IsFrozenNodeGen.create(context, null, null);
-        new Node() {
-            @Child RubyNode child = node;
-        }.adoptChildren();
-
-        return node.executeIsFrozen(object);
     }
 
     public void insertAfter(DynamicObject module) {
