@@ -22,7 +22,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-@CoreClass(name = "Rubinius::AtomicReference")
+@CoreClass("Rubinius::AtomicReference")
 public abstract class AtomicReferenceNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

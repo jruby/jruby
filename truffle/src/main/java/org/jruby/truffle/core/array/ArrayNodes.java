@@ -96,7 +96,7 @@ import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
 import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
-@CoreClass(name = "Array")
+@CoreClass("Array")
 public abstract class ArrayNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

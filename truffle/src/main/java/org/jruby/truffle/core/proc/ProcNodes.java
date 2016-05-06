@@ -38,7 +38,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
-@CoreClass(name = "Proc")
+@CoreClass("Proc")
 public abstract class ProcNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

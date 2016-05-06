@@ -39,7 +39,7 @@ import org.jruby.util.Memo;
 import java.io.File;
 import java.io.IOException;
 
-@CoreClass(name = "Truffle::Boot")
+@CoreClass("Truffle::Boot")
 public abstract class TruffleBootNodes {
 
     @CoreMethod(names = "jruby_home_directory", onSingleton = true)

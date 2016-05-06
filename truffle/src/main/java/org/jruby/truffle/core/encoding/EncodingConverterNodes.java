@@ -53,7 +53,7 @@ import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
-@CoreClass(name = "Encoding::Converter")
+@CoreClass("Encoding::Converter")
 public abstract class EncodingConverterNodes {
 
     public static DynamicObject createEncodingConverter(DynamicObject rubyClass, EConv econv) {

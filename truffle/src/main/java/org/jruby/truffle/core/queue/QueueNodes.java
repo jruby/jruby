@@ -36,7 +36,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-@CoreClass(name = "Queue")
+@CoreClass("Queue")
 public abstract class QueueNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

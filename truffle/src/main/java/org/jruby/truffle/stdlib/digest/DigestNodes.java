@@ -28,7 +28,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-@CoreClass(name = "Truffle::Digest")
+@CoreClass("Truffle::Digest")
 public abstract class DigestNodes {
 
     @TruffleBoundary

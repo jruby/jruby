@@ -36,7 +36,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
 import java.util.Locale;
 
-@CoreClass(name = "Float")
+@CoreClass("Float")
 public abstract class FloatNodes {
 
     @CoreMethod(names = "-@")

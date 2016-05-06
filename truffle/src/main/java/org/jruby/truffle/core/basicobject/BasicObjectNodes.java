@@ -57,7 +57,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@CoreClass(name = "BasicObject")
+@CoreClass("BasicObject")
 public abstract class BasicObjectNodes {
 
     @CoreMethod(names = "!")

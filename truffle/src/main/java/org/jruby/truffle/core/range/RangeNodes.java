@@ -41,7 +41,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
-@CoreClass(name = "Range")
+@CoreClass("Range")
 public abstract class RangeNodes {
 
     @CoreMethod(names = { "map", "collect" }, needsBlock = true, lowerFixnumSelf = true)

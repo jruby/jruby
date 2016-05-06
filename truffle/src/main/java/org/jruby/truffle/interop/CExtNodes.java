@@ -14,7 +14,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 
-@CoreClass(name = "Truffle::CExt")
+@CoreClass("Truffle::CExt")
 public class CExtNodes {
 
     @CoreMethod(names = "NUM2INT", isModuleFunction = true, needsSelf = false, required = 1)

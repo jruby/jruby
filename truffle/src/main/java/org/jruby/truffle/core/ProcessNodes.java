@@ -32,7 +32,7 @@ import org.jruby.truffle.platform.posix.ClockGetTime;
 import org.jruby.truffle.platform.posix.TimeSpec;
 import org.jruby.truffle.platform.signal.Signal;
 
-@CoreClass(name = "Process")
+@CoreClass("Process")
 public abstract class ProcessNodes {
 
     // These are just distinct values, not clock_gettime(3) values.

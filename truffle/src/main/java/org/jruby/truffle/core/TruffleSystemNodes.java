@@ -21,7 +21,7 @@ import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.unsafe.UnsafeHolder;
 
-@CoreClass(name = "Truffle::System")
+@CoreClass("Truffle::System")
 public abstract class TruffleSystemNodes {
 
     @CoreMethod(names = "host_cpu", onSingleton = true)

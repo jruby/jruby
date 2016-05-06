@@ -16,7 +16,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 
-@CoreClass(name = "Truffle::GC")
+@CoreClass("Truffle::GC")
 public abstract class TruffleGCNodes {
 
     @CoreMethod(names = "count", onSingleton = true)

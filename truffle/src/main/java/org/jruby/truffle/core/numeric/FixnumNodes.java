@@ -40,7 +40,7 @@ import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 
 import java.math.BigInteger;
 
-@CoreClass(name = "Fixnum")
+@CoreClass("Fixnum")
 public abstract class FixnumNodes {
 
     @CoreMethod(names = "-@")

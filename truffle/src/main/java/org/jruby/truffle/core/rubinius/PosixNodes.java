@@ -39,7 +39,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
 
-@CoreClass(name = "Rubinius::FFI::Platform::POSIX")
+@CoreClass("Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
 
     @CoreMethod(names = "access", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)

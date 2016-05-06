@@ -72,7 +72,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
 
-@CoreClass(name = "Regexp")
+@CoreClass("Regexp")
 public abstract class RegexpNodes {
 
     @TruffleBoundary

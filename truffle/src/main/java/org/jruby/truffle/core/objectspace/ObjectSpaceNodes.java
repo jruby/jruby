@@ -33,7 +33,7 @@ import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
-@CoreClass(name = "ObjectSpace")
+@CoreClass("ObjectSpace")
 public abstract class ObjectSpaceNodes {
 
     @CoreMethod(names = "_id2ref", isModuleFunction = true, required = 1)

@@ -22,7 +22,7 @@ import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.language.RubyNode;
 
-@CoreClass(name = "main")
+@CoreClass("main")
 public abstract class MainNodes {
 
     @CoreMethod(names = "public", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)

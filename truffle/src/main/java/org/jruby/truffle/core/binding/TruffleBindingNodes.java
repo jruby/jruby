@@ -21,7 +21,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.util.Memo;
 
-@CoreClass(name = "Truffle::Binding")
+@CoreClass("Truffle::Binding")
 public abstract class TruffleBindingNodes {
 
     @CoreMethod(names = "of_caller", isModuleFunction = true)

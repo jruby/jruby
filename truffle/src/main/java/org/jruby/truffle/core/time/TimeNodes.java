@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@CoreClass(name = "Time")
+@CoreClass("Time")
 public abstract class TimeNodes {
 
     private static final DateTime ZERO = new DateTime(0);

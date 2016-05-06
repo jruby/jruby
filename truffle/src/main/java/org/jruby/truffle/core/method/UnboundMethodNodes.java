@@ -32,7 +32,7 @@ import org.jruby.truffle.language.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.language.objects.MetaClassNodeGen;
 
-@CoreClass(name = "UnboundMethod")
+@CoreClass("UnboundMethod")
 public abstract class UnboundMethodNodes {
 
     @CoreMethod(names = "==", required = 1)

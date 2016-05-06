@@ -41,7 +41,7 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import java.util.ArrayList;
 import java.util.List;
 
-@CoreClass(name = "Binding")
+@CoreClass("Binding")
 public abstract class BindingNodes {
 
     public static DynamicObject createBinding(RubyContext context, MaterializedFrame frame) {

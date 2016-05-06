@@ -25,7 +25,7 @@ import org.jruby.truffle.platform.UnsafeGroup;
 import java.util.Arrays;
 import java.util.Collections;
 
-@CoreClass(name = "Truffle::Process")
+@CoreClass("Truffle::Process")
 public abstract class TruffleProcessNodes {
 
     @CoreMethod(names = "spawn", onSingleton = true, required = 3, unsafe = UnsafeGroup.PROCESSES)

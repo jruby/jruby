@@ -35,7 +35,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
-@CoreClass(name = "Class")
+@CoreClass("Class")
 public abstract class ClassNodes {
 
     private final static com.oracle.truffle.api.object.Layout LAYOUT = com.oracle.truffle.api.object.Layout.createLayout();

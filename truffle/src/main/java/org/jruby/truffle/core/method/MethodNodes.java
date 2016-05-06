@@ -47,7 +47,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 
-@CoreClass(name = "Method")
+@CoreClass("Method")
 public abstract class MethodNodes {
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)

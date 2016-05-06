@@ -18,7 +18,7 @@ import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
 
-@CoreClass(name = "TrueClass")
+@CoreClass("TrueClass")
 public abstract class TrueClassNodes {
 
     @CoreMethod(names = "&", needsSelf = false, required = 1)

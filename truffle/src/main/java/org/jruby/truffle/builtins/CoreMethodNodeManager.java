@@ -80,7 +80,7 @@ public class CoreMethodNodeManager {
 
     private void addCoreMethod(MethodDetails methodDetails) {
         DynamicObject module;
-        String fullName = methodDetails.getClassAnnotation().name();
+        String fullName = methodDetails.getClassAnnotation().value();
 
         if (fullName.equals("main")) {
             module = getSingletonClass(context.getCoreLibrary().getMainObject());
@@ -157,7 +157,7 @@ public class CoreMethodNodeManager {
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
-        final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection(methodDetails.getClassAnnotation().name(), method.names()[0]);
+        final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection(methodDetails.getClassAnnotation().value(), method.names()[0]);
 
         final int required = method.required();
         final int optional = method.optional();
@@ -351,7 +351,7 @@ public class CoreMethodNodeManager {
         }
 
         public String getIndicativeName() {
-            return classAnnotation.name() + "#" + methodAnnotation.names()[0];
+            return classAnnotation.value() + "#" + methodAnnotation.names()[0];
         }
     }
 

@@ -38,7 +38,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
 import java.math.BigInteger;
 
-@CoreClass(name = "Bignum")
+@CoreClass("Bignum")
 public abstract class BignumNodes {
 
     public static abstract class BignumCoreMethodNode extends CoreMethodArrayArgumentsNode {

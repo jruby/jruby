@@ -23,7 +23,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.platform.UnsafeGroup;
 
-@CoreClass(name = "Truffle::Ropes")
+@CoreClass("Truffle::Ropes")
 public abstract class TruffleRopesNodes {
 
     @CoreMethod(names = "debug_print", onSingleton = true, required = 1, unsafe = UnsafeGroup.IO)

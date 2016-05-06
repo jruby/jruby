@@ -44,7 +44,7 @@ import static org.jruby.RubyThread.RUBY_MIN_THREAD_PRIORITY;
 import static org.jruby.RubyThread.javaPriorityToRubyPriority;
 import static org.jruby.RubyThread.rubyPriorityToJavaPriority;
 
-@CoreClass(name = "Thread")
+@CoreClass("Thread")
 public abstract class ThreadNodes {
 
     @CoreMethod(names = "alive?", unsafe = UnsafeGroup.THREADS)

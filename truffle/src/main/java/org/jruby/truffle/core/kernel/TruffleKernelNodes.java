@@ -31,7 +31,7 @@ import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.io.IOException;
 
-@CoreClass(name = "Truffle::Kernel")
+@CoreClass("Truffle::Kernel")
 public abstract class TruffleKernelNodes {
 
     @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true, required = 1, unsafe = UnsafeGroup.AT_EXIT)

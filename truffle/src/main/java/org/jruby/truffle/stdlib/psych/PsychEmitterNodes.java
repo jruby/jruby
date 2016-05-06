@@ -81,7 +81,7 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
-@CoreClass(name = "Psych::Emitter")
+@CoreClass("Psych::Emitter")
 public abstract class PsychEmitterNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

@@ -34,7 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * We do not reuse much of class Queue since we need to be able to replace the queue in this case
  * and methods are small anyway.
  */
-@CoreClass(name = "SizedQueue")
+@CoreClass("SizedQueue")
 public abstract class SizedQueueNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

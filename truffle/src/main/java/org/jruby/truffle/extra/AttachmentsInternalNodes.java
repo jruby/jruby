@@ -18,7 +18,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.Layouts;
 
-@CoreClass(name = "Truffle::Attachments::Internal")
+@CoreClass("Truffle::Attachments::Internal")
 public abstract class AttachmentsInternalNodes {
 
     @CoreMethod(names = "attach", onSingleton = true, required = 2, needsBlock = true)

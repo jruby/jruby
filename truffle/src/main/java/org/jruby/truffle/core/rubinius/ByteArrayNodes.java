@@ -26,7 +26,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 
-@CoreClass(name = "Rubinius::ByteArray")
+@CoreClass("Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
 
     public static DynamicObject createByteArray(DynamicObjectFactory factory, ByteList bytes) {

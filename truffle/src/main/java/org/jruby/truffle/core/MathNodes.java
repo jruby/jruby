@@ -29,7 +29,7 @@ import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
 
-@CoreClass(name = "Math")
+@CoreClass("Math")
 public abstract class MathNodes {
 
     @CoreMethod(names = "acos", isModuleFunction = true, required = 1)

@@ -31,7 +31,7 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
-@CoreClass(name = "TracePoint")
+@CoreClass("TracePoint")
 public abstract class TracePointNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

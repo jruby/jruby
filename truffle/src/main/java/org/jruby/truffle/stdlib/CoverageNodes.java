@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@CoreClass(name = "Truffle::Coverage")
+@CoreClass("Truffle::Coverage")
 public abstract class CoverageNodes {
 
     @CoreMethod(names = "start", onSingleton = true)

@@ -49,7 +49,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-@CoreClass(name = "Encoding")
+@CoreClass("Encoding")
 public abstract class EncodingNodes {
 
     // Both are mutated only in CoreLibrary.initializeEncodingConstants().

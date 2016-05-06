@@ -40,7 +40,7 @@ import org.jruby.truffle.platform.UnsafeGroup;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
-@CoreClass(name = "Fiber")
+@CoreClass("Fiber")
 public abstract class FiberNodes {
 
     public static DynamicObject createFiber(DynamicObject thread, DynamicObjectFactory factory, String name) {

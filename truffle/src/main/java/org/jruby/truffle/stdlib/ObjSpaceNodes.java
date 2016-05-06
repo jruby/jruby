@@ -21,7 +21,7 @@ import org.jruby.truffle.language.objects.ObjectGraph;
 
 import java.util.Set;
 
-@CoreClass(name = "Truffle::ObjSpace")
+@CoreClass("Truffle::ObjSpace")
 public abstract class ObjSpaceNodes {
 
     @CoreMethod(names = "memsize_of", isModuleFunction = true, required = 1)

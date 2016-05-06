@@ -15,7 +15,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 
-@CoreClass(name = "Truffle::Fixnum")
+@CoreClass("Truffle::Fixnum")
 public abstract class TruffleFixnumNodes {
 
     @CoreMethod(names = "lower", isModuleFunction = true, required = 1)

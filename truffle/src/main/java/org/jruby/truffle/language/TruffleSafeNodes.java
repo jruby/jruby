@@ -18,7 +18,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 
-@CoreClass(name = "Truffle::Safe")
+@CoreClass("Truffle::Safe")
 public abstract class TruffleSafeNodes {
 
     @CoreMethod(names = "puts", onSingleton = true, required = 1, unsafe = UnsafeGroup.SAFE_PUTS)

@@ -44,7 +44,7 @@ import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
 
-@CoreClass(name = "MatchData")
+@CoreClass("MatchData")
 public abstract class MatchDataNodes {
 
     public static Object[] getCaptures(DynamicObject matchData) {

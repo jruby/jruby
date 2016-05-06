@@ -32,7 +32,7 @@ import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import java.util.ArrayList;
 import java.util.List;
 
-@CoreClass(name = "Truffle::Debug")
+@CoreClass("Truffle::Debug")
 public abstract class TruffleDebugNodes {
 
     @CoreMethod(names = "java_class_of", onSingleton = true, required = 1)

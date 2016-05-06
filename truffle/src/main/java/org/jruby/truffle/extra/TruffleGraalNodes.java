@@ -20,7 +20,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.graal.Graal;
 
-@CoreClass(name = "Truffle::Graal")
+@CoreClass("Truffle::Graal")
 public abstract class TruffleGraalNodes {
 
     @CoreMethod(names = "assert_constant", onSingleton = true, required = 1)

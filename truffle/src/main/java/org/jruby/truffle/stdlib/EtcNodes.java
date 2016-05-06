@@ -14,7 +14,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodNode;
 
-@CoreClass(name = "Truffle::Etc")
+@CoreClass("Truffle::Etc")
 public abstract class EtcNodes {
 
     @CoreMethod(names = "nprocessors", needsSelf = false)

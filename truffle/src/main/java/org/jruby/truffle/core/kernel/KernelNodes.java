@@ -142,7 +142,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-@CoreClass(name = "Kernel")
+@CoreClass("Kernel")
 public abstract class KernelNodes {
 
     @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1, unsafe = {UnsafeGroup.IO, UnsafeGroup.PROCESSES})

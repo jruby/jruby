@@ -17,7 +17,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 
-@CoreClass(name = "Rubinius::Type")
+@CoreClass("Rubinius::Type")
 public abstract class RubiniusTypeNodes {
 
     @CoreMethod(names = "each_ancestor", onSingleton = true, required = 1, needsBlock = true)

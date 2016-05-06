@@ -94,7 +94,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-@CoreClass(name = "Psych::Parser")
+@CoreClass("Psych::Parser")
 public abstract class PsychParserNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

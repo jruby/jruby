@@ -51,7 +51,7 @@ import org.jruby.truffle.language.yield.YieldNode;
 import java.util.Arrays;
 import java.util.Map;
 
-@CoreClass(name = "Hash")
+@CoreClass("Hash")
 public abstract class HashNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

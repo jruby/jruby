@@ -21,7 +21,7 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.Activation;
 
-@CoreClass(name = "Thread::Backtrace::Location")
+@CoreClass("Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
 
     @CoreMethod(names = { "absolute_path", "path" })

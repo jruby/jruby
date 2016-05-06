@@ -29,7 +29,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-@CoreClass(name = "Mutex")
+@CoreClass("Mutex")
 public abstract class MutexNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

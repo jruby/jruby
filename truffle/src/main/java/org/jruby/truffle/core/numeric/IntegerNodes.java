@@ -28,7 +28,7 @@ import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 
 import java.math.BigInteger;
 
-@CoreClass(name = "Integer")
+@CoreClass("Integer")
 public abstract class IntegerNodes {
 
     @CoreMethod(names = "downto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)

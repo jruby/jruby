@@ -154,7 +154,7 @@ import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
-@CoreClass(name = "String")
+@CoreClass("String")
 public abstract class StringNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

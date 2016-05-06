@@ -33,7 +33,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
-@CoreClass(name = "Exception")
+@CoreClass("Exception")
 public abstract class ExceptionNodes {
 
     @CoreMethod(names = "initialize", optional = 1)

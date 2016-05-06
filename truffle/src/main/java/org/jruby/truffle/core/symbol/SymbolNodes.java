@@ -42,7 +42,7 @@ import org.jruby.truffle.language.parser.jruby.Translator;
 
 import java.util.Arrays;
 
-@CoreClass(name = "Symbol")
+@CoreClass("Symbol")
 public abstract class SymbolNodes {
 
     @CoreMethod(names = "all_symbols", onSingleton = true)
