@@ -503,8 +503,13 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return constants.get(name);
     }
 
-    public Map<String, InternalMethod> getMethods() {
-        return methods;
+    public Iterable<InternalMethod> getMethods() {
+        return methods.values();
+    }
+
+    @TruffleBoundary
+    public InternalMethod getMethod(String name) {
+        return methods.get(name);
     }
 
     public ConcurrentMap<String, Object> getClassVariables() {
@@ -562,7 +567,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         if (includeAncestors) {
             allMethods = ModuleOperations.getAllMethods(rubyModuleObject);
         } else {
-            allMethods = getMethods();
+            allMethods = methods;
         }
         return filterMethods(context, allMethods, filter);
     }
@@ -582,7 +587,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         if (includeAncestors) {
             allMethods = ModuleOperations.getMethodsBeforeLogicalClass(rubyModuleObject);
         } else {
-            allMethods = getMethods();
+            allMethods = methods;
         }
         return filterMethods(context, allMethods, filter);
     }

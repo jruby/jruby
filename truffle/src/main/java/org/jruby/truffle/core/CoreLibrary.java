@@ -753,7 +753,7 @@ public class CoreLibrary {
 
         coreMethodNodeManager.allMethodInstalled();
 
-        basicObjectSendMethod = Layouts.MODULE.getFields(basicObjectClass).getMethods().get("__send__");
+        basicObjectSendMethod = Layouts.MODULE.getFields(basicObjectClass).getMethod("__send__");
         assert basicObjectSendMethod != null;
     }
 
