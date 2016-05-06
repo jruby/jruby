@@ -94,8 +94,12 @@ public class DefineClassNode extends RubyNode {
 
             definingClass = (DynamicObject) constant.getValue();
 
-            if (!isBlankOrRootClass(superClassModule) && !isBlankOrRootClass(definingClass)
-                    && ClassNodes.getSuperClass(definingClass) != superClassModule) {
+            final DynamicObject currentSuperClass = ClassNodes.getSuperClass(definingClass);
+
+            if (!isBlankOrRootClass(superClassModule)
+                    && !isBlankOrRootClass(definingClass)
+                    && currentSuperClass != superClassModule
+                    && (superClassModule != definingClass || currentSuperClass == coreLibrary().getObjectClass())) {
                 errorProfile.enter();
 
                 throw new RaiseException(coreExceptions().superclassMismatch(
