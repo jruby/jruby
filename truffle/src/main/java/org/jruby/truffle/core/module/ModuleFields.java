@@ -279,7 +279,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
 
         if (RubyGuards.isRubyModule(value)) {
-            Layouts.MODULE.getFields(((DynamicObject) value)).getAdoptedByLexicalParent(context, rubyModuleObject, name, currentNode);
+            Layouts.MODULE.getFields((DynamicObject) value).getAdoptedByLexicalParent(context, rubyModuleObject, name, currentNode);
         } else {
             setConstantInternal(context, currentNode, name, value, false);
         }

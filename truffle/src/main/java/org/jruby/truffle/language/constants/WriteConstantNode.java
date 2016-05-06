@@ -37,7 +37,7 @@ public class WriteConstantNode extends RubyNode {
         final Object value = valueNode.execute(frame);
         final Object moduleObject = moduleNode.execute(frame);
 
-        if (moduleProfile.profile(!(RubyGuards.isRubyModule(moduleObject)))) {
+        if (!moduleProfile.profile(RubyGuards.isRubyModule(moduleObject))) {
             throw new RaiseException(coreExceptions().typeErrorIsNotAClassModule(moduleObject, this));
         }
 

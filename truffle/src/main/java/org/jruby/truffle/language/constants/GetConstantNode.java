@@ -50,9 +50,9 @@ public abstract class GetConstantNode extends RubyNode {
 
     @Specialization(guards = { "constant != null", "constant.isAutoload()" })
     protected Object autoloadConstant(VirtualFrame frame, DynamicObject module, String name, RubyConstant constant,
-                                      @Cached("createRequireNode()") RequireNode requireNode,
-                                      @Cached("deepCopyReadConstantNode()") RestartableReadConstantNode readConstantNode,
-                                      @Cached("create()")IndirectCallNode callNode) {
+            @Cached("createRequireNode()") RequireNode requireNode,
+            @Cached("deepCopyReadConstantNode()") RestartableReadConstantNode readConstantNode,
+            @Cached("create()") IndirectCallNode callNode) {
 
         final DynamicObject path = (DynamicObject) constant.getValue();
 
