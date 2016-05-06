@@ -20,6 +20,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -660,6 +662,73 @@ public abstract class BignumNodes {
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
+        }
+
+    }
+
+    @Primitive(name = "bignum_compare")
+    public abstract static class BignumCompareNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public int compare(DynamicObject a, long b) {
+            return Layouts.BIGNUM.getValue(a).compareTo(BigInteger.valueOf(b));
+        }
+
+        @Specialization(guards = "!isInfinity(b)")
+        public int compare(DynamicObject a, double b) {
+            return Double.compare(Layouts.BIGNUM.getValue(a).doubleValue(), b);
+        }
+
+        @Specialization(guards = "isInfinity(b)")
+        public int compareInfinity(DynamicObject a, double b) {
+            if (b < 0) {
+                return +1;
+            } else {
+                return -1;
+            }
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
+        public int compare(DynamicObject a, DynamicObject b) {
+            return Layouts.BIGNUM.getValue(a).compareTo(Layouts.BIGNUM.getValue(b));
+        }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object compareFallback(DynamicObject a, DynamicObject b) {
+            return null; // Primitive failure
+        }
+
+    }
+
+    @Primitive(name = "bignum_pow")
+    public static abstract class BignumPowPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        private final ConditionProfile negativeProfile = ConditionProfile.createBinaryProfile();
+
+        @Specialization
+        public DynamicObject pow(DynamicObject a, int b) {
+            return pow(a, (long) b);
+        }
+
+        @Specialization
+        public DynamicObject pow(DynamicObject a, long b) {
+            if (negativeProfile.profile(b < 0)) {
+                return null; // Primitive failure
+            } else {
+                // TODO CS 15-Feb-15 what about this cast?
+                return createBignum(Layouts.BIGNUM.getValue(a).pow((int) b));
+            }
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public double pow(DynamicObject a, double b) {
+            return Math.pow(Layouts.BIGNUM.getValue(a).doubleValue(), b);
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
+        public Void pow(DynamicObject a, DynamicObject b) {
+            throw new UnsupportedOperationException();
         }
 
     }

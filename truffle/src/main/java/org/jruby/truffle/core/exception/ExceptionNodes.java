@@ -23,6 +23,8 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.NonStandard;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.backtrace.Backtrace;
@@ -142,4 +144,15 @@ public abstract class ExceptionNodes {
         }
 
     }
+
+    @Primitive(name = "exception_errno_error", needsSelf = false)
+    public static abstract class ExceptionErrnoErrorPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject exceptionErrnoError(DynamicObject message, int errno) {
+            return coreExceptions().errnoError(errno, message.toString(), this);
+        }
+
+    }
+
 }

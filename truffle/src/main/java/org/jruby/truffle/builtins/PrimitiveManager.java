@@ -13,29 +13,29 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.core.ObjectNodesFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
+import org.jruby.truffle.core.dir.DirNodesFactory;
+import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
+import org.jruby.truffle.core.encoding.EncodingNodesFactory;
+import org.jruby.truffle.core.exception.ExceptionNodesFactory;
+import org.jruby.truffle.core.numeric.BignumNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
 import org.jruby.truffle.core.numeric.FloatNodesFactory;
-import org.jruby.truffle.core.rubinius.BignumPrimitiveNodesFactory;
-import org.jruby.truffle.core.rubinius.DirPrimitiveNodesFactory;
-import org.jruby.truffle.core.rubinius.EncodingConverterPrimitiveNodesFactory;
-import org.jruby.truffle.core.rubinius.EncodingPrimitiveNodesFactory;
-import org.jruby.truffle.core.rubinius.ExceptionPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.IOBufferPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.IOPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.NativeFunctionPrimitiveNodesFactory;
-import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.PointerPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.RandomizerPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.StatPrimitiveNodesFactory;
-import org.jruby.truffle.core.rubinius.ThreadPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.VMPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.WeakRefPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.symbol.SymbolNodesFactory;
+import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -66,26 +66,26 @@ public class PrimitiveManager {
         final List<NodeFactory<? extends RubyNode>> nodeFactories = new ArrayList<>();
 
         nodeFactories.addAll(VMPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(ObjectPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(ObjectNodesFactory.getFactories());
         nodeFactories.addAll(TimeNodesFactory.getFactories());
         nodeFactories.addAll(StringNodesFactory.getFactories());
         nodeFactories.addAll(SymbolNodesFactory.getFactories());
         nodeFactories.addAll(FixnumNodesFactory.getFactories());
-        nodeFactories.addAll(BignumPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(BignumNodesFactory.getFactories());
         nodeFactories.addAll(FloatNodesFactory.getFactories());
-        nodeFactories.addAll(EncodingPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(EncodingConverterPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(EncodingNodesFactory.getFactories());
+        nodeFactories.addAll(EncodingConverterNodesFactory.getFactories());
         nodeFactories.addAll(RegexpPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(RandomizerPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ArrayNodesFactory.getFactories());
         nodeFactories.addAll(StatPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(PointerPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(NativeFunctionPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(DirPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(DirNodesFactory.getFactories());
         nodeFactories.addAll(IOPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(IOBufferPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(ExceptionPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(ThreadPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(ExceptionNodesFactory.getFactories());
+        nodeFactories.addAll(ThreadNodesFactory.getFactories());
         nodeFactories.addAll(WeakRefPrimitiveNodesFactory.getFactories());
 
         // This comes last as a catch-all
@@ -95,7 +95,9 @@ public class PrimitiveManager {
             final GeneratedBy generatedBy = nodeFactory.getClass().getAnnotation(GeneratedBy.class);
             final Class<?> nodeClass = generatedBy.value();
             final Primitive annotation = nodeClass.getAnnotation(Primitive.class);
-            primitives.putIfAbsent(annotation.name(), new PrimitiveNodeConstructor(annotation, nodeFactory));
+            if (annotation != null) {
+                primitives.putIfAbsent(annotation.name(), new PrimitiveNodeConstructor(annotation, nodeFactory));
+            }
         }
     }
 

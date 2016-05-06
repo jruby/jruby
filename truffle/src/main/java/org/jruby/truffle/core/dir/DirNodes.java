@@ -35,7 +35,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.core.dir;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -55,7 +55,7 @@ import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.io.File;
 
-public abstract class DirPrimitiveNodes {
+public abstract class DirNodes {
 
     @Primitive(name = "dir_allocate")
     public static abstract class DirAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {

@@ -6,6 +6,8 @@
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
+ *
+ * Contains code modified from JRuby's RubyConverter.java
  */
 package org.jruby.truffle.core.encoding;
 
@@ -28,6 +30,8 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.NonStandard;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
@@ -527,6 +531,37 @@ public abstract class EncodingNodes {
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
+        }
+
+    }
+
+    @Primitive(name = "encoding_get_object_encoding", needsSelf = false)
+    public static abstract class EncodingGetObjectEncodingNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject encodingGetObjectEncodingString(DynamicObject string) {
+            return EncodingNodes.getEncoding(Layouts.STRING.getRope(string).getEncoding());
+        }
+
+        @Specialization(guards = "isRubySymbol(symbol)")
+        public DynamicObject encodingGetObjectEncodingSymbol(DynamicObject symbol) {
+            return EncodingNodes.getEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
+        }
+
+        @Specialization(guards = "isRubyEncoding(encoding)")
+        public DynamicObject encodingGetObjectEncoding(DynamicObject encoding) {
+            return encoding;
+        }
+
+        @Specialization(guards = "isRubyRegexp(regexp)")
+        public DynamicObject encodingGetObjectEncodingRegexp(DynamicObject regexp) {
+            return EncodingNodes.getEncoding(Layouts.REGEXP.getSource(regexp).getEncoding());
+        }
+
+        @Specialization(guards = {"!isRubyString(object)", "!isRubySymbol(object)", "!isRubyEncoding(object)", "!isRubyRegexp(object)"})
+        public DynamicObject encodingGetObjectEncodingNil(DynamicObject object) {
+            // TODO(CS, 26 Jan 15) something to do with __encoding__ here?
+            return nil();
         }
 
     }

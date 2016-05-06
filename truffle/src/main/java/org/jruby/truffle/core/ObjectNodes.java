@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
@@ -33,7 +33,7 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 /**
  * Rubinius primitives associated with the Ruby {@code Object} class.
  */
-public abstract class ObjectPrimitiveNodes {
+public abstract class ObjectNodes {
 
     @Primitive(name = "object_id")
     public abstract static class ObjectIDPrimitiveNode extends PrimitiveArrayArgumentsNode {
@@ -110,7 +110,7 @@ public abstract class ObjectPrimitiveNodes {
 
         @Child private IsTaintedNode isTaintedNode;
         @Child private TaintNode taintNode;
-        
+
         public ObjectInfectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -121,18 +121,18 @@ public abstract class ObjectPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), getSourceSection(), null));
             }
-            
+
             if (isTaintedNode.executeIsTainted(source)) {
                 // This lazy node allocation effectively gives us a branch profile
-                
+
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     taintNode = insert(TaintNodeGen.create(getContext(), getSourceSection(), null));
                 }
-                
+
                 taintNode.executeTaint(host);
             }
-            
+
             return host;
         }
 
