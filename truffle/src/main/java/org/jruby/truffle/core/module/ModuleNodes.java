@@ -521,14 +521,11 @@ public abstract class ModuleNodes {
     })
     public abstract static class AutoloadNode extends CoreMethodNode {
 
-        @Child private StringNodes.EmptyNode emptyNode;
-        private final ConditionProfile invalidConstantName = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile emptyFilename = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile alreadyLoaded = ConditionProfile.createBinaryProfile();
+        @Child private StringNodes.IsEmptyNode isEmptyNode;
 
         public AutoloadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            emptyNode = StringNodesFactory.EmptyNodeFactory.create(new RubyNode[]{});
+            isEmptyNode = StringNodesFactory.IsEmptyNodeFactory.create(new RubyNode[] {});
         }
 
         @CreateCast("name") public RubyNode coerceNameToString(RubyNode name) {
@@ -539,19 +536,18 @@ public abstract class ModuleNodes {
             return ToPathNodeGen.create(null, null, filename);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(filename)")
         public DynamicObject autoload(DynamicObject module, String name, DynamicObject filename) {
-            if (invalidConstantName.profile(!IdUtil.isValidConstantName19(name))) {
-                CompilerDirectives.transferToInterpreter();
+            if (IdUtil.isValidConstantName19(name)) {
                 throw new RaiseException(coreExceptions().nameError(String.format("autoload must be constant name: %s", name), name, this));
             }
 
-            if (emptyFilename.profile(emptyNode.empty(filename))) {
-                CompilerDirectives.transferToInterpreter();
+            if (isEmptyNode.executeIsEmpty(filename)) {
                 throw new RaiseException(coreExceptions().argumentError("empty file name", this));
             }
 
-            if (alreadyLoaded.profile(Layouts.MODULE.getFields(module).getConstant(name) != null)) {
+            if (Layouts.MODULE.getFields(module).getConstant(name) != null) {
                 return nil();
             }
 
