@@ -38,6 +38,8 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.CoreSourceSection;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayNodesFactory.MaxBlockNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.MinBlockNodeFactory;
@@ -2160,6 +2162,16 @@ public abstract class ArrayNodes {
 
         protected static boolean fallback(DynamicObject array, DynamicObject other, Object[] others) {
             return ArrayGuards.isNullArray(array) || ArrayGuards.isNullArray(other) || others.length > 0;
+        }
+
+    }
+
+    @Primitive(name = "tuple_copy_from")
+    public static abstract class TupleCopyFromPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public Object tupleCopyFrom() {
+            return null;
         }
 
     }
