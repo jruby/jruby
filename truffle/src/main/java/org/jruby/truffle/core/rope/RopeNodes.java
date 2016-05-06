@@ -17,10 +17,7 @@ package org.jruby.truffle.core.rope;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.ExactMath;
-import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
-import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
@@ -506,6 +503,7 @@ public abstract class RopeNodes {
             @NodeChild(type = RubyNode.class, value = "base"),
             @NodeChild(type = RubyNode.class, value = "times")
     })
+    @ImportStatic(RopeGuards.class)
     public abstract static class MakeRepeatingNode extends RubyNode {
 
         public static MakeRepeatingNode create() {
@@ -564,13 +562,6 @@ public abstract class RopeNodes {
             return new RepeatingRope(base, times);
         }
 
-        protected static boolean isSingleByteString(Rope rope) {
-            return rope.byteLength() == 1;
-        }
-
-        protected static boolean isRopeBuffer(Rope rope) {
-            return rope instanceof RopeBuffer;
-        }
     }
 
 
@@ -756,10 +747,6 @@ public abstract class RopeNodes {
             return rope.getCodeRange() == CR_7BIT && encoding.isAsciiCompatible();
         }
 
-        protected static boolean is7Bit(Rope rope) {
-            return rope.getCodeRange() == CR_7BIT;
-        }
-
         protected int getCacheLimit() {
             return getContext().getOptions().ROPE_CLASS_CACHE;
         }
@@ -833,6 +820,7 @@ public abstract class RopeNodes {
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "rope")
     })
+    @ImportStatic(RopeGuards.class)
     public abstract static class FlattenNode extends RubyNode {
 
         @Child private MakeLeafRopeNode makeLeafRopeNode;
@@ -866,10 +854,6 @@ public abstract class RopeNodes {
             final byte[] bytes = RopeOperations.flattenBytes(rope);
 
             return makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength());
-        }
-
-        protected static boolean isLeafRope(Rope rope) {
-            return rope instanceof LeafRope;
         }
 
     }
