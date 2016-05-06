@@ -19,16 +19,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.cast.IntegerCastNode;
 import org.jruby.truffle.core.cast.IntegerCastNodeGen;
 import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
@@ -44,7 +42,7 @@ import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
 
-@CoreClass(name = "Truffle::BigDecimal")
+@CoreClass("Truffle::BigDecimal")
 public abstract class BigDecimalNodes {
 
     // TODO (pitr 2015-jun-16): lazy setup when required, see https://github.com/jruby/jruby/pull/3048#discussion_r32413656
@@ -1048,7 +1046,7 @@ public abstract class BigDecimalNodes {
         private int getConstant(VirtualFrame frame, String name) {
             if (sign == null) {
                 CompilerDirectives.transferToInterpreter();
-                sign = insert(GetIntegerConstantNodeGen.create(null, null, null, null));
+                sign = insert(GetIntegerConstantNodeGen.create(null, null));
             }
 
             return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), name);
@@ -1324,7 +1322,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "unscaled", visibility = Visibility.PRIVATE)
     public abstract static class UnscaledNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
@@ -1346,10 +1344,6 @@ public abstract class BigDecimalNodes {
 
     @CoreMethod(names = { "to_i", "to_int" })
     public abstract static class ToINode extends BigDecimalCoreMethodArrayArgumentsNode {
-
-        public ToINode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         private BigInteger toBigInteger(BigDecimal bigDecimal) {
             return bigDecimal.toBigInteger();

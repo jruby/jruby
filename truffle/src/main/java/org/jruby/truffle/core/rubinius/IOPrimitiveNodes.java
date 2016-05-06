@@ -49,7 +49,9 @@ import jnr.constants.platform.Fcntl;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.rope.BytesVisitor;
 import org.jruby.truffle.core.rope.Rope;
@@ -75,12 +77,12 @@ import static org.jruby.truffle.core.string.StringOperations.rope;
 
 public abstract class IOPrimitiveNodes {
 
-    public static abstract class IORubiniusPrimitiveArrayArgumentsNode extends RubiniusPrimitiveArrayArgumentsNode {
+    public static abstract class IOPrimitiveArrayArgumentsNode extends PrimitiveArrayArgumentsNode {
 
-        public IORubiniusPrimitiveArrayArgumentsNode() {
+        public IOPrimitiveArrayArgumentsNode() {
         }
 
-        public IORubiniusPrimitiveArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
+        public IOPrimitiveArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
@@ -96,8 +98,8 @@ public abstract class IOPrimitiveNodes {
 
     private static int STDOUT = 1;
 
-    @RubiniusPrimitive(name = "io_allocate", unsafe = UnsafeGroup.IO)
-    public static abstract class IOAllocatePrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_allocate", unsafe = UnsafeGroup.IO)
+    public static abstract class IOAllocatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode newBufferNode;
         @Child private AllocateObjectNode allocateNode;
@@ -115,8 +117,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_connect_pipe", needsSelf = false, unsafe = UnsafeGroup.IO)
-    public static abstract class IOConnectPipeNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_connect_pipe", needsSelf = false, unsafe = UnsafeGroup.IO)
+    public static abstract class IOConnectPipeNode extends IOPrimitiveArrayArgumentsNode {
 
         @CompilationFinal private int RDONLY = -1;
         @CompilationFinal private int WRONLY = -1;
@@ -169,8 +171,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 }, unsafe = UnsafeGroup.IO)
-    public static abstract class IOOpenPrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 }, unsafe = UnsafeGroup.IO)
+    public static abstract class IOOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(path)")
         public int open(DynamicObject path, int mode, int permission) {
@@ -179,8 +181,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_truncate", needsSelf = false, unsafe = UnsafeGroup.IO)
-    public static abstract class IOTruncatePrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_truncate", needsSelf = false, unsafe = UnsafeGroup.IO)
+    public static abstract class IOTruncatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(path)")
         public int truncate(DynamicObject path, long length) {
@@ -189,8 +191,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_ftruncate", unsafe = UnsafeGroup.IO)
-    public static abstract class IOFTruncatePrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_ftruncate", unsafe = UnsafeGroup.IO)
+    public static abstract class IOFTruncatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
         public int ftruncate(VirtualFrame frame, DynamicObject io, long length) {
@@ -200,8 +202,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_fnmatch", needsSelf = false, unsafe = UnsafeGroup.IO)
-    public static abstract class IOFNMatchPrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_fnmatch", needsSelf = false, unsafe = UnsafeGroup.IO)
+    public static abstract class IOFNMatchPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization(guards = { "isRubyString(pattern)", "isRubyString(path)" })
@@ -220,8 +222,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_ensure_open", unsafe = UnsafeGroup.IO)
-    public static abstract class IOEnsureOpenPrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_ensure_open", unsafe = UnsafeGroup.IO)
+    public static abstract class IOEnsureOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject ensureOpen(VirtualFrame frame, DynamicObject file) {
@@ -239,8 +241,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_read_if_available", lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
-    public static abstract class IOReadIfAvailableNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_read_if_available", lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
+    public static abstract class IOReadIfAvailableNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
@@ -281,8 +283,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_reopen", unsafe = UnsafeGroup.IO)
-    public static abstract class IOReopenPrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_reopen", unsafe = UnsafeGroup.IO)
+    public static abstract class IOReopenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
 
@@ -313,8 +315,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_reopen_path", lowerFixnumParameters = 1, unsafe = UnsafeGroup.IO)
-    public static abstract class IOReopenPathPrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_reopen_path", lowerFixnumParameters = 1, unsafe = UnsafeGroup.IO)
+    public static abstract class IOReopenPathPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
 
@@ -364,8 +366,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_write", unsafe = UnsafeGroup.IO)
-    public static abstract class IOWritePrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_write", unsafe = UnsafeGroup.IO)
+    public static abstract class IOWritePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
@@ -400,8 +402,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_close", unsafe = UnsafeGroup.IO)
-    public static abstract class IOClosePrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_close", unsafe = UnsafeGroup.IO)
+    public static abstract class IOClosePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode ensureOpenNode;
 
@@ -434,8 +436,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_seek", lowerFixnumParameters = { 0, 1 }, unsafe = UnsafeGroup.IO)
-    public static abstract class IOSeekPrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_seek", lowerFixnumParameters = { 0, 1 }, unsafe = UnsafeGroup.IO)
+    public static abstract class IOSeekPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
         public int seek(VirtualFrame frame, DynamicObject io, int amount, int whence) {
@@ -446,8 +448,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_accept", unsafe = UnsafeGroup.IO)
-    public abstract static class AcceptNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_accept", unsafe = UnsafeGroup.IO)
+    public abstract static class AcceptNode extends IOPrimitiveArrayArgumentsNode {
 
         @SuppressWarnings("restriction")
         @TruffleBoundary
@@ -471,8 +473,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_sysread", unsafe = UnsafeGroup.IO)
-    public static abstract class IOSysReadPrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO)
+    public static abstract class IOSysReadPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject sysread(VirtualFrame frame, DynamicObject file, int length) {
@@ -504,8 +506,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3, unsafe = UnsafeGroup.IO)
-    public static abstract class IOSelectPrimitiveNode extends IORubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3, unsafe = UnsafeGroup.IO)
+    public static abstract class IOSelectPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization(guards = { "isRubyArray(readables)", "isNil(writables)", "isNil(errorables)", "isNil(noTimeout)" })

@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.builtins;
 
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
@@ -18,6 +18,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.core.RaiseIfFrozenNode;
+import org.jruby.truffle.core.ReturnEnumeratorIfNoBlockNode;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.module.ModuleOperations;
@@ -77,7 +80,7 @@ public class CoreMethodNodeManager {
 
     private void addCoreMethod(MethodDetails methodDetails) {
         DynamicObject module;
-        String fullName = methodDetails.getClassAnnotation().name();
+        String fullName = methodDetails.getClassAnnotation().value();
 
         if (fullName.equals("main")) {
             module = getSingletonClass(context.getCoreLibrary().getMainObject());
@@ -154,7 +157,7 @@ public class CoreMethodNodeManager {
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
-        final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection(methodDetails.getClassAnnotation().name(), method.names()[0]);
+        final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection(methodDetails.getClassAnnotation().value(), method.names()[0]);
 
         final int required = method.required();
         final int optional = method.optional();
@@ -348,7 +351,7 @@ public class CoreMethodNodeManager {
         }
 
         public String getIndicativeName() {
-            return classAnnotation.name() + "#" + methodAnnotation.names()[0];
+            return classAnnotation.value() + "#" + methodAnnotation.names()[0];
         }
     }
 

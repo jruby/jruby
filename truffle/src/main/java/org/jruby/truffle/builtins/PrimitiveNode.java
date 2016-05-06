@@ -7,23 +7,22 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
 
-import com.oracle.truffle.api.frame.VirtualFrame;
+package org.jruby.truffle.builtins;
+
+import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.control.RaiseException;
 
-public class UnsafeNode extends RubyNode {
+@GenerateNodeFactory
+public abstract class PrimitiveNode extends RubyNode {
 
-    public UnsafeNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public PrimitiveNode() {
     }
 
-    @Override
-    public Object execute(VirtualFrame frame) {
-        throw new RaiseException(coreExceptions().internalErrorUnsafe(this));
+    public PrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        super(context, sourceSection);
     }
 
 }

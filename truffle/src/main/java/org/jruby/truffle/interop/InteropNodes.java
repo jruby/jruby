@@ -30,10 +30,10 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.Source;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
@@ -41,7 +41,7 @@ import org.jruby.util.ByteList;
 
 import java.io.IOException;
 
-@CoreClass(name = "Truffle::Interop")
+@CoreClass("Truffle::Interop")
 public abstract class InteropNodes {
 
     @CoreMethod(names = "executable?", isModuleFunction = true, needsSelf = false, required = 1)

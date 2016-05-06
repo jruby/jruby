@@ -11,7 +11,7 @@ package org.jruby.truffle.core.string;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.rope.Rope;
 
 import java.util.Map;

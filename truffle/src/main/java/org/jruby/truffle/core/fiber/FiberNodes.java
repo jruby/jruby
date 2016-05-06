@@ -19,12 +19,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.SingleValueCastNode;
 import org.jruby.truffle.core.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.core.proc.ProcOperations;
@@ -40,7 +40,7 @@ import org.jruby.truffle.platform.UnsafeGroup;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
-@CoreClass(name = "Fiber")
+@CoreClass("Fiber")
 public abstract class FiberNodes {
 
     public static DynamicObject createFiber(DynamicObject thread, DynamicObjectFactory factory, String name) {

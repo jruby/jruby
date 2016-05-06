@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.stdlib.bigdecimal;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -25,25 +26,26 @@ import org.jruby.truffle.language.constants.ReadConstantNode;
 @NodeChildren({@NodeChild("module"), @NodeChild("name")})
 public abstract class GetIntegerConstantNode extends RubyNode {
 
-    @Child
-    ReadConstantNode readConstantNode;
-    @Child
-    ToIntNode toIntNode;
-    @Child
-    IntegerCastNode integerCastNode;
-
-    public GetIntegerConstantNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        readConstantNode = new ReadConstantNode(context, sourceSection, false, false, null, null);
-        toIntNode = ToIntNode.create();
-        integerCastNode = IntegerCastNodeGen.create(context, sourceSection, null);
-    }
-
     public abstract int executeGetIntegerConstant(VirtualFrame frame, DynamicObject module, String name);
 
     @Specialization(guards = "isRubyModule(module)")
-    public int doInteger(VirtualFrame frame, DynamicObject module, String name) {
+    public int doInteger(
+            VirtualFrame frame,
+            DynamicObject module,
+            String name,
+            @Cached("createReadConstantNode()") ReadConstantNode readConstantNode,
+            @Cached("create()") ToIntNode toIntNode,
+            @Cached("createIntegerCastNode()") IntegerCastNode integerCastNode) {
         final Object value = readConstantNode.readConstant(frame, module, name);
         return integerCastNode.executeCastInt(toIntNode.executeIntOrLong(frame, value));
     }
+
+    protected ReadConstantNode createReadConstantNode() {
+        return new ReadConstantNode(null, null, false, false, null, null);
+    }
+
+    protected IntegerCastNode createIntegerCastNode() {
+        return IntegerCastNodeGen.create(null, null, null);
+    }
+
 }

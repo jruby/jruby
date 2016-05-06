@@ -18,11 +18,10 @@ import jnr.posix.Timeval;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.InterruptMode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.core.proc.ProcOperations;
-import org.jruby.truffle.core.rubinius.ThreadPrimitiveNodes;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.SafepointManager;
@@ -139,7 +138,7 @@ public class ThreadManager {
         final DynamicObject mainThread = context.getThreadManager().getRootThread();
         final boolean isSystemExit = Layouts.BASIC_OBJECT.getLogicalClass(exception) == context.getCoreLibrary().getSystemExitClass();
         if (thread != mainThread && (isSystemExit || Layouts.THREAD.getAbortOnException(thread))) {
-            ThreadPrimitiveNodes.ThreadRaisePrimitiveNode.raiseInThread(context, mainThread, exception, currentNode);
+            ThreadNodes.ThreadRaisePrimitiveNode.raiseInThread(context, mainThread, exception, currentNode);
         }
         Layouts.THREAD.setException(thread, exception);
     }

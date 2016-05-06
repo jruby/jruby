@@ -13,15 +13,17 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.RubyRandom;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.util.Random;
 
 import java.math.BigInteger;
 
 public abstract class RandomizerPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "randomizer_allocate", needsSelf = false)
-    public static abstract class RandomizerAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "randomizer_allocate", needsSelf = false)
+    public static abstract class RandomizerAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject randomizerAllocate() {
@@ -30,8 +32,8 @@ public abstract class RandomizerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "randomizer_seed")
-    public static abstract class RandomizerSeedPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "randomizer_seed")
+    public static abstract class RandomizerSeedPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyBignum(seed)")
         public DynamicObject randomizerSeed(DynamicObject randomizer, DynamicObject seed) {
@@ -57,8 +59,8 @@ public abstract class RandomizerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "randomizer_rand_float")
-    public static abstract class RandomizerRandFloatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "randomizer_rand_float")
+    public static abstract class RandomizerRandFloatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public double randomizerRandFloat(DynamicObject randomizer) {
@@ -71,8 +73,8 @@ public abstract class RandomizerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "randomizer_rand_int")
-    public static abstract class RandomizerRandIntPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "randomizer_rand_int")
+    public static abstract class RandomizerRandIntPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public int randomizerRandInt(DynamicObject randomizer, int limit) {
@@ -93,8 +95,8 @@ public abstract class RandomizerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "randomizer_gen_seed")
-    public static abstract class RandomizerGenSeedPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "randomizer_gen_seed")
+    public static abstract class RandomizerGenSeedPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization

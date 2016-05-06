@@ -7,15 +7,18 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle;
 
 import com.oracle.truffle.api.object.HiddenKey;
+import org.jruby.truffle.core.HandleLayout;
+import org.jruby.truffle.core.HandleLayoutImpl;
 import org.jruby.truffle.core.array.ArrayLayout;
 import org.jruby.truffle.core.array.ArrayLayoutImpl;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.core.basicobject.BasicObjectLayoutImpl;
 import org.jruby.truffle.core.binding.BindingLayout;
 import org.jruby.truffle.core.binding.BindingLayoutImpl;
+import org.jruby.truffle.core.dir.DirLayoutImpl;
 import org.jruby.truffle.core.encoding.EncodingConverterLayout;
 import org.jruby.truffle.core.encoding.EncodingConverterLayoutImpl;
 import org.jruby.truffle.core.encoding.EncodingLayout;
@@ -58,8 +61,7 @@ import org.jruby.truffle.core.rubinius.AtomicReferenceLayout;
 import org.jruby.truffle.core.rubinius.AtomicReferenceLayoutImpl;
 import org.jruby.truffle.core.rubinius.ByteArrayLayout;
 import org.jruby.truffle.core.rubinius.ByteArrayLayoutImpl;
-import org.jruby.truffle.core.rubinius.DirLayout;
-import org.jruby.truffle.core.rubinius.DirLayoutImpl;
+import org.jruby.truffle.core.dir.DirLayout;
 import org.jruby.truffle.core.rubinius.IOBufferLayout;
 import org.jruby.truffle.core.rubinius.IOBufferLayoutImpl;
 import org.jruby.truffle.core.rubinius.IOLayout;

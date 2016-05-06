@@ -17,7 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;

@@ -22,7 +22,7 @@ public abstract class BigDecimalOpNode extends BigDecimalCoreMethodNode {
 
     @CreateCast("b")
     protected RubyNode castB(RubyNode b) {
-        return BigDecimalCoerceNodeGen.create(null, null, b);
+        return BigDecimalCoerceNodeGen.create(b);
     }
 
 }

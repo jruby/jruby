@@ -15,11 +15,14 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.language.RubyNode;
 
-@CoreClass(name = "main")
+@CoreClass("main")
 public abstract class MainNodes {
 
     @CoreMethod(names = "public", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)

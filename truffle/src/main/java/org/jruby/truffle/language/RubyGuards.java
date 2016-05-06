@@ -11,7 +11,7 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.rubinius.PointerPrimitiveNodes;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 

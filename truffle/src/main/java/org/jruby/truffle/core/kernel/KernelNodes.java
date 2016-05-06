@@ -41,12 +41,14 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.core.ObjectNodes;
+import org.jruby.truffle.core.ObjectNodesFactory;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
@@ -79,8 +81,6 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodes;
-import org.jruby.truffle.core.rubinius.ObjectPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolTable;
@@ -142,7 +142,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-@CoreClass(name = "Kernel")
+@CoreClass("Kernel")
 public abstract class KernelNodes {
 
     @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1, unsafe = {UnsafeGroup.IO, UnsafeGroup.PROCESSES})
@@ -1925,13 +1925,13 @@ public abstract class KernelNodes {
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         @Child private LogicalClassNode classNode;
-        @Child private ObjectPrimitiveNodes.ObjectIDPrimitiveNode objectIDNode;
+        @Child private ObjectNodes.ObjectIDPrimitiveNode objectIDNode;
         @Child private ToHexStringNode toHexStringNode;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             classNode = LogicalClassNodeGen.create(context, sourceSection, null);
-            objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDPrimitiveNodeFactory.create(new RubyNode[]{ null });
+            objectIDNode = ObjectNodesFactory.ObjectIDPrimitiveNodeFactory.create(new RubyNode[]{ null });
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(new RubyNode[]{ null });
         }
 

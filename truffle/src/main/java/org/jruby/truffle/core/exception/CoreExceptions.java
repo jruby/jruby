@@ -16,7 +16,7 @@ import jnr.constants.platform.Errno;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.rope.Rope;
@@ -68,6 +68,10 @@ public class CoreExceptions {
 
     public DynamicObject argumentErrorNegativeArraySize(Node currentNode) {
         return argumentError(coreStrings().NEGATIVE_ARRAY_SIZE.getRope(), currentNode, null);
+    }
+
+    public DynamicObject argumentErrorCantOmitPrecision(Node currentNode) {
+        return argumentError("can't omit precision for a Float.", currentNode);
     }
 
     @TruffleBoundary
@@ -260,6 +264,10 @@ public class CoreExceptions {
         return typeError("can't define singleton", currentNode);
     }
 
+    public DynamicObject typeErrorCantBeCastedToBigDecimal(Node currentNode) {
+        return typeError("could not be casted to BigDecimal", currentNode);
+    }
+
     @TruffleBoundary
     public DynamicObject typeErrorMustHaveWriteMethod(Object object, Node currentNode) {
         return typeError(String.format("$stdout must have write method, %s given", Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(object)).getName()), currentNode);
@@ -285,6 +293,11 @@ public class CoreExceptions {
     @TruffleBoundary
     public DynamicObject typeErrorIsNotA(String value, String expectedType, Node currentNode) {
         return typeError(String.format("%s is not a %s", value, expectedType), currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject typeErrorIsNotAClassModule(Object value, Node currentNode) {
+        return typeError(String.format("%s is not a class/module", value), currentNode);
     }
 
     @TruffleBoundary

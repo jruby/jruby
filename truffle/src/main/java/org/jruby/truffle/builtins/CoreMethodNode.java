@@ -7,28 +7,21 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.builtins;
 
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-@NodeChildren({
-        @NodeChild(value = "left", type = RubyNode.class),
-        @NodeChild(value = "right", type = RubyNode.class)})
-public abstract class BinaryCoreMethodNode extends CoreMethodNode {
+@GenerateNodeFactory
+public abstract class CoreMethodNode extends RubyNode {
 
-    public BinaryCoreMethodNode() {
+    public CoreMethodNode() {
     }
 
-    public BinaryCoreMethodNode(RubyContext context, SourceSection sourceSection) {
+    public CoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
-
-    public abstract RubyNode getLeft();
-
-    public abstract RubyNode getRight();
 
 }

@@ -10,11 +10,11 @@
 package org.jruby.truffle.stdlib;
 
 import com.oracle.truffle.api.dsl.Specialization;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodNode;
 
-@CoreClass(name = "Truffle::Etc")
+@CoreClass("Truffle::Etc")
 public abstract class EtcNodes {
 
     @CoreMethod(names = "nprocessors", needsSelf = false)

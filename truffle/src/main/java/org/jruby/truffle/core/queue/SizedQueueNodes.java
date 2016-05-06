@@ -17,11 +17,11 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyNode;
@@ -34,7 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * We do not reuse much of class Queue since we need to be able to replace the queue in this case
  * and methods are small anyway.
  */
-@CoreClass(name = "SizedQueue")
+@CoreClass("SizedQueue")
 public abstract class SizedQueueNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

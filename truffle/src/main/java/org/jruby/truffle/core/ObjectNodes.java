@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
@@ -17,7 +17,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
@@ -31,10 +33,10 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 /**
  * Rubinius primitives associated with the Ruby {@code Object} class.
  */
-public abstract class ObjectPrimitiveNodes {
+public abstract class ObjectNodes {
 
-    @RubiniusPrimitive(name = "object_id")
-    public abstract static class ObjectIDPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "object_id")
+    public abstract static class ObjectIDPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
 
@@ -103,12 +105,12 @@ public abstract class ObjectPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "object_infect", needsSelf = false)
-    public static abstract class ObjectInfectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "object_infect", needsSelf = false)
+    public static abstract class ObjectInfectPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private IsTaintedNode isTaintedNode;
         @Child private TaintNode taintNode;
-        
+
         public ObjectInfectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -119,18 +121,18 @@ public abstract class ObjectPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), getSourceSection(), null));
             }
-            
+
             if (isTaintedNode.executeIsTainted(source)) {
                 // This lazy node allocation effectively gives us a branch profile
-                
+
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     taintNode = insert(TaintNodeGen.create(getContext(), getSourceSection(), null));
                 }
-                
+
                 taintNode.executeTaint(host);
             }
-            
+
             return host;
         }
 

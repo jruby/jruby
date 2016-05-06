@@ -7,17 +7,25 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.builtins;
+
+import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * A method that only exists in Rubinius but not in normal Ruby.
- */
 @Target(ElementType.TYPE)
-@Retention(RetentionPolicy.SOURCE)
-public @interface RubiniusOnly {
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Primitive {
+
+    String name();
+
+    boolean needsSelf() default true;
+
+    int[] lowerFixnumParameters() default {};
+
+    UnsafeGroup[] unsafe() default {};
+
 }

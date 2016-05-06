@@ -6,6 +6,8 @@
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
+ *
+ * Contains code modified from JRuby's RubyConverter.java
  */
 package org.jruby.truffle.core.encoding;
 
@@ -23,12 +25,14 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubiniusOnly;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.NonStandard;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
@@ -45,7 +49,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-@CoreClass(name = "Encoding")
+@CoreClass("Encoding")
 public abstract class EncodingNodes {
 
     // Both are mutated only in CoreLibrary.initializeEncodingConstants().
@@ -303,7 +307,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "default_external_jruby=", onSingleton = true, required = 1)
     public abstract static class SetDefaultExternalNode extends CoreMethodArrayArgumentsNode {
 
@@ -344,7 +348,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "default_internal_jruby=", onSingleton = true, required = 1)
     public abstract static class SetDefaultInternalNode extends CoreMethodArrayArgumentsNode {
 
@@ -414,7 +418,7 @@ public abstract class EncodingNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "encoding_map", onSingleton = true)
     public abstract static class EncodingMapNode extends CoreMethodArrayArgumentsNode {
 
@@ -527,6 +531,37 @@ public abstract class EncodingNodes {
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
+        }
+
+    }
+
+    @Primitive(name = "encoding_get_object_encoding", needsSelf = false)
+    public static abstract class EncodingGetObjectEncodingNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject encodingGetObjectEncodingString(DynamicObject string) {
+            return EncodingNodes.getEncoding(Layouts.STRING.getRope(string).getEncoding());
+        }
+
+        @Specialization(guards = "isRubySymbol(symbol)")
+        public DynamicObject encodingGetObjectEncodingSymbol(DynamicObject symbol) {
+            return EncodingNodes.getEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
+        }
+
+        @Specialization(guards = "isRubyEncoding(encoding)")
+        public DynamicObject encodingGetObjectEncoding(DynamicObject encoding) {
+            return encoding;
+        }
+
+        @Specialization(guards = "isRubyRegexp(regexp)")
+        public DynamicObject encodingGetObjectEncodingRegexp(DynamicObject regexp) {
+            return EncodingNodes.getEncoding(Layouts.REGEXP.getSource(regexp).getEncoding());
+        }
+
+        @Specialization(guards = {"!isRubyString(object)", "!isRubySymbol(object)", "!isRubyEncoding(object)", "!isRubyRegexp(object)"})
+        public DynamicObject encodingGetObjectEncodingNil(DynamicObject object) {
+            // TODO(CS, 26 Jan 15) something to do with __encoding__ here?
+            return nil();
         }
 
     }

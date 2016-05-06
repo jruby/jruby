@@ -14,10 +14,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.unsafe.UnsafeHolder;
 
-@CoreClass(name = "Truffle::System")
+@CoreClass("Truffle::System")
 public abstract class TruffleSystemNodes {
 
     @CoreMethod(names = "host_cpu", onSingleton = true)

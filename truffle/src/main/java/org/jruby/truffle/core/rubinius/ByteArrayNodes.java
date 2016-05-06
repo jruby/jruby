@@ -16,17 +16,17 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 
-@CoreClass(name = "Rubinius::ByteArray")
+@CoreClass("Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
 
     public static DynamicObject createByteArray(DynamicObjectFactory factory, ByteList bytes) {

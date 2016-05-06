@@ -12,16 +12,16 @@ package org.jruby.truffle.stdlib;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.objects.ObjectGraph;
 
 import java.util.Set;
 
-@CoreClass(name = "Truffle::ObjSpace")
+@CoreClass("Truffle::ObjSpace")
 public abstract class ObjSpaceNodes {
 
     @CoreMethod(names = "memsize_of", isModuleFunction = true, required = 1)

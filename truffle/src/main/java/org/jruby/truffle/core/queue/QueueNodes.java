@@ -19,12 +19,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyNode;
@@ -36,7 +36,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-@CoreClass(name = "Queue")
+@CoreClass("Queue")
 public abstract class QueueNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
@@ -124,7 +124,7 @@ public abstract class QueueNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "receive_timeout", required = 1, visibility = Visibility.PRIVATE)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "queue"),

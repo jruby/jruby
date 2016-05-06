@@ -14,14 +14,14 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.Activation;
 
-@CoreClass(name = "Thread::Backtrace::Location")
+@CoreClass("Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
 
     @CoreMethod(names = { "absolute_path", "path" })

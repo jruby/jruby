@@ -18,8 +18,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreSourceSection;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.CoreSourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.language.RubyConstant;
@@ -158,20 +158,9 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     // TODO (eregon, 12 May 2015): ideally all callers would be nodes and check themselves.
     public void checkFrozen(RubyContext context, Node currentNode) {
-        if (context.getCoreLibrary() != null && verySlowIsFrozen(context, rubyModuleObject)) {
-            CompilerDirectives.transferToInterpreter();
+        if (context.getCoreLibrary() != null && IsFrozenNode.isFrozen(rubyModuleObject)) {
             throw new RaiseException(context.getCoreExceptions().frozenError(rubyModuleObject, currentNode));
         }
-    }
-
-    // TODO CS 20-Aug-15 this needs to go
-    public static boolean verySlowIsFrozen(RubyContext context, Object object) {
-        final IsFrozenNode node = IsFrozenNodeGen.create(context, null, null);
-        new Node() {
-            @Child RubyNode child = node;
-        }.adoptChildren();
-
-        return node.executeIsFrozen(object);
     }
 
     public void insertAfter(DynamicObject module) {
@@ -279,7 +268,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
 
         if (RubyGuards.isRubyModule(value)) {
-            Layouts.MODULE.getFields(((DynamicObject) value)).getAdoptedByLexicalParent(context, rubyModuleObject, name, currentNode);
+            Layouts.MODULE.getFields((DynamicObject) value).getAdoptedByLexicalParent(context, rubyModuleObject, name, currentNode);
         } else {
             setConstantInternal(context, currentNode, name, value, false);
         }
@@ -514,8 +503,13 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return constants.get(name);
     }
 
-    public Map<String, InternalMethod> getMethods() {
-        return methods;
+    public Iterable<InternalMethod> getMethods() {
+        return methods.values();
+    }
+
+    @TruffleBoundary
+    public InternalMethod getMethod(String name) {
+        return methods.get(name);
     }
 
     public ConcurrentMap<String, Object> getClassVariables() {
@@ -573,7 +567,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         if (includeAncestors) {
             allMethods = ModuleOperations.getAllMethods(rubyModuleObject);
         } else {
-            allMethods = getMethods();
+            allMethods = methods;
         }
         return filterMethods(context, allMethods, filter);
     }
@@ -593,7 +587,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         if (includeAncestors) {
             allMethods = ModuleOperations.getMethodsBeforeLogicalClass(rubyModuleObject);
         } else {
-            allMethods = getMethods();
+            allMethods = methods;
         }
         return filterMethods(context, allMethods, filter);
     }

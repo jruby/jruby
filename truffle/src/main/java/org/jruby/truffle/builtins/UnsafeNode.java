@@ -7,22 +7,23 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
+package org.jruby.truffle.builtins;
 
-package org.jruby.truffle.core.rubinius;
-
-import com.oracle.truffle.api.dsl.GenerateNodeFactory;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 
-@GenerateNodeFactory
-public abstract class RubiniusPrimitiveNode extends RubyNode {
+public class UnsafeNode extends RubyNode {
 
-    public RubiniusPrimitiveNode() {
+    public UnsafeNode(RubyContext context, SourceSection sourceSection) {
+        super(context, sourceSection);
     }
 
-    public RubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    @Override
+    public Object execute(VirtualFrame frame) {
+        throw new RaiseException(coreExceptions().internalErrorUnsafe(this));
     }
 
 }

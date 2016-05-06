@@ -15,8 +15,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 import java.math.BigDecimal;
@@ -29,23 +27,21 @@ import java.math.RoundingMode;
 
 })
 public abstract class BigDecimalCoerceNode extends RubyNode {
+
     @Child private CreateBigDecimalNode createBigDecimal;
 
-    public static BigDecimalCoerceNode create(RubyContext context, SourceSection sourceSection, RubyNode value) {
+    public static BigDecimalCoerceNode create(RubyNode value) {
         return BigDecimalCoerceNodeGen.create(value,
                 RoundModeNodeFactory.create(),
-                BigDecimalCastNodeGen.create(context, sourceSection, null, null));
-    }
-
-    private void setupCreateBigDecimal() {
-        if (createBigDecimal == null) {
-            CompilerDirectives.transferToInterpreter();
-            createBigDecimal = insert(CreateBigDecimalNodeFactory.create(getContext(), getSourceSection(), null, null, null));
-        }
+                BigDecimalCastNodeGen.create(null, null));
     }
 
     protected DynamicObject createBigDecimal(VirtualFrame frame, Object value) {
-        setupCreateBigDecimal();
+        if (createBigDecimal == null) {
+            CompilerDirectives.transferToInterpreter();
+            createBigDecimal = insert(CreateBigDecimalNodeFactory.create(null, null, null));
+        }
+
         return createBigDecimal.executeCreate(frame, value);
     }
 
@@ -56,7 +52,10 @@ public abstract class BigDecimalCoerceNode extends RubyNode {
         return createBigDecimal(frame, cast);
     }
 
-    @Specialization(guards = { "isRubyBigDecimal(value)", "isNil(cast)" })
+    @Specialization(guards = {
+            "isRubyBigDecimal(value)",
+            "isNil(cast)"
+    })
     public Object doBigDecimal(DynamicObject value, RoundingMode roundingMode, DynamicObject cast) {
         return value;
     }

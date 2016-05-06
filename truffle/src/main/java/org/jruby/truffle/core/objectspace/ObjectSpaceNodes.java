@@ -18,11 +18,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
@@ -33,7 +33,7 @@ import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
-@CoreClass(name = "ObjectSpace")
+@CoreClass("ObjectSpace")
 public abstract class ObjectSpaceNodes {
 
     @CoreMethod(names = "_id2ref", isModuleFunction = true, required = 1)

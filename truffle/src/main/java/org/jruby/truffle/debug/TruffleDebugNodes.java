@@ -17,11 +17,11 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.array.ArrayStrategy;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
@@ -32,7 +32,7 @@ import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import java.util.ArrayList;
 import java.util.List;
 
-@CoreClass(name = "Truffle::Debug")
+@CoreClass("Truffle::Debug")
 public abstract class TruffleDebugNodes {
 
     @CoreMethod(names = "java_class_of", onSingleton = true, required = 1)

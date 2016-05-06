@@ -16,7 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
@@ -32,6 +32,7 @@ import java.util.Map.Entry;
 public abstract class ModuleOperations {
 
     public static boolean includesModule(DynamicObject module, DynamicObject other) {
+        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
         //assert RubyGuards.isRubyModule(other);
 
@@ -212,7 +213,7 @@ public abstract class ModuleOperations {
         final Map<String, InternalMethod> methods = new HashMap<>();
 
         for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
-            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods().values()) {
+            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -234,7 +235,7 @@ public abstract class ModuleOperations {
                 break;
             }
 
-            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods().values()) {
+            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -251,7 +252,7 @@ public abstract class ModuleOperations {
         final Map<String, InternalMethod> methods = new HashMap<>();
 
         for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
-            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods().values()) {
+            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -285,7 +286,7 @@ public abstract class ModuleOperations {
 
         // Look in ancestors
         for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
-            InternalMethod method = Layouts.MODULE.getFields(ancestor).getMethods().get(name);
+            InternalMethod method = Layouts.MODULE.getFields(ancestor).getMethod(name);
 
             if (method != null) {
                 return method;
@@ -317,7 +318,7 @@ public abstract class ModuleOperations {
             if (module == declaringModule) {
                 foundDeclaringModule = true;
             } else if (foundDeclaringModule) {
-                InternalMethod method = Layouts.MODULE.getFields(module).getMethods().get(name);
+                InternalMethod method = Layouts.MODULE.getFields(module).getMethod(name);
 
                 if (method != null) {
                     return method;

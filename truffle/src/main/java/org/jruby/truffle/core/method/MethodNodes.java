@@ -24,11 +24,11 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
@@ -47,7 +47,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 
-@CoreClass(name = "Method")
+@CoreClass("Method")
 public abstract class MethodNodes {
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)

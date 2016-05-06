@@ -30,7 +30,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.IsRubiniusUndefinedNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
 import org.jruby.truffle.core.array.ArrayAppendOneNodeGen;
 import org.jruby.truffle.core.array.ArrayConcatNode;
@@ -65,7 +65,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
-import org.jruby.truffle.core.rubinius.RubiniusPrimitiveConstructor;
+import org.jruby.truffle.builtins.PrimitiveConstructor;
 import org.jruby.truffle.core.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
 import org.jruby.truffle.core.string.StringNodesFactory;
@@ -563,7 +563,7 @@ public class BodyTranslator extends Translator {
          *
          * into
          *
-         *   CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *   CallPrimitiveNode(FooNode(arg1, arg2, ..., argN))
          *
          * or
          *
@@ -580,7 +580,7 @@ public class BodyTranslator extends Translator {
 
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
 
-        final RubiniusPrimitiveConstructor primitive = context.getRubiniusPrimitiveManager().getPrimitive(primitiveName);
+        final PrimitiveConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
         final ReturnID returnID = environment.getReturnID();
         return primitive.createCallPrimitiveNode(context, sourceSection, returnID);
     }
@@ -606,7 +606,7 @@ public class BodyTranslator extends Translator {
 
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
 
-        final RubiniusPrimitiveConstructor primitive = context.getRubiniusPrimitiveManager().getPrimitive(primitiveName);
+        final PrimitiveConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
 
         final List<RubyNode> arguments = new ArrayList<>();
 
@@ -1114,7 +1114,9 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final RubyNode ret = new WriteConstantNode(context, sourceSection, node.getName(), moduleNode, rhs);
+        final RubyNode ret = new WriteConstantNode(node.getName(), moduleNode, rhs);
+        ret.unsafeSetSourceSection(sourceSection);
+
         return addNewlineIfNeeded(node, ret);
     }
 

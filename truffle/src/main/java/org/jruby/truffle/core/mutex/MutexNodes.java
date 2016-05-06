@@ -16,11 +16,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.control.RaiseException;
@@ -29,7 +29,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-@CoreClass(name = "Mutex")
+@CoreClass("Mutex")
 public abstract class MutexNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

@@ -32,13 +32,15 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.CoreSourceSection;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.CoreSourceSection;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayNodesFactory.MaxBlockNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.MinBlockNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.RejectInPlaceNodeFactory;
@@ -94,7 +96,7 @@ import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
 import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
-@CoreClass(name = "Array")
+@CoreClass("Array")
 public abstract class ArrayNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
@@ -377,7 +379,7 @@ public abstract class ArrayNodes {
             return executeSet(frame, array, index, value, unused);
         }
 
-        // array[start, end] = object
+        // array[start, length] = object
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "strategy.specializesFor(value)" }, limit = "ARRAY_STRATEGIES")
         public Object setObject(VirtualFrame frame, DynamicObject array, int start, int length, Object value,
@@ -396,7 +398,7 @@ public abstract class ArrayNodes {
             return executeSet(frame, array, start, length, ary);
         }
 
-        // array[start, end] = other_array, with length == other_array.size
+        // array[start, length] = other_array, with length == other_array.size
 
         @Specialization(guards = {
                 "isRubyArray(replacement)",
@@ -413,7 +415,7 @@ public abstract class ArrayNodes {
             return replacement;
         }
 
-        // array[start, end] = other_array, with length != other_array.size
+        // array[start, length] = other_array, with length != other_array.size
 
         @Specialization(guards = {
                 "isRubyArray(replacement)",
@@ -467,7 +469,7 @@ public abstract class ArrayNodes {
             return replacement;
         }
 
-        // array[start, end] = object_or_array with non-int start or end
+        // array[start, length] = object_or_array with non-int start or length
 
         @Specialization(guards = { "!isInteger(startObject) || !isInteger(lengthObject)", "wasProvided(value)" })
         public Object setStartLengthNotInt(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, Object value,
@@ -2160,6 +2162,16 @@ public abstract class ArrayNodes {
 
         protected static boolean fallback(DynamicObject array, DynamicObject other, Object[] others) {
             return ArrayGuards.isNullArray(array) || ArrayGuards.isNullArray(other) || others.length > 0;
+        }
+
+    }
+
+    @Primitive(name = "tuple_copy_from")
+    public static abstract class TupleCopyFromPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public Object tupleCopyFrom() {
+            return null;
         }
 
     }

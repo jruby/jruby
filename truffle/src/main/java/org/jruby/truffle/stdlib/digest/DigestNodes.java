@@ -15,10 +15,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.rope.BytesVisitor;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
@@ -28,7 +28,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-@CoreClass(name = "Truffle::Digest")
+@CoreClass("Truffle::Digest")
 public abstract class DigestNodes {
 
     @TruffleBoundary

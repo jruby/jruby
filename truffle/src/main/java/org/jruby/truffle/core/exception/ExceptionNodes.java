@@ -18,11 +18,13 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.NonStandard;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.backtrace.Backtrace;
@@ -31,7 +33,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
-@CoreClass(name = "Exception")
+@CoreClass("Exception")
 public abstract class ExceptionNodes {
 
     @CoreMethod(names = "initialize", optional = 1)
@@ -87,7 +89,7 @@ public abstract class ExceptionNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "capture_backtrace!", optional = 1)
     public abstract static class CaptureBacktraceNode extends CoreMethodArrayArgumentsNode {
 
@@ -142,4 +144,15 @@ public abstract class ExceptionNodes {
         }
 
     }
+
+    @Primitive(name = "exception_errno_error", needsSelf = false)
+    public static abstract class ExceptionErrnoErrorPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject exceptionErrnoError(DynamicObject message, int errno) {
+            return coreExceptions().errnoError(errno, message.toString(), this);
+        }
+
+    }
+
 }

@@ -11,13 +11,13 @@ package org.jruby.truffle.core.bool;
 
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
 
-@CoreClass(name = "FalseClass")
+@CoreClass("FalseClass")
 public abstract class FalseClassNodes {
 
     @CoreMethod(names = "&", needsSelf = false, required = 1)

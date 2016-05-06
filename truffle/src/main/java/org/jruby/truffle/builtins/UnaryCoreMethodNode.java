@@ -7,23 +7,23 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.builtins;
 
-import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-@GenerateNodeFactory
-@NodeChild(value = "arguments", type = RubyNode[].class)
-public abstract class RubiniusPrimitiveArrayArgumentsNode extends RubiniusPrimitiveNode {
+@NodeChild(value = "operand", type = RubyNode.class)
+public abstract class UnaryCoreMethodNode extends CoreMethodNode {
 
-    public RubiniusPrimitiveArrayArgumentsNode() {
+    public UnaryCoreMethodNode() {
     }
 
-    public RubiniusPrimitiveArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
+    public UnaryCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
+
+    public abstract RubyNode getOperand();
 
 }

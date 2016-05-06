@@ -21,12 +21,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.core.CoreLibrary;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.CodeLoader;
@@ -39,7 +39,7 @@ import org.jruby.util.Memo;
 import java.io.File;
 import java.io.IOException;
 
-@CoreClass(name = "Truffle::Boot")
+@CoreClass("Truffle::Boot")
 public abstract class TruffleBootNodes {
 
     @CoreMethod(names = "jruby_home_directory", onSingleton = true)
@@ -82,7 +82,7 @@ public abstract class TruffleBootNodes {
         @Specialization(guards = "isRubyMethod(rubyMethod)")
         public Object installRubiniusPrimitive(DynamicObject rubyMethod) {
             String name = Layouts.METHOD.getMethod(rubyMethod).getName();
-            getContext().getRubiniusPrimitiveManager().installPrimitive(name, rubyMethod);
+            getContext().getPrimitiveManager().installPrimitive(name, rubyMethod);
             return nil();
         }
     }

@@ -28,6 +28,13 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
                 MissingBehavior.CALL_METHOD_MISSING);
     }
 
+    public static CallDispatchHeadNode createMethodCallIgnoreVisibility() {
+        return new CallDispatchHeadNode(
+                null,
+                true,
+                MissingBehavior.CALL_METHOD_MISSING);
+    }
+
     public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
         super(context, ignoreVisibility, missingBehavior, DispatchAction.CALL_METHOD);
     }

@@ -17,7 +17,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;

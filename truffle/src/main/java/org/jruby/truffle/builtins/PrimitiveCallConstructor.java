@@ -7,12 +7,12 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.builtins;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.method.MethodNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
@@ -23,11 +23,11 @@ import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.language.literal.ObjectLiteralNode;
 
-public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstructor {
+public class PrimitiveCallConstructor implements PrimitiveConstructor {
 
     private final DynamicObject method;
 
-    public RubiniusPrimitiveCallConstructor(DynamicObject method) {
+    public PrimitiveCallConstructor(DynamicObject method) {
         assert RubyGuards.isRubyMethod(method);
         this.method = method;
     }
@@ -39,7 +39,7 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
 
     @Override
     public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID) {
-        return new CallRubiniusPrimitiveNode(context, sourceSection,
+        return new CallPrimitiveNode(context, sourceSection,
                 MethodNodesFactory.CallNodeFactory.create(context, sourceSection, new RubyNode[] {
                     new ObjectLiteralNode(context, sourceSection, method),
                     new ReadAllArgumentsNode(),

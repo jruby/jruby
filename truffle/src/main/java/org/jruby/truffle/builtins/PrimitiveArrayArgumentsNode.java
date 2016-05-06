@@ -7,20 +7,23 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.builtins;
 
+import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.builtins.PrimitiveNode;
 import org.jruby.truffle.language.RubyNode;
 
+@GenerateNodeFactory
 @NodeChild(value = "arguments", type = RubyNode[].class)
-public abstract class CoreMethodArrayArgumentsNode extends CoreMethodNode {
+public abstract class PrimitiveArrayArgumentsNode extends PrimitiveNode {
 
-    public CoreMethodArrayArgumentsNode() {
+    public PrimitiveArrayArgumentsNode() {
     }
 
-    public CoreMethodArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
+    public PrimitiveArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 

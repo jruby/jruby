@@ -13,14 +13,14 @@ import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.graal.Graal;
 
-@CoreClass(name = "Truffle::Graal")
+@CoreClass("Truffle::Graal")
 public abstract class TruffleGraalNodes {
 
     @CoreMethod(names = "assert_constant", onSingleton = true, required = 1)

@@ -20,10 +20,10 @@ import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.platform.Platform;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
@@ -39,7 +39,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
 
-@CoreClass(name = "Rubinius::FFI::Platform::POSIX")
+@CoreClass("Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
 
     @CoreMethod(names = "access", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)

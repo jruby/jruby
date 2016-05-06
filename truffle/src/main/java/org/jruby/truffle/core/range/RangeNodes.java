@@ -20,15 +20,15 @@ import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.core.CoreLibrary;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubiniusOnly;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
-import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.NonStandard;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
@@ -41,7 +41,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
-@CoreClass(name = "Range")
+@CoreClass("Range")
 public abstract class RangeNodes {
 
     @CoreMethod(names = { "map", "collect" }, needsBlock = true, lowerFixnumSelf = true)
@@ -442,7 +442,7 @@ public abstract class RangeNodes {
     }
 
     // These 3 nodes replace ivar assignment in the common/range.rb Range#initialize
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "begin")
@@ -456,7 +456,7 @@ public abstract class RangeNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "end")
@@ -470,7 +470,7 @@ public abstract class RangeNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "excludeEnd")

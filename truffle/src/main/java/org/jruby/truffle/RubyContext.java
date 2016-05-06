@@ -24,7 +24,7 @@ import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
 import org.jruby.truffle.core.rope.RopeTable;
-import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
+import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.FrozenStrings;
 import org.jruby.truffle.core.symbol.SymbolTable;
@@ -65,7 +65,7 @@ public class RubyContext extends ExecutionContext {
 
     private final Options options = new Options();
     private final RopeTable ropeTable = new RopeTable();
-    private final RubiniusPrimitiveManager rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
+    private final PrimitiveManager primitiveManager = new PrimitiveManager();
     private final JRubyInterop jrubyInterop = new JRubyInterop(this);
     private final SafepointManager safepointManager = new SafepointManager(this);
     private final SymbolTable symbolTable = new SymbolTable(this);
@@ -150,7 +150,7 @@ public class RubyContext extends ExecutionContext {
 
         org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
         coreLibrary.addCoreMethods();
-        rubiniusPrimitiveManager.addAnnotatedPrimitives();
+        primitiveManager.addAnnotatedPrimitives();
         org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
 
         // Load the reset of the core library
@@ -291,8 +291,8 @@ public class RubyContext extends ExecutionContext {
         return compilerOptions;
     }
 
-    public RubiniusPrimitiveManager getRubiniusPrimitiveManager() {
-        return rubiniusPrimitiveManager;
+    public PrimitiveManager getPrimitiveManager() {
+        return primitiveManager;
     }
 
     public CoverageManager getCoverageManager() {

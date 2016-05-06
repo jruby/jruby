@@ -51,10 +51,10 @@ import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.RubyEncoding;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.adapaters.InputStreamAdapter;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
@@ -94,7 +94,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-@CoreClass(name = "Psych::Parser")
+@CoreClass("Psych::Parser")
 public abstract class PsychParserNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

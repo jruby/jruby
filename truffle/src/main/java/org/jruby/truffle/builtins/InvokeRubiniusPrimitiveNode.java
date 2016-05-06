@@ -7,49 +7,41 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.builtins;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.control.ReturnException;
-import org.jruby.truffle.language.control.ReturnID;
 
-/**
- * Node which wraps a {@link RubiniusPrimitiveNode}, providing the implicit control flow that you get with calls to
- * Rubinius primitives.
- */
-public class CallRubiniusPrimitiveNode extends RubyNode {
+public class InvokeRubiniusPrimitiveNode extends RubyNode {
 
     @Child private RubyNode primitive;
-    private final ReturnID returnID;
 
     private final ConditionProfile primitiveSucceededCondition = ConditionProfile.createBinaryProfile();
 
-    public CallRubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive, ReturnID returnID) {
+    public InvokeRubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive) {
         super(context, sourceSection);
         this.primitive = primitive;
-        this.returnID = returnID;
     }
 
     @Override
     public void executeVoid(VirtualFrame frame) {
-        final Object value = primitive.execute(frame);
-
-        if (primitiveSucceededCondition.profile(value != null)) {
-            // If the primitive didn't fail its value is returned in the calling method
-
-            throw new ReturnException(returnID, value);
-        }
-
-        // Primitives may return null to indicate that they have failed, in which case we continue with the fallback
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        executeVoid(frame);
+        final Object value = primitive.execute(frame);
+
+        if (primitiveSucceededCondition.profile(value != null)) {
+            // If the primitive didn't fail its value is produced
+
+            return value;
+        }
+
+        // Primitives may return null to indicate that they have failed, in which case we continue with the fallback
+
         return nil();
     }
 

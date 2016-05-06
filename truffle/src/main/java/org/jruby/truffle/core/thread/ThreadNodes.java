@@ -15,15 +15,19 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.InterruptMode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubiniusOnly;
-import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.NonStandard;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
@@ -35,7 +39,12 @@ import org.jruby.util.Memo;
 
 import java.util.concurrent.TimeUnit;
 
-@CoreClass(name = "Thread")
+import static org.jruby.RubyThread.RUBY_MAX_THREAD_PRIORITY;
+import static org.jruby.RubyThread.RUBY_MIN_THREAD_PRIORITY;
+import static org.jruby.RubyThread.javaPriorityToRubyPriority;
+import static org.jruby.RubyThread.rubyPriorityToJavaPriority;
+
+@CoreClass("Thread")
 public abstract class ThreadNodes {
 
     @CoreMethod(names = "alive?", unsafe = UnsafeGroup.THREADS)
@@ -117,7 +126,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE, unsafe = UnsafeGroup.THREADS)
     public abstract static class HandleInterruptNode extends YieldingCoreMethodNode {
 
@@ -396,6 +405,75 @@ public abstract class ThreadNodes {
         public DynamicObject list() {
             final Object[] threads = getContext().getThreadManager().getThreadList();
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), threads, threads.length);
+        }
+    }
+
+    @Primitive(name = "thread_raise", unsafe = UnsafeGroup.THREADS)
+    public static abstract class ThreadRaisePrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization(guards = { "isRubyThread(thread)", "isRubyException(exception)" })
+        public DynamicObject raise(DynamicObject thread, final DynamicObject exception) {
+            raiseInThread(getContext(), thread, exception, this);
+            return nil();
+        }
+
+        @TruffleBoundary
+        public static void raiseInThread(final RubyContext context, DynamicObject rubyThread, final DynamicObject exception, Node currentNode) {
+            final Thread javaThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(rubyThread).getCurrentFiber()));
+
+            context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, new SafepointAction() {
+                @Override
+                public void run(DynamicObject currentThread, Node currentNode) {
+                    if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
+                        Backtrace backtrace = context.getCallStack().getBacktrace(currentNode);
+                        Layouts.EXCEPTION.setBacktrace(exception, backtrace);
+                    }
+                    throw new RaiseException(exception);
+                }
+            });
+        }
+
+    }
+
+    @Primitive(name = "thread_get_priority", unsafe = UnsafeGroup.THREADS)
+    public static abstract class ThreadGetPriorityPrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadGetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public int getPriority(DynamicObject thread) {
+            final Thread javaThread = Layouts.THREAD.getThread(thread);
+            if (javaThread != null) {
+                int javaPriority = javaThread.getPriority();
+                return javaPriorityToRubyPriority(javaPriority);
+            } else {
+                return Layouts.THREAD.getPriority(thread);
+            }
+        }
+    }
+
+    @Primitive(name = "thread_set_priority", unsafe = UnsafeGroup.THREADS)
+    public static abstract class ThreadSetPriorityPrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadSetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public int getPriority(DynamicObject thread, int rubyPriority) {
+            if (rubyPriority < RUBY_MIN_THREAD_PRIORITY) {
+                rubyPriority = RUBY_MIN_THREAD_PRIORITY;
+            } else if (rubyPriority > RUBY_MAX_THREAD_PRIORITY) {
+                rubyPriority = RUBY_MAX_THREAD_PRIORITY;
+            }
+
+            int javaPriority = rubyPriorityToJavaPriority(rubyPriority);
+            final Thread javaThread = Layouts.THREAD.getThread(thread);
+            if (javaThread != null) {
+                javaThread.setPriority(javaPriority);
+            }
+            Layouts.THREAD.setPriority(thread, rubyPriority);
+            return rubyPriority;
         }
     }
 

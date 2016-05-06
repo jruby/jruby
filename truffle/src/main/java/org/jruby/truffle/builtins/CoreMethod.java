@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core;
+package org.jruby.truffle.builtins;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;

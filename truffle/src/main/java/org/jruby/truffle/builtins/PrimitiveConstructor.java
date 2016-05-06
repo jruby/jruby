@@ -7,14 +7,14 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.builtins;
 
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.ReturnID;
 
-public interface RubiniusPrimitiveConstructor {
+public interface PrimitiveConstructor {
     public int getPrimitiveArity();
 
     public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID);

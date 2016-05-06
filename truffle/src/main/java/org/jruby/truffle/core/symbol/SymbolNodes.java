@@ -20,12 +20,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.truffle.core.BinaryCoreMethodNode;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.BinaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.proc.ProcType;
@@ -40,7 +42,7 @@ import org.jruby.truffle.language.parser.jruby.Translator;
 
 import java.util.Arrays;
 
-@CoreClass(name = "Symbol")
+@CoreClass("Symbol")
 public abstract class SymbolNodes {
 
     @CoreMethod(names = "all_symbols", onSingleton = true)
@@ -151,6 +153,18 @@ public abstract class SymbolNodes {
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
+        }
+
+    }
+
+    @Primitive(name = "symbol_is_constant")
+    public static abstract class SymbolIsConstantPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubySymbol(symbol)")
+        public boolean symbolIsConstant(DynamicObject symbol) {
+            final String string = symbol.toString();
+            return string.length() > 0 && Character.isUpperCase(string.charAt(0));
         }
 
     }

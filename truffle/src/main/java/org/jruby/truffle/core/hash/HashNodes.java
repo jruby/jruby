@@ -25,13 +25,13 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubiniusOnly;
-import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.NonStandard;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
@@ -51,7 +51,7 @@ import org.jruby.truffle.language.yield.YieldNode;
 import java.util.Arrays;
 import java.util.Map;
 
-@CoreClass(name = "Hash")
+@CoreClass("Hash")
 public abstract class HashNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
@@ -1404,7 +1404,7 @@ public abstract class HashNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChild(type = RubyNode.class, value = "self")
     public abstract static class DefaultValueNode extends CoreMethodNode {
 
@@ -1420,7 +1420,7 @@ public abstract class HashNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "defaultValue")
@@ -1435,7 +1435,7 @@ public abstract class HashNodes {
         
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "defaultProc")

@@ -14,7 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 
 public abstract class ShapeCachingGuards {
 
