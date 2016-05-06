@@ -58,10 +58,6 @@ public class DefineClassNode extends RubyNode {
 
         DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
 
-        final RubyConstant constant = DefineModuleNode.lookupForExistingModule(
-                frame, getContext(), name, lexicalParentModule, indirectCallNode);
-
-        final DynamicObject definingClass;
         final Object superClassObject = superClass.execute(frame);
 
         if (!RubyGuards.isRubyClass(superClassObject)) {
@@ -75,6 +71,11 @@ public class DefineClassNode extends RubyNode {
             errorProfile.enter();
             throw new RaiseException(coreExceptions().typeError("can't make subclass of virtual class", this));
         }
+
+        final RubyConstant constant = DefineModuleNode.lookupForExistingModule(
+                frame, getContext(), name, lexicalParentModule, indirectCallNode);
+
+        final DynamicObject definingClass;
 
         if (needToDefineProfile.profile(constant == null)) {
             definingClass = ClassNodes.createInitializedRubyClass(getContext(), lexicalParentModule, superClassModule, name);
