@@ -231,7 +231,7 @@ public abstract class KernelNodes {
         private boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null));
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(new RubyNode[]{null, null}));
             }
 
             return referenceEqualNode.executeReferenceEqual(frame, left, right);

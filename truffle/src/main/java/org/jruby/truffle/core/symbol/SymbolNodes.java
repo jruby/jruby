@@ -21,7 +21,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.builtins.BinaryCoreMethodNode;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -58,7 +57,7 @@ public abstract class SymbolNodes {
     }
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)
-    public abstract static class EqualNode extends BinaryCoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "isRubySymbol(b)")
         public boolean equal(DynamicObject a, DynamicObject b) {

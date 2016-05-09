@@ -24,7 +24,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.builtins.BinaryCoreMethodNode;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -93,7 +92,7 @@ public abstract class BasicObjectNodes {
     }
 
     @CoreMethod(names = { "equal?", "==" }, required = 1)
-    public abstract static class ReferenceEqualNode extends BinaryCoreMethodNode {
+    public abstract static class ReferenceEqualNode extends CoreMethodArrayArgumentsNode {
 
         public abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
 

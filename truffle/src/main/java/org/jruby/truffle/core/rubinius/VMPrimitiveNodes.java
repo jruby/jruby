@@ -107,7 +107,7 @@ public abstract class VMPrimitiveNodes {
         private boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null));
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(new RubyNode[]{null, null}));
             }
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
         }
@@ -237,7 +237,7 @@ public abstract class VMPrimitiveNodes {
 
         public VMObjectEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            referenceEqualNode = ReferenceEqualNodeFactory.create(null, null);
+            referenceEqualNode = ReferenceEqualNodeFactory.create(new RubyNode[]{null, null});
         }
 
         @Specialization

@@ -185,7 +185,7 @@ public abstract class HashNodes {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null);
+            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(new RubyNode[]{null, null});
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
         }
