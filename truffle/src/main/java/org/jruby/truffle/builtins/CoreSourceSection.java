@@ -18,7 +18,7 @@ public abstract class CoreSourceSection {
     }
 
     public static boolean isCoreSourceSection(SourceSection sourceSection) {
-        return sourceSection.getShortDescription().startsWith("core: ");
+        return sourceSection.getSource() == null;
     }
 
 }
