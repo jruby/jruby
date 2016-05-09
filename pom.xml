@@ -795,6 +795,7 @@ DO NOT MODIFIY - GENERATED CODE
         <defaultGoal>install</defaultGoal>
       </build>
       <modules>
+        <module>truffle</module>
         <module>test</module>
         <module>maven</module>
       </modules>
@@ -805,6 +806,7 @@ DO NOT MODIFIY - GENERATED CODE
         <defaultGoal>clean</defaultGoal>
       </build>
       <modules>
+        <module>truffle</module>
         <module>test</module>
         <module>maven</module>
       </modules>
@@ -812,6 +814,7 @@ DO NOT MODIFIY - GENERATED CODE
     <profile>
       <id>release</id>
       <modules>
+        <module>truffle</module>
         <module>test</module>
         <module>maven</module>
       </modules>
@@ -849,6 +852,7 @@ DO NOT MODIFIY - GENERATED CODE
         </plugins>
       </build>
       <modules>
+        <module>truffle</module>
         <module>maven</module>
       </modules>
       <distributionManagement>

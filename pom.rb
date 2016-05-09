@@ -259,7 +259,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'test', 'maven' ]
+  all_modules = [ 'truffle', 'test', 'maven' ]
 
   profile 'all' do
 
@@ -280,13 +280,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'release' do
-    modules [ 'test', 'maven' ]
+    modules [ 'truffle', 'test', 'maven' ]
     properties 'invoker.skip' => true
   end
 
   profile 'snapshots' do
 
-    modules [ 'maven' ]
+    modules [ 'truffle', 'maven' ]
 
     distribution_management do
       repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )
