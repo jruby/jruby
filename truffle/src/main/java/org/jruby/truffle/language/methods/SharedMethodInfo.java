@@ -118,8 +118,11 @@ public class SharedMethodInfo {
         }
 
         builder.append(name);
-        builder.append(":");
-        builder.append(sourceSection.getShortDescription());
+
+        if (sourceSection != null) {
+            builder.append(":");
+            builder.append(sourceSection.getShortDescription());
+        }
 
         return builder.toString();
     }
