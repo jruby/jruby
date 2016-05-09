@@ -109,7 +109,7 @@ public class SharedMethodInfo {
 
         builder.append(name);
 
-        if (sourceSection != null) {
+        if (sourceSection != null || sourceSection.getSource() != null) {
             builder.append(":");
             builder.append(sourceSection.getShortDescription());
         }
