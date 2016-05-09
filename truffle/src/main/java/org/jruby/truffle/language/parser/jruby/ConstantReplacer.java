@@ -29,6 +29,15 @@ public class ConstantReplacer {
             }
         }
 
+        // The method_source gem checks if RUBY_ENGINE is defined and regexp matches 'jruby'. If it does,
+        // it uses Java interop to get source locations for JRuby. We rename the constant being looked for
+        // to one that doesn't exist so the defined? lookup fails.
+        if (sourceSection.getSource().getName().endsWith("source_location.rb")) {
+            if (name.equals("RUBY_ENGINE")) {
+                return name + "_NONEXISTENT";
+            }
+        }
+
         return name;
     }
 
