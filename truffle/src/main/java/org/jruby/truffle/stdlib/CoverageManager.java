@@ -71,6 +71,16 @@ public class CoverageManager {
         bitmap.set(line.getLineNumber() - 1);
     }
 
+    private boolean getLineHasCode(LineLocation line) {
+        final BitSet bitmap = linesHaveCode.get(line.getSource());
+
+        if (bitmap == null) {
+            return false;
+        }
+
+        return bitmap.get(line.getLineNumber() - 1);
+    }
+
     @TruffleBoundary
     public synchronized void enable() {
         if (enabled) {
@@ -94,8 +104,12 @@ public class CoverageManager {
                         if (!configured) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             final SourceSection sourceSection = eventContext.getInstrumentedSourceSection();
-                            lineNumber = sourceSection.getStartLine() - 1;
-                            counters = getCounters(sourceSection.getSource());
+
+                            if (getLineHasCode(sourceSection.getLineLocation())) {
+                                lineNumber = sourceSection.getStartLine() - 1;
+                                counters = getCounters(sourceSection.getSource());
+                            }
+
                             configured = true;
                         }
 
@@ -123,7 +137,7 @@ public class CoverageManager {
 
         enabled = false;
     }
-
+    
     private synchronized AtomicLongArray getCounters(Source source) {
         if (source.getPath() == null) {
             return null;
