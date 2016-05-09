@@ -1,4 +1,6 @@
-version = File.read( File.join( basedir, 'VERSION' ) ).strip
+version = ENV['JRUBY_VERSION'] ||
+  File.read( File.join( basedir, 'VERSION' ) ).strip
+
 project 'JRuby', 'https://github.com/jruby/jruby' do
 
   model_version '4.0.0'
@@ -77,16 +79,14 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
               'rdoc.version' => '4.2.0',
               'rake.version' => '10.4.2',
-              'jar-dependencies.version' => '0.2.3',
+              'jar-dependencies.version' => '0.3.2',
 
               'jruby-launcher.version' => '1.1.1',
               'ant.version' => '1.9.2',
               'asm.version' => '5.0.4',
-              'jffi.version' => '1.2.11',
+              'jffi.version' => '1.2.12',
               'bouncy-castle.version' => '1.47',
               'joda.time.version' => '2.8.2' )
-
-  modules [ 'truffle', 'core', 'lib' ]
 
   plugin_management do
     jar( 'junit:junit:4.11',
@@ -169,6 +169,15 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                    :phase => 'site-deploy' )
   end
 
+  modules [ 'core', 'lib' ]
+
+  # Truffle is by default only built if a JDK 8+ is available
+  profile 'truffle' do
+    activation do
+      jdk '[1.8,)' # 1.8+
+    end
+    modules [ 'truffle' ]
+  end
 
   build do
     default_goal 'install'
@@ -179,19 +188,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     modules [ 'test' ]
   end
 
-  [
-    'rake',
-    'exec',
-    'truffle-specs-language',
-    'truffle-specs-core',
-    'truffle-specs-library',
-    'truffle-specs-truffle',
-    'truffle-specs-language-report',
-    'truffle-specs-core-report',
-    'truffle-specs-library-report',
-    'truffle-test-pe',
-    'truffle-mri-tests'
-  ].each do |name|
+  [ 'rake', 'exec' ].each do |name|
     profile name do
 
       modules [ 'test' ]
@@ -257,7 +254,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'test', 'maven' ]
+  all_modules = [ 'truffle', 'test', 'maven' ]
 
   profile 'all' do
 
@@ -278,13 +275,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'release' do
-    modules [ 'test', 'maven' ]
+    modules [ 'truffle', 'test', 'maven' ]
     properties 'invoker.skip' => true
   end
 
   profile 'snapshots' do
 
-    modules [ 'maven' ]
+    modules [ 'truffle', 'maven' ]
 
     distribution_management do
       repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )

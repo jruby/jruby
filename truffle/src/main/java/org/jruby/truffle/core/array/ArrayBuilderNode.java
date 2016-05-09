@@ -14,8 +14,8 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 
 /*
  * TODO(CS): how does this work when when multithreaded? Could a node get replaced by someone else and
@@ -122,7 +122,7 @@ public abstract class ArrayBuilderNode extends Node {
             Object[] storeArray = (Object[]) store;
 
             if (index >= storeArray.length) {
-                storeArray = ArrayUtils.grow(storeArray, ArrayUtils.capacity(storeArray.length, index + 1));
+                storeArray = ArrayUtils.grow(storeArray, ArrayUtils.capacity(getContext(), storeArray.length, index + 1));
             }
 
             storeArray[index] = value;

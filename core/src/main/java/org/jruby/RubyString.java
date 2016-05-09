@@ -517,7 +517,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public static RubyString newUTF16String(Ruby runtime, CharSequence str) {
-        ByteList byteList = new ByteList(RubyEncoding.encodeUTF16(str.toString()), UTF16BEEncoding.INSTANCE, false);
+        ByteList byteList = new ByteList(RubyEncoding.encodeUTF16(str), UTF16BEEncoding.INSTANCE, false);
         return new RubyString(runtime, runtime.getString(), byteList);
     }
 
@@ -2313,8 +2313,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     /* RubyString aka rb_string_value */
     public static RubyString stringValue(IRubyObject object) {
-        return (RubyString) (object instanceof RubyString ? object :
-            object.convertToString());
+        return (RubyString) (object instanceof RubyString ? object : object.convertToString());
     }
 
     /** rb_str_sub / rb_str_sub_bang
@@ -4492,9 +4491,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return left.isNil() && right.isNil() ? context.runtime.getNil() : this;
     }
 
-    /** rb_str_count
-     *
-     */
     public IRubyObject count(ThreadContext context) {
         return count19(context);
     }
@@ -4543,7 +4539,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         final boolean[] table = new boolean[StringSupport.TRANS_SIZE + 1];
         StringSupport.TrTables tables = StringSupport.trSetupTable(countValue, runtime, table, null, true, enc);
-        return runtime.newFixnum(StringSupport.countCommon19(value, runtime, table, tables, enc));
+        return runtime.newFixnum(StringSupport.strCount(value, runtime, table, tables, enc));
     }
 
     // MRI: rb_str_count for arity > 1, first half
@@ -4564,7 +4560,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             tables = StringSupport.trSetupTable(countStr.value, runtime, table, tables, false, enc);
         }
 
-        return runtime.newFixnum(StringSupport.countCommon19(value, runtime, table, tables, enc));
+        return runtime.newFixnum(StringSupport.strCount(value, runtime, table, tables, enc));
     }
 
     /** rb_str_delete / rb_str_delete_bang

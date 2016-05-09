@@ -23,8 +23,8 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.methods.CallMethodNode;
-import org.jruby.truffle.language.methods.CallMethodNodeGen;
+import org.jruby.truffle.language.methods.CallInternalMethodNode;
+import org.jruby.truffle.language.methods.CallInternalMethodNodeGen;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 
@@ -35,7 +35,7 @@ public class SuperCallNode extends RubyNode {
     @Child ProcOrNullNode procOrNullNode;
 
     @Child LookupSuperMethodNode lookupSuperMethodNode;
-    @Child CallMethodNode callMethodNode;
+    @Child CallInternalMethodNode callMethodNode;
     @Child CallDispatchHeadNode callMethodMissingNode;
 
     public SuperCallNode(RubyContext context, SourceSection sourceSection, RubyNode arguments, RubyNode block) {
@@ -44,7 +44,7 @@ public class SuperCallNode extends RubyNode {
         this.block = block;
         this.procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
         this.lookupSuperMethodNode = LookupSuperMethodNodeGen.create(context, sourceSection, null);
-        this.callMethodNode = CallMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
+        this.callMethodNode = CallInternalMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
     }
 
     @ExplodeLoop

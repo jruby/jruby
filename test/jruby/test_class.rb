@@ -285,7 +285,7 @@ class TestClass < Test::Unit::TestCase
   class Foo
     def self.action(name, &block)
       define_method(name) {
-        instance_eval &block
+        instance_eval(&block)
       }
     end
 

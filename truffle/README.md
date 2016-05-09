@@ -26,7 +26,7 @@ University Linz](http://ssw.jku.at).
 * Aditya Bhardwaj
 
 The best way to get in touch with us is to join us in `#jruby` on Freenode, but 
-you can also Tweet to @chrisgseaton, @nirvdrum or @eregontp, or email
+you can also Tweet to @chrisgseaton, @nirvdrum, @eregontp or @pitr-ch, or email
 chris.seaton@oracle.com.
 
 ## Using Truffle
@@ -45,10 +45,10 @@ But you can also build it yourself, which you will need to do if you are on the
 https://github.com/jruby/jruby/wiki/Building-Graal
 
 You then need to set the `JAVACMD` environment variable as described on those
-pages.
+pages, and tell the JVM to use the Graal compiler.
 
 ```
-$ JAVACMD=... bin/jruby -X+T ...
+$ JAVACMD=... bin/jruby -X+T -J-Djvmci.Compiler=graal ...
 ```
 
 ### What to expect

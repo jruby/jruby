@@ -25,6 +25,7 @@ public class CoreString {
     private final String literal;
 
     @CompilationFinal private volatile Rope rope;
+    @CompilationFinal private volatile DynamicObject symbol;
 
     public CoreString(RubyContext context, String literal) {
         assert is7Bit(literal);
@@ -35,17 +36,23 @@ public class CoreString {
     public Rope getRope() {
         if (rope == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            rope = createRope();
+
+            rope = context.getRopeTable().getRope(
+                    literal.getBytes(StandardCharsets.US_ASCII),
+                    ASCIIEncoding.INSTANCE,
+                    CodeRange.CR_7BIT);
         }
+
         return rope;
     }
 
-    private Rope createRope() {
-        // RopeTable.getRope is fully synchronized and returns the same object for equivalent parameters
-        return context.getRopeTable().getRope(
-                literal.getBytes(StandardCharsets.US_ASCII),
-                ASCIIEncoding.INSTANCE,
-                CodeRange.CR_7BIT);
+    public DynamicObject getSymbol() {
+        if (symbol == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            symbol = context.getSymbolTable().getSymbol(getRope());
+        }
+
+        return symbol;
     }
 
     public DynamicObject createInstance() {
@@ -60,6 +67,11 @@ public class CoreString {
         }
 
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return literal;
     }
 
 }

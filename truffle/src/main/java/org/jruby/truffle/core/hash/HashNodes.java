@@ -19,24 +19,26 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubiniusOnly;
-import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.NonStandard;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -49,7 +51,7 @@ import org.jruby.truffle.language.yield.YieldNode;
 import java.util.Arrays;
 import java.util.Map;
 
-@CoreClass(name = "Hash")
+@CoreClass("Hash")
 public abstract class HashNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
@@ -84,7 +86,11 @@ public abstract class HashNodes {
 
         @ExplodeLoop
         @Specialization(guards = "isSmallArrayOfPairs(args)")
-        public Object construct(VirtualFrame frame, DynamicObject hashClass, Object[] args) {
+        public Object construct(
+                VirtualFrame frame,
+                DynamicObject hashClass,
+                Object[] args,
+                @Cached("new()") SnippetNode snippetNode) {
             final DynamicObject array = (DynamicObject) args[0];
 
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
@@ -97,18 +103,18 @@ public abstract class HashNodes {
                     final Object pair = store[n];
 
                     if (!RubyGuards.isRubyArray(pair)) {
-                        return constructFallback(frame, hashClass, args);
+                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
                     }
 
                     final DynamicObject pairArray = (DynamicObject) pair;
                     final Object pairStore = Layouts.ARRAY.getStore(pairArray);
 
                     if (pairStore != null && pairStore.getClass() != Object[].class) {
-                        return constructFallback(frame, hashClass, args);
+                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
                     }
 
                     if (Layouts.ARRAY.getSize(pairArray) != 2) {
-                        return constructFallback(frame, hashClass, args);
+                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
                     }
 
                     final Object[] pairObjectStore = (Object[]) pairStore;
@@ -126,8 +132,12 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "!isSmallArrayOfPairs(args)")
-        public Object constructFallback(VirtualFrame frame, DynamicObject hashClass, Object[] args) {
-            return ruby("_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
+        public Object constructFallback(
+                VirtualFrame frame,
+                DynamicObject hashClass,
+                Object[] args,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
         }
 
         public boolean isSmallArrayOfPairs(Object[] args) {
@@ -175,7 +185,7 @@ public abstract class HashNodes {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
+            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null);
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
         }
@@ -207,6 +217,19 @@ public abstract class HashNodes {
             return PackedArrayStrategy.getValue(store, cachedIndex);
         }
 
+        @Specialization(guards = {
+                "isPackedHash(hash)",
+                "isCompareByIdentity(hash)",
+                "cachedIndex >= 0",
+                "cachedIndex < getSize(hash)",
+                "equal(frame, key, getKeyAt(hash, cachedIndex))"
+        }, limit = "1")
+        public Object getConstantIndexPackedArrayByIdentity(VirtualFrame frame, DynamicObject hash, Object key,
+                @Cached("index(frame, hash, key)") int cachedIndex) {
+            final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
+            return PackedArrayStrategy.getValue(store, cachedIndex);
+        }
+
         protected int hash(VirtualFrame frame, Object key) {
             return hashNode.hash(frame, key);
         }
@@ -226,14 +249,23 @@ public abstract class HashNodes {
                 return -1;
             }
 
-            final int hashed = hashNode.hash(frame, key);
+            int hashed = 0;
+            if (!HashGuards.isCompareByIdentity(hash)) {
+                hashed = hashNode.hash(frame, key);
+            }
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final int size = Layouts.HASH.getSize(hash);
 
             for (int n = 0; n < size; n++) {
-                if (hashed == PackedArrayStrategy.getHashed(store, n) && eql(frame, key, PackedArrayStrategy.getKey(store, n))) {
-                    return n;
+                if (HashGuards.isCompareByIdentity(hash)) {
+                    if (equal(frame, key, PackedArrayStrategy.getKey(store, n))) {
+                        return n;
+                    }
+                } else {
+                    if (hashed == PackedArrayStrategy.getHashed(store, n) && eql(frame, key, PackedArrayStrategy.getKey(store, n))) {
+                        return n;
+                    }
                 }
             }
 
@@ -253,9 +285,8 @@ public abstract class HashNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = "isPackedHash(hash)", contains = "getConstantIndexPackedArray")
+        @Specialization(guards = { "isPackedHash(hash)", "!isCompareByIdentity(hash)" }, contains = "getConstantIndexPackedArray")
         public Object getPackedArray(VirtualFrame frame, DynamicObject hash, Object key,
-                @Cached("createBinaryProfile()") ConditionProfile byIdentityProfile,
                 @Cached("create()") BranchProfile notInHashProfile,
                 @Cached("create()") BranchProfile useDefaultProfile) {
             final int hashed = hashNode.hash(frame, key);
@@ -265,24 +296,43 @@ public abstract class HashNodes {
 
             for (int n = 0; n < getContext().getOptions().HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
-                    if (hashed == PackedArrayStrategy.getHashed(store, n)) {
-                        final boolean equal;
-
-                        if (byIdentityProfile.profile(Layouts.HASH.getCompareByIdentity(hash))) {
-                            equal = equal(frame, key, PackedArrayStrategy.getKey(store, n));
-                        } else {
-                            equal = eql(frame, key, PackedArrayStrategy.getKey(store, n));
-                        }
-
-                        if (equal) {
-                            return PackedArrayStrategy.getValue(store, n);
-                        }
+                    if (hashed == PackedArrayStrategy.getHashed(store, n) &&
+                            eql(frame, key, PackedArrayStrategy.getKey(store, n))) {
+                        return PackedArrayStrategy.getValue(store, n);
                     }
                 }
             }
 
             notInHashProfile.enter();
-            
+
+            if (undefinedValue != null) {
+                return undefinedValue;
+            }
+
+            useDefaultProfile.enter();
+            return callDefaultNode.call(frame, hash, "default", null, key);
+
+        }
+
+        @ExplodeLoop
+        @Specialization(guards = { "isPackedHash(hash)", "isCompareByIdentity(hash)" },
+                contains = "getConstantIndexPackedArray")
+        public Object getPackedArrayByIdentity(VirtualFrame frame, DynamicObject hash, Object key,
+                @Cached("create()") BranchProfile notInHashProfile,
+                @Cached("create()") BranchProfile useDefaultProfile) {
+            final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
+            final int size = Layouts.HASH.getSize(hash);
+
+            for (int n = 0; n < getContext().getOptions().HASH_PACKED_ARRAY_MAX; n++) {
+                if (n < size) {
+                    if (equal(frame, key, PackedArrayStrategy.getKey(store, n))) {
+                        return PackedArrayStrategy.getValue(store, n);
+                    }
+                }
+            }
+
+            notInHashProfile.enter();
+
             if (undefinedValue != null) {
                 return undefinedValue;
             }
@@ -358,10 +408,6 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
-        public ClearNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isNullHash(hash)")
         public DynamicObject emptyNull(DynamicObject hash) {
             return hash;
@@ -384,10 +430,6 @@ public abstract class HashNodes {
 
     @CoreMethod(names = "compare_by_identity", raiseIfFrozenSelf = true)
     public abstract static class CompareByIdentityNode extends CoreMethodArrayArgumentsNode {
-
-        public CompareByIdentityNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject compareByIdentity(DynamicObject hash) {
@@ -415,10 +457,6 @@ public abstract class HashNodes {
 
     @CoreMethod(names = "default_proc")
     public abstract static class DefaultProcNode extends CoreMethodArrayArgumentsNode {
-
-        public DefaultProcNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object defaultProc(DynamicObject hash) {
@@ -579,7 +617,7 @@ public abstract class HashNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -618,10 +656,6 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
-        public EmptyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isNullHash(hash)")
         public boolean emptyNull(DynamicObject hash) {
             return true;
@@ -637,10 +671,6 @@ public abstract class HashNodes {
     @CoreMethod(names = "initialize", needsBlock = true, optional = 1, raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject initialize(DynamicObject hash, NotProvided defaultValue, NotProvided block) {
@@ -684,7 +714,7 @@ public abstract class HashNodes {
         @Specialization(guards = "wasProvided(defaultValue)")
         public Object initialize(DynamicObject hash, Object defaultValue, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().argumentError("wrong number of arguments (1 for 0)", this));
+            throw new RaiseException(coreExceptions().argumentError("wrong number of arguments (1 for 0)", this));
         }
 
     }
@@ -692,10 +722,6 @@ public abstract class HashNodes {
     @CoreMethod(names = {"initialize_copy", "replace"}, required = 1, raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
-
-        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = {"isRubyHash(from)", "isNullHash(from)"})
         public DynamicObject replaceNull(DynamicObject self, DynamicObject from) {
@@ -752,8 +778,12 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "!isRubyHash(other)")
-        public Object replaceBuckets(VirtualFrame frame, DynamicObject self, Object other) {
-            return ruby("replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
+        public Object replaceBuckets(
+                VirtualFrame frame,
+                DynamicObject self,
+                Object other,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
         }
         
         private void copyOtherFields(DynamicObject self, DynamicObject from) {
@@ -767,10 +797,6 @@ public abstract class HashNodes {
     @CoreMethod(names = {"map", "collect"}, needsBlock = true)
     @ImportStatic(HashGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
-
-        public MapNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullHash(hash)")
         public DynamicObject mapNull(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
@@ -800,7 +826,7 @@ public abstract class HashNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(length);
+                    LoopNode.reportLoopCount(this, length);
                 }
             }
 
@@ -824,7 +850,7 @@ public abstract class HashNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(length);
+                    LoopNode.reportLoopCount(this, length);
                 }
             }
 
@@ -1179,10 +1205,6 @@ public abstract class HashNodes {
     @CoreMethod(names = "default=", required = 1, raiseIfFrozenSelf = true)
     public abstract static class SetDefaultNode extends CoreMethodArrayArgumentsNode {
 
-        public SetDefaultNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object setDefault(DynamicObject hash, Object defaultValue) {
             Layouts.HASH.setDefaultValue(hash, defaultValue);
@@ -1196,10 +1218,6 @@ public abstract class HashNodes {
     public abstract static class ShiftNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldNode yieldNode;
-
-        public ShiftNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = {"isEmptyHash(hash)", "!hasDefaultValue(hash)", "!hasDefaultBlock(hash)"})
         public DynamicObject shiftEmpty(DynamicObject hash) {
@@ -1306,10 +1324,6 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
-        public SizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isNullHash(hash)")
         public int sizeNull(DynamicObject hash) {
             return 0;
@@ -1390,13 +1404,9 @@ public abstract class HashNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChild(type = RubyNode.class, value = "self")
     public abstract static class DefaultValueNode extends CoreMethodNode {
-
-        public DefaultValueNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object defaultValue(DynamicObject hash) {
@@ -1410,16 +1420,12 @@ public abstract class HashNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "defaultValue")
     })
     public abstract static class SetDefaultValueNode extends CoreMethodNode {
-
-        public SetDefaultValueNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object setDefaultValue(DynamicObject hash, Object defaultValue) {
@@ -1429,16 +1435,12 @@ public abstract class HashNodes {
         
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "defaultProc")
     })
     public abstract static class SetDefaultProcNode extends CoreMethodNode {
-
-        public SetDefaultProcNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyProc(defaultProc)")
         public DynamicObject setDefaultProc(DynamicObject hash, DynamicObject defaultProc) {

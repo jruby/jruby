@@ -1,3 +1,11 @@
+# Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -32,6 +40,9 @@
 
 class Fixnum < Integer
 
+  MIN = -9223372036854775808
+  MAX =  9223372036854775807
+
   def self.induced_from(obj)
     case obj
     when Fixnum
@@ -53,14 +64,10 @@ class Fixnum < Integer
   # see README-DEVELOPERS regarding safe math compiler plugin
   #++
 
-  Truffle.omit(":divide is a Rubinius internal detail. We define :/ directly in Java") do
-    alias_method :/, :divide
-  end
-
   alias_method :modulo, :%
 
   def fdiv(n)
-    if n.kind_of?(Fixnum)
+    if n.kind_of?(Integer)
       to_f / n
     else
       redo_coerced :fdiv, n
@@ -69,17 +76,6 @@ class Fixnum < Integer
 
   def imaginary
     0
-  end
-
-  Truffle.omit(":divide is a Rubinius internal detail. We define :/ directly in Java") do
-    # Must be it's own method, so that super calls the correct method
-    # on Numeric
-    def div(o)
-      if o.is_a?(Float) && o == 0.0
-        raise ZeroDivisionError, "division by zero"
-      end
-      divide(o).floor
-    end
   end
 
   def **(o)

@@ -23,8 +23,8 @@ public class BacktraceData implements Serializable {
         this.javaTrace = javaTrace;
         this.rubyTrace = rubyTrace;
         this.fullTrace = fullTrace;
-        this.includeNonFiltered = includeNonFiltered;
         this.maskNative = maskNative;
+        this.includeNonFiltered = includeNonFiltered;
     }
 
     public static final BacktraceData EMPTY = new BacktraceData(
@@ -175,6 +175,32 @@ public class BacktraceData implements Serializable {
 
     // ^(org\\.jruby)|(sun\\.reflect)
     private static boolean isFilteredClass(final String className) {
-        return className.startsWith("org.jruby") || className.startsWith("sun.reflect") ;
+        if ( className.startsWith("sun.reflect.") ) return true; // sun.reflect.NativeMethodAccessorImpl.invoke
+        // NOTE: previously filtered "too much" (all org.jruby prefixes) hurting traces (e.g. for jruby-openssl)
+        final String org_jruby_ = "org.jruby.";
+        if ( className.startsWith(org_jruby_) ) {
+            final int dot = className.indexOf('.', org_jruby_.length());
+            if ( dot == -1 ) return false; // e.g. org.jruby.RubyArray
+            final String subPackage = className.substring(org_jruby_.length(), dot);
+            switch ( subPackage ) {
+                case "anno" : return true;
+                case "ast" : return true;
+                case "exceptions" : return true;
+                case "gen" : return true;
+                case "ir" : return true;
+                case "internal" : return true; // e.g. org.jruby.internal.runtime.methods.DynamicMethod.call
+                case "java" : return true; // e.g. org.jruby.java.invokers.InstanceMethodInvoker.call
+                // NOTE: if filtering javasupport is added back consider keeping some of the internals as they
+                // help identify issues and probably makes sense to NOT be filtered, namely:
+                // - (most if not all) classes in the package such as Java, JavaPackage, JavaUtil
+                // - sub-packages such as util, binding - maybe only filter the "proxy" sub-package?
+                //case "javasupport" : return true;
+                case "parser" : return true;
+                case "platform" : return true;
+                case "runtime" : return true; // e.g.  org.jruby.runtime.callsite.CachingCallSite.cacheAndCall
+                case "util" : return true;
+            }
+        }
+        return false;
     }
 }

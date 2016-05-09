@@ -1,6 +1,6 @@
 fails:IO#reopen with a String effects exec/system/fork performed after it
 fails:IO#reopen with a String opens a path after writing to the original file descriptor
-fails:IO#reopen with an IO reads from the beginning if the other IO has not been read from
-fails:IO#reopen with an IO reads from the current position of the other IO's stream
-fails:IO#reopen with an IO associates the IO instance with the other IO's stream
+fails:IO#reopen with a String positions an instance that has been read from at the beginning of the new stream
 slow:IO#reopen with a String effects exec/system/fork performed after it
+slow:IO#reopen with a String affects exec/system/fork performed after it
+fails:IO#reopen with a String affects exec/system/fork performed after it

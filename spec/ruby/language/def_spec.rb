@@ -73,18 +73,9 @@ describe "Defining a 'respond_to_missing?' method" do
 end
 
 describe "Defining a method" do
-  ruby_version_is ""..."2.1" do
-    it "returns a symbol of the method name" do
-      method_name = def some_method; end
-      method_name.should == nil
-    end
-  end
-
-  ruby_version_is "2.1" do
-    it "returns a symbol of the method name" do
-      method_name = def some_method; end
-      method_name.should == :some_method
-    end
+  it "returns a symbol of the method name" do
+    method_name = def some_method; end
+    method_name.should == :some_method
   end
 end
 
@@ -218,7 +209,7 @@ describe "A singleton method definition" do
   end
 
   it "can be declared for a local variable" do
-    a = "hi"
+    a = Object.new
     def a.foo
       5
     end
@@ -226,7 +217,7 @@ describe "A singleton method definition" do
   end
 
   it "can be declared for an instance variable" do
-    @a = "hi"
+    @a = Object.new
     def @a.foo
       6
     end
@@ -242,7 +233,7 @@ describe "A singleton method definition" do
   end
 
   it "can be declared for a class variable" do
-    @@a = "hi"
+    @@a = Object.new
     def @@a.foo
       8
     end
@@ -320,10 +311,14 @@ describe "A method defined with extreme default arguments" do
   end
 
   it "may use an fcall as a default" do
-    def foo(x = caller())
+    def bar
+      1
+    end
+    def foo(x = bar())
       x
     end
-    foo.shift.should be_kind_of(String)
+    foo.should == 1
+    foo(2).should == 2
   end
 
   it "evaluates the defaults in the method's scope" do
@@ -349,7 +344,7 @@ end
 
 describe "A singleton method defined with extreme default arguments" do
   it "may use a method definition as a default" do
-    $__a = "hi"
+    $__a = Object.new
     def $__a.foo(x = (def $__a.foo; "hello"; end;1));x;end
 
     $__a.foo(42).should == 42
@@ -358,22 +353,26 @@ describe "A singleton method defined with extreme default arguments" do
   end
 
   it "may use an fcall as a default" do
-    a = "hi"
-    def a.foo(x = caller())
+    a = Object.new
+    def a.bar
+      1
+    end
+    def a.foo(x = bar())
       x
     end
-    a.foo.shift.should be_kind_of(String)
+    a.foo.should == 1
+    a.foo(2).should == 2
   end
 
   it "evaluates the defaults in the singleton scope" do
-    a = "hi"
+    a = Object.new
     def a.foo(x = ($foo_self = self; nil)); 5 ;end
     a.foo
     $foo_self.should == a
   end
 
   it "may use preceding arguments as defaults" do
-    a = 'hi'
+    a = Object.new
     def a.foo(obj, width=obj.length)
       width
     end
@@ -381,7 +380,7 @@ describe "A singleton method defined with extreme default arguments" do
   end
 
   it "may use a lambda as a default" do
-    a = 'hi'
+    a = Object.new
     def a.foo(output = 'a', prc = lambda {|n| output * n})
       prc.call(5)
     end

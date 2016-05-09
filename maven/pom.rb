@@ -1,6 +1,7 @@
 project 'JRuby Artifacts' do
-
-  version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
+  
+  version = ENV['JRUBY_VERSION'] ||
+    File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id 'jruby-artifacts'

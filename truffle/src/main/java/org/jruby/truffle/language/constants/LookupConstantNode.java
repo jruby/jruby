@@ -20,8 +20,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
@@ -62,7 +62,7 @@ public abstract class LookupConstantNode extends RubyNode {
                                           @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
         if (!isVisible) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().nameErrorPrivateConstant(module, name, this));
+            throw new RaiseException(coreExceptions().nameErrorPrivateConstant(module, name, this));
         }
         return constant;
     }
@@ -79,7 +79,7 @@ public abstract class LookupConstantNode extends RubyNode {
 
         if (!isVisible) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().nameErrorPrivateConstant(module, name, this));
+            throw new RaiseException(coreExceptions().nameErrorPrivateConstant(module, name, this));
         }
         return constant;
     }
@@ -87,7 +87,7 @@ public abstract class LookupConstantNode extends RubyNode {
     @Specialization(guards = "!isRubyModule(module)")
     protected RubyConstant lookupNotModule(Object module, String name) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreLibrary().typeErrorIsNotA(module.toString(), "class/module", this));
+        throw new RaiseException(coreExceptions().typeErrorIsNotA(module.toString(), "class/module", this));
     }
 
     protected boolean guardName(String name, String cachedName, ConditionProfile sameNameProfile) {

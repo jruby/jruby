@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core.array;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -16,73 +17,36 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
-import java.util.Arrays;
-
 @NodeChildren({
-        @NodeChild(value="array", type=RubyNode.class),
-        @NodeChild(value="requiredCapacity", type=RubyNode.class)
+        @NodeChild(value = "array", type = RubyNode.class),
+        @NodeChild(value = "requiredCapacity", type = RubyNode.class)
 })
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayEnsureCapacityNode extends RubyNode {
-
-    private final ConditionProfile allocateProfile = ConditionProfile.createCountingProfile();
 
     public ArrayEnsureCapacityNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
+    public static ArrayEnsureCapacityNode create(RubyContext context) {
+        return ArrayEnsureCapacityNodeGen.create(context, null, null, null);
+    }
+
     public abstract Object executeEnsureCapacity(DynamicObject array, int requiredCapacity);
 
-    @Specialization(guards = "isIntArray(array)")
-    public boolean ensureCapacityInt(DynamicObject array, int requiredCapacity) {
-        final int[] store = (int[]) Layouts.ARRAY.getStore(array);
+    @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+    public boolean ensureCapacity(DynamicObject array, int requiredCapacity,
+            @Cached("of(array)") ArrayStrategy strategy,
+            @Cached("createCountingProfile()") ConditionProfile extendProfile) {
+        final ArrayMirror mirror = strategy.newMirror(array);
 
-        if (allocateProfile.profile(store.length < requiredCapacity)) {
-            Layouts.ARRAY.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)));
-            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Specialization(guards = "isLongArray(array)")
-    public boolean ensureCapacityLong(DynamicObject array, int requiredCapacity) {
-        final long[] store = (long[]) Layouts.ARRAY.getStore(array);
-
-        if (allocateProfile.profile(store.length < requiredCapacity)) {
-            Layouts.ARRAY.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)));
-            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Specialization(guards = "isDoubleArray(array)")
-    public boolean ensureCapacityDouble(DynamicObject array, int requiredCapacity) {
-        final double[] store = (double[]) Layouts.ARRAY.getStore(array);
-
-        if (allocateProfile.profile(store.length < requiredCapacity)) {
-            Layouts.ARRAY.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)));
-            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Specialization(guards = "isObjectArray(array)")
-    public boolean ensureCapacityObject(DynamicObject array, int requiredCapacity) {
-        final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
-
-        if (allocateProfile.profile(store.length < requiredCapacity)) {
-            Layouts.ARRAY.setStore(array, ArrayUtils.grow(store, ArrayUtils.capacity(store.length, requiredCapacity)));
-            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
+        if (extendProfile.profile(mirror.getLength() < requiredCapacity)) {
+            final int capacity = ArrayUtils.capacity(getContext(), mirror.getLength(), requiredCapacity);
+            Layouts.ARRAY.setStore(array, mirror.copyArrayAndMirror(capacity).getArray());
             return true;
         } else {
             return false;

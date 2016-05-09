@@ -18,19 +18,20 @@ end
 begin
   loop do
     x = foo
-    raise "value not correct" unless x == 200
-    Truffle::Primitive.assert_constant x
-    Truffle::Primitive.assert_not_compiled
+    raise 'value not correct' unless x == 200
+    Truffle::Graal.assert_constant x
+    Truffle::Graal.assert_not_compiled
   end
 rescue RubyTruffleError => e
-  if e.message.include? 'Truffle::Primitive.assert_not_compiled'
-    puts "attachments optimising"
+  if e.message.include? 'Truffle::Graal.assert_not_compiled'
+    puts 'attachments optimising'
     exit 0
-  elsif e.message.include? 'Truffle::Primitive.assert_constant'
-    puts "attachments not optimising"
+  elsif e.message.include? 'Truffle::Graal.assert_constant'
+    puts 'attachments not optimising'
     exit 1
   else
-    puts "some other error"
+    p e.message
+    puts 'some other error'
     exit 1
   end
 end

@@ -9,14 +9,11 @@
  */
 package org.jruby.truffle.core;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.java.JavaInterop;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Layout;
@@ -31,22 +28,25 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.builtins.CoreMethodNodeManager;
+import org.jruby.truffle.builtins.CoreSourceSection;
 import org.jruby.truffle.core.array.ArrayNodes;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.binding.BindingNodesFactory;
+import org.jruby.truffle.core.binding.TruffleBindingNodesFactory;
 import org.jruby.truffle.core.bool.FalseClassNodesFactory;
 import org.jruby.truffle.core.bool.TrueClassNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
-import org.jruby.truffle.core.encoding.EncodingOperations;
-import org.jruby.truffle.core.exception.ExceptionNodes;
 import org.jruby.truffle.core.exception.ExceptionNodesFactory;
 import org.jruby.truffle.core.fiber.FiberNodesFactory;
 import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
+import org.jruby.truffle.core.kernel.TruffleKernelNodesFactory;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.core.klass.ClassNodesFactory;
 import org.jruby.truffle.core.method.MethodNodesFactory;
@@ -58,6 +58,7 @@ import org.jruby.truffle.core.numeric.BignumNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
 import org.jruby.truffle.core.numeric.FloatNodesFactory;
 import org.jruby.truffle.core.numeric.IntegerNodesFactory;
+import org.jruby.truffle.core.numeric.TruffleFixnumNodesFactory;
 import org.jruby.truffle.core.objectspace.ObjectSpaceNodesFactory;
 import org.jruby.truffle.core.proc.ProcNodesFactory;
 import org.jruby.truffle.core.queue.QueueNodesFactory;
@@ -65,6 +66,7 @@ import org.jruby.truffle.core.queue.SizedQueueNodesFactory;
 import org.jruby.truffle.core.range.RangeNodesFactory;
 import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory;
+import org.jruby.truffle.core.rope.TruffleRopesNodesFactory;
 import org.jruby.truffle.core.rubinius.AtomicReferenceNodesFactory;
 import org.jruby.truffle.core.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.core.rubinius.PosixNodesFactory;
@@ -76,14 +78,21 @@ import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationNodesFactory;
 import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
-import org.jruby.truffle.extra.TrufflePrimitiveNodesFactory;
-import org.jruby.truffle.interop.TruffleInteropNodesFactory;
+import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
+import org.jruby.truffle.debug.TruffleDebugNodesFactory;
+import org.jruby.truffle.extra.AttachmentsInternalNodesFactory;
+import org.jruby.truffle.extra.TruffleGraalNodesFactory;
+import org.jruby.truffle.interop.CExtNodesFactory;
+import org.jruby.truffle.interop.InteropNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.TruffleBootNodesFactory;
+import org.jruby.truffle.language.TruffleSafeNodesFactory;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
+import org.jruby.truffle.language.globals.GlobalVariables;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -94,14 +103,14 @@ import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.truffle.stdlib.BigDecimalNodesFactory;
-import org.jruby.truffle.stdlib.DigestLayoutImpl;
-import org.jruby.truffle.stdlib.DigestNodesFactory;
+import org.jruby.truffle.stdlib.CoverageNodesFactory;
 import org.jruby.truffle.stdlib.EtcNodesFactory;
 import org.jruby.truffle.stdlib.ObjSpaceNodesFactory;
+import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory;
+import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
-import org.jruby.truffle.stdlib.psych.PsychParserNodes;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
+import org.jruby.truffle.stdlib.psych.YAMLEncoding;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
@@ -134,6 +143,7 @@ public class CoreLibrary {
     private final DynamicObject exceptionClass;
     private final DynamicObject falseClass;
     private final DynamicObject fiberClass;
+    private final DynamicObjectFactory fiberFactory;
     private final DynamicObject fixnumClass;
     private final DynamicObject floatClass;
     private final DynamicObject floatDomainErrorClass;
@@ -168,7 +178,6 @@ public class CoreLibrary {
     private final DynamicObject standardErrorClass;
     private final DynamicObject stringClass;
     private final DynamicObjectFactory stringFactory;
-    private final DynamicObject stringDataClass;
     private final DynamicObject symbolClass;
     private final DynamicObject syntaxErrorClass;
     private final DynamicObject systemCallErrorClass;
@@ -190,7 +199,6 @@ public class CoreLibrary {
     private final DynamicObject rubiniusChannelClass;
     private final DynamicObject rubiniusFFIModule;
     private final DynamicObject rubiniusFFIPointerClass;
-    private final DynamicObject rubiniusMirrorClass;
     private final DynamicObject signalModule;
     private final DynamicObject truffleModule;
     private final DynamicObject bigDecimalClass;
@@ -201,6 +209,7 @@ public class CoreLibrary {
     private final DynamicObjectFactory unboundMethodFactory;
     private final DynamicObject byteArrayClass;
     private final DynamicObjectFactory byteArrayFactory;
+    private final DynamicObjectFactory statFactory;
     private final DynamicObject fiberErrorClass;
     private final DynamicObject threadErrorClass;
     private final DynamicObject internalBufferClass;
@@ -214,13 +223,16 @@ public class CoreLibrary {
     private final DynamicObject atomicReferenceClass;
     private final DynamicObject handleClass;
     private final DynamicObjectFactory handleFactory;
+    private final DynamicObject ioClass;
 
     private final DynamicObject argv;
-    private final DynamicObject globalVariablesObject;
+    private final GlobalVariables globalVariables;
     private final DynamicObject mainObject;
     private final DynamicObject nilObject;
     private final DynamicObject rubiniusUndefined;
     private final DynamicObject digestClass;
+
+    @CompilationFinal private DynamicObject eagainWaitReadable;
 
     @CompilationFinal private ArrayNodes.MinBlock arrayMinBlock;
     @CompilationFinal private ArrayNodes.MaxBlock arrayMaxBlock;
@@ -248,6 +260,74 @@ public class CoreLibrary {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public DynamicObject getRuntimeErrorClass() {
+        return runtimeErrorClass;
+    }
+
+    public DynamicObject getSystemStackErrorClass() {
+        return systemStackErrorClass;
+    }
+
+    public DynamicObject getArgumentErrorClass() {
+        return argumentErrorClass;
+    }
+
+    public DynamicObject getIndexErrorClass() {
+        return indexErrorClass;
+    }
+
+    public DynamicObject getLocalJumpErrorClass() {
+        return localJumpErrorClass;
+    }
+
+    public DynamicObject getNotImplementedErrorClass() {
+        return notImplementedErrorClass;
+    }
+
+    public DynamicObject getSyntaxErrorClass() {
+        return syntaxErrorClass;
+    }
+
+    public DynamicObject getFloatDomainErrorClass() {
+        return floatDomainErrorClass;
+    }
+
+    public DynamicObject getIOErrorClass() {
+        return ioErrorClass;
+    }
+
+    public DynamicObject getRangeErrorClass() {
+        return rangeErrorClass;
+    }
+
+    public DynamicObject getRegexpErrorClass() {
+        return regexpErrorClass;
+    }
+
+    public DynamicObject getEncodingCompatibilityErrorClass() {
+        return encodingCompatibilityErrorClass;
+    }
+
+    public DynamicObject getFiberErrorClass() {
+        return fiberErrorClass;
+    }
+
+    public DynamicObject getThreadErrorClass() {
+        return threadErrorClass;
+    }
+
+    public DynamicObject getSecurityErrorClass() {
+        return securityErrorClass;
+    }
+
+    public DynamicObject getSystemCallErrorClass() {
+        return systemCallErrorClass;
+    }
+
+    public DynamicObject getEagainWaitReadable() {
+        return eagainWaitReadable;
     }
 
     private enum State {
@@ -413,7 +493,8 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(encodingClass, Layouts.ENCODING.createEncodingShape(encodingClass, encodingClass));
         falseClass = defineClass("FalseClass");
         fiberClass = defineClass("Fiber");
-        Layouts.CLASS.setInstanceFactoryUnsafe(fiberClass, Layouts.FIBER.createFiberShape(fiberClass, fiberClass));
+        fiberFactory = Layouts.FIBER.createFiberShape(fiberClass, fiberClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(fiberClass, fiberFactory);
         defineModule("FileTest");
         hashClass = defineClass("Hash");
         hashFactory = Layouts.HASH.createHashShape(hashClass, hashClass);
@@ -445,8 +526,11 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(stringClass, stringFactory);
         symbolClass = defineClass("Symbol");
         Layouts.CLASS.setInstanceFactoryUnsafe(symbolClass, alwaysFrozen(Layouts.SYMBOL.createSymbolShape(symbolClass, symbolClass)));
+
         threadClass = defineClass("Thread");
+        threadClass.define("@abort_on_exception", false);
         Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, Layouts.THREAD.createThreadShape(threadClass, threadClass));
+
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location");
         Layouts.CLASS.setInstanceFactoryUnsafe(threadBacktraceLocationClass, ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass));
@@ -457,13 +541,15 @@ public class CoreLibrary {
         unboundMethodClass = defineClass("UnboundMethod");
         unboundMethodFactory = Layouts.UNBOUND_METHOD.createUnboundMethodShape(unboundMethodClass, unboundMethodClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(unboundMethodClass, unboundMethodFactory);
-        final DynamicObject ioClass = defineClass("IO");
+        ioClass = defineClass("IO");
         Layouts.CLASS.setInstanceFactoryUnsafe(ioClass, Layouts.IO.createIOShape(ioClass, ioClass));
         internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
         Layouts.CLASS.setInstanceFactoryUnsafe(internalBufferClass, Layouts.IO_BUFFER.createIOBufferShape(internalBufferClass, internalBufferClass));
         weakRefClass = defineClass("WeakRef");
         weakRefFactory = Layouts.WEAK_REF_LAYOUT.createWeakRefShape(weakRefClass, weakRefClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(weakRefClass, weakRefFactory);
+        final DynamicObject tracePointClass = defineClass("TracePoint");
+        Layouts.CLASS.setInstanceFactoryUnsafe(tracePointClass, Layouts.TRACE_POINT.createTracePointShape(tracePointClass, tracePointClass));
 
         // Modules
 
@@ -485,18 +571,30 @@ public class CoreLibrary {
 
         truffleModule = defineModule("Truffle");
         defineModule(truffleModule, "Interop");
+        defineModule(truffleModule, "CExt");
         defineModule(truffleModule, "Debug");
-        final DynamicObject primitiveModule = defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
+        defineModule(truffleModule, "Coverage");
+        defineModule(truffleModule, "Graal");
+        defineModule(truffleModule, "Ropes");
+        defineModule(truffleModule, "GC");
+        final DynamicObject attachments = defineModule(truffleModule, "Attachments");
+        defineModule(attachments, "Internal");
+        defineModule(truffleModule, "Boot");
+        defineModule(truffleModule, "Fixnum");
+        defineModule(truffleModule, "Safe");
+        defineModule(truffleModule, "System");
+        defineModule(truffleModule, "Kernel");
+        defineModule(truffleModule, "Process");
+        defineModule(truffleModule, "Binding");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
-        Layouts.CLASS.setInstanceFactoryUnsafe(psychParserClass, Layouts.PSYCH_PARSER.createParserShape(psychParserClass, psychParserClass));
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
         final DynamicObject psychEmitterClass = defineClass(psychModule, psychHandlerClass, "Emitter");
         Layouts.CLASS.setInstanceFactoryUnsafe(psychEmitterClass, Layouts.PSYCH_EMITTER.createEmitterShape(psychEmitterClass, psychEmitterClass));
-        handleClass = defineClass(primitiveModule, objectClass, "Handle");
+        handleClass = defineClass(truffleModule, objectClass, "Handle");
         handleFactory = Layouts.HANDLE.createHandleShape(handleClass, handleClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(handleClass, handleFactory);
 
@@ -513,14 +611,18 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(rubiniusFFIPointerClass, Layouts.POINTER.createPointerShape(rubiniusFFIPointerClass, rubiniusFFIPointerClass));
 
         rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
-        rubiniusMirrorClass = defineClass(rubiniusModule, objectClass, "Mirror");
+        defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
+
+        DynamicObject statClass = defineClass(rubiniusModule, objectClass, "Stat");
+        statFactory = Layouts.STAT.createStatShape(statClass, statClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(statClass, statFactory);
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
         byteArrayFactory = Layouts.BYTE_ARRAY.createByteArrayShape(byteArrayClass, byteArrayClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(byteArrayClass, byteArrayFactory);
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
-        stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
+        defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
         tupleClass = defineClass(rubiniusModule, arrayClass, "Tuple");
         randomizerClass = defineClass(rubiniusModule, objectClass, "Randomizer");
@@ -545,10 +647,10 @@ public class CoreLibrary {
         argv = Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0);
         rubiniusUndefined = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
 
-        globalVariablesObject = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
+        globalVariables = new GlobalVariables(nilObject);
 
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
-        Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, DigestLayoutImpl.INSTANCE.createDigestShape(digestClass, digestClass));
+        Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, Layouts.DIGEST.createDigestShape(digestClass, digestClass));
 
         // No need for new version since it's null before which is not cached
         assert Layouts.CLASS.getSuperclass(basicObjectClass) == null;
@@ -616,10 +718,14 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(SymbolNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ThreadNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TrueClassNodesFactory.getFactories());
-        coreMethodNodeManager.addCoreMethodNodes(TrufflePrimitiveNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleGCNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleBootNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(AttachmentsInternalNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleGraalNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EncodingConverterNodesFactory.getFactories());
-        coreMethodNodeManager.addCoreMethodNodes(TruffleInteropNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(InteropNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(CExtNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(MethodNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(UnboundMethodNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ByteArrayNodesFactory.getFactories());
@@ -634,36 +740,46 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TracePointNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(CoverageNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleRopesNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleFixnumNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleSafeNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleSystemNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleKernelNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleProcessNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleDebugNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleBindingNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 
-        basicObjectSendMethod = Layouts.MODULE.getFields(basicObjectClass).getMethods().get("__send__");
+        basicObjectSendMethod = Layouts.MODULE.getFields(basicObjectClass).getMethod("__send__");
         assert basicObjectSendMethod != null;
     }
 
     private void initializeGlobalVariables() {
-        DynamicObject globals = globalVariablesObject;
+        GlobalVariables globals = globalVariables;
 
-        globals.define("$LOAD_PATH", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0), 0);
-        globals.define("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), new Object[0], 0), 0);
-        globals.define("$:", globals.get("$LOAD_PATH", nilObject), 0);
-        globals.define("$\"", globals.get("$LOADED_FEATURES", nilObject), 0);
-        globals.define("$,", nilObject, 0);
-        globals.define("$*", argv, 0);
-        globals.define("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)), 0);
+        globals.put("$LOAD_PATH", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0));
+        globals.put("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), new Object[0], 0));
+        globals.put("$:", globals.getOrDefault("$LOAD_PATH", nilObject));
+        globals.put("$\"", globals.getOrDefault("$LOADED_FEATURES", nilObject));
+        globals.put("$,", nilObject);
+        globals.put("$*", argv);
+        globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)));
 
-        globals.define("$DEBUG", context.getJRubyRuntime().isDebug(), 0);
+        globals.put("$DEBUG", context.getJRubyRuntime().isDebug());
 
         Object value = context.getJRubyRuntime().warningsEnabled() ? context.getJRubyRuntime().isVerbose() : nilObject;
-        globals.define("$VERBOSE", value, 0);
+        globals.put("$VERBOSE", value);
 
         final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeRope(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
         node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
-        globals.define("$/", defaultRecordSeparator, 0);
+        globals.put("$/", defaultRecordSeparator);
 
-        globals.define("$SAFE", 0, 0);
+        globals.put("$SAFE", 0);
     }
 
     private void initializeConstants() {
@@ -710,10 +826,10 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(context, node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(context, node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
 
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "ANY", PsychParserNodes.YAMLEncoding.YAML_ANY_ENCODING.ordinal());
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF8", PsychParserNodes.YAMLEncoding.YAML_UTF8_ENCODING.ordinal());
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16LE", PsychParserNodes.YAMLEncoding.YAML_UTF16LE_ENCODING.ordinal());
-        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16BE", PsychParserNodes.YAMLEncoding.YAML_UTF16BE_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "ANY", YAMLEncoding.YAML_ANY_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF8", YAMLEncoding.YAML_UTF8_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16LE", YAMLEncoding.YAML_UTF16LE_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(context, node, "UTF16BE", YAMLEncoding.YAML_UTF16BE_ENCODING.ordinal());
 
         // Java interop
         final DynamicObject javaModule = defineModule(truffleModule, "Java");
@@ -726,7 +842,7 @@ public class CoreLibrary {
         int i = 0;
         for (Map.Entry<String, Integer> signal : SignalManager.SIGNALS_LIST.entrySet()) {
             DynamicObject signalName = StringOperations.createString(context, StringOperations.encodeRope(signal.getKey(), UTF8Encoding.INSTANCE));
-            Object[] objects = new Object[]{signalName, signal.getValue()};
+            Object[] objects = new Object[]{ signalName, signal.getValue() };
             signals[i++] = Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), objects, objects.length);
         }
 
@@ -769,7 +885,7 @@ public class CoreLibrary {
             try {
                 final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
                 final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
-                deferredCall.getCallTarget().call(deferredCall.getArguments());
+                deferredCall.callWithoutCallNode();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -782,6 +898,10 @@ public class CoreLibrary {
         } finally {
             state = State.LOADED;
         }
+
+        // Get some references to things defined in the Ruby core
+
+        eagainWaitReadable = (DynamicObject) Layouts.MODULE.getFields(ioClass).getConstant("EAGAINWaitReadable").getValue();
     }
 
     private void initializeRubiniusFFI() {
@@ -927,487 +1047,6 @@ public class CoreLibrary {
         return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
     }
 
-    public DynamicObject runtimeError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(runtimeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    @TruffleBoundary
-    public DynamicObject systemStackErrorStackLevelTooDeep(Node currentNode, Throwable javaThrowable) {
-        return ExceptionNodes.createRubyException(systemStackErrorClass, StringOperations.createString(context, StringOperations.encodeRope("stack level too deep", UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
-    }
-
-    @TruffleBoundary
-    public DynamicObject frozenError(String className, Node currentNode) {
-        return runtimeError(String.format("can't modify frozen %s", className), currentNode);
-    }
-
-    public DynamicObject argumentError(String message, Node currentNode) {
-        return argumentError(message, currentNode, null);
-    }
-
-    @TruffleBoundary
-    public DynamicObject argumentErrorUnknownKeyword(Object name, Node currentNode) {
-        return argumentError("unknown keyword: " + name, currentNode, null);
-    }
-
-    @TruffleBoundary
-    public DynamicObject argumentError(String message, Node currentNode, Throwable javaThrowable) {
-        return ExceptionNodes.createRubyException(argumentErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
-    }
-
-    public DynamicObject argumentErrorOutOfRange(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return argumentError("out of range", currentNode);
-    }
-
-    public DynamicObject argumentErrorInvalidRadix(int radix, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return argumentError(String.format("invalid radix %d", radix), currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject argumentErrorMissingKeyword(String name, Node currentNode) {
-        return argumentError(String.format("missing keyword: %s", name), currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject argumentError(int passed, int required, Node currentNode) {
-        return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required), currentNode);
-    }
-
-    public DynamicObject argumentError(int passed, int required, int optional, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return argumentError(String.format("wrong number of arguments (%d for %d..%d)", passed, required, required + optional), currentNode);
-    }
-
-    public DynamicObject argumentErrorEmptyVarargs(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return argumentError("wrong number of arguments (0 for 1+)", currentNode);
-    }
-
-    public DynamicObject argumentErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        String badClassName = Layouts.MODULE.getFields(getLogicalClass(object)).getName();
-        return argumentError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
-    }
-
-    public DynamicObject errnoError(int errno, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        Errno errnoObj = Errno.valueOf(errno);
-        if (errnoObj == null) {
-            return systemCallError(String.format("Unknown Error (%s)", errno), currentNode);
-        }
-
-        return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), StringOperations.createString(context, StringOperations.encodeRope(errnoObj.description(), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject errnoError(int errno, String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        Errno errnoObj = Errno.valueOf(errno);
-        if (errnoObj == null) {
-            return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), currentNode);
-        }
-
-        final DynamicObject errorMessage = StringOperations.createString(context, StringOperations.encodeRope(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE));
-        return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), errorMessage, context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject indexError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(indexErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject indexTooSmallError(String type, int index, int length, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return indexError(String.format("index %d too small for %s; minimum: -%d", index, type, length), currentNode);
-    }
-
-    public DynamicObject localJumpError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(localJumpErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject noBlockGiven(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return localJumpError("no block given", currentNode);
-    }
-
-    public DynamicObject breakFromProcClosure(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return localJumpError("break from proc-closure", currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject unexpectedReturn(Node currentNode) {
-        return localJumpError("unexpected return", currentNode);
-    }
-
-    public DynamicObject noBlockToYieldTo(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return localJumpError("no block given (yield)", currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject typeErrorCantCreateInstanceOfSingletonClass(Node currentNode) {
-        return typeError("can't create instance of singleton class", currentNode, null);
-    }
-
-    @TruffleBoundary
-    public DynamicObject superclassMismatch(String name, Node currentNode) {
-        return typeError("superclass mismatch for class " + name, currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject typeError(String message, Node currentNode) {
-        return typeError(message, currentNode, null);
-    }
-
-    public DynamicObject typeError(String message, Node currentNode, Throwable javaThrowable) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(typeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
-    }
-
-    public DynamicObject typeErrorAllocatorUndefinedFor(DynamicObject rubyClass, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        String className = Layouts.MODULE.getFields(rubyClass).getName();
-        return typeError(String.format("allocator undefined for %s", className), currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject typeErrorCantDefineSingleton(Node currentNode) {
-        return typeError("can't define singleton", currentNode);
-    }
-
-    public DynamicObject typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject typeErrorMustHaveWriteMethod(Object object, Node currentNode) {
-        return typeError(String.format("$stdout must have write method, %s given", Layouts.MODULE.getFields(getLogicalClass(object)).getName()), currentNode);
-    }
-
-    public DynamicObject typeErrorCantConvertTo(Object from, String toClass, String methodUsed, Object result, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        String fromClass = Layouts.MODULE.getFields(getLogicalClass(from)).getName();
-        return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
-                fromClass, toClass, fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
-    }
-
-    public DynamicObject typeErrorCantConvertInto(Object from, String toClass, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("can't convert %s into %s", Layouts.MODULE.getFields(getLogicalClass(from)).getName(), toClass), currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject typeErrorIsNotA(Object value, String expectedType, Node currentNode) {
-        return typeErrorIsNotA(value.toString(), expectedType, currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject typeErrorIsNotA(String value, String expectedType, Node currentNode) {
-        return typeError(String.format("%s is not a %s", value, expectedType), currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject typeErrorNoImplicitConversion(Object from, String to, Node currentNode) {
-        return typeError(String.format("no implicit conversion of %s into %s", Layouts.MODULE.getFields(getLogicalClass(from)).getName(), to), currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject typeErrorMustBe(String variable, String type, Node currentNode) {
-        return typeError(String.format("value of %s must be %s", variable, type), currentNode);
-    }
-
-    public DynamicObject typeErrorBadCoercion(Object from, String to, String coercionMethod, Object coercedTo, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        String badClassName = Layouts.MODULE.getFields(getLogicalClass(from)).getName();
-        return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
-                badClassName,
-                to,
-                badClassName,
-                coercionMethod,
-                Layouts.MODULE.getFields(getLogicalClass(coercedTo)).getName()), currentNode);
-    }
-
-    public DynamicObject typeErrorCantDump(Object object, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        String logicalClass = Layouts.MODULE.getFields(getLogicalClass(object)).getName();
-        return typeError(String.format("can't dump %s", logicalClass), currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject typeErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
-        String badClassName = Layouts.MODULE.getFields(getLogicalClass(object)).getName();
-        return typeError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
-    }
-
-    public DynamicObject nameError(String message, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        final DynamicObject nameString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
-        DynamicObject nameError = ExceptionNodes.createRubyException(nameErrorClass, nameString, context.getCallStack().getBacktrace(currentNode));
-        nameError.define("@name", context.getSymbolTable().getSymbol(name), 0);
-        return nameError;
-    }
-
-    public DynamicObject nameErrorConstantNotDefined(DynamicObject module, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("constant %s::%s not defined", Layouts.MODULE.getFields(module).getName(), name), name, currentNode);
-    }
-
-    public DynamicObject nameErrorUninitializedConstant(DynamicObject module, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        assert RubyGuards.isRubyModule(module);
-        final String message;
-        if (module == objectClass) {
-            message = String.format("uninitialized constant %s", name);
-        } else {
-            message = String.format("uninitialized constant %s::%s", Layouts.MODULE.getFields(module).getName(), name);
-        }
-        return nameError(message, name, currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject nameErrorUninitializedClassVariable(DynamicObject module, String name, Node currentNode) {
-        assert RubyGuards.isRubyModule(module);
-        return nameError(String.format("uninitialized class variable %s in %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject nameErrorPrivateConstant(DynamicObject module, String name, Node currentNode) {
-        assert RubyGuards.isRubyModule(module);
-        return nameError(String.format("private constant %s::%s referenced", Layouts.MODULE.getFields(module).getName(), name), name, currentNode);
-    }
-
-    public DynamicObject nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("`%s' is not allowable as an instance variable name", name), name, currentNode);
-    }
-
-    public DynamicObject nameErrorInstanceVariableNotDefined(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("instance variable %s not defined", name), name, currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject nameErrorReadOnly(String name, Node currentNode) {
-        return nameError(String.format("%s is a read-only variable", name), name, currentNode);
-    }
-
-    public DynamicObject nameErrorUndefinedLocalVariableOrMethod(String name, Object receiver, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        // TODO: should not be just the class, but rather sth like name_err_mesg_to_str() in MRI error.c
-        String className = Layouts.MODULE.getFields(getLogicalClass(receiver)).getName();
-        return nameError(String.format("undefined local variable or method `%s' for %s", name, className), name, currentNode);
-    }
-
-    public DynamicObject nameErrorUndefinedMethod(String name, DynamicObject module, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        assert RubyGuards.isRubyModule(module);
-        return nameError(String.format("undefined method `%s' for %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
-    }
-
-    public DynamicObject nameErrorMethodNotDefinedIn(DynamicObject module, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("method `%s' not defined in %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
-    }
-
-    public DynamicObject nameErrorPrivateMethod(String name, DynamicObject module, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("method `%s' for %s is private", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
-    }
-
-    public DynamicObject nameErrorLocalVariableNotDefined(String name, DynamicObject binding, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        assert RubyGuards.isRubyBinding(binding);
-        return nameError(String.format("local variable `%s' not defined for %s", name, binding.toString()), name, currentNode);
-    }
-
-    public DynamicObject nameErrorClassVariableNotDefined(String name, DynamicObject module, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        assert RubyGuards.isRubyModule(module);
-        return nameError(String.format("class variable `%s' not defined for %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
-    }
-
-    public DynamicObject noMethodError(String message, String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        final DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
-        DynamicObject noMethodError = ExceptionNodes.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(), messageString, context.getCallStack().getBacktrace(currentNode));
-        noMethodError.define("@name", context.getSymbolTable().getSymbol(name), 0);
-        return noMethodError;
-    }
-
-    public DynamicObject noSuperMethodOutsideMethodError(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        DynamicObject noMethodError = noMethodError("super called outside of method", "<unknown>", currentNode);
-        noMethodError.define("@name", nilObject, 0); // FIXME: the name of the method is not known in this case currently
-        return noMethodError;
-    }
-
-    public DynamicObject noSuperMethodError(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("super: no superclass method `%s'", name), name, currentNode);
-    }
-
-    public DynamicObject noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        DynamicObject logicalClass = getLogicalClass(receiver);
-        String repr = Layouts.MODULE.getFields(logicalClass).getName();
-        if (RubyGuards.isRubyModule(receiver)) {
-            repr = Layouts.MODULE.getFields(((DynamicObject) receiver)).getName() + ":" + repr;
-        }
-        return noMethodError(String.format("undefined method `%s' for %s", name, repr), name, currentNode);
-    }
-
-    public DynamicObject privateMethodError(String name, Object self, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        String className = Layouts.MODULE.getFields(getLogicalClass(self)).getName();
-        return noMethodError(String.format("private method `%s' called for %s", name, className), name, currentNode);
-    }
-
-    public DynamicObject loadError(String message, String path, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
-        DynamicObject loadError = ExceptionNodes.createRubyException(context.getCoreLibrary().getLoadErrorClass(), messageString, context.getCallStack().getBacktrace(currentNode));
-        loadError.define("@path", StringOperations.createString(context, StringOperations.encodeRope(path, UTF8Encoding.INSTANCE)), 0);
-        return loadError;
-    }
-
-    public DynamicObject loadErrorCannotLoad(String name, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return loadError(String.format("cannot load such file -- %s", name), name, currentNode);
-    }
-
-    public DynamicObject zeroDivisionError(Node currentNode) {
-        return zeroDivisionError(currentNode, null);
-    }
-
-    public DynamicObject zeroDivisionError(Node currentNode, ArithmeticException exception) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("divided by 0", UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, exception));
-    }
-
-    public DynamicObject notImplementedError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(notImplementedErrorClass, StringOperations.createString(context, StringOperations.encodeRope(String.format("Method %s not implemented", message), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    @TruffleBoundary
-    public DynamicObject syntaxErrorInvalidRetry(Node currentNode) {
-        return syntaxError("Invalid retry", currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject syntaxError(String message, Node currentNode) {
-        return ExceptionNodes.createRubyException(syntaxErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject floatDomainError(String value, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(floatDomainErrorClass, StringOperations.createString(context, StringOperations.encodeRope(value, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject mathDomainError(String method, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EDOM), StringOperations.createString(context, StringOperations.encodeRope(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject ioError(String fileName, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(ioErrorClass, StringOperations.createString(context, StringOperations.encodeRope(String.format("Error reading file -  %s", fileName), UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject rangeError(int code, DynamicObject encoding, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        assert RubyGuards.isRubyEncoding(encoding);
-        return rangeError(String.format("invalid codepoint %x in %s", code, EncodingOperations.getEncoding(encoding)), currentNode);
-    }
-
-    public DynamicObject rangeError(String type, String value, String range, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return rangeError(String.format("%s %s out of range of %s", type, value, range), currentNode);
-    }
-
-    public DynamicObject rangeError(DynamicObject range, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        assert RubyGuards.isIntegerFixnumRange(range);
-        return rangeError(String.format("%d..%s%d out of range",
-                Layouts.INTEGER_FIXNUM_RANGE.getBegin(range),
-                Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? "." : "",
-                Layouts.INTEGER_FIXNUM_RANGE.getEnd(range)), currentNode);
-    }
-
-    public DynamicObject rangeError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(rangeErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject internalError(String message, Node currentNode) {
-        return internalError(message, currentNode, null);
-    }
-
-    public DynamicObject internalError(String message, Node currentNode, Throwable javaThrowable) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), StringOperations.createString(context, StringOperations.encodeRope("internal implementation error - " + message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode, javaThrowable));
-    }
-
-    public DynamicObject regexpError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(regexpErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject encodingCompatibilityErrorIncompatible(String a, String b, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return encodingCompatibilityError(String.format("incompatible character encodings: %s and %s", a, b), currentNode);
-    }
-
-    public DynamicObject encodingCompatibilityError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(encodingCompatibilityErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject fiberError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(fiberErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject deadFiberCalledError(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return fiberError("dead fiber called", currentNode);
-    }
-
-    public DynamicObject yieldFromRootFiberError(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return fiberError("can't yield from root fiber", currentNode);
-    }
-
-    public DynamicObject threadError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(threadErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject securityError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(securityErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject systemCallError(String message, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(systemCallErrorClass, StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)), context.getCallStack().getBacktrace(currentNode));
-    }
-
-    public DynamicObject systemExit(int exitStatus, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        final DynamicObject message = StringOperations.createString(context, StringOperations.encodeRope("exit", UTF8Encoding.INSTANCE));
-        final DynamicObject systemExit = ExceptionNodes.createRubyException(systemExitClass, message, context.getCallStack().getBacktrace(currentNode));
-        systemExit.define("@status", exitStatus, 0);
-        return systemExit;
-    }
-
     public RubyContext getContext() {
         return context;
     }
@@ -1420,16 +1059,8 @@ public class CoreLibrary {
         return basicObjectClass;
     }
 
-    public DynamicObject getBignumClass() {
-        return bignumClass;
-    }
-
     public DynamicObject getBigDecimalClass() {
         return bigDecimalClass;
-    }
-
-    public DynamicObject getBindingClass() {
-        return bindingClass;
     }
 
     public DynamicObjectFactory getBindingFactory() {
@@ -1444,8 +1075,8 @@ public class CoreLibrary {
         return falseClass;
     }
 
-    public DynamicObject getFiberClass() {
-        return fiberClass;
+    public DynamicObjectFactory getFiberFactory() {
+        return fiberFactory;
     }
 
     public DynamicObject getFixnumClass() {
@@ -1456,11 +1087,9 @@ public class CoreLibrary {
         return floatClass;
     }
 
-    public DynamicObject getHashClass() {
-        return hashClass;
+    public DynamicObject getStandardErrorClass() {
+        return standardErrorClass;
     }
-
-    public DynamicObject getStandardErrorClass() { return standardErrorClass; }
 
     public DynamicObject getLoadErrorClass() {
         return loadErrorClass;
@@ -1482,10 +1111,6 @@ public class CoreLibrary {
         return nilClass;
     }
 
-    public DynamicObject getRubyInternalMethod() {
-        return rubyInternalMethod;
-    }
-
     public DynamicObject getNoMethodErrorClass() {
         return noMethodErrorClass;
     }
@@ -1502,24 +1127,12 @@ public class CoreLibrary {
         return rangeClass;
     }
 
-    public DynamicObject getRationalClass() {
-        return rationalClass;
-    }
-
     public DynamicObject getRegexpClass() {
         return regexpClass;
     }
 
     public DynamicObject getRubyTruffleErrorClass() {
         return rubyTruffleErrorClass;
-    }
-
-    public DynamicObject getRuntimeErrorClass() {
-        return runtimeErrorClass;
-    }
-
-    public DynamicObject getSystemStackErrorClass() {
-        return systemStackErrorClass;
     }
 
     public DynamicObject getStringClass() {
@@ -1530,11 +1143,9 @@ public class CoreLibrary {
         return threadClass;
     }
 
-    public DynamicObject getTimeClass() {
-        return timeClass;
+    public DynamicObject getTypeErrorClass() {
+        return typeErrorClass;
     }
-
-    public DynamicObject getTypeErrorClass() { return typeErrorClass; }
 
     public DynamicObject getTrueClass() {
         return trueClass;
@@ -1548,20 +1159,16 @@ public class CoreLibrary {
         return kernelModule;
     }
 
-    public DynamicObject getArgv() {
-        return argv;
-    }
-
-    public DynamicObject getGlobalVariablesObject() {
-        return globalVariablesObject;
+    public GlobalVariables getGlobalVariables() {
+        return globalVariables;
     }
 
     public DynamicObject getLoadPath() {
-        return (DynamicObject) globalVariablesObject.get("$LOAD_PATH", context.getCoreLibrary().getNilObject());
+        return (DynamicObject) globalVariables.getOrDefault("$LOAD_PATH", context.getCoreLibrary().getNilObject());
     }
 
     public DynamicObject getLoadedFeatures() {
-        return (DynamicObject) globalVariablesObject.get("$LOADED_FEATURES", context.getCoreLibrary().getNilObject());
+        return (DynamicObject) globalVariables.getOrDefault("$LOADED_FEATURES", context.getCoreLibrary().getNilObject());
     }
 
     public DynamicObject getMainObject() {
@@ -1602,6 +1209,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getByteArrayFactory() {
         return byteArrayFactory;
+    }
+
+    public DynamicObjectFactory getStatFactory() {
+        return statFactory;
     }
 
     public DynamicObject getLookupTableClass() {

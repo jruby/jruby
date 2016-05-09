@@ -9,25 +9,17 @@
  */
 package org.jruby.truffle.stdlib;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodNode;
 
-@CoreClass(name = "Truffle::Etc")
+@CoreClass("Truffle::Etc")
 public abstract class EtcNodes {
 
     @CoreMethod(names = "nprocessors", needsSelf = false)
     public abstract static class NProcessors extends CoreMethodNode {
 
-        public NProcessors(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
         @Specialization
         public int nprocessors() {
             return Runtime.getRuntime().availableProcessors();

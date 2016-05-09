@@ -7,17 +7,19 @@
 # GNU Lesser General Public License version 2.1
 
 class Thread
+  # TODO (pitr-ch 06-Apr-2016): thread local variables do not have to be synchronized,
+  # they are only to protect against non-thread-safe Hash implementation
 
   def [](symbol)
-    __thread_local_variables[symbol.to_sym]
+    __thread_local_variables_lock { __thread_local_variables[symbol.to_sym] }
   end
 
   def []=(symbol, value)
-    __thread_local_variables[symbol.to_sym] = value
+    __thread_local_variables_lock { __thread_local_variables[symbol.to_sym] = value }
   end
 
   def thread_variable?(symbol)
-    __thread_local_variables.has_key? symbol.to_sym
+    __thread_local_variables_lock { __thread_local_variables.has_key? symbol.to_sym }
   end
 
   alias_method :thread_variable_get, :[]
@@ -29,24 +31,38 @@ class Thread
     if defined?(@__thread_local_variables)
       @__thread_local_variables
     else
-      LOCK.synchronize { @__thread_local_variables ||= {} }
+      LOCK.synchronize do
+        @__thread_local_variables ||= {}
+      end
     end
   end
 
+  def __thread_local_variables_lock
+    if defined?(@__thread_local_variables_lock)
+      @__thread_local_variables_lock
+    else
+      LOCK.synchronize do
+        @__thread_local_variables_lock ||= Mutex.new
+      end
+    end.synchronize { yield }
+  end
+
   def thread_variables
-    __thread_local_variables.keys
+    __thread_local_variables_lock { __thread_local_variables.keys }
   end
 
   def self.start(*args, &block)
     Thread.new(*args, &block)
   end
 
+  @abort_on_exception = false
+
   def self.abort_on_exception
-    current.abort_on_exception
+    @abort_on_exception
   end
 
   def self.abort_on_exception=(value)
-    current.abort_on_exception = value
+    @abort_on_exception = value
   end
 
   def self.handle_interrupt(config, &block)
@@ -60,7 +76,7 @@ class Thread
   end
 
   def freeze
-    __thread_local_variables.freeze
+    __thread_local_variables_lock { __thread_local_variables.freeze }
     super
   end
 

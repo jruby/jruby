@@ -38,6 +38,7 @@
 package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -47,11 +48,15 @@ import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.rope.BytesVisitor;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
@@ -60,9 +65,8 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.stdlib.sockets.FDSet;
-import org.jruby.truffle.stdlib.sockets.FDSetFactory;
-import org.jruby.truffle.stdlib.sockets.FDSetFactoryFactory;
+import org.jruby.truffle.platform.UnsafeGroup;
+import org.jruby.truffle.platform.posix.FDSet;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -73,16 +77,34 @@ import static org.jruby.truffle.core.string.StringOperations.rope;
 
 public abstract class IOPrimitiveNodes {
 
+    public static abstract class IOPrimitiveArrayArgumentsNode extends PrimitiveArrayArgumentsNode {
+
+        public IOPrimitiveArrayArgumentsNode() {
+        }
+
+        public IOPrimitiveArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        protected int ensureSuccessful(int result) {
+            assert result >= -1;
+            if (result == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
+            }
+            return result;
+        }
+    }
+
     private static int STDOUT = 1;
 
-    @RubiniusPrimitive(name = "io_allocate")
-    public static abstract class IOAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_allocate", unsafe = UnsafeGroup.IO)
+    public static abstract class IOAllocatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode newBufferNode;
         @Child private AllocateObjectNode allocateNode;
 
         public IOAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
             newBufferNode = DispatchHeadNodeFactory.createMethodCall(context);
             allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
@@ -95,35 +117,26 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_connect_pipe", needsSelf = false)
-    public static abstract class IOConnectPipeNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_connect_pipe", needsSelf = false, unsafe = UnsafeGroup.IO)
+    public static abstract class IOConnectPipeNode extends IOPrimitiveArrayArgumentsNode {
 
-        private final int RDONLY;
-        private final int WRONLY;
-
-        public IOConnectPipeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            RDONLY = (int) context.getNativePlatform().getRubiniusConfiguration().get("rbx.platform.file.O_RDONLY");
-            WRONLY = (int) context.getNativePlatform().getRubiniusConfiguration().get("rbx.platform.file.O_WRONLY");
-        }
+        @CompilationFinal private int RDONLY = -1;
+        @CompilationFinal private int WRONLY = -1;
 
         @Specialization
         public boolean connectPipe(DynamicObject lhs, DynamicObject rhs) {
             final int[] fds = new int[2];
 
-            if (posix().pipe(fds) == -1) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-            }
+            ensureSuccessful(posix().pipe(fds));
 
             newOpenFd(fds[0]);
             newOpenFd(fds[1]);
 
             Layouts.IO.setDescriptor(lhs, fds[0]);
-            Layouts.IO.setMode(lhs, RDONLY);
+            Layouts.IO.setMode(lhs, getRDONLY());
 
             Layouts.IO.setDescriptor(rhs, fds[1]);
-            Layouts.IO.setMode(rhs, WRONLY);
+            Layouts.IO.setMode(rhs, getWRONLY());
 
             return true;
         }
@@ -133,102 +146,84 @@ public abstract class IOPrimitiveNodes {
             final int FD_CLOEXEC = 1;
 
             if (newFd > 2) {
-                int flags = posix().fcntl(newFd, Fcntl.F_GETFD);
-
-                if (flags == -1) {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-                }
-
-                flags = posix().fcntlInt(newFd, Fcntl.F_SETFD, flags | FD_CLOEXEC);
-
-                if (flags == -1) {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-                }
+                final int flags = ensureSuccessful(posix().fcntl(newFd, Fcntl.F_GETFD));
+                ensureSuccessful(posix().fcntlInt(newFd, Fcntl.F_SETFD, flags | FD_CLOEXEC));
             }
         }
+
+        private int getRDONLY() {
+            if (RDONLY == -1) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                RDONLY = (int) getContext().getNativePlatform().getRubiniusConfiguration().get("rbx.platform.file.O_RDONLY");
+            }
+
+            return RDONLY;
+        }
+
+        private int getWRONLY() {
+            if (WRONLY == -1) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                WRONLY = (int) getContext().getNativePlatform().getRubiniusConfiguration().get("rbx.platform.file.O_WRONLY");
+            }
+
+            return WRONLY;
+        }
+
     }
 
-    @RubiniusPrimitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 })
-    public static abstract class IOOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public IOOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 }, unsafe = UnsafeGroup.IO)
+    public static abstract class IOOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(path)")
         public int open(DynamicObject path, int mode, int permission) {
-            return posix().open(StringOperations.getString(getContext(), path), mode, permission);
+            return ensureSuccessful(posix().open(StringOperations.getString(getContext(), path), mode, permission));
         }
 
     }
 
-
-    @RubiniusPrimitive(name = "io_truncate", needsSelf = false)
-    public static abstract class IOTruncatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public IOTruncatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "io_truncate", needsSelf = false, unsafe = UnsafeGroup.IO)
+    public static abstract class IOTruncatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(path)")
         public int truncate(DynamicObject path, long length) {
-            final int result = posix().truncate(StringOperations.getString(getContext(), path), length);
-            if (result == -1) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-            }
-            return result;
+            return ensureSuccessful(posix().truncate(StringOperations.getString(getContext(), path), length));
         }
 
     }
 
-    @RubiniusPrimitive(name = "io_ftruncate")
-    public static abstract class IOFTruncatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public IOFTruncatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "io_ftruncate", unsafe = UnsafeGroup.IO)
+    public static abstract class IOFTruncatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
         public int ftruncate(VirtualFrame frame, DynamicObject io, long length) {
             final int fd = Layouts.IO.getDescriptor(io);
-            return posix().ftruncate(fd, length);
+            return ensureSuccessful(posix().ftruncate(fd, length));
         }
 
     }
 
-    @RubiniusPrimitive(name = "io_fnmatch", needsSelf = false)
-    public static abstract class IOFNMatchPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public IOFNMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "io_fnmatch", needsSelf = false, unsafe = UnsafeGroup.IO)
+    public static abstract class IOFNMatchPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubyString(pattern)", "isRubyString(path)"})
+        @Specialization(guards = { "isRubyString(pattern)", "isRubyString(path)" })
         public boolean fnmatch(DynamicObject pattern, DynamicObject path, int flags) {
             final Rope patternRope = rope(pattern);
             final Rope pathRope = rope(path);
 
             return Dir.fnmatch(patternRope.getBytes(),
-                    patternRope.getBegin(),
-                    patternRope.getBegin() + patternRope.getRealSize(),
+                    0,
+                    patternRope.byteLength(),
                     pathRope.getBytes(),
-                    pathRope.getBegin(),
-                    pathRope.getBegin() + pathRope.getRealSize(),
+                    0,
+                    pathRope.byteLength(),
                     flags) != Dir.FNM_NOMATCH;
         }
 
     }
 
-    @RubiniusPrimitive(name = "io_ensure_open")
-    public static abstract class IOEnsureOpenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public IOEnsureOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "io_ensure_open", unsafe = UnsafeGroup.IO)
+    public static abstract class IOEnsureOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject ensureOpen(VirtualFrame frame, DynamicObject file) {
@@ -236,24 +231,18 @@ public abstract class IOPrimitiveNodes {
             final int fd = Layouts.IO.getDescriptor(file);
             if (fd == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().ioError("closed stream",this));
+                throw new RaiseException(coreExceptions().ioError("closed stream", this));
             } else if (fd == -2) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().ioError("shutdown stream",this));
+                throw new RaiseException(coreExceptions().ioError("shutdown stream", this));
             }
             return nil();
         }
 
     }
 
-    @RubiniusPrimitive(name = "io_read_if_available", lowerFixnumParameters = 0)
-    public static abstract class IOReadIfAvailableNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();
-
-        public IOReadIfAvailableNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "io_read_if_available", lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
+    public static abstract class IOReadIfAvailableNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
@@ -266,30 +255,26 @@ public abstract class IOPrimitiveNodes {
 
             final int fd = Layouts.IO.getDescriptor(file);
 
-            final FDSet fdSet = fdSetFactory.create();
+            final FDSet fdSet = new FDSet();
             fdSet.set(fd);
 
             final Timeval timeoutObject = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
-            timeoutObject.setTime(new long[] { 0, 0 });
+            timeoutObject.setTime(new long[]{ 0, 0 });
 
-            final int res = nativeSockets().select(fd + 1, fdSet.getPointer(),
-                    PointerPrimitiveNodes.NULL_POINTER, PointerPrimitiveNodes.NULL_POINTER, timeoutObject);
+            final int res = ensureSuccessful(nativeSockets().select(fd + 1, fdSet.getPointer(),
+                    PointerPrimitiveNodes.NULL_POINTER, PointerPrimitiveNodes.NULL_POINTER, timeoutObject));
 
             if (res == 0) {
-                CompilerDirectives.transferToInterpreter();
-                ruby("raise IO::EAGAINWaitReadable");
-            } else if (res < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
+                throw new RaiseException(
+                        Layouts.CLASS.getInstanceFactory(coreLibrary().getEagainWaitReadable()).newInstance(
+                            coreStrings().RESOURCE_TEMP_UNAVAIL.createInstance(),
+                            Errno.EAGAIN.intValue()));
             }
 
             final byte[] bytes = new byte[numberOfBytes];
-            final int bytesRead = posix().read(fd, bytes, numberOfBytes);
+            final int bytesRead = ensureSuccessful(posix().read(fd, bytes, numberOfBytes));
 
-            if (bytesRead < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-            } else if (bytesRead == 0) { // EOF
+            if (bytesRead == 0) { // EOF
                 return nil();
             }
 
@@ -298,8 +283,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_reopen")
-    public static abstract class IOReopenPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_reopen", unsafe = UnsafeGroup.IO)
+    public static abstract class IOReopenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
 
@@ -309,22 +294,14 @@ public abstract class IOPrimitiveNodes {
         }
 
         @TruffleBoundary
-        private void performReopen(DynamicObject file, DynamicObject io) {
-            final int fd = Layouts.IO.getDescriptor(file);
-            final int fdOther = Layouts.IO.getDescriptor(io);
+        private void performReopen(DynamicObject self, DynamicObject target) {
+            final int fdSelf = Layouts.IO.getDescriptor(self);
+            final int fdTarget = Layouts.IO.getDescriptor(target);
 
-            final int result = posix().dup2(fd, fdOther);
-            if (result == -1) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-            }
+            ensureSuccessful(posix().dup2(fdTarget, fdSelf));
 
-            final int mode = posix().fcntl(fd, Fcntl.F_GETFL);
-            if (mode < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-            }
-            Layouts.IO.setMode(file, mode);
+            final int newSelfMode = ensureSuccessful(posix().fcntl(fdSelf, Fcntl.F_GETFL));
+            Layouts.IO.setMode(self, newSelfMode);
         }
 
         @Specialization
@@ -338,8 +315,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_reopen_path", lowerFixnumParameters = 1)
-    public static abstract class IOReopenPathPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_reopen_path", lowerFixnumParameters = 1, unsafe = UnsafeGroup.IO)
+    public static abstract class IOReopenPathPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
 
@@ -353,11 +330,7 @@ public abstract class IOPrimitiveNodes {
             int fd = Layouts.IO.getDescriptor(file);
             final String pathString = StringOperations.getString(getContext(), path);
 
-            int otherFd = posix().open(pathString, mode, 666);
-            if (otherFd < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-            }
+            int otherFd = ensureSuccessful(posix().open(pathString, mode, 666));
 
             final int result = posix().dup2(otherFd, fd);
             if (result == -1) {
@@ -367,22 +340,18 @@ public abstract class IOPrimitiveNodes {
                     fd = otherFd;
                 } else {
                     if (otherFd > 0) {
-                        posix().close(otherFd);
+                        ensureSuccessful(posix().close(otherFd));
                     }
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().errnoError(errno, this));
+                    throw new RaiseException(coreExceptions().errnoError(errno, this));
                 }
 
             } else {
-                posix().close(otherFd);
+                ensureSuccessful(posix().close(otherFd));
             }
 
 
-            final int newMode = posix().fcntl(fd, Fcntl.F_GETFL);
-            if (newMode < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-            }
+            final int newMode = ensureSuccessful(posix().fcntl(fd, Fcntl.F_GETFL));
             Layouts.IO.setMode(file, newMode);
         }
 
@@ -397,12 +366,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_write")
-    public static abstract class IOWritePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public IOWritePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "io_write", unsafe = UnsafeGroup.IO)
+    public static abstract class IOWritePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
@@ -412,37 +377,33 @@ public abstract class IOPrimitiveNodes {
             final Rope rope = rope(string);
 
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
-                getContext().getDebugStandardOut().write(rope.getBytes(), rope.begin(), rope.byteLength());
+                getContext().getDebugStandardOut().write(rope.getBytes(), 0, rope.byteLength());
                 return rope.byteLength();
             }
 
-            // TODO (eregon, 11 May 2015): review consistency under concurrent modification
-            final ByteBuffer buffer = ByteBuffer.wrap(rope.getBytes(), rope.begin(), rope.byteLength());
+            RopeOperations.visitBytes(rope, new BytesVisitor() {
 
-            int total = 0;
+                @Override
+                public void accept(byte[] bytes, int offset, int length) {
+                    final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
 
-            while (buffer.hasRemaining()) {
-                getContext().getSafepointManager().poll(this);
+                    while (buffer.hasRemaining()) {
+                        getContext().getSafepointManager().poll(IOWritePrimitiveNode.this);
 
-                int written = posix().write(fd, buffer, buffer.remaining());
-
-                if (written < 0) {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
+                        int written = ensureSuccessful(posix().write(fd, buffer, buffer.remaining()));
+                        buffer.position(buffer.position() + written);
+                    }
                 }
 
-                buffer.position(buffer.position() + written);
+            });
 
-                total += written;
-            }
-
-            return total;
+            return rope.byteLength();
         }
 
     }
 
-    @RubiniusPrimitive(name = "io_close")
-    public static abstract class IOClosePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "io_close", unsafe = UnsafeGroup.IO)
+    public static abstract class IOClosePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode ensureOpenNode;
 
@@ -468,39 +429,27 @@ public abstract class IOPrimitiveNodes {
                 return 0;
             }
 
-            final int result = posix().close(fd);
+            ensureSuccessful(posix().close(fd));
 
-            // TODO BJF 13-May-2015 Implement more error handling from Rubinius
-            if (result == -1) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-            }
             return 0;
         }
 
     }
 
-    @RubiniusPrimitive(name = "io_seek", lowerFixnumParameters = {0, 1})
-    public static abstract class IOSeekPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public IOSeekPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "io_seek", lowerFixnumParameters = { 0, 1 }, unsafe = UnsafeGroup.IO)
+    public static abstract class IOSeekPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
         public int seek(VirtualFrame frame, DynamicObject io, int amount, int whence) {
             final int fd = Layouts.IO.getDescriptor(io);
+            // TODO (pitr-ch 15-Apr-2016): should it have ensureSuccessful too?
             return posix().lseek(fd, amount, whence);
         }
 
     }
 
-    @RubiniusPrimitive(name = "io_accept")
-    public abstract static class AcceptNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public AcceptNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "io_accept", unsafe = UnsafeGroup.IO)
+    public abstract static class AcceptNode extends IOPrimitiveArrayArgumentsNode {
 
         @SuppressWarnings("restriction")
         @TruffleBoundary
@@ -508,20 +457,15 @@ public abstract class IOPrimitiveNodes {
         public int accept(DynamicObject io) {
             final int fd = Layouts.IO.getDescriptor(io);
 
-            final int[] addressLength = {16};
+            final int[] addressLength = { 16 };
             final long address = UnsafeHolder.U.allocateMemory(addressLength[0]);
 
             final int newFd;
 
             try {
-                newFd = nativeSockets().accept(fd, memoryManager().newPointer(address), addressLength);
+                newFd = ensureSuccessful(nativeSockets().accept(fd, memoryManager().newPointer(address), addressLength));
             } finally {
                 UnsafeHolder.U.freeMemory(address);
-            }
-
-            if (newFd == -1) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
             }
 
             return newFd;
@@ -529,12 +473,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_sysread")
-    public static abstract class IOSysReadPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public IOSysReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO)
+    public static abstract class IOSysReadPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject sysread(VirtualFrame frame, DynamicObject file, int length) {
@@ -547,12 +487,9 @@ public abstract class IOPrimitiveNodes {
             while (toRead > 0) {
                 getContext().getSafepointManager().poll(this);
 
-                final int bytesRead = posix().read(fd, buffer, toRead);
+                final int bytesRead = ensureSuccessful(posix().read(fd, buffer, toRead));
 
-                if (bytesRead < 0) {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-                } else if (bytesRead == 0) { // EOF
+                if (bytesRead == 0) { // EOF
                     if (toRead == length) { // if EOF at first iteration
                         return nil();
                     } else {
@@ -569,14 +506,8 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3)
-    public static abstract class IOSelectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();
-
-        public IOSelectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3, unsafe = UnsafeGroup.IO)
+    public static abstract class IOSelectPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization(guards = { "isRubyArray(readables)", "isNil(writables)", "isNil(errorables)", "isNil(noTimeout)" })
@@ -589,13 +520,13 @@ public abstract class IOPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubyArray(readables)", "isNil(writables)", "isNil(errorables)"})
+        @Specialization(guards = { "isRubyArray(readables)", "isNil(writables)", "isNil(errorables)" })
         public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
             final Object[] readableObjects = ArrayOperations.toObjectArray(readables);
             final int[] readableFds = getFileDescriptors(readables);
             final int nfds = max(readableFds) + 1;
 
-            final FDSet readableSet = fdSetFactory.create();
+            final FDSet readableSet = new FDSet();
 
             final ThreadManager.ResultOrTimeout<Integer> result = getContext().getThreadManager().runUntilTimeout(this, timeoutMicros, new ThreadManager.BlockingTimeoutAction<Integer>() {
                 @Override
@@ -627,19 +558,16 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            final int resultCode = ((ThreadManager.ResultWithinTime<Integer>) result).getValue();
+            final int resultCode = ensureSuccessful(((ThreadManager.ResultWithinTime<Integer>) result).getValue());
 
-            if (resultCode == -1) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-            } else if (resultCode == 0) {
+            if (resultCode == 0) {
                 return nil();
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] {
-                    getSetObjects(readableObjects, readableFds, readableSet),
-                    Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
-                    Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) },
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
+                            getSetObjects(readableObjects, readableFds, readableSet),
+                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
+                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) },
                     3);
         }
 
@@ -650,7 +578,7 @@ public abstract class IOPrimitiveNodes {
             final int[] writableFds = getFileDescriptors(writables);
             final int nfds = max(writableFds) + 1;
 
-            final FDSet writableSet = fdSetFactory.create();
+            final FDSet writableSet = new FDSet();
 
 
             final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
@@ -673,17 +601,14 @@ public abstract class IOPrimitiveNodes {
                 }
             });
 
-            if (result == -1) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().errnoError(posix().errno(), this));
-            }
+            ensureSuccessful(result);
 
             assert result != 0;
 
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
                             Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
                             getSetObjects(writableObjects, writableFds, writableSet),
-                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0)},
+                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) },
                     3);
         }
 

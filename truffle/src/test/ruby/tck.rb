@@ -33,7 +33,7 @@ end
 Truffle::Interop.export_method(:count_invocations)
 
 def apply_numbers(f)
-  Truffle::Interop.execute(f, 18, 32) + 10
+  f.call(18, 32) + 10
 end
 
 Truffle::Interop.export_method(:apply_numbers)
@@ -72,22 +72,22 @@ def evaluate_source(mime, source)
   # TODO CS-21-Dec-15 java_string_to_ruby shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
 
   Truffle::Interop.eval(
-      Truffle::Interop.java_string_to_ruby(mime),
-      Truffle::Interop.java_string_to_ruby(source))
+      Truffle::Interop.unbox(mime),
+      Truffle::Interop.unbox(source))
 end
 
 Truffle::Interop.export_method(:evaluate_source)
 
 def complex_add(a, b)
-  Truffle::Interop.write_property a, :imaginary, Truffle::Interop.read_property(a, :imaginary) + Truffle::Interop.read_property(b, :imaginary)
-  Truffle::Interop.write_property a, :real, Truffle::Interop.read_property(a, :real) + Truffle::Interop.read_property(b, :real)
+  a.imaginary = a.imaginary + b.imaginary
+  a.real = a.real + b.real
 end
 
 Truffle::Interop.export_method(:complex_add)
 
 def complex_add_with_method(a, b)
-  Truffle::Interop.write_property a, :imaginary, Truffle::Interop.read_property(a, :imaginary) + Truffle::Interop.read_property(b, :imaginary)
-  Truffle::Interop.write_property a, :real, Truffle::Interop.read_property(a, :real) + Truffle::Interop.read_property(b, :real)
+  a.imaginary = a.imaginary + b.imaginary
+  a.real = a.real + b.real
 end
 
 Truffle::Interop.export_method(:complex_add_with_method)
@@ -95,7 +95,7 @@ Truffle::Interop.export_method(:complex_add_with_method)
 def complex_sum_real(complexes)
   complexes = Truffle::Interop.enumerable(complexes)
 
-  complexes.map{ |c| Truffle::Interop.read_property(c, :real) }.inject(&:+)
+  complexes.map{ |c| c.real }.inject(&:+)
 end
 
 Truffle::Interop.export_method(:complex_sum_real)
@@ -111,8 +111,8 @@ def complex_copy(a, b)
   b = b.to_a
 
   a.zip(b).each do |x, y|
-    Truffle::Interop.write_property x, :imaginary, Truffle::Interop.read_property(y, :imaginary)
-    Truffle::Interop.write_property x, :real, Truffle::Interop.read_property(y, :real)
+    x.imaginary = y.imaginary
+    x.real = y.real
   end
 end
 

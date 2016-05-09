@@ -38,7 +38,11 @@ public class SourceLoader {
         } else if (canonicalPath.startsWith(TRUFFLE_SCHEME) || canonicalPath.startsWith(JRUBY_SCHEME)) {
             return loadResource(canonicalPath);
         } else {
-            assert new File(canonicalPath).getCanonicalPath().equals(canonicalPath) : canonicalPath;
+            final File file = new File(canonicalPath);
+            if (!file.canRead()) {
+                throw new IOException("Can't read file " + canonicalPath);
+            }
+            assert file.getCanonicalPath().equals(canonicalPath) : canonicalPath;
             return Source.fromFileName(canonicalPath);
         }
     }

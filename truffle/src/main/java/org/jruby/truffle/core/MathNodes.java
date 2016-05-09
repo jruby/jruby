@@ -16,7 +16,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyMath;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -25,21 +29,17 @@ import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
 
-@CoreClass(name = "Math")
+@CoreClass("Math")
 public abstract class MathNodes {
 
     @CoreMethod(names = "acos", isModuleFunction = true, required = 1)
     public abstract static class ACosNode extends SimpleMonadicMathNode {
 
-        public ACosNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().mathDomainError("acos", this));
+                throw new RaiseException(coreExceptions().mathDomainError("acos", this));
             }
 
             return Math.acos(a);
@@ -50,10 +50,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "acosh", isModuleFunction = true, required = 1)
     public abstract static class ACosHNode extends SimpleMonadicMathNode {
 
-        public ACosHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             // Copied from RubyMath - see copyright notices there
@@ -62,7 +58,7 @@ public abstract class MathNodes {
                 return Double.NaN;
             } else if (a < 1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().mathDomainError("acosh", this));
+                throw new RaiseException(coreExceptions().mathDomainError("acosh", this));
             } else if (a < 94906265.62) {
                 return Math.log(a + Math.sqrt(a * a - 1.0));
             } else{
@@ -75,15 +71,11 @@ public abstract class MathNodes {
     @CoreMethod(names = "asin", isModuleFunction = true, required = 1)
     public abstract static class ASinNode extends SimpleMonadicMathNode {
 
-        public ASinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().mathDomainError("asin", this));
+                throw new RaiseException(coreExceptions().mathDomainError("asin", this));
             }
 
             return Math.asin(a);
@@ -93,10 +85,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "asinh", isModuleFunction = true, required = 1)
     public abstract static class ASinHNode extends SimpleMonadicMathNode {
-
-        public ASinHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -124,10 +112,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "atan", isModuleFunction = true, required = 1)
     public abstract static class ATanNode extends SimpleMonadicMathNode {
 
-        public ATanNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.atan(a);
@@ -137,10 +121,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "atan2", isModuleFunction = true, required = 2)
     public abstract static class ATan2Node extends SimpleDyadicMathNode {
-
-        public ATan2Node(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a, double b) {
@@ -152,17 +132,13 @@ public abstract class MathNodes {
     @CoreMethod(names = "atanh", isModuleFunction = true, required = 1)
     public abstract static class ATanHNode extends SimpleMonadicMathNode {
 
-        public ATanHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             // Copied from RubyMath - see copyright notices there
 
             if (a < -1.0 || a > 1.0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().mathDomainError("atanh", this));
+                throw new RaiseException(coreExceptions().mathDomainError("atanh", this));
             }
 
             final double y = Math.abs(a);
@@ -187,10 +163,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "cbrt", isModuleFunction = true, required = 1)
     public abstract static class CbRtNode extends SimpleMonadicMathNode {
 
-        public CbRtNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.cbrt(a);
@@ -200,10 +172,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "cos", isModuleFunction = true, required = 1)
     public abstract static class CosNode extends SimpleMonadicMathNode {
-
-        public CosNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -215,10 +183,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "cosh", isModuleFunction = true, required = 1)
     public abstract static class CosHNode extends SimpleMonadicMathNode {
 
-        public CosHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.cosh(a);
@@ -228,10 +192,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "erf", isModuleFunction = true, required = 1)
     public abstract static class ErfNode extends SimpleMonadicMathNode {
-
-        public ErfNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -256,10 +216,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "erfc", isModuleFunction = true, required = 1)
     public abstract static class ErfcNode extends SimpleMonadicMathNode {
-
-        public ErfcNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         public double doFunction(double a) {
@@ -297,10 +253,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "exp", isModuleFunction = true, required = 1)
     public abstract static class ExpNode extends SimpleMonadicMathNode {
-
-        public ExpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -367,7 +319,7 @@ public abstract class MathNodes {
                 return frexp(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().typeErrorCantConvertInto(a, "Float", this));
+                throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 
@@ -376,17 +328,13 @@ public abstract class MathNodes {
     @CoreMethod(names = "gamma", isModuleFunction = true, required = 1)
     public abstract static class GammaNode extends SimpleMonadicMathNode {
 
-        public GammaNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             // Copied from RubyMath - see copyright notices there
 
             if (a == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().mathDomainError("gamma", this));
+                throw new RaiseException(coreExceptions().mathDomainError("gamma", this));
             }
 
             if (Double.isNaN(a)) {
@@ -398,7 +346,7 @@ public abstract class MathNodes {
                     return Double.POSITIVE_INFINITY;
                 } else {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().mathDomainError("gamma", this));
+                    throw new RaiseException(coreExceptions().mathDomainError("gamma", this));
                 }
             }
 
@@ -418,7 +366,7 @@ public abstract class MathNodes {
 
             if (Double.isNaN(a)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().mathDomainError("gamma", this));
+                throw new RaiseException(coreExceptions().mathDomainError("gamma", this));
             }
 
             return result;
@@ -428,10 +376,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "hypot", isModuleFunction = true, required = 2)
     public abstract static class HypotNode extends SimpleDyadicMathNode {
-
-        public HypotNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a, double b) {
@@ -513,7 +457,7 @@ public abstract class MathNodes {
         public double function(double a, double b) {
             if (Double.isNaN(b)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().rangeError("float", Double.toString(b), "integer", this));
+                throw new RaiseException(coreExceptions().rangeError("float", Double.toString(b), "integer", this));
             }
 
             return a * Math.pow(2, b);
@@ -527,7 +471,7 @@ public abstract class MathNodes {
                         integerBNode.callLongFixnum(frame, b, "to_int", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().typeErrorCantConvertInto(a, "Float", this));
+                throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 
@@ -568,7 +512,7 @@ public abstract class MathNodes {
 
             if (a < 0 && Double.isInfinite(a)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().mathDomainError("log2", this));
+                throw new RaiseException(coreExceptions().mathDomainError("log2", this));
             }
 
             final RubyMath.NemesLogGamma l = new RubyMath.NemesLogGamma(a);
@@ -582,7 +526,7 @@ public abstract class MathNodes {
                 return lgamma(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().typeErrorCantConvertInto(a, "Float", this));
+                throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 
@@ -590,10 +534,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "log", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class LogNode extends SimpleDyadicMathNode {
-
-        public LogNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public double function(int a, NotProvided b) {
@@ -621,14 +561,14 @@ public abstract class MathNodes {
                 return doFunction(floatANode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().typeErrorCantConvertInto(a, "Float", this));
+                throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 
         private double doFunction(double a) {
             if (a < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().mathDomainError("log", this));
+                throw new RaiseException(coreExceptions().mathDomainError("log", this));
             }
 
             return Math.log(a);
@@ -638,7 +578,7 @@ public abstract class MathNodes {
         protected double doFunction(double a, double b) {
             if (a < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().mathDomainError("log", this));
+                throw new RaiseException(coreExceptions().mathDomainError("log", this));
             }
 
             return Math.log(a) / Math.log(b);
@@ -649,15 +589,11 @@ public abstract class MathNodes {
     @CoreMethod(names = "log10", isModuleFunction = true, required = 1)
     public abstract static class Log10Node extends SimpleMonadicMathNode {
 
-        public Log10Node(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().mathDomainError("log10", this));
+                throw new RaiseException(coreExceptions().mathDomainError("log10", this));
             }
 
             return Math.log10(a);
@@ -670,15 +606,11 @@ public abstract class MathNodes {
 
         private final double LOG2 = Math.log(2);
 
-        public Log2Node(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().mathDomainError("log2", this));
+                throw new RaiseException(coreExceptions().mathDomainError("log2", this));
             }
 
             return Math.log(a) / LOG2;
@@ -688,10 +620,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "sin", isModuleFunction = true, required = 1)
     public abstract static class SinNode extends SimpleMonadicMathNode {
-
-        public SinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -703,10 +631,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "sinh", isModuleFunction = true, required = 1)
     public abstract static class SinHNode extends SimpleMonadicMathNode {
 
-        public SinHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.sinh(a);
@@ -716,10 +640,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "tan", isModuleFunction = true, required = 1)
     public abstract static class TanNode extends SimpleMonadicMathNode {
-
-        public TanNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -731,10 +651,6 @@ public abstract class MathNodes {
     @CoreMethod(names = "tanh", isModuleFunction = true, required = 1)
     public abstract static class TanHNode extends SimpleMonadicMathNode {
 
-        public TanHNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.tanh(a);
@@ -744,10 +660,6 @@ public abstract class MathNodes {
 
     @CoreMethod(names = "sqrt", isModuleFunction = true, required = 1)
     public abstract static class SqrtNode extends SimpleMonadicMathNode {
-
-        public SqrtNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Override
         protected double doFunction(double a) {
@@ -760,6 +672,10 @@ public abstract class MathNodes {
 
         @Child private IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
+
+        protected SimpleMonadicMathNode() {
+            this(null, null);
+        }
 
         protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -799,7 +715,7 @@ public abstract class MathNodes {
                 return doFunction(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().typeErrorCantConvertInto(a, "Float", this));
+                throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 
@@ -810,6 +726,10 @@ public abstract class MathNodes {
         @Child protected IsANode isANode;
         @Child protected CallDispatchHeadNode floatANode;
         @Child protected CallDispatchHeadNode floatBNode;
+
+        protected SimpleDyadicMathNode() {
+            this(null, null);
+        }
 
         protected SimpleDyadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -914,7 +834,7 @@ public abstract class MathNodes {
             } else {
                 CompilerDirectives.transferToInterpreter();
 
-                throw new RaiseException(coreLibrary().typeErrorCantConvertInto(a, "Float", this));
+                throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 

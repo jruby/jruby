@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -28,7 +29,7 @@ public abstract class StringToSymbolNode extends RubyNode {
 
     @Specialization(guards = "isRubyString(string)")
     public DynamicObject doString(DynamicObject string) {
-        return getSymbol(string.toString());
+        return getSymbol(Layouts.STRING.getRope(string));
     }
 
 }

@@ -3,13 +3,22 @@
 set -e
 set -x
 
-./mvnw install -B -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$'
-
-MVN_STATUS=${PIPESTATUS[0]}
-
-if [ $MVN_STATUS != 0 ]
+if [[ -v PHASE ]]
 then
-  exit $MVN_STATUS
+  DOWNLOAD_OUTPUT_FILTER='Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$'
+  if [[ $JAVA_HOME == *"java-8"* ]]
+  then
+    ./mvnw package -B --projects '!truffle' -Dinvoker.skip=false $PHASE | egrep -v "$DOWNLOAD_OUTPUT_FILTER"
+  else
+    ./mvnw package -B -Dinvoker.skip=false $PHASE | egrep -v "$DOWNLOAD_OUTPUT_FILTER"
+  fi
+
+  MVN_STATUS=${PIPESTATUS[0]}
+
+  if [ $MVN_STATUS != 0 ]
+  then
+    exit $MVN_STATUS
+  fi
 fi
 
 if [[ -v COMMAND ]]
@@ -20,12 +29,4 @@ fi
 if [[ -v JT ]]
 then
   ruby tool/jt.rb $JT
-fi
-
-if [[ -v JTRCI ]]
-then
-  gem install bundler
-  mkdir gem-testing
-  cd gem-testing
-  jruby+truffle ci --batch ../$JTRCI
 fi

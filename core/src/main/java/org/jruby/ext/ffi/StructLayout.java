@@ -123,19 +123,15 @@ public final class StructLayout extends Type {
 
         RubyClass numberFieldClass = runtime.defineClassUnder("Number", fieldClass,
                 NumberFieldAllocator.INSTANCE, layoutClass);
-        numberFieldClass.defineAnnotatedMethods(NumberField.class);
 
         RubyClass enumFieldClass = runtime.defineClassUnder("Enum", fieldClass,
                 EnumFieldAllocator.INSTANCE, layoutClass);
-        enumFieldClass.defineAnnotatedMethods(EnumField.class);
 
         RubyClass stringFieldClass = runtime.defineClassUnder("String", fieldClass,
                 StringFieldAllocator.INSTANCE, layoutClass);
-        stringFieldClass.defineAnnotatedMethods(StringField.class);
 
         RubyClass pointerFieldClass = runtime.defineClassUnder("Pointer", fieldClass,
                 PointerFieldAllocator.INSTANCE, layoutClass);
-        pointerFieldClass.defineAnnotatedMethods(PointerField.class);
 
         RubyClass functionFieldClass = runtime.defineClassUnder("Function", fieldClass,
                 FunctionFieldAllocator.INSTANCE, layoutClass);

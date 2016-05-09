@@ -43,7 +43,7 @@ module ObjectSpace
   class << self
 
     def count_nodes_method(method, nodes)
-      node_stack = [Truffle::Primitive.ast(method)]
+      node_stack = [Truffle.ast(method)]
 
       until node_stack.empty?
         node = node_stack.pop
@@ -74,7 +74,7 @@ module ObjectSpace
 
   def count_tdata_objects(hash = {})
     ObjectSpace.each_object do |object|
-      object_type = Truffle::Primitive.object_type_of(object)
+      object_type = Truffle.object_type_of(object)
       hash[object_type] ||= 0
       hash[object_type] += 1
     end

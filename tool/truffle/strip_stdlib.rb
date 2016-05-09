@@ -14,7 +14,7 @@ needed_files = Dir.glob(truffle_stdlib.join('**', '*')).reduce([]) do |arr, file
   file = Pathname(file)
   next arr if File.directory? file
   content = File.read(file)
-  unless content =~ /require_relative ('|")([^'"]*)('|")( ?\+ ?File\.basename\(__FILE__\))?/
+  unless content =~ /^require_relative ('|")([^'"]*)('|")( ?\+ ?File\.basename\(__FILE__\))?/
     puts "File #{file} has unmatched content: #{content.inspect}"
     next arr
   end
@@ -34,6 +34,7 @@ end
 # pp needed_files
 
 to_delete    = stdlib_files - needed_files
+to_delete.delete_if { |f| File.directory?(f) || f =~ /README\.md/ }
 
 if ARGV[0] == 'delete'
 

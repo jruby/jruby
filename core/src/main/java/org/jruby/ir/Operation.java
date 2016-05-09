@@ -120,6 +120,7 @@ public enum Operation {
     INHERITANCE_SEARCH_CONST(OpFlags.f_can_raise_exception),
     CONST_MISSING(OpFlags.f_can_raise_exception),
     SEARCH_CONST(OpFlags.f_can_raise_exception),
+    SEARCH_MODULE_FOR_CONST(OpFlags.f_can_raise_exception),
 
     GET_GLOBAL_VAR(OpFlags.f_is_load),
     GET_FIELD(OpFlags.f_is_load),
@@ -220,10 +221,10 @@ public enum Operation {
     TOGGLE_BACKTRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     UPDATE_BLOCK_STATE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
 
-    PREPARE_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    PREPARE_SINGLE_BLOCK_ARG(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    PREPARE_FIXED_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
+    PREPARE_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    PREPARE_SINGLE_BLOCK_ARG(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    PREPARE_FIXED_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception);
 
     public final OpClass opClass;
     private int flags;
@@ -324,11 +325,13 @@ public enum Operation {
         return name().toLowerCase();
     }
 
+    private static final Operation[] VALUES = values();
+
     public static Operation fromOrdinal(int value) {
-        if (value < 0 || value >= values().length) {
+        if (value < 0 || value >= VALUES.length) {
             throw new RuntimeException("invalid ordinal: " + value);
         } else {
-            return values()[value];
+            return VALUES[value];
         }
     }
 }

@@ -24,7 +24,6 @@ import static org.jruby.util.cli.Options.TRUFFLE_CLASS_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CONSTANT_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CORE_ALWAYS_CLONE;
 import static org.jruby.util.cli.Options.TRUFFLE_CORE_LOAD_PATH;
-import static org.jruby.util.cli.Options.TRUFFLE_COVERAGE;
 import static org.jruby.util.cli.Options.TRUFFLE_COVERAGE_GLOBAL;
 import static org.jruby.util.cli.Options.TRUFFLE_DISPATCH_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE;
@@ -33,10 +32,14 @@ import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_STORE_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_HASH_PACKED_ARRAY_MAX;
-import static org.jruby.util.cli.Options.TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC;
 import static org.jruby.util.cli.Options.TRUFFLE_INLINE_NEEDS_CALLER_FRAME;
 import static org.jruby.util.cli.Options.TRUFFLE_INSTANCE_VARIABLE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT;
+import static org.jruby.util.cli.Options.TRUFFLE_INTEROP_CONVERT_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_INTEROP_EXECUTE_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_INTEROP_INVOKE_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_INTEROP_READ_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_INTEROP_WRITE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_IS_A_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_METHODMISSING_ALWAYS_CLONE;
 import static org.jruby.util.cli.Options.TRUFFLE_METHODMISSING_ALWAYS_INLINE;
@@ -45,7 +48,19 @@ import static org.jruby.util.cli.Options.TRUFFLE_METHOD_TO_PROC_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_RECOVER_LOOP_MIN;
 import static org.jruby.util.cli.Options.TRUFFLE_PACK_UNROLL_LIMIT;
+import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_AT_EXIT;
+import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_EXIT;
+import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_IO;
+import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_LOAD;
+import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_MEMORY;
+import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_PROCESSES;
+import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_PUTS;
+import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_SIGNALS;
+import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_SAFE_THREADS;
 import static org.jruby.util.cli.Options.TRUFFLE_PLATFORM_USE_JAVA;
+import static org.jruby.util.cli.Options.TRUFFLE_ROPE_CLASS_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_ROPE_LAZY_SUBSTRINGS;
+import static org.jruby.util.cli.Options.TRUFFLE_ROPE_PRINT_INTERN_STATS;
 import static org.jruby.util.cli.Options.TRUFFLE_SYMBOL_TO_PROC_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_THREAD_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_UNPACK_CACHE;
@@ -55,15 +70,26 @@ import static org.jruby.util.cli.Options.TRUFFLE_YIELD_CACHE;
 
 public class Options {
 
+    // Platform
+
+    public final boolean PLATFORM_SAFE_LOAD = TRUFFLE_PLATFORM_SAFE_LOAD.load();
+    public final boolean PLATFORM_SAFE_IO = TRUFFLE_PLATFORM_SAFE_IO.load();
+    public final boolean PLATFORM_SAFE_MEMORY = TRUFFLE_PLATFORM_SAFE_MEMORY.load();
+    public final boolean PLATFORM_SAFE_THREADS = TRUFFLE_PLATFORM_SAFE_THREADS.load();
+    public final boolean PLATFORM_SAFE_PROCESSES = TRUFFLE_PLATFORM_SAFE_PROCESSES.load();
+    public final boolean PLATFORM_SAFE_SIGNALS = TRUFFLE_PLATFORM_SAFE_SIGNALS.load();
+    public final boolean PLATFORM_SAFE_EXIT = TRUFFLE_PLATFORM_SAFE_EXIT.load();
+    public final boolean PLATFORM_SAFE_AT_EXIT = TRUFFLE_PLATFORM_SAFE_AT_EXIT.load();
+    public final boolean PLATFORM_SAFE_PUTS = TRUFFLE_PLATFORM_SAFE_PUTS.load();
+    public final boolean PLATFORM_USE_JAVA = TRUFFLE_PLATFORM_USE_JAVA.load();
+
     // Features
 
-    public final boolean COVERAGE = TRUFFLE_COVERAGE.load();
     public final boolean COVERAGE_GLOBAL = TRUFFLE_COVERAGE_GLOBAL.load();
 
     // Resources
 
     public final String CORE_LOAD_PATH = TRUFFLE_CORE_LOAD_PATH.load();
-    public final boolean PLATFORM_USE_JAVA = TRUFFLE_PLATFORM_USE_JAVA.load();
 
     // Data structures
 
@@ -71,6 +97,9 @@ public class Options {
     public final int ARRAY_SMALL = TRUFFLE_ARRAY_SMALL.load();
 
     public final int HASH_PACKED_ARRAY_MAX = TRUFFLE_HASH_PACKED_ARRAY_MAX.load();
+
+    public final boolean ROPE_LAZY_SUBSTRINGS = TRUFFLE_ROPE_LAZY_SUBSTRINGS.load();
+    public final boolean ROPE_PRINT_INTERN_STATS = TRUFFLE_ROPE_PRINT_INTERN_STATS.load();
 
     // Caches
 
@@ -91,6 +120,12 @@ public class Options {
     public final int CLASS_CACHE = TRUFFLE_CLASS_CACHE.load();
     public final int ENCODING_COMPATIBILE_QUERY_CACHE = TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE.load();
     public final int THREAD_CACHE = TRUFFLE_THREAD_CACHE.load();
+    public final int ROPE_CLASS_CACHE = TRUFFLE_ROPE_CLASS_CACHE.load();
+    public final int INTEROP_CONVERT_CACHE = TRUFFLE_INTEROP_CONVERT_CACHE.load();
+    public final int INTEROP_EXECUTE_CACHE = TRUFFLE_INTEROP_EXECUTE_CACHE.load();
+    public final int INTEROP_READ_CACHE = TRUFFLE_INTEROP_READ_CACHE.load();
+    public final int INTEROP_WRITE_CACHE = TRUFFLE_INTEROP_WRITE_CACHE.load();
+    public final int INTEROP_INVOKE_CACHE = TRUFFLE_INTEROP_INVOKE_CACHE.load();
 
     // Cloning and inlining
 
@@ -116,7 +151,6 @@ public class Options {
     public final boolean BACKTRACES_INTERLEAVE_JAVA = TRUFFLE_BACKTRACES_INTERLEAVE_JAVA.load();
     public final int BACKTRACES_LIMIT = TRUFFLE_BACKTRACES_LIMIT.load();
     public final boolean BACKTRACES_OMIT_UNUSED = TRUFFLE_BACKTRACES_OMIT_UNUSED.load();
-    public final boolean INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC.load();
 
     // Call graph
 

@@ -12,23 +12,25 @@ package org.jruby.truffle.core.array;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
+import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
+
 /**
- * Concatenate arrays.
+ * Concatenate argument arrays (translating a org.jruby.ast.ArgsCatNode).
  */
 public final class ArrayConcatNode extends RubyNode {
 
     @Children private final RubyNode[] children;
+    // Use an arrayBuilderNode to stabilize the array type for a given location.
     @Child private ArrayBuilderNode arrayBuilderNode;
 
-    private final BranchProfile appendArrayProfile = BranchProfile.create();
-    private final BranchProfile appendObjectProfile = BranchProfile.create();
+    private final ConditionProfile isArrayProfile = ConditionProfile.createBinaryProfile();
 
     public ArrayConcatNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);
@@ -39,53 +41,53 @@ public final class ArrayConcatNode extends RubyNode {
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
+        if (children.length == 1) {
+            return executeSingle(frame);
+        } else {
+            return executeMultiple(frame);
+        }
+    }
+
+    private DynamicObject executeSingle(VirtualFrame frame) {
+        Object store = arrayBuilderNode.start();
+        final Object childObject = children[0].execute(frame);
+
+        final int size;
+        if (isArrayProfile.profile(RubyGuards.isRubyArray(childObject))) {
+            final DynamicObject childArray = (DynamicObject) childObject;
+            size = Layouts.ARRAY.getSize(childArray);
+            store = arrayBuilderNode.ensure(store, size);
+            store = arrayBuilderNode.appendArray(store, 0, childArray);
+        } else {
+            size = 1;
+            store = arrayBuilderNode.ensure(store, 1);
+            store = arrayBuilderNode.appendValue(store, 0, childObject);
+        }
+        return createArray(getContext(), arrayBuilderNode.finish(store, size), size);
+    }
+
+    @ExplodeLoop
+    private DynamicObject executeMultiple(VirtualFrame frame) {
         Object store = arrayBuilderNode.start();
         int length = 0;
-        if (children.length == 1) {
-            return executeSingle(frame, store, length);
-        } else {
-            return executeRubyArray(frame, store, length);
-        }
-    }
 
-    @ExplodeLoop
-    private DynamicObject executeSingle(VirtualFrame frame, Object store, int length) {
-        final Object childObject = children[0].execute(frame);
-        if (RubyGuards.isRubyArray(childObject)) {
-            appendArrayProfile.enter();
-            final DynamicObject childArray = (DynamicObject) childObject;
-            store = arrayBuilderNode.ensure(store, length + Layouts.ARRAY.getSize(childArray));
-            store = arrayBuilderNode.appendArray(store, length, childArray);
-            length += Layouts.ARRAY.getSize(childArray);
-        } else {
-            appendObjectProfile.enter();
-            store = arrayBuilderNode.ensure(store, length + 1);
-            store = arrayBuilderNode.appendValue(store, length, childObject);
-            length++;
-        }
-        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), arrayBuilderNode.finish(store, length), length);
-    }
-
-    @ExplodeLoop
-    private DynamicObject executeRubyArray(VirtualFrame frame, Object store, int length) {
         for (int n = 0; n < children.length; n++) {
             final Object childObject = children[n].execute(frame);
 
-            if (RubyGuards.isRubyArray(childObject)) {
-                appendArrayProfile.enter();
+            if (isArrayProfile.profile(RubyGuards.isRubyArray(childObject))) {
                 final DynamicObject childArray = (DynamicObject) childObject;
-                store = arrayBuilderNode.ensure(store, length + Layouts.ARRAY.getSize(childArray));
+                final int size = Layouts.ARRAY.getSize(childArray);
+                store = arrayBuilderNode.ensure(store, length + size);
                 store = arrayBuilderNode.appendArray(store, length, childArray);
-                length += Layouts.ARRAY.getSize(childArray);
+                length += size;
             } else {
-                appendObjectProfile.enter();
                 store = arrayBuilderNode.ensure(store, length + 1);
                 store = arrayBuilderNode.appendValue(store, length, childObject);
                 length++;
             }
         }
 
-        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), arrayBuilderNode.finish(store, length), length);
+        return createArray(getContext(), arrayBuilderNode.finish(store, length), length);
     }
 
     @ExplodeLoop

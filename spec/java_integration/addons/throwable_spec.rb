@@ -10,7 +10,7 @@ describe "A Java Throwable" do
   end
   
   it "implements backtrace= as a no-op" do
-    ex = java.lang.Exception.new
+    ex = java.lang.IllegalStateException.new
     backtrace = ex.backtrace
     ex.set_backtrace ['blah']
     expect(ex.backtrace).to eq backtrace
@@ -18,21 +18,12 @@ describe "A Java Throwable" do
   
   it "implements to_s as message" do
     ex = java.lang.Exception.new
-    expect(ex.to_s).to eq ""
+    expect(ex.to_s).to eq ''
     expect(ex.to_s).to eq ex.message
     
-    ex = java.lang.Exception.new('hello')
+    ex = java.lang.RuntimeException.new('hello')
     expect(ex.to_s).to eq 'hello'
     expect(ex.to_s).to eq ex.message
-  end
-  
-  it "implements to_str to call to_s" do
-    ex = java.lang.Exception.new
-    def ex.to_s
-      'hello'
-    end
-    
-    expect(ex.to_str).to eq 'hello'
   end
   
   it "implements inspect as toString" do

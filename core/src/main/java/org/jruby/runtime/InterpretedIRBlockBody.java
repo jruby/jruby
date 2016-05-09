@@ -17,7 +17,7 @@ import org.jruby.util.log.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 
 public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<InterpreterContext> {
-    private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRBlockBody");
+    private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
     protected boolean pushScope;
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
@@ -156,7 +156,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
     // and replace interpreterContext asynchronously.
     protected void promoteToFullBuild(ThreadContext context) {
-        if (context.runtime.isBooting()) return; // don't Promote to full build during runtime boot
+        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't Promote to full build during runtime boot
 
         if (callCount++ >= Options.JIT_THRESHOLD.load()) context.runtime.getJITCompiler().buildThresholdReached(context, this);
     }

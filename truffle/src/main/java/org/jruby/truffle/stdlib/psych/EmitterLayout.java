@@ -11,22 +11,24 @@ package org.jruby.truffle.stdlib.psych;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.dsl.Layout;
+import com.oracle.truffle.api.object.dsl.Nullable;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.emitter.Emitter;
 
 @Layout
 public interface EmitterLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createEmitterShape(DynamicObject logicalClass,
-                                           DynamicObject metaClass);
+    DynamicObjectFactory createEmitterShape(
+            DynamicObject logicalClass,
+            DynamicObject metaClass);
 
-    DynamicObject createEmitter(DynamicObjectFactory factory,
-                               @Nullable Emitter emitter,
-                               @Nullable DumperOptions options,
-                               @Nullable Object io);
+    DynamicObject createEmitter(
+            DynamicObjectFactory factory,
+            @Nullable Emitter emitter,
+            @Nullable DumperOptions options,
+            @Nullable Object io);
 
     boolean isEmitter(DynamicObject object);
 

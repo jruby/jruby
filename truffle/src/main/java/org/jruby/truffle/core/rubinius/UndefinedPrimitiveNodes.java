@@ -11,8 +11,8 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 
 /**
  * Catch-all class for Rubinius primitives that are invoked but haven't yet been defined.  Its only purpose is to
@@ -23,12 +23,8 @@ public abstract class UndefinedPrimitiveNodes {
 
     public final static String NAME = "undefined";
 
-    @RubiniusPrimitive(name = NAME)
-    public static abstract class UndefinedPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public UndefinedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = NAME)
+    public static abstract class UndefinedPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization

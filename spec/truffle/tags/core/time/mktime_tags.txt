@@ -1,4 +1,0 @@
-fails:Time.mktime creates the correct time just after dst change
-fails:Time.mktime timezone changes correctly adjusts the timezone change to 'EET' on 'Europe/Istanbul'
-fails:Time.mktime timezone changes correctly adjusts the timezone change to 'CEST' on 'Europe/Amsterdam'
-fails(Joda Time behavior):Time.mktime respects rare old timezones

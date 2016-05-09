@@ -13,8 +13,9 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.numeric.BignumOperations;
 
 import java.math.BigInteger;
 
@@ -70,13 +71,13 @@ public abstract class ObjectIDOperations {
     public static DynamicObject largeFixnumToID(RubyContext context, long fixnum) {
         assert !isSmallFixnum(fixnum);
         BigInteger big = unsignedBigInteger(fixnum);
-        return Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), big.or(LARGE_FIXNUM_FLAG));
+        return BignumOperations.createBignum(context, big.or(LARGE_FIXNUM_FLAG));
     }
 
     public static DynamicObject floatToID(RubyContext context, double value) {
         long bits = Double.doubleToRawLongBits(value);
         BigInteger big = unsignedBigInteger(bits);
-        return Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), big.or(FLOAT_FLAG));
+        return BignumOperations.createBignum(context, big.or(FLOAT_FLAG));
     }
 
     // ID => primitive

@@ -21,7 +21,7 @@ import org.jruby.util.log.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 
 public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<DynamicMethod> {
-    private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
+    private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRMethod.class);
 
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
@@ -280,7 +280,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     }
 
     protected void tryJit(ThreadContext context, DynamicMethodBox box) {
-        if (context.runtime.isBooting()) return;  // don't JIT during runtime boot
+        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return;  // don't JIT during runtime boot
 
         synchronized (this) {
             if (box.callCount >= 0) {

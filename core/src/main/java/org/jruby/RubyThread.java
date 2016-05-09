@@ -103,7 +103,8 @@ import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
 @JRubyClass(name="Thread")
 public class RubyThread extends RubyObject implements ExecutionContext {
 
-    private static final Logger LOG = LoggerFactory.getLogger("RubyThread");
+    private static final Logger LOG = LoggerFactory.getLogger(RubyThread.class);
+    // static { LOG.setDebugEnable(true); }
 
     /** The thread-like think that is actually executing */
     private volatile ThreadLike threadImpl;
@@ -151,7 +152,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Thread-local tuple used for sleeping (semaphore, millis, nanos) */
     private final SleepTask2 sleepTask = new SleepTask2();
 
-    private static final boolean DEBUG = false;
     public static final int RUBY_MIN_THREAD_PRIORITY = -3;
     public static final int RUBY_MAX_THREAD_PRIORITY = 3;
 
@@ -478,14 +478,20 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject to_s(ThreadContext context) {
-            return context.runtime.newString(element.mriStyleString());
+            return RubyString.newString(context.runtime, element.mriStyleString());
         }
 
-        public static IRubyObject newLocationArray(Ruby runtime, RubyStackTraceElement[] elements) {
-            RubyArray ary = runtime.newArray(elements.length);
+        public static RubyArray newLocationArray(Ruby runtime, RubyStackTraceElement[] elements) {
+            return newLocationArray(runtime, elements, 0, elements.length);
+        }
 
-            for (RubyStackTraceElement element : elements) {
-                ary.append(new RubyThread.Location(runtime, runtime.getLocation(), element));
+        public static RubyArray newLocationArray(Ruby runtime, RubyStackTraceElement[] elements,
+            final int offset, final int length) {
+            final RubyClass locationClass = runtime.getLocation();
+
+            RubyArray ary = runtime.newArray(length);
+            for ( int i = offset; i < offset + length; i++ ) {
+                ary.append(new RubyThread.Location(runtime, locationClass, elements[i]));
             }
 
             return ary;
@@ -1510,7 +1516,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private static void debug(RubyThread thread, String message) {
-        if (DEBUG) LOG.debug(Thread.currentThread() + "(" + thread.status + "): " + message);
+        if (LOG.isDebugEnabled()) LOG.debug( "{} ({}): {}", Thread.currentThread(), thread.status, message );
     }
 
     @JRubyMethod

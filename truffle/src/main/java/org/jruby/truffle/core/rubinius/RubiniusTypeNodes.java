@@ -12,22 +12,16 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 
-@CoreClass(name = "Rubinius::Type")
+@CoreClass("Rubinius::Type")
 public abstract class RubiniusTypeNodes {
 
     @CoreMethod(names = "each_ancestor", onSingleton = true, required = 1, needsBlock = true)
     public abstract static class EachAncestorNode extends YieldingCoreMethodNode {
-
-        public EachAncestorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyModule(module)")
         public DynamicObject eachAncestor(VirtualFrame frame, DynamicObject module, DynamicObject block) {

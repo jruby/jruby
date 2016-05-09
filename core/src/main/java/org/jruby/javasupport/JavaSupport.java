@@ -63,9 +63,11 @@ public abstract class JavaSupport {
 
     public abstract Map<String, JavaClass> getNameClassMap();
 
-    public abstract void setJavaObjectVariable(Object o, int i, Object v);
-
+    @Deprecated
     public abstract Object getJavaObjectVariable(Object o, int i);
+
+    @Deprecated
+    public abstract void setJavaObjectVariable(Object o, int i, Object v);
 
     public abstract RubyModule getJavaModule();
 
@@ -83,8 +85,11 @@ public abstract class JavaSupport {
 
     public abstract RubyClass getJavaClassClass();
 
+    public abstract RubyClass getJavaPackageClass() ;
+
     public abstract RubyModule getJavaInterfaceTemplate();
 
+    @Deprecated
     public abstract RubyModule getPackageModuleTemplate();
 
     public abstract RubyClass getJavaProxyClass();
@@ -105,15 +110,94 @@ public abstract class JavaSupport {
 
     public abstract RubyClass getJavaProxyConstructorClass();
 
-    public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
-
     public abstract ClassValue<Map<String, AssignedName>> getStaticAssignedNames();
 
     public abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
 
+    @Deprecated // internal API - no longer used
+    public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
+
+    /**
+     * a replacement for {@link #getJavaProxyClassCache()} API
+     */
+    abstract JavaProxyClass fetchJavaProxyClass(ProxyClassKey classKey);
+
+    /**
+     * a replacement for {@link #getJavaProxyClassCache()} API
+     */
+    abstract JavaProxyClass saveJavaProxyClass(ProxyClassKey classKey, JavaProxyClass klass);
+
+    /**
+     * @note Internal API - subject to change!
+     */
+    public static final class ProxyClassKey {
+        final Class superClass;
+        final Class[] interfaces;
+        final Set<String> names; // "usable" method names - assumed immutable
+
+        private ProxyClassKey(Class superClass, Class[] interfaces, Set<String> names) {
+            this.superClass = superClass;
+            this.interfaces = interfaces;
+            this.names = names;
+        }
+
+        public static ProxyClassKey getInstance(Class superClass, Class[] interfaces, Set<String> names) {
+            return new ProxyClassKey(superClass, interfaces, names);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if ( obj instanceof ProxyClassKey ) {
+                final ProxyClassKey that = (ProxyClassKey) obj;
+                if (this.superClass != that.superClass) return false;
+
+                if (this.names.size() != that.names.size()) return false;
+                if ( ! this.names.equals(that.names) ) return false;
+
+                final int len = this.interfaces.length;
+                if (len != that.interfaces.length) return false;
+                // order is not important :
+                for ( int i = 0; i < len; i++ ) {
+                    final Class iface = this.interfaces[i];
+                    boolean ifaceFound = false;
+                    for ( int j = 0; j < len; j++ ) {
+                        if ( iface == that.interfaces[j] ) {
+                            ifaceFound = true; break;
+                        }
+                    }
+                    if ( ! ifaceFound ) return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private int hash;
+
+        @Override
+        public int hashCode() {
+            int hash = this.hash;
+            if (hash != 0) return hash;
+
+            for ( int i = 0; i < interfaces.length; i++ ) {
+                hash += interfaces[i].hashCode();
+            }
+            return this.hash = (hash * superClass.hashCode()) ^ this.names.hashCode();
+        }
+    }
+
+    /**
+     * @deprecated Internal API that should not be accessible.
+     */
     public abstract void beginProxy(Class cls, RubyModule proxy);
 
+    /**
+     * @deprecated Internal API that should not be accessible.
+     */
     public abstract void endProxy(Class cls);
 
+    /**
+     * @deprecated Internal API that should not be accessible.
+     */
     public abstract RubyModule getUnfinishedProxy(Class cls);
 }

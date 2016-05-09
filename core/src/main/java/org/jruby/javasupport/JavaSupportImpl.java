@@ -36,6 +36,7 @@ package org.jruby.javasupport;
 import java.lang.reflect.Member;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,6 +47,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
 import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.proxy.JavaProxyClass;
@@ -85,6 +87,7 @@ public class JavaSupportImpl extends JavaSupport {
     private RubyClass javaObjectClass;
     private JavaClass objectJavaClass;
     private RubyClass javaClassClass;
+    private RubyClass javaPackageClass;
     private RubyClass javaArrayClass;
     private RubyClass javaProxyClass;
     private RubyClass arrayJavaProxyCreatorClass;
@@ -100,16 +103,13 @@ public class JavaSupportImpl extends JavaSupport {
 
     private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>(64);
 
-    // A cache of all JavaProxyClass objects created for this runtime
-    private Map<Set<?>, JavaProxyClass> javaProxyClassCache = Collections.synchronizedMap(new HashMap<Set<?>, JavaProxyClass>());
-
     public JavaSupportImpl(final Ruby runtime) {
         this.runtime = runtime;
 
         this.javaClassCache = ClassValue.newInstance(new ClassValueCalculator<JavaClass>() {
             @Override
-            public JavaClass computeValue(Class<?> cls) {
-                return new JavaClass(runtime, cls);
+            public JavaClass computeValue(Class<?> klass) {
+                return new JavaClass(runtime, getJavaClassClass(), klass);
             }
         });
 
@@ -120,8 +120,8 @@ public class JavaSupportImpl extends JavaSupport {
              * allowing us to skip some threading work downstream.
              */
             @Override
-            public synchronized RubyModule computeValue(Class<?> cls) {
-                return Java.createProxyClassForClass(runtime, cls);
+            public synchronized RubyModule computeValue(Class<?> klass) {
+                return Java.createProxyClassForClass(runtime, klass);
             }
         });
 
@@ -146,6 +146,13 @@ public class JavaSupportImpl extends JavaSupport {
         Class primitiveClass;
         if ((primitiveClass = JavaUtil.PRIMITIVE_CLASSES.get(className)) == null) {
             if (!Ruby.isSecurityRestricted()) {
+                for(Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
+                    try {
+                        return loader.loadClass(className);
+                    }
+                    catch(ClassNotFoundException ignored) {
+                    }
+                }
                 return Class.forName(className, true, runtime.getJRubyClassLoader());
             }
             return Class.forName(className);
@@ -156,30 +163,34 @@ public class JavaSupportImpl extends JavaSupport {
     public Class loadJavaClassVerbose(String className) {
         try {
             return loadJavaClass(className);
-        } catch (ClassNotFoundException cnfExcptn) {
-            throw runtime.newNameError("cannot load Java class " + className, className, cnfExcptn);
-        } catch (ExceptionInInitializerError eiie) {
-            throw runtime.newNameError("cannot initialize Java class " + className, className, eiie);
-        } catch (LinkageError le) {
-            throw runtime.newNameError("cannot link Java class " + className + ", probable missing dependency: " + le.getLocalizedMessage(), className, le);
-        } catch (SecurityException se) {
-            if (runtime.isVerbose()) se.printStackTrace(runtime.getErrorStream());
-            throw runtime.newSecurityError(se.getLocalizedMessage());
+        } catch (ClassNotFoundException ex) {
+            throw initCause(runtime.newNameError("cannot load Java class " + className, className, ex), ex);
+        } catch (ExceptionInInitializerError ex) {
+            throw initCause(runtime.newNameError("cannot initialize Java class " + className, className, ex), ex);
+        } catch (LinkageError ex) {
+            throw initCause(runtime.newNameError("cannot link Java class " + className + ", probable missing dependency: " + ex.getLocalizedMessage(), className, ex), ex);
+        } catch (SecurityException ex) {
+            if (runtime.isVerbose()) ex.printStackTrace(runtime.getErrorStream());
+            throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);
         }
     }
 
     public Class loadJavaClassQuiet(String className) {
         try {
             return loadJavaClass(className);
-        } catch (ClassNotFoundException cnfExcptn) {
-            throw runtime.newNameError("cannot load Java class " + className, className, cnfExcptn, false);
-        } catch (ExceptionInInitializerError eiie) {
-            throw runtime.newNameError("cannot initialize Java class " + className, className, eiie, false);
-        } catch (LinkageError le) {
-            throw runtime.newNameError("cannot link Java class " + className, className, le, false);
-        } catch (SecurityException se) {
-            throw runtime.newSecurityError(se.getLocalizedMessage());
+        } catch (ClassNotFoundException ex) {
+            throw initCause(runtime.newNameError("cannot load Java class " + className, className, ex, false), ex);
+        } catch (ExceptionInInitializerError ex) {
+            throw initCause(runtime.newNameError("cannot initialize Java class " + className, className, ex, false), ex);
+        } catch (LinkageError ex) {
+            throw initCause(runtime.newNameError("cannot link Java class " + className, className, ex, false), ex);
+        } catch (SecurityException ex) {
+            throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);
         }
+    }
+
+    private static RaiseException initCause(final RaiseException ex, final Throwable cause) {
+        ex.initCause(cause); return ex;
     }
 
     public JavaClass getJavaClassFromCache(Class clazz) {
@@ -275,12 +286,19 @@ public class JavaSupportImpl extends JavaSupport {
         return javaClassClass = getJavaModule().getClass("JavaClass");
     }
 
+    public RubyClass getJavaPackageClass() {
+        RubyClass clazz;
+        if ((clazz = javaPackageClass) != null) return clazz;
+        return javaPackageClass = getJavaModule().getClass("JavaPackage");
+    }
+
     public RubyModule getJavaInterfaceTemplate() {
         RubyModule module;
         if ((module = javaInterfaceTemplate) != null) return module;
         return javaInterfaceTemplate = runtime.getModule("JavaInterfaceTemplate");
     }
 
+    @Deprecated
     public RubyModule getPackageModuleTemplate() {
         RubyModule module;
         if ((module = packageModuleTemplate) != null) return module;
@@ -335,10 +353,6 @@ public class JavaSupportImpl extends JavaSupport {
         return javaConstructorClass = getJavaModule().getClass("JavaConstructor");
     }
 
-    public Map<Set<?>, JavaProxyClass> getJavaProxyClassCache() {
-        return this.javaProxyClassCache;
-    }
-
     public ClassValue<Map<String, AssignedName>> getStaticAssignedNames() {
         return staticAssignedNames;
     }
@@ -347,21 +361,72 @@ public class JavaSupportImpl extends JavaSupport {
         return instanceAssignedNames;
     }
 
-    public void beginProxy(Class cls, RubyModule proxy) {
+    public final void beginProxy(Class cls, RubyModule proxy) {
         UnfinishedProxy up = new UnfinishedProxy(proxy);
         up.lock();
         unfinishedProxies.put(cls, up);
     }
 
-    public void endProxy(Class cls) {
+    public final void endProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.remove(cls);
         up.unlock();
     }
 
-    public RubyModule getUnfinishedProxy(Class cls) {
+    public final RubyModule getUnfinishedProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.get(cls);
         if (up != null && up.isHeldByCurrentThread()) return up.proxy;
         return null;
+    }
+
+    @Deprecated
+    public Map<Set<?>, JavaProxyClass> getJavaProxyClassCache() {
+        Map<Set<?>, JavaProxyClass> javaProxyClassCache = new HashMap<>(javaProxyClasses.size());
+        synchronized (javaProxyClasses) {
+            for ( Map.Entry<ProxyClassKey, JavaProxyClass> entry : javaProxyClasses.entrySet() ) {
+                final ProxyClassKey key = entry.getKey();
+                final Set<Object> cacheKey = new HashSet<>();
+                cacheKey.add(key.superClass);
+                for (int i = 0; i < key.interfaces.length; i++) {
+                    cacheKey.add(key.interfaces[i]);
+                }
+                // add (potentially) overridden names to the key.
+                if ( ! key.names.isEmpty() ) cacheKey.addAll(key.names);
+
+                javaProxyClassCache.put(cacheKey, entry.getValue());
+            }
+        }
+
+        return Collections.unmodifiableMap(javaProxyClassCache);
+    }
+
+    // cache of all JavaProxyClass objects created for this runtime
+    private final Map<ProxyClassKey, JavaProxyClass> javaProxyClasses = new HashMap<>();
+
+    @Override
+    final JavaProxyClass fetchJavaProxyClass(ProxyClassKey classKey) {
+        synchronized (javaProxyClasses) {
+            return javaProxyClasses.get(classKey);
+        }
+    }
+
+    @Override
+    final JavaProxyClass saveJavaProxyClass(ProxyClassKey classKey, JavaProxyClass klass) {
+        synchronized (javaProxyClasses) {
+            JavaProxyClass existing = javaProxyClasses.get(classKey);
+            if ( existing != null ) return existing;
+            javaProxyClasses.put(classKey, klass);
+        }
+        return klass;
+    }
+
+    // internal helper to access non-public fetch method
+    public static JavaProxyClass fetchJavaProxyClass(final Ruby runtime, ProxyClassKey classKey) {
+        return runtime.getJavaSupport().fetchJavaProxyClass(classKey);
+    }
+
+    // internal helper to access non-public save method
+    public static JavaProxyClass saveJavaProxyClass(final Ruby runtime, ProxyClassKey classKey, JavaProxyClass klass) {
+        return runtime.getJavaSupport().saveJavaProxyClass(classKey, klass);
     }
 
     @Deprecated
@@ -407,8 +472,4 @@ public class JavaSupportImpl extends JavaSupport {
         }
     }
 
-    @Deprecated
-    public static Class getPrimitiveClass(String primitiveType) {
-        return JavaUtil.PRIMITIVE_CLASSES.get(primitiveType);
-    }
 }

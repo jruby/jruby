@@ -65,6 +65,13 @@ public class IRReader implements IRPersistenceValues {
             });
         }
 
+        // Run through all scopes again and ensure they've calculated flags.
+        // This also forces lazy instrs from above to eagerly decode.
+        for (KeyValuePair<IRScope, Integer> pair: scopes) {
+            final IRScope scope = pair.getKey();
+            scope.computeScopeFlags();
+        }
+
         return scopes[0].getKey(); // topmost scope;
     }
 
@@ -150,9 +157,9 @@ public class IRReader implements IRPersistenceValues {
         case METACLASS_BODY:
             return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName(), line, staticScope);
         case INSTANCE_METHOD:
-            return new IRMethod(manager, lexicalParent, null, name, true, line, staticScope);
+            return new IRMethod(manager, lexicalParent, null, name, true, line, staticScope, false);
         case CLASS_METHOD:
-            return new IRMethod(manager, lexicalParent, null, name, false, line, staticScope);
+            return new IRMethod(manager, lexicalParent, null, name, false, line, staticScope, false);
         case MODULE_BODY:
             return new IRModuleBody(manager, lexicalParent, name, line, staticScope);
         case SCRIPT_BODY:

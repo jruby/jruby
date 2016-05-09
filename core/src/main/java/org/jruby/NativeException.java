@@ -27,8 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.PrintStream;
-
 import java.lang.reflect.Member;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -41,18 +39,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class NativeException extends RubyException {
 
     private final Throwable cause;
+    private final String messageAsJavaString;
     public static final String CLASS_NAME = "NativeException";
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
         super(runtime, rubyClass);
         this.cause = cause;
-        this.message = runtime.newString(cause.getClass().getName() + ": " + searchStackMessage(cause));
+        this.messageAsJavaString = cause.getClass().getName() + ": " + searchStackMessage(cause);
     }
     
     private NativeException(Ruby runtime, RubyClass rubyClass) {
-        super(runtime, rubyClass);
-        this.cause   = new Throwable();
-        this.message = runtime.newString();
+        super(runtime, rubyClass, null);
+        this.cause = new Throwable();
+        this.messageAsJavaString = null;
     }
     
     private static ObjectAllocator NATIVE_EXCEPTION_ALLOCATOR = new ObjectAllocator() {
@@ -72,32 +71,60 @@ public class NativeException extends RubyException {
     }
 
     @JRubyMethod
-    public IRubyObject cause(Block unusedBlock) {
-        return Java.getInstance(getRuntime(), cause);
+    public final IRubyObject cause() {
+        return Java.getInstance(getRuntime(), getCause());
     }
 
-    public IRubyObject backtrace() {
+    @Deprecated
+    public IRubyObject cause(Block unusedBlock) {
+        return cause();
+    }
+
+    @Override
+    public final IRubyObject backtrace() {
         IRubyObject rubyTrace = super.backtrace();
-        if (rubyTrace.isNil()) {
-            return rubyTrace;
-        }
+        if ( rubyTrace.isNil() ) return rubyTrace;
         final Ruby runtime = getRuntime();
-        RubyArray array = (RubyArray) rubyTrace.dup();
-        StackTraceElement[] stackTrace = cause.getStackTrace();
-        for (int i = stackTrace.length - 1; i >= 0; i--) {
-            StackTraceElement element = stackTrace[i];
+        final RubyArray rTrace = (RubyArray) rubyTrace;
+        StackTraceElement[] jTrace = cause.getStackTrace();
+
+        // NOTE: with the new filtering ruby trace will already include the source (Java) part
+        if ( rTrace.size() > 0 && jTrace.length > 0 ) {
+            final String r0 = rTrace.eltInternal(0).toString();
+            // final StackTraceElement j0 = jTrace[0];
+            final String method = jTrace[0].getMethodName();
+            final String file = jTrace[0].getFileName();
+            if ( method != null && file != null &&
+                r0.indexOf(method) != -1 && r0.indexOf(file) != -1 ) {
+                return rTrace; // as is
+            }
+        }
+        // so join-ing is mostly unnecessary, but just in case (due compatibility) make sure :
+
+        return joinedBacktrace(runtime, rTrace, jTrace);
+    }
+
+    private static RubyArray joinedBacktrace(final Ruby runtime, final RubyArray rTrace, final StackTraceElement[] jTrace) {
+        final IRubyObject[] trace = new IRubyObject[jTrace.length + rTrace.size()];
+        final StringBuilder line = new StringBuilder(32);
+        for ( int i = 0; i < jTrace.length; i++ ) {
+            StackTraceElement element = jTrace[i];
             final String className = element.getClassName();
-            final String line;
+            line.setLength(0);
             if (element.getFileName() == null) {
-                line = className + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + '\'';
+                line.append(className).append(':').append(element.getLineNumber()).append(":in `").append(element.getMethodName()).append('\'');
             } else {
                 final int index = className.lastIndexOf('.');
-                final String packageName = index == -1 ? "" : className.substring(0, index) + '/';
-                line = packageName.replace('.', '/') + element.getFileName() + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + '\'';
+                if ( index > - 1 ) {
+                    line.append(className.substring(0, index).replace('.', '/'));
+                    line.append('/');
+                }
+                line.append(element.getFileName()).append(':').append(element.getLineNumber()).append(":in `").append(element.getMethodName()).append('\'');
             }
-            array.unshift(runtime.newString(line));
+            trace[i] = RubyString.newString(runtime, line.toString());
         }
-        return array;
+        System.arraycopy(rTrace.toJavaArrayMaybeUnsafe(), 0, trace, jTrace.length, rTrace.size());
+        return RubyArray.newArrayNoCopy(runtime, trace);
     }
 
     @Deprecated // not used
@@ -139,12 +166,20 @@ public class NativeException extends RubyException {
         }
     }
 
-    public void printBacktrace(PrintStream errorStream) {
-        super.printBacktrace(errorStream);
-        if (getRuntime().isDebug()) {
-            errorStream.println("Complete Java stackTrace");
-            cause.printStackTrace(errorStream);
+    @Override
+    public final IRubyObject getMessage() {
+        if (message == null) {
+            if (messageAsJavaString == null) {
+                return message = getRuntime().getNil();
+            }
+            return message = getRuntime().newString(messageAsJavaString);
         }
+        return message;
+    }
+
+    @Override
+    public final String getMessageAsJavaString() {
+        return messageAsJavaString;
     }
 
     public final Throwable getCause() {
@@ -155,9 +190,9 @@ public class NativeException extends RubyException {
         String message;
         do {
             message = cause.getMessage();
+            if ( message != null ) return message;
             cause = cause.getCause();
-        } while (message == null && cause != null);
-
-        return message;
+        } while ( cause != null );
+        return null;
     }
 }

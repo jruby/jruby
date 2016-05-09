@@ -54,52 +54,49 @@ describe "A Ruby class generating a Java stub" do
     describe "with no arguments" do
       it "generates a default constructor" do
         cls = generate("class Foo; def initialize; end; end").classes[0]
-        cls.constructor?.should be true
+        expect( cls.constructor? ).to be true
 
-        init = cls.methods[0]
-        init.should_not be nil
-        init.name.should == "initialize"
-        init.constructor?.should == true
-        init.java_signature.to_s.should == "Object initialize()"
-        init.args.length.should == 0
+        expect( init = cls.methods[0] ).to_not be nil
+        expect( init.name ).to eql 'initialize'
+        expect( init.constructor? ).to be true
+        expect( init.java_signature.to_s ).to eql 'Object initialize()'
+        expect( init.args.length ).to eql 0
 
         java = init.to_s
-        java.should match EMPTY_INITIALIZE_PATTERN
+        expect( java ).to match EMPTY_INITIALIZE_PATTERN
       end
     end
 
     describe "with one argument and no java_signature" do
       it "generates an (Object) constructor" do
         cls = generate("class Foo; def initialize(a); end; end").classes[0]
-        cls.constructor?.should be true
+        expect( cls.constructor? ).to be true
 
         init = cls.methods[0]
-        init.name.should == "initialize"
-        init.constructor?.should == true
-        init.java_signature.to_s.should == "Object initialize(Object a)"
-        init.args.length.should == 1
-        init.args[0].should == 'a'
+        expect( init.name ).to eql 'initialize'
+        expect( init.constructor? ).to be true
+        expect( init.java_signature.to_s ).to eql 'Object initialize(Object a)'
+        expect( init.args ).to eql ['a']
 
         java = init.to_s
-        java.should match OBJECT_INITIALIZE_PATTERN
+        expect( java ).to match OBJECT_INITIALIZE_PATTERN
       end
     end
 
     describe "with one argument and a java_signature" do
       it "generates a type-appropriate constructor" do
         cls = generate("class Foo; java_signature 'Foo(String)'; def initialize(a); end; end").classes[0]
-        cls.constructor?.should be true
+        expect( cls.constructor? ).to be true
 
         init = cls.methods[0]
-        init.name.should == "initialize"
-        init.constructor?.should == true
-        init.java_signature.should_not == nil
-        init.java_signature.to_s.should == "Foo(String)"
-        init.args.length.should == 1
-        init.args[0].should == 'a'
+        expect( init.name ).to eql 'initialize'
+        expect( init.constructor? ).to be true
+        expect( init.java_signature ).to_not be nil
+        expect( init.java_signature.to_s ).to eql "Foo(String)"
+        expect( init.args ).to eql ['a']
 
         java = init.to_s
-        java.should match STRING_INITIALIZE_PATTERN
+        expect( java ).to match STRING_INITIALIZE_PATTERN
       end
     end
 
@@ -108,7 +105,7 @@ describe "A Ruby class generating a Java stub" do
         cls = generate("class Foo; java_signature 'Foo() throws FooBarException'; def initialize(); end; end").classes[0]
 
         method = cls.methods[0]
-        method.java_signature.to_s.should == 'Foo() throws FooBarException'
+        expect( method.java_signature.to_s ).to eql 'Foo() throws FooBarException'
       end
 
       it 'generates a throws clause for more than one exception' do

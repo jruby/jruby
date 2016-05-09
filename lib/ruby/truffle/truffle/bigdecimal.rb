@@ -252,7 +252,7 @@ class Truffle::BigDecimal < Numeric
            precs2
   end
 
-  def _dump(level)
+  def _dump(level=nil)
     # TODO (pitr 30-jun-2015): increase density
     to_s
   end

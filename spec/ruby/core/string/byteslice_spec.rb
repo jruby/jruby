@@ -22,6 +22,7 @@ with_feature :encoding do
       "\u3042".byteslice(1).should == "\x81".force_encoding("UTF-8")
       "\u3042".byteslice(1, 2).should == "\x81\x82".force_encoding("UTF-8")
       "\u3042".byteslice(1..2).should == "\x81\x82".force_encoding("UTF-8")
+      "\u3042".byteslice(-1).should == "\x82".force_encoding("UTF-8")
     end
   end
 end

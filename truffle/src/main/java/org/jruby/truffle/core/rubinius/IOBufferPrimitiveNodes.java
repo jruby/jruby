@@ -44,14 +44,17 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.exception.ExceptionNodes;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.ByteList;
 
 public abstract class IOBufferPrimitiveNodes {
@@ -59,8 +62,8 @@ public abstract class IOBufferPrimitiveNodes {
     private static final int IOBUFFER_SIZE = 32768;
     private static final int STACK_BUF_SZ = 8192;
 
-    @RubiniusPrimitive(name = "iobuffer_allocate")
-    public static abstract class IOBufferAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
+    @Primitive(name = "iobuffer_allocate", unsafe = UnsafeGroup.IO)
+    public static abstract class IOBufferAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
 
@@ -80,12 +83,8 @@ public abstract class IOBufferPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "iobuffer_unshift", lowerFixnumParameters = 1)
-    public static abstract class IOBufferUnshiftPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public IOBufferUnshiftPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "iobuffer_unshift", lowerFixnumParameters = 1, unsafe = UnsafeGroup.IO)
+    public static abstract class IOBufferUnshiftPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(string)")
         public int unshift(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject string, int startPosition) {
@@ -112,12 +111,8 @@ public abstract class IOBufferPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "iobuffer_fill")
-    public static abstract class IOBufferFillPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public IOBufferFillPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "iobuffer_fill", unsafe = UnsafeGroup.IO)
+    public static abstract class IOBufferFillPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public int fill(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject io) {
@@ -138,7 +133,7 @@ public abstract class IOBufferPrimitiveNodes {
                 // and now there isn't enough room for this data.
                 if (bytesRead > left(frame, ioBuffer)) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreLibrary().internalError("IO buffer overrun", this));
+                    throw new RaiseException(coreExceptions().internalError("IO buffer overrun", this));
                 }
                 final int used = Layouts.IO_BUFFER.getUsed(ioBuffer);
                 final ByteList storage = Layouts.BYTE_ARRAY.getBytes(Layouts.IO_BUFFER.getStorage(ioBuffer));
@@ -171,7 +166,7 @@ public abstract class IOBufferPrimitiveNodes {
                         continue;
                     } else {
                         CompilerDirectives.transferToInterpreter();
-                        throw new RaiseException(ExceptionNodes.createRubyException(coreLibrary().getErrnoClass(Errno.valueOf(errno))));
+                        throw new RaiseException(ExceptionOperations.createRubyException(coreLibrary().getErrnoClass(Errno.valueOf(errno))));
                     }
                 } else {
                     break;

@@ -638,6 +638,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_and
      *
      */
+    @JRubyMethod(name = "&", required = 1)
     public IRubyObject op_and(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyBignum) {
             return bignorm(getRuntime(), value.and(((RubyBignum) other).value));
@@ -647,7 +648,6 @@ public class RubyBignum extends RubyInteger {
         return coerceBit(context, "&", other);
     }
 
-    @JRubyMethod(name = "&", required = 1)
     public IRubyObject op_and19(ThreadContext context, IRubyObject other) {
         return op_and(context, other);
     }
@@ -655,6 +655,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_or
      *
      */
+    @JRubyMethod(name = "|", required = 1)
     public IRubyObject op_or(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyBignum) {
             return bignorm(getRuntime(), value.or(((RubyBignum) other).value));
@@ -665,7 +666,11 @@ public class RubyBignum extends RubyInteger {
         return coerceBit(context, "|", other);
     }
 
-    @JRubyMethod(name = "|", required = 1)
+    @JRubyMethod
+    public IRubyObject bit_length(ThreadContext context) {
+        return context.runtime.newFixnum(value.bitLength());
+    }
+
     public IRubyObject op_or19(ThreadContext context, IRubyObject other) {
         return op_or(context, other);
     }
@@ -673,6 +678,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_xor
      *
      */
+    @JRubyMethod(name = "^", required = 1)
     public IRubyObject op_xor(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyBignum) {
             return bignorm(getRuntime(), value.xor(((RubyBignum) other).value));
@@ -682,8 +688,7 @@ public class RubyBignum extends RubyInteger {
         }
         return coerceBit(context, "^", other);
     }
-    
-    @JRubyMethod(name = "^", required = 1)
+
     public IRubyObject op_xor19(ThreadContext context, IRubyObject other) {
         return op_xor(context, other);
     }
@@ -850,23 +855,21 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @Override
+    @JRubyMethod(name = {"==="}, required = 1)
     public IRubyObject eql_p(IRubyObject other) {
-        return eql_p19(other);
+        // '==' and '===' are the same, but they differ from 'eql?'.
+        return op_equal(other);
     }
 
-    /**
-     * In ruby 1.9, '==' and '===' are the same, but they differ from 'eql?'.
-     */
-    @JRubyMethod(name = {"==="}, required = 1)
     public IRubyObject eql_p19(IRubyObject other) {
-        return op_equal(other);
+        return eql_p(other);
     }
 
     /** rb_big_hash
      *
      */
-    @JRubyMethod(name = "hash")
     @Override
+    @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         return getRuntime().newFixnum(value.hashCode());
     }

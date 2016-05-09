@@ -11,17 +11,20 @@ package org.jruby.truffle.core.thread;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.dsl.Layout;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.language.backtrace.Activation;
 
-@org.jruby.truffle.om.dsl.api.Layout
+@Layout
 public interface ThreadBacktraceLocationLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createThreadBacktraceLocationShape(DynamicObject logicalClass,
-                                                            DynamicObject metaClass);
+    DynamicObjectFactory createThreadBacktraceLocationShape(
+            DynamicObject logicalClass,
+            DynamicObject metaClass);
 
-    DynamicObject createThreadBacktraceLocation(DynamicObjectFactory factory,
-                                                Activation activation);
+    DynamicObject createThreadBacktraceLocation(
+            DynamicObjectFactory factory,
+            Activation activation);
 
     Activation getActivation(DynamicObject object);
 

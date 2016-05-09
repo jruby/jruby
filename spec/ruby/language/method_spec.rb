@@ -518,15 +518,13 @@ describe "A method" do
       m(1, 2, 3).should == [1, 2, 3]
     end
 
-    ruby_version_is "2.1" do
-      evaluate <<-ruby do
-          def m(a:) a end
-        ruby
+    evaluate <<-ruby do
+        def m(a:) a end
+      ruby
 
-        lambda { m() }.should raise_error(ArgumentError)
-        m(a: 1).should == 1
-        lambda { m("a" => 1, a: 1) }.should raise_error(ArgumentError)
-      end
+      lambda { m() }.should raise_error(ArgumentError)
+      m(a: 1).should == 1
+      lambda { m("a" => 1, a: 1) }.should raise_error(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -678,14 +676,12 @@ describe "A method" do
       m(1, 2, 3).should == [1, [2, 3]]
     end
 
-    ruby_version_is "2.1" do
-      evaluate <<-ruby do
-          def m(a, b:) [a, b] end
-        ruby
+    evaluate <<-ruby do
+        def m(a, b:) [a, b] end
+      ruby
 
-        m(1, b: 2).should == [1, 2]
-        lambda { m("a" => 1, b: 2) }.should raise_error(ArgumentError)
-      end
+      m(1, b: 2).should == [1, 2]
+      lambda { m("a" => 1, b: 2) }.should raise_error(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -823,15 +819,13 @@ describe "A method" do
       result.should == [[1, 2, 3], 4, [5, 6], 7, [], 8]
     end
 
-    ruby_version_is "2.1" do
-      evaluate <<-ruby do
-          def m(a=1, b:) [a, b] end
-        ruby
+    evaluate <<-ruby do
+        def m(a=1, b:) [a, b] end
+      ruby
 
-        m(b: 2).should == [1, 2]
-        m(2, b: 1).should == [2, 1]
-        m("a" => 1, b: 2).should == [{"a" => 1}, 2]
-      end
+      m(b: 2).should == [1, 2]
+      m(2, b: 1).should == [2, 1]
+      m("a" => 1, b: 2).should == [{"a" => 1}, 2]
     end
 
     evaluate <<-ruby do
@@ -890,24 +884,22 @@ describe "A method" do
       m(1, 2, 3).should == [[1, 2], 3]
     end
 
-    ruby_version_is "2.1" do
-      evaluate <<-ruby do
-          def m(*, a:) a end
-        ruby
+    evaluate <<-ruby do
+        def m(*, a:) a end
+      ruby
 
-        m(a: 1).should == 1
-        m(1, 2, a: 3).should == 3
-        m("a" => 1, a: 2).should == 2
-      end
+      m(a: 1).should == 1
+      m(1, 2, a: 3).should == 3
+      m("a" => 1, a: 2).should == 2
+    end
 
-      evaluate <<-ruby do
-          def m(*a, b:) [a, b] end
-        ruby
+    evaluate <<-ruby do
+        def m(*a, b:) [a, b] end
+      ruby
 
-        m(b: 1).should == [[], 1]
-        m(1, 2, b: 3).should == [[1, 2], 3]
-        m("a" => 1, b: 2).should == [[{"a" => 1}], 2]
-      end
+      m(b: 1).should == [[], 1]
+      m(1, 2, b: 3).should == [[1, 2], 3]
+      m("a" => 1, b: 2).should == [[{"a" => 1}], 2]
     end
 
     evaluate <<-ruby do
@@ -1049,70 +1041,68 @@ describe "A method" do
       m(1, 2, 3, &(l = -> {})).should == [[1, 2, 3], l]
     end
 
-    ruby_version_is "2.1" do
-      evaluate <<-ruby do
-          def m(a:, b:) [a, b] end
-        ruby
+    evaluate <<-ruby do
+        def m(a:, b:) [a, b] end
+      ruby
 
-        m(a: 1, b: 2).should == [1, 2]
-        lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
-      end
+      m(a: 1, b: 2).should == [1, 2]
+      lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
+    end
 
-      evaluate <<-ruby do
-          def m(a:, b: 1) [a, b] end
-        ruby
+    evaluate <<-ruby do
+        def m(a:, b: 1) [a, b] end
+      ruby
 
-        m(a: 1).should == [1, 1]
-        m(a: 1, b: 2).should == [1, 2]
-        lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
-      end
+      m(a: 1).should == [1, 1]
+      m(a: 1, b: 2).should == [1, 2]
+      lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
+    end
 
-      evaluate <<-ruby do
-          def m(a:, **) a end
-        ruby
+    evaluate <<-ruby do
+        def m(a:, **) a end
+      ruby
 
-        m(a: 1).should == 1
-        m(a: 1, b: 2).should == 1
-        lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
-      end
+      m(a: 1).should == 1
+      m(a: 1, b: 2).should == 1
+      lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
+    end
 
-      evaluate <<-ruby do
-          def m(a:, **k) [a, k] end
-        ruby
+    evaluate <<-ruby do
+        def m(a:, **k) [a, k] end
+      ruby
 
-        m(a: 1).should == [1, {}]
-        m(a: 1, b: 2, c: 3).should == [1, {b: 2, c: 3}]
-        lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
-      end
+      m(a: 1).should == [1, {}]
+      m(a: 1, b: 2, c: 3).should == [1, {b: 2, c: 3}]
+      lambda { m("a" => 1, a: 1, b: 2) }.should raise_error(ArgumentError)
+    end
 
-      evaluate <<-ruby do
-          def m(a:, &b) [a, b] end
-        ruby
+    evaluate <<-ruby do
+        def m(a:, &b) [a, b] end
+      ruby
 
-        m(a: 1).should == [1, nil]
-        m(a: 1, &(l = ->{})).should == [1, l]
-      end
+      m(a: 1).should == [1, nil]
+      m(a: 1, &(l = ->{})).should == [1, l]
+    end
 
-      evaluate <<-ruby do
-          def m(a: 1, b:) [a, b] end
-        ruby
+    evaluate <<-ruby do
+        def m(a: 1, b:) [a, b] end
+      ruby
 
-        m(b: 0).should == [1, 0]
-        m(b: 2, a: 3).should == [3, 2]
-      end
+      m(b: 0).should == [1, 0]
+      m(b: 2, a: 3).should == [3, 2]
+    end
 
-      evaluate <<-ruby do
-          def m(a: def m(a: 1) a end, b:)
-            [a, b]
-          end
-        ruby
+    evaluate <<-ruby do
+        def m(a: def m(a: 1) a end, b:)
+          [a, b]
+        end
+      ruby
 
-        m(a: 2, b: 3).should == [2, 3]
-        m(b: 1).should == [:m, 1]
+      m(a: 2, b: 3).should == [2, 3]
+      m(b: 1).should == [:m, 1]
 
-        # Note the default value of a: in the original method.
-        m().should == 1
-      end
+      # Note the default value of a: in the original method.
+      m().should == 1
     end
 
     evaluate <<-ruby do
@@ -1123,14 +1113,12 @@ describe "A method" do
       m(b: 3, a: 4).should == [4, 3]
     end
 
-    ruby_version_is "2.1" do
-      evaluate <<-ruby do
-          def m(a: 1, **) a end
-        ruby
+    evaluate <<-ruby do
+        def m(a: 1, **) a end
+      ruby
 
-        m().should == 1
-        m(a: 2, b: 1).should == 2
-      end
+      m().should == 1
+      m(a: 2, b: 1).should == 2
     end
 
     evaluate <<-ruby do
@@ -1162,26 +1150,82 @@ describe "A method" do
       m(a: 1, b: 2).should == [{ a: 1, b: 2}, nil]
     end
 
-    ruby_version_is "2.1" do
-      evaluate <<-ruby do
-          def m(a, b=1, *c, (*d, (e)), f: 2, g:, h:, **k, &l)
-            [a, b, c, d, e, f, g, h, k, l]
-          end
-        ruby
+    evaluate <<-ruby do
+        def m(a, b=1, *c, (*d, (e)), f: 2, g:, h:, **k, &l)
+          [a, b, c, d, e, f, g, h, k, l]
+        end
+      ruby
 
-        result = m(9, 8, 7, 6, f: 5, g: 4, h: 3, &(l = ->{}))
-        result.should == [9, 8, [7], [], 6, 5, 4, 3, {}, l]
-      end
-
-      evaluate <<-ruby do
-          def m a, b=1, *c, d, e:, f: 2, g:, **k, &l
-            [a, b, c, d, e, f, g, k, l]
-          end
-        ruby
-
-        result = m(1, 2, e: 3, g: 4, h: 5, i: 6, &(l = ->{}))
-        result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
-      end
+      result = m(9, 8, 7, 6, f: 5, g: 4, h: 3, &(l = ->{}))
+      result.should == [9, 8, [7], [], 6, 5, 4, 3, {}, l]
     end
+
+    evaluate <<-ruby do
+        def m a, b=1, *c, d, e:, f: 2, g:, **k, &l
+          [a, b, c, d, e, f, g, k, l]
+        end
+      ruby
+
+      result = m(1, 2, e: 3, g: 4, h: 5, i: 6, &(l = ->{}))
+      result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
+    end
+  end
+end
+
+describe "A method call with a space between method name and parentheses" do
+  before(:each) do
+    def m(*args)
+      args
+    end
+
+    def n(value, &block)
+      [value, block.call]
+    end
+  end
+
+  context "when no arguments provided" do
+    it "assigns nil" do
+      args = m ()
+      args.should == [nil]
+    end
+  end
+
+  context "when a single argument provided" do
+    it "assigns it" do
+      args = m (1 == 1 ? true : false)
+      args.should == [true]
+    end
+  end
+
+  context "when 2+ arguments provided" do
+    it "raises a syntax error" do
+      lambda {
+        eval("m (1, 2)")
+      }.should raise_error(SyntaxError)
+
+      lambda {
+        eval("m (1, 2, 3)")
+      }.should raise_error(SyntaxError)
+    end
+  end
+
+  it "allows to pass a block with curly braces" do
+    args = n () { :block_value }
+    args.should == [nil, :block_value]
+
+    args = n (1) { :block_value }
+    args.should == [1, :block_value]
+  end
+
+  it "allows to pass a block with do/end" do
+    args = n () do
+      :block_value
+    end
+    args.should == [nil, :block_value]
+
+    args = n (1) do
+      :block_value
+    end
+    args.should == [1, :block_value]
   end
 end

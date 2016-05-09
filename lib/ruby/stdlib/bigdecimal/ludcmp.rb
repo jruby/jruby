@@ -76,13 +76,13 @@ module LUSolve
       end
       x <<= b[ps[i]] - dot
     end
-    (n-1).downto(0) do |i|
+    (n-1).downto(0) do |i2|
       dot = zero
-      psin = ps[i]*n
-      for j in (i+1)...n do
+      psin = ps[i2]*n
+      for j in (i2+1)...n do
         dot = a[psin+j].mult(x[j],prec) + dot
       end
-      x[i]  = (x[i]-dot).div(a[psin+i],prec)
+      x[i2]  = (x[i2]-dot).div(a[psin+i2],prec)
     end
     x
   end

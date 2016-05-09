@@ -11,10 +11,10 @@ package org.jruby.truffle.core.fiber;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.dsl.Layout;
+import com.oracle.truffle.api.object.dsl.Nullable;
+import com.oracle.truffle.api.object.dsl.Volatile;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
-import org.jruby.truffle.om.dsl.api.Volatile;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;

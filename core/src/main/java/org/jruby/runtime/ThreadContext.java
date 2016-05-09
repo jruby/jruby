@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -69,11 +70,10 @@ import java.util.Set;
 
 public final class ThreadContext {
 
-    private static final Logger LOG = LoggerFactory.getLogger("ThreadContext");
+    private static final Logger LOG = LoggerFactory.getLogger(ThreadContext.class);
 
     public static ThreadContext newContext(Ruby runtime) {
-        ThreadContext context = new ThreadContext(runtime);
-        return context;
+        return new ThreadContext(runtime);
     }
 
     private final static int INITIAL_SIZE = 10;
@@ -142,6 +142,7 @@ public final class ThreadContext {
 
     private static boolean trySHA1PRNG = true;
 
+    @SuppressWarnings("deprecated")
     public SecureRandom getSecureRandom() {
         SecureRandom secureRandom = this.secureRandom;
         if (secureRandom == null) {
@@ -159,6 +160,8 @@ public final class ThreadContext {
         }
         return secureRandom;
     }
+
+    private Encoding[] encodingHolder;
 
     /**
      * Constructor for Context.
@@ -667,21 +670,20 @@ public final class ThreadContext {
     public IRubyObject createCallerBacktrace(int level, Integer length, StackTraceElement[] stacktrace) {
         runtime.incrementCallerCount();
 
-        RubyStackTraceElement[] trace = getTraceSubset(level, length, stacktrace);
+        RubyStackTraceElement[] fullTrace = getFullTrace(length, stacktrace);
 
-        if (trace == null) return nil;
+        int traceLength = safeLength(level, length, fullTrace);
+        if (traceLength < 0) return nil;
 
         final RubyClass stringClass = runtime.getString();
-        final IRubyObject[] traceArray = new IRubyObject[trace.length];
+        final IRubyObject[] traceArray = new IRubyObject[traceLength];
 
-        for (int i = 0; i < trace.length; i++) {
-            traceArray[i] = new RubyString(runtime, stringClass, trace[i].mriStyleString());
+        for (int i = 0; i < traceLength; i++) {
+            traceArray[i] = new RubyString(runtime, stringClass, fullTrace[i + level].mriStyleString());
         }
 
         RubyArray backTrace = RubyArray.newArrayNoCopy(runtime, traceArray);
-
         if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
-
         return backTrace;
     }
 
@@ -696,33 +698,23 @@ public final class ThreadContext {
     public IRubyObject createCallerLocations(int level, Integer length, StackTraceElement[] stacktrace) {
         runtime.incrementCallerCount();
 
-        RubyStackTraceElement[] trace = getTraceSubset(level, length, stacktrace);
+        RubyStackTraceElement[] fullTrace = getFullTrace(length, stacktrace);
 
-        if (trace == null) return nil;
+        int traceLength = safeLength(level, length, fullTrace);
+        if (traceLength < 0) return nil;
 
-        return RubyThread.Location.newLocationArray(runtime, trace);
+        RubyArray backTrace = RubyThread.Location.newLocationArray(runtime, fullTrace, level, traceLength);
+        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
+        return backTrace;
     }
 
-    private RubyStackTraceElement[] getTraceSubset(int level, Integer length, StackTraceElement[] stacktrace) {
-
+    private RubyStackTraceElement[] getFullTrace(Integer length, StackTraceElement[] stacktrace) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
-
-        RubyStackTraceElement[] trace =
-                TraceType.Gather.CALLER.getBacktraceData(this, stacktrace, false).getBacktrace(runtime);
-
-        int traceLength = safeLength(level, length, trace);
-
-        if (traceLength < 0) return null;
-
-        trace = Arrays.copyOfRange(trace, level, level + traceLength);
-
-        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(trace);
-
-        return trace;
+        return TraceType.Gather.CALLER.getBacktraceData(this, stacktrace, false).getBacktrace(runtime);
     }
 
     private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
-        int baseLength = trace.length - level;
+        final int baseLength = trace.length - level;
         return length != null ? Math.min(length, baseLength) : baseLength;
     }
 
@@ -1112,17 +1104,22 @@ public final class ThreadContext {
         this.exceptionRequiresBacktrace = exceptionRequiresBacktrace;
     }
 
-    @Deprecated
-    public void setFile(String file) {
-        backtrace[backtraceIndex].filename = file;
-    }
-
     private Set<RecursiveComparator.Pair> recursiveSet;
 
     // Do we have to generate a backtrace when we generate an exception on this thread or can we
     // MAYBE omit creating the backtrace for the exception (only some rescue forms and only for
     // descendents of StandardError are eligible).
     public boolean exceptionRequiresBacktrace = true;
+
+    public Encoding[] encodingHolder() {
+        if (encodingHolder == null) encodingHolder = new Encoding[1];
+        return encodingHolder;
+    }
+
+    @Deprecated
+    public void setFile(String file) {
+        backtrace[backtraceIndex].filename = file;
+    }
 
     @Deprecated
     private org.jruby.util.RubyDateFormat dateFormat;

@@ -21,6 +21,20 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
 
     @Child private BooleanCastNode booleanCastNode;
 
+    public static CallDispatchHeadNode createMethodCall() {
+        return new CallDispatchHeadNode(
+                null,
+                false,
+                MissingBehavior.CALL_METHOD_MISSING);
+    }
+
+    public static CallDispatchHeadNode createMethodCallIgnoreVisibility() {
+        return new CallDispatchHeadNode(
+                null,
+                true,
+                MissingBehavior.CALL_METHOD_MISSING);
+    }
+
     public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
         super(context, ignoreVisibility, missingBehavior, DispatchAction.CALL_METHOD);
     }
@@ -67,9 +81,9 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
 
         CompilerDirectives.transferToInterpreter();
         if (value == DispatchNode.MISSING) {
-            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertInto(receiverObject, "Float", this));
+            throw new RaiseException(context.getCoreExceptions().typeErrorCantConvertInto(receiverObject, "Float", this));
         } else {
-            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(receiverObject, "Float", (String) methodName, value, this));
+            throw new RaiseException(context.getCoreExceptions().typeErrorCantConvertTo(receiverObject, "Float", (String) methodName, value, this));
         }
     }
 
@@ -91,9 +105,9 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
 
         CompilerDirectives.transferToInterpreter();
         if (value == DispatchNode.MISSING) {
-            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertInto(receiverObject, "Fixnum", this));
+            throw new RaiseException(context.getCoreExceptions().typeErrorCantConvertInto(receiverObject, "Fixnum", this));
         } else {
-            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(receiverObject, "Fixnum", (String) methodName, value, this));
+            throw new RaiseException(context.getCoreExceptions().typeErrorCantConvertTo(receiverObject, "Fixnum", (String) methodName, value, this));
         }
     }
 

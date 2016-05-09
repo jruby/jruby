@@ -10,14 +10,17 @@
 
 package org.jruby.truffle.language.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 
 @NodeChild(value = "child")
 public abstract class IsFrozenNode extends RubyNode {
@@ -27,6 +30,13 @@ public abstract class IsFrozenNode extends RubyNode {
     }
 
     public abstract boolean executeIsFrozen(Object object);
+
+    public void raiseIfFrozen(Object object) {
+        if (executeIsFrozen(object)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(coreExceptions().frozenError(object, this));
+        }
+    }
 
     @Specialization
     public boolean isFrozen(boolean object) {
@@ -56,6 +66,13 @@ public abstract class IsFrozenNode extends RubyNode {
     }
 
     protected ReadObjectFieldNode createReadFrozenNode() {
-        return ReadObjectFieldNodeGen.create(getContext(), Layouts.FROZEN_IDENTIFIER, false);
+        return ReadObjectFieldNodeGen.create(Layouts.FROZEN_IDENTIFIER, false);
     }
+
+    @TruffleBoundary
+    public static boolean isFrozen(Object object) {
+        return !(object instanceof DynamicObject) ||
+                ((DynamicObject) object).containsKey(Layouts.FROZEN_IDENTIFIER);
+    }
+
 }

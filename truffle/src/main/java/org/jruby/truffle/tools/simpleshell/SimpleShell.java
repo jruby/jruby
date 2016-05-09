@@ -14,8 +14,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
@@ -81,7 +81,7 @@ public class SimpleShell {
                         }
 
                         shellInterface.getWriter().println(
-                                formatter.formatLine(Collections.singletonList(activation), 0));
+                                formatter.formatLine(Collections.singletonList(activation), 0, null));
 
                         n++;
                     }
@@ -116,7 +116,7 @@ public class SimpleShell {
                                 rootNode, currentFrame,
                                 RubyArguments.getSelf(currentFrame.getArguments()));
 
-                        final Object result = deferredCall.getCallTarget().call(deferredCall.getArguments());
+                        final Object result = deferredCall.callWithoutCallNode();
 
                         String inspected;
 

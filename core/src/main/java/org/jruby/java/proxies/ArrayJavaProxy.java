@@ -2,13 +2,15 @@ package org.jruby.java.proxies;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
 import org.jruby.RubyRange;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -24,7 +26,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ArrayJavaProxy extends JavaProxy {
+public final class ArrayJavaProxy extends JavaProxy {
 
     private final JavaUtil.JavaConverter converter;
 
@@ -92,35 +94,52 @@ public class ArrayJavaProxy extends JavaProxy {
         return ArrayUtils.arefDirect(context.runtime, getObject(), converter, i);
     }
 
+    public Object get(final int index) {
+        return Array.get(getObject(), index);
+    }
+
+    public void set(final int index, final Object value) {
+        Array.set(getObject(), index, value);
+    }
+
     @JRubyMethod(name = "[]", required = 1, rest = true)
-    public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
+    public final IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         if ( args.length == 1 ) return op_aref(context, args[0]);
         return getRange(context, args);
     }
 
     @JRubyMethod(name = "[]=")
-    public IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
+    public final IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
         final int i = convertArrayIndex(index);
         return ArrayUtils.asetDirect(context.runtime, getObject(), converter, i, value);
     }
 
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public final IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        return dig(context, args, 0);
+    }
+
+    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
+        final IRubyObject val = at(context, args[idx++]);
+        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
+    }
+
     private static int convertArrayIndex(final IRubyObject index) {
-        if ( index instanceof RubyInteger ) {
-            return (int) ((RubyInteger) index).getLongValue();
-        }
         if ( index instanceof JavaProxy ) {
             return (Integer) index.toJava(Integer.class);
         }
-        return (int) index.convertToInteger().getLongValue();
+        return RubyNumeric.num2int(index);
     }
 
     @JRubyMethod
     public IRubyObject at(ThreadContext context, IRubyObject index) {
+        return at(context, convertArrayIndex(index));
+    }
+
+    private final IRubyObject at(ThreadContext context, int i) {
         final Ruby runtime = context.runtime;
         final Object array = getObject();
         final int length = Array.getLength(array);
-
-        int i = convertArrayIndex(index);
 
         if ( i < 0 ) i = i + length;
 
@@ -171,7 +190,16 @@ public class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
-        final StringBuilder buffer = new StringBuilder();
+        return RubyString.newString(context.runtime, arrayToString());
+    }
+
+    @Override
+    public String toString() {
+        return arrayToString().toString();
+    }
+
+    private StringBuilder arrayToString() {
+        final StringBuilder buffer = new StringBuilder(24);
         Class<?> componentClass = getObject().getClass().getComponentType();
 
         buffer.append(componentClass.getName());
@@ -180,38 +208,56 @@ public class ArrayJavaProxy extends JavaProxy {
             switch (componentClass.getName().charAt(0)) {
                 case 'b':
                     if (componentClass == byte.class) buffer.append(Arrays.toString((byte[])getObject()));
-                    if (componentClass == boolean.class) buffer.append(Arrays.toString((boolean[])getObject()));
+                    else /* if (componentClass == boolean.class) */ buffer.append(Arrays.toString((boolean[])getObject()));
                     break;
                 case 's':
-                    if (componentClass == short.class) buffer.append(Arrays.toString((short[])getObject()));
+                    /* if (componentClass == short.class) */ buffer.append(Arrays.toString((short[])getObject()));
                     break;
                 case 'c':
-                    if (componentClass == char.class) buffer.append(Arrays.toString((char[])getObject()));
+                    /* if (componentClass == char.class) */ buffer.append(Arrays.toString((char[])getObject()));
                     break;
                 case 'i':
-                    if (componentClass == int.class) buffer.append(Arrays.toString((int[])getObject()));
+                    /* if (componentClass == int.class) */ buffer.append(Arrays.toString((int[])getObject()));
                     break;
                 case 'l':
-                    if (componentClass == long.class) buffer.append(Arrays.toString((long[])getObject()));
+                    /* if (componentClass == long.class) */ buffer.append(Arrays.toString((long[])getObject()));
                     break;
                 case 'f':
-                    if (componentClass == float.class) buffer.append(Arrays.toString((float[])getObject()));
+                    /* if (componentClass == float.class) */ buffer.append(Arrays.toString((float[])getObject()));
                     break;
                 case 'd':
-                    if (componentClass == double.class) buffer.append(Arrays.toString((double[])getObject()));
+                    /* if (componentClass == double.class) */ buffer.append(Arrays.toString((double[])getObject()));
                     break;
             }
         } else {
             buffer.append(Arrays.toString((Object[]) getObject()));
         }
-        buffer.append('@').append(Integer.toHexString(inspectHashCode()));
-        return RubyString.newString(context.runtime, buffer.toString());
+
+        return buffer.append('@').append(Integer.toHexString(inspectHashCode()));
     }
 
-    @JRubyMethod(name = "==")
     @Override
-    public RubyBoolean op_eqq(ThreadContext context, IRubyObject other) {
+    @JRubyMethod(name = "==")
+    public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
+        if ( other instanceof RubyArray ) {
+            // we respond_to? to_ary thus shall handle [1].to_java == [1]
+            return context.runtime.newBoolean( equalsRubyArray((RubyArray) other) );
+        }
         return eql_p(context, other);
+    }
+
+    private boolean equalsRubyArray(final RubyArray rubyArray) {
+        final Object thisArray = this.getObject();
+        final int len = rubyArray.size();
+        if ( len != Array.getLength(thisArray) ) return false;
+        final Class<?> componentType = thisArray.getClass().getComponentType();
+        for ( int i = 0; i < len; i++ ) {
+            final Object ruby = rubyArray.eltInternal(i).toJava(componentType);
+            final Object elem = Array.get(thisArray, i);
+            if ( ruby == null ) return elem == null;
+            if ( ! ruby.equals(elem) ) return false;
+        }
+        return true;
     }
 
     @JRubyMethod(name = "eql?")
@@ -221,7 +267,7 @@ public class ArrayJavaProxy extends JavaProxy {
             final ArrayJavaProxy that = (ArrayJavaProxy) obj;
             equals = arraysEquals(this.getObject(), that.getObject());
         }
-        if ( obj.getClass().isArray() ) {
+        else if ( obj.getClass().isArray() ) {
             equals = arraysEquals(getObject(), obj);
         }
         return context.runtime.newBoolean(equals);
@@ -247,26 +293,26 @@ public class ArrayJavaProxy extends JavaProxy {
             switch ( componentType.getName().charAt(0) ) {
                 case 'b':
                     if (componentType == byte.class) return Arrays.equals((byte[]) thisArray, (byte[]) thatArray);
-                    if (componentType == boolean.class) return Arrays.equals((boolean[]) thisArray, (boolean[]) thatArray);
+                    else /* if (componentType == boolean.class) */ return Arrays.equals((boolean[]) thisArray, (boolean[]) thatArray);
                 case 's':
-                    if (componentType == short.class) return Arrays.equals((short[]) thisArray, (short[]) thatArray);
+                    /* if (componentType == short.class) */ return Arrays.equals((short[]) thisArray, (short[]) thatArray);
                 case 'c':
-                    if (componentType == char.class) return Arrays.equals((char[]) thisArray, (char[]) thatArray);
+                    /* if (componentType == char.class) */ return Arrays.equals((char[]) thisArray, (char[]) thatArray);
                 case 'i':
-                    if (componentType == int.class) return Arrays.equals((int[]) thisArray, (int[]) thatArray);
+                    /* if (componentType == int.class) */ return Arrays.equals((int[]) thisArray, (int[]) thatArray);
                 case 'l':
-                    if (componentType == long.class) return Arrays.equals((long[]) thisArray, (long[]) thatArray);
+                    /* if (componentType == long.class) */ return Arrays.equals((long[]) thisArray, (long[]) thatArray);
                 case 'f':
-                    if (componentType == float.class) return Arrays.equals((float[]) thisArray, (float[]) thatArray);
+                    /* if (componentType == float.class) */ return Arrays.equals((float[]) thisArray, (float[]) thatArray);
                 case 'd':
-                    if (componentType == double.class) return Arrays.equals((double[]) thisArray, (double[]) thatArray);
+                    /* if (componentType == double.class) */ return Arrays.equals((double[]) thisArray, (double[]) thatArray);
             }
         }
         return Arrays.equals((Object[]) thisArray, (Object[]) thatArray);
     }
 
-    @JRubyMethod
     @Override
+    @JRubyMethod
     public RubyFixnum hash() {
         return getRuntime().newFixnum( hashCode() );
     }
@@ -279,22 +325,80 @@ public class ArrayJavaProxy extends JavaProxy {
             switch ( componentType.getName().charAt(0) ) {
                 case 'b':
                     if (componentType == byte.class) return 11 * Arrays.hashCode((byte[]) array);
-                    if (componentType == boolean.class) return 11 * Arrays.hashCode((boolean[]) array);
+                    else /* if (componentType == boolean.class) */ return 11 * Arrays.hashCode((boolean[]) array);
                 case 's':
-                    if (componentType == short.class) return 11 * Arrays.hashCode((short[]) array);
+                    /* if (componentType == short.class) */ return 11 * Arrays.hashCode((short[]) array);
                 case 'c':
-                    if (componentType == char.class) return 11 * Arrays.hashCode((char[]) array);
+                    /* if (componentType == char.class) */ return 11 * Arrays.hashCode((char[]) array);
                 case 'i':
-                    if (componentType == int.class) return 11 * Arrays.hashCode((int[]) array);
+                    /* if (componentType == int.class) */ return 11 * Arrays.hashCode((int[]) array);
                 case 'l':
-                    if (componentType == long.class) return 11 * Arrays.hashCode((long[]) array);
+                    /* if (componentType == long.class) */ return 11 * Arrays.hashCode((long[]) array);
                 case 'f':
-                    if (componentType == float.class) return 11 * Arrays.hashCode((float[]) array);
+                    /* if (componentType == float.class) */ return 11 * Arrays.hashCode((float[]) array);
                 case 'd':
-                    if (componentType == double.class) return 11 * Arrays.hashCode((double[]) array);
+                    /* if (componentType == double.class) */ return 11 * Arrays.hashCode((double[]) array);
             }
         }
         return 11 * Arrays.hashCode((Object[]) array);
+    }
+
+    @Override
+    public IRubyObject dup() {
+        final Ruby runtime = getRuntime();
+
+        RubyObject dup = new ArrayJavaProxy(runtime, getMetaClass(), cloneObject(), converter);
+
+        if (isTaint()) dup.setTaint(true);
+        initCopy(dup, this, "initialize_dup");
+
+        return dup;
+    }
+
+    private static void initCopy(IRubyObject clone, IRubyObject original, String method) {
+        original.copySpecialInstanceVariables(clone);
+        if (original.hasVariables()) clone.syncVariables(original);
+    }
+
+    @Override
+    @JRubyMethod(name = "clone")
+    public IRubyObject rbClone() {
+        final Ruby runtime = getRuntime();
+
+        RubyObject clone = new ArrayJavaProxy(runtime, getMetaClass(), cloneObject(), converter);
+        clone.setMetaClass(getSingletonClassClone());
+
+        if (isTaint()) clone.setTaint(true);
+        initCopy(clone, this, "initialize_clone");
+        if (isFrozen()) clone.setFrozen(true);
+
+        return clone;
+    }
+
+    @Override
+    protected Object cloneObject() {
+        final Object array = getObject();
+        final Class<?> componentType = array.getClass().getComponentType();
+        if ( componentType.isPrimitive() ) {
+            switch ( componentType.getName().charAt(0) ) {
+                case 'b':
+                    if (componentType == byte.class) return ((byte[]) array).clone();
+                    else /* if (componentType == boolean.class) */ return ((boolean[]) array).clone();
+                case 's':
+                    /* if (componentType == short.class) */ return ((short[]) array).clone();
+                case 'c':
+                    /* if (componentType == char.class) */ return ((char[]) array).clone();
+                case 'i':
+                    /* if (componentType == int.class) */ return ((int[]) array).clone();
+                case 'l':
+                    /* if (componentType == long.class) */ return ((long[]) array).clone();
+                case 'f':
+                    /* if (componentType == float.class) */ return ((float[]) array).clone();
+                case 'd':
+                    /* if (componentType == double.class) */ return ((double[]) array).clone();
+            }
+        }
+        return ((Object[]) array).clone();
     }
 
     public IRubyObject getRange(ThreadContext context, IRubyObject[] args) {
@@ -365,7 +469,7 @@ public class ArrayJavaProxy extends JavaProxy {
         throw context.runtime.newTypeError("only Fixnum ranges supported");
     }
 
-    public static class ArrayNewMethod extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne {
+    private static final class ArrayNewMethod extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne {
 
         private final DynamicMethod newMethod;
 

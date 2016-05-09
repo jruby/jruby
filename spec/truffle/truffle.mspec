@@ -13,8 +13,12 @@ class MSpecScript
   set :target, File.expand_path("../../../bin/jruby#{windows? ? '.bat' : ''}", __FILE__)
 
   if ARGV[-2..-1] != %w[-t ruby] # No flags for MRI
-    set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G -Xtruffle.coverage=true]
+    set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G]
   end
+
+  set :command_line, [
+    "spec/ruby/command_line"
+  ]
 
   set :language, [
     "spec/ruby/language"
@@ -49,6 +53,15 @@ class MSpecScript
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
     "^spec/ruby/library/delegate/delegator/protected_methods_spec.rb",
+
+    # Openssl not yet supported
+    "^spec/ruby/library/openssl/cipher_spec.rb",
+    "^spec/ruby/library/openssl/config/freeze_spec.rb",
+    "^spec/ruby/library/openssl/hmac/digest_spec.rb",
+    "^spec/ruby/library/openssl/hmac/hexdigest_spec.rb",
+    "^spec/ruby/library/openssl/random/pseudo_bytes_spec.rb",
+    "^spec/ruby/library/openssl/random/random_bytes_spec.rb",
+    "^spec/ruby/library/openssl/x509/name/parse_spec.rb"
   ]
 
   set :truffle, [
@@ -58,6 +71,7 @@ class MSpecScript
   set :backtrace_filter, /mspec\//
 
   set :tags_patterns, [
+    [%r(^.*/command_line/),             'spec/truffle/tags/command_line/'],
     [%r(^.*/language/),                 'spec/truffle/tags/language/'],
     [%r(^.*/core/),                     'spec/truffle/tags/core/'],
     [%r(^.*/library/),                  'spec/truffle/tags/library/'],

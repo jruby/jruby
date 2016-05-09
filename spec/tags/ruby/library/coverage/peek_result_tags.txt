@@ -1,0 +1,2 @@
+fails:Coverage.peek_result returns the result so far
+fails:Coverage.peek_result second call after require returns accumulated result

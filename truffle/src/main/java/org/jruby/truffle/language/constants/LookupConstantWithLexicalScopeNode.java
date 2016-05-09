@@ -16,8 +16,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
@@ -47,7 +47,7 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode {
             @Cached("isVisible(constant)") boolean isVisible) {
         if (!isVisible) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().nameErrorPrivateConstant(getModule(), name, this));
+            throw new RaiseException(coreExceptions().nameErrorPrivateConstant(getModule(), name, this));
         }
         return constant;
     }

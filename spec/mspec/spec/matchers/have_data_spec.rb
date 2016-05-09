@@ -40,7 +40,7 @@ describe HaveDataMatcher do
     matcher = HaveDataMatcher.new("abc1")
     matcher.matches?(@name)
     matcher.failure_message.should == [
-      "Expected #{@name}", "to have data \"abc1\"\n"
+      "Expected #{@name}", "to have data \"abc1\"\nbut starts with \"123a\"\n"
     ]
   end
 

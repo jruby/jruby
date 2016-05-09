@@ -11,16 +11,19 @@ package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrumentation.Instrumentable;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 /**
  * Define a method from a module body (module/class/class << self ... end).
  */
+@Instrumentable(factory = ModuleBodyDefinitionNodeWrapper.class)
 public class ModuleBodyDefinitionNode extends RubyNode {
 
     private final String name;
@@ -35,6 +38,10 @@ public class ModuleBodyDefinitionNode extends RubyNode {
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
         this.captureBlock = captureBlock;
+    }
+
+    public ModuleBodyDefinitionNode(ModuleBodyDefinitionNode node) {
+        this(node.getContext(), node.getSourceSection(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock);
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
@@ -55,6 +62,15 @@ public class ModuleBodyDefinitionNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         return executeMethod(frame);
+    }
+
+    @Override
+    protected boolean isTaggedWith(Class<?> tag) {
+        if (tag == TraceManager.ClassTag.class) {
+            return true;
+        }
+
+        return super.isTaggedWith(tag);
     }
 
 }

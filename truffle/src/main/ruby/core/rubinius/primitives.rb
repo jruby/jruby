@@ -10,36 +10,39 @@ module Rubinius
   module RubyPrimitives
 
     def self.module_mirror(obj)
-      if obj.is_a?(::Numeric)
-        Rubinius::Mirror::Numeric
-      else
-        begin
-          Rubinius::Mirror.const_get(obj.class.name.to_sym, false)
-        rescue NameError
-          ancestor = obj.class.superclass
+      case obj
+        when ::Numeric then Rubinius::Mirror::Numeric
+        when ::String then Rubinius::Mirror::String
+        when ::Range then Rubinius::Mirror::Range
+        when ::Process then Rubinius::Mirror::Process
+        else
+          begin
+            Rubinius::Mirror.const_get(obj.class.name.to_sym, false)
+          rescue NameError
+            ancestor = obj.class.superclass
 
-          until ancestor.nil?
-            begin
-              return Rubinius::Mirror.const_get(ancestor.name.to_sym, false)
-            rescue NameError
-              ancestor = ancestor.superclass
+            until ancestor.nil?
+              begin
+                return Rubinius::Mirror.const_get(ancestor.name.to_sym, false)
+              rescue NameError
+                ancestor = ancestor.superclass
+              end
             end
-          end
 
-          nil
-        end
+            nil
+          end
       end
     end
 
-    Truffle::Primitive.install_rubinius_primitive method(:module_mirror)
+    Truffle::Boot.install_rubinius_primitive method(:module_mirror)
 
-    if Truffle::Primitive.substrate?
+    if Truffle::Graal.substrate?
 
       def self.vm_gc_start(force)
         Truffle::Interop.execute(Truffle::Interop.read_property(Truffle::Java::System, :gc))
       end
 
-      Truffle::Primitive.install_rubinius_primitive method(:vm_gc_start)
+      Truffle::Boot.install_rubinius_primitive method(:vm_gc_start)
 
     end
 
@@ -54,9 +57,9 @@ module Rubinius
         command, arguments = 'bash', ['bash', '-c', command]
       end
 
-      Truffle::Primitive.spawn_process command, arguments, env_array
+      Truffle::Process.spawn command, arguments, env_array
     end
 
-    Truffle::Primitive.install_rubinius_primitive method(:vm_spawn)
+    Truffle::Boot.install_rubinius_primitive method(:vm_spawn)
   end
 end

@@ -236,6 +236,20 @@ module ModuleSpecs
       alias_method :alias_super_call, :super_call
       alias_method :super_call, :alias_super_call
     end
+
+    class RedefineAfterAlias
+      include Parent
+
+      def super_call(arg)
+        super(arg)
+      end
+
+      alias_method :alias_super_call, :super_call
+
+      def super_call(arg)
+        :wrong
+      end
+    end
   end
 
 
@@ -372,6 +386,22 @@ module ModuleSpecs
       rescue RuntimeError
         return :good
       end
+    end
+
+    module FromThread
+      module A
+        autoload :B, fixture(__FILE__, "autoload_empty.rb")
+
+        class B
+          autoload :C, fixture(__FILE__, "autoload_abc.rb")
+
+          def self.foo
+            C.foo
+          end
+        end
+      end
+
+      class D < A::B; end
     end
   end
 
@@ -513,6 +543,37 @@ module ModuleSpecs
   class RecordIncludedModules
     def self.inherited(base)
       ScratchPad.record base
+    end
+  end
+
+  module SingletonOnModuleCase
+    module Foo
+      class << Foo
+        def included(base)
+          base.included_called
+          super
+        end
+      end
+    end
+
+    class Bar
+      @included_called = false
+
+      class << self
+        def included_called
+          @included_called = true
+        end
+
+        def included_called?
+          @included_called
+        end
+      end
+    end
+  end
+
+  module CaseCompareOnSingleton
+    def self.===(*)
+      raise 'method contents are irrelevant to test'
     end
   end
 end

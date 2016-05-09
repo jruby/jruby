@@ -36,6 +36,8 @@ public class RubyRootNode extends RootNode {
         this.needsDeclarationFrame = needsDeclarationFrame;
         this.body = body;
 
+        body.unsafeSetIsCall();
+
         if (context.getCallGraph() != null) {
             context.getCallGraph().registerRootNode(this);
         }
@@ -85,4 +87,7 @@ public class RubyRootNode extends RootNode {
         return needsDeclarationFrame;
     }
 
+    public RubyContext getContext() {
+        return context;
+    }
 }

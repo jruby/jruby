@@ -11,20 +11,16 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 
 import java.lang.ref.WeakReference;
 
 public abstract class WeakRefPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "weakref_new", needsSelf = false)
-    public static abstract class WeakRefNewPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public WeakRefNewPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "weakref_new", needsSelf = false)
+    public static abstract class WeakRefNewPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject weakRefNew(Object object) {
@@ -33,12 +29,8 @@ public abstract class WeakRefPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "weakref_set_object")
-    public static abstract class WeakRefSetObjectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public WeakRefSetObjectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "weakref_set_object")
+    public static abstract class WeakRefSetObjectPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object weakRefSetObject(DynamicObject weakRef, Object object) {
@@ -48,12 +40,8 @@ public abstract class WeakRefPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "weakref_object")
-    public static abstract class WeakRefObjectPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public WeakRefObjectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "weakref_object")
+    public static abstract class WeakRefObjectPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object weakRefObject(DynamicObject weakRef) {

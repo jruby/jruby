@@ -11,8 +11,8 @@ package org.jruby.truffle.core.adapaters;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;

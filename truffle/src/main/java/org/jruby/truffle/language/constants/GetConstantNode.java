@@ -19,8 +19,8 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.kernel.KernelNodes.RequireNode;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.language.RubyConstant;
@@ -50,9 +50,9 @@ public abstract class GetConstantNode extends RubyNode {
 
     @Specialization(guards = { "constant != null", "constant.isAutoload()" })
     protected Object autoloadConstant(VirtualFrame frame, DynamicObject module, String name, RubyConstant constant,
-                                      @Cached("createRequireNode()") RequireNode requireNode,
-                                      @Cached("deepCopyReadConstantNode()") RestartableReadConstantNode readConstantNode,
-                                      @Cached("create()")IndirectCallNode callNode) {
+            @Cached("createRequireNode()") RequireNode requireNode,
+            @Cached("deepCopyReadConstantNode()") RestartableReadConstantNode readConstantNode,
+            @Cached("create()") IndirectCallNode callNode) {
 
         final DynamicObject path = (DynamicObject) constant.getValue();
 
@@ -89,7 +89,7 @@ public abstract class GetConstantNode extends RubyNode {
     private Object doMissingConstant(VirtualFrame frame, DynamicObject module, String name, boolean isValidConstantName, DynamicObject symbolName) {
         if (!isValidConstantName) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
+            throw new RaiseException(coreExceptions().nameError(String.format("wrong constant name %s", name), name, this));
         }
 
         if (constMissingNode == null) {
@@ -101,7 +101,7 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     protected RequireNode createRequireNode() {
-        return KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null);
+        return KernelNodesFactory.RequireNodeFactory.create(null);
     }
 
     protected RestartableReadConstantNode deepCopyReadConstantNode() {

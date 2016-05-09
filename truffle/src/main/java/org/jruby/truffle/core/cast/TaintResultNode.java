@@ -40,21 +40,21 @@ public class TaintResultNode extends RubyNode {
         this.taintFromSelf = taintFromSelf;
         this.taintFromParameter = taintFromParameter;
         this.method = method;
-        this.isTaintedNode = IsTaintedNodeGen.create(getContext(), getSourceSection(), null);
+        this.isTaintedNode = IsTaintedNodeGen.create(null, null, null);
     }
 
     public TaintResultNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         this.taintFromSelf = false;
         this.taintFromParameter = -1;
-        this.isTaintedNode = IsTaintedNodeGen.create(getContext(), getSourceSection(), null);
+        this.isTaintedNode = IsTaintedNodeGen.create(null, null, null);
     }
 
     public Object maybeTaint(DynamicObject source, DynamicObject result) {
         if (taintProfile.profile(isTaintedNode.executeIsTainted(source))) {
             if (taintNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintNode = insert(TaintNodeGen.create(getContext(), getSourceSection(), null));
+                taintNode = insert(TaintNodeGen.create(null, null, null));
             }
 
             taintNode.executeTaint(result);

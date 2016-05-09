@@ -414,7 +414,7 @@ public abstract class CachingCallSite extends CallSite {
 
     protected abstract boolean methodMissing(DynamicMethod method, IRubyObject caller);
 
-    private static RubyClass getClass(IRubyObject self) {
+    protected static RubyClass getClass(IRubyObject self) {
         // the cast in the following line is necessary due to lacking optimizations in Hotspot
         return ((RubyBasicObject) self).getMetaClass();
     }

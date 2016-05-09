@@ -24,7 +24,7 @@ import java.io.ByteArrayOutputStream;
  * Method for -X-C (interpreted only execution).  See MixedModeIRMethod for inter/JIT method impl.
  */
 public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<InterpreterContext> {
-    private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
+    private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRMethod.class);
 
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
@@ -250,7 +250,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     protected void promoteToFullBuild(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        if (runtime.isBooting()) return;   // don't Promote to full build during runtime boot
+        if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return;   // don't Promote to full build during runtime boot
 
         if (callCount++ >= Options.JIT_THRESHOLD.load()) runtime.getJITCompiler().buildThresholdReached(context, this);
     }

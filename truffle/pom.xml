@@ -12,7 +12,7 @@ DO NOT MODIFIY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.1.0.0-SNAPSHOT</version>
+    <version>9.1.0.0</version>
   </parent>
   <artifactId>jruby-truffle</artifactId>
   <name>JRuby Truffle</name>
@@ -20,6 +20,7 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
+    <truffle.version>0.13</truffle.version>
   </properties>
   <dependencies>
     <dependency>
@@ -41,23 +42,23 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-api</artifactId>
-      <version>0.11</version>
+      <version>${truffle.version}</version>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-debug</artifactId>
-      <version>0.11</version>
+      <version>${truffle.version}</version>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
-      <version>0.11</version>
+      <version>${truffle.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-tck</artifactId>
-      <version>0.11</version>
+      <version>${truffle.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -74,6 +75,16 @@ DO NOT MODIFIY - GENERATED CODE
         <directory>src/main/ruby</directory>
         <includes>
           <include>**/*rb</include>
+        </includes>
+      </resource>
+      <resource>
+        <targetPath>${project.build.outputDirectory}/META-INF/</targetPath>
+        <directory>${project.basedir}/..</directory>
+        <includes>
+          <include>BSDL</include>
+          <include>COPYING</include>
+          <include>LEGAL</include>
+          <include>LICENSE.RUBY</include>
         </includes>
       </resource>
     </resources>
@@ -94,31 +105,18 @@ DO NOT MODIFIY - GENERATED CODE
         <artifactId>maven-compiler-plugin</artifactId>
         <executions>
           <execution>
-            <id>anno</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>org/jruby/truffle/om/dsl/processor/OMProcessor.java</include>
-              </includes>
-              <compilerArgs>
-                <compilerArg>-XDignore.symbol.file=true</compilerArg>
-                <compilerArg>-J-ea</compilerArg>
-              </compilerArgs>
-            </configuration>
-          </execution>
-          <execution>
             <id>default-compile</id>
             <phase>compile</phase>
             <goals>
               <goal>compile</goal>
             </goals>
             <configuration>
+              <fork>true</fork>
               <annotationProcessors>
-                <annotationProcessor>org.jruby.truffle.om.dsl.processor.OMProcessor</annotationProcessor>
+                <annotationProcessor>com.oracle.truffle.object.dsl.processor.LayoutProcessor</annotationProcessor>
+                <annotationProcessor>com.oracle.truffle.dsl.processor.InstrumentableProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
+                <annotationProcessor>com.oracle.truffle.dsl.processor.interop.InteropDSLProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.verify.VerifyTruffleProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor</annotationProcessor>
               </annotationProcessors>
@@ -138,10 +136,8 @@ DO NOT MODIFIY - GENERATED CODE
           <verbose>false</verbose>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
-          <source>${base.java.version}</source>
-          <source>1.7</source>
-          <target>${base.javac.version}</target>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
       </plugin>

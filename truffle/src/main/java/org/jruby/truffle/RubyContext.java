@@ -14,21 +14,22 @@ import com.oracle.truffle.api.CompilerOptions;
 import com.oracle.truffle.api.ExecutionContext;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
+import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.tools.CoverageTracker;
 import org.jruby.Ruby;
+import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.objectspace.ObjectSpaceManager;
 import org.jruby.truffle.core.rope.RopeTable;
-import org.jruby.truffle.core.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.core.string.CoreStrings;
+import org.jruby.truffle.core.string.FrozenStrings;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.extra.AttachmentsManager;
-import org.jruby.truffle.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.interop.InteropManager;
 import org.jruby.truffle.interop.JRubyInterop;
 import org.jruby.truffle.language.CallStackManager;
@@ -45,6 +46,7 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
+import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
@@ -63,19 +65,21 @@ public class RubyContext extends ExecutionContext {
 
     private final Options options = new Options();
     private final RopeTable ropeTable = new RopeTable();
-    private final RubiniusPrimitiveManager rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
+    private final PrimitiveManager primitiveManager = new PrimitiveManager();
     private final JRubyInterop jrubyInterop = new JRubyInterop(this);
     private final SafepointManager safepointManager = new SafepointManager(this);
     private final SymbolTable symbolTable = new SymbolTable(this);
     private final InteropManager interopManager = new InteropManager(this);
     private final CodeLoader codeLoader = new CodeLoader(this);
     private final FeatureLoader featureLoader = new FeatureLoader(this);
-    private final TraceManager traceManager = new TraceManager(this);
+    private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager = new ObjectSpaceManager(this);
     private final AtExitManager atExitManager = new AtExitManager(this);
     private final SourceCache sourceCache = new SourceCache(new SourceLoader(this));
     private final CallStackManager callStack = new CallStackManager(this);
     private final CoreStrings coreStrings = new CoreStrings(this);
+    private final FrozenStrings frozenStrings = new FrozenStrings(this);
+    private final CoreExceptions coreExceptions = new CoreExceptions(this);
 
     private final CompilerOptions compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
@@ -83,13 +87,15 @@ public class RubyContext extends ExecutionContext {
     private final CoreLibrary coreLibrary;
     private final ThreadManager threadManager;
     private final LexicalScope rootLexicalScope;
-    private final CoverageTracker coverageTracker;
     private final InstrumentationServerManager instrumentationServerManager;
-    private final AttachmentsManager attachmentsManager;
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
+    private final CoverageManager coverageManager;
+
+    private final Object classVariableDefinitionLock = new Object();
 
     private org.jruby.ast.RootNode initialJRubyRootNode;
+    private final AttachmentsManager attachmentsManager;
 
     public RubyContext(Ruby jrubyRuntime, TruffleLanguage.Env env) {
         latestInstance = this;
@@ -105,26 +111,26 @@ public class RubyContext extends ExecutionContext {
 
         // Stuff that needs to be loaded before we load any code
 
+        /*
+         * The Graal option TimeThreshold sets how long a method has to become hot after it has started running, in ms.
+         * This is designed to not try to compile cold methods that just happen to be called enough times during a
+         * very long running program. We haven't worked out the best value of this for Ruby yet, and the default value
+         * produces poor benchmark results. Here we just set it to a very high value, to effectively disable it.
+         */
+
         if (compilerOptions.supportsOption("MinTimeThreshold")) {
             compilerOptions.setOption("MinTimeThreshold", 100000000);
         }
 
+        /*
+         * The Graal option InliningMaxCallerSize sets the maximum size of a method for where we consider to inline
+         * calls from that method. So it's the caller method we're talking about, not the called method. The default
+         * value doesn't produce good results for Ruby programs, but we aren't sure why yet. Perhaps it prevents a few
+         * key methods from the core library from inlining other methods.
+         */
+
         if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
             compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
-        }
-
-        env.instrumenter().registerASTProber(new RubyDefaultASTProber(env.instrumenter()));
-
-        // TODO(CS, 28-Jan-15) this is global
-        // TODO(CS, 28-Jan-15) maybe not do this for core?
-        if (options.COVERAGE || options.COVERAGE_GLOBAL) {
-            coverageTracker = new CoverageTracker();
-
-            if (options.COVERAGE_GLOBAL) {
-                env.instrumenter().install(coverageTracker);
-            }
-        } else {
-            coverageTracker = null;
         }
 
         // Load the core library classes
@@ -144,7 +150,7 @@ public class RubyContext extends ExecutionContext {
 
         org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
         coreLibrary.addCoreMethods();
-        rubiniusPrimitiveManager.addAnnotatedPrimitives();
+        primitiveManager.addAnnotatedPrimitives();
         org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
 
         // Load the reset of the core library
@@ -163,7 +169,10 @@ public class RubyContext extends ExecutionContext {
             instrumentationServerManager = null;
         }
 
-        attachmentsManager = new AttachmentsManager(this);
+        final Instrumenter instrumenter = env.lookup(Instrumenter.class);
+        attachmentsManager = new AttachmentsManager(this, instrumenter);
+        traceManager = new TraceManager(this, instrumenter);
+        coverageManager = new CoverageManager(this, instrumenter);
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -182,6 +191,13 @@ public class RubyContext extends ExecutionContext {
     }
 
     public void shutdown() {
+        if (getOptions().ROPE_PRINT_INTERN_STATS) {
+            System.out.println("Ropes re-used: " + getRopeTable().getRopesReusedCount());
+            System.out.println("Rope byte arrays re-used: " + getRopeTable().getByteArrayReusedCount());
+            System.out.println("Rope bytes saved: " + getRopeTable().getRopeBytesSaved());
+            System.out.println("Total ropes interned: " + getRopeTable().totalRopes());
+        }
+
         atExitManager.runSystemExitHooks();
 
         if (instrumentationServerManager != null) {
@@ -191,7 +207,7 @@ public class RubyContext extends ExecutionContext {
         threadManager.shutdown();
 
         if (options.COVERAGE_GLOBAL) {
-            coverageTracker.print(System.out);
+            coverageManager.print(System.out);
         }
 
         if (callGraph != null) {
@@ -275,12 +291,12 @@ public class RubyContext extends ExecutionContext {
         return compilerOptions;
     }
 
-    public RubiniusPrimitiveManager getRubiniusPrimitiveManager() {
-        return rubiniusPrimitiveManager;
+    public PrimitiveManager getPrimitiveManager() {
+        return primitiveManager;
     }
 
-    public CoverageTracker getCoverageTracker() {
-        return coverageTracker;
+    public CoverageManager getCoverageManager() {
+        return coverageManager;
     }
 
     public static RubyContext getLatestInstance() {
@@ -322,4 +338,21 @@ public class RubyContext extends ExecutionContext {
     public CoreStrings getCoreStrings() {
         return coreStrings;
     }
+
+    public FrozenStrings getFrozenStrings() {
+        return frozenStrings;
+    }
+
+    public Object getClassVariableDefinitionLock() {
+        return classVariableDefinitionLock;
+    }
+
+    public Instrumenter getInstrumenter() {
+        return env.lookup(Instrumenter.class);
+    }
+
+    public CoreExceptions getCoreExceptions() {
+        return coreExceptions;
+    }
+
 }

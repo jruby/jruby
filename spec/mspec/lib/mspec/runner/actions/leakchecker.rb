@@ -38,8 +38,9 @@ class LeakChecker
     @no_leaks = true
     leaks = [
       check_fd_leak(test_name),
-      check_thread_leak(test_name),
       check_tempfile_leak(test_name),
+      check_thread_leak(test_name),
+      check_process_leak(test_name),
       check_env(test_name),
       check_argv(test_name),
       check_encodings(test_name)
@@ -196,6 +197,14 @@ class LeakChecker
     end
     @thread_info = live2
     return leaked
+  end
+
+  def check_process_leak(test_name)
+    subprocesses_leaked = Process.waitall
+    subprocesses_leaked.each { |pid, status|
+      puts "Leaked subprocess: #{pid}: #{status}"
+    }
+    return !subprocesses_leaked.empty?
   end
 
   def find_env

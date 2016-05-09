@@ -16,10 +16,24 @@ class String
     end
   end
 
+  def capitalize
+    s = dup
+    s.capitalize!
+    s
+  end
+
   def downcase
     s = dup
     s.downcase!
     s
+  end
+
+  def +@
+    frozen? ? dup : self
+  end
+
+  def -@
+    frozen? ? self : dup.freeze
   end
 
 end

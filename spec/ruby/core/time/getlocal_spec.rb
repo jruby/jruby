@@ -15,12 +15,14 @@ describe "Time#getlocal" do
     t.utc_offset.should == 3630
   end
 
-  it "returns a new time with the correct utc_offset according to the set timezone" do
-    t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
-    t.utc_offset.should == -3600
+  platform_is_not :windows do
+    it "returns a new time with the correct utc_offset according to the set timezone" do
+      t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
+      t.utc_offset.should == -3600
 
-    with_timezone("America/New_York") do
-      t.getlocal.utc_offset.should == -18000
+      with_timezone("America/New_York") do
+        t.getlocal.utc_offset.should == -18000
+      end
     end
   end
 

@@ -1,0 +1,2 @@
+src: ext/module/*.c
+out: lib/module/module.su

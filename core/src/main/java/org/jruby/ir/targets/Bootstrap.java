@@ -61,7 +61,7 @@ public class Bootstrap {
         RubyObjectVar8.class,
         RubyObjectVar9.class,
     };
-    private static final Logger LOG = LoggerFactory.getLogger("Bootstrap");
+    private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
     static final Lookup LOOKUP = MethodHandles.lookup();
 
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
@@ -794,26 +794,6 @@ public class Bootstrap {
     public static boolean testType(RubyClass original, IRubyObject self) {
         // naive test
         return ((RubyBasicObject)self).getMetaClass() == original;
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // constant lookup
-
-    public static Handle searchConst() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
-    }
-
-    public static CallSite searchConst(Lookup lookup, String searchType, MethodType type, String constName, int publicOnly) {
-        ConstantLookupSite site = new ConstantLookupSite(type, constName, publicOnly == 0 ? false : true);
-
-        MethodHandle handle = Binder
-                .from(lookup, type)
-                .insert(0, site)
-                .invokeVirtualQuiet(LOOKUP, searchType);
-
-        site.setTarget(handle);
-
-        return site;
     }
 
     ///////////////////////////////////////////////////////////////////////////

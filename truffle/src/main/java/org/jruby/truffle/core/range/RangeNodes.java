@@ -16,18 +16,19 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.NonStandard;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.CoreLibrary;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubiniusOnly;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
-import org.jruby.truffle.core.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
@@ -40,18 +41,14 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
-@CoreClass(name = "Range")
+@CoreClass("Range")
 public abstract class RangeNodes {
 
-    @CoreMethod(names = { "collect", "map" }, needsBlock = true, lowerFixnumSelf = true)
-    public abstract static class CollectNode extends YieldingCoreMethodNode {
-
-        public CollectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @CoreMethod(names = { "map", "collect" }, needsBlock = true, lowerFixnumSelf = true)
+    public abstract static class MapNode extends YieldingCoreMethodNode {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
-        public DynamicObject collect(VirtualFrame frame, DynamicObject range, DynamicObject block,
+        public DynamicObject map(VirtualFrame frame, DynamicObject range, DynamicObject block,
                 @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
             final int end = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
@@ -71,7 +68,7 @@ public abstract class RangeNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -84,10 +81,6 @@ public abstract class RangeNodes {
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode eachInternalCall;
-
-        public EachNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object eachInt(VirtualFrame frame, DynamicObject range, DynamicObject block) {
@@ -111,7 +104,7 @@ public abstract class RangeNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -140,7 +133,7 @@ public abstract class RangeNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -176,10 +169,6 @@ public abstract class RangeNodes {
     @CoreMethod(names = "exclude_end?")
     public abstract static class ExcludeEndNode extends CoreMethodArrayArgumentsNode {
 
-        public ExcludeEndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public boolean excludeEndInt(DynamicObject range) {
             return Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range);
@@ -199,10 +188,6 @@ public abstract class RangeNodes {
 
     @CoreMethod(names = "begin")
     public abstract static class BeginNode extends CoreMethodArrayArgumentsNode {
-
-        public BeginNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int eachInt(DynamicObject range) {
@@ -264,10 +249,6 @@ public abstract class RangeNodes {
     @CoreMethod(names = "end")
     public abstract static class EndNode extends CoreMethodArrayArgumentsNode {
 
-        public EndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int lastInt(DynamicObject range) {
             return Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
@@ -290,10 +271,6 @@ public abstract class RangeNodes {
 
         @Child private CallDispatchHeadNode stepInternalCall;
 
-        public StepNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = { "isIntegerFixnumRange(range)", "step > 0" })
         public Object stepInt(VirtualFrame frame, DynamicObject range, int step, DynamicObject block) {
             int count = 0;
@@ -314,7 +291,7 @@ public abstract class RangeNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -341,7 +318,7 @@ public abstract class RangeNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -428,10 +405,6 @@ public abstract class RangeNodes {
 
         @Child private CallDispatchHeadNode toAInternalCall;
 
-        public ToANode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public DynamicObject toA(DynamicObject range) {
             final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
@@ -469,16 +442,12 @@ public abstract class RangeNodes {
     }
 
     // These 3 nodes replace ivar assignment in the common/range.rb Range#initialize
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "begin")
     })
     public abstract static class InternalSetBeginNode extends RubyNode {
-
-        public InternalSetBeginNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object setBegin(DynamicObject range, Object begin) {
@@ -487,16 +456,12 @@ public abstract class RangeNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "end")
     })
     public abstract static class InternalSetEndNode extends RubyNode {
-
-        public InternalSetEndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object setEnd(DynamicObject range, Object end) {
@@ -505,20 +470,16 @@ public abstract class RangeNodes {
         }
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
             @NodeChild(type = RubyNode.class, value = "excludeEnd")
     })
     public abstract static class InternalSetExcludeEndNode extends RubyNode {
 
-        public InternalSetExcludeEndNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("excludeEnd")
         public RubyNode castToBoolean(RubyNode excludeEnd) {
-            return BooleanCastNodeGen.create(getContext(), getSourceSection(), excludeEnd);
+            return BooleanCastNodeGen.create(null, null, excludeEnd);
         }
 
         @Specialization(guards = "isObjectRange(range)")
@@ -550,7 +511,7 @@ public abstract class RangeNodes {
 
         @CreateCast("excludeEnd")
         public RubyNode coerceToBoolean(RubyNode excludeEnd) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), false, excludeEnd);
+            return BooleanCastWithDefaultNodeGen.create(null, null, false, excludeEnd);
         }
 
         @Specialization(guards = "rubyClass == rangeClass")
@@ -583,11 +544,11 @@ public abstract class RangeNodes {
             try {
                 cmpResult = cmpNode.call(frame, begin, "<=>", null, end);
             } catch (RaiseException e) {
-                throw new RaiseException(coreLibrary().argumentError("bad value for range", this));
+                throw new RaiseException(coreExceptions().argumentError("bad value for range", this));
             }
 
             if (cmpResult == nil()) {
-                throw new RaiseException(coreLibrary().argumentError("bad value for range", this));
+                throw new RaiseException(coreExceptions().argumentError("bad value for range", this));
             }
 
             return allocateNode.allocate(rubyClass, excludeEnd, begin, end);

@@ -4,8 +4,6 @@ require 'thread'
 require 'test/jruby/test_helper'
 require 'ipaddr'
 
-WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
-
 class IfaddrTest < Test::Unit::TestCase
   include TestHelper
 

@@ -50,6 +50,7 @@ jruby/test_jruby_internals
 jruby/test_marshal_with_instance_variables
 jruby/test_marshal_gemspec
 jruby/test_method_missing
+jruby/test_name_error
 jruby/test_no_stack_trace_stomp
 jruby/test_pack
 jruby/test_primitive_to_java

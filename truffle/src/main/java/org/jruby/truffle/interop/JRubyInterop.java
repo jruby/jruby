@@ -31,9 +31,9 @@ public class JRubyInterop {
     public DynamicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
-                return context.getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);
+                return context.getCoreExceptions().argumentError(jrubyException.getMessage().toString(), currentNode);
             case "RegexpError":
-                return context.getCoreLibrary().regexpError(jrubyException.getMessage().toString(), currentNode);
+                return context.getCoreExceptions().regexpError(jrubyException.getMessage().toString(), currentNode);
         }
 
         throw new UnsupportedOperationException();

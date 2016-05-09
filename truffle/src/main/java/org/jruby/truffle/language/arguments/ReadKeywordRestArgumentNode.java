@@ -14,8 +14,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.hash.BucketsStrategy;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.language.RubyGuards;
@@ -37,7 +37,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
                                        int minimum, String[] excludedKeywords) {
         super(context, sourceSection);
         this.excludedKeywords = excludedKeywords;
-        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimum);
+        readUserKeywordsHashNode = new ReadUserKeywordsHashNode(minimum);
     }
 
     @Override

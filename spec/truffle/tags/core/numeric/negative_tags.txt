@@ -1,3 +1,0 @@
-fails:Numeric#negative? on positive numbers returns false
-fails:Numeric#negative? on zero returns false
-fails:Numeric#negative? on negative numbers returns true

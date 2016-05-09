@@ -39,8 +39,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.RubyEncoding;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.rope.CodeRange;
@@ -77,7 +77,7 @@ public abstract class StringOperations {
 
     public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string) {
         return new StringCodeRangeableWrapper(string) {
-            private final ByteList byteList = StringOperations.rope(string).toByteListCopy();
+            private final ByteList byteList = RopeOperations.toByteListCopy(StringOperations.rope(string));
             int codeRange = StringOperations.getCodeRange(string).toInt();
 
             @Override
@@ -165,9 +165,9 @@ public abstract class StringOperations {
         return encoding;
     }
 
-    public static void forceEncoding(DynamicObject string, Encoding encoding) {
+    public static void forceEncodingVerySlow(DynamicObject string, Encoding encoding) {
         final Rope oldRope = Layouts.STRING.getRope(string);
-        StringOperations.setRope(string, RopeOperations.withEncoding(oldRope, encoding, CodeRange.CR_UNKNOWN));
+        StringOperations.setRope(string, RopeOperations.withEncodingVerySlow(oldRope, encoding, CodeRange.CR_UNKNOWN));
     }
 
     public static int normalizeIndex(int length, int index) {
@@ -186,7 +186,7 @@ public abstract class StringOperations {
 
         if (encoding == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().encodingCompatibilityErrorIncompatible(
+            throw new RaiseException(context.getCoreExceptions().encodingCompatibilityErrorIncompatible(
                     rope(string).getEncoding().toString(),
                     rope(other).getEncoding().toString(),
                     node));
@@ -226,7 +226,7 @@ public abstract class StringOperations {
     }
 
     public static ByteList getByteListReadOnly(DynamicObject object) {
-        return Layouts.STRING.getRope(object).getUnsafeByteList();
+        return RopeOperations.getByteListReadOnly(rope(object));
     }
 
     public static Rope ropeFromByteList(ByteList byteList) {

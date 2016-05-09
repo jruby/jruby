@@ -16,7 +16,6 @@ import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.RubyGC;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.thread.ThreadManager;
-import org.jruby.truffle.core.thread.ThreadNodes;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
 
@@ -93,8 +92,8 @@ public class ObjectSpaceManager {
         if (finalizerThread == null) {
             // TODO(CS): should we be running this in a real Ruby thread?
 
-            finalizerThread = ThreadNodes.createRubyThread(context, context.getCoreLibrary().getThreadClass());
-            ThreadNodes.initialize(finalizerThread, context, null, "finalizer", new Runnable() {
+            finalizerThread = ThreadManager.createRubyThread(context, context.getCoreLibrary().getThreadClass());
+            ThreadManager.initialize(finalizerThread, context, null, "finalizer", new Runnable() {
                 @Override
                 public void run() {
                     runFinalizers();

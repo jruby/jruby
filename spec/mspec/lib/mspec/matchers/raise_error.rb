@@ -1,3 +1,5 @@
+require 'mspec/utils/deprecate'
+
 class RaiseErrorMatcher
   def initialize(exception, message, &block)
     @exception = exception
@@ -33,21 +35,39 @@ class RaiseErrorMatcher
     return true
   end
 
+  def exception_class_and_message(exception_class, message)
+    if message
+      "#{exception_class} (#{message})"
+    else
+      "#{exception_class}"
+    end
+  end
+
+  def format_expected_exception
+    exception_class_and_message(@exception, @message)
+  end
+
+  def format_exception(exception)
+    exception_class_and_message(exception.class, exception.message)
+  end
+
   def failure_message
-    message = ["Expected #{@exception}#{%[ (#{@message})] if @message}"]
+    message = ["Expected #{format_expected_exception}"]
 
     if @actual then
-      message << "but got #{@actual.class}#{%[ (#{@actual.message})] if @actual.message}"
+      message << "but got #{format_exception(@actual)}"
     else
-      message << "but no exception was raised (#@result was returned)"
+      message << "but no exception was raised (#{@result} was returned)"
     end
 
     message
   end
 
   def negative_failure_message
-    message = ["Expected to not get #{@exception}#{%[ (#{@message})] if @message}", ""]
-    message[1] = "but got #{@actual.class}#{%[ (#{@actual.message})] if @actual.message}" unless @actual.class == @exception
+    message = ["Expected to not get #{format_expected_exception}", ""]
+    unless @actual.class == @exception
+      message[1] = "but got #{format_exception(@actual)}"
+    end
     message
   end
 end
@@ -62,5 +82,8 @@ end
 RaiseExceptionMatcher = RaiseErrorMatcher
 
 class Object
-  alias_method :raise_exception, :raise_error
+  def raise_exception(exception=Exception, message=nil, &block)
+    MSpec.deprecate "raise_exception", "raise_error"
+    raise_error(exception, message, &block)
+  end
 end

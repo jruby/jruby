@@ -11,7 +11,7 @@ import java.util.*;
 /* SSS: Currently unused code. Will be useful for some SSA building algos. */
 public class DominatorTreeBuilder extends CompilerPass {
     private static int NULL = -1;
-    private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");
+    private static final Logger LOG = LoggerFactory.getLogger(DominatorTreeBuilder.class);
 
     @Override
     public String getLabel() {

@@ -123,8 +123,8 @@ public class LoadArgumentsTranslator extends Translator {
             }
 
             sequence.add(new IfNode(context, sourceSection,
-                    new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, node.getPreCount() + node.getPostCount(), loadArray(sourceSection)),
-                    new RunBlockKWArgsHelperNode(context, sourceSection, arraySlotStack.peek().getArraySlot(), keyRestNameOrNil)));
+                    new ArrayIsAtLeastAsLargeAsNode(node.getPreCount() + node.getPostCount(), loadArray(sourceSection)),
+                    new RunBlockKWArgsHelperNode(arraySlotStack.peek().getArraySlot(), keyRestNameOrNil)));
         }
 
         final int preCount = node.getPreCount();
@@ -218,7 +218,7 @@ public class LoadArgumentsTranslator extends Translator {
         if (useArray()) {
             if (node.getPreCount() == 0 || node.hasRestArg()) {
                 sequence.add(new IfElseNode(context, sourceSection,
-                        new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, node.getPreCount() + node.getPostCount(), loadArray(sourceSection)),
+                        new ArrayIsAtLeastAsLargeAsNode(node.getPreCount() + node.getPostCount(), loadArray(sourceSection)),
                         notNilAtLeastAsLarge,
                         notNilSmaller));
             } else {
@@ -285,7 +285,7 @@ public class LoadArgumentsTranslator extends Translator {
         if (asgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
             /* This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
              * the semantic action of executing this node is to report an error, and we do the same thing. */
-            defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
+            defaultValue = new MissingKeywordArgumentNode(name);
         } else {
             defaultValue = translateNodeOrNil(sourceSection, asgnNode.getValueNode());
         }
@@ -311,9 +311,9 @@ public class LoadArgumentsTranslator extends Translator {
             return PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index);
         } else {
             if (state == State.PRE) {
-                return new ReadPreArgumentNode(context, sourceSection, index, isProc ? MissingArgumentBehavior.NIL : MissingArgumentBehavior.RUNTIME_ERROR);
+                return new ReadPreArgumentNode(index, isProc ? MissingArgumentBehavior.NIL : MissingArgumentBehavior.RUNTIME_ERROR);
             } else if (state == State.POST) {
-                return new ReadPostArgumentNode(context, sourceSection, -index);
+                return new ReadPostArgumentNode(-index);
             } else {
                 throw new IllegalStateException();
             }
@@ -346,7 +346,7 @@ public class LoadArgumentsTranslator extends Translator {
     public RubyNode visitBlockArgNode(org.jruby.ast.BlockArgNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode readNode = new ReadBlockNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+        final RubyNode readNode = new ReadBlockNode(context.getCoreLibrary().getNilObject());
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
         return new WriteLocalVariableNode(context, sourceSection, slot, readNode);
     }
@@ -412,7 +412,7 @@ public class LoadArgumentsTranslator extends Translator {
                 if (useArray()) {
                     // TODO CS 10-Jan-16 we should really hoist this check, or see if Graal does it for us
                     readNode = new IfElseNode(context, sourceSection,
-                            new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, minimum, loadArray(sourceSection)),
+                            new ArrayIsAtLeastAsLargeAsNode(minimum, loadArray(sourceSection)),
                             PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index),
                             defaultValue);
                 } else {
@@ -552,10 +552,10 @@ public class LoadArgumentsTranslator extends Translator {
 
                 if (node.getPreCount() == 0 && node.getPostCount() == 0) {
                     nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
-                            .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{new NilLiteralNode(context, sourceSection, true)})));
+                            .makeWriteNode(ArrayLiteralNode.create(context, sourceSection, new RubyNode[] { new NilLiteralNode(context, sourceSection, true) })));
                 } else {
                     nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
-                            .makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{})));
+                            .makeWriteNode(ArrayLiteralNode.create(context, sourceSection, new RubyNode[] {})));
                 }
             } else if (node.getRest() instanceof StarNode) {
                 // Don't think we need to do anything
@@ -588,7 +588,7 @@ public class LoadArgumentsTranslator extends Translator {
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)),
                         nil,
                         new IfElseNode(context, sourceSection,
-                                new ArrayIsAtLeastAsLargeAsNode(context, sourceSection, node.getPreCount() + node.getPostCount(), new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)),
+                                new ArrayIsAtLeastAsLargeAsNode(node.getPreCount() + node.getPostCount(), new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)),
                                 notNilAtLeastAsLarge,
                                 notNilSmaller))));
     }

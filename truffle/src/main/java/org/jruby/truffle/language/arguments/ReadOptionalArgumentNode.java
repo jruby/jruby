@@ -14,8 +14,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.core.array.ArrayReadNormalizedNode;
+import org.jruby.truffle.core.array.ArrayReadNormalizedNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -29,6 +31,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
     @Child private ReadRestArgumentNode readRestArgumentNode;
     @Child private RubyNode defaultValue;
     @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
+    @Child private ArrayReadNormalizedNode arrayReadNode;
 
     private final BranchProfile defaultValueProfile = BranchProfile.create();
 
@@ -45,7 +48,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
         this.reduceMinimumWhenNoKWargs = reduceMinimumWhenNoKWargs;
 
         if (reduceMinimumWhenNoKWargs) {
-            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, requiredForKWArgs);
+            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(requiredForKWArgs);
         }
     }
 
@@ -71,7 +74,11 @@ public class ReadOptionalArgumentNode extends RubyNode {
             final Object rest = readRestArgumentNode.execute(frame);
 
             if (RubyGuards.isRubyArray(rest) && Layouts.ARRAY.getSize((DynamicObject) rest) > 0) {
-                return ruby("rest[0]", "rest", rest);
+                if (arrayReadNode == null) {
+                    arrayReadNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), null, null, null));
+                }
+
+                return arrayReadNode.executeRead((DynamicObject) rest, 0);
             }
         }
 

@@ -348,7 +348,11 @@ modes.each do |mode|
     end
 
     it "compiles dynamic regexp" do
-      run('"foo" =~ /#{"foo"}/') {|result| expect(result).to eq 0 }
+      # test different arities since we optimize smaller ones
+      1.upto(10) do |i|
+        run('x = "foo"; i = ' + i.to_s + '; x * i =~ /' + '#{x}' * i + '/') {|result| expect(result).to eq 0 }
+      end
+
       run('ary = []; 2.times {|i| ary << ("foo0" =~ /#{"foo" + i.to_s}/o)}; ary') {|result| expect(result).to eq([0, 0]) }
     end
 
@@ -1106,6 +1110,28 @@ modes.each do |mode|
         end
       ensure
         $VERBOSE = verbose
+      end
+    end
+
+    it "maintains frame stack integrity through a bare lambda (GH #3643)" do
+      code = '
+        module GH3643
+          class A
+            def x(proc)
+              instance_eval(&proc) rescue nil
+              :ok
+            end
+          end
+          A.prepend(Module.new { def x(proc); super; super; end })
+          def self.foo
+            A.new.x(lambda{})
+          end
+          foo
+        end
+      '
+
+      run(code) do |x|
+        x.should == :ok
       end
     end
   end

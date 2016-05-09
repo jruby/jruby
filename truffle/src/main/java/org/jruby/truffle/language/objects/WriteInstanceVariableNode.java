@@ -15,7 +15,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -44,13 +43,12 @@ public class WriteInstanceVariableNode extends RubyNode {
         if (objectProfile.profile(object instanceof DynamicObject)) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                writeNode = insert(WriteObjectFieldNodeGen.create(getContext(), name));
+                writeNode = insert(WriteObjectFieldNodeGen.create(name));
             }
 
             writeNode.execute((DynamicObject) object, value);
         } else {
-            throw new RaiseException(coreLibrary().frozenError(
-                    Layouts.MODULE.getFields(coreLibrary().getLogicalClass(object)).getName(), this));
+            throw new RaiseException(coreExceptions().frozenError(object, this));
         }
 
         return value;

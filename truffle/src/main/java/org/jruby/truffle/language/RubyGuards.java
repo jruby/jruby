@@ -11,7 +11,8 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.core.rubinius.PointerPrimitiveNodes;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 
 public abstract class RubyGuards {
@@ -32,6 +33,10 @@ public abstract class RubyGuards {
 
     public static boolean isDouble(Object value) {
         return value instanceof Double;
+    }
+
+    public static boolean isString(Object value) {
+        return value instanceof String;
     }
 
     public static boolean isJavaCharSequence(Object value) {
@@ -218,6 +223,14 @@ public abstract class RubyGuards {
 
     public static boolean isHandle(DynamicObject object) {
         return Layouts.HANDLE.isHandle(object);
+    }
+
+    public static boolean isTracePoint(DynamicObject object) {
+        return Layouts.TRACE_POINT.isTracePoint(object);
+    }
+
+    public static boolean isNullPointer(DynamicObject pointer) {
+        return Layouts.POINTER.getPointer(pointer) == PointerPrimitiveNodes.NULL_POINTER;
     }
 
     // Internal types

@@ -8,7 +8,8 @@ import org.jruby.embed.IsolatedScriptingContainer;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 
-import org.jruby.util.GetResources;
+import org.jruby.embed.osgi.internal.BundleWiringOSGiClassLoaderAdapter;
+import org.jruby.util.Loader;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
@@ -133,7 +134,8 @@ public class OSGiIsolatedScriptingContainer extends IsolatedScriptingContainer {
         addBundleToGemPath(toBundle(symbolicName));
     }
 
-    static class BundleGetResources implements GetResources {
+    static class BundleGetResources implements Loader
+    {
 
         private final Bundle bundle;
 
@@ -149,6 +151,16 @@ public class OSGiIsolatedScriptingContainer extends IsolatedScriptingContainer {
         @Override
         public Enumeration<URL> getResources(String path) throws IOException {
             return bundle.getResources(path);
+        }
+
+        @Override
+        public Class<?> loadClass(final String name) throws ClassNotFoundException {
+            return bundle.loadClass(name);
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return new BundleWiringOSGiClassLoaderAdapter().getClassLoader(bundle);
         }
     }
 }

@@ -18,8 +18,8 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -65,7 +65,7 @@ public abstract class IsANode extends RubyNode {
 
     @Specialization(guards = "!isRubyModule(module)")
     public boolean isATypeError(Object self, DynamicObject module) {
-        throw new RaiseException(coreLibrary().typeError("class or module required", this));
+        throw new RaiseException(coreExceptions().typeError("class or module required", this));
     }
 
     @TruffleBoundary

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -16,8 +17,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -128,7 +129,7 @@ public abstract class SingletonClassNode extends RubyNode {
     }
 
     private DynamicObject noSingletonClass() {
-        throw new RaiseException(coreLibrary().typeErrorCantDefineSingleton(this));
+        throw new RaiseException(coreExceptions().typeErrorCantDefineSingleton(this));
     }
 
     @TruffleBoundary
@@ -150,21 +151,28 @@ public abstract class SingletonClassNode extends RubyNode {
         final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(
                 getContext(), logicalClass, object, name);
 
-        if (isFrozenNode == null) {
-            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
-        }
-
-        if (isFrozenNode.executeIsFrozen(object)) {
-            if (freezeNode == null) {
-                freezeNode = insert(FreezeNodeGen.create(getContext(), getSourceSection(), null));
-            }
-
-            freezeNode.executeFreeze(singletonClass);
+        if (isFrozen(object)) {
+            freeze(singletonClass);
         }
 
         Layouts.BASIC_OBJECT.setMetaClass(object, singletonClass);
 
         return singletonClass;
+    }
+
+    public void freeze(final DynamicObject singletonClass) {
+        if (freezeNode == null) {
+            freezeNode = insert(FreezeNodeGen.create(getContext(), getSourceSection(), null));
+        }
+        freezeNode.executeFreeze(singletonClass);
+    }
+
+    protected boolean isFrozen(Object object) {
+        if (isFrozenNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+        }
+        return isFrozenNode.executeIsFrozen(object);
     }
 
     protected int getCacheLimit() {

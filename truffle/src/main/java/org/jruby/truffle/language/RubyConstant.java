@@ -11,14 +11,14 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 
 public class RubyConstant {
 
     private final DynamicObject declaringModule;
     private final Object value;
-    private boolean isPrivate;
+    private final boolean isPrivate;
     private final boolean autoload;
 
     public RubyConstant(DynamicObject declaringModule, Object value, boolean isPrivate, boolean autoload) {
@@ -41,8 +41,12 @@ public class RubyConstant {
         return isPrivate;
     }
 
-    public void setPrivate(boolean isPrivate) {
-        this.isPrivate = isPrivate;
+    public RubyConstant withPrivate(boolean isPrivate) {
+        if (isPrivate == this.isPrivate) {
+            return this;
+        } else {
+            return new RubyConstant(declaringModule, value, isPrivate, autoload);
+        }
     }
 
     public boolean isVisibleTo(RubyContext context, LexicalScope lexicalScope, DynamicObject module) {

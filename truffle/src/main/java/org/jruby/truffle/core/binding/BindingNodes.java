@@ -20,12 +20,12 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -41,7 +41,7 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import java.util.ArrayList;
 import java.util.List;
 
-@CoreClass(name = "Binding")
+@CoreClass("Binding")
 public abstract class BindingNodes {
 
     public static DynamicObject createBinding(RubyContext context, MaterializedFrame frame) {
@@ -165,7 +165,7 @@ public abstract class BindingNodes {
         public Object localVariableGetUncached(DynamicObject binding, DynamicObject symbol) {
             final FrameSlotAndDepth frameSlot = findFrameSlotOrNull(binding, symbol);
             if (frameSlot == null) {
-                throw new RaiseException(coreLibrary().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
+                throw new RaiseException(coreExceptions().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
             } else {
                 final MaterializedFrame frame = RubyArguments.getDeclarationFrame(Layouts.BINDING.getFrame(binding), frameSlot.depth);
                 return frame.getValue(frameSlot.slot);
@@ -179,7 +179,7 @@ public abstract class BindingNodes {
             final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(Layouts.SYMBOL.getString(symbol));
 
             if (frameSlot == null) {
-                throw new RaiseException(coreLibrary().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
+                throw new RaiseException(coreExceptions().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
             }
 
             final Object value = frame.getValue(frameSlot);
@@ -300,10 +300,6 @@ public abstract class BindingNodes {
     @CoreMethod(names = "local_variables")
     public abstract static class LocalVariablesNode extends CoreMethodArrayArgumentsNode {
 
-        public LocalVariablesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject localVariables(DynamicObject binding) {
             MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
@@ -331,10 +327,6 @@ public abstract class BindingNodes {
     @CoreMethod(names = "receiver")
     public abstract static class ReceiverNode extends UnaryCoreMethodNode {
 
-        public ReceiverNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object receiver(DynamicObject binding) {
             return RubyArguments.getSelf(Layouts.BINDING.getFrame(binding).getArguments());
@@ -344,14 +336,10 @@ public abstract class BindingNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

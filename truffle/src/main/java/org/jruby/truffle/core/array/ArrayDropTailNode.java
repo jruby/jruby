@@ -9,18 +9,21 @@
  */
 package org.jruby.truffle.core.array;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
-@NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
+import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
+
+@NodeChildren({ @NodeChild(value = "array", type = RubyNode.class) })
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayDropTailNode extends RubyNode {
 
@@ -33,55 +36,20 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     @Specialization(guards = "isNullArray(array)")
     public DynamicObject getHeadNull(DynamicObject array) {
-        CompilerDirectives.transferToInterpreter();
-
-        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+        return createArray(getContext(), null, 0);
     }
 
-    @Specialization(guards = "isIntArray(array)")
-    public DynamicObject getHeadIntegerFixnum(DynamicObject array) {
-        CompilerDirectives.transferToInterpreter();
-
-        if (index >= Layouts.ARRAY.getSize(array)) {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+    @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+    public DynamicObject dropTail(DynamicObject array,
+            @Cached("of(array)") ArrayStrategy strategy,
+            @Cached("createBinaryProfile()") ConditionProfile indexLargerThanSize) {
+        final int size = Layouts.ARRAY.getSize(array);
+        if (indexLargerThanSize.profile(index >= size)) {
+            return createArray(getContext(), null, 0);
         } else {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((int[]) Layouts.ARRAY.getStore(array), 0, Layouts.ARRAY.getSize(array) - index), Layouts.ARRAY.getSize(array) - index);
-        }
-    }
-
-    @Specialization(guards = "isLongArray(array)")
-    public DynamicObject geHeadLongFixnum(DynamicObject array) {
-        CompilerDirectives.transferToInterpreter();
-
-        if (index >= Layouts.ARRAY.getSize(array)) {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
-        } else {
-            final int size = Layouts.ARRAY.getSize(array) - index;
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((long[]) Layouts.ARRAY.getStore(array), 0, size), size);
-        }
-    }
-
-    @Specialization(guards = "isDoubleArray(array)")
-    public DynamicObject getHeadFloat(DynamicObject array) {
-        CompilerDirectives.transferToInterpreter();
-
-        if (index >= Layouts.ARRAY.getSize(array)) {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
-        } else {
-            final int size = Layouts.ARRAY.getSize(array) - index;
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((double[]) Layouts.ARRAY.getStore(array), 0, size), size);
-        }
-    }
-
-    @Specialization(guards = "isObjectArray(array)")
-    public DynamicObject getHeadObject(DynamicObject array) {
-        CompilerDirectives.transferToInterpreter();
-
-        if (index >= Layouts.ARRAY.getSize(array)) {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
-        } else {
-            final int size = Layouts.ARRAY.getSize(array) - index;
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((Object[]) Layouts.ARRAY.getStore(array), 0, size), size);
+            final int newSize = size - index;
+            final Object newStore = strategy.newMirror(array).extractRange(0, newSize).getArray();
+            return createArray(getContext(), newStore, newSize);
         }
     }
 

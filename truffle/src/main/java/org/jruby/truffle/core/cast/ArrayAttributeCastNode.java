@@ -19,7 +19,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.coerce.ToIntNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -52,7 +51,7 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
     @Specialization(guards = "!inBounds(value)")
     public int doLongFixnumOutOfBounds(long value) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreLibrary().argumentError(String.format("%s out of int range", indexName), this));
+        throw new RaiseException(coreExceptions().argumentError(String.format("%s out of int range", indexName), this));
     }
 
     @Specialization(guards = "inBounds(value)")
@@ -63,13 +62,13 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
     @Specialization(guards = "!inBounds(value)")
     public int doDoubleOutOfBounds(double value) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreLibrary().argumentError(String.format("%s out of int range", indexName), this));
+        throw new RaiseException(coreExceptions().argumentError(String.format("%s out of int range", indexName), this));
     }
 
     @Specialization(guards = "isRubyBignum(value)")
     public DynamicObject doBignum(DynamicObject value) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreLibrary().argumentError(String.format("%s out of int range", indexName), this));
+        throw new RaiseException(coreExceptions().argumentError(String.format("%s out of int range", indexName), this));
     }
 
 
@@ -84,14 +83,15 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
     }
 
     @Specialization(guards = { "!isInteger(value)", "!isLong(value)", "!isDouble(value)", "!isRubyBignum(value)", "!isRubyRange(value)" })
-    public Object coerce(VirtualFrame frame, DynamicObject value, @Cached("create(getContext(), getSourceSection())") ToIntNode coerceToIntNode) {
-        return coerceToIntNode.executeIntOrLong(frame, value);
+    public Object coerce(VirtualFrame frame, DynamicObject value,
+            @Cached("create()") ToIntNode toIntNode) {
+        return toIntNode.executeIntOrLong(frame, value);
     }
 
     @Fallback
     public int doBasicObject(Object object) {
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreLibrary().
+        throw new RaiseException(coreExceptions().
                 typeErrorIsNotA(object.toString(), "Fixnum (fitting in int)", this));
     }
 

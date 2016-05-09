@@ -11,9 +11,7 @@ package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
 public class ArrayIsAtLeastAsLargeAsNode extends RubyNode {
@@ -22,9 +20,7 @@ public class ArrayIsAtLeastAsLargeAsNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public ArrayIsAtLeastAsLargeAsNode(RubyContext context, SourceSection sourceSection,
-                                       int requiredSize, RubyNode child) {
-        super(context, sourceSection);
+    public ArrayIsAtLeastAsLargeAsNode(int requiredSize, RubyNode child) {
         this.requiredSize = requiredSize;
         this.child = child;
     }

@@ -13,11 +13,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyBaseNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
-public class HashNode extends RubyNode {
+public class HashNode extends RubyBaseNode {
 
     @Child private CallDispatchHeadNode hashNode;
 
@@ -39,11 +39,6 @@ public class HashNode extends RubyNode {
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        throw new UnsupportedOperationException();
     }
 
 }

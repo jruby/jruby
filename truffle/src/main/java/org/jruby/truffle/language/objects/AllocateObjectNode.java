@@ -18,13 +18,14 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.instrumentation.Instrumentable;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
@@ -35,6 +36,7 @@ import org.jruby.truffle.language.control.RaiseException;
         @NodeChild("classToAllocate"),
         @NodeChild("values")
 })
+@Instrumentable(factory = AllocateObjectNodeWrapper.class)
 public abstract class AllocateObjectNode extends RubyNode {
 
     private final boolean useCallerFrameForTracing;
@@ -46,6 +48,10 @@ public abstract class AllocateObjectNode extends RubyNode {
     public AllocateObjectNode(RubyContext context, SourceSection sourceSection, boolean useCallerFrameForTracing) {
         super(context, sourceSection);
         this.useCallerFrameForTracing = useCallerFrameForTracing;
+    }
+
+    public AllocateObjectNode(AllocateObjectNode node) {
+        this(node.getContext(), node.getSourceSection());
     }
 
     public DynamicObject allocate(DynamicObject classToAllocate, Object... values) {
@@ -143,7 +149,7 @@ public abstract class AllocateObjectNode extends RubyNode {
 
     @Specialization(guards = "isSingleton(classToAllocate)")
     public DynamicObject allocateSingleton(DynamicObject classToAllocate, Object[] values) {
-        throw new RaiseException(coreLibrary().typeErrorCantCreateInstanceOfSingletonClass(this));
+        throw new RaiseException(coreExceptions().typeErrorCantCreateInstanceOfSingletonClass(this));
     }
 
     protected Assumption getTracingAssumption() {

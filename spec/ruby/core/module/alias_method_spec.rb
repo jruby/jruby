@@ -92,6 +92,10 @@ describe "Module#alias_method" do
     ModuleSpecs::AliasingSuper::Target.new.super_call(1).should == 1
   end
 
+  it "preserves original super call after alias redefine" do
+    ModuleSpecs::AliasingSuper::RedefineAfterAlias.new.alias_super_call(1).should == 1
+  end
+
   describe "aliasing special methods" do
     before :all do
       @class = ModuleSpecs::Aliasing

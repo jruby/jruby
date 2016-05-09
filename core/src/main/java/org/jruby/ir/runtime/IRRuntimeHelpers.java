@@ -47,9 +47,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.util.Arrays;
+import java.util.Map;
 
 public class IRRuntimeHelpers {
-    private static final Logger LOG = LoggerFactory.getLogger("IRRuntimeHelpers");
+    private static final Logger LOG = LoggerFactory.getLogger(IRRuntimeHelpers.class);
 
     public static boolean inProfileMode() {
         return RubyInstanceConfig.IR_PROFILE;
@@ -1388,6 +1389,56 @@ public class IRRuntimeHelpers {
         return re;
     }
 
+    @JIT
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, int embeddedOptions) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        return re;
+    }
+
+    @JIT
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, int embeddedOptions) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        return re;
+    }
+
+    @JIT
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, int embeddedOptions) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        return re;
+    }
+
+    @JIT
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, int embeddedOptions) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        return re;
+    }
+
+    @JIT
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, int embeddedOptions) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, arg4, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        return re;
+    }
+
     public static RubyRegexp newLiteralRegexp(ThreadContext context, ByteList source, RegexpOptions options) {
         RubyRegexp re = RubyRegexp.newRegexp(context.runtime, source, options);
         re.setLiteral();
@@ -1807,5 +1858,42 @@ public class IRRuntimeHelpers {
         }
 
         return site.call(context, caller, target, keyStr.strDup(context.runtime));
+    }
+
+    public static DynamicMethod getRefinedMethodForClass(StaticScope refinedScope, RubyModule target, String methodName) {
+        Map<RubyClass, RubyModule> refinements;
+        RubyModule refinement;
+        DynamicMethod method = null;
+        RubyModule overlay;
+
+        while (true) {
+            if (refinedScope == null) break;
+
+            overlay = refinedScope.getOverlayModuleForRead();
+
+            if (overlay != null) {
+
+                refinements = overlay.getRefinements();
+
+                if (!refinements.isEmpty()) {
+
+                    refinement = refinements.get(target);
+
+                    if (refinement != null) {
+
+                        DynamicMethod maybeMethod = refinement.searchMethod(methodName);
+
+                        if (!maybeMethod.isUndefined()) {
+                            method = maybeMethod;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            refinedScope = refinedScope.getEnclosingScope();
+        }
+
+        return method;
     }
 }

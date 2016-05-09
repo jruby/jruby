@@ -4,7 +4,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyString;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
@@ -289,6 +288,7 @@ public class IRBuilder {
     protected IRScope scope;
     protected List<Instr> instructions;
     protected List<String> argumentDescriptions;
+    protected boolean needsCodeCoverage;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
@@ -296,6 +296,10 @@ public class IRBuilder {
         this.parent = parent;
         instructions = new ArrayList<>(50);
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
+    }
+
+    private boolean needsCodeCoverage() {
+        return needsCodeCoverage || parent != null && parent.needsCodeCoverage();
     }
 
     public void addArgumentDescription(ArgumentType type, String name) {
@@ -368,6 +372,9 @@ public class IRBuilder {
             if (currLineNum != _lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
                     addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), currLineNum));
+                    if (needsCodeCoverage()) {
+                        addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), currLineNum));
+                    }
                 }
                 addInstr(manager.newLineNumber(currLineNum));
                 _lastProcessedLineNum = currLineNum;
@@ -516,7 +523,7 @@ public class IRBuilder {
     }
 
     public Operand buildLambda(LambdaNode node) {
-        IRClosure closure = new IRClosure(manager, scope, node.getLine(), node.getScope(), Signature.from(node));
+        IRClosure closure = new IRClosure(manager, scope, node.getLine(), node.getScope(), Signature.from(node), needsCodeCoverage);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, closure).buildLambdaInner(node);
@@ -1016,12 +1023,10 @@ public class IRBuilder {
             return new FrozenString(asString.getValue(), asString.getCodeRange(), asString.getPosition().getFile(), asString.getPosition().getLine());
         }
 
-        // Though you might be tempted to move this build into the CallInstr as:
-        //    new Callinstr( ... , build(receiverNode, s), ...)
-        // that is incorrect IR because the receiver has to be built *before* call arguments are built
+        // The receiver has to be built *before* call arguments are built
         // to preserve expected code execution order
         Operand receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
-        Variable  callResult = createTemporaryVariable();
+        Variable callResult = createTemporaryVariable();
 
         ArrayNode argsAry;
         if (
@@ -1042,10 +1047,10 @@ public class IRBuilder {
             addInstr(new BNilInstr(lazyLabel, receiver));
         }
 
-        Operand[] args       = setupCallArgs(callArgsNode);
-        Operand block      = setupCallClosure(callNode.getIterNode());
+        Operand[] args = setupCallArgs(callArgsNode);
+        Operand block = setupCallClosure(callNode.getIterNode());
 
-        CallInstr callInstr  = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);
+        CallInstr callInstr = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if ( callNode.getName().equals("new") &&
@@ -1331,52 +1336,26 @@ public class IRBuilder {
         return putConstant((Colon3Node) constNode, value);
     }
 
-    private void genInheritanceSearchInstrs(Operand startingModule, Variable constVal, Label foundLabel, boolean noPrivateConstants, String name) {
-        addInstr(new InheritanceSearchConstInstr(constVal, startingModule, name, noPrivateConstants));
-        addInstr(BNEInstr.create(foundLabel, constVal, UndefinedValue.UNDEFINED));
-        addInstr(new ConstMissingInstr(constVal, startingModule, name, scope.maybeUsingRefinements()));
-        addInstr(new LabelInstr(foundLabel));
-    }
-
-    private Operand searchConstInInheritanceHierarchy(Operand startingModule, String name) {
-        Variable constVal = createTemporaryVariable();
-        genInheritanceSearchInstrs(startingModule, constVal, getNewLabel(), true, name);
-        return constVal;
+    private Operand searchModuleForConst(Operand startingModule, String name) {
+        return addResultInstr(new SearchModuleForConstInstr(createTemporaryVariable(), startingModule, name, true));
     }
 
     private Operand searchConst(String name) {
-        final boolean noPrivateConstants = false;
-        Variable v = createTemporaryVariable();
-/**
- * SSS FIXME: Went back to a single instruction for now.
- *
- * Do not split search into lexical-search, inheritance-search, and const-missing instrs.
- *
-        Label foundLabel = getNewLabel();
-        addInstr(new LexicalSearchConstInstr(v, startingSearchScope(s), name));
-        addInstr(BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
-        genInheritanceSearchInstrs(s, findContainerModule(startingScope), v, foundLabel, noPrivateConstants, name);
-**/
-        addInstr(new SearchConstInstr(v, name, startingSearchScope(), noPrivateConstants));
-        return v;
+        return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, startingSearchScope(), false));
     }
 
-    public Operand buildColon2(final Colon2Node iVisited) {
-        Node leftNode = iVisited.getLeftNode();
-        final String name = iVisited.getName();
+    public Operand buildColon2(final Colon2Node colon2) {
+        Node lhs = colon2.getLeftNode();
 
-        // Colon2ImplicitNode
-        if (leftNode == null) return searchConst(name);
+        // Colon2ImplicitNode - (module|class) Foo.  Weird, but it is a wrinkle of AST inheritance.
+        if (lhs == null) return searchConst(colon2.getName());
 
-        // Colon2ConstNode
-        // 1. Load the module first (lhs of node)
-        // 2. Then load the constant from the module
-        Operand module = build(leftNode);
-        return searchConstInInheritanceHierarchy(module, name);
+        // Colon2ConstNode (Left::name)
+        return searchModuleForConst(build(lhs), colon2.getName());
     }
 
     public Operand buildColon3(Colon3Node node) {
-        return searchConstInInheritanceHierarchy(new ObjectClass(), node.getName());
+        return searchModuleForConst(new ObjectClass(), node.getName());
     }
 
     public Operand buildComplex(ComplexNode node) {
@@ -1512,17 +1491,17 @@ public class IRBuilder {
             return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_BACKREF, Operand.EMPTY_ARRAY));
         case GLOBALVARNODE:
             return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_GLOBAL,
-                    new Operand[] { new StringLiteral(((GlobalVarNode) node).getName()) }));
+                    new Operand[] { new FrozenString(((GlobalVarNode) node).getName()) }));
         case NTHREFNODE: {
             return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_NTH_REF,
                     new Operand[] { new Fixnum(((NthRefNode) node).getMatchNumber()) }));
         }
         case INSTVARNODE:
             return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_INSTANCE_VAR,
-                    new Operand[] { buildSelf(), new StringLiteral(((InstVarNode) node).getName()) }));
+                    new Operand[] { buildSelf(), new FrozenString(((InstVarNode) node).getName()) }));
         case CLASSVARNODE:
             return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_CLASS_VAR,
-                    new Operand[]{classVarDefinitionContainer(), new StringLiteral(((ClassVarNode) node).getName())}));
+                    new Operand[]{classVarDefinitionContainer(), new FrozenString(((ClassVarNode) node).getName())}));
         case SUPERNODE: {
             Label undefLabel = getNewLabel();
             Variable tmpVar  = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_SUPER,
@@ -1533,7 +1512,7 @@ public class IRBuilder {
         }
         case VCALLNODE:
             return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[] { buildSelf(), new StringLiteral(((VCallNode) node).getName()), manager.getFalse()}));
+                    new Operand[] { buildSelf(), new FrozenString(((VCallNode) node).getName()), manager.getFalse()}));
         case YIELDNODE:
             return buildDefinitionCheck(new BlockGivenInstr(createTemporaryVariable(), scope.getYieldClosureVariable()), "yield");
         case ZSUPERNODE:
@@ -1600,7 +1579,7 @@ public class IRBuilder {
              * ----------------------------------------------------------------- */
             Label undefLabel = getNewLabel();
             Variable tmpVar = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[]{buildSelf(), new StringLiteral(((FCallNode) node).getName()), manager.getFalse()}));
+                    new Operand[]{buildSelf(), new FrozenString(((FCallNode) node).getName()), manager.getFalse()}));
             addInstr(BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
             Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), "method");
             return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
@@ -1766,7 +1745,9 @@ public class IRBuilder {
 
     // Called by defineMethod but called on a new builder so things like ensure block info recording
     // do not get confused.
-    protected InterpreterContext defineMethodInner(DefNode defNode, IRScope parent) {
+    protected InterpreterContext defineMethodInner(DefNode defNode, IRScope parent, boolean needsCodeCoverage) {
+        this.needsCodeCoverage = needsCodeCoverage;
+
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLineNumber()));
         }
@@ -1817,7 +1798,7 @@ public class IRBuilder {
     static final ArgumentDescriptor[] NO_ARG_DESCS = new ArgumentDescriptor[0];
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        return new IRMethod(manager, scope, defNode, defNode.getName(), isInstanceMethod, defNode.getLine(), defNode.getScope());
+        return new IRMethod(manager, scope, defNode, defNode.getName(), isInstanceMethod, defNode.getLine(), defNode.getScope(), needsCodeCoverage());
 
         //return newIRBuilder(manager).defineMethodInner(defNode, method, parent);
     }
@@ -2746,7 +2727,7 @@ public class IRBuilder {
         return scope.allocateInterpreterContext(instructions);
     }
     public Operand buildIter(final IterNode iterNode) {
-        IRClosure closure = new IRClosure(manager, scope, iterNode.getLine(), iterNode.getScope(), Signature.from(iterNode));
+        IRClosure closure = new IRClosure(manager, scope, iterNode.getLine(), iterNode.getScope(), Signature.from(iterNode), needsCodeCoverage);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, closure).buildIterInner(iterNode);
@@ -3421,6 +3402,7 @@ public class IRBuilder {
     }
 
     public InterpreterContext buildEvalRoot(RootNode rootNode) {
+        needsCodeCoverage = false;  // Assuming there is no path into build eval root without actually being an eval.
         addInstr(manager.newLineNumber(scope.getLineNumber()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -3444,6 +3426,7 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildRootInner(RootNode rootNode) {
+        needsCodeCoverage = rootNode.needsCoverage();
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
 

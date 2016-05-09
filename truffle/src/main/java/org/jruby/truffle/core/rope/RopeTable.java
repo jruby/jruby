@@ -10,11 +10,16 @@
 
 package org.jruby.truffle.core.rope;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.core.string.StringOperations;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -22,9 +27,66 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class RopeTable {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final WeakHashMap<String, Key> stringsTable = new WeakHashMap<>();
     private final WeakHashMap<Key, WeakReference<Rope>> ropesTable = new WeakHashMap<>();
+    private final Set<Key> keys = new HashSet<>();
 
-    @CompilerDirectives.TruffleBoundary
+    private int byteArrayReusedCount;
+    private int ropesReusedCount;
+    private int ropeBytesSaved;
+
+    public Rope getRopeUTF8(String string) {
+        return getRope(string);
+    }
+
+    @TruffleBoundary
+    public Rope getRope(String string) {
+        lock.readLock().lock();
+
+        try {
+            final Key key = stringsTable.get(string);
+
+            if (key != null) {
+                final WeakReference<Rope> ropeReference = ropesTable.get(key);
+
+                if (ropeReference != null) {
+                    final Rope rope = ropeReference.get();
+
+                    if (rope != null) {
+                        return rope;
+                    }
+                }
+            }
+        } finally {
+            lock.readLock().unlock();
+        }
+
+        lock.writeLock().lock();
+
+        try {
+            final Rope rope = StringOperations.encodeRope(string, UTF8Encoding.INSTANCE);
+
+            Key key = stringsTable.get(string);
+
+            if (key == null) {
+                key = new Key(rope.getBytes(), UTF8Encoding.INSTANCE);
+                stringsTable.put(string, key);
+            }
+
+            WeakReference<Rope> ropeReference = ropesTable.get(key);
+
+            if (ropeReference == null || ropeReference.get() == null) {
+                ropeReference = new WeakReference<>(rope);
+                ropesTable.put(key, ropeReference);
+            }
+
+            return rope;
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @TruffleBoundary
     public Rope getRope(byte[] bytes, Encoding encoding, CodeRange codeRange) {
         final Key key = new Key(bytes, encoding);
 
@@ -37,11 +99,21 @@ public class RopeTable {
                 final Rope rope = ropeReference.get();
 
                 if (rope != null) {
+                    ++ropesReusedCount;
+                    ropeBytesSaved += rope.byteLength();
+
                     return rope;
                 }
             }
         } finally {
             lock.readLock().unlock();
+        }
+
+        // The only time we should have a null encoding is if we want to find a rope with the same logical byte[] as
+        // the one supplied to this method. If we've made it this far, no such rope exists, so return null immediately
+        // to back out of the recursive call.
+        if (encoding == null) {
+            return null;
         }
 
         lock.writeLock().lock();
@@ -57,14 +129,64 @@ public class RopeTable {
                 }
             }
 
-            final Rope rope = RopeOperations.create(bytes, encoding, codeRange);
+            // At this point, we were unable to find a rope with the same bytes and encoding (i.e., a direct match).
+            // However, there may still be a rope with the same byte[] and sharing a direct byte[] can still allow some
+            // reference equality optimizations. So, do another search but with a marker encoding. The only guarantee
+            // we can make about the resulting rope is that it would have the same logical byte[], but that's good enough
+            // for our purposes.
+            final Rope ropeWithSameBytesButDifferentEncoding = getRope(bytes, null ,codeRange);
+
+            final Rope rope;
+            if (ropeWithSameBytesButDifferentEncoding != null) {
+                rope = RopeOperations.create(ropeWithSameBytesButDifferentEncoding.getBytes(), encoding, codeRange);
+
+                ++byteArrayReusedCount;
+                ropeBytesSaved += rope.byteLength();
+            } else {
+                rope = RopeOperations.create(bytes, encoding, codeRange);
+            }
 
             ropesTable.put(key, new WeakReference<>(rope));
+
+            // TODO (nirvdrum 30-Mar-16): Revisit this. The purpose is to keep all keys live so the weak rope table never expunges results. We don't want that -- we want something that naturally ties to lifetime. Unfortunately, the old approach expunged live values because the key is synthetic.
+            keys.add(key);
 
             return rope;
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    public boolean contains(Rope rope) {
+        lock.readLock().lock();
+
+        try {
+            for (Map.Entry<Key, WeakReference<Rope>> entry : ropesTable.entrySet()) {
+                if (entry.getValue().get() == rope) {
+                    return true;
+                }
+            }
+        } finally {
+            lock.readLock().unlock();
+        }
+
+        return false;
+    }
+
+    public int getByteArrayReusedCount() {
+        return byteArrayReusedCount;
+    }
+
+    public int getRopesReusedCount() {
+        return ropesReusedCount;
+    }
+
+    public int getRopeBytesSaved() {
+        return ropeBytesSaved;
+    }
+
+    public int totalRopes() {
+        return ropesTable.size();
     }
 
     public static class Key {
@@ -89,7 +211,7 @@ public class RopeTable {
             if (o instanceof Key) {
                 final Key other = (Key) o;
 
-                return encoding == other.encoding && Arrays.equals(bytes, other.bytes);
+                return ((encoding == other.encoding) || (encoding == null)) && Arrays.equals(bytes, other.bytes);
             }
 
             return false;

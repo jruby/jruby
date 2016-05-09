@@ -41,14 +41,14 @@ import org.joni.Region;
 import org.joni.Syntax;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubiniusOnly;
-import org.jruby.truffle.core.coerce.ToStrNode;
-import org.jruby.truffle.core.coerce.ToStrNodeGen;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.NonStandard;
+import org.jruby.truffle.core.cast.ToStrNode;
+import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
@@ -69,9 +69,10 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Iterator;
 
-@CoreClass(name = "Regexp")
+@CoreClass("Regexp")
 public abstract class RegexpNodes {
 
     @TruffleBoundary
@@ -83,13 +84,13 @@ public abstract class RegexpNodes {
 
         final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
         final Encoding enc = checkEncoding(regexp, sourceRope, true);
-        final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), regexpSourceRope.getUnsafeByteList(), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
+        final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
 
         final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, sourceRope, true));
-        final Matcher matcher = r.matcher(sourceRope.getBytes(), sourceRope.begin(), sourceRope.begin() + sourceRope.realSize());
-        int range = sourceRope.begin() + sourceRope.realSize();
+        final Matcher matcher = r.matcher(sourceRope.getBytes(), 0, sourceRope.byteLength());
+        int range = sourceRope.byteLength();
 
-        return matchCommon(context, makeSubstringNode, regexp, source, operator, setNamedCaptures, matcher, sourceRope.begin() + startPos, range);
+        return matchCommon(context, makeSubstringNode, regexp, source, operator, setNamedCaptures, matcher, startPos, range);
     }
 
     @TruffleBoundary
@@ -274,7 +275,7 @@ public abstract class RegexpNodes {
         }
              */
 
-            final ByteList byteList = bytes.getUnsafeByteList();
+            final ByteList byteList = RopeOperations.getByteListReadOnly(bytes);
             Encoding enc = bytes.getEncoding();
             Encoding[] fixedEnc = new Encoding[]{null};
             ByteList unescaped = RegexpSupport.preprocess(context.getJRubyRuntime(), byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
@@ -295,13 +296,13 @@ public abstract class RegexpNodes {
             //if (regexpOptions.isEncodingNone()) setEncodingNone();
 
             Regex ret = new Regex(unescaped.getUnsafeBytes(), unescaped.getBegin(), unescaped.getBegin() + unescaped.getRealSize(), options.toJoniOptions(), enc, Syntax.RUBY);
-            ret.setUserObject(RopeOperations.withEncoding(bytes, enc));
+            ret.setUserObject(RopeOperations.withEncodingVerySlow(bytes, enc));
 
             return ret;
         } catch (ValueException e) {
-            throw new RaiseException(context.getCoreLibrary().runtimeError("error compiling regex", currentNode));
+            throw new RaiseException(context.getCoreExceptions().runtimeError("error compiling regex", currentNode));
         } catch (SyntaxException e) {
-            throw new RaiseException(context.getCoreLibrary().regexpError(e.getMessage(), currentNode));
+            throw new RaiseException(context.getCoreExceptions().regexpError(e.getMessage(), currentNode));
         }
     }
 
@@ -410,7 +411,7 @@ public abstract class RegexpNodes {
 
         public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -448,10 +449,6 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
-        public HashNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int hash(DynamicObject regexp) {
             int options = Layouts.REGEXP.getRegex(regexp).getOptions() & ~32 /* option n, NO_ENCODING in common/regexp.rb */;
@@ -460,7 +457,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "match_start", required = 2)
     public abstract static class MatchStartNode extends CoreMethodArrayArgumentsNode {
 
@@ -468,7 +465,7 @@ public abstract class RegexpNodes {
 
         public MatchStartNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -485,10 +482,6 @@ public abstract class RegexpNodes {
     @CoreMethod(names = { "quote", "escape" }, needsSelf = false, onSingleton = true, required = 1)
     public abstract static class QuoteNode extends CoreMethodArrayArgumentsNode {
 
-        public QuoteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization(guards = "isRubyString(raw)")
         public DynamicObject quoteString(DynamicObject raw) {
@@ -504,7 +497,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "search_from", required = 2)
     public abstract static class SearchFromNode extends CoreMethodArrayArgumentsNode {
 
@@ -512,7 +505,7 @@ public abstract class RegexpNodes {
 
         public SearchFromNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(context, sourceSection, null, null, null);
+            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -524,10 +517,6 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "source")
     public abstract static class SourceNode extends CoreMethodArrayArgumentsNode {
 
-        public SourceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject source(DynamicObject regexp) {
             return createString(Layouts.REGEXP.getSource(regexp));
@@ -538,28 +527,20 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject regexp) {
-            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getJRubyRuntime(), Layouts.REGEXP.getSource(regexp).getUnsafeByteList(), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
+            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getJRubyRuntime(), RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp)), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
         }
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @NodeChild(value = "self")
     public abstract static class RubiniusNamesNode extends RubyNode {
 
         @Child private CallDispatchHeadNode newLookupTableNode;
         @Child private CallDispatchHeadNode lookupTableWriteNode;
-
-        public RubiniusNamesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "!anyNames(regexp)")
         public DynamicObject rubiniusNamesNoCaptures(DynamicObject regexp) {
@@ -586,7 +567,7 @@ public abstract class RegexpNodes {
 
             for (final Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
-                final DynamicObject name = getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
+                final DynamicObject name = getContext().getSymbolTable().getSymbol(getContext().getRopeTable().getRope(Arrays.copyOfRange(e.name, e.nameP, e.nameEnd), USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
 
                 final int[] backrefs = e.getBackRefs();
                 final DynamicObject backrefsRubyArray = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), backrefs, backrefs.length);

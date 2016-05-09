@@ -20,11 +20,11 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.module.ModuleFields;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
@@ -35,7 +35,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
-@CoreClass(name = "Class")
+@CoreClass("Class")
 public abstract class ClassNodes {
 
     private final static com.oracle.truffle.api.object.Layout LAYOUT = com.oracle.truffle.api.object.Layout.createLayout();
@@ -266,10 +266,6 @@ public abstract class ClassNodes {
         @Child private ModuleNodes.InitializeNode moduleInitializeNode;
         @Child private CallDispatchHeadNode inheritedNode;
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         void triggerInheritedHook(VirtualFrame frame, DynamicObject subClass, DynamicObject superClass) {
             if (inheritedNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -281,7 +277,7 @@ public abstract class ClassNodes {
         void moduleInitialize(VirtualFrame frame, DynamicObject rubyClass, DynamicObject block) {
             if (moduleInitializeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{ null, null }));
+                moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(new RubyNode[]{ null, null }));
             }
             moduleInitializeNode.executeInitialize(frame, rubyClass, block);
         }
@@ -331,10 +327,6 @@ public abstract class ClassNodes {
     @CoreMethod(names = "inherited", required = 1, visibility = Visibility.PRIVATE)
     public abstract static class InheritedNode extends CoreMethodArrayArgumentsNode {
 
-        public InheritedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject inherited(Object subclass) {
             return nil();
@@ -344,10 +336,6 @@ public abstract class ClassNodes {
 
     @CoreMethod(names = "superclass")
     public abstract static class SuperClassNode extends CoreMethodArrayArgumentsNode {
-
-        public SuperClassNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = { "rubyClass == cachedRubyCLass", "cachedSuperclass != null" }, limit = "getCacheLimit()")
         public Object getSuperClass(DynamicObject rubyClass,
@@ -364,7 +352,7 @@ public abstract class ClassNodes {
                 return superclass;
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized class", this));
+                throw new RaiseException(getContext().getCoreExceptions().typeError("uninitialized class", this));
             }
         }
 
@@ -379,10 +367,6 @@ public abstract class ClassNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateConstructorNode extends CoreMethodArrayArgumentsNode {
-
-        public AllocateConstructorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {

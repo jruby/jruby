@@ -9,14 +9,16 @@
  */
 package org.jruby.truffle.core.array;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeChildren({
@@ -30,34 +32,34 @@ public abstract class ArrayGeneralizeNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeGeneralize(DynamicObject array, int requiredCapacity);
+    public static ArrayGeneralizeNode create(RubyContext context) {
+        return ArrayGeneralizeNodeGen.create(context, null, null, null);
+    }
+
+    public abstract Object[] executeGeneralize(DynamicObject array, int requiredCapacity);
 
     @Specialization(guards = "isNullArray(array)")
-    public DynamicObject generalizeNull(DynamicObject array, int requiredCapacity) {
-        Object store = new Object[requiredCapacity];
+    public Object[] generalizeNull(DynamicObject array, int requiredCapacity) {
+        Object[] store = new Object[requiredCapacity];
         Layouts.ARRAY.setStore(array, store);
-        return array;
+        return store;
     }
 
-    @Specialization(guards = "isIntArray(array)")
-    public DynamicObject generalizeInt(DynamicObject array, int requiredCapacity) {
-        final int[] store = (int[]) Layouts.ARRAY.getStore(array);
-        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
-        return array;
-    }
-
-    @Specialization(guards = "isLongArray(array)")
-    public DynamicObject generalizeLong(DynamicObject array, int requiredCapacity) {
-        final long[] store = (long[]) Layouts.ARRAY.getStore(array);
-        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
-        return array;
-    }
-
-    @Specialization(guards = "isDoubleArray(array)")
-    public DynamicObject generalizeDouble(DynamicObject array, int requiredCapacity) {
-        final double[] store = (double[]) Layouts.ARRAY.getStore(array);
-        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
-        return array;
+    @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+    public Object[] generalize(DynamicObject array, int requiredCapacity,
+            @Cached("of(array)") ArrayStrategy strategy,
+            @Cached("createCountingProfile()") ConditionProfile extendProfile) {
+        assert !ArrayGuards.isObjectArray(array);
+        final ArrayMirror mirror = strategy.newMirror(array);
+        final int capacity;
+        if (extendProfile.profile(mirror.getLength() < requiredCapacity)) {
+            capacity = ArrayUtils.capacity(getContext(), mirror.getLength(), requiredCapacity);
+        } else {
+            capacity = mirror.getLength();
+        }
+        final Object[] store = mirror.getBoxedCopy(capacity);
+        Layouts.ARRAY.setStore(array, store);
+        return store;
     }
 
 }

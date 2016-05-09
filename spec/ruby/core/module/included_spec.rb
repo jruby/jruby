@@ -36,4 +36,9 @@ describe "Module#included" do
   it "is private in its default implementation" do
     Module.should have_private_instance_method(:included)
   end
+
+  it "works with super using a singleton class" do
+    ModuleSpecs::SingletonOnModuleCase::Bar.include ModuleSpecs::SingletonOnModuleCase::Foo
+    ModuleSpecs::SingletonOnModuleCase::Bar.included_called?.should == true
+  end
 end

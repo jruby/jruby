@@ -20,15 +20,17 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.BinaryCoreMethodNode;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.BinaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.encoding.EncodingNodes;
-import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.core.proc.ProcOperations;
+import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
@@ -40,29 +42,11 @@ import org.jruby.truffle.language.parser.jruby.Translator;
 
 import java.util.Arrays;
 
-@CoreClass(name = "Symbol")
+@CoreClass("Symbol")
 public abstract class SymbolNodes {
-
-    public static SymbolCodeRangeableWrapper getCodeRangeable(DynamicObject symbol) {
-        SymbolCodeRangeableWrapper wrapper = Layouts.SYMBOL.getCodeRangeableWrapper(symbol);
-
-        if (wrapper != null) {
-            return wrapper;
-        }
-
-        wrapper = new SymbolCodeRangeableWrapper(symbol);
-
-        Layouts.SYMBOL.setCodeRangeableWrapper(symbol, wrapper);
-
-        return wrapper;
-    }
 
     @CoreMethod(names = "all_symbols", onSingleton = true)
     public abstract static class AllSymbolsNode extends CoreMethodArrayArgumentsNode {
-
-        public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -75,10 +59,6 @@ public abstract class SymbolNodes {
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)
     public abstract static class EqualNode extends BinaryCoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubySymbol(b)")
         public boolean equal(DynamicObject a, DynamicObject b) {
@@ -95,10 +75,6 @@ public abstract class SymbolNodes {
     @CoreMethod(names = "encoding")
     public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
 
-        public EncodingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject encoding(DynamicObject symbol) {
             return EncodingNodes.getEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
@@ -109,10 +85,6 @@ public abstract class SymbolNodes {
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
-        public HashNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int hash(DynamicObject symbol) {
             return Layouts.SYMBOL.getHashCode(symbol);
@@ -122,10 +94,6 @@ public abstract class SymbolNodes {
 
     @CoreMethod(names = "to_proc")
     public abstract static class ToProcNode extends CoreMethodArrayArgumentsNode {
-
-        public ToProcNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "cachedSymbol == symbol", limit = "getCacheLimit()")
         public DynamicObject toProcCached(VirtualFrame frame, DynamicObject symbol,
@@ -153,9 +121,9 @@ public abstract class SymbolNodes {
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = RubyArguments.getMethod(frame);
 
-            return ProcNodes.createRubyProc(
+            return ProcOperations.createRubyProc(
                     coreLibrary().getProcFactory(),
-                    ProcNodes.Type.PROC,
+                    ProcType.PROC,
                     sharedMethodInfo,
                     callTarget, callTarget, null,
                     method, coreLibrary().getNilObject(),
@@ -171,10 +139,6 @@ public abstract class SymbolNodes {
     @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject toS(DynamicObject symbol) {
             return createString(Layouts.SYMBOL.getRope(symbol));
@@ -185,14 +149,22 @@ public abstract class SymbolNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
+        }
+
+    }
+
+    @Primitive(name = "symbol_is_constant")
+    public static abstract class SymbolIsConstantPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubySymbol(symbol)")
+        public boolean symbolIsConstant(DynamicObject symbol) {
+            final String string = symbol.toString();
+            return string.length() > 0 && Character.isUpperCase(string.charAt(0));
         }
 
     }

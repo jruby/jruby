@@ -14,24 +14,19 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.Activation;
-import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 
-@CoreClass(name = "Thread::Backtrace::Location")
+@CoreClass("Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
 
     @CoreMethod(names = { "absolute_path", "path" })
     // TODO (eregon, 8 July 2015): these two methods are slightly different (path can be relative if it is the main script)
     public abstract static class AbsolutePathNode extends UnaryCoreMethodNode {
-
-        public AbsolutePathNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -39,7 +34,7 @@ public class ThreadBacktraceLocationNodes {
             final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
 
             if (activation.getCallNode() == null) {
-                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED_LIMIT, UTF8Encoding.INSTANCE));
+                return coreStrings().BACKTRACE_OMITTED_LIMIT.createInstance();
             }
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -50,23 +45,19 @@ public class ThreadBacktraceLocationNodes {
 
             // TODO CS 30-Apr-15: not absolute - not sure how to solve that
 
-            String path = sourceSection.getSource().getPath();
+            final String path = sourceSection.getSource().getPath();
 
             if (path == null) {
-                path = "(unknown)";
+                return coreStrings().UNKNOWN.createInstance();
+            } else {
+                return createString(getContext().getRopeTable().getRope(path));
             }
-
-            return createString(StringOperations.encodeRope(path, UTF8Encoding.INSTANCE));
         }
 
     }
 
     @CoreMethod(names = "lineno")
     public abstract static class LinenoNode extends UnaryCoreMethodNode {
-
-        public LinenoNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -83,17 +74,14 @@ public class ThreadBacktraceLocationNodes {
     @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends UnaryCoreMethodNode {
 
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject threadBacktraceLocation) {
-            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
+            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE
+                    .getActivation(threadBacktraceLocation);
 
             if (activation.getCallNode() == null) {
-                return createString(StringOperations.encodeRope(BacktraceFormatter.OMITTED_LIMIT, UTF8Encoding.INSTANCE));
+                return coreStrings().BACKTRACE_OMITTED_LIMIT.createInstance();
             }
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -102,10 +90,13 @@ public class ThreadBacktraceLocationNodes {
                 return createString(StringOperations.encodeRope(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE));
             }
 
-            return createString(StringOperations.encodeRope(String.format("%s:%d:in `%s'",
+            return createString(RopeOperations.format(getContext(),
                     sourceSection.getSource().getName(),
+                    ":",
                     sourceSection.getStartLine(),
-                    sourceSection.getIdentifier()), UTF8Encoding.INSTANCE));
+                    ":in `",
+                    sourceSection.getIdentifier(),
+                    "'"));
         }
 
     }

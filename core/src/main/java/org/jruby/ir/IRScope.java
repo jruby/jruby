@@ -58,7 +58,7 @@ import static org.jruby.ir.IRFlags.*;
  * and so on ...
  */
 public abstract class IRScope implements ParseResult {
-    public static final Logger LOG = LoggerFactory.getLogger("IRScope");
+    public static final Logger LOG = LoggerFactory.getLogger(IRScope.class);
 
     private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
 
@@ -190,7 +190,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void setupLexicalContainment() {
-        if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING) {
+        if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING || RubyInstanceConfig.RECORD_LEXICAL_HIERARCHY) {
             lexicalChildren = new ArrayList<>(1);
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }

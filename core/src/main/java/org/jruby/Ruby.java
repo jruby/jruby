@@ -40,6 +40,7 @@
 package org.jruby;
 
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.anno.TypePopulator;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.CallNode;
@@ -173,6 +174,7 @@ import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.ClosedChannelException;
+import java.nio.charset.Charset;
 import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -222,7 +224,10 @@ public final class Ruby implements Constantizable {
     /**
      * The logger used to log relevant bits.
      */
-    private static final Logger LOG = LoggerFactory.getLogger("Ruby");
+    private static final Logger LOG = LoggerFactory.getLogger(Ruby.class);
+    static { // enable DEBUG output
+        if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.setDebugEnable(true);
+    }
 
     /**
      * Create and initialize a new JRuby runtime. The properties of the
@@ -490,7 +495,7 @@ public final class Ruby implements Constantizable {
      * @return The last value of the script
      */
     public IRubyObject executeScript(String script, String filename) {
-        byte[] bytes = script.getBytes();
+        byte[] bytes = encodeToBytes(script);
 
         RootNode root = (RootNode) parseInline(new ByteArrayInputStream(bytes), filename, null);
         ThreadContext context = getCurrentContext();
@@ -653,13 +658,15 @@ public final class Ruby implements Constantizable {
             try {
                 script = tryCompile(scriptNode);
                 if (Options.JIT_LOGGING.load()) {
-                    LOG.info("Successfully compiled: " + scriptNode.getFile());
+                    LOG.info("Successfully compiled: {}", scriptNode.getFile());
                 }
             } catch (Throwable e) {
                 if (Options.JIT_LOGGING.load()) {
-                    LOG.error("Failed to compile: " + scriptNode.getFile());
                     if (Options.JIT_LOGGING_VERBOSE.load()) {
-                        LOG.error(e);
+                        LOG.error("Failed to compile: " + scriptNode.getFile(), e);
+                    }
+                    else {
+                        LOG.error("Failed to compile: " + scriptNode.getFile());
                     }
                 }
             }
@@ -691,7 +698,7 @@ public final class Ruby implements Constantizable {
     private RootNode addGetsLoop(RootNode oldRoot, boolean printing, boolean processLineEndings, boolean split) {
         ISourcePosition pos = oldRoot.getPosition();
         BlockNode newBody = new BlockNode(pos);
-        newBody.add(new GlobalAsgnNode(pos, "$/", new StrNode(pos, new ByteList(getInstanceConfig().getRecordSeparator().getBytes()))));
+        newBody.add(new GlobalAsgnNode(pos, "$/", new StrNode(pos, ((RubyString) globalVariables.get("$/")).getByteList())));
 
         if (processLineEndings) newBody.add(new GlobalAsgnNode(pos, "$\\", new GlobalVarNode(pos, "$/")));
 
@@ -803,9 +810,12 @@ public final class Ruby implements Constantizable {
             return Compiler.getInstance().execute(this, root, classLoader);
         } catch (NotCompilableException e) {
             if (Options.JIT_LOGGING.load()) {
-                LOG.error("failed to compile target script " + root.getFile() + ": " + e.getLocalizedMessage());
-
-                if (Options.JIT_LOGGING_VERBOSE.load()) LOG.error(e);
+                if (Options.JIT_LOGGING_VERBOSE.load()) {
+                    LOG.error("failed to compile target script " + root.getFile() + ": ", e);
+                }
+                else {
+                    LOG.error("failed to compile target script " + root.getFile() + ": " + e.getLocalizedMessage());
+                }
             }
             return null;
         }
@@ -901,6 +911,14 @@ public final class Ruby implements Constantizable {
 
     private JRubyTruffleInterface loadTruffle() {
         Main.printTruffleTimeMetric("before-load-context");
+
+        String javaVersion = System.getProperty("java.version");
+        String[] parts = javaVersion.split("\\D+");
+        int firstPart = Integer.valueOf(parts[0]);
+        if (!(firstPart >= 9 || Integer.valueOf(parts[1]) >= 8)) {
+            System.err.println("JRuby+Truffle needs Java 8 to run (found " + javaVersion + ").");
+            System.exit(1);
+        }
 
         final Class<?> clazz;
 
@@ -2785,7 +2803,16 @@ public final class Ruby implements Constantizable {
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
         addEvalParseToStats();
-        return parser.parse(file, content.getBytes(), scope, new ParserConfiguration(this, lineNumber, false, false, config));
+
+        return parser.parse(file, encodeToBytes(content), scope, new ParserConfiguration(this, lineNumber, false, false, config));
+    }
+
+    private byte[] encodeToBytes(String string) {
+        Charset charset = getDefaultCharset();
+
+        byte[] bytes = charset == null ? string.getBytes() : string.getBytes(charset);
+
+        return bytes;
     }
 
     @Deprecated
@@ -2845,6 +2872,20 @@ public final class Ruby implements Constantizable {
 
     public void setDefaultExternalEncoding(Encoding defaultExternalEncoding) {
         this.defaultExternalEncoding = defaultExternalEncoding;
+    }
+
+    /**
+     * Get the default java.nio.charset.Charset for the current default internal encoding.
+     */
+    public Charset getDefaultCharset() {
+        Encoding enc = getDefaultInternalEncoding();
+        if (enc == null) {
+            enc = UTF8Encoding.INSTANCE;
+        }
+
+        Charset charset = enc.getCharset();
+
+        return charset;
     }
 
     public EncodingService getEncodingService() {
@@ -2991,22 +3032,22 @@ public final class Ruby implements Constantizable {
             Class contents;
             try {
                 contents = getJRubyClassLoader().loadClass(className);
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("found jitted code for " + filename + " at class: " + className);
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("found jitted code for " + filename + " at class: " + className);
                 }
                 script = (Script) contents.newInstance();
                 readStream = new ByteArrayInputStream(buffer);
             } catch (ClassNotFoundException cnfe) {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("no jitted code in classloader for file " + filename + " at class: " + className);
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("no jitted code in classloader for file " + filename + " at class: " + className);
                 }
-            } catch (InstantiationException ie) {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
+            } catch (InstantiationException ex) {
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("jitted code could not be instantiated for file " + filename + " at class: " + className + ' ' + ex);
                 }
-            } catch (IllegalAccessException iae) {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
+            } catch (IllegalAccessException ex) {
+                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
+                    LOG.debug("jitted code could not be instantiated for file " + filename + " at class: " + className + ' ' + ex);
                 }
             }
         } catch (IOException ioe) {
@@ -3997,9 +4038,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newSystemStackError(String message, StackOverflowError soe) {
-        if (getDebug().isTrue()) {
-            LOG.debug(soe.getMessage(), soe);
-        }
+        if ( isDebug() ) LOG.debug(soe);
         return newRaiseException(getSystemStackError(), message);
     }
 
@@ -5272,4 +5311,11 @@ public final class Ruby implements Constantizable {
      * The nullToNil filter for this runtime.
      */
     private MethodHandle nullToNil;
+
+    public final ClassValue<TypePopulator> POPULATORS = new ClassValue<TypePopulator>() {
+        @Override
+        protected TypePopulator computeValue(Class<?> type) {
+            return RubyModule.loadPopulatorFor(type);
+        }
+    };
 }

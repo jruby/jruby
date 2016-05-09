@@ -9,16 +9,19 @@
  */
 package org.jruby.truffle.core.array;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
+
+import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 @ImportStatic(ArrayGuards.class)
@@ -37,57 +40,22 @@ public abstract class ArraySliceNode extends RubyNode {
 
     @Specialization(guards = "isNullArray(array)")
     public DynamicObject sliceNull(DynamicObject array) {
-        CompilerDirectives.transferToInterpreter();
-
-        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+        return createArray(getContext(), null, 0);
     }
 
-    @Specialization(guards = "isIntArray(array)")
-    public DynamicObject sliceIntegerFixnum(DynamicObject array) {
-        CompilerDirectives.transferToInterpreter();
+    @Specialization(guards = { "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
+    public DynamicObject readInBounds(DynamicObject array,
+            @Cached("of(array)") ArrayStrategy strategy,
+            @Cached("createBinaryProfile()") ConditionProfile emptyArray) {
         final int to = Layouts.ARRAY.getSize(array) + this.to;
 
-        if (from >= to) {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+        if (emptyArray.profile(from >= to)) {
+            return createArray(getContext(), null, 0);
         } else {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((int[]) Layouts.ARRAY.getStore(array), from, to), to - from);
+            final Object store = strategy.newMirror(array).extractRange(from, to).getArray();
+            return createArray(getContext(), store, to - from);
         }
-    }
 
-    @Specialization(guards = "isLongArray(array)")
-    public DynamicObject sliceLongFixnum(DynamicObject array) {
-        CompilerDirectives.transferToInterpreter();
-        final int to = Layouts.ARRAY.getSize(array) + this.to;
-
-        if (from >= to) {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
-        } else {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((long[]) Layouts.ARRAY.getStore(array), from, to), to - from);
-        }
-    }
-
-    @Specialization(guards = "isDoubleArray(array)")
-    public DynamicObject sliceFloat(DynamicObject array) {
-        CompilerDirectives.transferToInterpreter();
-        final int to = Layouts.ARRAY.getSize(array) + this.to;
-
-        if (from >= to) {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
-        } else {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((double[]) Layouts.ARRAY.getStore(array), from, to), to - from);
-        }
-    }
-
-    @Specialization(guards = "isObjectArray(array)")
-    public DynamicObject sliceObject(DynamicObject array) {
-        CompilerDirectives.transferToInterpreter();
-        final int to = Layouts.ARRAY.getSize(array) + this.to;
-
-        if (from >= to) {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
-        } else {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ArrayUtils.extractRange((Object[]) Layouts.ARRAY.getStore(array), from, to), to - from);
-        }
     }
 
 }

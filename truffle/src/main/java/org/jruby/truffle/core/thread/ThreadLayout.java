@@ -12,13 +12,13 @@ package org.jruby.truffle.core.thread;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
+import com.oracle.truffle.api.object.dsl.Layout;
+import com.oracle.truffle.api.object.dsl.Nullable;
+import com.oracle.truffle.api.object.dsl.Volatile;
 import org.jruby.RubyThread;
 import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.core.fiber.FiberManager;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
-import org.jruby.truffle.om.dsl.api.Volatile;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -28,32 +28,30 @@ import java.util.concurrent.locks.Lock;
 @Layout
 public interface ThreadLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createThreadShape(DynamicObject logicalClass,
-                                           DynamicObject metaClass);
+    DynamicObjectFactory createThreadShape(
+            DynamicObject logicalClass,
+            DynamicObject metaClass);
 
-    DynamicObject createThread(DynamicObjectFactory factory,
-                               DynamicObject threadLocals,
-                               @Volatile InterruptMode interruptMode, // needs to be volatile for fibers implemented by threads
-                               @Volatile RubyThread.Status status,
-                               List<Lock> ownedLocks,
-                               @Nullable FiberManager fiberManager,
-                               @Nullable String name,
-                               CountDownLatch finishedLatch,
-                               boolean abortOnException,
-                               @Nullable @Volatile Thread thread,
-                               @Nullable @Volatile DynamicObject exception,
-                               @Nullable @Volatile Object value,
-                               AtomicBoolean wakeUp,
-                               @Volatile int priority);
+    DynamicObject createThread(
+            DynamicObjectFactory factory,
+            DynamicObject threadLocals,
+            @Volatile InterruptMode interruptMode, // needs to be volatile for fibers implemented by threads
+            @Volatile RubyThread.Status status,
+            List<Lock> ownedLocks,
+            @Nullable FiberManager fiberManager,
+            CountDownLatch finishedLatch,
+            boolean abortOnException,
+            @Nullable @Volatile Thread thread,
+            @Nullable @Volatile DynamicObject exception,
+            @Nullable @Volatile Object value,
+            AtomicBoolean wakeUp,
+            @Volatile int priority);
 
     boolean isThread(ObjectType objectType);
     boolean isThread(DynamicObject object);
 
     FiberManager getFiberManager(DynamicObject object);
     void setFiberManagerUnsafe(DynamicObject object, FiberManager value);
-
-    String getName(DynamicObject object);
-    void setNameUnsafe(DynamicObject object, String value);
 
     CountDownLatch getFinishedLatch(DynamicObject object);
 

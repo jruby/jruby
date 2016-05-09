@@ -17,8 +17,8 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -46,13 +46,6 @@ public abstract class ObjectGraph {
 
                     if (Thread.currentThread() == stoppingThread) {
                         visitContextRoots(context, stack);
-                    }
-
-                    final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-
-                    if (currentFrame != null) {
-                        stack.addAll(getObjectsInFrame(currentFrame.getFrame(
-                                FrameInstance.FrameAccess.READ_ONLY, true)));
                     }
 
                     Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
@@ -101,7 +94,7 @@ public abstract class ObjectGraph {
 
     public static void visitContextRoots(RubyContext context, Collection<DynamicObject> stack) {
         // We do not want to expose the global object
-        stack.addAll(ObjectGraph.getAdjacentObjects(context.getCoreLibrary().getGlobalVariablesObject()));
+        stack.addAll(context.getCoreLibrary().getGlobalVariables().dynamicObjectValues());
         stack.addAll(context.getAtExitManager().getHandlers());
         stack.addAll(context.getObjectSpaceManager().getFinalizerHandlers());
     }

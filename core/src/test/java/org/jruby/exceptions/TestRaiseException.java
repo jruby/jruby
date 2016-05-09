@@ -14,12 +14,36 @@ public class TestRaiseException extends TestRubyBase {
 
     public void testBacktrace() {
         IRubyObject ex = runtime.evalScriptlet("ex = nil; " +
-            "begin; raise 'with-bracktrace'; rescue => e; ex = e end; ex"
+                        "begin; raise 'with-backtrace'; rescue => e; ex = e end; ex"
         );
         assertEquals("org.jruby.RubyException", ex.getClass().getName());
-        IRubyObject backtrace = ((RubyException) ex).getBacktrace();
-        assertNotNil( backtrace );
-        assertFalse( ((RubyArray) backtrace).isEmpty() );
+        assertNotNil(((RubyException) ex).getBacktrace());
+        RubyArray backtrace = (RubyArray) (((RubyException) ex).getBacktrace());
+        assertFalse(backtrace.isEmpty());
+        assert backtrace.get(0).toString().startsWith("<script>:1");
+
+        assertEquals("with-backtrace", ((RubyException) ex).getMessage().asJavaString());
+    }
+
+    public void testStackTrace() {
+        try {
+            runtime.evalScriptlet(
+                    "def first; raise StandardError, '' end\n" +
+                    "def second(); first() end\n" +
+                    "second()"
+            );
+            fail();
+        }
+        catch(RaiseException ex) {
+            assert ex.toString().startsWith("org.jruby.exceptions.RaiseException: (StandardError)");
+
+            StackTraceElement[] stack = ex.getStackTrace();
+            assertEquals(3, stack.length);
+            assertEquals("first", stack[0].getMethodName());
+            assertEquals(1, stack[0].getLineNumber());
+            assertEquals("second", stack[1].getMethodName());
+            assertEquals(2, stack[1].getLineNumber());
+        }
     }
 
     public void testJavaGeneratedBacktrace() {

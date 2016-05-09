@@ -12,10 +12,9 @@ package org.jruby.truffle.language.arguments;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.language.locals.WriteFrameSlotNode;
@@ -25,11 +24,11 @@ public class RunBlockKWArgsHelperNode extends RubyNode {
 
     @Child private ReadFrameSlotNode readArrayNode;
     @Child private WriteFrameSlotNode writeArrayNode;
+    @Child private SnippetNode snippetNode;
 
     private final Object kwrestName;
 
-    public RunBlockKWArgsHelperNode(RubyContext context, SourceSection sourceSection, FrameSlot arrayFrameSlot, Object kwrestName) {
-        super(context, sourceSection);
+    public RunBlockKWArgsHelperNode(FrameSlot arrayFrameSlot, Object kwrestName) {
         readArrayNode = ReadFrameSlotNodeGen.create(arrayFrameSlot);
         writeArrayNode = WriteFrameSlotNodeGen.create(arrayFrameSlot);
         this.kwrestName = kwrestName;
@@ -41,7 +40,16 @@ public class RunBlockKWArgsHelperNode extends RubyNode {
 
         final Object array = readArrayNode.executeRead(frame);
 
-        final Object remainingArray = ruby("Truffle::Primitive.load_arguments_from_array_kw_helper(array, kwrest_name, binding)", "array", array, "kwrest_name", kwrestName, "binding", Layouts.BINDING.createBinding(coreLibrary().getBindingFactory(), frame.materialize()));
+        if (snippetNode == null) {
+            snippetNode = insert(new SnippetNode());
+        }
+
+        final Object remainingArray = snippetNode.execute(
+                frame,
+                "Truffle.load_arguments_from_array_kw_helper(array, kwrest_name, binding)",
+                "array", array,
+                "kwrest_name", kwrestName,
+                "binding", Layouts.BINDING.createBinding(coreLibrary().getBindingFactory(), frame.materialize()));
 
         writeArrayNode.executeWrite(frame, remainingArray);
 

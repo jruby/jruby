@@ -62,8 +62,11 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  */
 @JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
+
     protected RubyException(Ruby runtime, RubyClass rubyClass) {
-        this(runtime, rubyClass, null);
+        super(runtime, rubyClass);
+        // this.message = null; its an internal constructor for sub-classes
+        this.cause = RubyBasicObject.UNDEF;
     }
 
     public RubyException(Ruby runtime, RubyClass rubyClass, String message) {
@@ -133,10 +136,9 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        if (message.isNil()) {
-            return context.runtime.newString(getMetaClass().getRealClass().getName());
-        }
-        return message.asString();
+        final IRubyObject msg = getMessage();
+        if ( ! msg.isNil() ) return msg.asString();
+        return context.runtime.newString(getMetaClass().getRealClass().getName());
     }
 
     @Deprecated
@@ -152,26 +154,28 @@ public class RubyException extends RubyObject {
      *@return A RubyString containing the debug information.
      */
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect(ThreadContext context) {
+    public RubyString inspect(ThreadContext context) {
         // rb_class_name skips intermediate classes (JRUBY-6786)
-        RubyModule rubyClass = getMetaClass().getRealClass();
+        String rubyClass = getMetaClass().getRealClass().getName();
         RubyString exception = RubyString.objAsString(context, this);
 
-        if (exception.isEmpty()) return getRuntime().newString(rubyClass.getName());
-        StringBuilder sb = new StringBuilder("#<");
-        sb.append(rubyClass.getName()).append(": ").append(exception.getByteList()).append('>');
-        return getRuntime().newString(sb.toString());
+        if (exception.isEmpty()) return context.runtime.newString(rubyClass);
+
+        return RubyString.newString(context.runtime,
+                new StringBuilder(2 + rubyClass.length() + 2 + exception.size() + 1).
+                    append("#<").append(rubyClass).append(": ").append(exception.getByteList()).append('>')
+        );
     }
 
-    @JRubyMethod(name = "==")
     @Override
-    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+    @JRubyMethod(name = "==")
+    public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return context.runtime.getTrue();
 
         boolean equal = context.runtime.getException().isInstance(other) &&
+                getMetaClass().getRealClass() == other.getMetaClass().getRealClass() &&
                 callMethod(context, "message").equals(other.callMethod(context, "message")) &&
-                callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace")) &&
-                getMetaClass().getRealClass() == other.getMetaClass().getRealClass();
+                callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace"));
         return context.runtime.newBoolean(equal);
     }
 
@@ -294,29 +298,28 @@ public class RubyException extends RubyObject {
      */
     public void printBacktrace(PrintStream errorStream, int skip) {
         IRubyObject trace = callMethod(getRuntime().getCurrentContext(), "backtrace");
-        if (!trace.isNil() && trace instanceof RubyArray) {
-            IRubyObject[] elements = trace.convertToArray().toJavaArray();
-
+        if ( trace.isNil() ) return;
+        if ( trace instanceof RubyArray ) {
+            IRubyObject[] elements = ((RubyArray) trace).toJavaArrayMaybeUnsafe();
             for (int i = skip; i < elements.length; i++) {
                 IRubyObject stackTraceLine = elements[i];
                 if (stackTraceLine instanceof RubyString) {
-                    printStackTraceLine(errorStream, stackTraceLine);
+                    errorStream.println("\tfrom " + stackTraceLine);
+                }
+                else {
+                    errorStream.println("\t" + stackTraceLine);
                 }
             }
         }
     }
 
-    private void printStackTraceLine(PrintStream errorStream, IRubyObject stackTraceLine) {
-            errorStream.print("\tfrom " + stackTraceLine + '\n');
-    }
-
     private boolean isArrayOfStrings(IRubyObject backtrace) {
         if (!(backtrace instanceof RubyArray)) return false;
 
-        IRubyObject[] elements = ((RubyArray) backtrace).toJavaArray();
+        final RubyArray rTrace = ((RubyArray) backtrace);
 
-        for (int i = 0 ; i < elements.length ; i++) {
-            if (!(elements[i] instanceof RubyString)) return false;
+        for (int i = 0 ; i < rTrace.getLength() ; i++) {
+            if (!(rTrace.eltInternal(i) instanceof RubyString)) return false;
         }
 
         return true;
@@ -342,8 +345,7 @@ public class RubyException extends RubyObject {
 
             marshalStream.registerLinkTarget(exc);
             List<Variable<Object>> attrs = exc.getVariableList();
-            attrs.add(new VariableEntry<Object>(
-                    "mesg", exc.message == null ? runtime.getNil() : exc.message));
+            attrs.add(new VariableEntry<Object>("mesg", exc.getMessage()));
             attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
         }
@@ -387,12 +389,24 @@ public class RubyException extends RubyObject {
         return exceptionClass.callMethod(context, "new", message.convertToString());
     }
 
+    /**
+     * @return error message if provided or nil
+     */
     public IRubyObject getMessage() {
-        return message;
+        return message == null ? getRuntime().getNil() : message;
+    }
+
+    public String getMessageAsJavaString() {
+        final IRubyObject msg = getMessage();
+        return msg.isNil() ? null : msg.toString();
     }
 
     private BacktraceData backtraceData;
     private IRubyObject backtrace;
+    /**
+     * @deprecated do not access the field directly
+     * @see #getMessage()
+     */
     public IRubyObject message;
     IRubyObject cause;
 

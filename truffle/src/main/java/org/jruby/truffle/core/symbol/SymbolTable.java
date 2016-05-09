@@ -13,8 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
@@ -74,11 +74,6 @@ public class SymbolTable {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public DynamicObject getSymbol(ByteList bytes) {
-        return getSymbol(StringOperations.ropeFromByteList(bytes));
-    }
-
-    @CompilerDirectives.TruffleBoundary
     public DynamicObject getSymbol(Rope rope) {
         lock.readLock().lock();
 
@@ -111,14 +106,13 @@ public class SymbolTable {
 
             final DynamicObject symbolClass = context.getCoreLibrary().getSymbolClass();
             final Rope flattenedRope = RopeOperations.flatten(rope);
-            final String string = ByteList.decode(flattenedRope.getBytes(), flattenedRope.begin(), flattenedRope.byteLength(), "ISO-8859-1");
+            final String string = ByteList.decode(flattenedRope.getBytes(), 0, flattenedRope.byteLength(), "ISO-8859-1");
 
             final DynamicObject newSymbol = Layouts.SYMBOL.createSymbol(
                     Layouts.CLASS.getInstanceFactory(symbolClass),
                     string,
                     flattenedRope,
-                    string.hashCode(),
-                    null);
+                    string.hashCode());
 
             symbolsTable.put(flattenedRope, new WeakReference<>(newSymbol));
             return newSymbol;
@@ -159,7 +153,7 @@ public class SymbolTable {
         // check like Rubinius does for compatibility with their Struct Ruby implementation.
         if (!(name.startsWith("@") && name.length() > 1 && IdUtil.isInitialCharacter(name.charAt(1)))) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
         return name;
     }
@@ -167,7 +161,7 @@ public class SymbolTable {
     public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
         if (!IdUtil.isValidClassVariableName(name)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
         return name;
     }

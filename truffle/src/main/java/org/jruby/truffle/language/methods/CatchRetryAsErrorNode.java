@@ -34,7 +34,7 @@ public class CatchRetryAsErrorNode extends RubyNode {
             return body.execute(frame);
         } catch (RetryException e) {
             retryProfile.enter();
-            throw new RaiseException(coreLibrary().syntaxErrorInvalidRetry(this));
+            throw new RaiseException(coreExceptions().syntaxErrorInvalidRetry(this));
         }
     }
 

@@ -20,9 +20,15 @@ class IO
 
 end
 
-STDIN = File.new(0)
-STDOUT = File.new(1)
-STDERR = File.new(2)
+if Truffle::Safe.io_safe?
+  STDIN = File.new(0)
+  STDOUT = File.new(1)
+  STDERR = File.new(2)
+else
+  STDIN = nil
+  STDOUT = nil
+  STDERR = nil
+end
 
 $stdin = STDIN
 $stdout = STDOUT
@@ -34,19 +40,21 @@ class << STDIN
   end
 end
 
-if STDOUT.tty?
-  STDOUT.sync = true
-else
-  Truffle::Primitive.at_exit true do
-    STDOUT.flush
+if Truffle::Safe.io_safe?
+  if STDOUT.tty?
+    STDOUT.sync = true
+  else
+    Truffle::Kernel.at_exit true do
+      STDOUT.flush
+    end
   end
-end
 
-if STDERR.tty?
-  STDERR.sync = true
-else
-  Truffle::Primitive.at_exit true do
-    STDERR.flush
+  if STDERR.tty?
+    STDERR.sync = true
+  else
+    Truffle::Kernel.at_exit true do
+      STDERR.flush
+    end
   end
 end
 
@@ -121,11 +129,11 @@ end
 module Rubinius
 
   def self.synchronize(object, &block)
-    Truffle::Primitive.synchronized(object, &block)
+    Truffle::System.synchronized(object, &block)
   end
 
   def self.memory_barrier
-    Truffle::Primitive.full_memory_barrier
+    Truffle::System.full_memory_barrier
   end
 
 end
@@ -156,27 +164,17 @@ end
 
 # Windows probably doesn't have a HOME env var, but Rubinius requires it in places, so we need
 # to construct the value and place it in the hash.
-unless ENV['HOME']
-  if ENV['HOMEDRIVE']
-    ENV['HOME'] = if ENV['HOMEPATH']
-                    ENV['HOMEDRIVE'] + ENV['HOMEPATH']
-                  else
-                    ENV['USERPROFILE']
-                  end
-  end
-end
+#unless ENV['HOME']
+#  if ENV['HOMEDRIVE']
+#    ENV['HOME'] = if ENV['HOMEPATH']
+#                    ENV['HOMEDRIVE'] + ENV['HOMEPATH']
+#                  else
+#                    ENV['USERPROFILE']
+#                  end
+#  end
+#end
 
 class Exception
-
-  def locations
-    # These should be Rubinius::Location
-    # and use the internal backtrace, never the custom one.
-    backtrace.each do |s|
-      def s.position
-        self
-      end
-    end
-  end
 
   def to_s
     if message.nil?
@@ -219,9 +217,9 @@ end
 
 ENV_JAVA = {}
 
-# Truffle::Primitive.get_data is used by RubyContext#execute to prepare the DATA constant
+# The translator adds a call to Truffle.get_data to set up the DATA constant
 
-module Truffle::Primitive
+module Truffle
   def self.get_data(path, offset)
     file = File.open(path)
     file.seek(offset)
@@ -229,7 +227,7 @@ module Truffle::Primitive
     # I think if the file can't be locked then we just silently ignore
     file.flock(File::LOCK_EX | File::LOCK_NB)
 
-    Truffle::Primitive.at_exit true do
+    Truffle::Kernel.at_exit true do
       file.flock(File::LOCK_UN)
     end
 
@@ -237,7 +235,7 @@ module Truffle::Primitive
   end
 end
 
-module Truffle::Primitive
+module Truffle
   def self.load_arguments_from_array_kw_helper(array, kwrest_name, binding)
     array = array.dup
 
@@ -263,7 +261,7 @@ module Truffle::Primitive
     else
       kwargs = {}
     end
-    
+
     binding.local_variable_set(kwrest_name, kwargs) if kwrest_name
     array
   end
@@ -286,3 +284,5 @@ def when_splat(cases, expression)
     c === expression
   end
 end
+
+Truffle::Interop.export(:ruby_cext, Truffle::CExt)

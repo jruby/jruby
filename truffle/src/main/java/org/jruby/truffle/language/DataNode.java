@@ -9,14 +9,17 @@
  */
 package org.jruby.truffle.language;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
 
 public class DataNode extends RubyNode {
+
+    @Child private SnippetNode snippetNode;
 
     private final int endPosition;
 
@@ -27,8 +30,13 @@ public class DataNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object data = ruby(
-                "Truffle::Primitive.get_data(file, offset)",
+        if (snippetNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            snippetNode = insert(new SnippetNode());
+        }
+
+        final Object data = snippetNode.execute(frame,
+                "Truffle.get_data(file, offset)",
                 "file", StringOperations.createString(getContext(),
                         ByteList.create(getEncapsulatingSourceSection().getSource().getPath())),
                 "offset", endPosition);

@@ -9,26 +9,27 @@
  */
 package org.jruby.truffle.core.numeric;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubyBaseNode;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class FixnumOrBignumNode extends RubyNode {
+public class FixnumOrBignumNode extends RubyBaseNode {
 
     private static final BigInteger LONG_MIN_BIGINT = BigInteger.valueOf(Long.MIN_VALUE);
     private static final BigInteger LONG_MAX_BIGINT = BigInteger.valueOf(Long.MAX_VALUE);
 
     public static FixnumOrBignumNode create(RubyContext context, SourceSection sourceSection) {
         return new FixnumOrBignumNode(context, sourceSection);
+    }
+
+    public FixnumOrBignumNode() {
+        this(null, null);
     }
 
     public FixnumOrBignumNode(RubyContext context, SourceSection sourceSection) {
@@ -41,9 +42,8 @@ public class FixnumOrBignumNode extends RubyNode {
     private final ConditionProfile integerFromDoubleProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile longFromDoubleProfile = ConditionProfile.createBinaryProfile();
 
+    @TruffleBoundary
     public Object fixnumOrBignum(BigDecimal value) {
-        CompilerDirectives.transferToInterpreter();
-
         return fixnumOrBignum(value.toBigInteger());
     }
 
@@ -57,7 +57,7 @@ public class FixnumOrBignumNode extends RubyNode {
                 return longValue;
             }
         } else {
-            return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), value);
+            return createBignum(value);
         }
     }
 
@@ -74,10 +74,6 @@ public class FixnumOrBignumNode extends RubyNode {
     @TruffleBoundary
     private static BigInteger doubleToBigInteger(double value) {
         return new BigDecimal(value).toBigInteger();
-    }
-
-    public Object execute(VirtualFrame frame) {
-        throw new UnsupportedOperationException();
     }
 
 }

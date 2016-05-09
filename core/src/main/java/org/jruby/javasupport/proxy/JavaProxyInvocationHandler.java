@@ -37,7 +37,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public interface JavaProxyInvocationHandler {
 
-    IRubyObject getOrig();
+    IRubyObject getOrig(); // rename to getTarget() ? returns self or null for proc based handler
+
+    // org.jruby.Ruby getRuntime();
 
     /**
      * Similar to {@link java.lang.reflect.InvocationHandler}
@@ -47,8 +49,7 @@ public interface JavaProxyInvocationHandler {
      * @param args
      * @return
      * @throws Throwable
-     * @see {@link InvocationHandler}
+     * @see java.lang.reflect.InvocationHandler#invoke(Object, java.lang.reflect.Method, Object[])
      */
-    Object invoke(Object receiver, JavaProxyMethod method, Object[] args)
-            throws Throwable;
+    Object invoke(Object receiver, JavaProxyMethod method, Object[] args) throws Throwable;
 }

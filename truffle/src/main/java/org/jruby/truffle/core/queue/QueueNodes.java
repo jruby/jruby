@@ -18,13 +18,13 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.CoreMethodNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.RubiniusOnly;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyNode;
@@ -36,7 +36,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-@CoreClass(name = "Queue")
+@CoreClass("Queue")
 public abstract class QueueNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
@@ -58,10 +58,6 @@ public abstract class QueueNodes {
 
     @CoreMethod(names = { "push", "<<", "enq" }, required = 1)
     public abstract static class PushNode extends CoreMethodArrayArgumentsNode {
-
-        public PushNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject push(DynamicObject self, final Object value) {
@@ -86,13 +82,9 @@ public abstract class QueueNodes {
     })
     public abstract static class PopNode extends CoreMethodNode {
 
-        public PopNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("nonBlocking")
         public RubyNode coerceToBoolean(RubyNode nonBlocking) {
-            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), false, nonBlocking);
+            return BooleanCastWithDefaultNodeGen.create(null, null, false, nonBlocking);
         }
 
         @Specialization(guards = "!nonBlocking")
@@ -119,7 +111,7 @@ public abstract class QueueNodes {
             final Object value = doPoll(queue);
             if (value == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreLibrary().threadError("queue empty", this));
+                throw new RaiseException(coreExceptions().threadError("queue empty", this));
             }
 
             return value;
@@ -132,17 +124,13 @@ public abstract class QueueNodes {
 
     }
 
-    @RubiniusOnly
+    @NonStandard
     @CoreMethod(names = "receive_timeout", required = 1, visibility = Visibility.PRIVATE)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "queue"),
             @NodeChild(type = RubyNode.class, value = "duration")
     })
     public abstract static class ReceiveTimeoutNode extends CoreMethodNode {
-
-        public ReceiveTimeoutNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object receiveTimeout(DynamicObject self, int duration) {
@@ -186,10 +174,6 @@ public abstract class QueueNodes {
     @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
-        public EmptyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public boolean empty(DynamicObject self) {
@@ -202,10 +186,6 @@ public abstract class QueueNodes {
     @CoreMethod(names = { "size", "length" })
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
-        public SizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public int size(DynamicObject self) {
@@ -217,10 +197,6 @@ public abstract class QueueNodes {
 
     @CoreMethod(names = "clear")
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
-
-        public ClearNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -235,24 +211,16 @@ public abstract class QueueNodes {
     @CoreMethod(names = "marshal_dump")
     public abstract static class MarshalDumpNode extends CoreMethodArrayArgumentsNode {
 
-        public MarshalDumpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         @TruffleBoundary
         public Object marshal_dump(DynamicObject self) {
-            throw new RaiseException(coreLibrary().typeErrorCantDump(self, this));
+            throw new RaiseException(coreExceptions().typeErrorCantDump(self, this));
         }
 
     }
 
     @CoreMethod(names = "num_waiting")
     public abstract static class NumWaitingNode extends CoreMethodArrayArgumentsNode {
-
-        public NumWaitingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int num_waiting(DynamicObject self) {

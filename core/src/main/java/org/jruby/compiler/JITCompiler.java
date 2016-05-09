@@ -70,7 +70,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class JITCompiler implements JITCompilerMBean {
-    private static final Logger LOG = LoggerFactory.getLogger("JITCompiler");
+    private static final Logger LOG = LoggerFactory.getLogger(JITCompiler.class);
 
     public static final String RUBY_JIT_PREFIX = "rubyjit";
 

@@ -14,8 +14,8 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -47,15 +47,20 @@ public abstract class IsTaintedNode extends RubyNode {
         return false;
     }
 
-    @Specialization
+    @Specialization(guards = "isRubySymbol(object) || isNil(object)")
+    protected boolean isTaintedNilOrSymbol(DynamicObject object) {
+        return false;
+    }
+
+    @Specialization(guards = {"!isRubySymbol(object)", "!isNil(object)"})
     protected boolean isTainted(
-            DynamicObject object,
-            @Cached("createReadTaintedNode()") ReadObjectFieldNode readTaintedNode) {
+        DynamicObject object,
+        @Cached("createReadTaintedNode()") ReadObjectFieldNode readTaintedNode) {
         return (boolean) readTaintedNode.execute(object);
     }
 
     protected ReadObjectFieldNode createReadTaintedNode() {
-        return ReadObjectFieldNodeGen.create(getContext(), Layouts.TAINTED_IDENTIFIER, false);
+        return ReadObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER, false);
     }
 
 }

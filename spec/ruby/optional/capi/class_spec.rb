@@ -4,6 +4,7 @@ require File.expand_path('../fixtures/class', __FILE__)
 load_extension("class")
 
 autoload :ClassUnderAutoload, "#{object_path}/class_under_autoload_spec"
+autoload :ClassIdUnderAutoload, "#{object_path}/class_id_under_autoload_spec"
 
 describe :rb_path_to_class, shared: true do
   it "returns a class or module from a scoped String" do
@@ -191,13 +192,8 @@ describe "C-API Class function" do
       CApiClassSpecs::Super.should be_ancestor_of(CApiClassSpecs::ClassUnder1)
     end
 
-    it "uses Object as the superclass if NULL is passed" do
-      @s.rb_define_class_under(CApiClassSpecs, "ClassUnder2", nil)
-      Object.should be_ancestor_of(CApiClassSpecs::ClassUnder2)
-    end
-
     it "sets the class name" do
-      cls = @s.rb_define_class_under(CApiClassSpecs, "ClassUnder3", nil)
+      cls = @s.rb_define_class_under(CApiClassSpecs, "ClassUnder3", Object)
       cls.name.should == "CApiClassSpecs::ClassUnder3"
     end
 
@@ -239,6 +235,42 @@ describe "C-API Class function" do
 
       ClassUnderAutoload.name.should == "ClassUnderAutoload"
     end
+
+    ruby_version_is "2.3" do
+      it "raises a TypeError if class is defined and its superclass mismatches the given one" do
+        lambda { @s.rb_define_class_under(CApiClassSpecs, "Sub", Object) }.should raise_error(TypeError)
+      end
+    end
+  end
+
+  describe "rb_define_class_id_under" do
+    it "creates a subclass of the superclass contained in a module" do
+      cls = @s.rb_define_class_id_under(CApiClassSpecs, :ClassIdUnder1, CApiClassSpecs::Super)
+      cls.should be_kind_of(Class)
+      CApiClassSpecs::Super.should be_ancestor_of(CApiClassSpecs::ClassIdUnder1)
+    end
+
+    it "sets the class name" do
+      cls = @s.rb_define_class_id_under(CApiClassSpecs, :ClassIdUnder3, Object)
+      cls.name.should == "CApiClassSpecs::ClassIdUnder3"
+    end
+
+    it "calls #inherited on the superclass" do
+      CApiClassSpecs::Super.should_receive(:inherited)
+      @s.rb_define_class_id_under(CApiClassSpecs, :ClassIdUnder4, CApiClassSpecs::Super)
+    end
+
+    it "defines a class for an existing Autoload" do
+      compile_extension("class_id_under_autoload")
+
+      ClassIdUnderAutoload.name.should == "ClassIdUnderAutoload"
+    end
+
+    ruby_version_is "2.3" do
+      it "raises a TypeError if class is defined and its superclass mismatches the given one" do
+        lambda { @s.rb_define_class_id_under(CApiClassSpecs, :Sub, Object) }.should raise_error(TypeError)
+      end
+    end
   end
 
   describe "rb_define_class_variable" do
@@ -259,23 +291,6 @@ describe "C-API Class function" do
       lambda {
         @s.rb_cvar_get(CApiClassSpecs::CVars, "@@no_cvar")
       }.should raise_error(NameError)
-    end
-  end
-
-  describe "rb_class_inherited" do
-    before :each do
-      @subclass = Class.new
-    end
-
-    it "calls superclass.inherited(subclass)" do
-      @s.rb_class_inherited(CApiClassSpecs::Inherited, @subclass).should equal(@subclass)
-    end
-
-    it "calls Object.inherited(subclass) if superclass is C NULL" do
-      Object.should_receive(:inherited).with(@subclass)
-
-      # Pass false to have the specs helper C function pass NULL
-      @s.rb_class_inherited(false, @subclass)
     end
   end
 

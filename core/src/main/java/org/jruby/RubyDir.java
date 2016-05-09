@@ -799,12 +799,11 @@ public class RubyDir extends RubyObject {
                 return runtime.getNil();
             }
 
-            String[] rows = passwd.split("\n");
-            int rowCount = rows.length;
-            for (int i = 0; i < rowCount; i++) {
-                String[] fields = rows[i].split(":");
-                if (fields[0].equals(user)) {
-                    return runtime.newString(fields[5]);
+            List<String> rows = StringSupport.split(passwd, '\n');
+            for (int i = 0; i < rows.size(); i++) {
+                List<String> fields = StringSupport.split(rows.get(i), ':');
+                if (fields.get(0).equals(user)) {
+                    return runtime.newString(fields.get(5));
                 }
             }
         }
@@ -812,24 +811,31 @@ public class RubyDir extends RubyObject {
         throw runtime.newArgumentError("user " + user + " doesn't exist");
     }
 
+    static final ByteList HOME = new ByteList(new byte[] {'H','O','M','E'}, false);
+
     public static RubyString getHomeDirectoryPath(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        IRubyObject systemHash = runtime.getObject().getConstant("ENV_JAVA");
-        RubyHash envHash = (RubyHash) runtime.getObject().getConstant("ENV");
-        IRubyObject home = envHash.op_aref(context, runtime.newString("HOME"));
+        final RubyString homeKey = RubyString.newStringShared(context.runtime, HOME);
+        return getHomeDirectoryPath(context, context.runtime.getENV().op_aref(context, homeKey));
+    }
 
-        if (home == null || home.isNil()) {
-            home = systemHash.callMethod(context, "[]", runtime.newString("user.home"));
+    static RubyString getHomeDirectoryPath(ThreadContext context, IRubyObject home) {
+        final Ruby runtime = context.runtime;
+
+        if (home == null || home == context.nil) {
+            IRubyObject ENV_JAVA = runtime.getObject().getConstant("ENV_JAVA");
+            home = ENV_JAVA.callMethod(context, "[]", runtime.newString("user.home"));
         }
 
-        if (home == null || home.isNil()) {
-            home = envHash.op_aref(context, runtime.newString("LOGDIR"));
+        if (home == null || home == context.nil) {
+            RubyHash ENV = (RubyHash) runtime.getObject().getConstant("ENV");
+            home = ENV.op_aref(context, runtime.newString("LOGDIR"));
         }
 
-        if (home == null || home.isNil()) {
+        if (home == null || home == context.nil) {
             throw runtime.newArgumentError("user.home/LOGDIR not set");
         }
 
         return (RubyString) home;
     }
+
 }

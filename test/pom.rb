@@ -1,4 +1,5 @@
-version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
+version = ENV['JRUBY_VERSION'] ||
+  File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
 project 'JRuby Integration Tests' do
 
@@ -76,7 +77,8 @@ project 'JRuby Integration Tests' do
           'showWarnings' =>  'true',
           'showDeprecation' =>  'true',
           'source' =>  '${base.java.version}',
-          'target' =>  '${base.java.version}' )
+          'target' =>  '${base.java.version}',
+          'testExcludes' => ['truffle/**/*.java'] )
   plugin :dependency do
     execute_goals( 'copy',
                    :id => 'copy jars for testing',

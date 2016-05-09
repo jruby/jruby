@@ -14,8 +14,8 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.proc.ProcNodes;
-import org.jruby.truffle.core.proc.ProcNodes.Type;
+import org.jruby.truffle.core.proc.ProcOperations;
+import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.BreakID;
@@ -30,7 +30,7 @@ import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
  */
 public class BlockDefinitionNode extends RubyNode {
 
-    private final Type type;
+    private final ProcType type;
     private final SharedMethodInfo sharedMethodInfo;
 
     // TODO(CS, 10-Jan-15) having two call targets isn't ideal, but they all have different semantics, and we don't
@@ -43,7 +43,7 @@ public class BlockDefinitionNode extends RubyNode {
 
     @Child private ReadFrameSlotNode readFrameOnStackMarkerNode;
 
-    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, Type type, SharedMethodInfo sharedMethodInfo,
+    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, ProcType type, SharedMethodInfo sharedMethodInfo,
                                CallTarget callTargetForProcs, CallTarget callTargetForLambdas, BreakID breakID, FrameSlot frameOnStackMarkerSlot) {
         super(context, sourceSection);
         this.type = type;
@@ -80,7 +80,7 @@ public class BlockDefinitionNode extends RubyNode {
             }
         }
 
-        return ProcNodes.createRubyProc(coreLibrary().getProcFactory(), type, sharedMethodInfo,
+        return ProcOperations.createRubyProc(coreLibrary().getProcFactory(), type, sharedMethodInfo,
                 callTargetForProcs, callTargetForLambdas, frame.materialize(),
                 RubyArguments.getMethod(frame),
                 RubyArguments.getSelf(frame),

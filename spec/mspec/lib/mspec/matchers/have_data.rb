@@ -16,14 +16,16 @@ class HaveDataMatcher
       size = @data.size
     end
 
-    File.open @name, fmode(@mode) do |f|
-      return f.read(size) == @data
+    @contents = File.open @name, fmode(@mode) do |f|
+      f.read(size)
     end
+    @contents == @data
   end
 
   def failure_message
     ["Expected #{@name}",
-     "to have data #{@data.pretty_inspect}"]
+     "to have data #{@data.pretty_inspect}" +
+     "but starts with #{@contents.pretty_inspect}"]
   end
 
   def negative_failure_message

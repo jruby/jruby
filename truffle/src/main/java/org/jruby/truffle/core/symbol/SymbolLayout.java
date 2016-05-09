@@ -11,11 +11,11 @@ package org.jruby.truffle.core.symbol;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.dsl.Layout;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.om.dsl.api.Nullable;
 
-@org.jruby.truffle.om.dsl.api.Layout
+@Layout
 public interface SymbolLayout extends BasicObjectLayout {
 
     DynamicObjectFactory createSymbolShape(DynamicObject logicalClass,
@@ -24,8 +24,7 @@ public interface SymbolLayout extends BasicObjectLayout {
     DynamicObject createSymbol(DynamicObjectFactory factory,
                                String string,
                                Rope rope,
-                               int hashCode,
-                               @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
+                               int hashCode);
 
     boolean isSymbol(Object object);
     boolean isSymbol(DynamicObject object);
@@ -35,8 +34,5 @@ public interface SymbolLayout extends BasicObjectLayout {
     Rope getRope(DynamicObject object);
 
     int getHashCode(DynamicObject object);
-
-    SymbolCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
-    void setCodeRangeableWrapper(DynamicObject object, SymbolCodeRangeableWrapper value);
 
 }

@@ -33,7 +33,7 @@ class TestArray < Test::Unit::TestCase
   def test_map
     methods = %w{map map! collect collect!}
     methods.each { |method|
-      assert_no_match /Enumerable/, [].method(method).to_s
+      assert_no_match(/Enumerable/, [].method(method).to_s)
     }
   end
 end

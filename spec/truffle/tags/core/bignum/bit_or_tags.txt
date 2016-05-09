@@ -1,1 +1,0 @@
-fails:Bignum#| returns self bitwise OR other when one operand is negative

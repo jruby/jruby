@@ -2,7 +2,8 @@
 
 require 'fileutils'
 
-version = File.read( File.join( File.dirname(File.expand_path(__FILE__)), '..', '..', 'VERSION' ) ).strip
+version = ENV['JRUBY_VERSION'] ||
+    File.read( File.join( File.dirname(File.expand_path(__FILE__)), '..', '..', 'VERSION' ) ).strip
 
 # this regexp can be refined to work with pre, rc1, rc2 and such cases
 ruby_version = version.sub( /-SNAPSHOT$/, '.SNAPSHOT' )

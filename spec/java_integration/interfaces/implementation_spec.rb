@@ -43,8 +43,9 @@ describe "Single-method Java interfaces implemented in Ruby" do
   end
 
   it "should be kind_of? the interface" do
-    expect(@value_holder1.new(1)).to be_kind_of(SingleMethodInterface)
-    expect(SingleMethodInterface === @value_holder1.new(1)).to be true
+    expect( @value_holder1.new(1) ).to be_kind_of SingleMethodInterface
+    expect( @value_holder1.new(1) ).to be_a SingleMethodInterface
+    expect( SingleMethodInterface === @value_holder1.new(1) ).to be true
   end
 
   it "should be implemented with 'include InterfaceClass'" do
@@ -232,7 +233,25 @@ describe "Single-method Java interfaces" do
     expect(UsesSingleMethodInterface.new.callIt2(impl)).to eq(:callIt)
   end
 
-  it "passes correct arguments to proc .impl" do
+  it '.impl should always dispatch interface method (even when it conflicts from method in Ruby hierarchy)' do
+    begin
+      Kernel.module_eval { def callIt; raise RuntimeError.new('Kernel#callIt') end }
+      expect { callIt }.to raise_error(RuntimeError)
+
+      impl = SingleMethodInterface.impl { |name| name ? 'CALL-IT' : 'FALSY!' }
+
+      # NOTE: prior to 9.1 impls would fail with RuntimeError 'Kernel#callIt'
+
+      expect(UsesSingleMethodInterface.new.callIt2(impl)).to eq 'CALL-IT'
+
+      impl = DescendantOfSingleMethodInterface.impl { |name| name.to_s.upcase }
+      #expect(UsesSingleMethodInterface.new.callIt2(impl)).to eq 'CALLIT'
+    ensure
+      Kernel.send :remove_method, :callIt if defined? Kernel.callIt
+    end
+  end
+
+  it "passes correct arguments to proc implementation" do
     Java::java.io.File.new('.').list do |dir, name| # FilenameFilter
       expect(dir).to be_kind_of(java.io.File)
       expect(name).to be_kind_of(String)
@@ -253,7 +272,7 @@ describe "Single-method Java interfaces" do
     end
   end
 
-  it "resolves 'ambiguous' method by proc argument count (with .impl)" do
+  it "resolves 'ambiguous' method by proc argument count (with proc-implementation)" do
     java.io.File.new('.').listFiles do |pathname| # FileFilter#accept(File)
       expect(pathname).to be_kind_of(java.io.File)
     end

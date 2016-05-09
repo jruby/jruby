@@ -58,7 +58,7 @@ import static org.jruby.util.CodegenUtils.*;
  */
 public class JVMVisitor extends IRVisitor {
 
-    private static final Logger LOG = LoggerFactory.getLogger("JVMVisitor");
+    private static final Logger LOG = LoggerFactory.getLogger(JVMVisitor.class);
     public static final String DYNAMIC_SCOPE = "$dynamicScope";
     private static final boolean DEBUG = false;
     public static final String BLOCK_ARG_NAME = "blockArg";
@@ -164,25 +164,51 @@ public class JVMVisitor extends IRVisitor {
 
         IRBytecodeAdapter m = jvmMethod();
 
-        int numberOfBasicBlocks = bbs.length;
         int ipc = 0; // synthetic, used for debug traces that show which instr failed
-        for (int i = 0; i < numberOfBasicBlocks; i++) {
-            BasicBlock bb = bbs[i];
+
+        Label currentRescue = null;
+        Label currentRegionStart = null;
+        Label currentBlockStart = null;
+        Map<Label, org.objectweb.asm.Label> rescueEndForStart = new HashMap<>();
+        Map<Label, org.objectweb.asm.Label> syntheticEndForStart = new HashMap<>();
+
+        for (BasicBlock bb: bbs) {
+            currentBlockStart = bb.getLabel();
+            Label rescueLabel = exceptionTable.get(bb);
+
+            // not in a region at all (null-null) or in a region (a-a) but not at a boundary of the region.
+            if (rescueLabel == currentRescue) continue;
+
+            if (currentRescue != null) { // end of active region
+                rescueEndForStart.put(currentRegionStart, jvm.methodData().getLabel(bb.getLabel()));
+            }
+
+            if (rescueLabel != null) { // new region
+                currentRescue = rescueLabel;
+                currentRegionStart = bb.getLabel();
+            } else { // end of active region but no new region
+                currentRescue = null;
+                currentRegionStart = null;
+            }
+        }
+
+        // handle unclosed final region
+        if (currentRegionStart != null) {
+            org.objectweb.asm.Label syntheticEnd = new org.objectweb.asm.Label();
+            rescueEndForStart.put(currentRegionStart, syntheticEnd);
+            syntheticEndForStart.put(currentBlockStart, syntheticEnd);
+        }
+
+        for (BasicBlock bb: bbs) {
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
             Label rescueLabel = exceptionTable.get(bb);
-            org.objectweb.asm.Label end = null;
 
             m.mark(start);
 
-            boolean newEnd = false;
-            if (rescueLabel != null) {
-                if (i+1 < numberOfBasicBlocks) {
-                    end = jvm.methodData().getLabel(bbs[i+1].getLabel());
-                } else {
-                    newEnd = true;
-                    end = new org.objectweb.asm.Label();
-                }
-
+            // if this is the start of a rescued region, emit trycatch
+            org.objectweb.asm.Label end;
+            if (rescueLabel != null && (end = rescueEndForStart.get(bb.getLabel())) != null) {
+                // first entry into a rescue region, do the try/catch
                 org.objectweb.asm.Label rescue = jvm.methodData().getLabel(rescueLabel);
                 jvmAdapter().trycatch(start, end, rescue, p(Throwable.class));
             }
@@ -201,8 +227,9 @@ public class JVMVisitor extends IRVisitor {
                 visit(instr);
             }
 
-            if (newEnd) {
-                m.mark(end);
+            org.objectweb.asm.Label syntheticEnd = syntheticEndForStart.get(bb.getLabel());
+            if (syntheticEnd != null) {
+                m.mark(syntheticEnd);
             }
         }
 
@@ -289,7 +316,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Handle emitModuleBodyJIT(IRModuleBody method) {
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
 
         String clsName = jvm.scriptToClass(method.getFileName());
         jvm.pushscript(clsName, method.getFileName());
@@ -314,7 +341,7 @@ public class JVMVisitor extends IRVisitor {
 
     public Handle emitClosure(IRClosure closure, boolean print) {
         /* Compile the closure like a method */
-        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, print);
 
@@ -322,7 +349,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Handle emitModuleBody(IRModuleBody method) {
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
 
         Signature signature = signatureFor(method, false);
         emitScope(method, name, signature, false, true);
@@ -818,7 +845,12 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) {
         final IRBytecodeAdapter m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
+
+        if (instr.getOptions().isOnce() && instr.getRegexp() != null) {
+            visit(new Regexp(instr.getRegexp().source().convertToString().getByteList(), instr.getOptions()));
+            jvmStoreLocal(instr.getResult());
+            return;
+        }
 
         RegexpOptions options = instr.getOptions();
         final Operand[] operands = instr.getPieces();
@@ -863,7 +895,7 @@ public class JVMVisitor extends IRVisitor {
         if (callInstr.getCallSite() instanceof RefinedCachingCallSite) {
             throw new NotCompilableException("refinements are unsupported in JIT");
         }
-        
+
         IRBytecodeAdapter m = jvmMethod();
         String name = callInstr.getName();
         Operand[] args = callInstr.getCallArgs();
@@ -1807,7 +1839,7 @@ public class JVMVisitor extends IRVisitor {
             case IS_DEFINED_CONSTANT_OR_METHOD:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedConstantOrMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
@@ -1819,14 +1851,14 @@ public class JVMVisitor extends IRVisitor {
                 break;
             case IS_DEFINED_GLOBAL:
                 jvmMethod().loadContext();
-                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[0]).getString());
+                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[0]).getString());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedGlobal", sig(IRubyObject.class, ThreadContext.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_INSTANCE_VAR:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedInstanceVar", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
@@ -1834,21 +1866,21 @@ public class JVMVisitor extends IRVisitor {
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmAdapter().checkcast(p(RubyModule.class));
-                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedClassVar", sig(IRubyObject.class, ThreadContext.class, RubyModule.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_SUPER:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedSuper", sig(IRubyObject.class, ThreadContext.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_METHOD:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((StringLiteral) runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Stringable) runtimehelpercall.getArgs()[1]).getString());
                 jvmAdapter().ldc(((Boolean)runtimehelpercall.getArgs()[2]).isTrue());
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, boolean.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
@@ -1911,6 +1943,15 @@ public class JVMVisitor extends IRVisitor {
         visit(searchconstinstr.getStartingScope());
         jvmMethod().searchConst(searchconstinstr.getConstName(), searchconstinstr.isNoPrivateConsts());
         jvmStoreLocal(searchconstinstr.getResult());
+    }
+
+    @Override
+    public void SearchModuleForConstInstr(SearchModuleForConstInstr instr) {
+        jvmMethod().loadContext();
+        visit(instr.getCurrentModule());
+
+        jvmMethod().searchModuleForConst(instr.getConstName(), instr.isNoPrivateConsts());
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override

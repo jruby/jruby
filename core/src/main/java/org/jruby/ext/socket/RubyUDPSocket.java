@@ -28,6 +28,7 @@
 package org.jruby.ext.socket;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.ConnectException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -183,6 +184,9 @@ public class RubyUDPSocket extends RubyIPSocket {
         catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "bind: name or service not known");
         }
+        catch (BindException e) {
+            throw runtime.newErrnoEADDRFromBindException(e);
+        }
         catch (SocketException e) {
             final String message = e.getMessage();
             if ( message != null ) {
@@ -196,15 +200,6 @@ public class RubyUDPSocket extends RubyIPSocket {
         catch (IOException e) {
             throw sockerr(runtime, "bind: name or service not known", e);
         }
-        //catch (Error e) {
-        //    // Workaround for a bug in Sun's JDK 1.5.x, see
-        //    // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6303753
-        //    if (e.getCause() instanceof SocketException) {
-        //        throw SocketUtils.sockerr(runtime, "bind: name or service not known");
-        //    } else {
-        //        throw e;
-        //    }
-        //}
     }
 
     @JRubyMethod
@@ -321,7 +316,8 @@ public class RubyUDPSocket extends RubyIPSocket {
             int written;
 
             RubyString data = _mesg.convertToString();
-            ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
+            ByteList dataBL = data.getByteList();
+            ByteBuffer buf = ByteBuffer.wrap(dataBL.unsafeBytes(), dataBL.begin(), dataBL.realSize());
 
             written = ((DatagramChannel) this.getChannel()).write(buf);
 
@@ -395,7 +391,8 @@ public class RubyUDPSocket extends RubyIPSocket {
             }
 
             RubyString data = _mesg.convertToString();
-            ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
+            ByteList dataBL = data.getByteList();
+            ByteBuffer buf = ByteBuffer.wrap(dataBL.unsafeBytes(), dataBL.begin(), dataBL.realSize());
 
             byte[] buf2 = data.getBytes();
             DatagramPacket sendDP;

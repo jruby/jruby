@@ -17,12 +17,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
@@ -32,15 +32,11 @@ import org.jruby.truffle.language.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.language.objects.MetaClassNodeGen;
 
-@CoreClass(name = "UnboundMethod")
+@CoreClass("UnboundMethod")
 public abstract class UnboundMethodNodes {
 
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyUnboundMethod(other)")
         boolean equal(DynamicObject self, DynamicObject other) {
@@ -56,10 +52,6 @@ public abstract class UnboundMethodNodes {
 
     @CoreMethod(names = "arity")
     public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
-
-        public ArityNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int arity(DynamicObject method) {
@@ -88,10 +80,10 @@ public abstract class UnboundMethodNodes {
                 CompilerDirectives.transferToInterpreter();
                 final DynamicObject declaringModule = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
                 if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
-                    throw new RaiseException(coreLibrary().typeError(
+                    throw new RaiseException(coreExceptions().typeError(
                             "singleton method called for a different object", this));
                 } else {
-                    throw new RaiseException(coreLibrary().typeError(
+                    throw new RaiseException(coreExceptions().typeError(
                             "bind argument must be an instance of " + Layouts.MODULE.getFields(declaringModule).getName(), this));
                 }
             }
@@ -108,10 +100,6 @@ public abstract class UnboundMethodNodes {
     @CoreMethod(names = "name")
     public abstract static class NameNode extends CoreMethodArrayArgumentsNode {
 
-        public NameNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject name(DynamicObject unboundMethod) {
             return getSymbol(Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getName());
@@ -123,10 +111,6 @@ public abstract class UnboundMethodNodes {
     @CoreMethod(names = "origin", visibility = Visibility.PRIVATE)
     public abstract static class OriginNode extends CoreMethodArrayArgumentsNode {
 
-        public OriginNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject origin(DynamicObject unboundMethod) {
             return Layouts.UNBOUND_METHOD.getOrigin(unboundMethod);
@@ -137,10 +121,6 @@ public abstract class UnboundMethodNodes {
     @CoreMethod(names = "owner")
     public abstract static class OwnerNode extends CoreMethodArrayArgumentsNode {
 
-        public OwnerNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject owner(DynamicObject unboundMethod) {
             return Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
@@ -150,10 +130,6 @@ public abstract class UnboundMethodNodes {
 
     @CoreMethod(names = "parameters")
     public abstract static class ParametersNode extends CoreMethodArrayArgumentsNode {
-
-        public ParametersNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -167,10 +143,6 @@ public abstract class UnboundMethodNodes {
 
     @CoreMethod(names = "source_location")
     public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
-
-        public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -191,14 +163,10 @@ public abstract class UnboundMethodNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

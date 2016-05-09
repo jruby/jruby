@@ -5,15 +5,6 @@ describe "Kernel#test" do
   before :all do
     @file = File.dirname(__FILE__) + '/fixtures/classes.rb'
     @dir = File.dirname(__FILE__) + '/fixtures'
-
-    @link = tmp("file_symlink.lnk")
-    rm_r @link
-
-    File.symlink(@file, @link)
-  end
-
-  after :all do
-    rm_r @link
   end
 
   it "is a private method" do
@@ -32,8 +23,16 @@ describe "Kernel#test" do
     Kernel.test(?d, @dir).should == true
   end
 
-  it "returns true when passed ?l if the argument is a symlink" do
-    Kernel.test(?l, @link).should be_true
+  platform_is_not :windows do
+    it "returns true when passed ?l if the argument is a symlink" do
+      link = tmp("file_symlink.lnk")
+      File.symlink(@file, link)
+      begin
+        Kernel.test(?l, link).should be_true
+      ensure
+        rm_r link
+      end
+    end
   end
 
   it "returns true when passed ?r if the argument is readable by the effective uid" do

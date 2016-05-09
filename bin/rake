@@ -8,7 +8,7 @@
 
 require 'rubygems'
 
-version = ">= 0"
+version = ">= 0.a"
 
 if ARGV.first
   str = ARGV.first
@@ -19,5 +19,4 @@ if ARGV.first
   end
 end
 
-gem 'rake', version
-load Gem.bin_path('rake', 'rake', version)
+load Gem.activate_bin_path('rake', 'rake', version)

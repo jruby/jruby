@@ -1,10 +1,10 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 # A JRuby launcher, in Ruby, and using the class files from Eclipse
 # Currently needs the core and stdlib jar, so build them again when they change.
 
 M2REPO = "#{Dir.home}/.m2/repository"
 
-TRUFFLE_VERSION = "0.11"
+TRUFFLE_VERSION = "0.13"
 
 TRUFFLEJARS = %W[
   com/oracle/truffle/truffle-api/#{TRUFFLE_VERSION}/truffle-api-#{TRUFFLE_VERSION}.jar
@@ -12,7 +12,7 @@ TRUFFLEJARS = %W[
 ].map { |jar| "#{M2REPO}/#{jar}" }
 
 SNAKEYAMLJAR = "#{M2REPO}/org/yaml/snakeyaml/1.14/snakeyaml-1.14.jar"
-ANTLR4JAR = "#{M2REPO}/org/antlr/antlr4-runtime/4.5/antlr4-runtime-4.5.jar"
+ANTLR4JAR = "#{M2REPO}/org/antlr/antlr4-runtime/4.5.1-1/antlr4-runtime-4.5.1-1.jar"
 
 GRAAL_OPTIONS_PREFIX = "graal."
 
@@ -35,7 +35,7 @@ ARGV.each { |arg|
   when /^-J-G:-/
     java_flags << "-D#{GRAAL_OPTIONS_PREFIX}#{$'}=false"
   when /^-J-G:/
-    java_flags << "-D#{GRAAL_OPTIONS_PREFIX}.#{$'}"
+    java_flags << "-D#{GRAAL_OPTIONS_PREFIX}#{$'}"
   when /^-J/
     java_flags << arg[2..-1]
   when /^-Xtruffle./
@@ -49,6 +49,15 @@ bootclasspath = []
 classpath = []
 
 bootclasspath << "#{JRUBY}/lib/jruby.jar"
+# add other jars in lib to classpath for command-line execution
+ignore = %w[jruby.jar jruby-truffle.jar jruby-complete.jar]
+Dir.glob("#{JRUBY}/lib/*.jar") { |jar|
+  basename = File.basename(jar)
+  unless ignore.include?(basename)
+    classpath << jar
+  end
+}
+
 if rest.include?('-X+T')
   bootclasspath += TRUFFLEJARS
   classpath << SNAKEYAMLJAR
@@ -63,6 +72,7 @@ unless VERIFY_JRUBY
 end
 
 args = [java]
+args << "-Xss2048k"
 args << "-Djffi.boot.library.path=#{JRUBY}/lib/jni"
 args << "-Xbootclasspath/a:" + bootclasspath.join(':')
 args << "-classpath" << classpath.join(':') unless classpath.empty?
@@ -75,5 +85,9 @@ args << "-Djruby.shell=/bin/sh"
 args += java_flags
 args << "org.jruby.Main"
 args += rest
+
+if args.include?('-d')
+  puts args.join(' ')
+end
 
 exec(*args)

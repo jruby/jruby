@@ -43,7 +43,7 @@ public class ReadClassVariableNode extends RubyNode {
 
         if (value == null) {
             missingProfile.enter();
-            throw new RaiseException(coreLibrary().nameErrorUninitializedClassVariable(module, name, this));
+            throw new RaiseException(coreExceptions().nameErrorUninitializedClassVariable(module, name, this));
         }
 
         return value;

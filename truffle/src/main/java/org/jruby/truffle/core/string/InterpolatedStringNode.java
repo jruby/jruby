@@ -16,8 +16,6 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.ToSNode;
-import org.jruby.truffle.core.rubinius.StringPrimitiveNodes;
-import org.jruby.truffle.core.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -34,7 +32,7 @@ public final class InterpolatedStringNode extends RubyNode {
 
     @Children private final ToSNode[] children;
 
-    @Child private StringPrimitiveNodes.StringAppendPrimitiveNode appendNode;
+    @Child private StringNodes.StringAppendPrimitiveNode appendNode;
     @Child private CallDispatchHeadNode dupNode;
     @Child private IsTaintedNode isTaintedNode;
     @Child private TaintNode taintNode;
@@ -44,7 +42,7 @@ public final class InterpolatedStringNode extends RubyNode {
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, ToSNode[] children) {
         super(context, sourceSection);
         this.children = children;
-        appendNode = StringPrimitiveNodesFactory.StringAppendPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[] {});
+        appendNode = StringNodesFactory.StringAppendPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[] {});
         dupNode = DispatchHeadNodeFactory.createMethodCall(context);
         isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
         taintNode = TaintNodeGen.create(context, sourceSection, null);

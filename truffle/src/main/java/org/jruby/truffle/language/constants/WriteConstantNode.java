@@ -9,51 +9,41 @@
  */
 package org.jruby.truffle.language.constants;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import com.oracle.truffle.api.profiles.ConditionProfile;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
-/**
- * Represents writing a constant into some module.
- */
 public class WriteConstantNode extends RubyNode {
 
     private final String name;
-    @Child private RubyNode module;
-    @Child private RubyNode rhs;
 
-    public WriteConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode module, RubyNode rhs) {
-        super(context, sourceSection);
+    @Child private RubyNode moduleNode;
+    @Child private RubyNode valueNode;
+
+    private final ConditionProfile moduleProfile = ConditionProfile.createBinaryProfile();
+
+    public WriteConstantNode(String name, RubyNode moduleNode, RubyNode valueNode) {
         this.name = name;
-        this.module = module;
-        this.rhs = rhs;
+        this.moduleNode = moduleNode;
+        this.valueNode = valueNode;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        final Object value = valueNode.execute(frame);
+        final Object moduleObject = moduleNode.execute(frame);
 
-        // Evaluate RHS first.
-        final Object rhsValue = rhs.execute(frame);
-
-        final Object receiverObject = module.execute(frame);
-
-        if (!(RubyGuards.isRubyModule(receiverObject))) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
+        if (!moduleProfile.profile(RubyGuards.isRubyModule(moduleObject))) {
+            throw new RaiseException(coreExceptions().typeErrorIsNotAClassModule(moduleObject, this));
         }
 
-        final DynamicObject module = (DynamicObject) receiverObject;
+        Layouts.MODULE.getFields((DynamicObject) moduleObject).setConstant(getContext(), this, name, value);
 
-        Layouts.MODULE.getFields(module).setConstant(getContext(), this, name, rhsValue);
-
-        return rhsValue;
+        return value;
     }
 
 }

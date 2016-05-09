@@ -1,6 +1,7 @@
 project 'JRuby Main Maven Artifact' do
 
-  version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
+  version = ENV['JRUBY_VERSION'] ||
+    File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby:#{version}"
@@ -20,6 +21,14 @@ project 'JRuby Main Maven Artifact' do
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
 
   plugin( :invoker, :properties => { 'localRepository' => '${settings.localRepository}' } )
+
+  build do
+    resource do
+      directory '${project.basedir}/../..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
+    end
+  end
 
   profile :apps do
     activation do

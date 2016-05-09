@@ -15,8 +15,8 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -107,12 +107,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 Object key = keyValues[n * 2].execute(frame);
 
                 if (stringKeyProfile.profile(RubyGuards.isRubyString(key))) {
-                    if (isFrozenNode == null) {
-                        CompilerDirectives.transferToInterpreter();
-                        isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
-                    }
-
-                    if (!isFrozenNode.executeIsFrozen(key)) {
+                    if (!isFrozen(key)) {
                         key = freezeNode.call(frame, dupNode.call(frame, key, "dup", null), "freeze", null);
                     }
                 }
@@ -136,6 +131,14 @@ public abstract class HashLiteralNode extends RubyNode {
             }
 
             return Layouts.HASH.createHash(coreLibrary().getHashFactory(), store, size, null, null, null, null, false);
+        }
+
+        protected boolean isFrozen(Object object) {
+            if (isFrozenNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return isFrozenNode.executeIsFrozen(object);
         }
 
     }

@@ -12,20 +12,22 @@ package org.jruby.truffle.language.arguments;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 
 public class ReadUserKeywordsHashNode extends RubyNode {
 
     private final int minArgumentCount;
 
+    @Child private DoesRespondDispatchHeadNode respondToToHashNode;
+    @Child private CallDispatchHeadNode callToHashNode;
+
     private final ConditionProfile notEnoughArgumentsProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile lastArgumentIsHashProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadUserKeywordsHashNode(RubyContext context, SourceSection sourceSection, int minArgumentCount) {
-        super(context, sourceSection);
+    public ReadUserKeywordsHashNode(int minArgumentCount) {
         this.minArgumentCount = minArgumentCount;
     }
 
@@ -45,8 +47,16 @@ public class ReadUserKeywordsHashNode extends RubyNode {
 
         CompilerDirectives.bailout("Ruby keyword arguments aren't optimized yet");
 
-        if ((boolean) ruby("last_arg.respond_to?(:to_hash)", "last_arg", lastArgument)) {
-            final Object converted = ruby("last_arg.to_hash", "last_arg", lastArgument);
+        if (respondToToHashNode == null) {
+            respondToToHashNode = insert(new DoesRespondDispatchHeadNode(getContext(), false));
+        }
+
+        if (respondToToHashNode.doesRespondTo(frame, "to_hash", lastArgument)) {
+            if (callToHashNode == null) {
+                callToHashNode = insert(CallDispatchHeadNode.createMethodCall());
+            }
+
+            final Object converted = callToHashNode.call(frame, lastArgument, "to_hash", null);
 
             if (RubyGuards.isRubyHash(converted)) {
                 RubyArguments.setArgument(frame.getArguments(), argumentCount - 1, converted);

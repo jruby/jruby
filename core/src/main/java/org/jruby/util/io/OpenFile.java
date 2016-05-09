@@ -99,7 +99,7 @@ public class OpenFile implements Finalizable {
     }
 
     public void checkReopenSeek(ThreadContext context, Ruby runtime, long pos) {
-        if (seek(context, pos, PosixShim.SEEK_SET) < 0 && errno() != null) {
+        if (seek(context, pos, PosixShim.SEEK_SET) == -1 && errno() != null) {
             throw runtime.newErrnoFromErrno(errno(), getPath());
         }
     }
@@ -920,10 +920,6 @@ public class OpenFile implements Finalizable {
             IRubyObject ecopts;
             byte[] sname, dname;
             ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
-            if (isTextMode() && Platform.IS_WINDOWS) {
-                // we can't do O_TEXT so we always do CRLF translation on Windows
-                ecflags = ecflags | EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
-            }
             ecopts = encs.ecopts;
             if (encs.enc2 != null) {
                 sname = encs.enc2.getName();
@@ -1933,7 +1929,7 @@ public class OpenFile implements Finalizable {
             /* xxx: target position may be negative if buffer is filled by ungetc */
             posix.errno = null;
             r = posix.lseek(fd, -rbuf.len, PosixShim.SEEK_CUR);
-            if (r < 0 && posix.errno != null) {
+            if (r == -1 && posix.errno != null) {
                 if (posix.errno == Errno.ESPIPE)
                     mode |= DUPLEX;
                 return;
@@ -1981,7 +1977,7 @@ public class OpenFile implements Finalizable {
             //        }
 
             pos = posix.lseek(fd, 0, PosixShim.SEEK_CUR);
-            if (pos < 0 && posix.errno != null) {
+            if (pos == -1 && posix.errno != null) {
                 if (posix.errno == Errno.ESPIPE)
                     mode |= DUPLEX;
                 return;
@@ -2007,7 +2003,7 @@ public class OpenFile implements Finalizable {
             while (newlines >= 0) {
                 r = posix.lseek(fd, pos - rbuf.len - newlines, PosixShim.SEEK_SET);
                 if (newlines == 0) break;
-                if (r < 0) {
+                if (r == -1) {
                     newlines--;
                     continue;
                 }
@@ -2636,7 +2632,7 @@ public class OpenFile implements Finalizable {
         long pos;
 
         if ((size = posix.size(fd)) >= 0 &&
-                (pos = posix.lseek(fd, 0, PosixShim.SEEK_CUR)) >= 0 &&
+                (pos = posix.lseek(fd, 0, PosixShim.SEEK_CUR)) != -1 &&
                 size > pos) {
             if (siz + (size - pos) > Integer.MAX_VALUE) {
                 throw runtime.newIOError("file too big for single read");

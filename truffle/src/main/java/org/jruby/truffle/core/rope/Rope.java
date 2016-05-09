@@ -10,7 +10,6 @@
 package org.jruby.truffle.core.rope;
 
 import org.jcodings.Encoding;
-import org.jruby.util.ByteList;
 
 import java.util.Arrays;
 
@@ -23,8 +22,7 @@ public abstract class Rope {
     private final int characterLength;
     private final int ropeDepth;
     private int hashCode = 0;
-    private byte[] bytes;
-    private ByteList unsafeByteList;
+    protected byte[] bytes;
 
     protected Rope(Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth, byte[] bytes) {
         this.encoding = encoding;
@@ -50,23 +48,13 @@ public abstract class Rope {
         return byteLength == 0;
     }
 
-    public final ByteList getUnsafeByteList() {
-        if (unsafeByteList == null) {
-            unsafeByteList = new ByteList(getBytes(), getEncoding(), false);
-        }
-
-        return unsafeByteList;
-    }
-
-    public final ByteList toByteListCopy() { return new ByteList(getBytes(), getEncoding(), true); }
-
     protected abstract byte getByteSlow(int index);
 
     public final byte[] getRawBytes() {
         return bytes;
     }
 
-    public final byte[] getBytes() {
+    public byte[] getBytes() {
         if (bytes == null) {
             bytes = RopeOperations.flattenBytes(this);
         }
@@ -77,8 +65,6 @@ public abstract class Rope {
     public byte[] getBytesCopy() {
         return getBytes().clone();
     }
-
-    public abstract byte[] extractRange(int offset, int length);
 
     public final Encoding getEncoding() {
         return encoding;
@@ -94,22 +80,6 @@ public abstract class Rope {
 
     public final int depth() {
         return ropeDepth;
-    }
-
-    public int begin() {
-        return 0;
-    }
-
-    public int getBegin() {
-        return begin();
-    }
-
-    public int realSize() {
-        return byteLength();
-    }
-
-    public int getRealSize() {
-        return realSize();
     }
 
     @Override

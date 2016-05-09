@@ -35,19 +35,21 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
-import org.jruby.util.ClassLoaderGetResourses;
+import org.jruby.util.ClassesLoader;
 import org.jruby.util.ClasspathLauncher;
 import org.jruby.util.FileResource;
-import org.jruby.util.GetResources;
+import org.jruby.util.Loader;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.StringSupport;
 import org.jruby.util.UriLikePathHelper;
 import org.jruby.util.cli.ArgumentProcessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
+
 import org.objectweb.asm.Opcodes;
 
 import java.io.BufferedInputStream;
@@ -60,7 +62,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -94,8 +95,7 @@ public class RubyInstanceConfig {
             managementEnabled = false;
         } else {
             if (COMPILE_EXCLUDE != null) {
-                String[] elements = COMPILE_EXCLUDE.split(",");
-                excludedMethods.addAll(Arrays.asList(elements));
+                excludedMethods.addAll(StringSupport.split(COMPILE_EXCLUDE, ','));
             }
 
             managementEnabled = Options.MANAGEMENT_ENABLED.load();
@@ -169,10 +169,10 @@ public class RubyInstanceConfig {
             Object rubyoptObj = environment.get("RUBYOPT");
             String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
 
-            if (rubyopt == null || "".equals(rubyopt)) return;
+            if (rubyopt == null || rubyopt.length() == 0) return;
 
-            if (rubyopt.split("\\s").length != 0) {
-                String[] rubyoptArgs = rubyopt.split("\\s+");
+            String[] rubyoptArgs = rubyopt.split("\\s+");
+            if (rubyoptArgs.length != 0) {
                 new ArgumentProcessor(rubyoptArgs, false, true, true, this).processArguments();
             }
         } catch (SecurityException se) {
@@ -700,6 +700,11 @@ public class RubyInstanceConfig {
         return extraGemPaths;
     }
 
+    private final List<Loader> extraLoaders = new LinkedList<>();
+    public List<Loader> getExtraLoaders() {
+        return extraLoaders;
+    }
+
     /**
      * adds a given ClassLoader to jruby. i.e. adds the root of
      * the classloader to the LOAD_PATH so embedded ruby scripts
@@ -716,7 +721,7 @@ public class RubyInstanceConfig {
      * @param loader
      */
     public void addLoader(ClassLoader loader) {
-        addLoader(new ClassLoaderGetResourses(loader));
+        addLoader(new ClassesLoader(loader));
     }
 
     /**
@@ -727,13 +732,14 @@ public class RubyInstanceConfig {
      * method to do so.
      * @param bundle
      */
-    public void addLoader(GetResources bundle) {
+    public void addLoader(Loader bundle) {
         // loader can be a ClassLoader or an Bundle from OSGi
         UriLikePathHelper helper = new UriLikePathHelper(bundle);
         String uri = helper.getUriLikePath();
         if (uri != null) extraLoadPaths.add(uri);
         uri = helper.getUriLikeGemPath();
         if (uri != null) extraGemPaths.add(uri);
+        extraLoaders.add(bundle);
     }
 
     public String[] getArgv() {
@@ -1635,6 +1641,10 @@ public class RubyInstanceConfig {
         public boolean shouldPrecompileAll() {
             return this == FORCE;
         }
+
+        public boolean isTruffle() {
+            return this == TRUFFLE;
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1856,6 +1866,7 @@ public class RubyInstanceConfig {
     public static String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
     public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
+    public static boolean RECORD_LEXICAL_HIERARCHY = Options.RECORD_LEXICAL_HIERARCHY.load();
 
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
 

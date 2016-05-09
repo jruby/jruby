@@ -6,8 +6,8 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-tagged_example "defined?(true) == 'true'", true
-tagged_example "defined?(false) == 'false'", true
-tagged_example "defined?(self) == 'self'", true
-tagged_example "defined?(14) == 'expression'", true
-tagged_example "defined?(14 + 2) == 'expression'", true
+example "defined?(true) == 'true'", true
+example "defined?(false) == 'false'", true
+example "defined?(self) == 'self'", true
+example "defined?(14) == 'expression'", true
+tagged example "defined?(14 + 2) == 'method'", true

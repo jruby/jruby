@@ -1,0 +1,38 @@
+java7: {name: oraclejdk, version: "8u66", platformspecific: true}
+
+common: {
+  packages: {
+    git : ">=1.8.3"
+    maven : ">=3.3.9"
+    ruby : ">=2.1.0"
+  }
+  
+  downloads: {
+    JAVA_HOME: ${java7}
+  }
+  
+  environment: {
+    PATH: "$JAVA_HOME/bin:$PATH"
+  }
+  
+  setup: [
+    [ruby, "tool/jt.rb", build]
+  ]
+
+  timelimit: "30:00"
+}
+
+gate_caps: {
+  capabilities: [linux, amd64, gate]
+}
+
+jt: [ruby, "tool/jt.rb"]
+
+builds = [
+  {name: "ruby-test-fast"} ${common} ${gate_caps} {run: [${jt} [test, fast]]},
+  {name: "ruby-test-specs-command-line"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":command_line"]]},
+  {name: "ruby-test-specs-language"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":language"]]},
+  {name: "ruby-test-specs-core"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":core"]]},
+  {name: "ruby-test-specs-library"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":library"]]},
+  {name: "ruby-test-specs-truffle"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":truffle"]]}
+]

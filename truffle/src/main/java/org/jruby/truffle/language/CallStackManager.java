@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.language;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
@@ -17,9 +16,9 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreSourceSection;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.builtins.CoreSourceSection;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
@@ -27,6 +26,7 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.util.Memo;
 
 import java.util.ArrayList;
 
@@ -40,9 +40,16 @@ public class CallStackManager {
 
     @TruffleBoundary
     public FrameInstance getCallerFrameIgnoringSend() {
-        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
+        final Memo<Boolean> firstFrame = new Memo<>(true);
+
+        final FrameInstance fi = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
             @Override
             public FrameInstance visitFrame(FrameInstance frameInstance) {
+                if (firstFrame.get()) {
+                    firstFrame.set(false);
+                    return null;
+                }
+
                 final InternalMethod method = getMethod(frameInstance);
                 assert method != null;
 
@@ -53,6 +60,8 @@ public class CallStackManager {
                 }
             }
         });
+
+        return fi;
     }
 
     @TruffleBoundary
@@ -62,10 +71,17 @@ public class CallStackManager {
 
     @TruffleBoundary
     public Node getTopMostUserCallNode() {
+        final Memo<Boolean> firstFrame = new Memo<>(true);
+
         return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Node>() {
 
             @Override
             public Node visitFrame(FrameInstance frameInstance) {
+                if (firstFrame.get()) {
+                    firstFrame.set(false);
+                    return null;
+                }
+
                 final SourceSection sourceSection = frameInstance.getCallNode().getEncapsulatingSourceSection();
 
                 if (CoreSourceSection.isCoreSourceSection(sourceSection)) {
@@ -105,13 +121,12 @@ public class CallStackManager {
         return getBacktrace(currentNode, omit, filterNullSourceSection, exception, null);
     }
 
+    @TruffleBoundary
     public Backtrace getBacktrace(Node currentNode,
                                   final int omit,
                                   final boolean filterNullSourceSection,
                                   DynamicObject exception,
                                   Throwable javaThrowable) {
-        CompilerAsserts.neverPartOfCompilation();
-
         if (exception != null
                 && context.getOptions().BACKTRACES_OMIT_UNUSED
                 && DisablingBacktracesNode.areBacktracesDisabled()
@@ -131,11 +146,18 @@ public class CallStackManager {
             activations.add(new Activation(currentNode, method));
         }
 
+        final Memo<Boolean> firstFrame = new Memo<>(true);
+
         Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
             int depth = 1;
 
             @Override
             public Object visitFrame(FrameInstance frameInstance) {
+                if (firstFrame.get()) {
+                    firstFrame.set(false);
+                    return null;
+                }
+
                 if (depth > limit) {
                     activations.add(Activation.OMITTED_LIMIT);
                     return new Object();

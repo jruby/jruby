@@ -111,12 +111,12 @@ public class JavaObject extends RubyObject {
     }
 
     @Override
-    public Class<?> getJavaClass() {
+    public final Class<?> getJavaClass() {
         Object dataStruct = dataGetStruct();
         return dataStruct != null ? dataStruct.getClass() : Void.TYPE;
     }
 
-    public Object getValue() {
+    public final Object getValue() {
         return dataGetStruct();
     }
 
@@ -252,35 +252,34 @@ public class JavaObject extends RubyObject {
     }
 
     @JRubyMethod(name = "synchronized")
-    public IRubyObject ruby_synchronized(ThreadContext context, Block block) {
-        Object lock = getValue();
+    public final IRubyObject ruby_synchronized(ThreadContext context, Block block) {
+        final Object lock = getValue();
         synchronized (lock != null ? lock : NULL_LOCK) {
             return block.yield(context, null);
         }
     }
 
-    public static IRubyObject ruby_synchronized(ThreadContext context, Object lock, Block block) {
+    public static IRubyObject ruby_synchronized(ThreadContext context, final Object lock, Block block) {
         synchronized (lock != null ? lock : NULL_LOCK) {
             return block.yield(context, null);
         }
     }
 
     @JRubyMethod
-    public IRubyObject marshal_dump() {
+    public IRubyObject marshal_dump(ThreadContext context) {
         if (Serializable.class.isAssignableFrom(getJavaClass())) {
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ObjectOutputStream oos = new ObjectOutputStream(baos);
 
-                oos.writeObject(getValue());
+                new ObjectOutputStream(baos).writeObject(getValue());
 
-                return getRuntime().newString(new ByteList(baos.toByteArray()));
-            } catch (IOException ioe) {
-                throw getRuntime().newIOErrorFromException(ioe);
+                return context.runtime.newString(new ByteList(baos.toByteArray(), false));
             }
-        } else {
-            throw getRuntime().newTypeError("no marshal_dump is defined for class " + getJavaClass());
+            catch (IOException ex) {
+                throw context.runtime.newIOErrorFromException(ex);
+            }
         }
+        throw context.runtime.newTypeError("no marshal_dump is defined for class " + getJavaClass());
     }
 
     @JRubyMethod
@@ -288,15 +287,16 @@ public class JavaObject extends RubyObject {
         try {
             ByteList byteList = str.convertToString().getByteList();
             ByteArrayInputStream bais = new ByteArrayInputStream(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-            ObjectInputStream ois = new JRubyObjectInputStream(context.runtime, bais);
 
-            dataWrapStruct(ois.readObject());
+            dataWrapStruct(new JRubyObjectInputStream(context.runtime, bais).readObject());
 
             return this;
-        } catch (IOException ioe) {
-            throw context.runtime.newIOErrorFromException(ioe);
-        } catch (ClassNotFoundException cnfe) {
-            throw context.runtime.newTypeError("Class not found unmarshaling Java type: " + cnfe.getLocalizedMessage());
+        }
+        catch (IOException ex) {
+            throw context.runtime.newIOErrorFromException(ex);
+        }
+        catch (ClassNotFoundException ex) {
+            throw context.runtime.newTypeError("Class not found unmarshaling Java type: " + ex.getLocalizedMessage());
         }
     }
 

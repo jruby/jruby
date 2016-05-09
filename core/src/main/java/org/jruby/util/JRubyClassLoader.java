@@ -56,7 +56,7 @@ import org.jruby.util.log.LoggerFactory;
  */
 public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
-    private static final Logger LOG = LoggerFactory.getLogger("JRubyClassLoader");
+    private static final Logger LOG = LoggerFactory.getLogger(JRubyClassLoader.class);
 
     private Runnable unloader;
 
@@ -84,7 +84,8 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
     public void addURL(URL url) {
         // if we have such embedded jar within a jar, we copy it to temp file and use the
         // the temp file with the super URLClassLoader
-        if ( url.toString().contains( "!/" )) {
+        if (url.toString().contains( "!/" ) ||
+            !(url.getProtocol().equals("file") || url.getProtocol().equals("http") || url.getProtocol().equals("https"))) {
             InputStream in = null; OutputStream out = null;
             try {
                 File f = File.createTempFile("jruby", new File(url.getFile()).getName(), getTempDir());

@@ -45,13 +45,6 @@ public class SubstringRope extends Rope {
         return child.getByteSlow(index + offset);
     }
 
-    @Override
-    public byte[] extractRange(int offset, int length) {
-        assert length <= this.byteLength();
-
-        return child.extractRange(this.offset + offset, length);
-    }
-
     public Rope getChild() {
         return child;
     }

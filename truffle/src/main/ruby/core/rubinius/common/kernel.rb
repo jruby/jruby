@@ -1,3 +1,11 @@
+# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -345,9 +353,12 @@ module Kernel
 
   def extend(*modules)
     raise ArgumentError, "wrong number of arguments (0 for 1+)" if modules.empty?
-    Rubinius.check_frozen
 
     modules.reverse_each do |mod|
+      if !mod.kind_of?(Module) or mod.kind_of?(Class)
+        raise TypeError, "wrong argument type #{mod.class} (expected Module)"
+      end
+
       Rubinius.privately do
         mod.extend_object self
       end
@@ -517,15 +528,34 @@ module Kernel
   end
   module_function :lambda
 
-  def load(name, wrap=false)
-    cl = Rubinius::CodeLoader.new(name)
-    cl.load(wrap)
+  def load(filename, wrap = false)
+    filename = Rubinius::Type.coerce_to_path filename
 
-    Rubinius.run_script cl.compiled_code
+    # load absolute path
+    if filename.start_with? File::SEPARATOR
+      return Truffle::Kernel.load File.expand_path(filename), wrap
+    end
 
-    Rubinius::CodeLoader.loaded_hook.trigger!(name)
+    # if path starts with . only try relative paths
+    if filename.start_with? '.'
+      return Truffle::Kernel.load File.expand_path(filename), wrap
+    end
 
-    return true
+    # try to resolve with current working directory
+    if File.exist? filename
+      return Truffle::Kernel.load File.expand_path(filename), wrap
+    end
+
+    # try to find relative path in $LOAD_PATH
+    $LOAD_PATH.each do |dir|
+      path = File.expand_path(File.join(dir, filename))
+      if File.exist? path
+        return Truffle::Kernel.load path, wrap
+      end
+    end
+
+    # file not found trigger an error
+    Truffle::Kernel.load filename, wrap
   end
   module_function :load
 

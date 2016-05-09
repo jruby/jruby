@@ -10,8 +10,8 @@
 package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 
 public abstract class ArrayHelpers {
 
@@ -24,6 +24,7 @@ public abstract class ArrayHelpers {
     }
 
     public static void setStoreAndSize(DynamicObject array, Object store, int size) {
+        assert !(store instanceof ArrayMirror);
         Layouts.ARRAY.setStore(array, store);
         Layouts.ARRAY.setSize(array, size);
     }

@@ -1,3 +1,5 @@
+require 'mspec/utils/deprecate'
+
 class Object
   # The following helpers provide a level of indirection for running the specs
   # against a Hash implementation that has a different name than Hash.
@@ -5,12 +7,14 @@ class Object
   # Returns the Hash class.
   unless method_defined?(:hash_class)
     def hash_class
+      MSpec.deprecate "hash_class", "Hash"
       Hash
     end
   end
 
   # Returns a new instance of hash_class.
   def new_hash(*args, &block)
+    MSpec.deprecate "new_hash", "hash literals"
     if block
       hash_class.new(&block)
     elsif args.size == 1

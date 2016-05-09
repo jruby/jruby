@@ -14,8 +14,9 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.runtime.Visibility;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
@@ -31,6 +32,7 @@ import java.util.Map.Entry;
 public abstract class ModuleOperations {
 
     public static boolean includesModule(DynamicObject module, DynamicObject other) {
+        CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
         //assert RubyGuards.isRubyModule(other);
 
@@ -175,7 +177,7 @@ public abstract class ModuleOperations {
                 module = (DynamicObject) constant.getValue();
             } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(context.getCoreLibrary().typeError(fullName.substring(0, next) + " does not refer to class/module", currentNode));
+                throw new RaiseException(context.getCoreExceptions().typeError(fullName.substring(0, next) + " does not refer to class/module", currentNode));
             }
             start = next + 2;
         }
@@ -183,7 +185,7 @@ public abstract class ModuleOperations {
         final String lastSegment = fullName.substring(start);
         if (!IdUtil.isValidConstantName19(lastSegment)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameError(String.format("wrong constant name %s", fullName), fullName, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameError(String.format("wrong constant name %s", fullName), fullName, currentNode));
         }
 
         return lookupConstantWithInherit(context, module, lastSegment, inherit, currentNode);
@@ -194,7 +196,7 @@ public abstract class ModuleOperations {
 
         if (!IdUtil.isValidConstantName19(name)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameError(String.format("wrong constant name %s", name), name, currentNode));
         }
 
         if (inherit) {
@@ -211,7 +213,7 @@ public abstract class ModuleOperations {
         final Map<String, InternalMethod> methods = new HashMap<>();
 
         for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
-            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods().values()) {
+            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -233,7 +235,7 @@ public abstract class ModuleOperations {
                 break;
             }
 
-            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods().values()) {
+            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -250,7 +252,7 @@ public abstract class ModuleOperations {
         final Map<String, InternalMethod> methods = new HashMap<>();
 
         for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
-            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods().values()) {
+            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -284,7 +286,7 @@ public abstract class ModuleOperations {
 
         // Look in ancestors
         for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
-            InternalMethod method = Layouts.MODULE.getFields(ancestor).getMethods().get(name);
+            InternalMethod method = Layouts.MODULE.getFields(ancestor).getMethod(name);
 
             if (method != null) {
                 return method;
@@ -293,6 +295,11 @@ public abstract class ModuleOperations {
 
         // Nothing found
         return null;
+    }
+
+    public static InternalMethod lookupMethod(DynamicObject module, String name, Visibility visibility) {
+        InternalMethod method = lookupMethod(module, name);
+        return (method != null && method.getVisibility() == visibility) ? method : null;
     }
 
     public static InternalMethod lookupSuperMethod(InternalMethod currentMethod, DynamicObject objectMetaClass) {
@@ -311,7 +318,7 @@ public abstract class ModuleOperations {
             if (module == declaringModule) {
                 foundDeclaringModule = true;
             } else if (foundDeclaringModule) {
-                InternalMethod method = Layouts.MODULE.getFields(module).getMethods().get(name);
+                InternalMethod method = Layouts.MODULE.getFields(module).getMethod(name);
 
                 if (method != null) {
                     return method;
@@ -357,23 +364,45 @@ public abstract class ModuleOperations {
     @TruffleBoundary
     public static void setClassVariable(final RubyContext context, DynamicObject module, final String name, final Object value, final Node currentNode) {
         assert RubyGuards.isRubyModule(module);
+        ModuleFields moduleFields = Layouts.MODULE.getFields(module);
+        moduleFields.checkFrozen(context, currentNode);
 
-        DynamicObject found = classVariableLookup(module, new Function1<DynamicObject, DynamicObject>() {
+        // if the cvar is not already defined we need to take lock and ensure there is only one
+        // defined in the class tree
+        if (!trySetClassVariable(module, name, value)) {
+            synchronized (context.getClassVariableDefinitionLock()) {
+                if (!trySetClassVariable(module, name, value)) {
+                    moduleFields.getClassVariables().put(name, value);
+                }
+            }
+        }
+    }
+
+    private static boolean trySetClassVariable(DynamicObject topModule, final String name, final Object value) {
+        final DynamicObject found = classVariableLookup(topModule, new Function1<DynamicObject, DynamicObject>() {
             @Override
             public DynamicObject apply(DynamicObject module) {
-                if (Layouts.MODULE.getFields(module).getClassVariables().containsKey(name)) {
-                    Layouts.MODULE.getFields(module).setClassVariable(context, currentNode, name, value);
+                final ModuleFields moduleFields = Layouts.MODULE.getFields(module);
+                if (moduleFields.getClassVariables().replace(name, value) != null) {
                     return module;
                 } else {
                     return null;
                 }
             }
         });
+        return found != null;
+    }
 
+    @TruffleBoundary
+    public static Object removeClassVariable(ModuleFields moduleFields, RubyContext context, Node currentNode, String name) {
+        moduleFields.checkFrozen(context, currentNode);
+
+        final Object found = moduleFields.getClassVariables().remove(name);
         if (found == null) {
-            // Not existing class variable - set in the current module
-            Layouts.MODULE.getFields(module).setClassVariable(context, currentNode, name, value);
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(context.getCoreExceptions().nameErrorClassVariableNotDefined(name, moduleFields.rubyModuleObject, currentNode));
         }
+        return found;
     }
 
     private static <R> R classVariableLookup(DynamicObject module, Function1<R, DynamicObject> action) {

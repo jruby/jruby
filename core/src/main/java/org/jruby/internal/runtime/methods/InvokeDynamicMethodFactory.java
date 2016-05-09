@@ -10,9 +10,9 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * Copyright (C) 2012 The JRuby Community <www.jruby.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -32,17 +32,14 @@ import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
 import org.jruby.RubyModule;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,21 +52,19 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import static org.jruby.runtime.Helpers.arrayOf;
-
 /**
  * This invoker uses MethodHandle for all bindings to Java code, rather than generating
  * stubs or using reflection.
- * 
+ *
  * @see org.jruby.runtime.MethodFactory
  * @see HandleMethod
  */
 public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
-    private static final Logger LOG = LoggerFactory.getLogger("InvokeDynamicMethodFactory");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(InvokeDynamicMethodFactory.class);
+
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    
+
     /**
      */
     public InvokeDynamicMethodFactory(ClassLoader classLoader) {
@@ -80,7 +75,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
     public DynamicMethod getAnnotatedMethod(final RubyModule implementationClass, final List<JavaMethodDescriptor> descs) {
         JavaMethodDescriptor desc1 = descs.get(0);
         DescriptorInfo info = new DescriptorInfo(desc1);
-        
+
         if (desc1.anno.frame()) {
             // super logic does not work yet because we need to take impl class
             // and method name from the DynamicMethod#call call, so punt to
@@ -121,7 +116,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
         }
 
         Callable<MethodHandle>[] generators = buildAnnotatedMethodHandles(implementationClass.getRuntime(), descs, implementationClass);
-        
+
         return new HandleMethod(
                 implementationClass,
                 desc1.anno.visibility(),
@@ -155,7 +150,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
         }
 
         Callable<MethodHandle>[] targets = new Callable[5];
-        
+
         for (JavaMethodDescriptor desc: descs) {
             MethodHandle method;
 
@@ -192,7 +187,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 targets[4] = target;
             }
         }
-        
+
         return targets;
     }
 
@@ -322,14 +317,14 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
     /**
      * Use code generation to provide a method handle based on an annotated Java
      * method.
-     * 
+     *
      * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     @Override
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
-        return getAnnotatedMethod(implementationClass, Arrays.asList(desc));
+        return getAnnotatedMethod(implementationClass, Collections.singletonList(desc));
     }
-    
+
     public static final Signature VARIABLE_ARITY_SIGNATURE = Signature
             .returning(IRubyObject.class)
             .appendArg("context", ThreadContext.class)
@@ -338,7 +333,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             .appendArg("name", String.class)
             .appendArg("args", IRubyObject[].class)
             .appendArg("block", Block.class);
-    
+
     public static final Signature[] SPECIFIC_ARITY_SIGNATURES;
     static {
             Signature[] specifics = new Signature[4];
@@ -348,9 +343,9 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                     .appendArg("self", IRubyObject.class)
                     .appendArg("class", RubyModule.class)
                     .appendArg("name", String.class);
-            
+
             specifics[0] = specific.appendArg("block", Block.class);
-            
+
             for (int i = 0; i < 3; i++) {
                 specific = specific
                         .appendArg("arg" + i, IRubyObject.class);
@@ -358,7 +353,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             }
             SPECIFIC_ARITY_SIGNATURES = specifics;
     }
-    
+
     private static final SmartBinder[] SPREAD_BINDERS = new SmartBinder[4];
     static {
         for (int i = 0; i < 4; i++) {

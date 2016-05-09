@@ -91,10 +91,6 @@ if [ -z "$JAVACMD" ] ; then
   fi
 fi
 
-if [ -z "$JAVA_MEM" ] ; then
-  JAVA_MEM=-Xmx500m
-fi
-
 if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss2048k
 fi
@@ -247,11 +243,11 @@ do
      # Pass -X... and -X? search options through
      -X*\.\.\.|-X*\?)
         ruby_args=("${ruby_args[@]}" "$1") ;;
-     # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X+T)
         JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
         ruby_args=("${ruby_args[@]}" "-X+T")
         ;;
+     # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
         val=${1:2}
         if expr "$val" : '.*[.]' > /dev/null; then

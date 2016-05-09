@@ -23,31 +23,31 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
-import org.jruby.truffle.core.proc.ProcNodes;
+import org.jruby.truffle.core.proc.ProcOperations;
+import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.methods.CallMethodNode;
-import org.jruby.truffle.language.methods.CallMethodNodeGen;
-import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.language.methods.CallBoundMethodNode;
+import org.jruby.truffle.language.methods.CallBoundMethodNodeGen;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 
-@CoreClass(name = "Method")
+@CoreClass("Method")
 public abstract class MethodNodes {
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)
@@ -55,14 +55,10 @@ public abstract class MethodNodes {
 
         @Child protected ReferenceEqualNode referenceEqualNode;
 
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         protected boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), null, null));
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null));
             }
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
         }
@@ -82,10 +78,6 @@ public abstract class MethodNodes {
     @CoreMethod(names = "arity")
     public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
 
-        public ArityNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public int arity(DynamicObject method) {
             return Layouts.METHOD.getMethod(method).getSharedMethodInfo().getArity().getArityNumber();
@@ -96,35 +88,24 @@ public abstract class MethodNodes {
     @CoreMethod(names = { "call", "[]" }, needsBlock = true, rest = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
+        @Child CallBoundMethodNode callBoundMethodNode;
         @Child ProcOrNullNode procOrNullNode;
-        @Child CallMethodNode callMethodNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            callBoundMethodNode = CallBoundMethodNodeGen.create(context, sourceSection, null, null, null);
             procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
-            callMethodNode = CallMethodNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block) {
-            final InternalMethod internalMethod = Layouts.METHOD.getMethod(method);
-            final Object[] frameArguments = packArguments(method, internalMethod, arguments, block);
-
-            return callMethodNode.executeCallMethod(frame, internalMethod, frameArguments);
-        }
-
-        private Object[] packArguments(DynamicObject method, InternalMethod internalMethod, Object[] arguments, Object block) {
-            return RubyArguments.pack(null, null, internalMethod, DeclarationContext.METHOD, null, Layouts.METHOD.getReceiver(method), procOrNullNode.executeProcOrNull(block), arguments);
+            return callBoundMethodNode.executeCallBoundMethod(frame, method, arguments, procOrNullNode.executeProcOrNull(block));
         }
 
     }
 
     @CoreMethod(names = "name")
     public abstract static class NameNode extends CoreMethodArrayArgumentsNode {
-
-        public NameNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public DynamicObject name(DynamicObject method) {
@@ -138,10 +119,6 @@ public abstract class MethodNodes {
     @CoreMethod(names = "owner")
     public abstract static class OwnerNode extends CoreMethodArrayArgumentsNode {
 
-        public OwnerNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject owner(DynamicObject method) {
             return Layouts.METHOD.getMethod(method).getDeclaringModule();
@@ -151,10 +128,6 @@ public abstract class MethodNodes {
 
     @CoreMethod(names = "parameters")
     public abstract static class ParametersNode extends CoreMethodArrayArgumentsNode {
-
-        public ParametersNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization
@@ -169,10 +142,6 @@ public abstract class MethodNodes {
     @CoreMethod(names = "receiver")
     public abstract static class ReceiverNode extends CoreMethodArrayArgumentsNode {
 
-        public ReceiverNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object receiver(DynamicObject method) {
             return Layouts.METHOD.getReceiver(method);
@@ -182,10 +151,6 @@ public abstract class MethodNodes {
 
     @CoreMethod(names = "source_location")
     public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
-
-        public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object sourceLocation(DynamicObject method) {
@@ -225,10 +190,6 @@ public abstract class MethodNodes {
     @CoreMethod(names = "to_proc")
     public abstract static class ToProcNode extends CoreMethodArrayArgumentsNode {
 
-        public ToProcNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "methodObject == cachedMethodObject", limit = "getCacheLimit()")
         public DynamicObject toProcCached(DynamicObject methodObject,
                 @Cached("methodObject") DynamicObject cachedMethodObject,
@@ -241,9 +202,9 @@ public abstract class MethodNodes {
             final CallTarget callTarget = method2proc(methodObject);
             final InternalMethod method = Layouts.METHOD.getMethod(methodObject);
 
-            return ProcNodes.createRubyProc(
+            return ProcOperations.createRubyProc(
                     coreLibrary().getProcFactory(),
-                    ProcNodes.Type.LAMBDA,
+                    ProcType.LAMBDA,
                     method.getSharedMethodInfo(),
                     callTarget,
                     callTarget,
@@ -296,14 +257,10 @@ public abstract class MethodNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            throw new RaiseException(coreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
+            throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

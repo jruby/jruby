@@ -14,11 +14,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 
 public class ReadRestArgumentNode extends RubyNode {
 
@@ -30,6 +31,7 @@ public class ReadRestArgumentNode extends RubyNode {
     private final BranchProfile subsetOfArgumentsProfile = BranchProfile.create();
 
     @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
+    @Child private SnippetNode snippetNode = new SnippetNode();
 
     public ReadRestArgumentNode(RubyContext context, SourceSection sourceSection, int startIndex, int indexFromCount,
                                 boolean keywordArguments, int minimumForKWargs) {
@@ -39,7 +41,7 @@ public class ReadRestArgumentNode extends RubyNode {
         this.keywordArguments = keywordArguments;
 
         if (keywordArguments) {
-            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(context, sourceSection, minimumForKWargs);
+            readUserKeywordsHashNode = new ReadUserKeywordsHashNode(minimumForKWargs);
         }
     }
 
@@ -89,8 +91,8 @@ public class ReadRestArgumentNode extends RubyNode {
                 kwargsHash = nil();
             }
 
-            getContext().getCodeLoader().inline(this,
-                    "Truffle::Primitive.add_rejected_kwargs_to_rest(rest, kwargs)",
+            snippetNode.execute(frame,
+                    "Truffle.add_rejected_kwargs_to_rest(rest, kwargs)",
                     "rest", rest,
                     "kwargs", kwargsHash);
         }

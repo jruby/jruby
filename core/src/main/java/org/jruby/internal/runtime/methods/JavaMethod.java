@@ -34,6 +34,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
+import static org.jruby.util.StringSupport.split;
+
 /**
  */
 public abstract class JavaMethod extends DynamicMethod implements Cloneable, MethodArgs2, NativeCallMethod {
@@ -232,12 +235,12 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     public String[] getParameterList() {
         if (parameterList == null) {
             if (parameterDesc != null && parameterDesc.length() > 0) {
-                parameterList = parameterDesc.split(";");
-            } else {
-                parameterList = new String[0];
+                parameterList = split(parameterDesc, ';').toArray(EMPTY_STRING_ARRAY);
+            }
+            else {
+                parameterList = EMPTY_STRING_ARRAY;
             }
         }
-
         return parameterList;
     }
 

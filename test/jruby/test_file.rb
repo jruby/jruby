@@ -792,12 +792,12 @@ class TestFile < Test::Unit::TestCase
     Dir.mkdir(subdir)
     Dir.chdir(subdir) { |dir|
       begin
-        file = File.open("__dummy_file.txt", "wb") { |file|
-          file.write("dummy text")
-          file
-        }
+        file = File.open("__dummy_file.txt", "wb")
+        file.write("dummy text")
+        file.close
         assert_nothing_raised { File.truncate(file.path, 0) }
       ensure
+        file.close rescue nil
         File.unlink(file.path)
       end
     }

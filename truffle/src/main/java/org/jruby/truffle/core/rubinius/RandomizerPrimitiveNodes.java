@@ -12,22 +12,18 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyRandom;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.Layouts;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.util.Random;
 
 import java.math.BigInteger;
 
 public abstract class RandomizerPrimitiveNodes {
 
-    @RubiniusPrimitive(name = "randomizer_allocate", needsSelf = false)
-    public static abstract class RandomizerAllocatePrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public RandomizerAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "randomizer_allocate", needsSelf = false)
+    public static abstract class RandomizerAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject randomizerAllocate() {
@@ -36,12 +32,8 @@ public abstract class RandomizerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "randomizer_seed")
-    public static abstract class RandomizerSeedPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public RandomizerSeedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "randomizer_seed")
+    public static abstract class RandomizerSeedPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyBignum(seed)")
         public DynamicObject randomizerSeed(DynamicObject randomizer, DynamicObject seed) {
@@ -67,12 +59,8 @@ public abstract class RandomizerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "randomizer_rand_float")
-    public static abstract class RandomizerRandFloatPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public RandomizerRandFloatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "randomizer_rand_float")
+    public static abstract class RandomizerRandFloatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public double randomizerRandFloat(DynamicObject randomizer) {
@@ -85,12 +73,8 @@ public abstract class RandomizerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "randomizer_rand_int")
-    public static abstract class RandomizerRandIntPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public RandomizerRandIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "randomizer_rand_int")
+    public static abstract class RandomizerRandIntPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public int randomizerRandInt(DynamicObject randomizer, int limit) {
@@ -111,18 +95,14 @@ public abstract class RandomizerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "randomizer_gen_seed")
-    public static abstract class RandomizerGenSeedPrimitiveNode extends RubiniusPrimitiveArrayArgumentsNode {
-
-        public RandomizerGenSeedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    @Primitive(name = "randomizer_gen_seed")
+    public static abstract class RandomizerGenSeedPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization
         public DynamicObject randomizerGenSeed(DynamicObject randomizerClass) {
             final BigInteger seed = RubyRandom.randomSeedBigInteger(getContext().getJRubyRuntime().getRandom());
-            return Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), seed);
+            return createBignum(seed);
         }
     }
 

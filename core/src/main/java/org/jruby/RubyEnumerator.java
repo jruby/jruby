@@ -700,7 +700,18 @@ public class RubyEnumerator extends RubyObject {
         }
 
         private void ensureStarted() {
-            if (thread == null) future = runtime.getFiberExecutor().submit(this);
+            try {
+                if (thread == null) future = runtime.getFiberExecutor().submit(this);
+            } catch (OutOfMemoryError oome) {
+                String oomeMessage = oome.getMessage();
+                if (oomeMessage != null && oomeMessage.contains("unable to create new native thread")) {
+                    // try to clean out stale enumerator threads by forcing GC
+                    System.gc();
+                    future = runtime.getFiberExecutor().submit(this);
+                } else {
+                    throw oome;
+                }
+            }
         }
 
         private IRubyObject peekTake() {

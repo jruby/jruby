@@ -12,7 +12,9 @@ describe "Socket::TCPServer.accept_nonblock" do
 
   it "accepts non blocking connections" do
     @server.listen(5)
-    lambda { @server.accept_nonblock}.should raise_error(Errno::EAGAIN)
+    lambda {
+      @server.accept_nonblock
+    }.should raise_error(IO::WaitReadable)
 
     c = TCPSocket.new("127.0.0.1", SocketSpecs.port)
     sleep 0.1

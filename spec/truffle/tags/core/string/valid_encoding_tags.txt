@@ -1,0 +1,1 @@
+fails:String#valid_encoding? returns true if an invalid string is appended another invalid one but both make a valid string

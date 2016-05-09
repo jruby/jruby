@@ -254,8 +254,8 @@ describe "IO#gets" do
   end
 
   after :each do
-    rm_r @name
     @io.close if @io
+    rm_r @name
     Encoding.default_external = @external
     Encoding.default_internal = @internal
   end

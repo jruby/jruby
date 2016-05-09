@@ -11,20 +11,22 @@ package org.jruby.truffle.core.exception;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.dsl.Layout;
+import com.oracle.truffle.api.object.dsl.Nullable;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.language.backtrace.Backtrace;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 
 @Layout
 public interface ExceptionLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createExceptionShape(DynamicObject logicalClass,
-                                              DynamicObject metaClass);
+    DynamicObjectFactory createExceptionShape(
+            DynamicObject logicalClass,
+            DynamicObject metaClass);
 
-    DynamicObject createException(DynamicObjectFactory factory,
-                                  @Nullable Object message,
-                                  @Nullable Backtrace backtrace);
+    DynamicObject createException(
+            DynamicObjectFactory factory,
+            @Nullable Object message,
+            @Nullable Backtrace backtrace);
 
     boolean isException(DynamicObject object);
 

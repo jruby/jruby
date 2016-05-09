@@ -13,15 +13,14 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.LoopConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.CoreClass;
-import org.jruby.truffle.core.CoreMethod;
-import org.jruby.truffle.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.Layouts;
-import org.jruby.truffle.core.YieldingCoreMethodNode;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.builtins.CoreClass;
+import org.jruby.truffle.builtins.CoreMethod;
+import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -29,17 +28,13 @@ import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 
 import java.math.BigInteger;
 
-@CoreClass(name = "Integer")
+@CoreClass("Integer")
 public abstract class IntegerNodes {
 
     @CoreMethod(names = "downto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class DownToNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode downtoInternalCall;
-
-        public DownToNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public Object downto(VirtualFrame frame, int from, int to, DynamicObject block) {
@@ -55,7 +50,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -82,7 +77,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -111,10 +106,6 @@ public abstract class IntegerNodes {
 
         // TODO CS 2-May-15 we badly need OSR in this node
 
-        public TimesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public DynamicObject times(VirtualFrame frame, int n, NotProvided block) {
             // TODO (eregon, 16 June 2015): this should return an enumerator
@@ -138,7 +129,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(i);
+                    LoopNode.reportLoopCount(this, i);
                 }
             }
 
@@ -156,7 +147,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(i < Integer.MAX_VALUE ? (int) i : Integer.MAX_VALUE);
+                    LoopNode.reportLoopCount(this, i < Integer.MAX_VALUE ? (int) i : Integer.MAX_VALUE);
                 }
             }
 
@@ -178,10 +169,6 @@ public abstract class IntegerNodes {
 
     @CoreMethod(names = { "to_i", "to_int" })
     public abstract static class ToINode extends CoreMethodArrayArgumentsNode {
-
-        public ToINode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization
         public int toI(int n) {
@@ -205,10 +192,6 @@ public abstract class IntegerNodes {
 
         @Child private CallDispatchHeadNode uptoInternalCall;
 
-        public UpToNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public Object upto(VirtualFrame frame, int from, int to, DynamicObject block) {
             int count = 0;
@@ -223,7 +206,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
@@ -249,7 +232,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    LoopNode.reportLoopCount(this, count);
                 }
             }
 
