@@ -13,15 +13,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.language.LexicalScope;
 
-import java.util.Arrays;
-
 public class SharedMethodInfo {
 
     private final SourceSection sourceSection;
     private final LexicalScope lexicalScope;
     private final Arity arity;
     private final String name;
-    private final String indicativeName;
     private final boolean isBlock;
     private final ArgumentDescriptor[] argumentDescriptors;
     private final boolean alwaysClone;
@@ -33,7 +30,6 @@ public class SharedMethodInfo {
             LexicalScope lexicalScope,
             Arity arity,
             String name,
-            String indicativeName,
             boolean isBlock,
             ArgumentDescriptor[] argumentDescriptors,
             boolean alwaysClone,
@@ -47,7 +43,6 @@ public class SharedMethodInfo {
         this.lexicalScope = lexicalScope;
         this.arity = arity;
         this.name = name;
-        this.indicativeName = indicativeName;
         this.isBlock = isBlock;
         this.argumentDescriptors = argumentDescriptors;
         this.alwaysClone = alwaysClone;
@@ -69,10 +64,6 @@ public class SharedMethodInfo {
 
     public String getName() {
         return name;
-    }
-
-    public String getIndicativeName() {
-        return indicativeName;
     }
 
     public boolean isBlock() {
@@ -100,7 +91,6 @@ public class SharedMethodInfo {
                 sourceSection,
                 lexicalScope,
                 arity,
-                newName,
                 newName,
                 isBlock,
                 argumentDescriptors,

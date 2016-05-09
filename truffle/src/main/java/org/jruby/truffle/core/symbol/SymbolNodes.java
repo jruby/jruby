@@ -111,7 +111,7 @@ public abstract class SymbolNodes {
             final SourceSection sourceSection = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getCallNode().getEncapsulatingSourceSection();
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.AT_LEAST_ONE, Layouts.SYMBOL.getString(symbol), Layouts.SYMBOL.getString(symbol), true, ArgumentDescriptor.ANON_REST, false, false, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.AT_LEAST_ONE, Layouts.SYMBOL.getString(symbol), true, ArgumentDescriptor.ANON_REST, false, false, false);
 
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
 
