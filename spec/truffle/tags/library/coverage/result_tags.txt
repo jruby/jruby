@@ -1,2 +1,0 @@
-fails:Coverage.result should list coverage for the required file starting coverage
-fails:Coverage.result should list coverage for the loaded file starting coverage
