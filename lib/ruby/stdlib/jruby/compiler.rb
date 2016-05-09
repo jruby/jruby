@@ -52,8 +52,8 @@ module JRuby::Compiler
         options[:target] = tgt
       end
 
-      opts.on("-J OPTION", "Pass OPTION to javac for javac compiles") do |opts|
-        options[:javac_options] << opts
+      opts.on("-J OPTION", "Pass OPTION to javac for javac compiles") do |o|
+        options[:javac_options] << o
       end
 
       #opts.on("-5"," --jdk5", "Generate JDK 5 classes (version 49)") do |x|
@@ -287,8 +287,8 @@ module JRuby::Compiler
 
       if File.directory?(filename)
         puts "Compiling **/*.rb in '#{File.expand_path(filename)}'..." if options[:verbose]
-        Dir.glob(File.join(filename, "/**/*.rb")).each do |filename|
-          errors += compile_proc[filename]
+        Dir.glob(File.join(filename, "/**/*.rb")).each do |f|
+          errors += compile_proc[f]
         end
       else
         if filename.end_with?('.java')

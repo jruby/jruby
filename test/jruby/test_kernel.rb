@@ -780,7 +780,7 @@ class TestKernel < Test::Unit::TestCase
     ENV['RUBYOPT'] = "-v"
     result =  `bin/jruby -e "a=1"`
     assert_equal 0, $?.exitstatus
-    assert_match /ruby/i, result
+    assert_match(/ruby/i, result)
   ensure
     ENV['RUBYOPT'] = old
   end

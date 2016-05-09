@@ -3,7 +3,6 @@ require 'test/unit'
 # JRUBY-3714: ActiveMessaging poller stops silently with JRuby 1.3.0RC1 and RC2.
 class TestCvarsInOddScopes < Test::Unit::TestCase
   def test_lambda_in_eigenclass
-    $result
     Class.new do
       @@running = true
       class << self
@@ -17,7 +16,6 @@ class TestCvarsInOddScopes < Test::Unit::TestCase
   end
 
   def test_proc_in_eigenclass
-    $result
     Class.new do
       @@running = true
       class << self

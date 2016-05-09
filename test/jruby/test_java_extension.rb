@@ -284,7 +284,7 @@ class TestJavaExtension < Test::Unit::TestCase
 
   def test_ruby_block_with_args_as_interface
     file = java.io.File.new(".")
-    listing = file.list {|file,str| !!(str =~ /\./) }
+    listing = file.list {|_,str| !!(str =~ /\./) }
     assert listing.size >= 0
   end
 
