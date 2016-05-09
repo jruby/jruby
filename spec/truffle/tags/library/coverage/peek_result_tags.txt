@@ -1,4 +1,2 @@
 fails:Coverage.peek_result returns the result so far
-fails:Coverage.peek_result immediate second call returns same result
 fails:Coverage.peek_result second call after require returns accumulated result
-fails:Coverage.peek_result call right before Coverage.result should give equal result
