@@ -28,7 +28,9 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLongArray;
 
@@ -43,6 +45,7 @@ public class CoverageManager {
     private EventBinding<?> binding;
     private final Map<Source, AtomicLongArray> counters = new ConcurrentHashMap<>();
     private final Map<Source, BitSet> linesHaveCode = new HashMap<>();
+    private final Set<Source> loadedSinceEnabled = new HashSet<>();
 
     private boolean enabled;
 
@@ -55,6 +58,8 @@ public class CoverageManager {
     }
 
     public synchronized void setLineHasCode(LineLocation line) {
+        loadedSinceEnabled.add(line.getSource());
+
         BitSet bitmap = linesHaveCode.get(line.getSource());
 
         if (bitmap == null) {
@@ -80,16 +85,20 @@ public class CoverageManager {
                 return new ExecutionEventNode() {
 
                     @CompilationFinal private boolean configured;
-                    @CompilationFinal private AtomicLongArray counters;
                     @CompilationFinal private int lineNumber;
+                    @CompilationFinal private AtomicLongArray counters;
 
                     @Override
                     protected void onEnter(VirtualFrame frame) {
                         if (!configured) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             final SourceSection sourceSection = eventContext.getInstrumentedSourceSection();
-                            counters = getCounters(sourceSection.getSource());
                             lineNumber = sourceSection.getStartLine() - 1;
+
+                            if (loadedSinceEnabled.contains(sourceSection.getSource())) {
+                                counters = getCounters(sourceSection.getSource());
+                            }
+
                             configured = true;
                         }
 
@@ -112,6 +121,7 @@ public class CoverageManager {
             return;
         }
 
+        loadedSinceEnabled.clear();
         binding.dispose();
 
         enabled = false;
