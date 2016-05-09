@@ -79,7 +79,7 @@ public class SharedMethodInfo {
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
-        return Arrays.copyOf(argumentDescriptors, argumentDescriptors.length);
+        return argumentDescriptors;
     }
 
     public boolean shouldAlwaysClone() {
