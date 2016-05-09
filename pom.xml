@@ -84,7 +84,6 @@ DO NOT MODIFIY - GENERATED CODE
     </mailingList>
   </mailingLists>
   <modules>
-    <module>truffle</module>
     <module>core</module>
     <module>lib</module>
   </modules>
@@ -526,6 +525,15 @@ DO NOT MODIFIY - GENERATED CODE
   </reporting>
   <profiles>
     <profile>
+      <id>truffle</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <modules>
+        <module>truffle</module>
+      </modules>
+    </profile>
+    <profile>
       <id>test</id>
       <modules>
         <module>test</module>
@@ -545,87 +553,6 @@ DO NOT MODIFIY - GENERATED CODE
     </profile>
     <profile>
       <id>exec</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-language</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-core</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-library</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-truffle</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-language-report</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-core-report</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-library-report</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-test-pe</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-mri-tests</id>
       <build>
         <defaultGoal>package</defaultGoal>
       </build>
@@ -796,6 +723,7 @@ DO NOT MODIFIY - GENERATED CODE
         <defaultGoal>install</defaultGoal>
       </build>
       <modules>
+        <module>truffle</module>
         <module>test</module>
         <module>maven</module>
       </modules>
@@ -806,6 +734,7 @@ DO NOT MODIFIY - GENERATED CODE
         <defaultGoal>clean</defaultGoal>
       </build>
       <modules>
+        <module>truffle</module>
         <module>test</module>
         <module>maven</module>
       </modules>
@@ -813,6 +742,7 @@ DO NOT MODIFIY - GENERATED CODE
     <profile>
       <id>release</id>
       <modules>
+        <module>truffle</module>
         <module>test</module>
         <module>maven</module>
       </modules>
@@ -850,6 +780,7 @@ DO NOT MODIFIY - GENERATED CODE
         </plugins>
       </build>
       <modules>
+        <module>truffle</module>
         <module>maven</module>
       </modules>
       <distributionManagement>
