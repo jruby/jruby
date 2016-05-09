@@ -74,21 +74,21 @@ public class TraceManager {
         instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
-                return new BaseEventEventNode(context, traceFunc, context.getCoreStrings().LINE.createInstance());
+                return new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().LINE.createInstance());
             }
         }));
 
         instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CallTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
-                return new CallEventEventNode(context, traceFunc, context.getCoreStrings().CALL.createInstance());
+                return new CallEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CALL.createInstance());
             }
         }));
 
         instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(ClassTag.class).build(), new ExecutionEventNodeFactory() {
             @Override
             public ExecutionEventNode create(EventContext eventContext) {
-                return new BaseEventEventNode(context, traceFunc, context.getCoreStrings().CLASS.createInstance());
+                return new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CLASS.createInstance());
             }
         }));
 
@@ -99,6 +99,7 @@ public class TraceManager {
         protected final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
 
         protected final RubyContext context;
+        protected final EventContext eventContext;
         protected final DynamicObject traceFunc;
         protected final Object event;
 
@@ -107,8 +108,9 @@ public class TraceManager {
         @CompilationFinal private DynamicObject file;
         @CompilationFinal private int line;
 
-        public BaseEventEventNode(RubyContext context, DynamicObject traceFunc, Object event) {
+        public BaseEventEventNode(RubyContext context, EventContext eventContext, DynamicObject traceFunc, Object event) {
             this.context = context;
+            this.eventContext = eventContext;
             this.traceFunc = traceFunc;
             this.event = event;
         }
@@ -137,7 +139,7 @@ public class TraceManager {
         private DynamicObject getFile() {
             if (file == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                file = StringOperations.createString(context, context.getRopeTable().getRopeUTF8(getEncapsulatingSourceSection().getSource().getName()));
+                file = StringOperations.createString(context, context.getRopeTable().getRopeUTF8(eventContext.getInstrumentedSourceSection().getSource().getName()));
             }
 
             return file;
@@ -146,7 +148,7 @@ public class TraceManager {
         private int getLine() {
             if (line == 0) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                line = getEncapsulatingSourceSection().getStartLine();
+                line = eventContext.getInstrumentedSourceSection().getStartLine();
             }
 
             return line;
@@ -167,8 +169,8 @@ public class TraceManager {
 
         @Child private LogicalClassNode logicalClassNode;
 
-        public CallEventEventNode(RubyContext context, DynamicObject traceFunc, Object event) {
-            super(context, traceFunc, event);
+        public CallEventEventNode(RubyContext context, EventContext eventContext, DynamicObject traceFunc, Object event) {
+            super(context, eventContext, traceFunc, event);
         }
 
         @Override

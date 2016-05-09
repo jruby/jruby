@@ -74,7 +74,7 @@ public class CoverageManager {
                 .build(), new ExecutionEventNodeFactory() {
 
             @Override
-            public ExecutionEventNode create(EventContext eventContext) {
+            public ExecutionEventNode create(final EventContext eventContext) {
                 return new ExecutionEventNode() {
 
                     @CompilationFinal private AtomicLongArray counters;
@@ -84,7 +84,7 @@ public class CoverageManager {
                     protected void onEnter(VirtualFrame frame) {
                         if (counters == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
-                            final SourceSection sourceSection = getEncapsulatingSourceSection();
+                            final SourceSection sourceSection = eventContext.getInstrumentedSourceSection();
                             counters = getCounters(sourceSection.getSource());
                             lineNumber = sourceSection.getStartLine() - 1;
                         }
