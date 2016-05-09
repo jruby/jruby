@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrumentation.EventBinding;
 import com.oracle.truffle.api.instrumentation.EventContext;
 import com.oracle.truffle.api.instrumentation.ExecutionEventNode;
 import com.oracle.truffle.api.instrumentation.ExecutionEventNodeFactory;
@@ -39,6 +40,7 @@ public class CoverageManager {
     public static final long NO_CODE = -1;
 
     private final Instrumenter instrumenter;
+    private EventBinding<?> binding;
     private final Map<Source, AtomicLongArray> counters = new ConcurrentHashMap<>();
     private final Map<Source, BitSet> linesHaveCode = new HashMap<>();
 
@@ -69,7 +71,7 @@ public class CoverageManager {
             return;
         }
 
-        instrumenter.attachFactory(SourceSectionFilter.newBuilder()
+        binding = instrumenter.attachFactory(SourceSectionFilter.newBuilder()
                 .tagIs(LineTag.class)
                 .build(), new ExecutionEventNodeFactory() {
 
@@ -100,6 +102,17 @@ public class CoverageManager {
         });
 
         enabled = true;
+    }
+
+    @TruffleBoundary
+    public synchronized void disable() {
+        if (!enabled) {
+            return;
+        }
+
+        binding.dispose();
+
+        enabled = false;
     }
 
     private synchronized AtomicLongArray getCounters(Source source) {

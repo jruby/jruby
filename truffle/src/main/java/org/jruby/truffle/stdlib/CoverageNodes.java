@@ -27,12 +27,23 @@ import java.util.Map;
 @CoreClass("Truffle::Coverage")
 public abstract class CoverageNodes {
 
-    @CoreMethod(names = "start", onSingleton = true)
-    public abstract static class CoverageStartNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "enable", onSingleton = true)
+    public abstract static class CoverageEnableNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject coverageStart() {
+        public DynamicObject enable() {
             getContext().getCoverageManager().enable();
+            return nil();
+        }
+
+    }
+
+    @CoreMethod(names = "disable", onSingleton = true)
+    public abstract static class CoverageDisableNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject disable() {
+            getContext().getCoverageManager().disable();
             return nil();
         }
 
@@ -43,7 +54,7 @@ public abstract class CoverageNodes {
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject coverageResult() {
+        public DynamicObject resultArray() {
             final List<DynamicObject> results = new ArrayList<>();
 
             for (Map.Entry<Source, long[]> source : getContext().getCoverageManager().getCounts().entrySet()) {
