@@ -120,6 +120,10 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static String decodeRope(Ruby runtime, Rope value) {
+        // TODO CS 9-May-16 having recursive problems with this, so flatten up front for now
+
+        value = flatten(value);
+
         if (value instanceof LeafRope) {
             int begin = 0;
             int length = value.byteLength();
@@ -146,26 +150,6 @@ public class RopeOperations {
             }
 
             return RubyEncoding.decode(value.getBytes(), begin, length, charset);
-        } else if (value instanceof SubstringRope) {
-            final SubstringRope substringRope = (SubstringRope) value;
-
-            return decodeRope(runtime, substringRope.getChild()).substring(substringRope.getOffset(), substringRope.getOffset() + substringRope.characterLength());
-        } else if (value instanceof ConcatRope) {
-            final ConcatRope concatRope = (ConcatRope) value;
-
-            return decodeRope(runtime, concatRope.getLeft()) + decodeRope(runtime, concatRope.getRight());
-        } else if (value instanceof RepeatingRope) {
-            final RepeatingRope repeatingRope = (RepeatingRope) value;
-
-            final String childString = decodeRope(runtime, repeatingRope.getChild());
-            final StringBuilder builder = new StringBuilder(childString.length() * repeatingRope.getTimes());
-            for (int i = 0; i < repeatingRope.getTimes(); i++) {
-                builder.append(childString);
-            }
-
-            return builder.toString();
-        } else if (value instanceof LazyIntRope) {
-            return Integer.toString(((LazyIntRope) value).getValue());
         } else {
             throw new RuntimeException("Decoding to String is not supported for rope of type: " + value.getClass().getName());
         }
