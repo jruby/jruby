@@ -89,7 +89,9 @@ public class CoverageManager {
                             lineNumber = sourceSection.getStartLine() - 1;
                         }
 
-                        counters.incrementAndGet(lineNumber);
+                        if (counters != null) {
+                            counters.incrementAndGet(lineNumber);
+                        }
                     }
 
                 };
@@ -101,6 +103,10 @@ public class CoverageManager {
     }
 
     private synchronized AtomicLongArray getCounters(Source source) {
+        if (source.getPath() == null) {
+            return null;
+        }
+
         AtomicLongArray c = counters.get(source);
 
         if (c == null) {
