@@ -133,6 +133,7 @@ public class CoverageManager {
         }
 
         binding.dispose();
+        linesHaveCode.clear();
         counters.clear();
 
         enabled = false;
