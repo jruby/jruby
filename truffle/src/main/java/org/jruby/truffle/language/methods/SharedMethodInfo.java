@@ -15,16 +15,11 @@ import org.jruby.truffle.language.LexicalScope;
 
 import java.util.Arrays;
 
-/**
- * {@link InternalMethod} objects are copied as properties such as visibility are changed. {@link SharedMethodInfo} stores
- * the state that does not change, such as where the method was defined.
- */
 public class SharedMethodInfo {
 
     private final SourceSection sourceSection;
     private final LexicalScope lexicalScope;
     private final Arity arity;
-    /** The original name of the method. Does not change when aliased. */
     private final String name;
     private final String indicativeName;
     private final boolean isBlock;
@@ -33,14 +28,27 @@ public class SharedMethodInfo {
     private final boolean alwaysInline;
     private final boolean needsCallerFrame;
 
-    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, String indicativeName, boolean isBlock, ArgumentDescriptor[] argumentDescriptors, boolean alwaysClone, boolean alwaysInline, boolean needsCallerFrame) {
+    public SharedMethodInfo(
+            SourceSection sourceSection,
+            LexicalScope lexicalScope,
+            Arity arity, String name,
+            String indicativeName,
+            boolean isBlock,
+            ArgumentDescriptor[] argumentDescriptors,
+            boolean alwaysClone,
+            boolean alwaysInline,
+            boolean needsCallerFrame) {
+        if (argumentDescriptors == null) {
+            argumentDescriptors = new ArgumentDescriptor[]{};
+        }
+
         this.sourceSection = sourceSection;
         this.lexicalScope = lexicalScope;
         this.arity = arity;
         this.name = name;
         this.indicativeName = indicativeName;
         this.isBlock = isBlock;
-        this.argumentDescriptors = argumentDescriptors == null ? new ArgumentDescriptor[] {} : argumentDescriptors;
+        this.argumentDescriptors = argumentDescriptors;
         this.alwaysClone = alwaysClone;
         this.alwaysInline = alwaysInline;
         this.needsCallerFrame = needsCallerFrame;
@@ -87,7 +95,17 @@ public class SharedMethodInfo {
     }
 
     public SharedMethodInfo withName(String newName) {
-        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, newName, isBlock, argumentDescriptors, alwaysClone, alwaysInline, needsCallerFrame);
+        return new SharedMethodInfo(
+                sourceSection,
+                lexicalScope,
+                arity,
+                newName,
+                newName,
+                isBlock,
+                argumentDescriptors,
+                alwaysClone,
+                alwaysInline,
+                needsCallerFrame);
     }
 
     @Override
