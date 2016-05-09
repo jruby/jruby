@@ -17,8 +17,4 @@ public abstract class CoreSourceSection {
         return SourceSection.createUnavailable("core", String.format("%s#%s", className, methodName));
     }
 
-    public static boolean isCoreSourceSection(SourceSection sourceSection) {
-        return sourceSection.getSource() == null;
-    }
-
 }

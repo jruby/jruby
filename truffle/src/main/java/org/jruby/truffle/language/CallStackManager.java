@@ -18,7 +18,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.builtins.CoreSourceSection;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
@@ -84,7 +83,7 @@ public class CallStackManager {
 
                 final SourceSection sourceSection = frameInstance.getCallNode().getEncapsulatingSourceSection();
 
-                if (CoreSourceSection.isCoreSourceSection(sourceSection)) {
+                if (sourceSection.getSource() == null) {
                     return null;
                 } else {
                     return frameInstance.getCallNode();
