@@ -525,6 +525,15 @@ DO NOT MODIFIY - GENERATED CODE
   </reporting>
   <profiles>
     <profile>
+      <id>truffle</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <modules>
+        <module>truffle</module>
+      </modules>
+    </profile>
+    <profile>
       <id>test</id>
       <modules>
         <module>test</module>
@@ -892,15 +901,6 @@ DO NOT MODIFIY - GENERATED CODE
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>truffle</id>
-      <activation>
-        <jdk>[1.8,)</jdk>
-      </activation>
-      <modules>
-        <module>truffle</module>
-      </modules>
     </profile>
   </profiles>
 </project>

@@ -88,8 +88,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'bouncy-castle.version' => '1.47',
               'joda.time.version' => '2.8.2' )
 
-  modules [ 'core', 'lib' ]
-
   plugin_management do
     jar( 'junit:junit:4.11',
          :scope => 'test' )
@@ -171,6 +169,15 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                    :phase => 'site-deploy' )
   end
 
+  modules [ 'core', 'lib' ]
+
+  # Truffle is by default only built if a JDK 8+ is available
+  profile 'truffle' do
+    activation do
+      jdk '[1.8,)' # 1.8+
+    end
+    modules [ 'truffle' ]
+  end
 
   build do
     default_goal 'install'
@@ -317,13 +324,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       jdk '1.8'
     end
     plugin :javadoc, :additionalparam => '-Xdoclint:none'
-  end
-
-  profile 'truffle' do
-    activation do
-      jdk '[1.8,)' # 1.8+
-    end
-    modules [ 'truffle' ]
   end
 
   reporting do
