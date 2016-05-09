@@ -79,16 +79,18 @@ public class CoverageManager {
             public ExecutionEventNode create(final EventContext eventContext) {
                 return new ExecutionEventNode() {
 
+                    @CompilationFinal private boolean configured;
                     @CompilationFinal private AtomicLongArray counters;
                     @CompilationFinal private int lineNumber;
 
                     @Override
                     protected void onEnter(VirtualFrame frame) {
-                        if (counters == null) {
+                        if (!configured) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             final SourceSection sourceSection = eventContext.getInstrumentedSourceSection();
                             counters = getCounters(sourceSection.getSource());
                             lineNumber = sourceSection.getStartLine() - 1;
+                            configured = true;
                         }
 
                         if (counters != null) {
