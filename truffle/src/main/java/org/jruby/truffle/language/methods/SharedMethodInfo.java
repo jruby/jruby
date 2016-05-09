@@ -33,10 +33,6 @@ public class SharedMethodInfo {
     private final boolean alwaysInline;
     private final boolean needsCallerFrame;
 
-    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, boolean isBlock, ArgumentDescriptor[] argumentDescriptors, boolean alwaysClone, boolean alwaysInline, boolean needsCallerFrame) {
-        this(sourceSection, lexicalScope, arity, name, name, isBlock, argumentDescriptors, alwaysClone, alwaysInline, needsCallerFrame);
-    }
-
     public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, String indicativeName, boolean isBlock, ArgumentDescriptor[] argumentDescriptors, boolean alwaysClone, boolean alwaysInline, boolean needsCallerFrame) {
         this.sourceSection = sourceSection;
         this.lexicalScope = lexicalScope;
@@ -91,7 +87,7 @@ public class SharedMethodInfo {
     }
 
     public SharedMethodInfo withName(String newName) {
-        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, argumentDescriptors, alwaysClone, alwaysInline, needsCallerFrame);
+        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, newName, isBlock, argumentDescriptors, alwaysClone, alwaysInline, needsCallerFrame);
     }
 
     @Override
