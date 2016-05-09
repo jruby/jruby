@@ -137,6 +137,10 @@ public class CoreExceptions {
         return runtimeError("Truffle::Graal.assert_not_compiled can only be called lexically", currentNode);
     }
 
+    public DynamicObject runtimeErrorCoverageNotEnabled(Node currentNode) {
+        return runtimeError("coverage measurement is not enabled", currentNode);
+    }
+
     @TruffleBoundary
     public DynamicObject runtimeError(String message, Node currentNode) {
         return ExceptionOperations.createRubyException(

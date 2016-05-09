@@ -153,7 +153,11 @@ public class CoverageManager {
         return c;
     }
 
-    public Map<Source, long[]> getCounts() {
+    public synchronized Map<Source, long[]> getCounts() {
+        if (!enabled) {
+            return null;
+        }
+
         final Map<Source, long[]> counts = new HashMap<>();
 
         for (Map.Entry<Source, AtomicLongArray> entry : counters.entrySet()) {
