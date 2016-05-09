@@ -15,13 +15,13 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-public class InvokeRubiniusPrimitiveNode extends RubyNode {
+public class InvokePrimitiveNode extends RubyNode {
 
     @Child private RubyNode primitive;
 
     private final ConditionProfile primitiveSucceededCondition = ConditionProfile.createBinaryProfile();
 
-    public InvokeRubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive) {
+    public InvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive) {
         super(context, sourceSection);
         this.primitive = primitive;
     }

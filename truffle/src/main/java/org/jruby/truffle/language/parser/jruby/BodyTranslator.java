@@ -593,7 +593,7 @@ public class BodyTranslator extends Translator {
          *
          * into
          *
-         *   InvokeRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *   InvokePrimitiveNode(FooNode(arg1, arg2, ..., argN))
          *
          * or
          *
