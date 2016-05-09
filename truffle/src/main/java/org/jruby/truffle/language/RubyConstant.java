@@ -11,8 +11,8 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 
 public class RubyConstant {
 
