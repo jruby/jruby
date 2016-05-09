@@ -31,7 +31,8 @@ public class SharedMethodInfo {
     public SharedMethodInfo(
             SourceSection sourceSection,
             LexicalScope lexicalScope,
-            Arity arity, String name,
+            Arity arity,
+            String name,
             String indicativeName,
             boolean isBlock,
             ArgumentDescriptor[] argumentDescriptors,
