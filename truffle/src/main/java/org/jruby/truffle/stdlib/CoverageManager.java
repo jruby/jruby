@@ -45,7 +45,6 @@ public class CoverageManager {
     private EventBinding<?> binding;
     private final Map<Source, AtomicLongArray> counters = new ConcurrentHashMap<>();
     private final Map<Source, BitSet> linesHaveCode = new HashMap<>();
-    private final Set<Source> loadedSinceEnabled = new HashSet<>();
 
     private boolean enabled;
 
@@ -58,7 +57,9 @@ public class CoverageManager {
     }
 
     public synchronized void setLineHasCode(LineLocation line) {
-        loadedSinceEnabled.add(line.getSource());
+        if (!enabled) {
+            return;
+        }
 
         BitSet bitmap = linesHaveCode.get(line.getSource());
 
@@ -94,11 +95,7 @@ public class CoverageManager {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             final SourceSection sourceSection = eventContext.getInstrumentedSourceSection();
                             lineNumber = sourceSection.getStartLine() - 1;
-
-                            if (loadedSinceEnabled.contains(sourceSection.getSource())) {
-                                counters = getCounters(sourceSection.getSource());
-                            }
-
+                            counters = getCounters(sourceSection.getSource());
                             configured = true;
                         }
 
@@ -121,8 +118,8 @@ public class CoverageManager {
             return;
         }
 
-        loadedSinceEnabled.clear();
         binding.dispose();
+        counters.clear();
 
         enabled = false;
     }
