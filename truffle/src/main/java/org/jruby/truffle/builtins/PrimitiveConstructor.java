@@ -15,9 +15,11 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.ReturnID;
 
 public interface PrimitiveConstructor {
-    public int getPrimitiveArity();
 
-    public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID);
+    int getPrimitiveArity();
 
-    public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments);
+    RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID);
+
+    RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments);
+
 }
