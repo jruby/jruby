@@ -38,9 +38,6 @@ public class SharedMethodInfo {
     }
 
     public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, String indicativeName, boolean isBlock, ArgumentDescriptor[] argumentDescriptors, boolean alwaysClone, boolean alwaysInline, boolean needsCallerFrame) {
-        assert sourceSection != null;
-        assert name != null;
-
         this.sourceSection = sourceSection;
         this.lexicalScope = lexicalScope;
         this.arity = arity;
