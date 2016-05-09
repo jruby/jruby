@@ -12,22 +12,11 @@ package org.jruby.truffle.builtins;
 import com.oracle.truffle.api.dsl.Specialization;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 
 public class AmbiguousOptionalArgumentChecker {
 
-    private static final Method GET_PARAMETERS = checkParametersNamesAvailable();
     public static boolean SUCCESS = true;
-
-    private static Method checkParametersNamesAvailable() {
-        try {
-            return Method.class.getMethod("getParameters");
-        } catch (NoSuchMethodException | SecurityException e) {
-            // Java 7 or could not find how to get names of method parameters
-            System.err.println("Could not find method Method.getParameters()");
-            System.exit(1);
-            return null;
-        }
-    }
 
     public static void verifyNoAmbiguousOptionalArguments(CoreMethodNodeManager.MethodDetails methodDetails) {
         try {
@@ -60,15 +49,15 @@ public class AmbiguousOptionalArgumentChecker {
                             n--; // ignore final Object[] argument
                         }
                         Class<?> parameterType = parameterTypes[n];
-                        Object[] parameters = (Object[]) GET_PARAMETERS.invoke(method);
+                        Parameter[] parameters = method.getParameters();
 
-                        Object parameter = parameters[n];
-                        boolean isNamePresent = (boolean) parameter.getClass().getMethod("isNamePresent").invoke(parameter);
+                        Parameter parameter = parameters[n];
+                        boolean isNamePresent = parameter.isNamePresent();
                         if (!isNamePresent) {
                             System.err.println("Method parameters names are not available for " + method);
                             System.exit(1);
                         }
-                        String name = (String) parameter.getClass().getMethod("getName").invoke(parameter);
+                        String name = parameter.getName();
 
                         if (parameterType == Object.class && !name.startsWith("unused") && !name.equals("maybeBlock")) {
                             String[] guards = method.getAnnotation(Specialization.class).guards();
@@ -101,12 +90,12 @@ public class AmbiguousOptionalArgumentChecker {
         return false;
     }
 
-    private static String methodToString(Method method, Class<?>[] parameterTypes, Object[] parameters) throws ReflectiveOperationException {
+    private static String methodToString(Method method, Class<?>[] parameterTypes, Parameter[] parameters) throws ReflectiveOperationException {
         StringBuilder str = new StringBuilder();
         str.append(method.getName()).append("(");
         for (int i = 0; i < parameters.length; i++) {
-            Object parameter = parameters[i];
-            String name = (String) parameter.getClass().getMethod("getName").invoke(parameter);
+            Parameter parameter = parameters[i];
+            String name = parameter.getName();
             str.append(parameterTypes[i].getSimpleName()).append(" ").append(name);
             if (i < parameters.length - 1) {
                 str.append(", ");
