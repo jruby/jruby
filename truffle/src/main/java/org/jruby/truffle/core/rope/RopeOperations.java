@@ -222,77 +222,9 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static void visitBytes(Rope rope, BytesVisitor visitor, int offset, int length) {
-        /*
-         * TODO: CS-7-Apr-16 rewrite this to be iterative as flattenBytes is, but with new logic for offset and length
-         * creating a range, then write flattenBytes in terms of visitBytes.
-         */
+        // TODO CS 9-May-16 make this the primitive, and have flatten use it
 
-        assert length <= rope.byteLength();
-
-        if (rope.getRawBytes() != null) {
-            visitor.accept(rope.getRawBytes(), offset, length);
-        } else if (rope instanceof ConcatRope) {
-            final ConcatRope concat = (ConcatRope) rope;
-            
-            final int leftLength = concat.getLeft().byteLength();
-
-            if (offset < leftLength) {
-                /*
-                 * The left branch might not be large enough to extract the full byte range we want. In that case,
-                 * we'll extract what we can and extract the difference from the right side.
-                 */
-                
-                final int leftUsed;
-
-                if (offset + length > leftLength) {
-                    leftUsed = leftLength - offset;
-                } else {
-                    leftUsed = length;
-                }
-
-                visitBytes(concat.getLeft(), visitor, offset, leftUsed);
-
-                if (leftUsed < length) {
-                    visitBytes(concat.getRight(), visitor, 0, length - leftUsed);
-                }
-            } else {
-                visitBytes(concat.getRight(), visitor, offset - leftLength, length);
-            }
-        } else if (rope instanceof SubstringRope) {
-            final SubstringRope substring = (SubstringRope) rope;
-
-            visitBytes(substring.getChild(), visitor, substring.getOffset() + offset, length);
-        } else if (rope instanceof RepeatingRope) {
-            final RepeatingRope repeating = (RepeatingRope) rope;
-            final Rope child = repeating.getChild();
-
-            final int start = offset % child.byteLength();
-            final int firstPartLength = Math.min(child.byteLength() - start, length);
-
-            visitBytes(child, visitor, start, firstPartLength);
-
-            final int lengthMinusFirstPart = length - firstPartLength;
-            final int remainingEnd = lengthMinusFirstPart % child.byteLength();
-
-            if (lengthMinusFirstPart >= child.byteLength()) {
-                final byte[] secondPart = child.getBytes();
-
-                final int repeatPartCount = lengthMinusFirstPart / child.byteLength();
-                for (int i = 0; i < repeatPartCount; i++) {
-                    visitBytes(child, visitor, 0, secondPart.length);
-                }
-
-                if (remainingEnd > 0) {
-                    visitBytes(child, visitor, 0, remainingEnd);
-                }
-            } else if (remainingEnd > 0) {
-                visitBytes(child, visitor, 0, remainingEnd);
-            }
-        } else if (rope instanceof LazyRope) {
-            visitor.accept(rope.getBytes(), offset, length);
-        } else {
-            throw new UnsupportedOperationException("Don't know how to visit rope of type: " + rope.getClass().getName());
-        }
+        visitor.accept(flattenBytes(rope), offset, length);
     }
 
     @TruffleBoundary
