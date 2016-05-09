@@ -498,7 +498,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private RaiseException notStructMemberError(String name) {
-        return getRuntime().newNameError("no member '" + name + "' in struct", name);
+        return getRuntime().newNameError("no member '" + name + "' in struct", this, name);
     }
 
     public final IRubyObject get(int index) {
