@@ -224,10 +224,10 @@ class SocketTest < Test::Unit::TestCase
 
   def test_tcp_socket_errors
     begin
-      TCPSocket.new('127.0.0.10', 42)
+      TCPSocket.new('0.0.0.0', 42)
     rescue Errno::ECONNREFUSED => e
-      # Connection refused - connect(2) for "127.0.0.1" port 42
-      assert_equal 'Connection refused - connect(2) for "127.0.0.10" port 42', e.message
+      # Connection refused - connect(2) for "0.0.0.0" port 42
+      assert_equal 'Connection refused - connect(2) for "0.0.0.0" port 42', e.message
     else; fail 'not raised'
     end
 
