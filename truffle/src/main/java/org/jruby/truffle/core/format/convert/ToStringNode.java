@@ -138,7 +138,7 @@ public abstract class ToStringNode extends FormatNode {
             if (inspectNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(),
-                        getEncapsulatingSourceSection(), new RubyNode[]{null}));
+                        getEncapsulatingSourceSection(), null));
             }
 
             return Layouts.STRING.getRope(inspectNode.toS(frame, object)).getBytes();

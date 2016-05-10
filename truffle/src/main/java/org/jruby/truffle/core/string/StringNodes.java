@@ -615,9 +615,7 @@ public abstract class StringNodes {
         private StringSubstringPrimitiveNode getSubstringNode() {
             if (substringNode == null) {
                 CompilerDirectives.transferToInterpreter();
-
-                substringNode = insert(StringNodesFactory.StringSubstringPrimitiveNodeFactory.create(
-                        new RubyNode[] { null, null, null }));
+                substringNode = insert(StringNodesFactory.StringSubstringPrimitiveNodeFactory.create(null));
             }
 
             return substringNode;

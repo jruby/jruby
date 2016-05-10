@@ -277,7 +277,7 @@ public abstract class ClassNodes {
         void moduleInitialize(VirtualFrame frame, DynamicObject rubyClass, DynamicObject block) {
             if (moduleInitializeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(new RubyNode[]{ null, null }));
+                moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(null));
             }
             moduleInitializeNode.executeInitialize(frame, rubyClass, block);
         }

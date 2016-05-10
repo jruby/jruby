@@ -185,7 +185,7 @@ public abstract class HashNodes {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(new RubyNode[]{null, null});
+            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null);
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
         }
@@ -375,7 +375,7 @@ public abstract class HashNodes {
         
         public GetOrUndefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            getIndexNode = HashNodesFactory.GetIndexNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            getIndexNode = HashNodesFactory.GetIndexNodeFactory.create(context, sourceSection, null);
             getIndexNode.setUndefinedValue(context.getCoreLibrary().getRubiniusUndefined());
         }
 

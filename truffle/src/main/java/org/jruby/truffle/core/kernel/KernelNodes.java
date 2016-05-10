@@ -231,7 +231,7 @@ public abstract class KernelNodes {
         private boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(new RubyNode[]{null, null}));
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null));
             }
 
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
@@ -282,7 +282,7 @@ public abstract class KernelNodes {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = SameOrEqualNodeFactory.create(new RubyNode[]{ null, null });
+            equalNode = SameOrEqualNodeFactory.create(null);
         }
 
         @Specialization
@@ -1931,8 +1931,8 @@ public abstract class KernelNodes {
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             classNode = LogicalClassNodeGen.create(context, sourceSection, null);
-            objectIDNode = ObjectNodesFactory.ObjectIDPrimitiveNodeFactory.create(new RubyNode[]{ null });
-            toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(new RubyNode[]{ null });
+            objectIDNode = ObjectNodesFactory.ObjectIDPrimitiveNodeFactory.create(null);
+            toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(null);
         }
 
         public abstract DynamicObject executeToS(VirtualFrame frame, Object self);

@@ -260,7 +260,7 @@ public abstract class FiberNodes {
 
         public ResumeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(new RubyNode[] { null, null, null });
+            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
         }
 
         @Specialization
@@ -277,7 +277,7 @@ public abstract class FiberNodes {
 
         public YieldNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(new RubyNode[] { null, null, null });
+            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
         }
 
         @Specialization

@@ -880,7 +880,7 @@ public abstract class FixnumNodes {
         public Object leftShiftNeg(VirtualFrame frame, long a, int b) {
             if (rightShiftNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                rightShiftNode = insert(FixnumNodesFactory.RightShiftNodeFactory.create(new RubyNode[]{ null, null }));
+                rightShiftNode = insert(FixnumNodesFactory.RightShiftNodeFactory.create(null));
             }
             return rightShiftNode.executeRightShift(frame, a, -b);
         }
@@ -940,7 +940,7 @@ public abstract class FixnumNodes {
         public Object rightShiftNeg(VirtualFrame frame, long a, int b) {
             if (leftShiftNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(new RubyNode[]{ null, null }));
+                leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(null));
             }
             return leftShiftNode.executeLeftShift(frame, a, -b);
         }
@@ -960,7 +960,7 @@ public abstract class FixnumNodes {
         public Object rightShiftNeg(VirtualFrame frame, long a, DynamicObject b) {
             if (leftShiftNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(new RubyNode[]{ null, null }));
+                leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(null));
             }
             return leftShiftNode.executeLeftShift(frame, a, Layouts.BIGNUM.getValue(b).negate());
         }

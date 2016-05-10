@@ -696,7 +696,7 @@ public abstract class ArrayNodes {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(new RubyNode[]{null,null});
+            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -891,7 +891,7 @@ public abstract class ArrayNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(new RubyNode[]{null,null});
+            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
         }
 
         @Specialization(guards = "isNullArray(array)")
