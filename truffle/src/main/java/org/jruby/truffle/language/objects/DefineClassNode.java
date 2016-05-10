@@ -96,22 +96,15 @@ public class DefineClassNode extends RubyNode {
 
             final DynamicObject currentSuperClass = ClassNodes.getSuperClass(definingClass);
 
-            if (!isBlankOrRootClass(superClassModule)
-                    && !isBlankOrRootClass(definingClass)
-                    && currentSuperClass != superClassModule
-                    && (superClassModule != definingClass || currentSuperClass == coreLibrary().getObjectClass())) {
+            if (currentSuperClass != superClassModule
+                    && superClassModule != coreLibrary().getObjectClass()) { // bug-compat with MRI https://bugs.ruby-lang.org/issues/12367
                 errorProfile.enter();
-
                 throw new RaiseException(coreExceptions().superclassMismatch(
                         Layouts.MODULE.getFields(definingClass).getName(), this));
             }
         }
 
         return definingClass;
-    }
-
-    private boolean isBlankOrRootClass(DynamicObject rubyClass) {
-        return rubyClass == coreLibrary().getBasicObjectClass() || rubyClass == coreLibrary().getObjectClass();
     }
 
 }

@@ -543,7 +543,7 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(ioClass, Layouts.IO.createIOShape(ioClass, ioClass));
         internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
         Layouts.CLASS.setInstanceFactoryUnsafe(internalBufferClass, Layouts.IO_BUFFER.createIOBufferShape(internalBufferClass, internalBufferClass));
-        weakRefClass = defineClass("WeakRef");
+        weakRefClass = defineClass(basicObjectClass, "WeakRef");
         weakRefFactory = Layouts.WEAK_REF_LAYOUT.createWeakRefShape(weakRefClass, weakRefClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(weakRefClass, weakRefFactory);
         final DynamicObject tracePointClass = defineClass("TracePoint");
