@@ -324,7 +324,6 @@ module Commands
     puts '    --score name                               report results as scores'
     puts 'jt metrics ... minheap ...                     what is the smallest heap you can use to run an application'
     puts 'jt metrics ... time ...                        how long does it take to run a command, broken down into different phases'
-    puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -883,37 +882,6 @@ module Commands
 
     build
     run({ "TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS" => "true" }, '-e', 'exit')
-  end
-
-  def install(arg)
-    case arg
-    when /.*suite.*\.py$/
-      rebuild
-      mvn '-Pcomplete'
-
-      suite_file = arg
-      suite_lines = File.readlines(suite_file)
-      version = Utilities.jruby_version
-
-      [
-        ['maven/jruby-complete/target', "jruby-complete"],
-        ['truffle/target', "jruby-truffle"]
-      ].each do |dir, name|
-        jar_name = "#{name}-#{version}.jar"
-        source_jar_path = "#{dir}/#{jar_name}"
-        shasum = Digest::SHA1.hexdigest File.read(source_jar_path)
-        jar_shasum_name = "#{name}-#{version}-#{shasum}.jar"
-        FileUtils.cp source_jar_path, "#{File.expand_path('../..', suite_file)}/lib/#{jar_shasum_name}"
-        line_index = suite_lines.find_index { |line| line.start_with? "      \"path\" : \"lib/#{name}" }
-        suite_lines[line_index] = "      \"path\" : \"lib/#{jar_shasum_name}\",\n"
-        suite_lines[line_index + 1] = "      \#\"urls\" : [\"http://lafo.ssw.uni-linz.ac.at/truffle/ruby/#{jar_shasum_name}\"],\n"
-        suite_lines[line_index + 2] = "      \"sha1\" : \"#{shasum}\"\n"
-      end
-
-      File.write(suite_file, suite_lines.join())
-    else
-      raise ArgumentError, kind
-    end
   end
 
 end
