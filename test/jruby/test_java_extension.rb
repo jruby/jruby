@@ -303,18 +303,6 @@ class TestJavaExtension < Test::Unit::TestCase
     end
   end
 
-  class CallAbstractInConstructor < org.jruby.test.Abstract
-    def initialize; super("call protected method in constructor!") end
-
-    def protected_method; "HELLO!" end
-  end
-
-  def test_calling_abstract_method_in_java_constructor
-    skip('this leaking in super constructor (calling Ruby implemented methods)')
-    #a = CallAbstractInConstructor.new
-    #assert_equal "HELLO!", a.result
-  end
-
   def test_map_interface_to_array
     hash = {"one"=>"two","three"=>"four"}
     map = java.util.HashMap.new(hash)
