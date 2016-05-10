@@ -102,6 +102,18 @@ describe "A class definition" do
     end
   end
 
+  it "allows reopening a class without specifying the superclass" do
+    module ClassSpecs
+      class SuperclassNotGiven < A
+      end
+      SuperclassNotGiven.superclass.should == A
+
+      class SuperclassNotGiven
+      end
+      SuperclassReopenedObject.superclass.should == A
+    end
+  end
+
   it "does not allow to set the superclass even if it was not specified by the first declaration" do
     module ClassSpecs
       class NoSuperclassSet
