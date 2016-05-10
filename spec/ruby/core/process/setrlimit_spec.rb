@@ -74,8 +74,10 @@ platform_is_not :windows do
       end
 
       platform_is_not :solaris do
-        it "coerces :MEMLOCK into RLIMIT_MEMLOCK" do
-          Process.setrlimit(:MEMLOCK, *Process.getrlimit(Process::RLIMIT_MEMLOCK)).should be_nil
+        platform_is_not :aix do
+          it "coerces :MEMLOCK into RLIMIT_MEMLOCK" do
+            Process.setrlimit(:MEMLOCK, *Process.getrlimit(Process::RLIMIT_MEMLOCK)).should be_nil
+          end
         end
 
         it "coerces :NPROC into RLIMIT_NPROC" do
@@ -154,8 +156,10 @@ platform_is_not :windows do
       end
 
       platform_is_not :solaris do
-        it "coerces 'MEMLOCK' into RLIMIT_MEMLOCK" do
-          Process.setrlimit("MEMLOCK", *Process.getrlimit(Process::RLIMIT_MEMLOCK)).should be_nil
+        platform_is_not :aix do
+          it "coerces 'MEMLOCK' into RLIMIT_MEMLOCK" do
+            Process.setrlimit("MEMLOCK", *Process.getrlimit(Process::RLIMIT_MEMLOCK)).should be_nil
+          end
         end
 
         it "coerces 'NPROC' into RLIMIT_NPROC" do
