@@ -324,6 +324,7 @@ module Commands
     puts '    --score name                               report results as scores'
     puts 'jt metrics ... minheap ...                     what is the smallest heap you can use to run an application'
     puts 'jt metrics ... time ...                        how long does it take to run a command, broken down into different phases'
+    puts 'jt tarball                                     build the and test the distribution tarball'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -855,6 +856,15 @@ module Commands
     else
       "#{(bytes/1024.0**4).round(2)} TB"
     end
+  end
+  
+  def tarball
+    mvn '-Pdist'
+    generated_file = "#{JRUBY_DIR}/maven/jruby-dist/target/jruby-dist-#{Utilities.jruby_version}-bin.tar.gz"
+    final_file = "#{JRUBY_DIR}/jruby-bin-#{Utilities.jruby_version}.tar.gz"
+    FileUtils.copy generated_file, final_file
+    FileUtils.copy "#{generated_file}.sha256", "#{final_file}.sha256"
+    sh 'test/truffle/tarball.sh', final_file
   end
   
   def log(tty_message, full_message)
