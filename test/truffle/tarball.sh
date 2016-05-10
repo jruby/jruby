@@ -13,7 +13,6 @@ then
   RUBY=`echo */bin/jruby`
   FLAGS='-X+T'
   TOOL=`echo */bin/jruby+truffle`
-  $RUBY `dirname $RUBY`/gem install bundler
 else
   # GraalVM tarball
   RUBY=`echo */bin/ruby`
