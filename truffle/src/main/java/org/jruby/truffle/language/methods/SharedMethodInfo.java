@@ -13,11 +13,16 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.language.LexicalScope;
 
+/**
+ * {@link InternalMethod} objects are copied as properties such as visibility are changed.
+ * {@link SharedMethodInfo} stores the state that does not change, such as where the method was defined.
+ */
 public class SharedMethodInfo {
 
     private final SourceSection sourceSection;
     private final LexicalScope lexicalScope;
     private final Arity arity;
+    /** The original name of the method. Does not change when aliased. */
     private final String name;
     private final boolean isBlock;
     private final ArgumentDescriptor[] argumentDescriptors;
