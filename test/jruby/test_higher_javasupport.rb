@@ -1394,7 +1394,8 @@ CLASSDEF
 
   # JRUBY-3476
   def test_object_with_singleton_returns_java_class
-    x = java.lang.Object.new
+    java.util.ArrayList.__persistent__ = true
+    x = java.util.ArrayList.new
     def x.foo; end
     assert(x.java_class.kind_of?Java::JavaClass)
   end

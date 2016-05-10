@@ -3,6 +3,7 @@ require 'test/unit'
 class TestIvarTableIntegrity < Test::Unit::TestCase
   def test_ivar_table_integrity
     cls = Class.new do
+      def initialize; @foo = nil; end
       def foo=(a); @foo = a; end
       def remove_foo; remove_instance_variable :@foo; end
       def foo; @foo; end

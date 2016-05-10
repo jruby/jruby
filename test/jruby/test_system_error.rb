@@ -51,10 +51,6 @@ class TestSystemError < Test::Unit::TestCase
       ["EOPNOTSUPP", 102, "Operation not supported"], ["ENOSTR", 99, /Not a STREAM/i],
       ["ENOTTY", 25, "Inappropriate ioctl for device"],
       ["EALREADY", 37, "Operation already in progress"]].sort_by{|v| v[1] }
-
-      if ($VERBOSE)
-        print_report
-      end
   end
 
 #  def test_has_186_ERRNO_constants

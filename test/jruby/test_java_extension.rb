@@ -310,9 +310,9 @@ class TestJavaExtension < Test::Unit::TestCase
   end
 
   def test_calling_abstract_method_in_java_constructor
-    return skip('this leaking in super constructor (calling Ruby implemented methods)')
-    a = CallAbstractInConstructor.new
-    assert_equal "HELLO!", a.result
+    skip('this leaking in super constructor (calling Ruby implemented methods)')
+    #a = CallAbstractInConstructor.new
+    #assert_equal "HELLO!", a.result
   end
 
   def test_map_interface_to_array
