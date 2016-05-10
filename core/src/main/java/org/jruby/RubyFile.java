@@ -1557,6 +1557,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         RubyString origPath = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
         String relativePath = origPath.getUnicodeValue();
+
+        // Encoding logic lives in MRI's rb_file_expand_path_internal and should roughly equate to the following:
+        // * Paths expanded from the system, like ~ expanding to the user's home dir, should be filesystem-encoded.
+        // * Calls with a relative directory should use the encoding of that string.
+        // * Remaining calls should use the encoding of the incoming path string.
+        //
+        // We have our own system-like cases (e.g. URI expansion) that we do not set to the filesystem encoding
+        // because they are not really filesystem paths; they're in-process or network paths.
+        //
+        // See dac9850 and jruby/jruby#3849.
+
         Encoding enc = origPath.getEncoding();
         // for special paths like ~
         Encoding fsenc = runtime.getEncodingService().getFileSystemEncoding();
