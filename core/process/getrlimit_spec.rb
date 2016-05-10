@@ -1,5 +1,16 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
+platform_is :aix do
+  # In AIX, if getrlimit(2) is called multiple times with RLIMIT_DATA,
+  # the first call and the subequent calls return slightly different
+  # values of rlim_cur, even if the process does nothing between
+  # the calls.  This behavior causes some of the tests in this spec
+  # to fail, so call Process.getrlimit(:DATA) once and discard the result.
+  # Subsequent calls to Process.getrlimit(:DATA) should return
+  # a consistent value of rlim_cur.
+  Process.getrlimit(:DATA)
+end
+
 platform_is_not :windows do
   describe "Process.getrlimit" do
     it "returns a two-element Array of Integers" do
