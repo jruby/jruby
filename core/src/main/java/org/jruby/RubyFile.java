@@ -47,7 +47,6 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -80,7 +79,6 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
-import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
@@ -786,7 +784,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true)
     public static IRubyObject expand_path19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         RubyString path = (RubyString) expandPathInternal(context, recv, args, true, false);
-        path.force_encoding(context, context.runtime.getEncodingService().convertEncodingToRubyEncoding(get_path(context, args[0]).getEncoding()));
 
         return path;
     }
@@ -1560,10 +1557,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         RubyString origPath = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
         String relativePath = origPath.getUnicodeValue();
+        Encoding enc = origPath.getEncoding();
+        // for special paths like ~
+        Encoding fsenc = runtime.getEncodingService().getFileSystemEncoding();
 
         // Special /dev/null of windows
         if (Platform.IS_WINDOWS && ("NUL:".equalsIgnoreCase(relativePath) || "NUL".equalsIgnoreCase(relativePath))) {
-            return runtime.newString("//./" + relativePath.substring(0, 3));
+            return RubyString.newString(runtime, "//./" + relativePath.substring(0, 3), fsenc);
         }
 
         // treat uri-like and jar-like path as absolute
@@ -1613,21 +1613,22 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 // this is basically for classpath:/ and uri:classloader:/
                 relativePath = relativePath.substring(2).replace('\\', '/');
             }
-            return concatStrings(runtime, preFix, extra, relativePath);
+            return concatStrings(runtime, preFix, extra, relativePath, enc);
         }
 
         String[] uriParts = splitURI(relativePath);
         String cwd;
 
         // Handle ~user paths
-        if (expandUser) {
+        if (expandUser && startsWith(relativePath, '~')) {
+            enc = fsenc;
             relativePath = expandUserPath(context, relativePath, true);
         }
 
         if (uriParts != null) {
             //If the path was an absolute classpath path, return it as-is.
             if (uriParts[0].equals("classpath:")) {
-                return concatStrings(runtime, preFix, relativePath, postFix);
+                return concatStrings(runtime, preFix, relativePath, postFix, enc);
             }
             relativePath = uriParts[1];
         }
@@ -1640,6 +1641,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (args.length == 2 && !args[1].isNil()) {
             // TODO maybe combine this with get_path method
             String path = args[1].toString();
+            enc = fsenc;
             if (path.startsWith("uri:")) {
                 cwd = path;
             } else {
@@ -1745,13 +1747,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 }
             }
         }
-        return concatStrings(runtime, preFix, realPath, postFix);
+        return concatStrings(runtime, preFix, realPath, postFix, enc);
     }
 
-    private static RubyString concatStrings(final Ruby runtime, String s1, String s2, String s3) {
+    private static RubyString concatStrings(final Ruby runtime, String s1, String s2, String s3, Encoding enc) {
         return RubyString.newString(runtime,
                 new StringBuilder(s1.length() + s2.length() + s3.length()).
-                        append(s1).append(s2).append(s3)
+                        append(s1).append(s2).append(s3).toString(),
+                enc
         );
     }
 
@@ -1808,7 +1811,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static String expandUserPath(ThreadContext context, String path, final boolean raiseOnRelativePath) {
         int pathLength = path.length();
 
-        if (pathLength >= 1 && path.charAt(0) == '~') {
+        if (startsWith(path, '~')) {
             // Enebo : Should ~frogger\\foo work (it doesnt in linux ruby)?
             int userEnd = path.indexOf('/');
 
@@ -2049,11 +2052,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static boolean startsWith(final CharSequence str, final char c) {
-        return ( str.length() < 1 ) ? false : str.charAt(0) == c;
+        return str.length() >= 1 && str.charAt(0) == c;
     }
 
     private static boolean startsWith(final CharSequence str, final char c1, final char c2) {
-        return ( str.length() < 2 ) ? false : str.charAt(0) == c1 && str.charAt(1) == c2;
+        return str.length() >= 2 && str.charAt(0) == c1 && str.charAt(1) == c2;
     }
 
     // without any char[] array copying, also StringBuilder only has lastIndexOf(String)

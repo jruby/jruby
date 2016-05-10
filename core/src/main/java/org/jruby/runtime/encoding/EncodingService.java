@@ -97,7 +97,7 @@ public final class EncodingService {
     }
 
     // mri: rb_filesystem_encoding
-    public Encoding getFileSystemEncoding(Ruby runtime) {
+    public Encoding getFileSystemEncoding() {
         return SpecialEncoding.FILESYSTEM.toEncoding(runtime);
     }
 
@@ -578,5 +578,10 @@ public final class EncodingService {
     private Entry findEntryFromEncoding(Encoding e) {
         if (e == null) return null;
         return findEncodingEntry(new ByteList(e.getName()));
+    }
+
+    @Deprecated
+    public Encoding getFileSystemEncoding(Ruby runtime) {
+        return getFileSystemEncoding();
     }
 }
