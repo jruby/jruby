@@ -76,6 +76,9 @@ public class StaticScope implements Serializable {
     // Our name holder (offsets are assigned as variables are added)
     private String[] variableNames;
 
+    // A list of booleans indicating which variables are named captures from regexp
+    private boolean[] namedCaptures;
+
     // Arity of this scope if there is one
     private Signature signature;
 
@@ -185,7 +188,7 @@ public class StaticScope implements Serializable {
      * current scope.
      *
      * @param name of new variable
-     * @return index+depth merged location of scope
+     * @return index of variable
      */
     public int addVariableThisScope(String name) {
         // Ignore duplicate "_" args in blocks
@@ -204,6 +207,20 @@ public class StaticScope implements Serializable {
 
         // Returns slot of variable
         return variableNames.length - 1;
+    }
+
+    /**
+     * Add a new named capture variable to this (current) scope.
+     *
+     * @param name name of variable.
+     * @return index of variable
+     */
+    public int addNamedCaptureVariable(String name) {
+        int index = addVariableThisScope(name);
+
+        growNamedCaptures(index);
+
+        return index;
     }
 
     /**
@@ -507,6 +524,24 @@ public class StaticScope implements Serializable {
         System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
         variableNames = newVariableNames;
         variableNames[variableNames.length - 1] = name;
+    }
+
+    private void growNamedCaptures(int index) {
+        boolean[] namedCaptures = this.namedCaptures;
+        boolean[] newNamedCaptures;
+        if (namedCaptures != null) {
+            newNamedCaptures = new boolean[Math.max(index + 1, namedCaptures.length)];
+            System.arraycopy(namedCaptures, 0, newNamedCaptures, 0, namedCaptures.length);
+        } else {
+            newNamedCaptures = new boolean[index + 1];
+        }
+        newNamedCaptures[index] = true;
+        this.namedCaptures = newNamedCaptures;
+    }
+
+    public boolean isNamedCapture(int index) {
+        boolean[] namedCaptures = this.namedCaptures;
+        return namedCaptures != null && index < namedCaptures.length && namedCaptures[index];
     }
 
     @Override
