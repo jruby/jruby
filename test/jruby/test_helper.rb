@@ -82,7 +82,7 @@ module TestHelper
   end
 
   def sh(cmd)
-    puts cmd if $VERBOSE
+    puts cmd if $DEBUG
     return `#{cmd}`
   end
   private :sh

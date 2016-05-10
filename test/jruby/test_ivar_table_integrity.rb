@@ -4,11 +4,9 @@ class TestIvarTableIntegrity < Test::Unit::TestCase
   def test_ivar_table_integrity
     cls = Class.new do
       def initialize; @foo = nil; end
-      def foo=(a); @foo = a; end
+      attr_accessor :foo
+      attr_accessor :bar
       def remove_foo; remove_instance_variable :@foo; end
-      def foo; @foo; end
-      def bar=(a); @bar = a; end
-      def bar; @bar; end
     end
 
     obj = cls.new

@@ -70,7 +70,13 @@ class TestIO < Test::Unit::TestCase
     assert_nothing_raised { g.write "" }
     assert_nothing_raised { g.puts "" }
     assert_nothing_raised { g.putc 'c' }
-    assert_raises(Errno::EBADF) { g.syswrite "" }
+    begin
+      # silence "syswrite for buffered IO" warning
+      verbose, $VERBOSE = $VERBOSE, nil
+      assert_raises(Errno::EBADF) { g.syswrite "" }
+    ensure
+      $VERBOSE = verbose
+    end
 
     f = File.open(@file, "w")
     @to_close << g = IO.new(f.fileno)

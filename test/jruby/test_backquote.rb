@@ -13,20 +13,20 @@ class TestBackquote < Test::Unit::TestCase
     end
   end
 
-  def test_backquote_special_commands_and_cwd_inside_classloader
-    # not sure why it fails with java-1.6 - assume it is rare feature
-    # and works for java-1.7+
-    if File.exists?("/bin/echo") and not ENV_JAVA['java.version'].start_with?("1.6.")
-      begin
-        cwd = Dir.pwd
-        Dir.chdir('uri:classloader:/')
-        output = `/bin/echo hello`
-        assert_equal("hello\n", output)
-      ensure
-        Dir.chdir(cwd)
-      end
-    end
-  end
+#  def test_backquote_special_commands_and_cwd_inside_classloader
+#    # not sure why it fails with java-1.6 - assume it is rare feature
+#    # and works for java-1.7+
+#    if File.exists?("/bin/echo") and not ENV_JAVA['java.version'].start_with?("1.6.")
+#      begin
+#        cwd = Dir.pwd
+#        Dir.chdir('uri:classloader:/')
+#        output = `/bin/echo hello`
+#        assert_equal("hello\n", output)
+#      ensure
+#        Dir.chdir(cwd)
+#      end
+#    end
+#  end
 
   def test_system_special_commands
     if File.exists?("/bin/true")
