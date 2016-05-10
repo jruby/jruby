@@ -15,7 +15,7 @@ end
 # class to represent all information about a particular rotation of a particular piece
 class Rotation
   # an array (by location) containing a bit mask for how the piece maps at the given location.
-  # if the rotation is illegal at that location the mask will contain false
+  # if the rotation is invalid at that location the mask will contain false
   attr_reader :start_masks
 
   # maps a direction to a relative location.  these differ depending on whether it is an even or
@@ -32,7 +32,7 @@ class Rotation
     @start_masks = Array.new(60)
 
     # create the rotational masks by placing the base mask at the location and seeing if
-    # 1) it overlaps the boundries and 2) it produces a prunable board.  if either of these
+    # 1) it overlaps the boundaries and 2) it produces a prunable board.  if either of these
     # is true the piece cannot be placed
     0.upto(59) do | offset |
       mask = is_even(offset) ? (@even_mask << offset) : (@odd_mask << offset)
@@ -260,7 +260,7 @@ end
 
 # support function that create three utility maps:
 #  $converter -- for each row an array that maps a five bit row (via array mapping)
-#                to the a a five bit representation of the bits below it
+#                to the a five bit representation of the bits below it
 #  $bit_count -- maps a five bit row (via array mapping) to the number of 1s in the row
 #  @@new_regions -- maps a five bit row (via array mapping) to an array of "region" arrays
 #                   a region array has three values the first is a mask of bits in the region,
@@ -326,9 +326,9 @@ end
 #  The exact procedure is described in-code
 def prunable( board, location, slotting = false)
   collectors = []
-  # loop accross the rows
+  # loop across the rows
   (location / 6).to_i.upto(9) do | row_on |
-    # obtain a set of regions representing the bits of the curent row.
+    # obtain a set of regions representing the bits of the current row.
     regions = $regions[(board >> (row_on * 6)) & 0b11111]
     converter = $converter[row_on]
 
@@ -370,7 +370,7 @@ def prunable( board, location, slotting = false)
     end
 
     # check the existing collectors, if any collector overlapped no bits in the region its [2] value will
-    # be zero.  The size of any such reaason is tested if it is not a muliple of five true is returned since
+    # be zero.  The size of any such reaason is tested if it is not a multiple of five true is returned since
     # the board is prunable.  if it is a multiple of five it is removed.
     # Collector that are still active have a new adjacent value [0] set based n the matched bits
     # and have [2] cleared out for the next cycle.
@@ -382,7 +382,7 @@ def prunable( board, location, slotting = false)
           collectors[collector_num] = nil
         else
           # if a collector matches all bits in the row then we can return unprunable early for the
-          # follwing reasons:
+          # following reasons:
           #    1) there can be no more unavailable bits bince we fill from the top left downward
           #    2) all previous regions have been closed or joined so only this region can fail
           #    3) this region must be good since there can never be only 1 region that is nuot
@@ -467,7 +467,7 @@ def find_top( rotation_skip)
 end
 
 # the normail find routine, iterates through the available pieces, checks all rotations at the current location
-# and adds any boards found.  depth is acheived via recursion.  the overall approach is described
+# and adds any boards found.  depth is achieved via recursion.  the overall approach is described
 # here: http://www-128.ibm.com/developerworks/java/library/j-javaopt/
 # parameters:
 #  start_location -- where to start looking for place for the next piece at
@@ -526,7 +526,7 @@ def save( board_string)
     @boards_found += 1
 
     # the exit motif is a time saver.  Ideally the function should return, but those tests
-    # take noticable time (performance).
+    # take noticeable time (performance).
     if (@boards_found == @stop_count) then
       print_results
       exit(0)
@@ -561,4 +561,3 @@ create_collector_support
 @boards_found = 0
 
 find_all ######## DO IT!!!
-

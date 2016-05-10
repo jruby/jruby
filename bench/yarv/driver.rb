@@ -2,9 +2,23 @@
 # Ruby Benchmark driver
 #
 
-require 'optparse'
+first = true
+
+begin
+  require 'optparse'
+rescue LoadError
+  if first
+    first = false
+    $:.unshift File.join(File.dirname(__FILE__), '../lib')
+    retry
+  else
+    raise
+  end
+end
+
 require 'benchmark'
 require 'pp'
+require 'tempfile'
 
 class BenchmarkDriver
   def self.benchmark(opt)
@@ -14,6 +28,24 @@ class BenchmarkDriver
     ensure
       driver.show_results
     end
+  end
+
+  def self.load(input, type, opt)
+    case type
+    when 'yaml'
+      require 'yaml'
+      h = YAML.load(input)
+    when 'json'
+      require 'json'
+      h = JSON.load(input)
+    else
+      h = eval(input.read)
+    end
+    obj = allocate
+    obj.instance_variable_set("@execs", h[:executables] || h["executables"])
+    obj.instance_variable_set("@results", h[:results] || h["results"])
+    obj.instance_variable_set("@opt", opt)
+    obj
   end
 
   def output *args
@@ -35,7 +67,7 @@ class BenchmarkDriver
 
   def progress_message *args
     unless STDOUT.tty?
-      STDERR.print(*args) 
+      STDERR.print(*args)
       STDERR.flush
     end
   end
@@ -47,22 +79,26 @@ class BenchmarkDriver
 
       if /(.+)::(.+)/ =~ e
         # ex) ruby-a::/path/to/ruby-a
-        v = $1.strip
-        e = $2
+        label = $1.strip
+        path = $2
+        version = `#{path} -v`.chomp
       else
-        v =  `#{e} -v`.chomp
-        v.sub!(/ patchlevel \d+/, '')
+        path = e
+        version = label = `#{path} -v`.chomp
       end
-      [e, v]
+      [path, label, version]
     }.compact
 
     @dir = dir
     @repeat = opt[:repeat] || 1
     @repeat = 1 if @repeat < 1
     @pattern = opt[:pattern] || nil
+    @exclude = opt[:exclude] || nil
     @verbose = opt[:quiet] ? false : (opt[:verbose] || false)
     @output = opt[:output] ? open(opt[:output], 'w') : nil
     @loop_wl1 = @loop_wl2 = nil
+    @ruby_arg = opt[:ruby_arg] || nil
+    @measure_target = opt[:measure_target]
     @opt = opt
 
     # [[name, [[r-1-1, r-1-2, ...], [r-2-1, r-2-2, ...]]], ...]
@@ -71,13 +107,56 @@ class BenchmarkDriver
     if @verbose
       @start_time = Time.now
       message @start_time
-      @execs.each_with_index{|(e, v), i|
-        message "target #{i}: #{v}"
+      @execs.each_with_index{|(path, label, version), i|
+        message "target #{i}: " + (label == version ? "#{label}" : "#{label} (#{version})") + " at \"#{path}\""
       }
+      message "measure target: #{@measure_target}"
     end
   end
 
+  def adjusted_results name, results
+    s = nil
+    results.each_with_index{|e, i|
+      r = e.min
+      case name
+      when /^vm1_/
+        if @loop_wl1
+          r -= @loop_wl1[i]
+          r = 0 if r < 0
+          s = '*'
+        end
+      when /^vm2_/
+        if @loop_wl2
+          r -= @loop_wl2[i]
+          r = 0 if r < 0
+          s = '*'
+        end
+      end
+      yield r
+    }
+    s
+  end
+
   def show_results
+    case @opt[:format]
+    when :tsv
+      strformat = "\t%1$s"
+      numformat = "\t%1$*2$.3f"
+      minwidth = 0
+      name_width = 0
+    when :markdown
+      markdown = true
+      strformat = "|%1$-*2$s"
+      numformat = "|%1$*2$.3f"
+    when :plain
+      strformat = " %1$-*2$s"
+      numformat = " %1$*2$.3f"
+    end
+
+    name_width ||= @results.map {|v,*| v.size}.max
+    minwidth ||= 7
+    width = @execs.map{|(_, v)| [v.size, minwidth].max}
+
     output
 
     if @verbose
@@ -86,7 +165,30 @@ class BenchmarkDriver
       message
       message PP.pp(@results, "", 79)
       message
-      message "Elapesed time: #{Time.now - @start_time} (sec)"
+      message "Elapsed time: #{Time.now - @start_time} (sec)"
+    end
+
+    if rawdata_output = @opt[:rawdata_output]
+      h = {}
+      h[:cpuinfo] = File.read('/proc/cpuinfo') if File.exist?('/proc/cpuinfo')
+      h[:executables] = @execs
+      h[:results] = @results
+      if (type = File.extname(rawdata_output)).empty?
+        type = rawdata_output
+        rawdata_output = @output.path.sub(/\.[^.\/]+\z/, '') << '.' << rawdata_output
+      end
+      case type
+      when 'yaml'
+        require 'yaml'
+        h = YAML.dump(h)
+      when 'json'
+        require 'json'
+        h = JSON.pretty_generate(h)
+      else
+        require 'pp'
+        h = h.pretty_inspect
+      end
+      open(rawdata_output, 'w') {|f| f.puts h}
     end
 
     output '-----------------------------------------------------------'
@@ -96,35 +198,63 @@ class BenchmarkDriver
       output "minimum results in each #{@repeat} measurements."
     end
 
-    output "name\t#{@execs.map{|(e, v)| v}.join("\t")}"
+    output({
+      real: "Execution time (sec)",
+      peak: "Memory usage (peak) (B)",
+      size: "Memory usage (last size) (B)",
+    }[@measure_target])
+    output if markdown
+    output ["name".ljust(name_width), @execs.map.with_index{|(_, v), i| sprintf(strformat, v, width[i])}].join("").rstrip
+    output ["-"*name_width, width.map{|n|":".rjust(n, "-")}].join("|") if markdown
     @results.each{|v, result|
       rets = []
-      s = nil
-      result.each_with_index{|e, i|
-        r = e.min
-        case v
-        when /^vm1_/
-          if @loop_wl1
-            r -= @loop_wl1[i]
-            s = '*'
-          end
-        when /^vm2_/
-          if @loop_wl2
-            r -= @loop_wl2[i]
-            s = '*'
-          end
-        end
-        rets << sprintf("%.3f", r)
+      s = adjusted_results(v, result){|r|
+        rets << sprintf(numformat, r, width[rets.size])
       }
-      output "#{v}#{s}\t#{rets.join("\t")}"
+      v += s if s
+      output [v.ljust(name_width), rets].join("")
     }
+
+    if @execs.size > 1
+      output
+      output({
+        real: "Speedup ratio: compare with the result of `#{@execs[0][1]}' (greater is better)",
+        peak: "Memory consuming ratio (peak) with the result of `#{@execs[0][1]}' (greater is better)",
+        size: "Memory consuming ratio (size) with the result of `#{@execs[0][1]}' (greater is better)",
+      }[@measure_target])
+      output if markdown
+      output ["name".ljust(name_width), @execs[1..-1].map.with_index{|(_, v), i| sprintf(strformat, v, width[i])}].join("").rstrip
+      output ["-"*name_width, width[1..-1].map{|n|":".rjust(n, "-")}].join("|") if markdown
+      @results.each{|v, result|
+        rets = []
+        first_value = nil
+        s = adjusted_results(v, result){|r|
+          if first_value
+            if r == 0
+              rets << "Error"
+            else
+              rets << sprintf(numformat, first_value/Float(r), width[rets.size+1])
+            end
+          else
+            first_value = r
+          end
+        }
+        v += s if s
+        output [v.ljust(name_width), rets].join("")
+      }
+    end
+
+    if @opt[:output]
+      output
+      output "Log file: #{@opt[:output]}"
+    end
   end
 
   def files
     flag = {}
-    vm1 = vm2 = wl1 = wl2 = false
     @files = Dir.glob(File.join(@dir, 'bm*.rb')).map{|file|
       next if @pattern && /#{@pattern}/ !~ File.basename(file)
+      next if @exclude && /#{@exclude}/ =~ File.basename(file)
       case file
       when /bm_(vm[12])_/, /bm_loop_(whileloop2?).rb/
         flag[$1] = true
@@ -185,32 +315,63 @@ class BenchmarkDriver
     result
   end
 
-  def measure executable, file
-    cmd = "#{executable} #{file}"
-    m = Benchmark.measure{
-      `#{cmd}`
-    }
+  unless defined?(File::NULL)
+    if File.exist?('/dev/null')
+      File::NULL = '/dev/null'
+    end
+  end
 
-    if $? != 0
-      raise "Benchmark process exited with abnormal status (#{$?})"
+  def measure executable, file
+    case @measure_target
+    when :real
+      cmd = "#{executable} #{@ruby_arg} #{file}"
+      m = Benchmark.measure{
+        system(cmd, out: File::NULL)
+      }
+      result = m.real
+    when :peak, :size
+      tmp = Tempfile.new("benchmark-memory-wrapper-data")
+      wrapper = "#{File.join(__dir__, 'memory_wrapper.rb')} #{tmp.path} #{@measure_target}"
+      cmd = "#{executable} #{@ruby_arg} #{wrapper} #{file}"
+      system(cmd, out: File::NULL)
+      result = tmp.read.to_i
+      tmp.close
+    else
+      raise "unknown measure target"
     end
 
-    m.real
+    if $? != 0
+      raise $?.inspect if $? && $?.signaled?
+      output "\`#{cmd}\' exited with abnormal status (#{$?})"
+      0
+    else
+      result
+    end
   end
 end
 
 if __FILE__ == $0
   opt = {
-    :execs => ['ruby'],
-    :dir => './',
+    :execs => [],
+    :dir => File.dirname(__FILE__),
     :repeat => 1,
-    :output => "bmlog-#{Time.now.strftime('%Y%m%d-%H%M%S')}.#{$$}",
+    :measure_target => :real,
+    :output => nil,
+    :raw_output => nil,
+    :format => :tsv,
+  }
+  formats = {
+    :tsv => ".tsv",
+    :markdown => ".md",
+    :plain => ".txt",
   }
 
   parser = OptionParser.new{|o|
     o.on('-e', '--executables [EXECS]',
-         "Specify benchmark one or more targets. (exec1; exec2; exec3, ...)"){|e|
-      opt[:execs] = e.split(/;/)
+      "Specify benchmark one or more targets (e1::path1; e2::path2; e3::path3;...)"){|e|
+       e.split(/;/).each{|path|
+         opt[:execs] << path
+       }
     }
     o.on('-d', '--directory [DIRECTORY]', "Benchmark suites directory"){|d|
       opt[:dir] = d
@@ -218,21 +379,49 @@ if __FILE__ == $0
     o.on('-p', '--pattern [PATTERN]', "Benchmark name pattern"){|p|
       opt[:pattern] = p
     }
+    o.on('-x', '--exclude [PATTERN]', "Benchmark exclude pattern"){|e|
+      opt[:exclude] = e
+    }
     o.on('-r', '--repeat-count [NUM]', "Repeat count"){|n|
       opt[:repeat] = n.to_i
     }
-    o.on('-o', '--output-file [FILE]', "Output file"){|o|
-      opt[:output] = o
+    o.on('-o', '--output-file [FILE]', "Output file"){|f|
+      opt[:output] = f
     }
-    o.on('-q', '--quiet', "Run without notify information except result table."){|q|
-      opt[:quiet] = q
+    o.on('--ruby-arg [ARG]', "Optional argument for ruby"){|a|
+      opt[:ruby_arg] = a
+    }
+    o.on('--measure-target [TARGET]', 'real (execution time), peak, size (memory)'){|mt|
+      opt[:measure_target] = mt.to_sym
+    }
+    o.on('--rawdata-output [FILE]', 'output rawdata'){|r|
+      opt[:rawdata_output] = r
+    }
+    o.on('--load-rawdata=FILE', 'input rawdata'){|r|
+      opt[:rawdata_input] = r
+    }
+    o.on('-f', "--format=FORMAT", "output format (#{formats.keys.join(",")})", formats.keys){|r|
+      opt[:format] = r
     }
     o.on('-v', '--verbose'){|v|
       opt[:verbose] = v
     }
+    o.on('-q', '--quiet', "Run without notify information except result table."){|q|
+      opt[:quiet] = q
+      opt[:verbose] = false
+    }
   }
 
   parser.parse!(ARGV)
-  BenchmarkDriver.benchmark(opt)
+  opt[:output] ||= "bmlog-#{Time.now.strftime('%Y%m%d-%H%M%S')}.#{$$}#{formats[opt[:format]]}"
+
+  if input = opt[:rawdata_input]
+    b = open(input) {|f|
+      BenchmarkDriver.load(f, File.extname(input)[1..-1], opt)
+    }
+    b.show_results
+  else
+    BenchmarkDriver.benchmark(opt)
+  end
 end
 
