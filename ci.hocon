@@ -12,6 +12,7 @@ common: {
   }
   
   environment: {
+    CI: "true",
     PATH: "$JAVA_HOME/bin:$PATH"
   }
   

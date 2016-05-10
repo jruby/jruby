@@ -625,7 +625,7 @@ module Commands
       options += %w[--format spec/truffle/truffle_formatter.rb]
     end
 
-    if ENV['TRAVIS']
+    if ENV['CI']
       # Need lots of output to keep Travis happy
       options += %w[--format specdoc]
     end
