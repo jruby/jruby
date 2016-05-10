@@ -12,12 +12,10 @@ then
   # JRuby tarball
   RUBY=`echo */bin/jruby`
   FLAGS='-X+T'
-  TOOL=`echo */bin/jruby+truffle`
 else
   # GraalVM tarball
   RUBY=`echo */bin/ruby`
   FLAGS=
-  TOOL=`echo */bin/ruby-tool`
 fi
 
 if [ ! -f $RUBY ]
@@ -55,19 +53,3 @@ then
   echo Standard library test failed
   exit 1
 fi
-
-rm -rf openweather
-git clone https://github.com/lucasocon/openweather.git
-pushd openweather
-rm -rf .jruby+truffle
-git checkout 87e49710c9130107acb13a0dda92ec4bb0db70b0
-../$TOOL setup
-LONDON=`../$TOOL --no-use-fs-core run examples/temperature.rb London | grep London:`
-if [[ "$LONDON" =~ London:\ [0-9]+\.[0-9]+\ ℃ ]]
-then
-  echo Passed, and the temperature in $LONDON
-else
-  echo Gem test failed
-  exit 1
-fi
-popd
