@@ -83,6 +83,22 @@ describe "A class definition" do
         class SuperclassReopenedBasicObject < BasicObject
         end
       }.should raise_error(TypeError, /superclass mismatch/)
+      SuperclassReopenedBasicObject.superclass.should == A
+    end
+  end
+
+  # [Bug #12367] [ruby-core:75446]
+  it "raises an error when reopening a class with Object as superclass" do
+    module ClassSpecs
+      class SuperclassReopenedObject < A
+      end
+      SuperclassReopenedObject.superclass.should == A
+
+      lambda {
+        class SuperclassReopenedObject < Object
+        end
+      }.should raise_error(TypeError, /superclass mismatch/)
+      SuperclassReopenedObject.superclass.should == A
     end
   end
 
