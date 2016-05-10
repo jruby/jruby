@@ -48,8 +48,8 @@ class TestThread < Test::Unit::TestCase
     assert_equal([:x, :y], Thread.current.keys.sort {|x, y| x.to_s <=> y.to_s} & [:x, :y])
     assert_raises(TypeError) { Thread.current[Object.new] }
     assert_raises(TypeError) { Thread.current[Object.new] = 1 }
-    assert_raises(ArgumentError) { Thread.current[1] }
-    assert_raises(ArgumentError) { Thread.current[1]  = 1}
+    assert_raises(TypeError) { Thread.current[1] }
+    assert_raises(TypeError) { Thread.current[1]  = 1}
   end
 
   def test_status
