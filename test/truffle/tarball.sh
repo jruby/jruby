@@ -5,9 +5,6 @@
 set -e
 set -x
 
-TAR_BALL=$1
-BASE=$(dirname $0)
-
 tar -zxf $1
 
 if [ -f */bin/jruby ]
