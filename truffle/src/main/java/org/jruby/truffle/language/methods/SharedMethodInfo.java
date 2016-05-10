@@ -106,20 +106,25 @@ public class SharedMethodInfo {
 
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder();
+        final String prefix;
 
         if (isBlock) {
-            builder.append("block in ");
+            prefix = "block in ";
+        } else {
+            prefix = "";
         }
 
-        builder.append(name);
+        final String suffix;
 
-        if (sourceSection != null || sourceSection.getSource() != null) {
-            builder.append(":");
-            builder.append(sourceSection.getShortDescription());
+        if (sourceSection == null) {
+            suffix = name;
+        } else if (sourceSection.getSource() == null) {
+            suffix = sourceSection.getIdentifier();
+        } else {
+            suffix = name + " " + sourceSection.getShortDescription();
         }
 
-        return builder.toString();
+        return prefix + suffix;
     }
 
 }
