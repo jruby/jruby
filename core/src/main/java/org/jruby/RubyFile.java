@@ -786,6 +786,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true)
     public static IRubyObject expand_path19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         RubyString path = (RubyString) expandPathInternal(context, recv, args, true, false);
+        path.force_encoding(context, context.runtime.getEncodingService().convertEncodingToRubyEncoding(get_path(context, args[0]).getEncoding()));
 
         return path;
     }
