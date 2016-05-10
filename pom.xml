@@ -104,7 +104,7 @@ DO NOT MODIFIY - GENERATED CODE
     </site>
   </distributionManagement>
   <properties>
-    <rspec-core.version>3.3.2</rspec-core.version>
+    <rspec-core.version>3.4.4</rspec-core.version>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <racc.version>1.4.13</racc.version>
     <its.j2ee>j2ee*/pom.xml</its.j2ee>
@@ -117,14 +117,14 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby-launcher.version>1.1.1</jruby-launcher.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <asm.version>5.0.4</asm.version>
-    <rspec-expectations.version>3.3.1</rspec-expectations.version>
+    <rspec-expectations.version>3.4.0</rspec-expectations.version>
     <its.osgi>osgi*/pom.xml</its.osgi>
     <base.javac.version>1.7</base.javac.version>
     <test-unit.version>3.1.1</test-unit.version>
     <rdoc.version>4.2.0</rdoc.version>
-    <rspec.version>3.3.0</rspec.version>
+    <rspec.version>3.4.0</rspec.version>
     <base.java.version>1.7</base.java.version>
-    <rspec-mocks.version>3.3.2</rspec-mocks.version>
+    <rspec-mocks.version>3.4.1</rspec-mocks.version>
     <jruby.plugins.version>1.0.10</jruby.plugins.version>
     <invoker.skip>true</invoker.skip>
     <json.version>1.8.3</json.version>
@@ -135,6 +135,7 @@ DO NOT MODIFIY - GENERATED CODE
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
     <joda.time.version>2.8.2</joda.time.version>
+    <rspec-support.version>3.4.1</rspec-support.version>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
   </properties>
   <dependencyManagement>
