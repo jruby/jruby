@@ -382,7 +382,6 @@ module Commands
     {
       '--asm' => '--graal',
       '--igv' => '--graal',
-      '--sulong' => '--graal',
       '--bips' => '--graal'
     }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
