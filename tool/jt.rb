@@ -466,6 +466,7 @@ module Commands
       test_specs('run')
       # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled
       test_integration({'HAS_REDIS' => 'true'}, 'all')
+      test_gems
       test_compiler
       test_cexts if ENV['SULONG_DIR']
     when 'compiler' then test_compiler(*rest)
