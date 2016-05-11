@@ -37,13 +37,13 @@ describe "Truffle::Interop.write" do
   describe "writes an instance variable if given an @name" do
     it "as a symbol" do
       object = Object.new
-      Truffle::Interop.write ReadInstanceVariable.new, :@foo, 14
+      Truffle::Interop.write object, :@foo, 14
       object.instance_variable_get('foo').should == 14
     end
     
     it "as a string" do
       object = Object.new
-      Truffle::Interop.write ReadInstanceVariable.new, '@foo', 14
+      Truffle::Interop.write object, '@foo', 14
       object.instance_variable_get('foo').should == 14
     end
   end
