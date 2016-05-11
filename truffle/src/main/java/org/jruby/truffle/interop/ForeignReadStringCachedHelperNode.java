@@ -31,12 +31,9 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 })
 abstract class ForeignReadStringCachedHelperNode extends RubyNode {
 
-    @Child
-    private DoesRespondDispatchHeadNode definedNode;
-    @Child
-    private DoesRespondDispatchHeadNode indexDefinedNode;
-    @Child
-    private CallDispatchHeadNode callNode;
+    @Child private DoesRespondDispatchHeadNode definedNode;
+    @Child private DoesRespondDispatchHeadNode indexDefinedNode;
+    @Child private CallDispatchHeadNode callNode;
 
     protected final static String INDEX_METHOD_NAME = "[]";
 

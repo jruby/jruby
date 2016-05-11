@@ -29,7 +29,7 @@ import org.jruby.truffle.language.RubyNode;
 })
 abstract class ForeignReadStringCachingHelperNode extends RubyNode {
 
-    @Child IsStringLikeNode isStringLikeNode;
+    private @Child IsStringLikeNode isStringLikeNode;
 
     public ForeignReadStringCachingHelperNode(RubyContext context) {
         super(context, null);
