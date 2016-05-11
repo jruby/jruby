@@ -336,6 +336,11 @@ public abstract class InteropNodes {
             return Message.IS_NULL.createNode();
         }
 
+        @Fallback
+        public boolean isNull(Object receiver) {
+            return false;
+        }
+
     }
 
     @CoreMethod(names = "read", isModuleFunction = true, needsSelf = false, required = 2)
