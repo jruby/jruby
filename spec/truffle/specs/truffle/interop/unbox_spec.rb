@@ -9,6 +9,22 @@
 require_relative '../../../../ruby/spec_helper'
 
 describe "Truffle::Interop.unbox" do
+    
+  it "passes through fixnums" do
+    Truffle::Interop.unbox(14).should == 14
+  end
+  
+  it "passes through floats" do
+    Truffle::Interop.unbox(14.2).should == 14.2
+  end
+  
+  it "passes through true" do
+    Truffle::Interop.unbox(true).should == true
+  end
+  
+  it "passes through false" do
+    Truffle::Interop.unbox(false).should == false
+  end
   
   it "doesn't work on empty strings" do
     lambda { Truffle::Interop.unbox('') }.should raise_error(RubyTruffleError)
