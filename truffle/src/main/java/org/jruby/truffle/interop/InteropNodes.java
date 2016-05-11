@@ -126,14 +126,14 @@ public abstract class InteropNodes {
                 Object[] args,
                 @Cached("args.length") int cachedArgsLength,
                 @Cached("createInvokeNode(cachedArgsLength)") Node invokeNode,
-                @Cached("createToJavaStringNode()") ToJavaStringNode toJavaStringNode,
+                        @Cached("create()") ToJavaStringNode toJavaStringNode,
                 @Cached("create()") BranchProfile exceptionProfile) {
             try {
                 return ForeignAccess.sendInvoke(
                         invokeNode,
                         frame,
                         receiver,
-                        toJavaStringNode.executeToJavaString(frame, identifier),
+                        toJavaStringNode.executeToJavaString(identifier),
                         args);
             } catch (UnsupportedTypeException
                     | ArityException
@@ -142,10 +142,6 @@ public abstract class InteropNodes {
                 exceptionProfile.enter();
                 throw new RuntimeException(e);
             }
-        }
-
-        protected ToJavaStringNode createToJavaStringNode() {
-            return ToJavaStringNodeGen.create(getContext(), null, null);
         }
 
         @Specialization(

@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.interop;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -19,8 +19,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -31,115 +29,52 @@ import org.jruby.truffle.language.RubyNode;
 })
 abstract class ForeignReadStringCachingHelperNode extends RubyNode {
 
+    @Child IsStringLikeNode isStringLikeNode;
+
     public ForeignReadStringCachingHelperNode(RubyContext context) {
         super(context, null);
     }
 
     public abstract Object executeStringCachingHelper(VirtualFrame frame, DynamicObject receiver, Object name);
 
-    @Specialization(guards = { "isRubyString(name)", "ropesEqual(name, cachedRope)" }, limit = "getCacheLimit()")
-    public Object cacheStringAndForward(
-            VirtualFrame frame,
-            DynamicObject receiver,
-            DynamicObject name,
-            @Cached("privatizeRope(name)") Rope cachedRope,
-            @Cached("ropeToString(cachedRope)") String cachedString,
-            @Cached("isIVar(cachedString)") boolean cachedIsIVar,
+    @Specialization(guards = "isStringLike(name)")
+    public Object cacheStringLikeAndForward(VirtualFrame frame, DynamicObject receiver, Object name,
+            @Cached("create()") ToJavaStringNode toJavaStringNode,
             @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
-        return nextHelper.executeStringCachedHelper(frame, receiver, name, cachedString, cachedIsIVar);
+        String nameAsJavaString = toJavaStringNode.executeToJavaString(name);
+        boolean isIVar = isIVar(nameAsJavaString);
+        return nextHelper.executeStringCachedHelper(frame, receiver, name, nameAsJavaString, isIVar);
     }
 
-    @Specialization(guards = "isRubyString(name)", contains = "cacheStringAndForward")
-    public Object uncachedStringAndForward(
-            VirtualFrame frame,
-            DynamicObject receiver,
-            DynamicObject name,
-            @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
-        final String nameString = objectToString(name);
-        return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString, isIVar(nameString));
-    }
-
-    @Specialization(guards = { "isRubySymbol(name)", "name == cachedName" }, limit = "getCacheLimit()")
-    public Object cacheSymbolAndForward(
-            VirtualFrame frame,
-            DynamicObject receiver,
-            DynamicObject name,
-            @Cached("name") DynamicObject cachedName,
-            @Cached("objectToString(cachedName)") String cachedString,
-            @Cached("isIVar(cachedString)") boolean cachedIsIVar,
-            @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
-        return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedString, cachedIsIVar);
-    }
-
-    @Specialization(guards = "isRubySymbol(name)", contains = "cacheSymbolAndForward")
-    public Object uncachedSymbolAndForward(
-            VirtualFrame frame,
-            DynamicObject receiver,
-            DynamicObject name,
-            @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
-        final String nameString = objectToString(name);
-        return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString, isIVar(nameString));
-    }
-
-    @Specialization(guards = "name == cachedName", limit = "getCacheLimit()")
-    public Object cacheJavaStringAndForward(
-            VirtualFrame frame,
-            DynamicObject receiver,
-            String name,
-            @Cached("name") String cachedName,
-            @Cached("isIVar(cachedName)") boolean cachedIsIVar,
-            @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
-        return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedName, cachedIsIVar);
-    }
-
-    @Specialization(contains = "cacheJavaStringAndForward")
-    public Object uncachedJavaStringAndForward(
-            VirtualFrame frame,
-            DynamicObject receiver,
-            String name,
-            @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
-        return nextHelper.executeStringCachedHelper(frame, receiver, name, name, isIVar(name));
-    }
-
-    protected ForeignReadStringCachedHelperNode createNextHelper() {
-        return ForeignReadStringCachedHelperNodeGen.create(null, null, null, null);
-    }
-
-    @TruffleBoundary
-    protected String objectToString(DynamicObject string) {
-        return string.toString();
-    }
-
-    protected String ropeToString(Rope rope) {
-        return RopeOperations.decodeRope(getContext().getJRubyRuntime(), rope);
-    }
-
-    @TruffleBoundary
-    protected boolean isIVar(String name) {
-        return !name.isEmpty() && name.charAt(0) == '@';
-    }
-
-    @Specialization(guards = { "isRubyString(receiver)", "index < 0" })
-    public int indexStringNegative(DynamicObject receiver, int index) {
-        return 0;
-    }
-
-    @Specialization(guards = { "isRubyString(receiver)", "index >= 0", "!inRange(receiver, index)" })
-    public int indexStringOutOfRange(DynamicObject receiver, int index) {
-        return 0;
-    }
-
-    @Specialization(guards = { "isRubyString(receiver)", "index >= 0", "inRange(receiver, index)" })
+    @Specialization(guards = { "isRubyString(receiver)", "inRange(receiver, index)" })
     public int indexString(DynamicObject receiver, int index) {
         return Layouts.STRING.getRope(receiver).get(index);
     }
 
-    protected boolean inRange(DynamicObject string, int index) {
-        return index < Layouts.STRING.getRope(string).byteLength();
+    @Specialization(guards = { "isRubyString(receiver)", "!inRange(receiver, index)" })
+    public int indexStringOutOfRange(DynamicObject receiver, int index) {
+        return 0;
     }
 
-    protected int getCacheLimit() {
-        return getContext().getOptions().INTEROP_READ_CACHE;
+    protected boolean inRange(DynamicObject string, int index) {
+        return index >= 0 && index < Layouts.STRING.getRope(string).byteLength();
+    }
+
+    protected boolean isStringLike(Object value) {
+        if (isStringLikeNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            isStringLikeNode = insert(IsStringLikeNode.create());
+        }
+
+        return isStringLikeNode.executeIsStringLike(value);
+    }
+
+    protected boolean isIVar(String name) {
+        return !name.isEmpty() && name.charAt(0) == '@';
+    }
+
+    protected ForeignReadStringCachedHelperNode createNextHelper() {
+        return ForeignReadStringCachedHelperNodeGen.create(null, null, null, null);
     }
 
 }
