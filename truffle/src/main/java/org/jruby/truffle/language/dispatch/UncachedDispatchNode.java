@@ -47,7 +47,7 @@ public class UncachedDispatchNode extends DispatchNode {
         this.missingBehavior = missingBehavior;
         this.indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
         this.toSymbolNode = ToSymbolNodeGen.create(context, null, null);
-        this.toJavaStringNode = ToJavaStringNodeGen.create(context, null, null);
+        this.toJavaStringNode = ToJavaStringNodeGen.create();
         this.metaClassNode = MetaClassNodeGen.create(context, null, null);
     }
 
@@ -67,7 +67,7 @@ public class UncachedDispatchNode extends DispatchNode {
 
         final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(RubyArguments.getSelf(frame));
 
-        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeToJavaString(frame, name), ignoreVisibility);
+        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeToJavaString(name), ignoreVisibility);
 
         if (method != null) {
             if (dispatchAction == DispatchAction.CALL_METHOD) {

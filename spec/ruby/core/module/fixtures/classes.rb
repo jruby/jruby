@@ -576,6 +576,13 @@ module ModuleSpecs
       raise 'method contents are irrelevant to test'
     end
   end
+
+  m = Module.new do
+    def foo
+    end
+    private :foo
+  end
+  EmptyFooMethod = m.instance_method(:foo)
 end
 
 class Object

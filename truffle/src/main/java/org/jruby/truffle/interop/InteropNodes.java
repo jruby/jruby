@@ -126,14 +126,14 @@ public abstract class InteropNodes {
                 Object[] args,
                 @Cached("args.length") int cachedArgsLength,
                 @Cached("createInvokeNode(cachedArgsLength)") Node invokeNode,
-                @Cached("createToJavaStringNode()") ToJavaStringNode toJavaStringNode,
+                        @Cached("create()") ToJavaStringNode toJavaStringNode,
                 @Cached("create()") BranchProfile exceptionProfile) {
             try {
                 return ForeignAccess.sendInvoke(
                         invokeNode,
                         frame,
                         receiver,
-                        toJavaStringNode.executeToJavaString(frame, identifier),
+                        toJavaStringNode.executeToJavaString(identifier),
                         args);
             } catch (UnsupportedTypeException
                     | ArityException
@@ -142,10 +142,6 @@ public abstract class InteropNodes {
                 exceptionProfile.enter();
                 throw new RuntimeException(e);
             }
-        }
-
-        protected ToJavaStringNode createToJavaStringNode() {
-            return ToJavaStringNodeGen.create(getContext(), null, null);
         }
 
         @Specialization(
@@ -193,7 +189,7 @@ public abstract class InteropNodes {
         }
 
         protected Node createHasSizeNode() {
-            return Message.IS_EXECUTABLE.createNode();
+            return Message.HAS_SIZE.createNode();
         }
 
     }
@@ -293,41 +289,6 @@ public abstract class InteropNodes {
     public abstract static class UnboxNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public boolean unbox(boolean receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public byte unbox(byte receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public short unbox(short receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public int unbox(int receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public long unbox(long receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public float unbox(float receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public double unbox(double receiver) {
-            return receiver;
-        }
-
-        @Specialization
         public DynamicObject unbox(CharSequence receiver) {
             // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
 
@@ -353,6 +314,11 @@ public abstract class InteropNodes {
             return Message.UNBOX.createNode();
         }
 
+        @Fallback
+        public Object unbox(Object receiver) {
+            return receiver;
+        }
+
     }
 
     @CoreMethod(names = "null?", isModuleFunction = true, needsSelf = false, required = 1)
@@ -368,6 +334,11 @@ public abstract class InteropNodes {
 
         protected Node createIsNullNode() {
             return Message.IS_NULL.createNode();
+        }
+
+        @Fallback
+        public boolean isNull(Object receiver) {
+            return false;
         }
 
     }

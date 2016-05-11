@@ -119,10 +119,14 @@ public class RubyTimeOutputFormatter {
         }
     }
 
+    private static final int SMALLBUF = 100;
+
     static String padding(String sequence, int width, char padder) {
         if (sequence.length() >= width) {
             return sequence;
         }
+
+        if (width > SMALLBUF) throw new IndexOutOfBoundsException("padding width " + width + " too large");
 
         StringBuilder buf = new StringBuilder(width + sequence.length());
         for (int i = sequence.length(); i < width; i++) {

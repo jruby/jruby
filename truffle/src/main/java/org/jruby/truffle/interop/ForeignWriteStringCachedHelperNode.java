@@ -1,5 +1,3 @@
-package org.jruby.truffle.interop;
-
 /*
  * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
@@ -9,6 +7,8 @@ package org.jruby.truffle.interop;
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
+package org.jruby.truffle.interop;
+
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -27,84 +27,71 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
         @NodeChild("receiver"),
         @NodeChild("name"),
         @NodeChild("stringName"),
-        @NodeChild("startsAt"),
+        @NodeChild("isIVar"),
         @NodeChild("value")
 })
 abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
 
-    @Child
-    private DoesRespondDispatchHeadNode definedNode;
-    @Child
-    private DoesRespondDispatchHeadNode indexDefinedNode;
-    @Child
-    private CallDispatchHeadNode callNode;
+    private @Child DoesRespondDispatchHeadNode definedNode;
+    private @Child DoesRespondDispatchHeadNode indexDefinedNode;
+    private @Child CallDispatchHeadNode callNode;
 
-    protected final static String INDEX_METHOD_NAME = "[]=";
+    protected final static String INDEX_SET_METHOD_NAME = "[]=";
 
     public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object name,
-                                                     String stringName, boolean startsAt, Object value);
+            Object stringName, boolean isIVar, Object value);
 
-    @Specialization(guards = "startsAt(startsAt)")
+    @Specialization(guards = "isIVar")
     public Object readInstanceVariable(
             DynamicObject receiver,
             Object name,
-            String stringName,
-            boolean startsAt,
+            Object stringName,
+            boolean isIVar,
             Object value,
             @Cached("createWriteObjectFieldNode(stringName)") WriteObjectFieldNode writeObjectFieldNode) {
         writeObjectFieldNode.execute(receiver, value);
         return value;
     }
 
-    protected boolean startsAt(boolean startsAt) {
-        return startsAt;
-    }
-
-    protected WriteObjectFieldNode createWriteObjectFieldNode(String name) {
+    protected WriteObjectFieldNode createWriteObjectFieldNode(Object name) {
         return WriteObjectFieldNodeGen.create(name);
     }
 
-    @Specialization(
-            guards = {
-                    "notStartsAt(startsAt)",
-                    "methodDefined(frame, receiver, writeMethodName, getDefinedNode())"
-            }
-    )
+    @Specialization(guards = { "not(isIVar)", "methodDefined(frame, receiver, writeMethodName, getDefinedNode())" })
     public Object callMethod(
             VirtualFrame frame,
             DynamicObject receiver,
             Object name,
-            String stringName,
-            boolean startsAt,
+            Object stringName,
+            boolean isIVar,
             Object value,
             @Cached("createWriteMethodName(stringName)") String writeMethodName) {
         return getCallNode().call(frame, receiver, writeMethodName, null, value);
     }
 
-    protected String createWriteMethodName(String name) {
+    // Workaround for DSL bug
+    protected boolean not(boolean value) {
+        return !value;
+    }
+
+    protected String createWriteMethodName(Object name) {
         return name + "=";
     }
 
-    @Specialization(
-            guards = {
-                    "notStartsAt(startsAt)",
-                    "!methodDefined(frame, receiver, writeMethodName, getDefinedNode())",
-                    "methodDefined(frame, receiver, INDEX_METHOD_NAME, getIndexDefinedNode())"
-            }
-    )
+    @Specialization(guards = {
+            "!isIVar",
+            "!methodDefined(frame, receiver, writeMethodName, getDefinedNode())",
+            "methodDefined(frame, receiver, INDEX_SET_METHOD_NAME, getIndexDefinedNode())"
+    })
     public Object index(
             VirtualFrame frame,
             DynamicObject receiver,
             Object name,
-            String stringName,
-            boolean startsAt,
+            Object stringName,
+            boolean isIVar,
             Object value,
             @Cached("createWriteMethodName(stringName)") String writeMethodName) {
-        return getCallNode().call(frame, receiver, "[]", null, name, value);
-    }
-
-    protected boolean notStartsAt(boolean startsAt) {
-        return !startsAt;
+        return getCallNode().call(frame, receiver, "[]=", null, name, value);
     }
 
     protected DoesRespondDispatchHeadNode getDefinedNode() {
@@ -125,9 +112,13 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
         return indexDefinedNode;
     }
 
-    protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, String stringName,
+    protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, Object stringName,
                                     DoesRespondDispatchHeadNode definedNode) {
-        return definedNode.doesRespondTo(frame, stringName, receiver);
+        if (stringName == null) {
+            return false;
+        } else {
+            return definedNode.doesRespondTo(frame, stringName, receiver);
+        }
     }
 
     protected CallDispatchHeadNode getCallNode() {

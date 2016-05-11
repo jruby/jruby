@@ -14,11 +14,8 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -27,43 +24,50 @@ import org.jruby.truffle.language.RubyNode;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class ToJavaStringNode extends RubyNode {
 
-    public ToJavaStringNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public static ToJavaStringNode create() {
+        return ToJavaStringNodeGen.create(null);
     }
 
-    public abstract String executeToJavaString(VirtualFrame frame, Object value);
+    public abstract String executeToJavaString(Object value);
 
-    @Specialization(
-            guards = {
-                    "isRubyString(value)",
-                    "ropesEqual(value, cachedRope)"
-            },
-            limit = "getLimit()")
-    public String stringUncached(
-            DynamicObject value,
+    @Specialization(guards = { "isRubyString(value)", "ropesEqual(value, cachedRope)" }, limit = "getLimit()")
+    String stringCached(DynamicObject value,
             @Cached("privatizeRope(value)") Rope cachedRope,
             @Cached("value.toString()") String convertedString) {
         return convertedString;
     }
 
-    protected String objectToString(DynamicObject object) {
-        return object.toString();
-    }
-
     @TruffleBoundary
-    @Specialization(guards = "isRubyString(value)", contains = "stringUncached")
-    public String stringCached(DynamicObject value) {
+    @Specialization(guards = "isRubyString(value)", contains = "stringCached")
+    public String stringUncached(DynamicObject value) {
         return value.toString();
     }
 
-    @Specialization(guards = "isRubySymbol(value)")
-    public String symbol(DynamicObject value) {
-        return Layouts.SYMBOL.getString(value);
+    @Specialization(guards = { "isRubySymbol(symbol)", "symbol == cachedSymbol" }, limit = "getLimit()")
+    public String symbolCached(DynamicObject symbol,
+            @Cached("symbol") DynamicObject cachedSymbol,
+            @Cached("symbolToString(symbol)") String convertedString) {
+        return convertedString;
     }
 
-    @Specialization
-    public String javaString(String value) {
+    @Specialization(guards = "isRubySymbol(symbol)", contains = "symbolCached")
+    public String symbolUncached(DynamicObject symbol) {
+        return symbolToString(symbol);
+    }
+
+    @Specialization(guards = "string == cachedString", limit = "getLimit()")
+    public String javaStringCached(String string,
+            @Cached("string") String cachedString) {
+        return cachedString;
+    }
+
+    @Specialization(contains = "javaStringCached")
+    public String javaStringUncached(String value) {
         return value;
+    }
+
+    protected String symbolToString(DynamicObject symbol) {
+        return Layouts.SYMBOL.getString(symbol);
     }
 
     protected int getLimit() {

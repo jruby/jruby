@@ -7,6 +7,7 @@ import com.headius.invokebinder.SmartHandle;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.*;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
@@ -19,10 +20,10 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.GlobalSite;
+import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.runtime.invokedynamic.MathLinker;
 import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.runtime.ivars.FieldVariableAccessor;
@@ -588,6 +589,11 @@ public class Bootstrap {
                                 .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
                                 .handle();
                     }
+                }
+
+                JRubyMethod anno = nativeCall.getMethod().getAnnotation(JRubyMethod.class);
+                if (anno != null && anno.frame()) {
+                    mh = InvocationLinker.wrapWithFrameOnly(site.signature, method.getImplementationClass(), site.name(), mh);
                 }
             }
         }
