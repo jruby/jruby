@@ -10,6 +10,7 @@ import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -25,6 +26,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.ext.nkf.RubyNKF;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.encoding.ISO_8859_16;
 
 public final class EncodingService {
@@ -542,8 +544,15 @@ public final class EncodingService {
             case EXTERNAL: return runtime.getDefaultExternalEncoding();
             case INTERNAL: return runtime.getDefaultInternalEncoding();
             case FILESYSTEM:
-                // This needs to do something different on Windows. See encoding.c,
-                // in the enc_set_filesystem_encoding function.
+                if (Platform.IS_WINDOWS) {
+                    String fileEncoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
+                    try {
+                        return service.getEncodingFromString(fileEncoding);
+                    } catch (RaiseException re) {
+                        runtime.getWarnings().warning("could not load encoding for file.encoding of " + fileEncoding + ", using default external");
+                        if (runtime.isDebug()) re.printStackTrace();
+                    }
+                }
                 return runtime.getDefaultExternalEncoding();
             default:
                 throw new RuntimeException("invalid SpecialEncoding: " + this);
