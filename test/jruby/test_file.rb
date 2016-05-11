@@ -222,6 +222,10 @@ class TestFile < Test::Unit::TestCase
       assert_equal('C:/', File.realpath('C:/'))
       assert_equal('C:/', File.realpath('C:\\'))
     end
+
+    def test_basename_windows_1250_encoding
+      assert_equal(Encoding.find('Windows-1250'), File.basename('/'.force_encoding('Windows-1250')).encoding)
+    end
   else
     def test_expand_path
       assert_equal("/bin", File.expand_path("../../bin", "/foo/bar"))
