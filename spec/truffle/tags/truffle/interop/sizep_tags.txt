@@ -1,0 +1,3 @@
+fails:Truffle::Interop.size? returns true for arrays
+fails:Truffle::Interop.size? returns true for hashes
+fails:Truffle::Interop.size? returns true for strings

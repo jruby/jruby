@@ -1,0 +1,2 @@
+fails:Truffle::Interop.read can be used to index an array
+fails:Truffle::Interop.read can be used to index a hash

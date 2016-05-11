@@ -1,0 +1,2 @@
+fails:Truffle::Interop.null? returns false for zero
+fails:Truffle::Interop.null? returns false for false
