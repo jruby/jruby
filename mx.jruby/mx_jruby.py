@@ -41,6 +41,8 @@ class MavenProject(mx.Project):
     def annotation_processors(self):
         return []
 
+    def find_classes_with_matching_source_line(self, pkgRoot, function, includeInnerClasses=False):
+        return dict()
 
 class MavenBuildTask(mx.BuildTask):
     def __init__(self, project, args, vmbuild, vm):
