@@ -289,41 +289,6 @@ public abstract class InteropNodes {
     public abstract static class UnboxNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public boolean unbox(boolean receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public byte unbox(byte receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public short unbox(short receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public int unbox(int receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public long unbox(long receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public float unbox(float receiver) {
-            return receiver;
-        }
-
-        @Specialization
-        public double unbox(double receiver) {
-            return receiver;
-        }
-
-        @Specialization
         public DynamicObject unbox(CharSequence receiver) {
             // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
 
@@ -347,6 +312,11 @@ public abstract class InteropNodes {
 
         protected Node createUnboxNode() {
             return Message.UNBOX.createNode();
+        }
+
+        @Fallback
+        public Object unbox(Object receiver) {
+            return receiver;
         }
 
     }
