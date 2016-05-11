@@ -91,7 +91,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
             boolean isIVar,
             Object value,
             @Cached("createWriteMethodName(stringName)") String writeMethodName) {
-        return getCallNode().call(frame, receiver, "[]", null, name, value);
+        return getCallNode().call(frame, receiver, "[]=", null, name, value);
     }
 
     protected DoesRespondDispatchHeadNode getDefinedNode() {
