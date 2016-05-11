@@ -39,13 +39,13 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
     protected final static String INDEX_SET_METHOD_NAME = "[]=";
 
     public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object name,
-            String stringName, boolean isIVar, Object value);
+            Object stringName, boolean isIVar, Object value);
 
     @Specialization(guards = "isIVar")
     public Object readInstanceVariable(
             DynamicObject receiver,
             Object name,
-            String stringName,
+            Object stringName,
             boolean isIVar,
             Object value,
             @Cached("createWriteObjectFieldNode(stringName)") WriteObjectFieldNode writeObjectFieldNode) {
@@ -53,7 +53,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
         return value;
     }
 
-    protected WriteObjectFieldNode createWriteObjectFieldNode(String name) {
+    protected WriteObjectFieldNode createWriteObjectFieldNode(Object name) {
         return WriteObjectFieldNodeGen.create(name);
     }
 
@@ -62,7 +62,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
             VirtualFrame frame,
             DynamicObject receiver,
             Object name,
-            String stringName,
+            Object stringName,
             boolean isIVar,
             Object value,
             @Cached("createWriteMethodName(stringName)") String writeMethodName) {
@@ -74,7 +74,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
         return !value;
     }
 
-    protected String createWriteMethodName(String name) {
+    protected String createWriteMethodName(Object name) {
         return name + "=";
     }
 
@@ -87,7 +87,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
             VirtualFrame frame,
             DynamicObject receiver,
             Object name,
-            String stringName,
+            Object stringName,
             boolean isIVar,
             Object value,
             @Cached("createWriteMethodName(stringName)") String writeMethodName) {
@@ -112,9 +112,13 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
         return indexDefinedNode;
     }
 
-    protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, String stringName,
+    protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, Object stringName,
                                     DoesRespondDispatchHeadNode definedNode) {
-        return definedNode.doesRespondTo(frame, stringName, receiver);
+        if (stringName == null) {
+            return false;
+        } else {
+            return definedNode.doesRespondTo(frame, stringName, receiver);
+        }
     }
 
     protected CallDispatchHeadNode getCallNode() {

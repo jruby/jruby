@@ -46,6 +46,13 @@ abstract class ForeignWriteStringCachingHelperNode extends RubyNode {
         return nextHelper.executeStringCachedHelper(frame, receiver, name, nameAsJavaString, isIVar, value);
     }
 
+    @Specialization(guards = "!isStringLike(name)")
+    public Object passThroughNonString(VirtualFrame frame, DynamicObject receiver, Object name, Object value,
+            @Cached("create()") ToJavaStringNode toJavaStringNode,
+            @Cached("createNextHelper()") ForeignWriteStringCachedHelperNode nextHelper) {
+        return nextHelper.executeStringCachedHelper(frame, receiver, name, null, false, value);
+    }
+
     protected boolean isStringLike(Object value) {
         if (isStringLikeNode == null) {
             CompilerDirectives.transferToInterpreter();
