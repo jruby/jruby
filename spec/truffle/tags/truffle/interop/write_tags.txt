@@ -1,2 +1,0 @@
-fails:Truffle::Interop.write can be used to assign an array
-fails:Truffle::Interop.write can be used to assign a hash
