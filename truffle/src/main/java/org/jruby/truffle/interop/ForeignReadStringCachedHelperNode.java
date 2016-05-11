@@ -37,19 +37,19 @@ abstract class ForeignReadStringCachedHelperNode extends RubyNode {
 
     protected final static String INDEX_METHOD_NAME = "[]";
 
-    public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object name, String stringName, boolean isIVar);
+    public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object name, Object stringName, boolean isIVar);
 
     @Specialization(guards = "isIVar")
     public Object readInstanceVariable(
             DynamicObject receiver,
             Object name,
-            String stringName,
+            Object stringName,
             boolean isIVar,
             @Cached("createReadObjectFieldNode(stringName)") ReadObjectFieldNode readObjectFieldNode) {
         return readObjectFieldNode.execute(receiver);
     }
 
-    protected ReadObjectFieldNode createReadObjectFieldNode(String name) {
+    protected ReadObjectFieldNode createReadObjectFieldNode(Object name) {
         return ReadObjectFieldNodeGen.create(name, nil());
     }
 
@@ -61,7 +61,7 @@ abstract class ForeignReadStringCachedHelperNode extends RubyNode {
             VirtualFrame frame,
             DynamicObject receiver,
             Object name,
-            String stringName,
+            Object stringName,
             boolean isIVar) {
         return getCallNode().call(frame, receiver, stringName, null);
     }
@@ -75,7 +75,7 @@ abstract class ForeignReadStringCachedHelperNode extends RubyNode {
             VirtualFrame frame,
             DynamicObject receiver,
             Object name,
-            String stringName,
+            Object stringName,
             boolean isIVar) {
         return getCallNode().call(frame, receiver, "[]", null, name);
     }
@@ -98,9 +98,13 @@ abstract class ForeignReadStringCachedHelperNode extends RubyNode {
         return indexDefinedNode;
     }
 
-    protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, String stringName,
+    protected boolean methodDefined(VirtualFrame frame, DynamicObject receiver, Object stringName,
                                     DoesRespondDispatchHeadNode definedNode) {
-        return definedNode.doesRespondTo(frame, stringName, receiver);
+        if (stringName == null) {
+            return false;
+        } else {
+            return definedNode.doesRespondTo(frame, stringName, receiver);
+        }
     }
 
     protected CallDispatchHeadNode getCallNode() {

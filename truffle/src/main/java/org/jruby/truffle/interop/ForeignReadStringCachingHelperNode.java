@@ -56,6 +56,12 @@ abstract class ForeignReadStringCachingHelperNode extends RubyNode {
         return 0;
     }
 
+    @Specialization(guards = { "!isRubyString(receiver)", "!isStringLike(name)" })
+    public Object indexObject(VirtualFrame frame, DynamicObject receiver, Object name,
+            @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
+        return nextHelper.executeStringCachedHelper(frame, receiver, name, null, false);
+    }
+
     protected boolean inRange(DynamicObject string, int index) {
         return index >= 0 && index < Layouts.STRING.getRope(string).byteLength();
     }
