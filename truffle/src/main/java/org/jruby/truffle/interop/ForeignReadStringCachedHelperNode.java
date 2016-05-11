@@ -1,5 +1,3 @@
-package org.jruby.truffle.interop;
-
 /*
  * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
@@ -9,6 +7,8 @@ package org.jruby.truffle.interop;
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
+package org.jruby.truffle.interop;
+
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -27,7 +27,7 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
         @NodeChild("receiver"),
         @NodeChild("name"),
         @NodeChild("stringName"),
-        @NodeChild("startsAt")
+        @NodeChild("isIVar")
 })
 abstract class ForeignReadStringCachedHelperNode extends RubyNode {
 
@@ -40,60 +40,47 @@ abstract class ForeignReadStringCachedHelperNode extends RubyNode {
 
     protected final static String INDEX_METHOD_NAME = "[]";
 
-    public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object name,
-                                                     String stringName, boolean startsAt);
+    public abstract Object executeStringCachedHelper(VirtualFrame frame, DynamicObject receiver, Object name, String stringName, boolean isIVar);
 
-    @Specialization(guards = "startsAt(startsAt)")
+    @Specialization(guards = "isIVar")
     public Object readInstanceVariable(
             DynamicObject receiver,
             Object name,
             String stringName,
-            boolean startsAt,
+            boolean isIVar,
             @Cached("createReadObjectFieldNode(stringName)") ReadObjectFieldNode readObjectFieldNode) {
         return readObjectFieldNode.execute(receiver);
-    }
-
-    protected boolean startsAt(boolean startsAt) {
-        return startsAt;
     }
 
     protected ReadObjectFieldNode createReadObjectFieldNode(String name) {
         return ReadObjectFieldNodeGen.create(name, nil());
     }
 
-    @Specialization(
-            guards = {
-                    "notStartsAt(startsAt)",
-                    "methodDefined(frame, receiver, stringName, getDefinedNode())"
-            }
-    )
+    @Specialization(guards = {
+            "!isIVar",
+            "methodDefined(frame, receiver, stringName, getDefinedNode())"
+    })
     public Object callMethod(
             VirtualFrame frame,
             DynamicObject receiver,
             Object name,
             String stringName,
-            boolean startsAt) {
+            boolean isIVar) {
         return getCallNode().call(frame, receiver, stringName, null);
     }
 
-    @Specialization(
-            guards = {
-                    "notStartsAt(startsAt)",
-                    "!methodDefined(frame, receiver, stringName, getDefinedNode())",
-                    "methodDefined(frame, receiver, INDEX_METHOD_NAME, getIndexDefinedNode())"
-            }
-    )
+    @Specialization(guards = {
+            "!isIVar",
+            "!methodDefined(frame, receiver, stringName, getDefinedNode())",
+            "methodDefined(frame, receiver, INDEX_METHOD_NAME, getIndexDefinedNode())"
+    })
     public Object index(
             VirtualFrame frame,
             DynamicObject receiver,
             Object name,
             String stringName,
-            boolean startsAt) {
+            boolean isIVar) {
         return getCallNode().call(frame, receiver, "[]", null, name);
-    }
-
-    protected boolean notStartsAt(boolean startsAt) {
-        return !startsAt;
     }
 
     protected DoesRespondDispatchHeadNode getDefinedNode() {

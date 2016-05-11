@@ -1,5 +1,3 @@
-package org.jruby.truffle.interop;
-
 /*
  * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
@@ -9,8 +7,9 @@ package org.jruby.truffle.interop;
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
+package org.jruby.truffle.interop;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -38,80 +37,59 @@ abstract class ForeignReadStringCachingHelperNode extends RubyNode {
 
     public abstract Object executeStringCachingHelper(VirtualFrame frame, DynamicObject receiver, Object name);
 
-    @Specialization(
-            guards = {
-                    "isRubyString(name)",
-                    "ropesEqual(name, cachedRope)"
-            },
-            limit = "getCacheLimit()"
-    )
+    @Specialization(guards = { "isRubyString(name)", "ropesEqual(name, cachedRope)" }, limit = "getCacheLimit()")
     public Object cacheStringAndForward(
             VirtualFrame frame,
             DynamicObject receiver,
             DynamicObject name,
             @Cached("privatizeRope(name)") Rope cachedRope,
             @Cached("ropeToString(cachedRope)") String cachedString,
-            @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
+            @Cached("isIVar(cachedString)") boolean cachedIsIVar,
             @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
-        return nextHelper.executeStringCachedHelper(frame, receiver, name, cachedString, cachedStartsWithAt);
+        return nextHelper.executeStringCachedHelper(frame, receiver, name, cachedString, cachedIsIVar);
     }
 
-    @Specialization(
-            guards = "isRubyString(name)",
-            contains = "cacheStringAndForward"
-    )
+    @Specialization(guards = "isRubyString(name)", contains = "cacheStringAndForward")
     public Object uncachedStringAndForward(
             VirtualFrame frame,
             DynamicObject receiver,
             DynamicObject name,
             @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
         final String nameString = objectToString(name);
-        return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString, startsWithAt(nameString));
+        return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString, isIVar(nameString));
     }
 
-    @Specialization(
-            guards = {
-                    "isRubySymbol(name)",
-                    "name == cachedName"
-            },
-            limit = "getCacheLimit()"
-    )
+    @Specialization(guards = { "isRubySymbol(name)", "name == cachedName" }, limit = "getCacheLimit()")
     public Object cacheSymbolAndForward(
             VirtualFrame frame,
             DynamicObject receiver,
             DynamicObject name,
             @Cached("name") DynamicObject cachedName,
             @Cached("objectToString(cachedName)") String cachedString,
-            @Cached("startsWithAt(cachedString)") boolean cachedStartsWithAt,
+            @Cached("isIVar(cachedString)") boolean cachedIsIVar,
             @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
-        return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedString, cachedStartsWithAt);
+        return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedString, cachedIsIVar);
     }
 
-    @Specialization(
-            guards = "isRubySymbol(name)",
-            contains = "cacheSymbolAndForward"
-    )
+    @Specialization(guards = "isRubySymbol(name)", contains = "cacheSymbolAndForward")
     public Object uncachedSymbolAndForward(
             VirtualFrame frame,
             DynamicObject receiver,
             DynamicObject name,
             @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
         final String nameString = objectToString(name);
-        return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString, startsWithAt(nameString));
+        return nextHelper.executeStringCachedHelper(frame, receiver, name, nameString, isIVar(nameString));
     }
 
-    @Specialization(
-            guards = "name == cachedName",
-            limit = "getCacheLimit()"
-    )
+    @Specialization(guards = "name == cachedName", limit = "getCacheLimit()")
     public Object cacheJavaStringAndForward(
             VirtualFrame frame,
             DynamicObject receiver,
             String name,
             @Cached("name") String cachedName,
-            @Cached("startsWithAt(cachedName)") boolean cachedStartsWithAt,
+            @Cached("isIVar(cachedName)") boolean cachedIsIVar,
             @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
-        return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedName, cachedStartsWithAt);
+        return nextHelper.executeStringCachedHelper(frame, receiver, cachedName, cachedName, cachedIsIVar);
     }
 
     @Specialization(contains = "cacheJavaStringAndForward")
@@ -120,14 +98,14 @@ abstract class ForeignReadStringCachingHelperNode extends RubyNode {
             DynamicObject receiver,
             String name,
             @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
-        return nextHelper.executeStringCachedHelper(frame, receiver, name, name, startsWithAt(name));
+        return nextHelper.executeStringCachedHelper(frame, receiver, name, name, isIVar(name));
     }
 
     protected ForeignReadStringCachedHelperNode createNextHelper() {
         return ForeignReadStringCachedHelperNodeGen.create(null, null, null, null);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     protected String objectToString(DynamicObject string) {
         return string.toString();
     }
@@ -136,33 +114,22 @@ abstract class ForeignReadStringCachingHelperNode extends RubyNode {
         return RopeOperations.decodeRope(getContext().getJRubyRuntime(), rope);
     }
 
-    @CompilerDirectives.TruffleBoundary
-    protected boolean startsWithAt(String name) {
+    @TruffleBoundary
+    protected boolean isIVar(String name) {
         return !name.isEmpty() && name.charAt(0) == '@';
     }
 
-    @Specialization(guards = {
-            "isRubyString(receiver)",
-            "index < 0"
-    })
+    @Specialization(guards = { "isRubyString(receiver)", "index < 0" })
     public int indexStringNegative(DynamicObject receiver, int index) {
         return 0;
     }
 
-    @Specialization(guards = {
-            "isRubyString(receiver)",
-            "index >= 0",
-            "!inRange(receiver, index)"
-    })
+    @Specialization(guards = { "isRubyString(receiver)", "index >= 0", "!inRange(receiver, index)" })
     public int indexStringOutOfRange(DynamicObject receiver, int index) {
         return 0;
     }
 
-    @Specialization(guards = {
-            "isRubyString(receiver)",
-            "index >= 0",
-            "inRange(receiver, index)"
-    })
+    @Specialization(guards = { "isRubyString(receiver)", "index >= 0", "inRange(receiver, index)" })
     public int indexString(DynamicObject receiver, int index) {
         return Layouts.STRING.getRope(receiver).get(index);
     }

@@ -33,26 +33,17 @@ public abstract class ToJavaStringNode extends RubyNode {
 
     public abstract String executeToJavaString(VirtualFrame frame, Object value);
 
-    @Specialization(
-            guards = {
-                    "isRubyString(value)",
-                    "ropesEqual(value, cachedRope)"
-            },
-            limit = "getLimit()")
-    public String stringUncached(
+    @Specialization(guards = { "isRubyString(value)", "ropesEqual(value, cachedRope)" }, limit = "getLimit()")
+    String stringCached(
             DynamicObject value,
             @Cached("privatizeRope(value)") Rope cachedRope,
             @Cached("value.toString()") String convertedString) {
         return convertedString;
     }
 
-    protected String objectToString(DynamicObject object) {
-        return object.toString();
-    }
-
     @TruffleBoundary
-    @Specialization(guards = "isRubyString(value)", contains = "stringUncached")
-    public String stringCached(DynamicObject value) {
+    @Specialization(guards = "isRubyString(value)", contains = "stringCached")
+    public String stringUncached(DynamicObject value) {
         return value.toString();
     }
 
