@@ -189,7 +189,7 @@ public abstract class InteropNodes {
         }
 
         protected Node createHasSizeNode() {
-            return Message.IS_EXECUTABLE.createNode();
+            return Message.HAS_SIZE.createNode();
         }
 
     }
