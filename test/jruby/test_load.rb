@@ -319,8 +319,9 @@ DEPS
   end
 
   def test_load_wrapped
-    pend 'TODO: fix load module wrapping'
     load(File.expand_path('hello_dummy.rb', File.dirname(__FILE__)), true)
+    assert !defined?(::Hello)
+    assert !defined?(::Dummy)
   end
 
 end

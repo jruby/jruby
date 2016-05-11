@@ -30,8 +30,8 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.util.ByteList;
@@ -120,6 +120,10 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static String decodeRope(Ruby runtime, Rope value) {
+        // TODO CS 9-May-16 having recursive problems with this, so flatten up front for now
+
+        value = flatten(value);
+
         if (value instanceof LeafRope) {
             int begin = 0;
             int length = value.byteLength();
@@ -146,26 +150,6 @@ public class RopeOperations {
             }
 
             return RubyEncoding.decode(value.getBytes(), begin, length, charset);
-        } else if (value instanceof SubstringRope) {
-            final SubstringRope substringRope = (SubstringRope) value;
-
-            return decodeRope(runtime, substringRope.getChild()).substring(substringRope.getOffset(), substringRope.getOffset() + substringRope.characterLength());
-        } else if (value instanceof ConcatRope) {
-            final ConcatRope concatRope = (ConcatRope) value;
-
-            return decodeRope(runtime, concatRope.getLeft()) + decodeRope(runtime, concatRope.getRight());
-        } else if (value instanceof RepeatingRope) {
-            final RepeatingRope repeatingRope = (RepeatingRope) value;
-
-            final String childString = decodeRope(runtime, repeatingRope.getChild());
-            final StringBuilder builder = new StringBuilder(childString.length() * repeatingRope.getTimes());
-            for (int i = 0; i < repeatingRope.getTimes(); i++) {
-                builder.append(childString);
-            }
-
-            return builder.toString();
-        } else if (value instanceof LazyIntRope) {
-            return Integer.toString(((LazyIntRope) value).getValue());
         } else {
             throw new RuntimeException("Decoding to String is not supported for rope of type: " + value.getClass().getName());
         }
@@ -222,77 +206,9 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static void visitBytes(Rope rope, BytesVisitor visitor, int offset, int length) {
-        /*
-         * TODO: CS-7-Apr-16 rewrite this to be iterative as flattenBytes is, but with new logic for offset and length
-         * creating a range, then write flattenBytes in terms of visitBytes.
-         */
+        // TODO CS 9-May-16 make this the primitive, and have flatten use it
 
-        assert length <= rope.byteLength();
-
-        if (rope.getRawBytes() != null) {
-            visitor.accept(rope.getRawBytes(), offset, length);
-        } else if (rope instanceof ConcatRope) {
-            final ConcatRope concat = (ConcatRope) rope;
-            
-            final int leftLength = concat.getLeft().byteLength();
-
-            if (offset < leftLength) {
-                /*
-                 * The left branch might not be large enough to extract the full byte range we want. In that case,
-                 * we'll extract what we can and extract the difference from the right side.
-                 */
-                
-                final int leftUsed;
-
-                if (offset + length > leftLength) {
-                    leftUsed = leftLength - offset;
-                } else {
-                    leftUsed = length;
-                }
-
-                visitBytes(concat.getLeft(), visitor, offset, leftUsed);
-
-                if (leftUsed < length) {
-                    visitBytes(concat.getRight(), visitor, 0, length - leftUsed);
-                }
-            } else {
-                visitBytes(concat.getRight(), visitor, offset - leftLength, length);
-            }
-        } else if (rope instanceof SubstringRope) {
-            final SubstringRope substring = (SubstringRope) rope;
-
-            visitBytes(substring.getChild(), visitor, substring.getOffset() + offset, length);
-        } else if (rope instanceof RepeatingRope) {
-            final RepeatingRope repeating = (RepeatingRope) rope;
-            final Rope child = repeating.getChild();
-
-            final int start = offset % child.byteLength();
-            final int firstPartLength = Math.min(child.byteLength() - start, length);
-
-            visitBytes(child, visitor, start, firstPartLength);
-
-            final int lengthMinusFirstPart = length - firstPartLength;
-            final int remainingEnd = lengthMinusFirstPart % child.byteLength();
-
-            if (lengthMinusFirstPart >= child.byteLength()) {
-                final byte[] secondPart = child.getBytes();
-
-                final int repeatPartCount = lengthMinusFirstPart / child.byteLength();
-                for (int i = 0; i < repeatPartCount; i++) {
-                    visitBytes(child, visitor, 0, secondPart.length);
-                }
-
-                if (remainingEnd > 0) {
-                    visitBytes(child, visitor, 0, remainingEnd);
-                }
-            } else if (remainingEnd > 0) {
-                visitBytes(child, visitor, 0, remainingEnd);
-            }
-        } else if (rope instanceof LazyRope) {
-            visitor.accept(rope.getBytes(), offset, length);
-        } else {
-            throw new UnsupportedOperationException("Don't know how to visit rope of type: " + rope.getClass().getName());
-        }
+        visitor.accept(flattenBytes(rope), offset, length);
     }
 
     @TruffleBoundary

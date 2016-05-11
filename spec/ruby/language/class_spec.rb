@@ -58,12 +58,95 @@ describe "A class definition" do
     }.should raise_error(TypeError)
   end
 
+  it "inherits from Object by default" do
+    ClassSpecs::A.superclass.should == Object
+  end
+
+  it "raises an error when trying to change the superclass" do
+    module ClassSpecs
+      class SuperclassResetToSubclass < L
+      end
+      lambda {
+        class SuperclassResetToSubclass < M
+        end
+      }.should raise_error(TypeError, /superclass mismatch/)
+    end
+  end
+
+  it "raises an error when reopening a class with BasicObject as superclass" do
+    module ClassSpecs
+      class SuperclassReopenedBasicObject < A
+      end
+      SuperclassReopenedBasicObject.superclass.should == A
+
+      lambda {
+        class SuperclassReopenedBasicObject < BasicObject
+        end
+      }.should raise_error(TypeError, /superclass mismatch/)
+      SuperclassReopenedBasicObject.superclass.should == A
+    end
+  end
+
+  # [Bug #12367] [ruby-core:75446]
+  ruby_version_is "2.4" do # Until backported
+    it "raises an error when reopening a class with Object as superclass" do
+      module ClassSpecs
+        class SuperclassReopenedObject < A
+        end
+        SuperclassReopenedObject.superclass.should == A
+
+        lambda {
+          class SuperclassReopenedObject < Object
+          end
+        }.should raise_error(TypeError, /superclass mismatch/)
+        SuperclassReopenedObject.superclass.should == A
+      end
+    end
+  end
+
+  it "allows reopening a class without specifying the superclass" do
+    module ClassSpecs
+      class SuperclassNotGiven < A
+      end
+      SuperclassNotGiven.superclass.should == A
+
+      class SuperclassNotGiven
+      end
+      SuperclassNotGiven.superclass.should == A
+    end
+  end
+
+  it "does not allow to set the superclass even if it was not specified by the first declaration" do
+    module ClassSpecs
+      class NoSuperclassSet
+      end
+
+      lambda {
+        class NoSuperclassSet < String
+        end
+      }.should raise_error(TypeError, /superclass mismatch/)
+    end
+  end
+
   it "allows using self as the superclass if self is a class" do
     ClassSpecs::I::J.superclass.should == ClassSpecs::I
 
     lambda {
       class ShouldNotWork < self; end
     }.should raise_error(TypeError)
+  end
+
+  it "first evaluates the superclass before checking if the class already exists" do
+    module ClassSpecs
+      class SuperclassEvaluatedFirst
+      end
+      a = SuperclassEvaluatedFirst
+
+      class SuperclassEvaluatedFirst < remove_const(:SuperclassEvaluatedFirst)
+      end
+      b = SuperclassEvaluatedFirst
+      b.superclass.should == a
+    end
   end
 
   it "raises a TypeError if inheriting from a metaclass" do

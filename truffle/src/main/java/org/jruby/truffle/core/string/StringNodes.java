@@ -83,12 +83,12 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
@@ -615,9 +615,7 @@ public abstract class StringNodes {
         private StringSubstringPrimitiveNode getSubstringNode() {
             if (substringNode == null) {
                 CompilerDirectives.transferToInterpreter();
-
-                substringNode = insert(StringNodesFactory.StringSubstringPrimitiveNodeFactory.create(
-                        new RubyNode[] { null, null, null }));
+                substringNode = insert(StringNodesFactory.StringSubstringPrimitiveNodeFactory.create(null));
             }
 
             return substringNode;

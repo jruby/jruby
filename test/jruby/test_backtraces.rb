@@ -56,7 +56,7 @@ class TestBacktraces < Test::Unit::TestCase
     constructor = sample_class.constructor(Java::int)
     constructor.new_instance 0
     begin
-      constructor.new_instance -1
+      constructor.new_instance(-1)
       fail 'did no raise exception'
     rescue NativeException => ex
       assert_equal 'java.lang.IllegalStateException: param == -1', ex.message
@@ -323,7 +323,7 @@ class TestBacktraces < Test::Unit::TestCase
         begin
           throwing.doRun( (i += 1) > 0 )
         rescue java.lang.Exception
-          assert e = $!.backtrace.find { |e| e.index('org.jruby.RubyFixnum.times') }
+          assert e = $!.backtrace.find { |e2| e2.index('org.jruby.RubyFixnum.times') }
           assert_equal fixnum_times_, e[ 0...fixnum_times_.size ]
           backtrace = $!.backtrace.dup
           raise
@@ -336,7 +336,7 @@ class TestBacktraces < Test::Unit::TestCase
     rescue java.lang.Exception
       # puts $!.backtrace
       # second rewriting of the same exception :
-      assert e = $!.backtrace.find { |e| e.index('org.jruby.RubyFixnum.times') }
+      assert e = $!.backtrace.find { |e2| e2.index('org.jruby.RubyFixnum.times') }
       assert_equal fixnum_times_, e[ 0...fixnum_times_.size ]
       # NOTE back-trace gets duplicate .rb calls - seems not necessary to fix?!
       # assert_equal backtrace, $!.backtrace # expect the same back-trace
@@ -367,7 +367,7 @@ class TestBacktraces < Test::Unit::TestCase
       line.strip!
 
       # if line starts with +nnn, we prepend the current file and offset
-      if line.match /^\+(\d+)(:.*)/
+      if line.match(/^\+(\d+)(:.*)/)
         flunk("@offset is not defined in the test case") unless @offset ||= nil
         # For JRuby, we soften this requirement, since native calls will
         # show their actual .java file and line, rather than the caller.

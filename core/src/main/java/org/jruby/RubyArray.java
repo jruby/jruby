@@ -4206,9 +4206,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int i;
 
         if (block.isGiven()) {
+            Ruby runtime = context.runtime;
             for (i = 0; i < realLength; i++) {
                 v = eltOk(i);
-                if (result == UNDEF || RubyComparable.cmpint(context, block.yieldSpecific(context, v, result), v, result) > 0) {
+                if (result == UNDEF || RubyComparable.cmpint(context, block.yieldArray(context, runtime.newArray(v, result), null), v, result) > 0) {
                     result = v;
                 }
             }
@@ -4241,9 +4242,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int i;
 
         if (block.isGiven()) {
+            Ruby runtime = context.runtime;
             for (i = 0; i < realLength; i++) {
                 v = eltOk(i);
-                if (result == UNDEF || RubyComparable.cmpint(context, block.yieldSpecific(context, v, result), v, result) < 0) {
+                if (result == UNDEF || RubyComparable.cmpint(context, block.yieldArray(context, runtime.newArray(v, result), null), v, result) < 0) {
                     result = v;
                 }
             }

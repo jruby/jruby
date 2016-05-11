@@ -11,7 +11,7 @@ class TestTimeout < Test::Unit::TestCase
   def test_timeout_for_loop
     n = 10000000
     assert_raises(Timeout::Error) do
-      Timeout::timeout(1) { for i in 0..n do; (i + i % (i+1)) % (i + 10) ; end }
+      Timeout.timeout(1) { for i in 0..n do; (i + i % (i+1)) % (i + 10) ; end }
     end
   end
 
@@ -19,7 +19,7 @@ class TestTimeout < Test::Unit::TestCase
     pass = timeout = error = 0
     count.times do
       begin
-        Timeout::timeout(time, &block)
+        Timeout.timeout(time, &block)
         pass += 1
       rescue Timeout::Error => e
         timeout += 1
@@ -51,7 +51,7 @@ class TestTimeout < Test::Unit::TestCase
     client = TCPSocket.new('localhost', port)
     server.accept
     begin
-      timeout(0.1) { client.sysread(1024) }
+      Timeout.timeout(0.1) { client.sysread(1024) }
     rescue Timeout::Error
       ok = true
     end
@@ -85,7 +85,7 @@ class TestTimeout < Test::Unit::TestCase
   def test_timeout_raises_anon_class_to_unroll
     begin
       quiet do
-        timeout(0.1) { foo }
+        Timeout.timeout(0.1) { foo }
       end
     rescue Timeout::Error
       ok = true
@@ -97,7 +97,7 @@ class TestTimeout < Test::Unit::TestCase
   # JRUBY-3928: Net::HTTP doesn't timeout as expected when using timeout.rb
   def test_timeout_socket_connect
     assert_raises(Timeout::Error) do
-      timeout(0.1) do
+      Timeout.timeout(0.1) do
         TCPSocket.new('google.com', 12345)
       end
     end
@@ -183,9 +183,9 @@ class TestTimeout < Test::Unit::TestCase
   end
 
   def test_timeout_interval_argument
-    assert_equal 42, Timeout::timeout(Seconds.new(2)) { 42 }
+    assert_equal 42, Timeout.timeout(Seconds.new(2)) { 42 }
     assert_raises(Timeout::Error) do
-      Timeout::timeout(Seconds.new(0.3)) { sleep(0.5) }
+      Timeout.timeout(Seconds.new(0.3)) { sleep(0.5) }
     end
   end
 

@@ -18,12 +18,12 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.SingleValueCastNode;
 import org.jruby.truffle.core.cast.SingleValueCastNodeGen;
@@ -260,7 +260,7 @@ public abstract class FiberNodes {
 
         public ResumeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(new RubyNode[] { null, null, null });
+            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
         }
 
         @Specialization
@@ -277,7 +277,7 @@ public abstract class FiberNodes {
 
         public YieldNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(new RubyNode[] { null, null, null });
+            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
         }
 
         @Specialization

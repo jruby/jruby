@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrumentation.EventBinding;
 import com.oracle.truffle.api.instrumentation.EventContext;
 import com.oracle.truffle.api.instrumentation.ExecutionEventNode;
 import com.oracle.truffle.api.instrumentation.ExecutionEventNodeFactory;
@@ -39,6 +40,7 @@ public class CoverageManager {
     public static final long NO_CODE = -1;
 
     private final Instrumenter instrumenter;
+    private EventBinding<?> binding;
     private final Map<Source, AtomicLongArray> counters = new ConcurrentHashMap<>();
     private final Map<Source, BitSet> linesHaveCode = new HashMap<>();
 
@@ -53,6 +55,10 @@ public class CoverageManager {
     }
 
     public synchronized void setLineHasCode(LineLocation line) {
+        if (!enabled) {
+            return;
+        }
+
         BitSet bitmap = linesHaveCode.get(line.getSource());
 
         if (bitmap == null) {
@@ -63,33 +69,51 @@ public class CoverageManager {
         bitmap.set(line.getLineNumber() - 1);
     }
 
+    private boolean getLineHasCode(LineLocation line) {
+        final BitSet bitmap = linesHaveCode.get(line.getSource());
+
+        if (bitmap == null) {
+            return false;
+        }
+
+        return bitmap.get(line.getLineNumber() - 1);
+    }
+
     @TruffleBoundary
     public synchronized void enable() {
         if (enabled) {
             return;
         }
 
-        instrumenter.attachFactory(SourceSectionFilter.newBuilder()
+        binding = instrumenter.attachFactory(SourceSectionFilter.newBuilder()
                 .tagIs(LineTag.class)
                 .build(), new ExecutionEventNodeFactory() {
 
             @Override
-            public ExecutionEventNode create(EventContext eventContext) {
+            public ExecutionEventNode create(final EventContext eventContext) {
                 return new ExecutionEventNode() {
 
-                    @CompilationFinal private AtomicLongArray counters;
+                    @CompilationFinal private boolean configured;
                     @CompilationFinal private int lineNumber;
+                    @CompilationFinal private AtomicLongArray counters;
 
                     @Override
                     protected void onEnter(VirtualFrame frame) {
-                        if (counters == null) {
+                        if (!configured) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
-                            final SourceSection sourceSection = getEncapsulatingSourceSection();
-                            counters = getCounters(sourceSection.getSource());
-                            lineNumber = sourceSection.getStartLine() - 1;
+                            final SourceSection sourceSection = eventContext.getInstrumentedSourceSection();
+
+                            if (getLineHasCode(sourceSection.getLineLocation())) {
+                                lineNumber = sourceSection.getStartLine() - 1;
+                                counters = getCounters(sourceSection.getSource());
+                            }
+
+                            configured = true;
                         }
 
-                        counters.incrementAndGet(lineNumber);
+                        if (counters != null) {
+                            counters.incrementAndGet(lineNumber);
+                        }
                     }
 
                 };
@@ -100,7 +124,24 @@ public class CoverageManager {
         enabled = true;
     }
 
+    @TruffleBoundary
+    public synchronized void disable() {
+        if (!enabled) {
+            return;
+        }
+
+        binding.dispose();
+        linesHaveCode.clear();
+        counters.clear();
+
+        enabled = false;
+    }
+    
     private synchronized AtomicLongArray getCounters(Source source) {
+        if (source.getPath() == null) {
+            return null;
+        }
+
         AtomicLongArray c = counters.get(source);
 
         if (c == null) {
@@ -111,7 +152,11 @@ public class CoverageManager {
         return c;
     }
 
-    public Map<Source, long[]> getCounts() {
+    public synchronized Map<Source, long[]> getCounts() {
+        if (!enabled) {
+            return null;
+        }
+
         final Map<Source, long[]> counts = new HashMap<>();
 
         for (Map.Entry<Source, AtomicLongArray> entry : counters.entrySet()) {

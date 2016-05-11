@@ -145,8 +145,8 @@ class SocketTest < Test::Unit::TestCase
     # SocketError(<getaddrinfo: Servname not supported for ai_socktype>)
 
     error = defined?(JRUBY_VERSION) ? SocketError : Errno::ECONNREFUSED
-    [ 2**16, 2**16 + 1, 2**17, 2**30 - 1 ].each do |port|
-      assert_raises(error) { TCPSocket.new('localhost', port) }
+    [ 2**16, 2**16 + 1, 2**17, 2**30 - 1 ].each do |p|
+      assert_raises(error) { TCPSocket.new('localhost', p) }
     end
   end
 
@@ -224,10 +224,10 @@ class SocketTest < Test::Unit::TestCase
 
   def test_tcp_socket_errors
     begin
-      TCPSocket.new('127.0.0.10', 42)
+      TCPSocket.new('0.0.0.0', 42)
     rescue Errno::ECONNREFUSED => e
-      # Connection refused - connect(2) for "127.0.0.1" port 42
-      assert_equal 'Connection refused - connect(2) for "127.0.0.10" port 42', e.message
+      # Connection refused - connect(2) for "0.0.0.0" port 42
+      assert_equal 'Connection refused - connect(2) for "0.0.0.0" port 42', e.message
     else; fail 'not raised'
     end
 
@@ -570,9 +570,9 @@ class ServerTest < Test::Unit::TestCase
 
   # JRUBY-2874
   def test_raises_socket_error_on_out_of_range_port
-    [-2**16, -2**8, -2, -1, 2**16, 2**16 + 1, 2**17, 2**30 -1].each do |port|
+    [-2**16, -2**8, -2, -1, 2**16, 2**16 + 1, 2**17, 2**30 - 1].each do |p|
       assert_raises(SocketError) do
-        TCPServer.new('localhost', port)
+        TCPServer.new('localhost', p)
       end
     end
   end

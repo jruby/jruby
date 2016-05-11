@@ -63,6 +63,9 @@ import static org.jruby.RubyEnumerator.SizeFn;
  */
 @JRubyClass(name="Struct")
 public class RubyStruct extends RubyObject {
+    public static final String NO_MEMBER_IN_STRUCT = "no member '%s' in struct";
+    public static final String IDENTIFIER_NEEDS_TO_BE_CONSTANT = "identifier %s needs to be constant";
+    public static final String UNINITIALIZED_CONSTANT = "uninitialized constant %s";
     private final IRubyObject[] values;
 
     /**
@@ -203,7 +206,7 @@ public class RubyStruct extends RubyObject {
             newStruct.inherit(superClass);
         } else {
             if (!IdUtil.isConstant(name)) {
-                throw runtime.newNameError("identifier " + name + " needs to be constant", name);
+                throw runtime.newNameError(IDENTIFIER_NEEDS_TO_BE_CONSTANT, recv, name);
             }
 
             IRubyObject type = superClass.getConstantAt(name);
@@ -466,7 +469,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private RaiseException notStructMemberError(String name) {
-        return getRuntime().newNameError("no member '" + name + "' in struct", name);
+        return getRuntime().newNameError(NO_MEMBER_IN_STRUCT, this, name);
     }
 
     public final IRubyObject get(int index) {
@@ -765,7 +768,7 @@ public class RubyStruct extends RubyObject {
         RubySymbol className = (RubySymbol) input.unmarshalObject(false);
         RubyClass rbClass = pathToClass(runtime, className.asJavaString());
         if (rbClass == null) {
-            throw runtime.newNameError("uninitialized constant " + className, className.asJavaString());
+            throw runtime.newNameError(UNINITIALIZED_CONSTANT, runtime.getStructClass(), className);
         }
 
         final RubyArray member = __member__(rbClass);

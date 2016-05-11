@@ -876,11 +876,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return originalKey;
         } else if (originalKey instanceof RubyString) {
             return getRuntime().newSymbol(originalKey.asJavaString());
-        } else if (originalKey instanceof RubyFixnum) {
-            getRuntime().getWarnings().warn(ID.FIXNUMS_NOT_SYMBOLS, "Do not use Fixnums as Symbols");
-            throw getRuntime().newArgumentError(originalKey + " is not a symbol");
         } else {
-            throw getRuntime().newTypeError(originalKey + " is not a symbol");
+            throw getRuntime().newTypeError(originalKey + " is not a symbol nor a string");
         }
     }
 

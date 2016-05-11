@@ -27,27 +27,30 @@ env:
   global:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn48M -Xmx512M"
     - MALLOC_ARENA_MAX=2
-  matrix:
-    - JT='test specs :command_line'
-    - JT='test specs :language'
-    - JT='test specs :core'
-    - JT='test specs :library'
-    - JT='test specs :truffle'
-    - JT='test integration fast'
-    - JT='test integration long' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
 
 matrix:
   include:
-    - env: COMMAND=test/check_versions.sh
+    # JRuby+Truffle needs Java 8
+    - env: JT='test specs :command_line'
+      jdk: oraclejdk8
+    - env: JT='test specs :language'
+      jdk: oraclejdk8
+    - env: JT='test specs :core'
+      jdk: oraclejdk8
+    - env: JT='test specs :library'
+      jdk: oraclejdk8
+    - env: JT='test specs :truffle'
+      jdk: oraclejdk8
+    - env: JT='test integration'
+      jdk: oraclejdk8
+    - env: JT='test gems' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
       jdk: oraclejdk8
     - env: JT=check_ambiguous_arguments SKIP_BUILD=true
       jdk: oraclejdk8
   allow_failures:
-    - env: PHASE='-Prake -Dtask=test:mri:fullint'
     - env: JT='test mri'
-    - env: PHASE='-Pj2ee --projects !truffle'
-      jdk: oraclejdk7
-    - env: JT='test integration long' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
+      jdk: oraclejdk8
+    - env: JT='test gems' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required
@@ -65,8 +68,12 @@ branches:
     - ruby-2.3
 
 script: tool/travis_runner.sh
-install:
-  - if [ -z "$SKIP_BUILD" ]; then travis_retry ./mvnw -Pbootstrap clean install -B -Dinvoker.skip -Dmaven.test.skip; fi
+install: |
+  if [[ -n "$PHASE" && $JAVA_HOME == *"java-8"* ]]; then
+    travis_retry ./mvnw package -B --projects '!truffle' -Dinvoker.skip -Dmaven.test.skip;
+  else
+    if [ -z "$SKIP_BUILD" ]; then travis_retry ./mvnw package -B -Dinvoker.skip -Dmaven.test.skip; fi
+  fi
 
 notifications:
   irc:

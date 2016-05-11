@@ -304,8 +304,8 @@ module Commands
     puts 'jt test spec/ruby/language/while_spec.rb       run specs in this file'
     puts 'jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)'
     puts '    --no-java-cmd   don\'t set JAVACMD - rely on bin/jruby or RUBY_BIN to have Graal already'
-    puts 'jt test integration [fast|long|all]            runs bigger integration tests (fast is default)'
-    puts '    --no-gems       don\'t run tests that install gems'
+    puts 'jt test integration                            runs bigger integration tests'
+    puts 'jt test gems                                   tests installing and using gems'
     puts 'jt test cexts                                  run C extension tests (set SULONG_DIR)'
     puts 'jt tag spec/ruby/language                      tag failing specs in this directory'
     puts 'jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file'
@@ -324,7 +324,7 @@ module Commands
     puts '    --score name                               report results as scores'
     puts 'jt metrics ... minheap ...                     what is the smallest heap you can use to run an application'
     puts 'jt metrics ... time ...                        how long does it take to run a command, broken down into different phases'
-    puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
+    puts 'jt tarball                                     build the and test the distribution tarball'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -471,6 +471,7 @@ module Commands
     when 'compiler' then test_compiler(*rest)
     when 'cexts' then test_cexts(*rest)
     when 'integration' then test_integration({}, *rest)
+    when 'gems' then test_gems({}, *rest)
     when 'specs' then test_specs('run', *rest)
     when 'tck' then
       args = []
@@ -542,13 +543,24 @@ module Commands
   private :test_cexts
 
   def test_integration(env, *args)
-    no_gems = args.delete('--no-gems')
+    env_vars   = env
+    jruby_opts = []
 
-    all  = args.delete('all')
-    long = args.delete('long') || all
-    fast = args.delete('fast') || all ||
-        !long # fast is the default
+    jruby_opts << '-Xtruffle.graal.warn_unless=false'
+    env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
+    env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
+    tests_path             = "#{JRUBY_DIR}/test/truffle/integration"
+    single_test            = !args.empty?
+    test_names             = single_test ? '{' + args.join(',') + '}' : '*'
+
+    Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
+      sh env_vars, test_script
+    end
+  end
+  private :test_integration
+
+  def test_gems(env, *args)
     env_vars   = env
     jruby_opts = []
 
@@ -562,21 +574,15 @@ module Commands
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
     env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
-    integration_path       = "#{JRUBY_DIR}/test/truffle/integration"
-    long_tests             = File.read("#{integration_path}/long-tests.txt").lines.map(&:chomp)
+    tests_path             = "#{JRUBY_DIR}/test/truffle/gems"
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
-    Dir["#{integration_path}/#{test_names}.sh"].each do |test_script|
-      is_long     = long_tests.include?(File.basename(test_script))
-      gem_check   = !(no_gems && File.read(test_script).include?('gem install'))
-      group_check = (is_long && long) || (!is_long && fast)
-      run         = single_test || group_check && gem_check
-
-      sh env_vars, test_script if run
+    Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
+      sh env_vars, test_script
     end
   end
-  private :test_integration
+  private :test_gems
 
   def test_specs(command, *args)
     env_vars = {}
@@ -619,7 +625,7 @@ module Commands
       options += %w[--format spec/truffle/truffle_formatter.rb]
     end
 
-    if ENV['TRAVIS']
+    if ENV['CI']
       # Need lots of output to keep Travis happy
       options += %w[--format specdoc]
     end
@@ -858,6 +864,15 @@ module Commands
     end
   end
   
+  def tarball
+    mvn '-Pdist'
+    generated_file = "#{JRUBY_DIR}/maven/jruby-dist/target/jruby-dist-#{Utilities.jruby_version}-bin.tar.gz"
+    final_file = "#{JRUBY_DIR}/jruby-bin-#{Utilities.jruby_version}.tar.gz"
+    FileUtils.copy generated_file, final_file
+    FileUtils.copy "#{generated_file}.sha256", "#{final_file}.sha256"
+    sh 'test/truffle/tarball.sh', final_file
+  end
+  
   def log(tty_message, full_message)
     if STDOUT.tty?
       print(tty_message) unless tty_message.nil?
@@ -883,37 +898,6 @@ module Commands
 
     build
     run({ "TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS" => "true" }, '-e', 'exit')
-  end
-
-  def install(arg)
-    case arg
-    when /.*suite.*\.py$/
-      rebuild
-      mvn '-Pcomplete'
-
-      suite_file = arg
-      suite_lines = File.readlines(suite_file)
-      version = Utilities.jruby_version
-
-      [
-        ['maven/jruby-complete/target', "jruby-complete"],
-        ['truffle/target', "jruby-truffle"]
-      ].each do |dir, name|
-        jar_name = "#{name}-#{version}.jar"
-        source_jar_path = "#{dir}/#{jar_name}"
-        shasum = Digest::SHA1.hexdigest File.read(source_jar_path)
-        jar_shasum_name = "#{name}-#{version}-#{shasum}.jar"
-        FileUtils.cp source_jar_path, "#{File.expand_path('../..', suite_file)}/lib/#{jar_shasum_name}"
-        line_index = suite_lines.find_index { |line| line.start_with? "      \"path\" : \"lib/#{name}" }
-        suite_lines[line_index] = "      \"path\" : \"lib/#{jar_shasum_name}\",\n"
-        suite_lines[line_index + 1] = "      \#\"urls\" : [\"http://lafo.ssw.uni-linz.ac.at/truffle/ruby/#{jar_shasum_name}\"],\n"
-        suite_lines[line_index + 2] = "      \"sha1\" : \"#{shasum}\"\n"
-      end
-
-      File.write(suite_file, suite_lines.join())
-    else
-      raise ArgumentError, kind
-    end
   end
 
 end

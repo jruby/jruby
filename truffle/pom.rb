@@ -38,8 +38,8 @@ project 'JRuby Truffle' do
           'verbose' => 'false',
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
-          'source' => [ '${base.java.version}', '1.7' ],
-          'target' => [ '${base.javac.version}', '1.7' ],
+          'source' => '1.8',
+          'target' => '1.8',
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
                    :id => 'default-compile',

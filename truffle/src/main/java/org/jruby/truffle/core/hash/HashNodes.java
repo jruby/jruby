@@ -24,12 +24,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayBuilderNode;
@@ -185,7 +185,7 @@ public abstract class HashNodes {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null);
+            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null);
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
         }
@@ -375,7 +375,7 @@ public abstract class HashNodes {
         
         public GetOrUndefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            getIndexNode = HashNodesFactory.GetIndexNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            getIndexNode = HashNodesFactory.GetIndexNodeFactory.create(context, sourceSection, null);
             getIndexNode.setUndefinedValue(context.getCoreLibrary().getRubiniusUndefined());
         }
 

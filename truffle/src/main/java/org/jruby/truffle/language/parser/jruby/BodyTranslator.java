@@ -27,10 +27,11 @@ import org.jruby.parser.ParserSupport;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.builtins.PrimitiveConstructor;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.IsRubiniusUndefinedNode;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
 import org.jruby.truffle.core.array.ArrayAppendOneNodeGen;
 import org.jruby.truffle.core.array.ArrayConcatNode;
@@ -65,7 +66,6 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
-import org.jruby.truffle.builtins.PrimitiveConstructor;
 import org.jruby.truffle.core.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
 import org.jruby.truffle.core.string.StringNodesFactory;
@@ -593,7 +593,7 @@ public class BodyTranslator extends Translator {
          *
          * into
          *
-         *   InvokeRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *   InvokePrimitiveNode(FooNode(arg1, arg2, ..., argN))
          *
          * or
          *
@@ -1962,8 +1962,7 @@ public class BodyTranslator extends Translator {
         final String name = isLambda ? "(lambda)" : currentCallMethodName;
         final boolean isProc = !isLambda;
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), name, true,
-                Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), name, true, Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
 
         final String namedMethodName = isLambda ? sharedMethodInfo.getName(): environment.getNamedMethodName();
 

@@ -15,8 +15,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import jnr.constants.platform.Errno;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.rope.Rope;
@@ -135,6 +135,10 @@ public class CoreExceptions {
 
     public DynamicObject runtimeErrorCompiled(Node currentNode) {
         return runtimeError("Truffle::Graal.assert_not_compiled can only be called lexically", currentNode);
+    }
+
+    public DynamicObject runtimeErrorCoverageNotEnabled(Node currentNode) {
+        return runtimeError("coverage measurement is not enabled", currentNode);
     }
 
     @TruffleBoundary

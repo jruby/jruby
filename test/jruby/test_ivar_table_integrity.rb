@@ -3,11 +3,10 @@ require 'test/unit'
 class TestIvarTableIntegrity < Test::Unit::TestCase
   def test_ivar_table_integrity
     cls = Class.new do
-      def foo=(a); @foo = a; end
+      def initialize; @foo = nil; end
+      attr_accessor :foo
+      attr_accessor :bar
       def remove_foo; remove_instance_variable :@foo; end
-      def foo; @foo; end
-      def bar=(a); @bar = a; end
-      def bar; @bar; end
     end
 
     obj = cls.new

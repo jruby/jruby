@@ -27,7 +27,7 @@ public abstract class Reflector {
         return method.invoke(obj, arg);
     }
 
-    public static Object invoke(final Object obj, final Class klass, final String method) throws Exception {
+    public static Object invoke(final Object obj, final Class<?> klass, final String method) throws Exception {
         Method instanceMethod = klass.getMethod(method, (Class[]) null);
         return instanceMethod.invoke(obj, (Object[]) null);
     }

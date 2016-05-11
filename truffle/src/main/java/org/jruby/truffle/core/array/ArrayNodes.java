@@ -31,13 +31,12 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
-import org.jruby.truffle.builtins.CoreSourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
@@ -697,7 +696,7 @@ public abstract class ArrayNodes {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(new RubyNode[]{null,null});
+            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -892,7 +891,7 @@ public abstract class ArrayNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(new RubyNode[]{null,null});
+            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -1355,15 +1354,13 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MaxBlock(RubyContext context) {
-            final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection("Array", "max");
-
             frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
+            sharedMethodInfo = new SharedMethodInfo(SourceSection.createUnavailable(null, "Array#max block"), null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
 
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                                        new ReadDeclarationVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, null, null, sharedMethodInfo, MaxBlockNodeFactory.create(context, null, new RubyNode[]{
+                                        new ReadDeclarationVariableNode(context, null, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
                                         new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR)
                                 }), false));
         }
@@ -1477,15 +1474,13 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MinBlock(RubyContext context) {
-            final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection("Array", "min");
-
             frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
+            sharedMethodInfo = new SharedMethodInfo(SourceSection.createUnavailable(null, "Array#min block"), null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
 
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sourceSection, null, sharedMethodInfo, MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                                        new ReadDeclarationVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, null, null, sharedMethodInfo, MinBlockNodeFactory.create(context, null, new RubyNode[]{
+                                        new ReadDeclarationVariableNode(context, null, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
                                         new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR)
                                 }), false));
         }

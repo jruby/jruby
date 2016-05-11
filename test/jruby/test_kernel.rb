@@ -7,7 +7,7 @@ class TestKernel < Test::Unit::TestCase
   include TestHelper
 
   def log(msg)
-    $stderr.puts msg if $VERBOSE
+    $stderr.puts msg if $DEBUG
   end
 
   TESTAPP_DIR = File.expand_path(File.join(File.dirname(__FILE__), 'testapp'))
@@ -432,42 +432,36 @@ class TestKernel < Test::Unit::TestCase
     assert !system('')
   end
 
-  unless false # FIXME figure out why this doesn't pass in 1.9+
-    def test_system_existing
-      quiet do
-        if (WINDOWS)
-          res = system('cd')
-        else
-          res = system('pwd')
-        end
-        assert_equal true, res
+  def test_system_existing
+    quiet do
+      if (WINDOWS)
+        res = system('cd')
+      else
+        res = system('true')
       end
+      assert_equal true, res
     end
   end
 
-  unless false # FIXME figure out why this doesn't pass in 1.9+
-    def test_system_existing_with_leading_space
-      quiet do
-        if (WINDOWS)
-          res = system(' cd')
-        else
-          res = system(' pwd')
-        end
-        assert_equal true, res
+  def test_system_existing_with_leading_space
+    quiet do
+      if (WINDOWS)
+        res = system(' cd')
+      else
+        res = system(' true')
       end
+      assert_equal true, res
     end
   end
 
-  unless false # FIXME figure out why this doesn't pass in 1.9+
-    def test_system_existing_with_trailing_space
-      quiet do
-        if (WINDOWS)
-          res = system('cd ')
-        else
-          res = system('pwd ')
-        end
-        assert_equal true, res
+  def test_system_existing_with_trailing_space
+    quiet do
+      if (WINDOWS)
+        res = system('cd ')
+      else
+        res = system('true ')
       end
+      assert_equal true, res
     end
   end
 
@@ -780,7 +774,7 @@ class TestKernel < Test::Unit::TestCase
     ENV['RUBYOPT'] = "-v"
     result =  `bin/jruby -e "a=1"`
     assert_equal 0, $?.exitstatus
-    assert_match /ruby/i, result
+    assert_match(/ruby/i, result)
   ensure
     ENV['RUBYOPT'] = old
   end

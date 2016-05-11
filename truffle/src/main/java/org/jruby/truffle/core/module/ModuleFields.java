@@ -17,18 +17,15 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.builtins.CoreSourceSection;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.IsFrozenNode;
-import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.ObjectGraphNode;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
 
@@ -313,7 +310,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         if (context.getCoreLibrary().isLoadingRubyCore()) {
             final InternalMethod currentMethod = methods.get(method.getName());
 
-            if (currentMethod != null && CoreSourceSection.isCoreSourceSection(currentMethod.getSharedMethodInfo().getSourceSection())) {
+            if (currentMethod != null && currentMethod.getSharedMethodInfo().getSourceSection().getSource() == null) {
                 return;
             }
         }

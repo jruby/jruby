@@ -17,8 +17,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.core.kernel.KernelNodes;
@@ -138,7 +138,7 @@ public abstract class ToStringNode extends FormatNode {
             if (inspectNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(),
-                        getEncapsulatingSourceSection(), new RubyNode[]{null}));
+                        getEncapsulatingSourceSection(), null));
             }
 
             return Layouts.STRING.getRope(inspectNode.toS(frame, object)).getBytes();

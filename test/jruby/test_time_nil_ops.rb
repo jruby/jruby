@@ -19,7 +19,7 @@ class TestTimeNilOps < Test::Unit::TestCase
   def test_times
     t = Time.now
     begin
-      t * ()
+      _ = t * ()
       fail "bleh"
     rescue NoMethodError=>x
       assert x
@@ -29,7 +29,7 @@ class TestTimeNilOps < Test::Unit::TestCase
   def test_div
     t = Time.now
     begin
-      t / ()
+      _ = t / ()
       fail "bleh"
     rescue NoMethodError=>x
       assert x

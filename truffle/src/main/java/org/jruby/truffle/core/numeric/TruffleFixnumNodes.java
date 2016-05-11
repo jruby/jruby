@@ -11,9 +11,9 @@ package org.jruby.truffle.core.numeric;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.builtins.CoreClass;
-import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.core.CoreLibrary;
 
 @CoreClass("Truffle::Fixnum")
 public abstract class TruffleFixnumNodes {

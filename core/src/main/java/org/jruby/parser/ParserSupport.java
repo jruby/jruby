@@ -1303,14 +1303,16 @@ public class ParserSupport {
 
         for (int i = 0; i < length; i++) {
             // TODO: Pass by non-local-varnamed things but make sure consistent with list we get from regexp
-            
             if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
                 int slot = scope.isDefined(names[i]);
                 if (slot >= 0) {
-                    if (warnings.isVerbose()) warn(ID.AMBIGUOUS_ARGUMENT, getPosition(regexpNode), "named capture conflicts a local variable - " + names[i]);
+                    // If verbose and the variable is not just another named capture, warn
+                    if (warnings.isVerbose() && !scope.isNamedCapture(slot)) {
+                        warn(ID.AMBIGUOUS_ARGUMENT, getPosition(regexpNode), "named capture conflicts a local variable - " + names[i]);
+                    }
                     locals.add(slot);
                 } else {
-                    locals.add(getCurrentScope().addVariableThisScope(names[i]));
+                    locals.add(getCurrentScope().addNamedCaptureVariable(names[i]));
                 }
             }
         }

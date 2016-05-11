@@ -20,8 +20,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.language.RubyNode;
@@ -59,7 +59,7 @@ public abstract class SetNode extends RubyNode {
         super(context, sourceSection);
         hashNode = new HashNode(context, sourceSection);
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null, null);
+        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null);
     }
 
     public abstract Object executeSet(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity);

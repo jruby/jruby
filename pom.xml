@@ -16,7 +16,7 @@ DO NOT MODIFIY - GENERATED CODE
   </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
-  <version>9.1.0.0</version>
+  <version>9.1.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>JRuby</name>
   <description>JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.</description>
@@ -84,7 +84,6 @@ DO NOT MODIFIY - GENERATED CODE
     </mailingList>
   </mailingLists>
   <modules>
-    <module>truffle</module>
     <module>core</module>
     <module>lib</module>
   </modules>
@@ -105,7 +104,7 @@ DO NOT MODIFIY - GENERATED CODE
     </site>
   </distributionManagement>
   <properties>
-    <rspec-core.version>3.3.2</rspec-core.version>
+    <rspec-core.version>3.4.4</rspec-core.version>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <racc.version>1.4.13</racc.version>
     <its.j2ee>j2ee*/pom.xml</its.j2ee>
@@ -118,14 +117,14 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby-launcher.version>1.1.1</jruby-launcher.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <asm.version>5.0.4</asm.version>
-    <rspec-expectations.version>3.3.1</rspec-expectations.version>
+    <rspec-expectations.version>3.4.0</rspec-expectations.version>
     <its.osgi>osgi*/pom.xml</its.osgi>
     <base.javac.version>1.7</base.javac.version>
     <test-unit.version>3.1.1</test-unit.version>
     <rdoc.version>4.2.0</rdoc.version>
-    <rspec.version>3.3.0</rspec.version>
+    <rspec.version>3.4.0</rspec.version>
     <base.java.version>1.7</base.java.version>
-    <rspec-mocks.version>3.3.2</rspec-mocks.version>
+    <rspec-mocks.version>3.4.1</rspec-mocks.version>
     <jruby.plugins.version>1.0.10</jruby.plugins.version>
     <invoker.skip>true</invoker.skip>
     <json.version>1.8.3</json.version>
@@ -136,6 +135,7 @@ DO NOT MODIFIY - GENERATED CODE
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
     <joda.time.version>2.8.2</joda.time.version>
+    <rspec-support.version>3.4.1</rspec-support.version>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
   </properties>
   <dependencyManagement>
@@ -526,6 +526,15 @@ DO NOT MODIFIY - GENERATED CODE
   </reporting>
   <profiles>
     <profile>
+      <id>truffle</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <modules>
+        <module>truffle</module>
+      </modules>
+    </profile>
+    <profile>
       <id>test</id>
       <modules>
         <module>test</module>
@@ -545,87 +554,6 @@ DO NOT MODIFIY - GENERATED CODE
     </profile>
     <profile>
       <id>exec</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-language</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-core</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-library</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-truffle</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-language-report</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-core-report</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-specs-library-report</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-test-pe</id>
-      <build>
-        <defaultGoal>package</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>truffle-mri-tests</id>
       <build>
         <defaultGoal>package</defaultGoal>
       </build>
@@ -796,6 +724,7 @@ DO NOT MODIFIY - GENERATED CODE
         <defaultGoal>install</defaultGoal>
       </build>
       <modules>
+        <module>truffle</module>
         <module>test</module>
         <module>maven</module>
       </modules>
@@ -806,6 +735,7 @@ DO NOT MODIFIY - GENERATED CODE
         <defaultGoal>clean</defaultGoal>
       </build>
       <modules>
+        <module>truffle</module>
         <module>test</module>
         <module>maven</module>
       </modules>
@@ -813,6 +743,7 @@ DO NOT MODIFIY - GENERATED CODE
     <profile>
       <id>release</id>
       <modules>
+        <module>truffle</module>
         <module>test</module>
         <module>maven</module>
       </modules>
@@ -850,6 +781,7 @@ DO NOT MODIFIY - GENERATED CODE
         </plugins>
       </build>
       <modules>
+        <module>truffle</module>
         <module>maven</module>
       </modules>
       <distributionManagement>

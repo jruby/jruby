@@ -12,15 +12,13 @@ package org.jruby.truffle.builtins;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
-import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
-import org.jruby.truffle.core.ReturnEnumeratorIfNoBlockNode;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.module.ModuleOperations;
@@ -46,7 +44,6 @@ import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -157,7 +154,7 @@ public class CoreMethodNodeManager {
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
-        final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection(methodDetails.getClassAnnotation().value(), method.names()[0]);
+        final SourceSection sourceSection = SourceSection.createUnavailable(null, String.format("%s#%s", methodDetails.getClassAnnotation().value(), method.names()[0]));
 
         final int required = method.required();
         final int optional = method.optional();
@@ -166,7 +163,7 @@ public class CoreMethodNodeManager {
 
         final Arity arity = new Arity(required, optional, method.rest());
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, method.names()[0], methodDetails.getIndicativeName(), false, null, context.getOptions().CORE_ALWAYS_CLONE, alwaysInline, needsCallerFrame);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, method.names()[0], false, null, context.getOptions().CORE_ALWAYS_CLONE, alwaysInline, needsCallerFrame);
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
@@ -352,110 +349,6 @@ public class CoreMethodNodeManager {
 
         public String getIndicativeName() {
             return classAnnotation.value() + "#" + methodAnnotation.names()[0];
-        }
-    }
-
-    private static class AmbiguousOptionalArgumentChecker {
-
-        private static final Method GET_PARAMETERS = checkParametersNamesAvailable();
-        private static boolean SUCCESS = true;
-
-        private static Method checkParametersNamesAvailable() {
-            try {
-                return Method.class.getMethod("getParameters");
-            } catch (NoSuchMethodException | SecurityException e) {
-                // Java 7 or could not find how to get names of method parameters
-                System.err.println("Could not find method Method.getParameters()");
-                System.exit(1);
-                return null;
-            }
-        }
-
-        private static void verifyNoAmbiguousOptionalArguments(MethodDetails methodDetails) {
-            try {
-                verifyNoAmbiguousOptionalArgumentsWithReflection(methodDetails);
-            } catch (Exception e) {
-                e.printStackTrace();
-                SUCCESS = false;
-            }
-        }
-
-        private static void verifyNoAmbiguousOptionalArgumentsWithReflection(MethodDetails methodDetails) throws ReflectiveOperationException {
-            final CoreMethod methodAnnotation = methodDetails.getMethodAnnotation();
-            if (methodAnnotation.optional() > 0 || methodAnnotation.needsBlock()) {
-                int opt = methodAnnotation.optional();
-                if (methodAnnotation.needsBlock()) {
-                    opt++;
-                }
-
-                Class<?> node = methodDetails.getNodeFactory().getNodeClass();
-
-                for (int i = 1; i <= opt; i++) {
-                    boolean unguardedObjectArgument = false;
-                    StringBuilder errors = new StringBuilder();
-                    for (Method method : node.getDeclaredMethods()) {
-                        if (method.isAnnotationPresent(Specialization.class)) {
-                            // count from the end to ignore optional VirtualFrame in front.
-                            Class<?>[] parameterTypes = method.getParameterTypes();
-                            int n = parameterTypes.length - i;
-                            if (methodAnnotation.rest()) {
-                                n--; // ignore final Object[] argument
-                            }
-                            Class<?> parameterType = parameterTypes[n];
-                            Object[] parameters = (Object[]) GET_PARAMETERS.invoke(method);
-
-                            Object parameter = parameters[n];
-                            boolean isNamePresent = (boolean) parameter.getClass().getMethod("isNamePresent").invoke(parameter);
-                            if (!isNamePresent) {
-                                System.err.println("Method parameters names are not available for " + method);
-                                System.exit(1);
-                            }
-                            String name = (String) parameter.getClass().getMethod("getName").invoke(parameter);
-
-                            if (parameterType == Object.class && !name.startsWith("unused") && !name.equals("maybeBlock")) {
-                                String[] guards = method.getAnnotation(Specialization.class).guards();
-                                if (!isGuarded(name, guards)) {
-                                    unguardedObjectArgument = true;
-                                    errors.append("\"").append(name).append("\" in ").append(methodToString(method, parameterTypes, parameters)).append("\n");
-                                }
-                            }
-                        }
-                    }
-
-                    if (unguardedObjectArgument) {
-                        SUCCESS = false;
-                        System.err.println("Ambiguous optional argument in " + node.getCanonicalName() + ":");
-                        System.err.println(errors);
-                    }
-                }
-            }
-        }
-
-        private static boolean isGuarded(String name, String[] guards) {
-            for (String guard : guards) {
-                if (guard.equals("wasProvided(" + name + ")") ||
-                        guard.equals("wasNotProvided(" + name + ")") ||
-                        guard.equals("wasNotProvided(" + name + ") || isRubiniusUndefined(" + name + ")") ||
-                        guard.equals("isNil(" + name + ")")) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private static String methodToString(Method method, Class<?>[] parameterTypes, Object[] parameters) throws ReflectiveOperationException {
-            StringBuilder str = new StringBuilder();
-            str.append(method.getName()).append("(");
-            for (int i = 0; i < parameters.length; i++) {
-                Object parameter = parameters[i];
-                String name = (String) parameter.getClass().getMethod("getName").invoke(parameter);
-                str.append(parameterTypes[i].getSimpleName()).append(" ").append(name);
-                if (i < parameters.length - 1) {
-                    str.append(", ");
-                }
-            }
-            str.append(")");
-            return str.toString();
         }
     }
 

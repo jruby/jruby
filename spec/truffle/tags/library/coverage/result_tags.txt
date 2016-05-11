@@ -1,9 +1,0 @@
-fails:Coverage.result gives the covered files as a hash with arrays of count or nil
-fails:Coverage.result no requires/loads should give empty hash
-fails:Coverage.result second call should give exception
-fails:Coverage.result second run should give same result
-fails:Coverage.result second run without load/require should give empty hash
-fails:Coverage.result second Coverage.start does nothing
-fails:Coverage.result should list coverage for the required file starting coverage
-fails:Coverage.result should list coverage for the loaded file starting coverage
-fails:Coverage.result does not include the file starting coverage since it is not tracked

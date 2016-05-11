@@ -75,7 +75,7 @@ public class #{StarterName} {
 
     javac = ENV['JAVA_HOME'] ? "#{ENV['JAVA_HOME']}/bin/javac" : "javac"
     javac_cmd = "#{javac} -cp #{jruby_jar} #{StarterSource}"
-    puts javac_cmd if $VERBOSE; `#{javac_cmd}`
+    `#{javac_cmd}`
     assert_equal 0, $?.exitstatus, "javac failed to compile #{StarterSource}"
 
     jar = ENV['JAVA_HOME'] ? "#{ENV['JAVA_HOME']}/bin/jar" : "jar"
@@ -86,7 +86,7 @@ public class #{StarterName} {
 
     java = ENV['JAVA_HOME'] ? "#{ENV['JAVA_HOME']}/bin/java" : "java"
     java_cmd = "#{java} -jar -Djruby.aot.loadClasses=true #{JarFile}"
-    puts java_cmd if $VERBOSE; result = `#{java_cmd}`
+    result = `#{java_cmd}`
     assert_equal 0, $?.exitstatus, "did not get 0 for exit status from running java against the jar"
     assert_equal "hello from runner", result, "wrong text from runner"
   end

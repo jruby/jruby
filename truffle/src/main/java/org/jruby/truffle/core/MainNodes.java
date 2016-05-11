@@ -32,7 +32,7 @@ public abstract class MainNodes {
 
         public PublicNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            publicNode = ModuleNodesFactory.PublicNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            publicNode = ModuleNodesFactory.PublicNodeFactory.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -49,7 +49,7 @@ public abstract class MainNodes {
 
         public PrivateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            privateNode = ModuleNodesFactory.PrivateNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            privateNode = ModuleNodesFactory.PrivateNodeFactory.create(context, sourceSection, null);
         }
 
         @Specialization

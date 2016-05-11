@@ -10,8 +10,6 @@
 package org.jruby.truffle.stdlib.bigdecimal;
 
 import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeChild(value = "arguments", type = RubyNode[].class)

@@ -20,11 +20,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.truffle.builtins.BinaryCoreMethodNode;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
@@ -58,7 +57,7 @@ public abstract class SymbolNodes {
     }
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)
-    public abstract static class EqualNode extends BinaryCoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "isRubySymbol(b)")
         public boolean equal(DynamicObject a, DynamicObject b) {
@@ -112,9 +111,7 @@ public abstract class SymbolNodes {
             final SourceSection sourceSection = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getCallNode().getEncapsulatingSourceSection();
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                    sourceSection, null, Arity.AT_LEAST_ONE, Layouts.SYMBOL.getString(symbol),
-                    true, ArgumentDescriptor.ANON_REST, false, false, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.AT_LEAST_ONE, Layouts.SYMBOL.getString(symbol), true, ArgumentDescriptor.ANON_REST, false, false, false);
 
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
 

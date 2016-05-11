@@ -99,10 +99,10 @@ public class PrimitiveNodeConstructor implements PrimitiveConstructor {
         List<Class<?>> signature = signatures.get(0);
 
         if (signature.get(0) == RubyContext.class) {
-            return new InvokeRubiniusPrimitiveNode(context, sourceSection,
+            return new InvokePrimitiveNode(context, sourceSection,
                     factory.createNode(context, sourceSection, arguments));
         } else {
-            return new InvokeRubiniusPrimitiveNode(context, sourceSection,
+            return new InvokePrimitiveNode(context, sourceSection,
                     factory.createNode(new Object[]{arguments}));
         }
     }

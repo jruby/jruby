@@ -28,23 +28,20 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.profiles.ValueProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
 import org.jruby.truffle.core.array.ArrayHelpers;
-import org.jruby.truffle.core.cast.BooleanCastNode;
-import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
@@ -98,6 +95,7 @@ import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.IdUtil;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -258,7 +256,7 @@ public abstract class ModuleNodes {
         private Object isSubclass(DynamicObject self, DynamicObject other) {
             if (subclassNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                subclassNode = insert(ModuleNodesFactory.IsSubclassOfOrEqualToNodeFactory.create(new RubyNode[]{null, null}));
+                subclassNode = insert(ModuleNodesFactory.IsSubclassOfOrEqualToNodeFactory.create(null));
             }
             return subclassNode.executeIsSubclassOfOrEqualTo(self, other);
         }
@@ -1134,7 +1132,7 @@ public abstract class ModuleNodes {
         void classEval(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             if (classExecNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null,null}));
+                classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), null));
             }
             classExecNode.executeClassExec(frame, module, new Object[]{}, block);
         }

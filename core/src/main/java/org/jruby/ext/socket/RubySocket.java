@@ -202,18 +202,14 @@ public class RubySocket extends RubyBasicSocket {
 
         boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
 
-        doConnectNonblock(context, getChannel(), addr, exception);
-
-        return RubyFixnum.zero(context.runtime);
+        return doConnectNonblock(context, getChannel(), addr, exception);
     }
 
     @JRubyMethod()
     public IRubyObject connect(ThreadContext context, IRubyObject arg) {
         SocketAddress addr = addressForChannel(context, arg);
 
-        doConnect(context, getChannel(), addr, true);
-
-        return RubyFixnum.zero(context.runtime);
+        return doConnect(context, getChannel(), addr, true);
     }
 
     @JRubyMethod()

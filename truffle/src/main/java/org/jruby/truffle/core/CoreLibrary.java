@@ -18,7 +18,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Layout;
 import com.oracle.truffle.api.object.Property;
-import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
@@ -31,7 +30,6 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
-import org.jruby.truffle.builtins.CoreSourceSection;
 import org.jruby.truffle.core.array.ArrayNodes;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
@@ -103,10 +101,10 @@ import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory;
 import org.jruby.truffle.stdlib.CoverageNodesFactory;
 import org.jruby.truffle.stdlib.EtcNodesFactory;
 import org.jruby.truffle.stdlib.ObjSpaceNodesFactory;
+import org.jruby.truffle.stdlib.bigdecimal.BigDecimalNodesFactory;
 import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
@@ -346,10 +344,10 @@ public class CoreLibrary {
         @Child SingletonClassNode singletonClassNode;
         @Child FreezeNode freezeNode;
 
-        public CoreLibraryNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
-            this.freezeNode = FreezeNodeGen.create(context, sourceSection, null);
+        public CoreLibraryNode(RubyContext context) {
+            super(context, null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, null, null);
+            this.freezeNode = FreezeNodeGen.create(context, null, null);
             adoptChildren();
         }
 
@@ -368,7 +366,7 @@ public class CoreLibrary {
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
-        this.node = new CoreLibraryNode(context, CoreSourceSection.createCoreSourceSection("CoreLibrary", "initialize"));
+        this.node = new CoreLibraryNode(context);
 
         // Nothing in this constructor can use RubyContext.getCoreLibrary() as we are building it!
         // Therefore, only initialize the core classes and modules here.
@@ -545,7 +543,7 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(ioClass, Layouts.IO.createIOShape(ioClass, ioClass));
         internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
         Layouts.CLASS.setInstanceFactoryUnsafe(internalBufferClass, Layouts.IO_BUFFER.createIOBufferShape(internalBufferClass, internalBufferClass));
-        weakRefClass = defineClass("WeakRef");
+        weakRefClass = defineClass(basicObjectClass, "WeakRef");
         weakRefFactory = Layouts.WEAK_REF_LAYOUT.createWeakRefShape(weakRefClass, weakRefClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(weakRefClass, weakRefFactory);
         final DynamicObject tracePointClass = defineClass("TracePoint");

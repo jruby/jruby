@@ -57,7 +57,7 @@ class RaiseErrorMatcher
     if @actual then
       message << "but got #{format_exception(@actual)}"
     else
-      message << "but no exception was raised (#{@result} was returned)"
+      message << "but no exception was raised (#{@result.pretty_inspect.chomp} was returned)"
     end
 
     message

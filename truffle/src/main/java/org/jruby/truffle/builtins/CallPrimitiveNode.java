@@ -17,16 +17,12 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ReturnID;
 
-/**
- * Node which wraps a {@link PrimitiveNode}, providing the implicit control flow that you get with calls to
- * Rubinius primitives.
- */
 public class CallPrimitiveNode extends RubyNode {
 
     @Child private RubyNode primitive;
     private final ReturnID returnID;
 
-    private final ConditionProfile primitiveSucceededCondition = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile failedProfile = ConditionProfile.createBinaryProfile();
 
     public CallPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive, ReturnID returnID) {
         super(context, sourceSection);
@@ -35,22 +31,17 @@ public class CallPrimitiveNode extends RubyNode {
     }
 
     @Override
-    public void executeVoid(VirtualFrame frame) {
+    public Object execute(VirtualFrame frame) {
         final Object value = primitive.execute(frame);
 
-        if (primitiveSucceededCondition.profile(value != null)) {
+        // Primitives fail by returning null, allowing the method to continue (the fallback)
+        if (failedProfile.profile(value == null)) {
+            return nil();
+        } else {
             // If the primitive didn't fail its value is returned in the calling method
-
             throw new ReturnException(returnID, value);
         }
 
-        // Primitives may return null to indicate that they have failed, in which case we continue with the fallback
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        executeVoid(frame);
-        return nil();
     }
 
 }

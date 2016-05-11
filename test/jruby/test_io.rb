@@ -70,7 +70,13 @@ class TestIO < Test::Unit::TestCase
     assert_nothing_raised { g.write "" }
     assert_nothing_raised { g.puts "" }
     assert_nothing_raised { g.putc 'c' }
-    assert_raises(Errno::EBADF) { g.syswrite "" }
+    begin
+      # silence "syswrite for buffered IO" warning
+      verbose, $VERBOSE = $VERBOSE, nil
+      assert_raises(Errno::EBADF) { g.syswrite "" }
+    ensure
+      $VERBOSE = verbose
+    end
 
     f = File.open(@file, "w")
     @to_close << g = IO.new(f.fileno)
@@ -483,16 +489,20 @@ class TestIO < Test::Unit::TestCase
   end
 
   # JRUBY-6137
-  def test_rubyio_fileno_mapping_leak; require 'jruby'
-    pend "TODO: refactor JRuby.runtime.fileno_int_map_size"
-    starting_count = JRuby.runtime.fileno_int_map_size
-    io = org.jruby.RubyIO.new(JRuby.runtime, org.jruby.util.io.STDIO::ERR)
-    open_io_count = JRuby.runtime.fileno_int_map_size
+  def test_rubyio_fileno_mapping_leak
+    fileno_util = JRuby.runtime.fileno_util
+    starting_count = fileno_util.number_of_wrappers
+
+    # use a non-channel stream to ensure we use our mapping
+    io = org.jruby.RubyIO.new(JRuby.runtime, java.io.ByteArrayOutputStream.new)
+
+    open_io_count = fileno_util.number_of_wrappers
     assert_equal(starting_count + 1, open_io_count)
+
     io.close
-    closed_io_count = JRuby.runtime.fileno_int_map_size
+    closed_io_count = fileno_util.number_of_wrappers
     assert_equal(starting_count, closed_io_count)
-  end if defined? JRUBY_VERSION
+  end if RUBY_ENGINE == 'jruby'
 
   # JRUBY-1222
   def test_stringio_gets_utf8

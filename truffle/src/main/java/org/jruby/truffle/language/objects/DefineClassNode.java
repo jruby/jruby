@@ -16,8 +16,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
@@ -30,7 +30,7 @@ public class DefineClassNode extends RubyNode {
 
     protected final String name;
 
-    @Child private RubyNode superClass;
+    @Child private RubyNode superClassNode;
     @Child private CallDispatchHeadNode inheritedNode;
     @Child private RubyNode lexicalParentModule;
     @Child private IndirectCallNode indirectCallNode;
@@ -43,7 +43,7 @@ public class DefineClassNode extends RubyNode {
         super(context, sourceSection);
         this.name = name;
         this.lexicalParentModule = lexicalParent;
-        this.superClass = superClass;
+        this.superClassNode = superClass;
         indirectCallNode = IndirectCallNode.create();
     }
 
@@ -58,60 +58,63 @@ public class DefineClassNode extends RubyNode {
 
         DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
 
-        final Object superClassObject = superClass.execute(frame);
-
-        if (!RubyGuards.isRubyClass(superClassObject)) {
-            errorProfile.enter();
-            throw new RaiseException(coreExceptions().typeError("superclass must be a Class", this));
-        }
-
-        final DynamicObject superClassModule = (DynamicObject) superClassObject;
-
-        if (Layouts.CLASS.getIsSingleton(superClassModule)) {
-            errorProfile.enter();
-            throw new RaiseException(coreExceptions().typeError("can't make subclass of virtual class", this));
-        }
+        final DynamicObject superClass = executeSuperClass(frame);
 
         final RubyConstant constant = DefineModuleNode.lookupForExistingModule(
                 frame, getContext(), name, lexicalParentModule, indirectCallNode);
 
-        final DynamicObject definingClass;
+        final DynamicObject definedClass;
 
         if (needToDefineProfile.profile(constant == null)) {
-            definingClass = ClassNodes.createInitializedRubyClass(getContext(), lexicalParentModule, superClassModule, name);
+            definedClass = ClassNodes.createInitializedRubyClass(getContext(), lexicalParentModule, superClass, name);
 
-            if (inheritedNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
-            }
-
-            inheritedNode.call(frame, superClassModule, "inherited", null, definingClass);
+            callInherited(frame, superClass, definedClass);
         } else {
             if (!RubyGuards.isRubyClass(constant.getValue())) {
                 errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorIsNotA(constant.getValue(), "class", this));
             }
 
-            definingClass = (DynamicObject) constant.getValue();
+            definedClass = (DynamicObject) constant.getValue();
 
-            final DynamicObject currentSuperClass = ClassNodes.getSuperClass(definingClass);
+            final DynamicObject currentSuperClass = ClassNodes.getSuperClass(definedClass);
 
-            if (!isBlankOrRootClass(superClassModule)
-                    && !isBlankOrRootClass(definingClass)
-                    && currentSuperClass != superClassModule
-                    && (superClassModule != definingClass || currentSuperClass == coreLibrary().getObjectClass())) {
+            if (currentSuperClass != superClass
+                    && superClass != coreLibrary().getObjectClass()) { // bug-compat with MRI https://bugs.ruby-lang.org/issues/12367
                 errorProfile.enter();
-
                 throw new RaiseException(coreExceptions().superclassMismatch(
-                        Layouts.MODULE.getFields(definingClass).getName(), this));
+                        Layouts.MODULE.getFields(definedClass).getName(), this));
             }
         }
 
-        return definingClass;
+        return definedClass;
     }
 
-    private boolean isBlankOrRootClass(DynamicObject rubyClass) {
-        return rubyClass == coreLibrary().getBasicObjectClass() || rubyClass == coreLibrary().getObjectClass();
+    private DynamicObject executeSuperClass(VirtualFrame frame) {
+        final Object superClassObject = superClassNode.execute(frame);
+
+        if (!RubyGuards.isRubyClass(superClassObject)) {
+            errorProfile.enter();
+            throw new RaiseException(coreExceptions().typeError("superclass must be a Class", this));
+        }
+
+        final DynamicObject superClass = (DynamicObject) superClassObject;
+
+        if (Layouts.CLASS.getIsSingleton(superClass)) {
+            errorProfile.enter();
+            throw new RaiseException(coreExceptions().typeError("can't make subclass of virtual class", this));
+        }
+
+        return superClass;
+    }
+
+    private void callInherited(VirtualFrame frame, DynamicObject superClass, DynamicObject childClass) {
+        if (inheritedNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+        }
+
+        inheritedNode.call(frame, superClass, "inherited", null, childClass);
     }
 
 }

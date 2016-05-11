@@ -11,8 +11,8 @@ package org.jruby.truffle.core.fiber;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 
 import java.util.Collections;
