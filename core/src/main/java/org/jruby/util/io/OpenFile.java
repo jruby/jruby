@@ -2077,8 +2077,7 @@ public class OpenFile implements Finalizable {
                 }
 
                 if (writeconv != null) {
-                    ((RubyString) str).setValue(
-                            EncodingUtils.econvStrConvert(context, writeconv, ((RubyString) str).getByteList(), EConvFlags.PARTIAL_INPUT));
+                    str = context.runtime.newString(EncodingUtils.econvStrConvert(context, writeconv, ((RubyString) str).getByteList(), EConvFlags.PARTIAL_INPUT));
                 }
             }
             //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
