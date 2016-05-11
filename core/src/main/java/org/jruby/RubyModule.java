@@ -1868,8 +1868,17 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
-        Visibility visibility = context.getCurrentVisibility();
+        Visibility visibility = getVisibilityForDefineMethod(context);
+
         return defineMethodFromBlock(context, arg0, block, visibility);
+    }
+
+    private Visibility getVisibilityForDefineMethod(ThreadContext context) {
+        Visibility visibility = PUBLIC;
+
+        // These checks are similar to rb_vm_cref_in_context from MRI.
+        if (context.getCurrentFrame().getSelf() == this) visibility = context.getCurrentVisibility();
+        return visibility;
     }
 
     public IRubyObject defineMethodFromBlock(ThreadContext context, IRubyObject arg0, Block block, Visibility visibility) {
@@ -1913,7 +1922,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        Visibility visibility = context.getCurrentVisibility();
+        Visibility visibility = getVisibilityForDefineMethod(context);
+
         return defineMethodFromCallable(context, arg0, arg1, visibility);
     }
 
