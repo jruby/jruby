@@ -1,4 +1,2 @@
 fails:Module#define_method when name is :initialize passed a block sets visibility to private when method name is :initialize
 fails:Module#define_method when name is :initialize given an UnboundMethod sets the visibility to private when method is named :initialize
-fails:Module#define_method when name is not a special private name given an UnboundMethod and called from another module sets the visibility of the method to public
-fails:Module#define_method when name is not a special private name passed a block and called from another module sets the visibility of the method to public
