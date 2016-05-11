@@ -835,6 +835,10 @@ public final class ThreadContext {
         pushCallFrame(clazz, name, self, block);
     }
 
+    public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self) {
+        pushCallFrame(clazz, name, self, Block.NULL_BLOCK);
+    }
+
     public void postMethodFrameOnly() {
         popFrame();
     }

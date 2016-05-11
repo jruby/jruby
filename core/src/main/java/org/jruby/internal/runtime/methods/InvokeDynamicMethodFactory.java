@@ -261,7 +261,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
         SmartHandle smartTarget = targetBinder.invoke(method);
         if (frame) {
             smartTarget = SmartHandle
-                    .from(smartTarget.signature(), InvocationLinker.wrapWithFrameOnly(binder.baseSignature(), implementationClass, rubyName, smartTarget.handle(), null));
+                    .from(smartTarget.signature(), InvocationLinker.wrapWithFrameOnly(binder.baseSignature(), implementationClass, rubyName, smartTarget.handle()));
         }
 
         MethodHandle target = smartTarget.handle();
