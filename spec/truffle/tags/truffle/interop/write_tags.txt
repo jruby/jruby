@@ -1,4 +1,2 @@
 fails:Truffle::Interop.write can be used to assign an array
 fails:Truffle::Interop.write can be used to assign a hash
-fails:Truffle::Interop.write writes an instance variable if given an @name as a symbol
-fails:Truffle::Interop.write writes an instance variable if given an @name as a string

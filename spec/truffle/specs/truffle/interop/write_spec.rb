@@ -38,13 +38,13 @@ describe "Truffle::Interop.write" do
     it "as a symbol" do
       object = Object.new
       Truffle::Interop.write object, :@foo, 14
-      object.instance_variable_get('foo').should == 14
+      object.instance_variable_get(:@foo).should == 14
     end
     
     it "as a string" do
       object = Object.new
       Truffle::Interop.write object, '@foo', 14
-      object.instance_variable_get('foo').should == 14
+      object.instance_variable_get(:@foo).should == 14
     end
   end
   
