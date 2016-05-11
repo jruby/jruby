@@ -538,7 +538,7 @@ module Commands
       end
     end
   ensure
-    File.delete output_file
+    File.delete output_file rescue nil
   end
   private :test_cexts
 
