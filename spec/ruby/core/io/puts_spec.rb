@@ -116,4 +116,27 @@ describe "IO#puts" do
   it "raises IOError on closed stream" do
     lambda { IOSpecs.closed_io.puts("stuff") }.should raise_error(IOError)
   end
+
+  with_feature :encoding do
+    it "writes crlf when IO is opened with newline: :crlf" do
+      File.open(@name, 'w', newline: :crlf) do |file|
+        file.puts
+      end
+      File.read(@name).should == "\r\n"
+    end
+
+    it "writes cr when IO is opened with newline: :cr" do
+      File.open(@name, 'w', newline: :cr) do |file|
+        file.puts
+      end
+      File.read(@name).should == "\r"
+    end
+
+    it "writes lf when IO is opened with newline: :lf" do
+      File.open(@name, 'w', newline: :lf) do |file|
+        file.puts
+      end
+      File.read(@name).should == "\n"
+    end
+  end
 end
