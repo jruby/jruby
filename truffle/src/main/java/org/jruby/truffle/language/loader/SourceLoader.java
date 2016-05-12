@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.Locale;
 
 public class SourceLoader {
@@ -58,20 +60,20 @@ public class SourceLoader {
         }
 
         final Class<?> relativeClass;
-        final String relativePath;
+        final Path relativePath;
 
         if (path.startsWith(TRUFFLE_SCHEME)) {
             relativeClass = RubyContext.class;
-            relativePath = path.substring(TRUFFLE_SCHEME.length());
+            relativePath = FileSystems.getDefault().getPath(path.substring(TRUFFLE_SCHEME.length()));
         } else if (path.startsWith(JRUBY_SCHEME)) {
             relativeClass = Ruby.class;
-            relativePath = path.substring(JRUBY_SCHEME.length());
+            relativePath = FileSystems.getDefault().getPath(path.substring(JRUBY_SCHEME.length()));
         } else {
             throw new UnsupportedOperationException();
         }
 
-        final String canonicalPath = (new File(relativePath)).getCanonicalPath();
-        final InputStream stream = relativeClass.getResourceAsStream(canonicalPath);
+        final Path normalizedPath = relativePath.normalize();
+        final InputStream stream = relativeClass.getResourceAsStream(normalizedPath.toString().replace('\\', '/'));
 
         if (stream == null) {
             throw new FileNotFoundException(path);
