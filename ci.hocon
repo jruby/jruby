@@ -24,7 +24,7 @@ common: {
 }
 
 gate_caps: {
-  capabilities: [linux, amd64, gate]
+  capabilities: [linux, amd64, gate, post-push]
 }
 
 jt: [ruby, "tool/jt.rb"]
