@@ -1260,6 +1260,44 @@ public class EncodingUtils {
     }
 
     /**
+     * A version of transcodeLoop for working without any Ruby runtime available.
+     *
+     * MRI: transcode_loop with no fallback and java.lang.String input
+     */
+    public static ByteList transcodeString(String string, Encoding toEncoding, int ecflags) {
+        Encoding encoding;
+
+        // This may be inefficient if we aren't matching endianness right
+        if (Platform.BYTE_ORDER == Platform.LITTLE_ENDIAN) {
+            encoding = UTF16LEEncoding.INSTANCE;
+        } else {
+            encoding = UTF16BEEncoding.INSTANCE;
+        }
+
+        EConv ec = TranscoderDB.open(encoding.getName(), toEncoding.getName(), ecflags);
+
+        byte[] inBytes = string.getBytes(encoding.getCharset());
+        Ptr inPos = new Ptr(0);
+
+        int inStop = inBytes.length;
+        // most encodings will be shorter than UTF-16 for typical input
+        int outStop = (int)((double) inBytes.length / 1.5 + 1);
+
+        byte[] outBytes = new byte[outStop];
+        Ptr outPos = new Ptr(0);
+
+        ByteList destination = new ByteList(outBytes, toEncoding, false);
+
+        boolean success = transcodeLoop(ec, null, null, null, inBytes, inPos, outBytes, outPos, inStop, outStop, destination, strTranscodingResize);
+
+        if (!success) {
+            // TODO: anything?
+        }
+
+        return destination;
+    }
+
+    /**
      * Perform the inner transcoding loop.
      *
      * The data in inBytes will be transcoded from the source encoding to the destination, eventually

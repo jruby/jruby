@@ -5463,8 +5463,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         Charset charset = encoding.getCharset();
 
-        // if null charset, fall back on Java default charset
-        if (charset == null) charset = Charset.defaultCharset();
+        // if null charset, let our transcoder handle it
+        if (charset == null) {
+            return EncodingUtils.transcodeString(value.toString(), encoding, 0);
+        }
 
         byte[] bytes;
         if (charset == RubyEncoding.UTF8) {
