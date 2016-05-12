@@ -37,10 +37,10 @@ end
 # * /etc/nsswitch.conf is not supported.
 
 class Resolv
-  
+
   ##
   # Tests whether we're running on Windows
-  
+
   WINDOWS = /mswin|cygwin|mingw|bccwin/ =~ RUBY_PLATFORM || ::RbConfig::CONFIG['host_os'] =~ /mswin/
 
   ##
@@ -576,13 +576,13 @@ class Resolv
     def extract_resources(msg, name, typeclass) # :nodoc:
       if typeclass < Resource::ANY
         n0 = Name.create(name)
-        msg.each_answer {|n, ttl, data|
+        msg.each_resource {|n, ttl, data|
           yield data if n0 == n
         }
       end
       yielded = false
       n0 = Name.create(name)
-      msg.each_answer {|n, ttl, data|
+      msg.each_resource {|n, ttl, data|
         if n0 == n
           case data
           when typeclass
@@ -594,7 +594,7 @@ class Resolv
         end
       }
       return if yielded
-      msg.each_answer {|n, ttl, data|
+      msg.each_resource {|n, ttl, data|
         if n0 == n
           case data
           when typeclass
@@ -2856,4 +2856,3 @@ class Resolv
   AddressRegex = /(?:#{IPv4::Regex})|(?:#{IPv6::Regex})/
 
 end
-
