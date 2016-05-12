@@ -45,12 +45,17 @@ module Utilities
     yield File.expand_path(from_branch) if from_branch
 
     rel_java_bin = "bin/java" # "jre/bin/javao"
-    %w[dk re].each { |kind|
-      ["", "../", "../../"].each { |prefix|
+    ['', '../', '../../'].each do |prefix|
+      %w[dk re].each do |kind|
         path = "#{prefix}graalvm-#{GRAALVM_VERSION}-#{kind}/#{rel_java_bin}"
         yield File.expand_path(path, JRUBY_DIR)
-      }
-    }
+      end
+    end
+
+    ['', '../', '../../'].each do |prefix|
+      path = Dir["#{prefix}graal/jvmci/jdk1.8.*/product/#{rel_java_bin}"].sort.last
+      yield File.expand_path(path, JRUBY_DIR) if path
+    end
   end
 
   def self.find_graal
