@@ -120,6 +120,7 @@ module Truffle
           },
           setup:  {
               help:    ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
+              before:  ['--before SH_CMD', 'Commands to execute before setup', ADD_TO_ARRAY, []],
               after:   ['--after SH_CMD', 'Commands to execute after setup', ADD_TO_ARRAY, []],
               file:    ['--file NAME,CONTENT', Array, 'Create file in truffle_bundle_path', MERGE_TO_HASH, {}],
               without: ['--without GROUP', 'Do not install listed gem group by bundler', ADD_TO_ARRAY, []]
@@ -383,6 +384,10 @@ module Truffle
     def subcommand_setup(rest)
       bundle_options = @options[:global][:bundle_options].split(' ')
       bundle_path    = File.expand_path(@options[:global][:truffle_bundle_path])
+
+      @options[:setup][:before].each do |cmd|
+        execute_cmd cmd
+      end
 
       bundle_cli([*bundle_options,
                   'install',
