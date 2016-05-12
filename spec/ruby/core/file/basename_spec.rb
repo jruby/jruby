@@ -147,8 +147,9 @@ describe "File.basename" do
     end
 
     it "returns the basename with the same encoding as the original" do
-      basename = File.basename('/path/file'.encode('Windows-1250'))
-      basename.encoding.should == Encoding.find('Windows-1250')
+      basename = File.basename('C:/Users/Scuby Pagrubý'.encode(Encoding::Windows_1250))
+      basename.should == 'Scuby Pagrubý'.encode(Encoding::Windows_1250)
+      basename.encoding.should == Encoding::Windows_1250
     end
 
   end
