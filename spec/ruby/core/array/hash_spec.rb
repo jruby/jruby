@@ -79,4 +79,8 @@ describe "Array#hash" do
     a.hash.should == b.hash
     a.should eql(b)
   end
+
+  it "produces different hashes for nested arrays with different values and empty terminator" do
+    [1, [1, []]].hash.should_not == [2, [2, []]]
+  end
 end
