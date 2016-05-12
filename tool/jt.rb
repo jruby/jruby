@@ -351,6 +351,7 @@ module Commands
     puts '  JVMCI_DIR_...git_branch_name...              JMVCI repository to use for a given branch'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
+    puts '  SULONG_CLASSPATH                             An explicit classpath to use for Sulong, rather than working it out from SULONG_DIR'
   end
 
   def checkout(branch)
@@ -413,11 +414,16 @@ module Commands
     if args.delete('--sulong')
       dir = Utilities.find_sulong_dir
       env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
-      jruby_args << '-J-classpath' << "#{dir}/lib/*"
-      jruby_args << '-J-classpath' << "#{dir}/build/sulong.jar"
-      nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
-      jruby_args << '-J-classpath' << nfi_classes
-      jruby_args << '-J-XX:-UseJVMCIClassLoader'
+      
+      if ENV["SULONG_CLASSPATH"]
+        jruby_args << '-J-classpath' << ENV["SULONG_CLASSPATH"]
+      else
+        jruby_args << '-J-classpath' << "#{dir}/lib/*"
+        jruby_args << '-J-classpath' << "#{dir}/build/sulong.jar"
+        nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
+        jruby_args << '-J-classpath' << nfi_classes
+        jruby_args << '-J-XX:-UseJVMCIClassLoader'
+      end
     end
 
     if args.delete('--asm')
