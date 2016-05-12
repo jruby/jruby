@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 
+puts 'here'
 puts Truffle::Interop.mime_type_supported?('application/x-sulong-library')
+puts 'there'
 abort
 
 require 'method'
