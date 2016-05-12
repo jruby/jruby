@@ -37,7 +37,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
