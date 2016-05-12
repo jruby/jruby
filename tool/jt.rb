@@ -464,15 +464,15 @@ module Commands
     when nil
       test_tck
       test_specs('run')
-      # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled
-      test_integration({'HAS_REDIS' => 'true'}, 'all')
-      test_gems
+      # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled since it uses refinements
+      test_integration
+      test_gems env: { 'HAS_REDIS' => 'true' }
       test_compiler
       test_cexts if ENV['SULONG_DIR']
     when 'compiler' then test_compiler(*rest)
     when 'cexts' then test_cexts(*rest)
-    when 'integration' then test_integration({}, *rest)
-    when 'gems' then test_gems({}, *rest)
+    when 'integration' then test_integration(*rest)
+    when 'gems' then test_gems(*rest)
     when 'specs' then test_specs('run', *rest)
     when 'tck' then
       args = []
@@ -543,7 +543,7 @@ module Commands
   end
   private :test_cexts
 
-  def test_integration(env, *args)
+  def test_integration(*args, env: {})
     env_vars   = env
     jruby_opts = []
 
@@ -561,7 +561,7 @@ module Commands
   end
   private :test_integration
 
-  def test_gems(env, *args)
+  def test_gems(*args, env: {})
     env_vars   = env
     jruby_opts = []
 
