@@ -37,5 +37,6 @@ builds = [
   {name: ruby-test-specs-library} ${common} ${gate_caps} {run: [${jt} [test, specs, ":library"]]},
   {name: ruby-test-specs-truffle} ${common} ${gate_caps} {run: [${jt} [test, specs, ":truffle"]]},
   {name: ruby-test-integration} ${common} ${gate_caps} {run: [${jt} [test, integration]]},
+  {name: ruby-test-tck} ${common} ${gate_caps} {run: [${jt} [test, tck]]},
   {name: ruby-tarball} ${common} ${gate_caps} {run: [${jt} [tarball]]}
 ]
