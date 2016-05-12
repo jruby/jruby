@@ -18,7 +18,7 @@ import org.jruby.truffle.platform.linux.LinuxPlatform;
 public abstract class NativePlatformFactory {
 
     public static NativePlatform createPlatform(RubyContext context) {
-        if (context.getOptions().PLATFORM_USE_JAVA) {
+        if (context.getOptions().PLATFORM_USE_JAVA || (Platform.getPlatform().getOS() == Platform.OS_TYPE.WINDOWS)) {
             return new JavaPlatform(context);
         }
 
