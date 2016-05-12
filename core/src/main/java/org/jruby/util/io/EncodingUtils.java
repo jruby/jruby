@@ -1140,39 +1140,90 @@ public class EncodingUtils {
         }
     };
 
-    public interface TranscodeFallback {
-        IRubyObject call(ThreadContext context, IRubyObject fallback, IRubyObject c);
+    /**
+     * Fallback function to provide replacements for characters that fail to transcode.
+     *
+     * @param <State> Runtime state necessary for the function to work
+     * @param <Data> Data needed for the function to execute
+     */
+    public interface TranscodeFallback<State, Data> {
+        /**
+         * Return a replacement character for the given byte range and encoding.
+         *
+         * @param context  runtime state for the function
+         * @param fallback data for the function
+         * @param ec the transcoder that stumbled over the character
+         * @return true if the character was successfully replaced; false otherwise
+         */
+        boolean call(State context, Data fallback, EConv ec);
     }
 
-    private static final TranscodeFallback HASH_FALLBACK = new TranscodeFallback() {
+    private static abstract class AbstractTranscodeFallback implements TranscodeFallback<ThreadContext, IRubyObject> {
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject fallback, IRubyObject c) {
+        public boolean call(ThreadContext context, IRubyObject fallback, EConv ec) {
+            Ruby runtime = context.runtime;
+            IRubyObject rep = RubyString.newStringNoCopy(
+                    runtime,
+                    new ByteList(
+                            ec.lastError.getErrorBytes(),
+                            ec.lastError.getErrorBytesP(),
+                            ec.lastError.getErrorBytesLength(),
+                            runtime.getEncodingService().findEncodingOrAliasEntry(ec.lastError.getSource()).getEncoding(),
+                            false)
+            );
+            rep = innerCall(context, fallback, rep);
+            if (!rep.isNil()) {
+                rep = rep.convertToString();
+                Encoding repEnc = ((RubyString) rep).getEncoding();
+                ByteList repByteList = ((RubyString) rep).getByteList();
+                ec.insertOutput(repByteList.getUnsafeBytes(), repByteList.begin(), repByteList.getRealSize(), repEnc.getName());
+
+                // TODO: check for too-large replacement
+                return true;
+            }
+            return false;
+        }
+
+        protected abstract IRubyObject innerCall(ThreadContext context, IRubyObject fallback, IRubyObject c);
+    }
+
+    private static final AbstractTranscodeFallback HASH_FALLBACK = new AbstractTranscodeFallback() {
+        @Override
+        protected IRubyObject innerCall(ThreadContext context, IRubyObject fallback, IRubyObject c) {
             return ((RubyHash)fallback).op_aref(context, c);
         }
     };
 
-    private static final TranscodeFallback PROC_FALLBACK = new TranscodeFallback() {
+    private static final AbstractTranscodeFallback PROC_FALLBACK = new AbstractTranscodeFallback() {
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject fallback, IRubyObject c) {
+        protected IRubyObject innerCall(ThreadContext context, IRubyObject fallback, IRubyObject c) {
             return ((RubyProc)fallback).call(context, new IRubyObject[]{c});
         }
     };
 
-    private static final TranscodeFallback METHOD_FALLBACK = new TranscodeFallback() {
+    private static final AbstractTranscodeFallback METHOD_FALLBACK = new AbstractTranscodeFallback() {
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject fallback, IRubyObject c) {
+        protected IRubyObject innerCall(ThreadContext context, IRubyObject fallback, IRubyObject c) {
             return fallback.callMethod(context, "call", c);
         }
     };
 
-    private static final TranscodeFallback AREF_FALLBACK = new TranscodeFallback() {
+    private static final AbstractTranscodeFallback AREF_FALLBACK = new AbstractTranscodeFallback() {
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject fallback, IRubyObject c) {
+        protected IRubyObject innerCall(ThreadContext context, IRubyObject fallback, IRubyObject c) {
             return fallback.callMethod(context, "[]", c);
         }
     };
 
-    // transcode_loop
+    /**
+     * Perform the inner transcoding loop.
+     *
+     * @see #transcodeLoop(EConv, TranscodeFallback, Object, Object, byte[], Ptr, byte[], Ptr, int, int, ByteList, ResizeFunction)
+     *
+     * This version will determine fallback function and encoding options from the given options object.
+     *
+     * MRI: transcode_loop Ruby-related bits
+     */
     public static void transcodeLoop(ThreadContext context, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int _outStop, ByteList destination, ResizeFunction resizeFunction, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts) {
         Ruby runtime = context.runtime;
         EConv ec;
@@ -1199,6 +1250,27 @@ public class EncodingUtils {
             }
         }
 
+        boolean success = transcodeLoop(ec, fallbackFunc, context, fallback, inBytes, inPos, outBytes, outPos, inStop, _outStop, destination, resizeFunction);
+
+        if (!success) {
+            RaiseException re = makeEconvException(runtime, ec);
+            ec.close();
+            throw re;
+        }
+    }
+
+    /**
+     * Perform the inner transcoding loop.
+     *
+     * The data in inBytes will be transcoded from the source encoding to the destination, eventually
+     * replacing the contents of the given ByteList. Along the way, invalid characters may be handled by
+     * calling the fallback function (if non-null) with the given state and data. If the target ByteList
+     * needs to be resized, use the given function to do so.
+     *
+     * MRI: transcode_loop generified with EConv and fallback function provided
+     */
+    public static <State,Data> boolean transcodeLoop(EConv ec, TranscodeFallback<State,Data> fallbackFunc, State s, Data fallbackData, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int _outStop, ByteList destination, ResizeFunction resizeFunction) {
+        Ptr outStop = new Ptr(_outStop);
         Transcoding lastTC = ec.lastTranscoding;
         int maxOutput = lastTC != null ? lastTC.transcoder.maxOutput : 1;
 
@@ -1208,25 +1280,8 @@ public class EncodingUtils {
         while (true) {
             EConvResult ret = ec.convert(inBytes, inPos, inStop, outBytes, outPos, outStop.p, 0);
 
-            if (!fallback.isNil() && ret == EConvResult.UndefinedConversion) {
-                IRubyObject rep = RubyString.newStringNoCopy(
-                        runtime,
-                        new ByteList(
-                                ec.lastError.getErrorBytes(),
-                                ec.lastError.getErrorBytesP(),
-                                ec.lastError.getErrorBytesLength(),
-                                runtime.getEncodingService().findEncodingOrAliasEntry(ec.lastError.getSource()).getEncoding(),
-                                false)
-                );
-                rep = fallbackFunc.call(context, fallback, rep);
-                if (!rep.isNil()) {
-                    rep = rep.convertToString();
-                    Encoding repEnc = ((RubyString)rep).getEncoding();
-                    ByteList repByteList = ((RubyString)rep).getByteList();
-                    ec.insertOutput(repByteList.getUnsafeBytes(), repByteList.begin(), repByteList.getRealSize(), repEnc.getName());
-
-                    // TODO: check for too-large replacement
-
+            if (fallbackFunc != null && ret == EConvResult.UndefinedConversion) {
+                if (fallbackFunc.call(s, fallbackData, ec)) {
                     continue;
                 }
             }
@@ -1234,9 +1289,7 @@ public class EncodingUtils {
             if (ret == EConvResult.InvalidByteSequence ||
                     ret == EConvResult.IncompleteInput ||
                     ret == EConvResult.UndefinedConversion) {
-                RaiseException re = makeEconvException(runtime, ec);
-                ec.close();
-                throw re;
+                return false;
             }
 
             if (ret == EConvResult.DestinationBufferFull) {
@@ -1247,7 +1300,7 @@ public class EncodingUtils {
 
             ec.close();
 
-            return;
+            return true;
         }
     }
 
