@@ -37,10 +37,10 @@ end
 # * /etc/nsswitch.conf is not supported.
 
 class Resolv
-
+  
   ##
   # Tests whether we're running on Windows
-
+  
   WINDOWS = /mswin|cygwin|mingw|bccwin/ =~ RUBY_PLATFORM || ::RbConfig::CONFIG['host_os'] =~ /mswin/
 
   ##
@@ -2856,3 +2856,4 @@ class Resolv
   AddressRegex = /(?:#{IPv4::Regex})|(?:#{IPv6::Regex})/
 
 end
+
