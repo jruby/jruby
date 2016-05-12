@@ -1007,7 +1007,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         if (enc != encStr && enc != EncodingUtils.ascii8bitEncoding(runtime)
                 // this is a hack because we don't seem to handle incoming ASCII-8BIT properly in transcoder
                 && encStr != ASCIIEncoding.INSTANCE) {
-            str = runtime.newString(EncodingUtils.strConvEnc(context, strByteList, encStr, enc));
+            str = EncodingUtils.strConvEnc(context, str, encStr, enc);
         }
         len = str.size();
         if (len == 0) return RubyFixnum.zero(runtime);

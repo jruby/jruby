@@ -1370,8 +1370,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     pathEncoding != encodingService.getAscii8bitEncoding() &&
                     pathEncoding != encodingService.getFileSystemEncoding(runtime) &&
                     !path.isAsciiOnly()) {
-                ByteList bytes = EncodingUtils.strConvEnc(context, path.getByteList(), pathEncoding, encodingService.getFileSystemEncoding(runtime));
-                path = RubyString.newString(runtime, bytes);
+                path = EncodingUtils.strConvEnc(context, path, pathEncoding, encodingService.getFileSystemEncoding(runtime));
             }
         }
 
