@@ -70,6 +70,8 @@ module Utilities
       java = Dir[search].first
       return java if java
     end
+    
+    raise "couldn't find the Java build in the Sulong repository - you need to check it out and build it"
   end
 
   def self.find_graal_js
