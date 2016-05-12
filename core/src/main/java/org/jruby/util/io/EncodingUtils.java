@@ -939,7 +939,8 @@ public class EncodingUtils {
         if (frompPos.p != sp.begin() + slen) {
             throw runtime.newArgumentError("not fully converted, " + (slen - frompPos.p) + " bytes left");
         }
-        destp.setRealSize(destpPos.p);
+
+        // MRI sets length of dest here, but we've already done it in the inner transcodeLoop
 
         if (denc_p[0] == null) {
             dencindex = defineDummyEncoding(context, dname_p[0]);
@@ -1302,13 +1303,30 @@ public class EncodingUtils {
      *
      * The data in inBytes will be transcoded from the source encoding to the destination, eventually
      * replacing the contents of the given ByteList. Along the way, invalid characters may be handled by
-     * calling the fallback function (if non-null) with the given state and data. If the target ByteList
-     * needs to be resized, use the given function to do so.
+     * calling the fallback function (if non-null) with the given state and data. If the destination
+     * needs to be resized, use the given function to do so. Upon completion, destination will
+     * contain the resulting transcoded bytes.
      *
      * MRI: transcode_loop generified with EConv and fallback function provided
+     *
+     * @param ec the encoding converter
+     * @param fallbackFunc the fallback function for non-transcodable characters, or null if none
+     * @param s runtime state to pass into the fallback
+     * @param fallbackData call state to pass into the fallback
+     * @param inBytes the incoming byte array
+     * @param inPos the position from which to start in the incoming bytearray
+     * @param outBytes the initial output byte array
+     * @param outPos the position from which to start in the initial output byte array
+     * @param inStop the position at which to stop in the input
+     * @param outStop the number of bytes at which to stop in the output
+     * @param destination the ByteList to hold the eventual output
+     * @param resizeFunction a function to use to grow the destination
+     * @param <State> type of state for the fallback function
+     * @param <Data> type of data for the fallback function
+     * @return
      */
-    public static <State,Data> boolean transcodeLoop(EConv ec, TranscodeFallback<State,Data> fallbackFunc, State s, Data fallbackData, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int _outStop, ByteList destination, ResizeFunction resizeFunction) {
-        Ptr outStop = new Ptr(_outStop);
+    public static <State,Data> boolean transcodeLoop(EConv ec, TranscodeFallback<State,Data> fallbackFunc, State s, Data fallbackData, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int outStop, ByteList destination, ResizeFunction resizeFunction) {
+        Ptr outstopPos = new Ptr(outStop);
         Transcoding lastTC = ec.lastTranscoding;
         int maxOutput = lastTC != null ? lastTC.transcoder.maxOutput : 1;
 
@@ -1316,7 +1334,7 @@ public class EncodingUtils {
 
         // resume:
         while (true) {
-            EConvResult ret = ec.convert(inBytes, inPos, inStop, outBytes, outPos, outStop.p, 0);
+            EConvResult ret = ec.convert(inBytes, inPos, inStop, outBytes, outPos, outstopPos.p, 0);
 
             if (fallbackFunc != null && ret == EConvResult.UndefinedConversion) {
                 if (fallbackFunc.call(s, fallbackData, ec)) {
@@ -1331,7 +1349,7 @@ public class EncodingUtils {
             }
 
             if (ret == EConvResult.DestinationBufferFull) {
-                moreOutputBuffer(destination, resizeFunction, maxOutput, outStart, outPos, outStop);
+                moreOutputBuffer(destination, resizeFunction, maxOutput, outStart, outPos, outstopPos);
                 outBytes = destination.getUnsafeBytes();
                 continue;
             }
