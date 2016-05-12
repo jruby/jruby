@@ -61,7 +61,7 @@ module Utilities
   end
   
   def self.find_sulong_graal(dir)
-    p `find . | grep bin/java`
+    p `find /home/travis | grep bin/java`
     p "#{dir}/../graal-core/mx.imports/binary/jvmci/jdk*/product/bin/java"
     
     searches = [
