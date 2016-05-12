@@ -146,6 +146,11 @@ describe "File.basename" do
       File.basename('/path/Офис.m4a').should == "Офис.m4a"
     end
 
+    it "returns the basename with the same encoding as the original" do
+      basename = File.basename('/path/file'.encode('Windows-1250'))
+      basename.encoding.should == Encoding.find('Windows-1250')
+    end
+
   end
 
 end
