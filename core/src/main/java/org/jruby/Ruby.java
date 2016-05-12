@@ -3127,7 +3127,16 @@ public final class Ruby implements Constantizable {
     public class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
         private EnumSet<RubyEvent> interest =
-                EnumSet.allOf(RubyEvent.class);
+                EnumSet.of(
+                        RubyEvent.C_CALL,
+                        RubyEvent.C_RETURN,
+                        RubyEvent.CALL,
+                        RubyEvent.CLASS,
+                        RubyEvent.END,
+                        RubyEvent.LINE,
+                        RubyEvent.RAISE,
+                        RubyEvent.RETURN
+                );
 
         public void setTraceFunc(RubyProc traceFunc) {
             this.traceFunc = traceFunc;

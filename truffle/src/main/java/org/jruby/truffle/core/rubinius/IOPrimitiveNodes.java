@@ -70,9 +70,7 @@ import org.jruby.truffle.platform.posix.FDSet;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;
-
 import java.nio.ByteBuffer;
-
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
 public abstract class IOPrimitiveNodes {
@@ -265,10 +263,7 @@ public abstract class IOPrimitiveNodes {
                     PointerPrimitiveNodes.NULL_POINTER, PointerPrimitiveNodes.NULL_POINTER, timeoutObject));
 
             if (res == 0) {
-                throw new RaiseException(
-                        Layouts.CLASS.getInstanceFactory(coreLibrary().getEagainWaitReadable()).newInstance(
-                            coreStrings().RESOURCE_TEMP_UNAVAIL.createInstance(),
-                            Errno.EAGAIN.intValue()));
+                throw new RaiseException(coreExceptions().eAGAINWaitReadable(this));
             }
 
             final byte[] bytes = new byte[numberOfBytes];

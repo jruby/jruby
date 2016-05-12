@@ -45,12 +45,17 @@ module Utilities
     yield File.expand_path(from_branch) if from_branch
 
     rel_java_bin = "bin/java" # "jre/bin/javao"
-    %w[dk re].each { |kind|
-      ["", "../", "../../"].each { |prefix|
+    ['', '../', '../../'].each do |prefix|
+      %w[dk re].each do |kind|
         path = "#{prefix}graalvm-#{GRAALVM_VERSION}-#{kind}/#{rel_java_bin}"
         yield File.expand_path(path, JRUBY_DIR)
-      }
-    }
+      end
+    end
+
+    ['', '../', '../../'].each do |prefix|
+      path = Dir["#{prefix}graal/jvmci/jdk1.8.*/product/#{rel_java_bin}"].sort.last
+      yield File.expand_path(path, JRUBY_DIR) if path
+    end
   end
 
   def self.find_graal
@@ -471,14 +476,15 @@ module Commands
     when nil
       test_tck
       test_specs('run')
-      # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled
-      test_integration({'HAS_REDIS' => 'true'}, 'all')
+      # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled since it uses refinements
+      test_integration
+      test_gems env: { 'HAS_REDIS' => 'true' }
       test_compiler
       test_cexts if ENV['SULONG_DIR']
     when 'compiler' then test_compiler(*rest)
     when 'cexts' then test_cexts(*rest)
-    when 'integration' then test_integration({}, *rest)
-    when 'gems' then test_gems({}, *rest)
+    when 'integration' then test_integration(*rest)
+    when 'gems' then test_gems(*rest)
     when 'specs' then test_specs('run', *rest)
     when 'tck' then
       args = []
@@ -549,7 +555,7 @@ module Commands
   end
   private :test_cexts
 
-  def test_integration(env, *args)
+  def test_integration(*args, env: {})
     env_vars   = env
     jruby_opts = []
 
@@ -567,7 +573,7 @@ module Commands
   end
   private :test_integration
 
-  def test_gems(env, *args)
+  def test_gems(*args, env: {})
     env_vars   = env
     jruby_opts = []
 

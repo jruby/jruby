@@ -900,6 +900,7 @@ public class CoreLibrary {
         // Get some references to things defined in the Ruby core
 
         eagainWaitReadable = (DynamicObject) Layouts.MODULE.getFields(ioClass).getConstant("EAGAINWaitReadable").getValue();
+        assert Layouts.CLASS.isClass(eagainWaitReadable);
     }
 
     private void initializeRubiniusFFI() {

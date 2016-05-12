@@ -708,6 +708,16 @@ public class CoreExceptions {
                 context.getCallStack().getBacktrace(currentNode));
     }
 
+    // IO::EAGAINWaitReadable
+
+    @TruffleBoundary
+    public DynamicObject eAGAINWaitReadable(Node currentNode) {
+        return ExceptionOperations.createRubyException(
+                context.getCoreLibrary().getEagainWaitReadable(),
+                coreStrings().RESOURCE_TEMP_UNAVAIL.createInstance(),
+                context.getCallStack().getBacktrace(currentNode));
+    }
+
     // SystemExit
 
     @TruffleBoundary
