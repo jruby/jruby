@@ -48,7 +48,9 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
+import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
+import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.CodegenUtils.sig;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -2712,6 +2714,26 @@ public class Helpers {
 
     public static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
         return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
+    }
+
+    // MRI: rb_hash
+    public static RubyFixnum safeHash(final ThreadContext context, IRubyObject obj) {
+        final Ruby runtime = context.runtime;
+        IRubyObject hval = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                if (recur) return RubyFixnum.zero(runtime);
+                return invokedynamic(context, obj, HASH);
+            }
+        }, obj);
+
+        while (!(hval instanceof RubyFixnum)) {
+            if (hval instanceof RubyBignum) {
+                // This is different from MRI because we don't have rb_integer_pack
+                return ((RubyBignum) hval).hash();
+            }
+            hval = hval.convertToInteger();
+        }
+        return (RubyFixnum) hval;
     }
 
     @Deprecated

@@ -79,7 +79,6 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.RubyEnumerator.SizeFn;
 
@@ -677,24 +676,18 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      *
      */
     @JRubyMethod(name = "hash")
-    public RubyFixnum hash(final ThreadContext context) {
-        return (RubyFixnum) context.runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                final Ruby runtime = context.runtime;
-                int begin = RubyArray.this.begin;
-                long h = realLength;
-                if (recur) {
-                    h ^= RubyNumeric.num2long(invokedynamic(context, runtime.getArray(), HASH));
-                } else {
-                    for (int i = begin; i < begin + realLength; i++) {
-                        h = (h << 1) | (h < 0 ? 1 : 0);
-                        final IRubyObject value = safeArrayRef(runtime, values, i);
-                        h ^= RubyNumeric.num2long(invokedynamic(context, value, HASH));
-                    }
-                }
-                return runtime.newFixnum(h);
-            }
-        }, RubyArray.this);
+    public RubyFixnum hash(ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        int begin = RubyArray.this.begin;
+        long h = (realLength << 32) & System.identityHashCode(RubyArray.class);
+        for (int i = begin; i < begin + realLength; i++) {
+            h = (h << 1) | (h < 0 ? 1 : 0);
+            final IRubyObject value = safeArrayRef(runtime, values, i);
+            RubyFixnum n = Helpers.safeHash(context, value);
+            h = (h * 31) + n.getLongValue();
+        }
+
+        return runtime.newFixnum(h);
     }
 
     /** rb_ary_store
