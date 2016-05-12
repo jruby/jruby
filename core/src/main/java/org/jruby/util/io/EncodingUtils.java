@@ -1338,6 +1338,8 @@ public class EncodingUtils {
 
             ec.close();
 
+            destination.setRealSize(outPos.p);
+
             return true;
         }
     }
