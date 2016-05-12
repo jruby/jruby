@@ -30,12 +30,12 @@ gate_caps: {
 jt: [ruby, "tool/jt.rb"]
 
 builds = [
-  {name: "ruby-test-fast"} ${common} ${gate_caps} {run: [${jt} [test, fast]]},
-  {name: "ruby-test-specs-command-line"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":command_line"]]},
-  {name: "ruby-test-specs-language"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":language"]]},
-  {name: "ruby-test-specs-core"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":core"]]},
-  {name: "ruby-test-specs-library"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":library"]]},
-  {name: "ruby-test-specs-truffle"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":truffle"]]},
-  {name: "ruby-test-integration"} ${common} ${gate_caps} {run: [${jt} [test, integration]]},
-  {name: "ruby-tarball"} ${common} ${gate_caps} {run: [${jt} [tarball]]}
+  {name: ruby-test-fast} ${common} ${gate_caps} {run: [${jt} [test, fast]]},
+  {name: ruby-test-specs-command-line} ${common} ${gate_caps} {run: [${jt} [test, specs, ":command_line"]]},
+  {name: ruby-test-specs-language} ${common} ${gate_caps} {run: [${jt} [test, specs, ":language"]]},
+  {name: ruby-test-specs-core} ${common} ${gate_caps} {run: [${jt} [test, specs, ":core"]]},
+  {name: ruby-test-specs-library} ${common} ${gate_caps} {run: [${jt} [test, specs, ":library"]]},
+  {name: ruby-test-specs-truffle} ${common} ${gate_caps} {run: [${jt} [test, specs, ":truffle"]]},
+  {name: ruby-test-integration} ${common} ${gate_caps} {run: [${jt} [test, integration]]},
+  {name: ruby-tarball} ${common} ${gate_caps} {run: [${jt} [tarball]]}
 ]
