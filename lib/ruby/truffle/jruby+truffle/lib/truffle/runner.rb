@@ -182,8 +182,8 @@ module Truffle
 
       run_help = <<-TXT.gsub(/^ {6}/, '')
 
-      Usage: #{EXECUTABLE} [options] run [subcommand-options] -- [ruby-options]
-      Usage: #{EXECUTABLE} [options] run [subcommand-options] -- [prepended-ruby-options] -- [appended-ruby-options]
+      Usage: #{EXECUTABLE} [options] run [subcommand-options] -- [ruby-options] [RUBY-FILE]
+      Usage: #{EXECUTABLE} [options] run [subcommand-options] -- [prepended-ruby-options] -- [appended-ruby-options] [RUBY-FILE]
       Usage: #{EXECUTABLE} [options] run [subcommand-options] -S GEM_EXECUTABLE -- [ruby-options] -- [gem-executable-options]
       Usage: #{EXECUTABLE} [options] run [subcommand-options] -S GEM_EXECUTABLE -- [gem-executable-options]
       ('--' divides different kind of options)
