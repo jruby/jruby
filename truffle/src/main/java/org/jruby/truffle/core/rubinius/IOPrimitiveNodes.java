@@ -42,10 +42,12 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
+import jnr.constants.platform.OpenFlags;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.truffle.Layouts;
@@ -63,6 +65,7 @@ import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.core.thread.ThreadManager.ResultWithinTime;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
@@ -395,6 +398,86 @@ public abstract class IOPrimitiveNodes {
             });
 
             return rope.byteLength();
+        }
+
+    }
+
+    @Primitive(name = "io_write_nonblock", unsafe = UnsafeGroup.IO)
+    public static abstract class IOWriteNonBlockPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
+
+        static class StopWriting extends ControlFlowException {
+            final int bytesWritten;
+
+            public StopWriting(int bytesWritten) {
+                this.bytesWritten = bytesWritten;
+            }
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public int writeNonBlock(DynamicObject io, DynamicObject string) {
+            setNonBlocking(io);
+
+            final int fd = Layouts.IO.getDescriptor(io);
+            final Rope rope = rope(string);
+
+            if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
+                // TODO (eregon, 13 May 2015): this looks like it would block
+                getContext().getDebugStandardOut().write(rope.getBytes(), 0, rope.byteLength());
+                return rope.byteLength();
+            }
+
+            final IOWriteNonBlockPrimitiveNode currentNode = this;
+
+            try {
+                RopeOperations.visitBytes(rope, new BytesVisitor() {
+
+                    int totalWritten = 0;
+
+                    @Override
+                    public void accept(byte[] bytes, int offset, int length) {
+                        final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
+
+                        while (buffer.hasRemaining()) {
+                            getContext().getSafepointManager().poll(currentNode);
+
+                            final int result = posix().write(fd, buffer, buffer.remaining());
+                            if (result <= 0) {
+                                int errno = posix().errno();
+                                if (errno == Errno.EAGAIN.intValue() || errno == Errno.EWOULDBLOCK.intValue()) {
+                                    throw new RaiseException(coreExceptions().eAGAINWaitWritable(currentNode));
+                                } else {
+                                    ensureSuccessful(result);
+                                }
+                            } else {
+                                totalWritten += result;
+                            }
+
+                            if (result < buffer.remaining()) {
+                                throw new StopWriting(totalWritten);
+                            }
+
+                            buffer.position(buffer.position() + result);
+                        }
+                    }
+
+                });
+            } catch (StopWriting e) {
+                return e.bytesWritten;
+            }
+
+            return rope.byteLength();
+        }
+
+        protected void setNonBlocking(DynamicObject io) {
+            final int fd = Layouts.IO.getDescriptor(io);
+            int flags = ensureSuccessful(posix().fcntl(fd, Fcntl.F_GETFL));
+
+            if ((flags & OpenFlags.O_NONBLOCK.intValue()) == 0) {
+                flags |= OpenFlags.O_NONBLOCK.intValue();
+                ensureSuccessful(posix().fcntlInt(fd, Fcntl.F_SETFL, flags));
+                Layouts.IO.setMode(io, flags);
+            }
         }
 
     }

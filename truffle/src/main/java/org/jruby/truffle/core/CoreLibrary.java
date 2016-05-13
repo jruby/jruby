@@ -231,6 +231,7 @@ public class CoreLibrary {
     private final DynamicObject digestClass;
 
     @CompilationFinal private DynamicObject eagainWaitReadable;
+    @CompilationFinal private DynamicObject eagainWaitWritable;
 
     @CompilationFinal private ArrayNodes.MinBlock arrayMinBlock;
     @CompilationFinal private ArrayNodes.MaxBlock arrayMaxBlock;
@@ -326,6 +327,10 @@ public class CoreLibrary {
 
     public DynamicObject getEagainWaitReadable() {
         return eagainWaitReadable;
+    }
+
+    public DynamicObject getEagainWaitWritable() {
+        return eagainWaitWritable;
     }
 
     private enum State {
@@ -901,6 +906,9 @@ public class CoreLibrary {
 
         eagainWaitReadable = (DynamicObject) Layouts.MODULE.getFields(ioClass).getConstant("EAGAINWaitReadable").getValue();
         assert Layouts.CLASS.isClass(eagainWaitReadable);
+
+        eagainWaitWritable = (DynamicObject) Layouts.MODULE.getFields(ioClass).getConstant("EAGAINWaitWritable").getValue();
+        assert Layouts.CLASS.isClass(eagainWaitWritable);
     }
 
     private void initializeRubiniusFFI() {
