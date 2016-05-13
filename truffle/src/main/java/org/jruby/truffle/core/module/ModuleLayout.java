@@ -11,6 +11,7 @@ package org.jruby.truffle.core.module;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.object.dsl.Layout;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 
@@ -23,6 +24,7 @@ public interface ModuleLayout extends BasicObjectLayout {
     DynamicObject createModule(DynamicObjectFactory factory,
                                ModuleFields fields);
 
+    boolean isModule(ObjectType objectType);
     boolean isModule(DynamicObject object);
     boolean isModule(Object object);
 

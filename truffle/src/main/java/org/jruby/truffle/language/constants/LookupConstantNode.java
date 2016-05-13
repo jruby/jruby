@@ -23,6 +23,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
+import org.jruby.truffle.language.CheckLayoutNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
@@ -40,6 +41,8 @@ public abstract class LookupConstantNode extends RubyNode {
 
     private final boolean ignoreVisibility;
     private final boolean lookInObject;
+
+    @Child CheckLayoutNode checkLayoutNode = new CheckLayoutNode();
 
     public LookupConstantNode(RubyContext context, SourceSection sourceSection, boolean ignoreVisibility, boolean lookInObject) {
         super(context, sourceSection);
@@ -97,6 +100,10 @@ public abstract class LookupConstantNode extends RubyNode {
         } else {
             return name.equals(cachedName);
         }
+    }
+
+    protected boolean isRubyModule(DynamicObject module) {
+        return checkLayoutNode.isModule(module);
     }
 
     protected RubyConstant doLookup(DynamicObject module, String name) {
