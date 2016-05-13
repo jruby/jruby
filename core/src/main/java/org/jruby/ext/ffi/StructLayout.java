@@ -480,7 +480,7 @@ public final class StructLayout extends Type {
 
         @Override
         public int hashCode() {
-            return 53 * 5 + (int) (this.offset ^ (this.offset >>> 32)) + 37 * type.hashCode();
+            return 53 * 5 + this.offset + 37 * type.hashCode();
         }
         
         /**
