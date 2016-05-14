@@ -422,8 +422,9 @@ module Commands
         jruby_args << '-J-classpath' << "#{dir}/build/sulong.jar"
         nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
         jruby_args << '-J-classpath' << nfi_classes
-        jruby_args << '-J-XX:-UseJVMCIClassLoader'
       end
+      
+      jruby_args << '-J-XX:-UseJVMCIClassLoader'
     end
 
     if args.delete('--asm')
