@@ -86,15 +86,15 @@ else
   require_relative 'core/block_given_pe.rb'
   require_relative 'core/string_pe.rb'
   require_relative 'core/class_pe'
-  require_relative 'core/interop_pe'
+  require_relative 'interop/interop_pe'
   require_relative 'macro/pushing_pixels_pe.rb'
   
   if Truffle::Interop.mime_type_supported?('application/javascript')
-    require_relative 'js.rb'
+    require_relative 'interop/js.rb'
   end
   
   if Truffle::Interop.mime_type_supported?('application/x-r')
-    require_relative 'r.rb'
+    require_relative 'interop/r.rb'
   end
 
 end
