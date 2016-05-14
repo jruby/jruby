@@ -6,4 +6,5 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-main_thread example "Truffle::Interop.eval('application/javascript', '14 + 2')", 16
+# The Truffle API's this uses are different from GraalVM 0.12 and Truffle 0.13
+tagged main_thread example "Truffle::Interop.eval('application/javascript', '14 + 2')", 16

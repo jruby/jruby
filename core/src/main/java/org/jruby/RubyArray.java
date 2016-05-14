@@ -37,7 +37,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -683,13 +682,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 final Ruby runtime = context.runtime;
                 int begin = RubyArray.this.begin;
                 long h = realLength;
+                h ^= System.identityHashCode(RubyArray.class);
                 if (recur) {
-                    h ^= RubyNumeric.num2long(invokedynamic(context, runtime.getArray(), HASH));
+                    h ^= h * 31 + RubyNumeric.num2long(invokedynamic(context, runtime.getArray(), HASH));
                 } else {
                     for (int i = begin; i < begin + realLength; i++) {
                         h = (h << 1) | (h < 0 ? 1 : 0);
                         final IRubyObject value = safeArrayRef(runtime, values, i);
-                        h ^= RubyNumeric.num2long(invokedynamic(context, value, HASH));
+                        h ^= h * 31 + RubyNumeric.num2long(invokedynamic(context, value, HASH));
                     }
                 }
                 return runtime.newFixnum(h);

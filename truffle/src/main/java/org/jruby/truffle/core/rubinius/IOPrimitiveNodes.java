@@ -42,16 +42,19 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
+import jnr.constants.platform.OpenFlags;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.core.array.ArrayGuards;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.rope.BytesVisitor;
 import org.jruby.truffle.core.rope.Rope;
@@ -59,8 +62,10 @@ import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
+import org.jruby.truffle.core.thread.ThreadManager.ResultWithinTime;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
@@ -397,6 +402,86 @@ public abstract class IOPrimitiveNodes {
 
     }
 
+    @Primitive(name = "io_write_nonblock", unsafe = UnsafeGroup.IO)
+    public static abstract class IOWriteNonBlockPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
+
+        static class StopWriting extends ControlFlowException {
+            final int bytesWritten;
+
+            public StopWriting(int bytesWritten) {
+                this.bytesWritten = bytesWritten;
+            }
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public int writeNonBlock(DynamicObject io, DynamicObject string) {
+            setNonBlocking(io);
+
+            final int fd = Layouts.IO.getDescriptor(io);
+            final Rope rope = rope(string);
+
+            if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
+                // TODO (eregon, 13 May 2015): this looks like it would block
+                getContext().getDebugStandardOut().write(rope.getBytes(), 0, rope.byteLength());
+                return rope.byteLength();
+            }
+
+            final IOWriteNonBlockPrimitiveNode currentNode = this;
+
+            try {
+                RopeOperations.visitBytes(rope, new BytesVisitor() {
+
+                    int totalWritten = 0;
+
+                    @Override
+                    public void accept(byte[] bytes, int offset, int length) {
+                        final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
+
+                        while (buffer.hasRemaining()) {
+                            getContext().getSafepointManager().poll(currentNode);
+
+                            final int result = posix().write(fd, buffer, buffer.remaining());
+                            if (result <= 0) {
+                                int errno = posix().errno();
+                                if (errno == Errno.EAGAIN.intValue() || errno == Errno.EWOULDBLOCK.intValue()) {
+                                    throw new RaiseException(coreExceptions().eAGAINWaitWritable(currentNode));
+                                } else {
+                                    ensureSuccessful(result);
+                                }
+                            } else {
+                                totalWritten += result;
+                            }
+
+                            if (result < buffer.remaining()) {
+                                throw new StopWriting(totalWritten);
+                            }
+
+                            buffer.position(buffer.position() + result);
+                        }
+                    }
+
+                });
+            } catch (StopWriting e) {
+                return e.bytesWritten;
+            }
+
+            return rope.byteLength();
+        }
+
+        protected void setNonBlocking(DynamicObject io) {
+            final int fd = Layouts.IO.getDescriptor(io);
+            int flags = ensureSuccessful(posix().fcntl(fd, Fcntl.F_GETFL));
+
+            if ((flags & OpenFlags.O_NONBLOCK.intValue()) == 0) {
+                flags |= OpenFlags.O_NONBLOCK.intValue();
+                ensureSuccessful(posix().fcntlInt(fd, Fcntl.F_SETFL, flags));
+                Layouts.IO.setMode(io, flags);
+            }
+        }
+
+    }
+
     @Primitive(name = "io_close", unsafe = UnsafeGroup.IO)
     public static abstract class IOClosePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
@@ -504,33 +589,45 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3, unsafe = UnsafeGroup.IO)
     public static abstract class IOSelectPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
+        public abstract Object executeSelect(DynamicObject readables, DynamicObject writables, DynamicObject errorables, Object Timeout);
+
         @TruffleBoundary
-        @Specialization(guards = { "isRubyArray(readables)", "isNil(writables)", "isNil(errorables)", "isNil(noTimeout)" })
+        @Specialization(guards = "isNil(noTimeout)")
         public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, DynamicObject noTimeout) {
             Object result;
             do {
-                result = select(readables, writables, errorables, Integer.MAX_VALUE);
+                result = executeSelect(readables, writables, errorables, Integer.MAX_VALUE);
             } while (result == nil());
             return result;
         }
 
+        @Specialization(guards = { "isRubyArray(readables)", "isNilOrEmpty(writables)", "isNilOrEmpty(errorables)" })
+        public Object selectReadables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
+            return selectOneSet(readables, timeoutMicros, 1);
+        }
+
+        @Specialization(guards = { "isNilOrEmpty(readables)", "isRubyArray(writables)", "isNilOrEmpty(errorables)" })
+        public Object selectWritables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
+            return selectOneSet(writables, timeoutMicros, 2);
+        }
+
         @TruffleBoundary
-        @Specialization(guards = { "isRubyArray(readables)", "isNil(writables)", "isNil(errorables)" })
-        public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
-            final Object[] readableObjects = ArrayOperations.toObjectArray(readables);
-            final int[] readableFds = getFileDescriptors(readables);
-            final int nfds = max(readableFds) + 1;
+        private Object selectOneSet(DynamicObject setToSelect, int timeoutMicros, int setNb) {
+            assert setNb >= 1 && setNb <= 3;
+            final Object[] readableObjects = ArrayOperations.toObjectArray(setToSelect);
+            final int[] fds = getFileDescriptors(setToSelect);
+            final int nfds = max(fds) + 1;
 
-            final FDSet readableSet = new FDSet();
+            final FDSet fdSet = new FDSet();
 
-            final ThreadManager.ResultOrTimeout<Integer> result = getContext().getThreadManager().runUntilTimeout(this, timeoutMicros, new ThreadManager.BlockingTimeoutAction<Integer>() {
+            final ThreadManager.ResultOrTimeout<Integer> resultOrTimeout = getContext().getThreadManager().runUntilTimeout(this, timeoutMicros, new ThreadManager.BlockingTimeoutAction<Integer>() {
                 @Override
                 public Integer block(Timeval timeoutToUse) throws InterruptedException {
                     // Set each fd each time since they are removed if the fd was not available
-                    for (int fd : readableFds) {
-                        readableSet.set(fd);
+                    for (int fd : fds) {
+                        fdSet.set(fd);
                     }
-                    final int result = callSelect(nfds, readableSet, timeoutToUse);
+                    final int result = callSelect(nfds, fdSet, timeoutToUse);
 
                     if (result == 0) {
                         return null;
@@ -539,72 +636,36 @@ public abstract class IOPrimitiveNodes {
                     return result;
                 }
 
-                private int callSelect(int nfds, FDSet readableSet, Timeval timeoutToUse) {
+                private int callSelect(int nfds, FDSet fdSet, Timeval timeoutToUse) {
                     return nativeSockets().select(
                             nfds,
-                            readableSet.getPointer(),
-                            PointerPrimitiveNodes.NULL_POINTER,
-                            PointerPrimitiveNodes.NULL_POINTER,
+                            setNb == 1 ? fdSet.getPointer() : PointerPrimitiveNodes.NULL_POINTER,
+                            setNb == 2 ? fdSet.getPointer() : PointerPrimitiveNodes.NULL_POINTER,
+                            setNb == 3 ? fdSet.getPointer() : PointerPrimitiveNodes.NULL_POINTER,
                             timeoutToUse);
                 }
             });
 
-            if (result instanceof ThreadManager.TimedOut) {
+            if (resultOrTimeout instanceof ThreadManager.TimedOut) {
                 return nil();
             }
 
-            final int resultCode = ensureSuccessful(((ThreadManager.ResultWithinTime<Integer>) result).getValue());
+            final ResultWithinTime<Integer> result = (ThreadManager.ResultWithinTime<Integer>) resultOrTimeout;
+            final int resultCode = ensureSuccessful(result.getValue());
 
             if (resultCode == 0) {
                 return nil();
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
-                            getSetObjects(readableObjects, readableFds, readableSet),
-                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
-                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) },
-                    3);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] {
+                    setNb == 1 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray(),
+                    setNb == 2 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray(),
+                    setNb == 3 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray()
+            }, 3);
         }
 
-        @TruffleBoundary
-        @Specialization(guards = { "isNil(readables)", "isRubyArray(writables)", "isNil(errorables)" })
-        public Object selectNilReadables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
-            final Object[] writableObjects = ArrayOperations.toObjectArray(writables);
-            final int[] writableFds = getFileDescriptors(writables);
-            final int nfds = max(writableFds) + 1;
-
-            final FDSet writableSet = new FDSet();
-
-
-            final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
-                @Override
-                public Integer block() throws InterruptedException {
-                    // Set each fd each time since they are removed if the fd was not available
-                    for (int fd : writableFds) {
-                        writableSet.set(fd);
-                    }
-                    return callSelect(nfds, writableSet);
-                }
-
-                private int callSelect(int nfds, FDSet writableSet) {
-                    return nativeSockets().select(
-                            nfds,
-                            PointerPrimitiveNodes.NULL_POINTER,
-                            writableSet.getPointer(),
-                            PointerPrimitiveNodes.NULL_POINTER,
-                            null);
-                }
-            });
-
-            ensureSuccessful(result);
-
-            assert result != 0;
-
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
-                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
-                            getSetObjects(writableObjects, writableFds, writableSet),
-                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) },
-                    3);
+        public DynamicObject createEmptyArray() {
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
         }
 
         private int[] getFileDescriptors(DynamicObject fileDescriptorArray) {
@@ -649,6 +710,10 @@ public abstract class IOPrimitiveNodes {
             }
 
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), setObjects, setFdsCount);
+        }
+
+        protected boolean isNilOrEmpty(DynamicObject fds) {
+            return isNil(fds) || (RubyGuards.isRubyArray(fds) && ArrayGuards.isEmptyArray(fds));
         }
 
     }

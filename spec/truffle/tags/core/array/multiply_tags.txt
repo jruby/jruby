@@ -1,1 +1,0 @@
-fails:Array#* with an integer properly handles recursive arrays

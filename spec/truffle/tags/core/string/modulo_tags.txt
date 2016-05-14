@@ -14,8 +14,6 @@ fails:String#% raises an ArgumentError when a width star token is seen after a w
 fails:String#% raises an ArgumentError when multiple precision tokens are given
 fails:String#% raises an ArgumentError when absolute and relative argument numbers are mixed
 fails:String#% allows reuse of the one argument multiple via absolute argument numbers
-fails:String#% always interprets an array argument as a list of argument parameters
-fails:String#% always interprets an array subclass argument as a list of argument parameters
 fails:String#% allows positional arguments for width star and precision star arguments
 fails:String#% allows negative width to imply '-' flag
 fails:String#% ignores negative precision
@@ -44,7 +42,6 @@ fails:String#% supports integer formats using %i
 fails:String#% supports negative integers using %i
 fails:String#% supports negative integers using %i, giving priority to `-`
 fails:String#% supports float formats using %e
-fails:String#% supports float formats using %e, but Inf, -Inf, and NaN are not floats
 fails:String#% supports float formats using %E, but Inf, -Inf, and NaN are not floats
 fails:String#% supports float formats using %E
 fails:String#% supports float formats using %f
@@ -53,10 +50,7 @@ fails:String#% supports float formats using %G
 fails:String#% supports octal formats using %o for positive numbers
 fails:String#% supports octal formats using %o for negative numbers
 fails:String#% supports inspect formats using %p
-fails:String#% calls inspect on arguments for %p format
-fails:String#% taints result for %p when argument.inspect is tainted
 fails:String#% supports string formats using %s
-fails:String#% respects a space padding request not as part of the width
 fails:String#% taints result for %s when argument is tainted
 fails:String#% raises an ArgumentError for huge precisions for %s
 fails:String#% supports unsigned formats using %u
@@ -80,4 +74,3 @@ fails:String#% behaves as if calling Kernel#Float for %g arguments, when the pas
 fails:String#% behaves as if calling Kernel#Float for %G arguments, when the passed argument does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Float for %G arguments, when the passed argument is hexadecimal string
 fails:String#% when format string contains %<> formats should raise ArgumentError if no hash given
-fails:String#% when format string contains %{} sections should raise ArgumentError if no hash given

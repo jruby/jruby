@@ -11,6 +11,7 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 
@@ -29,8 +30,9 @@ public abstract class UndefinedPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public Object undefined(Object args) {
+            final SourceSection sourceSection = getEncapsulatingSourceSection();
             throw new UnsupportedOperationException(
-                    "Undefined Rubinius primitive: \"" + getSourceSection().toString().trim() + '"');
+                    "Undefined Rubinius primitive: \"" + sourceSection.toString().trim() + '"');
         }
 
     }
