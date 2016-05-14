@@ -54,12 +54,12 @@ public class DeclarationContext {
 
     public static Visibility findVisibility(Frame frame) {
         final Frame visibilityFrame = lookupVisibility(frame);
-        return RubyArguments.getDeclarationContext(visibilityFrame.getArguments()).visibility;
+        return RubyArguments.getDeclarationContext(visibilityFrame).visibility;
     }
 
     public static void changeVisibility(Frame frame, Visibility newVisibility) {
         final Frame visibilityFrame = lookupVisibility(frame);
-        final DeclarationContext oldDeclarationContext = RubyArguments.getDeclarationContext(visibilityFrame.getArguments());
+        final DeclarationContext oldDeclarationContext = RubyArguments.getDeclarationContext(visibilityFrame);
         if (newVisibility != oldDeclarationContext.visibility) {
             RubyArguments.setDeclarationContext(visibilityFrame.getArguments(), oldDeclarationContext.withVisibility(newVisibility));
         }

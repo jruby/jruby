@@ -160,7 +160,7 @@ public final class RubyArguments {
 
     public static MaterializedFrame getDeclarationFrame(VirtualFrame frame, int level) {
         assert level > 0;
-        return getDeclarationFrame(RubyArguments.getDeclarationFrame(frame.getArguments()), level - 1);
+        return getDeclarationFrame(RubyArguments.getDeclarationFrame(frame), level - 1);
     }
 
     @ExplodeLoop
@@ -171,7 +171,7 @@ public final class RubyArguments {
         MaterializedFrame currentFrame = frame;
 
         for (int n = 0; n < level; n++) {
-            currentFrame = RubyArguments.getDeclarationFrame(currentFrame.getArguments());
+            currentFrame = RubyArguments.getDeclarationFrame(currentFrame);
         }
 
         return currentFrame;

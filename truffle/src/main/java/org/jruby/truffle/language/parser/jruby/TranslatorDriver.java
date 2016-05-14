@@ -137,7 +137,7 @@ public class TranslatorDriver implements Parser {
 
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
 
-        final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame.getArguments());
+        final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame);
         LexicalScope lexicalScope;
         if (parentMethod != null && parentMethod.getSharedMethodInfo().getLexicalScope() != null) {
             lexicalScope = parentMethod.getSharedMethodInfo().getLexicalScope();
@@ -145,7 +145,7 @@ public class TranslatorDriver implements Parser {
             lexicalScope = context.getRootLexicalScope();
         }
         if (parserContext == ParserContext.MODULE) {
-            Object module = RubyArguments.getSelf(Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.READ_ONLY, true).getArguments());
+            Object module = RubyArguments.getSelf(Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.READ_ONLY, true));
             lexicalScope = new LexicalScope(lexicalScope, (DynamicObject) module);
         }
         parseEnvironment.resetLexicalScope(lexicalScope);

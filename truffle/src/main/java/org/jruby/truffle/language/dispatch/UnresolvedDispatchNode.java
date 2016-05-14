@@ -153,7 +153,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             callerClass = null;
         } else if (getDispatchAction() == DispatchAction.RESPOND_TO_METHOD) {
             final Frame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
-            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame.getArguments()));
+            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame));
         } else {
             callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame));
         }
