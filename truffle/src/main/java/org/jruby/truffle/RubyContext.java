@@ -94,7 +94,6 @@ public class RubyContext extends ExecutionContext {
 
     private final Object classVariableDefinitionLock = new Object();
 
-    private String initialInputFile;
     private final AttachmentsManager attachmentsManager;
 
     public RubyContext(Ruby jrubyRuntime, TruffleLanguage.Env env) {
@@ -221,14 +220,6 @@ public class RubyContext extends ExecutionContext {
                 }
             }
         }
-    }
-
-    public void setInitialJRubyRootNode(org.jruby.ast.RootNode initialJRubyRootNode) {
-        this.initialInputFile = initialJRubyRootNode.getPosition().getFile();
-    }
-
-    public String getInitialInputFile() {
-        return initialInputFile;
     }
 
     public Options getOptions() {
