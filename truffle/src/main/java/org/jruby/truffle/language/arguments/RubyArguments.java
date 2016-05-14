@@ -64,96 +64,52 @@ public final class RubyArguments {
         return packed;
     }
 
-    // Getters on Object[]
-
-    public static MaterializedFrame getDeclarationFrame(Object[] arguments) {
-        return (MaterializedFrame) arguments[ArgumentIndicies.DECLARATION_FRAME.ordinal()];
-    }
-
-    public static MaterializedFrame getCallerFrame(Object[] arguments) {
-        return (MaterializedFrame) arguments[ArgumentIndicies.CALLER_FRAME.ordinal()];
-    }
-
-    public static InternalMethod getMethod(Object[] arguments) {
-        return (InternalMethod) arguments[ArgumentIndicies.METHOD.ordinal()];
-    }
-
-    public static DeclarationContext getDeclarationContext(Object[] arguments) {
-        return (DeclarationContext) arguments[ArgumentIndicies.DECLARATION_CONTEXT.ordinal()];
-    }
-
-    public static FrameOnStackMarker getFrameOnStackMarker(Object[] arguments) {
-        return (FrameOnStackMarker) arguments[ArgumentIndicies.FRAME_ON_STACK_MARKER.ordinal()];
-    }
-
-    public static Object getSelf(Object[] arguments) {
-        return arguments[ArgumentIndicies.SELF.ordinal()];
-    }
-
-    public static DynamicObject getBlock(Object[] arguments) {
-        return (DynamicObject) arguments[ArgumentIndicies.BLOCK.ordinal()];
-    }
-
-    public static int getArgumentsCount(Object[] arguments) {
-        return arguments.length - RUNTIME_ARGUMENT_COUNT;
-    }
-
-    public static Object getArgument(Object[] arguments, int index) {
-        return arguments[RUNTIME_ARGUMENT_COUNT + index];
-    }
-
-    public static Object[] getArguments(Object[] arguments) {
-        return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
-    }
-
-    public static Object[] getArguments(Object[] arguments, int start) {
-        return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT + start, arguments.length);
-    }
-
-    // Getters on Frame
+    // Getters
 
     public static MaterializedFrame getDeclarationFrame(Frame frame) {
-        return getDeclarationFrame(frame.getArguments());
+        return (MaterializedFrame) frame.getArguments()[ArgumentIndicies.DECLARATION_FRAME.ordinal()];
     }
 
     public static MaterializedFrame getCallerFrame(Frame frame) {
-        return getCallerFrame(frame.getArguments());
+        return (MaterializedFrame) frame.getArguments()[ArgumentIndicies.CALLER_FRAME.ordinal()];
     }
 
     public static InternalMethod getMethod(Frame frame) {
-        return getMethod(frame.getArguments());
+        return (InternalMethod) frame.getArguments()[ArgumentIndicies.METHOD.ordinal()];
     }
 
     public static DeclarationContext getDeclarationContext(Frame frame) {
-        return getDeclarationContext(frame.getArguments());
+        return (DeclarationContext) frame.getArguments()[ArgumentIndicies.DECLARATION_CONTEXT.ordinal()];
     }
 
     public static FrameOnStackMarker getFrameOnStackMarker(Frame frame) {
-        return getFrameOnStackMarker(frame.getArguments());
+        return (FrameOnStackMarker) frame.getArguments()[ArgumentIndicies.FRAME_ON_STACK_MARKER.ordinal()];
     }
 
     public static Object getSelf(Frame frame) {
-        return getSelf(frame.getArguments());
+        return frame.getArguments()[ArgumentIndicies.SELF.ordinal()];
     }
 
     public static DynamicObject getBlock(Frame frame) {
-        return getBlock(frame.getArguments());
+        return (DynamicObject) frame.getArguments()[ArgumentIndicies.BLOCK.ordinal()];
     }
 
     public static int getArgumentsCount(Frame frame) {
-        return getArgumentsCount(frame.getArguments());
+        return frame.getArguments().length - RUNTIME_ARGUMENT_COUNT;
     }
 
     public static Object getArgument(Frame frame, int index) {
-        return getArgument(frame.getArguments(), index);
+        return frame.getArguments()[RUNTIME_ARGUMENT_COUNT + index];
     }
 
     public static Object[] getArguments(Frame frame) {
-        return getArguments(frame.getArguments());
+        Object[] arguments = frame.getArguments();
+        return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
     }
 
     public static Object[] getArguments(Frame frame, int start) {
-        return getArguments(frame.getArguments(), start);
+        Object[] arguments = frame.getArguments();
+        return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT + start, arguments.length);
     }
 
     // Getters for the declaration frame that let you reach up several levels
@@ -198,7 +154,7 @@ public final class RubyArguments {
             return null;
         }
 
-        return getSelf(arguments);
+        return arguments[ArgumentIndicies.SELF.ordinal()];
     }
 
     public static DynamicObject tryGetBlock(Object[] arguments) {
