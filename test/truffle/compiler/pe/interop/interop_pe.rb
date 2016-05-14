@@ -15,6 +15,5 @@ module InteropPE
   end
 end
 
-
 example "Truffle::Interop.read(InteropPE::A.new(42), :@foo)", 42
 example "Truffle::Interop.read(InteropPE::A.new(42), '@foo')", 42
