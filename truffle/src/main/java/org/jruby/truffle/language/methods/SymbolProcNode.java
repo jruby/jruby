@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.methods;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -23,12 +24,11 @@ public class SymbolProcNode extends RubyNode {
 
     private final String symbol;
 
-    @Child private CallDispatchHeadNode dispatch;
+    @Child private CallDispatchHeadNode callNode;
 
     public SymbolProcNode(RubyContext context, SourceSection sourceSection, String symbol) {
         super(context, sourceSection);
         this.symbol = symbol;
-        dispatch = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     @Override
@@ -42,7 +42,16 @@ public class SymbolProcNode extends RubyNode {
                 1,
                 RubyArguments.getArgumentsCount(frame.getArguments()));
 
-        return dispatch.call(frame, receiver, symbol, block, arguments);
+        return getCallNode().call(frame, receiver, symbol, block, arguments);
+    }
+
+    private CallDispatchHeadNode getCallNode() {
+        if (callNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            callNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+        }
+
+        return callNode;
     }
 
 }
