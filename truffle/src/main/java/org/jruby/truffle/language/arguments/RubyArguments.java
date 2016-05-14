@@ -135,34 +135,34 @@ public final class RubyArguments {
 
     // Getters that fail safely for when you aren't even sure if this is a Ruby frame
 
-    public static MaterializedFrame tryGetDeclarationFrame(Object[] arguments) {
-        if (ArgumentIndicies.DECLARATION_FRAME.ordinal() >= arguments.length) {
+    public static MaterializedFrame tryGetDeclarationFrame(Frame frame) {
+        if (ArgumentIndicies.DECLARATION_FRAME.ordinal() >= frame.getArguments().length) {
             return null;
         }
 
-        final Object frame = arguments[ArgumentIndicies.DECLARATION_FRAME.ordinal()];
+        final Object declarationFrame = frame.getArguments()[ArgumentIndicies.DECLARATION_FRAME.ordinal()];
 
-        if (frame instanceof MaterializedFrame) {
-            return (MaterializedFrame) frame;
+        if (declarationFrame instanceof MaterializedFrame) {
+            return (MaterializedFrame) declarationFrame;
         }
 
         return null;
     }
 
-    public static Object tryGetSelf(Object[] arguments) {
-        if (ArgumentIndicies.SELF.ordinal() >= arguments.length) {
+    public static Object tryGetSelf(Frame frame) {
+        if (ArgumentIndicies.SELF.ordinal() >= frame.getArguments().length) {
             return null;
         }
 
-        return arguments[ArgumentIndicies.SELF.ordinal()];
+        return frame.getArguments()[ArgumentIndicies.SELF.ordinal()];
     }
 
-    public static DynamicObject tryGetBlock(Object[] arguments) {
-        if (ArgumentIndicies.BLOCK.ordinal() >= arguments.length) {
+    public static DynamicObject tryGetBlock(Frame frame) {
+        if (ArgumentIndicies.BLOCK.ordinal() >= frame.getArguments().length) {
             return null;
         }
 
-        final Object block = arguments[ArgumentIndicies.BLOCK.ordinal()];
+        final Object block = frame.getArguments()[ArgumentIndicies.BLOCK.ordinal()];
 
         if (block instanceof DynamicObject) {
             return (DynamicObject) block;
@@ -171,12 +171,12 @@ public final class RubyArguments {
         }
     }
 
-    public static InternalMethod tryGetMethod(Object[] arguments) {
-        if (ArgumentIndicies.METHOD.ordinal() >= arguments.length) {
+    public static InternalMethod tryGetMethod(Frame frame) {
+        if (ArgumentIndicies.METHOD.ordinal() >= frame.getArguments().length) {
             return null;
         }
 
-        final Object method = arguments[ArgumentIndicies.METHOD.ordinal()];
+        final Object method = frame.getArguments()[ArgumentIndicies.METHOD.ordinal()];
 
         if (method instanceof InternalMethod) {
             return (InternalMethod) method;
