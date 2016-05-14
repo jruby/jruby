@@ -106,7 +106,7 @@ public abstract class TruffleBootNodes {
                     StringOperations.createString(getContext(),
                             ByteList.create(getContext().getJRubyInterop().getArg0())));
 
-            String inputFile = getContext().getInitialJRubyRootNode().getPosition().getFile();
+            String inputFile = getContext().getInitialInputFile();
 
             final Source source;
 
