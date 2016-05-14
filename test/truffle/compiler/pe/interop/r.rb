@@ -6,4 +6,5 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-main_thread example "Truffle::Interop.eval('application/x-r', '14 + 2')", 16.0
+# Either R's eval or R expressions in general do not PE yet
+tagged main_thread example "Truffle::Interop.eval('application/x-r', '14 + 2')", 16.0
