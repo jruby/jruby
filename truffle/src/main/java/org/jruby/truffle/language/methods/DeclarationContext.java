@@ -61,7 +61,7 @@ public class DeclarationContext {
         final Frame visibilityFrame = lookupVisibility(frame);
         final DeclarationContext oldDeclarationContext = RubyArguments.getDeclarationContext(visibilityFrame);
         if (newVisibility != oldDeclarationContext.visibility) {
-            RubyArguments.setDeclarationContext(visibilityFrame.getArguments(), oldDeclarationContext.withVisibility(newVisibility));
+            RubyArguments.setDeclarationContext(visibilityFrame, oldDeclarationContext.withVisibility(newVisibility));
         }
     }
 

@@ -187,20 +187,20 @@ public final class RubyArguments {
 
     // Setters
 
-    public static void setDeclarationFrame(Object[] arguments, MaterializedFrame declarationFrame) {
-        arguments[ArgumentIndicies.DECLARATION_FRAME.ordinal()] = declarationFrame;
+    public static void setDeclarationFrame(Frame frame, MaterializedFrame declarationFrame) {
+        frame.getArguments()[ArgumentIndicies.DECLARATION_FRAME.ordinal()] = declarationFrame;
     }
 
-    public static void setDeclarationContext(Object[] arguments, DeclarationContext declarationContext) {
-        arguments[ArgumentIndicies.DECLARATION_CONTEXT.ordinal()] = declarationContext;
+    public static void setDeclarationContext(Frame frame, DeclarationContext declarationContext) {
+        frame.getArguments()[ArgumentIndicies.DECLARATION_CONTEXT.ordinal()] = declarationContext;
     }
 
-    public static void setSelf(Object[] arguments, Object self) {
-        arguments[ArgumentIndicies.SELF.ordinal()] = self;
+    public static void setSelf(Frame frame, Object self) {
+        frame.getArguments()[ArgumentIndicies.SELF.ordinal()] = self;
     }
 
-    public static void setArgument(Object[] internalArguments, int index, Object value) {
-        internalArguments[RUNTIME_ARGUMENT_COUNT + index] = value;
+    public static void setArgument(Frame frame, int index, Object value) {
+        frame.getArguments()[RUNTIME_ARGUMENT_COUNT + index] = value;
     }
 
 }

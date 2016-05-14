@@ -59,7 +59,7 @@ public class ReadUserKeywordsHashNode extends RubyNode {
             final Object converted = callToHashNode.call(frame, lastArgument, "to_hash", null);
 
             if (RubyGuards.isRubyHash(converted)) {
-                RubyArguments.setArgument(frame.getArguments(), argumentCount - 1, converted);
+                RubyArguments.setArgument(frame, argumentCount - 1, converted);
                 return converted;
             }
         }

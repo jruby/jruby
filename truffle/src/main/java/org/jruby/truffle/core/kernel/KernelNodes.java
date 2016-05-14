@@ -570,7 +570,7 @@ public abstract class KernelNodes {
                                             NotProvided filename, NotProvided lineNumber, @Cached("create()") IndirectCallNode callNode) {
             final DynamicObject binding = getCallerBinding(frame);
             final MaterializedFrame topFrame = Layouts.BINDING.getFrame(binding);
-            RubyArguments.setSelf(topFrame.getArguments(), RubyArguments.getSelf(frame));
+            RubyArguments.setSelf(topFrame, RubyArguments.getSelf(frame));
             final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, "(eval)", 1, true);
             return deferredCall.call(frame, callNode);
 
