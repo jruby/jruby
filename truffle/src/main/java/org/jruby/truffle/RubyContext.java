@@ -172,8 +172,6 @@ public class RubyContext extends ExecutionContext {
         attachmentsManager = new AttachmentsManager(this, instrumenter);
         traceManager = new TraceManager(this, instrumenter);
         coverageManager = new CoverageManager(this, instrumenter);
-
-        coreLibrary.initializePostBoot();
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
