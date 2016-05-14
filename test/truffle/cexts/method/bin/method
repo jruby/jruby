@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-STDERR.puts Truffle::Interop.mime_type_supported?('application/x-sulong-library')
-
 require 'method'
 
 puts MethodExtension.add(14, 2)
