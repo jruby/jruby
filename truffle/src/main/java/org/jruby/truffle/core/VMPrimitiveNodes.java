@@ -35,7 +35,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -88,9 +88,6 @@ import static jnr.constants.platform.Errno.ECHILD;
 import static jnr.constants.platform.Errno.EINTR;
 import static jnr.constants.platform.WaitFlags.WNOHANG;
 
-/**
- * Rubinius primitives associated with the VM.
- */
 public abstract class VMPrimitiveNodes {
 
     @Primitive(name = "vm_catch", needsSelf = false)

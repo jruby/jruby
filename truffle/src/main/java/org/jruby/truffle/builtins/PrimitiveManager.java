@@ -31,7 +31,7 @@ import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.StatPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodes;
 import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodesFactory;
-import org.jruby.truffle.core.rubinius.VMPrimitiveNodesFactory;
+import org.jruby.truffle.core.VMPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.WeakRefPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.symbol.SymbolNodesFactory;
