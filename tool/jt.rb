@@ -64,18 +64,18 @@ module Utilities
     end
     raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
   end
-  
+
   def self.find_sulong_graal(dir)
     searches = [
       "#{dir}/../jvmci/jdk*/product/bin/java",
       "#{dir}/../graal-core/mx.imports/binary/jvmci/jdk*/product/bin/java"
     ]
-    
+
     searches.each do |search|
       java = Dir[search].first
       return java if java
     end
-    
+
     raise "couldn't find the Java build in the Sulong repository - you need to check it out and build it"
   end
 
@@ -134,7 +134,7 @@ module Utilities
   def self.mangle_for_env(name)
     name.upcase.tr('-', '_')
   end
-  
+
   def self.find_jvmci
     jvmci_locations = [
       ENV['JVMCI_DIR'],
@@ -149,7 +149,7 @@ module Utilities
       Dir.exist?(location)
     end
   end
-  
+
   def self.igv_running?
     `ps ax`.include?('IdealGraphVisualizer')
   end
@@ -168,14 +168,14 @@ module Utilities
       puts "-------------"
       puts
       puts
-      
+
       sleep 3
-      
+
       until igv_running?
         puts 'still waiting for IGV to appear in ps ax...'
         sleep 3
       end
-      
+
       puts 'just a few more seconds...'
       sleep 6
     end
@@ -414,7 +414,7 @@ module Commands
     if args.delete('--sulong')
       dir = Utilities.find_sulong_dir
       env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
-      
+
       if ENV["SULONG_CLASSPATH"]
         jruby_args << '-J-classpath' << ENV["SULONG_CLASSPATH"]
       else
@@ -484,8 +484,8 @@ module Commands
       test_tck
       test_specs('run')
       # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled since it uses refinements
-      test_integration ({})
-      test_gems ({ 'HAS_REDIS' => 'true' })
+      test_integration
+      test_gems('HAS_REDIS' => 'true')
       test_compiler
       test_cexts if ENV['SULONG_DIR']
     when 'compiler' then test_compiler(*rest)
@@ -528,19 +528,19 @@ module Commands
     jruby_opts = []
     jruby_opts << '-J-Djvmci.Compiler=graal'
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
-    
+
     if ENV['GRAAL_JS_JAR']
       jruby_opts << '-J-classpath'
       jruby_opts << Utilities.find_graal_js
     end
-    
+
     jruby_opts << '-Xtruffle.exceptions.print_java=true'
-    
+
     env_vars = {}
     env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
-    
+
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
       sh env_vars, test_script
     end
@@ -746,7 +746,7 @@ module Commands
       raise ArgumentError, command
     end
   end
-  
+
   def metrics_alloc(score_name, *args)
     samples = []
     METRICS_REPS.times do
@@ -781,7 +781,7 @@ module Commands
     end
     allocated
   end
-  
+
   def metrics_minheap(score_name, *args)
     heap = 10
     log '>', "Trying #{heap} MB"
@@ -813,11 +813,11 @@ module Commands
       puts "#{heap} MB"
     end
   end
-  
+
   def can_run_in_heap(heap, *command)
     run("-J-Xmx#{heap}M", *command, {err: '/dev/null', out: '/dev/null'}, :continue_on_failure, :no_print_cmd)
   end
-  
+
   def metrics_time(score_name, *args)
     samples = []
     METRICS_REPS.times do
@@ -883,7 +883,7 @@ module Commands
       "#{(bytes/1024.0**4).round(2)} TB"
     end
   end
-  
+
   def tarball
     mvn '-Pdist'
     generated_file = "#{JRUBY_DIR}/maven/jruby-dist/target/jruby-dist-#{Utilities.jruby_version}-bin.tar.gz"
@@ -892,7 +892,7 @@ module Commands
     FileUtils.copy "#{generated_file}.sha256", "#{final_file}.sha256"
     sh 'test/truffle/tarball.sh', final_file
   end
-  
+
   def log(tty_message, full_message)
     if STDOUT.tty?
       print(tty_message) unless tty_message.nil?
