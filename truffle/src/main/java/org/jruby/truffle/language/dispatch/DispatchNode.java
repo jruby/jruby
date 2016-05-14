@@ -68,7 +68,7 @@ public abstract class DispatchNode extends RubyNode {
         }
 
         // Check visibility
-        if (!ignoreVisibility && !method.isVisibleTo(this, callerClass)) {
+        if (!ignoreVisibility && !method.isVisibleTo(callerClass)) {
             return null;
         }
 
