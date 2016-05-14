@@ -31,7 +31,9 @@ import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 })
 public abstract class AddMethodNode extends RubyNode {
 
-    private final boolean ignoreNameVisibility; // def expr.meth()
+    // Some method names such as initialize imply that the method is private - this flag says to ignore that implication
+    private final boolean ignoreNameVisibility;
+
     private final boolean isLiteralDef;
 
     @Child private SingletonClassNode singletonClassNode;
