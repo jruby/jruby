@@ -35,12 +35,6 @@ import org.jruby.util.unsafe.UnsafeHolder;
 public abstract class PointerPrimitiveNodes {
     public static final Pointer NULL_POINTER = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0);
 
-    /*
-     * :pointer_allocate is not a real Rubinius primitive, but Rubinius provides no implementaiton
-     * of Pointer#allocate, so we define this primitive and use it in our own code in the core
-     * library to define that method.
-     */
-
     @Primitive(name = "pointer_allocate", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
