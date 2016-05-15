@@ -6,14 +6,6 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-module Truffle
-  # Utility method for commenting out part of Rubinius's implementation and detailing why.  It helps clearly
-  # demarcate things we want to omit from things Rubinius has left commented out and as such, should help compare
-  # diffs when upgrading Rubinius core files.
-  def self.omit(reason)
-  end
-end
-
 Truffle::Boot.require_core 'core/pre'
 
 # Load Rubinius API

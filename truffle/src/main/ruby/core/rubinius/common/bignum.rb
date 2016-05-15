@@ -26,11 +26,6 @@
 
 class Bignum < Integer
 
-  Truffle.omit(":divide is a Rubinius internal detail. We define :/ directly in Java") do
-    # see README-DEVELOPERS regarding safe math compiler plugin
-    alias_method :/, :divide
-  end
-
   def eql?(value)
     value.is_a?(Bignum) && self == value
   end

@@ -30,46 +30,6 @@ class Proc
     Rubinius::Mirror::Proc.from_block self, env
   end
 
-  Truffle.omit("Rubinius-specific initialization.") do
-    def self.new(*args)
-      env = nil
-
-      Rubinius.asm do
-        push_block
-        # assign a pushed block to the above local variable "env"
-        # Note that "env" is indexed at 1, not 0. "args" is indexed at 0.
-        set_local 1
-      end
-
-      unless env
-        # Support for ancient pre-block-pass style:
-        # def something; Proc.new; end
-        # something { a_block } => Proc instance
-        env = Rubinius::BlockEnvironment.of_sender
-
-        unless env
-          raise ArgumentError, "tried to create a Proc object without a block"
-        end
-      end
-
-      block = Rubinius::Mirror::Proc.from_block self, env
-
-      if block.class != self
-        block = block.dup
-        Rubinius::Unsafe.set_class(block, self)
-      end
-
-      Rubinius.asm(block, args) do |b, a|
-        run b
-        run a
-        run b
-        send_with_splat :initialize, 0, true
-      end
-
-      return block
-    end
-  end
-
   attr_accessor :block
   attr_accessor :bound_method
   attr_accessor :ruby_method
@@ -224,18 +184,6 @@ class Proc
 
     copy.freeze if frozen?
     copy
-  end
-
-  Truffle.omit("We handle the dup in a parent class.") do
-    def dup
-      copy = self.class.__allocate__
-      Rubinius.invoke_primitive :object_copy_object, copy, self
-
-      Rubinius.privately do
-        copy.initialize_copy self
-      end
-      copy
-    end
   end
 
   def self.from_method(meth)

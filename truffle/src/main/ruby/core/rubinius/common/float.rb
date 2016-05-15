@@ -176,10 +176,6 @@ class Float < Numeric
     redo_coerced :/, other
   end
 
-  Truffle.omit(":divide is a Rubinius internal detail. We define :/ directly in Java") do
-    alias_method :/, :divide
-  end
-
   alias_method :quo, :/
   alias_method :fdiv, :/
 
