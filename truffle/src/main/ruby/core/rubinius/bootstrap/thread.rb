@@ -212,4 +212,35 @@ class Thread
     thread.kill
   end
 
+  def raise(exc=undefined, msg=nil, trace=nil)
+    return self unless alive?
+
+    if undefined.equal? exc
+      no_argument = true
+      exc         = nil
+    end
+
+    if exc.respond_to? :exception
+      exc = exc.exception msg
+      Kernel.raise TypeError, 'exception class/object expected' unless Exception === exc
+      exc.set_backtrace trace if trace
+    elsif no_argument
+      exc = RuntimeError.exception nil
+    elsif exc.kind_of? String
+      exc = RuntimeError.exception exc
+    else
+      Kernel.raise TypeError, 'exception class/object expected'
+    end
+
+    if $DEBUG
+      STDERR.puts "Exception: #{exc.message} (#{exc.class})"
+    end
+
+    if self == Thread.current
+      Kernel.raise exc
+    else
+      raise_prim exc
+    end
+  end
+
 end
