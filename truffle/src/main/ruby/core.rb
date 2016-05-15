@@ -16,7 +16,6 @@ Truffle::Boot.require_core 'core/rubinius/api/kernel/common/thread'
 
 Truffle::Boot.require_core 'core/rubinius/api/shims/lookuptable'
 Truffle::Boot.require_core 'core/rubinius/api/shims/rubinius'
-Truffle::Boot.require_core 'core/rubinius/api/shims/thread'
 Truffle::Boot.require_core 'core/rubinius/api/shims/tuple'
 Truffle::Boot.require_core 'core/rubinius/api/shims/metrics'
 Truffle::Boot.require_core 'core/rubinius/api/shims/hash'
