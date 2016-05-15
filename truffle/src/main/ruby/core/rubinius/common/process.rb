@@ -1,3 +1,11 @@
+# Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -91,7 +99,7 @@ module Process
     rlimit[:rlim_cur] = cur_limit
     rlimit[:rlim_max] = undefined.equal?(max_limit) ? cur_limit : max_limit
 
-    ret = FFI::Platform::POSIX.setrlimit(resource, rlimit.pointer)
+    ret = Truffle::POSIX.setrlimit(resource, rlimit.pointer)
     Errno.handle if ret == -1
     nil
   end
@@ -101,14 +109,14 @@ module Process
 
     lim_max = []
     rlimit = Rlimit.new
-    ret = FFI::Platform::POSIX.getrlimit(resource, rlimit.pointer)
+    ret = Truffle::POSIX.getrlimit(resource, rlimit.pointer)
     Errno.handle if ret == -1
 
     [rlimit[:rlim_cur], rlimit[:rlim_max]]
   end
 
   def self.setsid
-    pgid = FFI::Platform::POSIX.setsid
+    pgid = Truffle::POSIX.setsid
     Errno.handle if pgid == -1
     pgid
   end
@@ -181,7 +189,7 @@ module Process
       pid = Rubinius::Type.coerce_to_pid pid
 
       pid = -pid if use_process_group
-      result = FFI::Platform::POSIX.kill(pid, signal)
+      result = Truffle::POSIX.kill(pid, signal)
 
       Errno.handle if result == -1
     end
@@ -200,7 +208,7 @@ module Process
   def self.getpgid(pid)
     pid = Rubinius::Type.coerce_to pid, Integer, :to_int
 
-    ret = FFI::Platform::POSIX.getpgid(pid)
+    ret = Truffle::POSIX.getpgid(pid)
     Errno.handle if ret == -1
     ret
   end
@@ -209,7 +217,7 @@ module Process
     pid = Rubinius::Type.coerce_to pid, Integer, :to_int
     int = Rubinius::Type.coerce_to int, Integer, :to_int
 
-    ret = FFI::Platform::POSIX.setpgid(pid, int)
+    ret = Truffle::POSIX.setpgid(pid, int)
     Errno.handle if ret == -1
     ret
   end
@@ -226,19 +234,19 @@ module Process
     setpgid(0, 0)
   end
   def self.getpgrp
-    ret = FFI::Platform::POSIX.getpgrp
+    ret = Truffle::POSIX.getpgrp
     Errno.handle if ret == -1
     ret
   end
 
   def self.pid
-    ret = FFI::Platform::POSIX.getpid
+    ret = Truffle::POSIX.getpid
     Errno.handle if ret == -1
     ret
   end
 
   def self.ppid
-    ret = FFI::Platform::POSIX.getppid
+    ret = Truffle::POSIX.getppid
     Errno.handle if ret == -1
     ret
   end
@@ -249,16 +257,16 @@ module Process
     # atm respond_to returns true if a method is attached but not implemented on the platform
     uid = Rubinius::Type.coerce_to uid, Integer, :to_int
     begin
-      ret = FFI::Platform::POSIX.setresuid(uid, -1, -1)
+      ret = Truffle::POSIX.setresuid(uid, -1, -1)
     rescue NotImplementedError
       begin
-        ret = FFI::Platform::POSIX.setreuid(uid, -1)
+        ret = Truffle::POSIX.setreuid(uid, -1)
       rescue NotImplementedError
         begin
-          ret = FFI::Platform::POSIX.setruid(uid)
+          ret = Truffle::POSIX.setruid(uid)
         rescue NotImplementedError
           if Process.euid == uid
-            ret = FFI::Platform::POSIX.setuid(uid)
+            ret = Truffle::POSIX.setuid(uid)
           else
             raise NotImplementedError
           end
@@ -282,16 +290,16 @@ module Process
     # atm respond_to returns true if a method is attached but not implemented on the platform
     uid = Rubinius::Type.coerce_to uid, Integer, :to_int
     begin
-      ret = FFI::Platform::POSIX.setresuid(-1, uid, -1)
+      ret = Truffle::POSIX.setresuid(-1, uid, -1)
     rescue NotImplementedError
       begin
-        ret = FFI::Platform::POSIX.setreuid(-1, uid)
+        ret = Truffle::POSIX.setreuid(-1, uid)
       rescue NotImplementedError
         begin
-          ret = FFI::Platform::POSIX.seteuid(uid)
+          ret = Truffle::POSIX.seteuid(uid)
         rescue NotImplementedError
           if Process.uid == uid
-            ret = FFI::Platform::POSIX.setuid(uid)
+            ret = Truffle::POSIX.setuid(uid)
           else
             raise NotImplementedError
           end
@@ -310,25 +318,25 @@ module Process
   end
 
   def self.uid
-    ret = FFI::Platform::POSIX.getuid
+    ret = Truffle::POSIX.getuid
     Errno.handle if ret == -1
     ret
   end
 
   def self.gid
-    ret = FFI::Platform::POSIX.getgid
+    ret = Truffle::POSIX.getgid
     Errno.handle if ret == -1
     ret
   end
 
   def self.euid
-    ret = FFI::Platform::POSIX.geteuid
+    ret = Truffle::POSIX.geteuid
     Errno.handle if ret == -1
     ret
   end
 
   def self.egid
-    ret = FFI::Platform::POSIX.getegid
+    ret = Truffle::POSIX.getegid
     Errno.handle if ret == -1
     ret
   end
@@ -337,8 +345,8 @@ module Process
     kind = Rubinius::Type.coerce_to kind, Integer, :to_int
     id =   Rubinius::Type.coerce_to id, Integer, :to_int
 
-    FFI::Platform::POSIX.errno = 0
-    ret = FFI::Platform::POSIX.getpriority(kind, id)
+    Truffle::POSIX.errno = 0
+    ret = Truffle::POSIX.getpriority(kind, id)
     Errno.handle
     ret
   end
@@ -348,16 +356,16 @@ module Process
     id =   Rubinius::Type.coerce_to id, Integer, :to_int
     priority = Rubinius::Type.coerce_to priority, Integer, :to_int
 
-    ret = FFI::Platform::POSIX.setpriority(kind, id, priority)
+    ret = Truffle::POSIX.setpriority(kind, id, priority)
     Errno.handle if ret == -1
     ret
   end
 
   def self.groups
     g = []
-    count = Rubinius::FFI::Platform::POSIX.getgroups(0, nil)
+    count = Truffle::POSIX.getgroups(0, nil)
     FFI::MemoryPointer.new(:int, count) { |p|
-      num_groups = FFI::Platform::POSIX.getgroups(count, p)
+      num_groups = Truffle::POSIX.getgroups(count, p)
       Errno.handle if num_groups == -1
       g = p.read_array_of_int(num_groups)
     }
@@ -368,7 +376,7 @@ module Process
     @maxgroups = g.length if g.length > @maxgroups
     FFI::MemoryPointer.new(:int, @maxgroups) { |p|
       p.write_array_of_int(g)
-      Errno.handle if FFI::Platform::POSIX.setgroups(g.length, p) == -1
+      Errno.handle if Truffle::POSIX.setgroups(g.length, p) == -1
     }
     g
   end
@@ -377,7 +385,7 @@ module Process
     username = StringValue(username)
     gid = Rubinius::Type.coerce_to gid, Integer, :to_int
 
-    if FFI::Platform::POSIX.initgroups(username, gid) == -1
+    if Truffle::POSIX.initgroups(username, gid) == -1
       Errno.handle
     end
 
@@ -616,25 +624,25 @@ module Process
   module Sys
     class << self
       def getegid
-        ret = FFI::Platform::POSIX.getegid
+        ret = Truffle::POSIX.getegid
         Errno.handle if ret == -1
         ret
       end
 
       def geteuid
-        ret = FFI::Platform::POSIX.geteuid
+        ret = Truffle::POSIX.geteuid
         Errno.handle if ret == -1
         ret
       end
 
       def getgid
-        ret = FFI::Platform::POSIX.getgid
+        ret = Truffle::POSIX.getgid
         Errno.handle if ret == -1
         ret
       end
 
       def getuid
-        ret = FFI::Platform::POSIX.getuid
+        ret = Truffle::POSIX.getuid
         Errno.handle if ret == -1
         ret
       end
@@ -646,7 +654,7 @@ module Process
       def setgid(gid)
         gid = Rubinius::Type.coerce_to gid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.setgid gid
+        ret = Truffle::POSIX.setgid gid
         Errno.handle if ret == -1
         nil
       end
@@ -654,7 +662,7 @@ module Process
       def setuid(uid)
         uid = Rubinius::Type.coerce_to uid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.setuid uid
+        ret = Truffle::POSIX.setuid uid
         Errno.handle if ret == -1
         nil
       end
@@ -662,7 +670,7 @@ module Process
       def setegid(egid)
         egid = Rubinius::Type.coerce_to egid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.setegid egid
+        ret = Truffle::POSIX.setegid egid
         Errno.handle if ret == -1
         nil
       end
@@ -670,7 +678,7 @@ module Process
       def seteuid(euid)
         euid = Rubinius::Type.coerce_to euid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.seteuid euid
+        ret = Truffle::POSIX.seteuid euid
         Errno.handle if ret == -1
         nil
       end
@@ -687,7 +695,7 @@ module Process
         rid = Rubinius::Type.coerce_to rid, Integer, :to_int
         eid = Rubinius::Type.coerce_to eid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.setregid rid, eid
+        ret = Truffle::POSIX.setregid rid, eid
         Errno.handle if ret == -1
         nil
       end
@@ -696,7 +704,7 @@ module Process
         rid = Rubinius::Type.coerce_to rid, Integer, :to_int
         eid = Rubinius::Type.coerce_to eid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.setreuid rid, eid
+        ret = Truffle::POSIX.setreuid rid, eid
         Errno.handle if ret == -1
         nil
       end
@@ -706,7 +714,7 @@ module Process
         eid = Rubinius::Type.coerce_to eid, Integer, :to_int
         sid = Rubinius::Type.coerce_to sid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.setresgid rid, eid, sid
+        ret = Truffle::POSIX.setresgid rid, eid, sid
         Errno.handle if ret == -1
         nil
       end
@@ -716,7 +724,7 @@ module Process
         eid = Rubinius::Type.coerce_to eid, Integer, :to_int
         sid = Rubinius::Type.coerce_to sid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.setresuid rid, eid, sid
+        ret = Truffle::POSIX.setresuid rid, eid, sid
         Errno.handle if ret == -1
         nil
       end
@@ -728,13 +736,13 @@ module Process
       def change_privilege(uid)
         uid = Rubinius::Type.coerce_to uid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.setreuid(uid, uid)
+        ret = Truffle::POSIX.setreuid(uid, uid)
         Errno.handle if ret == -1
         uid
       end
 
       def eid
-        ret = FFI::Platform::POSIX.geteuid
+        ret = Truffle::POSIX.geteuid
         Errno.handle if ret == -1
         ret
       end
@@ -742,18 +750,18 @@ module Process
       def eid=(uid)
         uid = Rubinius::Type.coerce_to uid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.seteuid(uid)
+        ret = Truffle::POSIX.seteuid(uid)
         Errno.handle if ret == -1
         uid
       end
       alias_method :grant_privilege, :eid=
 
       def re_exchange
-        real = FFI::Platform::POSIX.getuid
+        real = Truffle::POSIX.getuid
         Errno.handle if real == -1
-        eff = FFI::Platform::POSIX.geteuid
+        eff = Truffle::POSIX.geteuid
         Errno.handle if eff == -1
-        ret = FFI::Platform::POSIX.setreuid(eff, real)
+        ret = Truffle::POSIX.setreuid(eff, real)
         Errno.handle if ret == -1
         eff
       end
@@ -763,7 +771,7 @@ module Process
       end
 
       def rid
-        ret = FFI::Platform::POSIX.getuid
+        ret = Truffle::POSIX.getuid
         Errno.handle if ret == -1
         ret
       end
@@ -791,13 +799,13 @@ module Process
       def change_privilege(gid)
         gid = Rubinius::Type.coerce_to gid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.setregid(gid, gid)
+        ret = Truffle::POSIX.setregid(gid, gid)
         Errno.handle if ret == -1
         gid
       end
 
       def eid
-        ret = FFI::Platform::POSIX.getegid
+        ret = Truffle::POSIX.getegid
         Errno.handle if ret == -1
         ret
       end
@@ -805,18 +813,18 @@ module Process
       def eid=(gid)
         gid = Rubinius::Type.coerce_to gid, Integer, :to_int
 
-        ret = FFI::Platform::POSIX.setegid(gid)
+        ret = Truffle::POSIX.setegid(gid)
         Errno.handle if ret == -1
         gid
       end
       alias_method :grant_privilege, :eid=
 
       def re_exchange
-        real = FFI::Platform::POSIX.getgid
+        real = Truffle::POSIX.getgid
         Errno.handle if real == -1
-        eff = FFI::Platform::POSIX.getegid
+        eff = Truffle::POSIX.getegid
         Errno.handle if eff == -1
-        ret = FFI::Platform::POSIX.setregid(eff, real)
+        ret = Truffle::POSIX.setregid(eff, real)
         Errno.handle if ret == -1
         eff
       end
@@ -826,7 +834,7 @@ module Process
       end
 
       def rid
-        ret = FFI::Platform::POSIX.getgid
+        ret = Truffle::POSIX.getgid
         Errno.handle if ret == -1
         ret
       end

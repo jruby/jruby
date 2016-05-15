@@ -1,4 +1,12 @@
- # Copyright (c) 2007-2015, Evan Phoenix and contributors
+# Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -147,45 +155,45 @@ class Dir
 
     if block_given?
       original_path = self.getwd
-      error = FFI::Platform::POSIX.chdir path
+      error = Truffle::POSIX.chdir path
       Errno.handle(path) if error != 0
 
       begin
         value = yield path
       ensure
-        error = FFI::Platform::POSIX.chdir original_path
+        error = Truffle::POSIX.chdir original_path
         Errno.handle(original_path) if error != 0
       end
 
       return value
     else
-      error = FFI::Platform::POSIX.chdir path
+      error = Truffle::POSIX.chdir path
       Errno.handle path if error != 0
       error
     end
   end
 
   def self.mkdir(path, mode = 0777)
-    error = FFI::Platform::POSIX.mkdir(Rubinius::Type.coerce_to_path(path), mode)
+    error = Truffle::POSIX.mkdir(Rubinius::Type.coerce_to_path(path), mode)
     Errno.handle path if error != 0
     error
   end
 
   def self.rmdir(path)
-    error = FFI::Platform::POSIX.rmdir(Rubinius::Type.coerce_to_path(path))
+    error = Truffle::POSIX.rmdir(Rubinius::Type.coerce_to_path(path))
     Errno.handle path if error != 0
     error
   end
 
   def self.getwd
     buf = String.pattern Rubinius::PATH_MAX, 0
-    wd = FFI::Platform::POSIX.getcwd(buf, buf.length)
+    wd = Truffle::POSIX.getcwd(buf, buf.length)
     Errno.handle unless wd
     Rubinius::Type.external_string wd
   end
 
   def self.chroot(path)
-    ret = FFI::Platform::POSIX.chroot Rubinius::Type.coerce_to_path(path)
+    ret = Truffle::POSIX.chroot Rubinius::Type.coerce_to_path(path)
     Errno.handle path if ret != 0
     ret
   end

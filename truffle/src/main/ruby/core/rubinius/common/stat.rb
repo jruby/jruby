@@ -93,12 +93,12 @@ class Rubinius::Stat
   end
 
   def dev_major
-    major = Rubinius::FFI::Platform::POSIX.major dev
+    major = Truffle::POSIX.major dev
     major < 0 ? nil : major
   end
 
   def dev_minor
-    minor = Rubinius::FFI::Platform::POSIX.major dev
+    minor = Truffle::POSIX.major dev
     minor < 0 ? nil : minor
   end
 
@@ -149,7 +149,7 @@ class Rubinius::Stat
   end
 
   def owned?
-    uid == Rubinius::FFI::Platform::POSIX.geteuid
+    uid == Truffle::POSIX.geteuid
   end
 
   def pipe?
@@ -157,12 +157,12 @@ class Rubinius::Stat
   end
 
   def rdev_major
-    major = Rubinius::FFI::Platform::POSIX.major rdev
+    major = Truffle::POSIX.major rdev
     major < 0 ? nil : major
   end
 
   def rdev_minor
-    minor = Rubinius::FFI::Platform::POSIX.minor rdev
+    minor = Truffle::POSIX.minor rdev
     minor < 0 ? nil : minor
   end
 
@@ -228,22 +228,22 @@ class Rubinius::Stat
   end
 
   def rgrpowned?
-    gid == Rubinius::FFI::Platform::POSIX.getgid
+    gid == Truffle::POSIX.getgid
   end
   private :rgrpowned?
 
   def rowned?
-    uid == Rubinius::FFI::Platform::POSIX.getuid
+    uid == Truffle::POSIX.getuid
   end
   private :rowned?
 
   def rsuperuser?
-    Rubinius::FFI::Platform::POSIX.getuid == 0
+    Truffle::POSIX.getuid == 0
   end
   private :rsuperuser?
 
   def superuser?
-    Rubinius::FFI::Platform::POSIX.geteuid == 0
+    Truffle::POSIX.geteuid == 0
   end
   private :superuser?
 end

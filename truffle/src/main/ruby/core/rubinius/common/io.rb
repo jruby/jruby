@@ -1012,7 +1012,7 @@ class IO
   #
   def self.setup(io, fd, mode=nil, sync=false)
     if Truffle::Safe.io_safe?
-      cur_mode = FFI::Platform::POSIX.fcntl(fd, F_GETFL, 0)
+      cur_mode = Truffle::POSIX.fcntl(fd, F_GETFL, 0)
     else
       cur_mode = RDONLY if fd == 0
       cur_mode = WRONLY if fd == 1
@@ -1096,7 +1096,7 @@ class IO
   ##
   # Obtains a new duplicate descriptor for the current one.
   def initialize_copy(original) # :nodoc:
-    @descriptor = FFI::Platform::POSIX.dup(@descriptor)
+    @descriptor = Truffle::POSIX.dup(@descriptor)
   end
 
   private :initialize_copy
@@ -1573,7 +1573,7 @@ class IO
     end
 
     command = Rubinius::Type.coerce_to command, Fixnum, :to_int
-    FFI::Platform::POSIX.fcntl descriptor, command, arg
+    Truffle::POSIX.fcntl descriptor, command, arg
   end
 
   def internal_encoding
@@ -1610,7 +1610,7 @@ class IO
     end
 
     command = Rubinius::Type.coerce_to command, Fixnum, :to_int
-    ret = FFI::Platform::POSIX.ioctl descriptor, command, real_arg
+    ret = Truffle::POSIX.ioctl descriptor, command, real_arg
     Errno.handle if ret < 0
     if arg.kind_of?(String)
       arg.replace buffer.read_string(buffer_size)
@@ -1656,7 +1656,7 @@ class IO
   def fsync
     flush
 
-    err = FFI::Platform::POSIX.fsync @descriptor
+    err = Truffle::POSIX.fsync @descriptor
 
     Errno.handle 'fsync(2)' if err < 0
 
@@ -2404,7 +2404,7 @@ class IO
   #  File.new("/dev/tty").isatty   #=> true
   def tty?
     ensure_open
-    FFI::Platform::POSIX.isatty(@descriptor) == 1
+    Truffle::POSIX.isatty(@descriptor) == 1
   end
 
   alias_method :isatty, :tty?

@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.extra;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
@@ -27,6 +27,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
+import org.jruby.truffle.core.rubinius.PointerPrimitiveNodes;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
@@ -39,8 +40,8 @@ import java.nio.charset.StandardCharsets;
 
 import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
 
-@CoreClass("Rubinius::FFI::Platform::POSIX")
-public abstract class PosixNodes {
+@CoreClass("Truffle::POSIX")
+public abstract class TrufflePosixNodes {
 
     @CoreMethod(names = "access", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class AccessNode extends CoreMethodArrayArgumentsNode {
