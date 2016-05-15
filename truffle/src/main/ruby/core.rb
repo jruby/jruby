@@ -11,7 +11,6 @@ Truffle::Boot.require_core 'core/pre'
 # Load Rubinius API
 
 Truffle::Boot.require_core 'core/rubinius/api/kernel/common/thread'
-Truffle::Boot.require_core 'core/rubinius/api/kernel/common/type'
 
 # Patch rubinius-core-api to make it work for us
 
