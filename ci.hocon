@@ -1,14 +1,19 @@
-java7: {name: oraclejdk, version: "8u66", platformspecific: true}
+jt: [ruby, tool/jt.rb]
 
 common: {
   packages: {
-    git : ">=1.8.3"
-    maven : ">=3.3.9"
-    ruby : ">=2.1.0"
+    git:        ">=1.8.3"
+    maven:      ">=3.3.9"
+    mercurial:  ">=3.2.4"
+    ruby:       ">=2.1.0"
   }
   
   downloads: {
-    JAVA_HOME: ${java7}
+    JAVA_HOME: {
+      name: oraclejdk,
+      version: "8u66",
+      platformspecific: true
+    }
   }
   
   environment: {
@@ -17,26 +22,43 @@ common: {
   }
   
   setup: [
-    [ruby, "tool/jt.rb", build]
+    ${jt} [build]
   ]
 
   timelimit: "30:00"
 }
 
-gate_caps: {
+graal-core: {
+  setup: [
+    ${jt} [bootstrap],
+    [mkdir, graal-workspace],
+    [cd, graal-workspace],
+    [git, clone, "https://github.com/graalvm/graal-core.git"],
+    [cd, graal-core],
+    [git, checkout, "3a28fca1b331f9912dabd231052354cffa9dee9c"],
+    [mx, sforceimports], // ../../mx/mx
+    [mx, --vm, server, build],
+    [cd, ../..]
+  ]
+  
+  environment: {
+    GRAAL_BIN: graal-workspace/jvmci/jdk1.8.0_66/product/bin/java
+  }
+}
+
+gate-caps: {
   capabilities: [linux, amd64, gate, post-push]
 }
 
-jt: [ruby, "tool/jt.rb"]
-
-builds = [
-  {name: ruby-test-fast} ${common} ${gate_caps} {run: [${jt} [test, fast]]},
-  {name: ruby-test-specs-command-line} ${common} ${gate_caps} {run: [${jt} [test, specs, ":command_line"]]},
-  {name: ruby-test-specs-language} ${common} ${gate_caps} {run: [${jt} [test, specs, ":language"]]},
-  {name: ruby-test-specs-core} ${common} ${gate_caps} {run: [${jt} [test, specs, ":core"]]},
-  {name: ruby-test-specs-library} ${common} ${gate_caps} {run: [${jt} [test, specs, ":library"]]},
-  {name: ruby-test-specs-truffle} ${common} ${gate_caps} {run: [${jt} [test, specs, ":truffle"]]},
-  {name: ruby-test-integration} ${common} ${gate_caps} {run: [${jt} [test, integration]]},
-  {name: ruby-test-tck} ${common} ${gate_caps} {run: [${jt} [test, tck]]},
-  {name: ruby-tarball} ${common} ${gate_caps} {run: [${jt} [tarball]]}
+builds: [
+  {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
+  {name: ruby-test-specs-command-line} ${common} ${gate-caps} {run: [${jt} [test, specs, ":command_line"]]},
+  {name: ruby-test-specs-language} ${common} ${gate-caps} {run: [${jt} [test, specs, ":language"]]},
+  {name: ruby-test-specs-core} ${common} ${gate-caps} {run: [${jt} [test, specs, ":core"]]},
+  {name: ruby-test-specs-library} ${common} ${gate-caps} {run: [${jt} [test, specs, ":library"]]},
+  {name: ruby-test-specs-truffle} ${common} ${gate-caps} {run: [${jt} [test, specs, ":truffle"]]},
+  {name: ruby-test-integration} ${common} ${gate-caps} {run: [${jt} [test, integration]]},
+  {name: ruby-test-tck} ${common} ${gate-caps} {run: [${jt} [test, tck]]},
+  {name: ruby-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
+  {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]}
 ]
