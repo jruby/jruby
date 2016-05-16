@@ -341,4 +341,35 @@ class Range
       delta
     end
   end
+
+  def to_a_internal # MODIFIED called from java to_a
+    return to_a_from_enumerable unless @begin.kind_of? Fixnum and @end.kind_of? Fixnum
+
+    fin = @end
+    fin += 1 unless @excl
+
+    size = fin - @begin
+    return [] if size <= 0
+
+    ary = Array.new(size)
+
+    i = 0
+    while i < size
+      ary[i] = @begin + i
+      i += 1
+    end
+
+    ary
+  end
+
+  def to_a_from_enumerable(*arg)
+    ary = []
+    each(*arg) do
+      o = Rubinius.single_block_arg
+      ary << o
+      nil
+    end
+    Rubinius::Type.infect ary, self
+    ary
+  end
 end

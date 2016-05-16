@@ -1922,7 +1922,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/range.rb") || path.equals(corePath + "rubinius/api/shims/range.rb")) {
+        } else if (path.equals(corePath + "rubinius/common/range.rb")) {
             if (name.equals("@begin")) {
                 ret = RangeNodesFactory.BeginNodeFactory.create(new RubyNode[]{ self });
                 setSourceSection(ret, sourceSection);
