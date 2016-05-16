@@ -2800,6 +2800,8 @@ public class BodyTranslator extends Translator {
                 && rescueBody != null
                 && rescueBody.getExceptionNodes() == null
                 && rescueBody.getBodyNode() instanceof SideEffectFree
+                // allow `expression rescue $!` pattern
+                && (!(rescueBody.getBodyNode() instanceof org.jruby.ast.GlobalVarNode) || !((org.jruby.ast.GlobalVarNode) rescueBody.getBodyNode()).getName().equals("$!"))
                 && rescueBody.getOptRescueNode() == null) {
             tryPart = new DisablingBacktracesNode(context, sourceSection, tryPart);
 
