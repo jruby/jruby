@@ -8,10 +8,6 @@
 
 Truffle::Boot.require_core 'core/pre'
 
-# Patch rubinius-core-api to make it work for us
-
-Truffle::Boot.require_core 'core/rubinius/api/shims/hash'
-
 # Rubinius primitives written in Ruby
 
 Truffle::Boot.require_core 'core/rubinius/primitives'

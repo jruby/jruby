@@ -183,7 +183,9 @@ class Hash
   # so we have to not collide with that.
   attr_reader_specific :entries, :__entries__
 
-  def self.[](*args)
+  # Renamed version of the Rubinius Hash#[] method
+  #def self.[](*args)
+  def self._constructor_fallback(*args)
     if args.size == 1
       obj = args.first
       if hash = Rubinius::Type.check_convert_type(obj, Hash, :to_hash)
