@@ -1,3 +1,11 @@
+# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -28,10 +36,6 @@ module Rubinius
   class Mirror
     class Range < Mirror
       self.subject = ::Range
-
-      def excl
-        Rubinius.invoke_primitive :object_get_ivar, @object, :@excl
-      end
 
       def step_float_iterations_size(first, last, step_size)
         err = (first.abs + last.abs + (last - first).abs) / step_size.abs * Float::EPSILON
@@ -80,6 +84,10 @@ module Rubinius
         end
 
         return first, last, step_size
+      end
+
+      def excl
+        @object.exclude_end?
       end
 
     end
