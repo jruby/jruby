@@ -48,12 +48,14 @@ public abstract class RangeNodes {
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
-        public DynamicObject map(VirtualFrame frame, DynamicObject range, DynamicObject block,
+        public DynamicObject map(
+                VirtualFrame frame, DynamicObject range, DynamicObject block,
                 @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
             final int end = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
             final boolean excludedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range);
-            final int length = (excludedEnd ? end : end + 1) - begin;
+            final int direction = begin < end ? +1 : -1;
+            final int length = Math.abs((excludedEnd ? end : end + direction) - begin);
 
             Object store = arrayBuilder.start(length);
             int count = 0;
@@ -64,7 +66,7 @@ public abstract class RangeNodes {
                         count++;
                     }
 
-                    store = arrayBuilder.appendValue(store, n, yield(frame, block, begin + n));
+                    store = arrayBuilder.appendValue(store, n, yield(frame, block, begin + direction * n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -72,7 +74,10 @@ public abstract class RangeNodes {
                 }
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), arrayBuilder.finish(store, length), length);
+            return Layouts.ARRAY.createArray(
+                    coreLibrary().getArrayFactory(),
+                    arrayBuilder.finish(store, length),
+                    length);
         }
 
     }
