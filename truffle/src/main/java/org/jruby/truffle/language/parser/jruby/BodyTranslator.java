@@ -1869,7 +1869,7 @@ public class BodyTranslator extends Translator {
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "rubinius/common/array.rb") || path.equals(corePath + "rubinius/api/shims/array.rb")) {
+        if (path.equals(corePath + "rubinius/common/array.rb")) {
             if (name.equals("@total")) {
                 ret = new RubyCallNode(context, sourceSection, "size", self, null, false);
                 return addNewlineIfNeeded(node, ret);
