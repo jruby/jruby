@@ -10,7 +10,6 @@ Truffle::Boot.require_core 'core/pre'
 
 # Patch rubinius-core-api to make it work for us
 
-Truffle::Boot.require_core 'core/rubinius/api/shims/lookuptable'
 Truffle::Boot.require_core 'core/rubinius/api/shims/metrics'
 Truffle::Boot.require_core 'core/rubinius/api/shims/hash'
 
@@ -25,6 +24,7 @@ Truffle::Boot.require_core 'core/rubinius/alpha'
 # Load bootstrap
 
 Truffle::Boot.require_core 'core/rubinius/bootstrap/tuple'
+Truffle::Boot.require_core 'core/rubinius/bootstrap/lookuptable'
 Truffle::Boot.require_core 'core/rubinius/bootstrap/atomic'
 Truffle::Boot.require_core 'core/rubinius/bootstrap/basic_object'
 Truffle::Boot.require_core 'core/rubinius/bootstrap/mirror'
