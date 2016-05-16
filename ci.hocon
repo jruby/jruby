@@ -35,7 +35,6 @@ graal-core: {
     [cd, graal-workspace],
     [git, clone, "https://github.com/graalvm/graal-core.git"],
     [cd, graal-core],
-    [git, checkout, "3a28fca1b331f9912dabd231052354cffa9dee9c"],
     [mx, sforceimports], // ../../mx/mx
     [mx, --vm, server, build],
     [cd, ../..]
