@@ -136,6 +136,30 @@ module Rubinius
     Rubinius.primitive :vm_get_user_home
     raise PrimitiveFailure, "Rubinius.get_user_home primitive failed"
   end
+
+  module Metrics
+
+    def self.data
+      {
+          :'gc.young.count' => 0,
+          :'gc.young.ms' => 0,
+          :'gc.immix.concurrent.ms' => 0,
+          :'gc.immix.count' => Truffle::GC.count,
+          :'gc.immix.stop.ms' => Truffle::GC.time,
+          :'gc.large.sweep.us' => 0,
+          :'memory.young.bytes' => 0,
+          :'memory.young.objects' => 0,
+          :'memory.immix.bytes' => 0,
+          :'memory.immix.objects' => 0,
+          :'memory.large.bytes' => 0,
+          :'memory.promoted.bytes' => 0,
+          :'memory.promoted.objects' => 0,
+          :'memory.symbols.bytes' => 0,
+          :'memory.code.bytes' => 0
+      }
+    end
+
+  end
 end
 
 class PrimitiveFailure < Exception
