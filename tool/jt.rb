@@ -288,6 +288,7 @@ module Commands
 
   def help
     puts 'jt checkout name                               checkout a different Git branch and rebuild'
+    puts 'jt bootstrap                                   run the build system\'s bootstrap phase'
     puts 'jt build [options]                             build'
     puts 'jt build truffle [options]                     build only the Truffle part, assumes the rest is up-to-date'
     puts 'jt rebuild [options]                           clean and build'
@@ -356,6 +357,10 @@ module Commands
   def checkout(branch)
     sh 'git', 'checkout', branch
     rebuild
+  end
+
+  def bootstrap
+    mvn '-DskipTests', '-Pbootstrap-no-launcher'
   end
 
   def build(project = nil)
