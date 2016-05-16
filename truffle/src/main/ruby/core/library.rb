@@ -60,7 +60,7 @@ module Rubinius::FFI::Library
 
     caller = Truffle::Boot.source_of_caller
 
-    suffixes = ['ruby/truffle/rubysl/rubysl-socket/lib/rubysl/socket.rb', 'core/rubinius/platform/env.rb']
+    suffixes = ['ruby/truffle/rubysl/rubysl-socket/lib/rubysl/socket.rb', 'core/platform/env.rb']
 
     suffixes.each do |suffix|
       if caller[-suffix.length, suffix.length] == suffix

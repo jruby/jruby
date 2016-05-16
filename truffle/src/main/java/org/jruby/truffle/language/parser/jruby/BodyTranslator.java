@@ -1150,7 +1150,7 @@ public class BodyTranslator extends Translator {
 
         final String name = ConstantReplacer.replacementName(sourceSection, node.getName());
 
-        if (name.equals("Rubinius") && getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius")) {
+        if (name.equals("Rubinius") && getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core")) {
             final RubyNode ret = new org.jruby.ast.Colon3Node(node.getPosition(), name).accept(this);
             return addNewlineIfNeeded(node, ret);
         }
@@ -1278,7 +1278,7 @@ public class BodyTranslator extends Translator {
         // method, we simply ignore the method definition.  Here we explicitly rename the method so it's always defined.
 
         final String path = getSourcePath(sourceSection);
-        final String coreRubiniusPath = context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/";
+        final String coreRubiniusPath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         if (path.startsWith(coreRubiniusPath)) {
             boolean rename = false;
 
@@ -1705,7 +1705,7 @@ public class BodyTranslator extends Translator {
             RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 
             if (name.equals("$_")) {
-                if (getSourcePath(sourceSection).equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/regexp.rb")) {
+                if (getSourcePath(sourceSection).equals(context.getCoreLibrary().getCoreLoadPath() + "/core/common/regexp.rb")) {
                     readNode = new RubiniusLastStringReadNode(context, sourceSection);
                 } else {
                     readNode = GetFromThreadLocalNodeGen.create(context, sourceSection, readNode);
@@ -1810,7 +1810,7 @@ public class BodyTranslator extends Translator {
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "rubinius/common/hash.rb")) {
+        if (path.equals(corePath + "common/hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.SetDefaultValueNodeFactory.create(self, rhs);
                 setSourceSection(ret, sourceSection);
@@ -1820,13 +1820,13 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/bootstrap/string.rb") || path.equals(corePath + "rubinius/common/string.rb")) {
+        } else if (path.equals(corePath + "bootstrap/string.rb") || path.equals(corePath + "common/string.rb")) {
             if (name.equals("@hash")) {
                 ret = StringNodesFactory.ModifyBangNodeFactory.create(new RubyNode[]{});
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/range.rb")) {
+        } else if (path.equals(corePath + "common/range.rb")) {
             if (name.equals("@begin")) {
                 ret = RangeNodesFactory.InternalSetBeginNodeGen.create(self, rhs);
                 setSourceSection(ret, sourceSection);
@@ -1840,7 +1840,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/io.rb")) {
+        } else if (path.equals(corePath + "common/io.rb")) {
             // TODO (pitr 08-Aug-2015): values of predefined OM properties should be casted to defined types automatically
             if (name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
                 // Cast int-fitting longs back to int
@@ -1869,7 +1869,7 @@ public class BodyTranslator extends Translator {
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "rubinius/common/array.rb")) {
+        if (path.equals(corePath + "common/array.rb")) {
             if (name.equals("@total")) {
                 ret = new RubyCallNode(context, sourceSection, "size", self, null, false);
                 return addNewlineIfNeeded(node, ret);
@@ -1880,7 +1880,7 @@ public class BodyTranslator extends Translator {
                 ret = new IntegerFixnumLiteralNode(context, sourceSection, 0);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/regexp.rb")) {
+        } else if (path.equals(corePath + "common/regexp.rb")) {
             if (name.equals("@source")) {
                 ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(self);
                 setSourceSection(ret, sourceSection);
@@ -1898,7 +1898,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/time.rb")) {
+        } else if (path.equals(corePath + "common/time.rb")) {
             if (name.equals("@is_gmt")) {
                 ret = TimeNodesFactory.InternalGMTNodeFactory.create(self);
                 setSourceSection(ret, sourceSection);
@@ -1908,7 +1908,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/hash.rb")) {
+        } else if (path.equals(corePath + "common/hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.DefaultValueNodeFactory.create(self);
                 setSourceSection(ret, sourceSection);
@@ -1922,7 +1922,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/range.rb")) {
+        } else if (path.equals(corePath + "common/range.rb")) {
             if (name.equals("@begin")) {
                 ret = RangeNodesFactory.BeginNodeFactory.create(new RubyNode[]{ self });
                 setSourceSection(ret, sourceSection);
