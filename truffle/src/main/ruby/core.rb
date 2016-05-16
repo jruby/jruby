@@ -92,7 +92,6 @@ Truffle::Boot.require_core 'core/rubinius/common/lru_cache'
 Truffle::Boot.require_core 'core/rubinius/api/shims/encoding'
 Truffle::Boot.require_core 'core/rubinius/common/encoding'
 Truffle::Boot.require_core 'core/rubinius/common/env'
-ENV = Rubinius::EnvironmentVariables.new
 Truffle::Boot.require_core 'core/rubinius/common/errno'
 Truffle::Boot.require_core 'core/rubinius/common/false'
 Truffle::Boot.require_core 'core/rubinius/common/io'

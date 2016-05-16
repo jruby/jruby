@@ -322,3 +322,5 @@ module Rubinius
     private :set_encoding
   end
 end
+
+ENV = Rubinius::EnvironmentVariables.new
