@@ -363,7 +363,12 @@ public abstract class RangeNodes {
             return stepInternal(frame, range, block);
         }
 
-        @Specialization(guards = { "isIntegerFixnumRange(range)", "!isInteger(step)", "!isLong(step)", "wasProvided(step)" })
+        @Specialization(guards = {
+                "isIntegerFixnumRange(range)",
+                "!isInteger(step)",
+                "!isLong(step)",
+                "wasProvided(step)"
+        })
         public Object stepInt(VirtualFrame frame, DynamicObject range, Object step, NotProvided block) {
             return stepInternal(frame, range, step, null);
         }
@@ -521,21 +526,38 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "rubyClass == rangeClass")
         public DynamicObject intRange(DynamicObject rubyClass, int begin, int end, boolean excludeEnd) {
-            return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(coreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, begin, end);
+            return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(
+                    coreLibrary().getIntegerFixnumRangeFactory(),
+                    excludeEnd,
+                    begin,
+                    end);
         }
 
         @Specialization(guards = { "rubyClass == rangeClass", "fitsIntoInteger(begin)", "fitsIntoInteger(end)" })
         public DynamicObject longFittingIntRange(DynamicObject rubyClass, long begin, long end, boolean excludeEnd) {
-            return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(coreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, (int) begin, (int) end);
+            return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(
+                    coreLibrary().getIntegerFixnumRangeFactory(),
+                    excludeEnd,
+                    (int) begin,
+                    (int) end);
         }
 
         @Specialization(guards = { "rubyClass == rangeClass", "!fitsIntoInteger(begin) || !fitsIntoInteger(end)" })
         public DynamicObject longRange(DynamicObject rubyClass, long begin, long end, boolean excludeEnd) {
-            return Layouts.LONG_FIXNUM_RANGE.createLongFixnumRange(coreLibrary().getLongFixnumRangeFactory(), excludeEnd, begin, end);
+            return Layouts.LONG_FIXNUM_RANGE.createLongFixnumRange(
+                    coreLibrary().getLongFixnumRangeFactory(),
+                    excludeEnd,
+                    begin,
+                    end);
         }
 
         @Specialization(guards = { "rubyClass != rangeClass || (!isIntOrLong(begin) || !isIntOrLong(end))" })
-        public Object objectRange(VirtualFrame frame, DynamicObject rubyClass, Object begin, Object end, boolean excludeEnd) {
+        public Object objectRange(
+                VirtualFrame frame,
+                DynamicObject rubyClass,
+                Object begin,
+                Object end,
+                boolean excludeEnd) {
             if (cmpNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
