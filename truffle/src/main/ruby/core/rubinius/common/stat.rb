@@ -144,10 +144,6 @@ class Rubinius::Stat
     end
   end
 
-  def grpowned?
-    Process.groups.include?(gid)
-  end
-
   def owned?
     uid == Truffle::POSIX.geteuid
   end
@@ -246,4 +242,11 @@ class Rubinius::Stat
     Truffle::POSIX.geteuid == 0
   end
   private :superuser?
+
+  # Process.groups only return supplemental groups, so we need to check if gid/egid match too.
+  def grpowned?
+    gid = gid()
+    return true if gid == Process.gid || gid == Process.egid
+    Process.groups.include?(gid)
+  end
 end
