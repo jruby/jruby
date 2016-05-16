@@ -1,3 +1,11 @@
+# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -901,5 +909,9 @@ class Module
       @seen_ivars = [ivar_name]
     end
     nil
+  end
+
+  # Not sure what this does - but we seem better off not doing it
+  def attr_reader_specific(a, b)
   end
 end

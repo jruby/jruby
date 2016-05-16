@@ -66,7 +66,6 @@ Truffle::Boot.require_core 'core/rubinius/platform/struct'
 
 Truffle::Boot.require_core 'core/rubinius/common/string_mirror'
 Truffle::Boot.require_core 'core/rubinius/common/module'
-Truffle::Boot.require_core 'core/rubinius/api/shims/module'
 Truffle::Boot.require_core 'core/rubinius/common/proc'
 Truffle::Boot.require_core 'core/rubinius/common/enumerable_helper'
 Truffle::Boot.require_core 'core/rubinius/common/enumerable'
