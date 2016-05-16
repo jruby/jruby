@@ -65,7 +65,6 @@ Truffle::Boot.require_core 'core/rubinius/platform/struct'
 # Load common
 
 Truffle::Boot.require_core 'core/rubinius/common/string_mirror'
-Truffle::Boot.require_core 'core/rubinius/api/shims/string_mirror'
 Truffle::Boot.require_core 'core/rubinius/common/module'
 Truffle::Boot.require_core 'core/rubinius/api/shims/module'
 Truffle::Boot.require_core 'core/rubinius/common/proc'
