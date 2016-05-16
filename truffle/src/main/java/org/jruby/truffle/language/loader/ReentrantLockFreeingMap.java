@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Usage:
  * <pre><code>
- *  KeyedReentrantLock<String> fileLocks = new KeyedReentrantLock<String>();
+ *  ReentrantLockFreeingMap<String> fileLocks = new ReentrantLockFreeingMap<String>();
  *  while (true) {
  *      final ReentrantLock lock = fileLocks.getLock(key);
  *
@@ -28,11 +28,11 @@ import java.util.concurrent.locks.ReentrantLock;
  *  }
  * </code></pre>
  */
-public class KeyedReentrantLock<K> {
+public class ReentrantLockFreeingMap<K> {
 
     private final ConcurrentHashMap<K, ReentrantLock> locks = new ConcurrentHashMap<>();
 
-    public KeyedReentrantLock() {
+    public ReentrantLockFreeingMap() {
     }
 
     @TruffleBoundary
@@ -70,7 +70,7 @@ public class KeyedReentrantLock<K> {
                         return SUCCESS;
                     }
                 });
-        // ensure that we are no holding removed lock
+        // ensure that we are not holding removed lock
         if (lock == locks.get(key)) {
             return true;
         } else {
