@@ -67,7 +67,7 @@ import org.jruby.truffle.core.regexp.RegexpNodesFactory;
 import org.jruby.truffle.core.rope.TruffleRopesNodesFactory;
 import org.jruby.truffle.core.rubinius.AtomicReferenceNodesFactory;
 import org.jruby.truffle.core.rubinius.ByteArrayNodesFactory;
-import org.jruby.truffle.core.rubinius.PosixNodesFactory;
+import org.jruby.truffle.extra.TrufflePosixNodesFactory;
 import org.jruby.truffle.core.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -592,6 +592,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Kernel");
         defineModule(truffleModule, "Process");
         defineModule(truffleModule, "Binding");
+        defineModule(truffleModule, "POSIX");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -609,7 +610,6 @@ public class CoreLibrary {
         rubiniusModule = defineModule("Rubinius");
 
         rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
-        defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
         rubiniusFFIPointerClass = defineClass(rubiniusFFIModule, objectClass, "Pointer");
         Layouts.CLASS.setInstanceFactoryUnsafe(rubiniusFFIPointerClass, Layouts.POINTER.createPointerShape(rubiniusFFIPointerClass, rubiniusFFIPointerClass));
 
@@ -733,7 +733,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(UnboundMethodNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ByteArrayNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TimeNodesFactory.getFactories());
-        coreMethodNodeManager.addCoreMethodNodes(PosixNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TrufflePosixNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(RubiniusTypeNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ThreadBacktraceLocationNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());

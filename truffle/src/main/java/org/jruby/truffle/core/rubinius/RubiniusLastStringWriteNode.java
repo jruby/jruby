@@ -41,7 +41,7 @@ public abstract class RubiniusLastStringWriteNode extends RubyNode {
         FrameSlot slot = callerFrame.getFrameDescriptor().findFrameSlot("$_");
 
         while (slot == null) {
-            callerFrame = RubyArguments.getDeclarationFrame(callerFrame.getArguments());
+            callerFrame = RubyArguments.getDeclarationFrame(callerFrame);
 
             if (callerFrame == null) {
                 break;

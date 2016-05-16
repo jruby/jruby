@@ -2,7 +2,7 @@ subdir 'activemodel'
 repository_name 'rails'
 
 git_clone 'https://github.com/rails/rails.git' unless File.exists? repository_dir
-git_checkout git_tag('4.2.5.2')
+git_checkout git_tag('4.2.6')
 
 use_only_https_git_paths!
 

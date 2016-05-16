@@ -1078,7 +1078,7 @@ public abstract class ModuleNodes {
 
             @Override
             public Object execute(VirtualFrame frame) {
-                RubyArguments.setDeclarationFrame(frame.getArguments(), declarationFrame);
+                RubyArguments.setDeclarationFrame(frame, declarationFrame);
                 return procBody.execute(frame);
             }
 

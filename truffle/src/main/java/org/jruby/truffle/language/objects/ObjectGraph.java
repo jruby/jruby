@@ -149,18 +149,17 @@ public abstract class ObjectGraph {
     public static Set<DynamicObject> getObjectsInFrame(Frame frame) {
         final Set<DynamicObject> objects = new HashSet<>();
 
-        final Object[] arguments = frame.getArguments();
-        final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(arguments);
+        final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(frame);
         if (lexicalParentFrame != null) {
             objects.addAll(getObjectsInFrame(lexicalParentFrame));
         }
 
-        final Object self = RubyArguments.tryGetSelf(arguments);
+        final Object self = RubyArguments.tryGetSelf(frame);
         if (self instanceof DynamicObject) {
             objects.add((DynamicObject) self);
         }
 
-        final DynamicObject block = RubyArguments.tryGetBlock(arguments);
+        final DynamicObject block = RubyArguments.tryGetBlock(frame);
         if (block != null) {
             objects.add(block);
         }

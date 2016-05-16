@@ -316,13 +316,13 @@ public abstract class KernelNodes {
         @Specialization
         public boolean blockGiven(MaterializedFrame callerFrame,
                                   @Cached("createBinaryProfile()") ConditionProfile blockProfile) {
-            return blockProfile.profile(RubyArguments.getBlock(callerFrame.getArguments()) != null);
+            return blockProfile.profile(RubyArguments.getBlock(callerFrame) != null);
         }
 
         @TruffleBoundary
         @Specialization
         public boolean blockGiven(NotProvided noCallerFrame) {
-            return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
+            return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false)) != null;
         }
 
     }
@@ -556,11 +556,11 @@ public abstract class KernelNodes {
             final InternalMethod method = new InternalMethod(
                     cachedRootNode.getRootNode().getSharedMethodInfo(),
                     cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
-                    RubyArguments.getMethod(parentFrame.getArguments()).getDeclaringModule(),
+                    RubyArguments.getMethod(parentFrame).getDeclaringModule(),
                     Visibility.PUBLIC,
                     cachedCallTarget);
 
-            return callNode.call(frame, RubyArguments.pack(parentFrame, null, method, RubyArguments.getDeclarationContext(parentFrame.getArguments()), null, callerSelf, null, new Object[]{}));
+            return callNode.call(frame, RubyArguments.pack(parentFrame, null, method, RubyArguments.getDeclarationContext(parentFrame), null, callerSelf, null, new Object[]{}));
         }
 
         @Specialization(guards = {
@@ -570,7 +570,7 @@ public abstract class KernelNodes {
                                             NotProvided filename, NotProvided lineNumber, @Cached("create()") IndirectCallNode callNode) {
             final DynamicObject binding = getCallerBinding(frame);
             final MaterializedFrame topFrame = Layouts.BINDING.getFrame(binding);
-            RubyArguments.setSelf(topFrame.getArguments(), RubyArguments.getSelf(frame));
+            RubyArguments.setSelf(topFrame, RubyArguments.getSelf(frame));
             final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, "(eval)", 1, true);
             return deferredCall.call(frame, callNode);
 
@@ -1144,7 +1144,7 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject lambda(NotProvided block) {
             final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
-            final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
+            final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame);
 
             if (parentBlock == null) {
                 CompilerDirectives.transferToInterpreter();

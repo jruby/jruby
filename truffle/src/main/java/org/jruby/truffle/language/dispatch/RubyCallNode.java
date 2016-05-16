@@ -204,7 +204,7 @@ public class RubyCallNode extends RubyNode {
             }
         } else if (method.isUndefined()) {
             return nil();
-        } else if (!ignoreVisibility && !method.isVisibleTo(this, context.getCoreLibrary().getMetaClass(self))) {
+        } else if (!ignoreVisibility && !method.isVisibleTo(context.getCoreLibrary().getMetaClass(self))) {
             return nil();
         }
 

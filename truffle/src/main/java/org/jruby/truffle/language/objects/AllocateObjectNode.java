@@ -129,8 +129,8 @@ public abstract class AllocateObjectNode extends RubyNode {
 
         final Frame allocatingFrame = allocatingFrameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
 
-        final Object allocatingSelf = RubyArguments.getSelf(allocatingFrame.getArguments());
-        final String allocatingMethod = RubyArguments.getMethod(allocatingFrame.getArguments()).getName();
+        final Object allocatingSelf = RubyArguments.getSelf(allocatingFrame);
+        final String allocatingMethod = RubyArguments.getMethod(allocatingFrame).getName();
         final SourceSection allocatingSourceSection = allocatingNode.getEncapsulatingSourceSection();
         
         getContext().getObjectSpaceManager().traceAllocation(
