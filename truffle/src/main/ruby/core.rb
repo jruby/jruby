@@ -18,15 +18,15 @@ Truffle::Boot.require_core 'core/alpha'
 
 # Load bootstrap
 
-Truffle::Boot.require_core 'core/bootstrap/tuple'
-Truffle::Boot.require_core 'core/bootstrap/lookuptable'
-Truffle::Boot.require_core 'core/bootstrap/atomic'
-Truffle::Boot.require_core 'core/bootstrap/basic_object'
-Truffle::Boot.require_core 'core/bootstrap/mirror'
+Truffle::Boot.require_core 'core/tuple'
+Truffle::Boot.require_core 'core/lookuptable'
+Truffle::Boot.require_core 'core/atomic'
+Truffle::Boot.require_core 'core/basic_object'
+Truffle::Boot.require_core 'core/mirror'
 Truffle::Boot.require_core 'core/bootstrap/bignum'
 Truffle::Boot.require_core 'core/bootstrap/channel'
-Truffle::Boot.require_core 'core/bootstrap/character'
-Truffle::Boot.require_core 'core/bootstrap/configuration'
+Truffle::Boot.require_core 'core/character'
+Truffle::Boot.require_core 'core/configuration'
 Truffle::Boot.require_core 'core/bootstrap/dir'
 Truffle::Boot.require_core 'core/bootstrap/false'
 Truffle::Boot.require_core 'core/bootstrap/gc'
@@ -43,7 +43,7 @@ Truffle::Boot.require_core 'core/bootstrap/thread'
 Truffle::Boot.require_core 'core/bootstrap/time'
 Truffle::Boot.require_core 'core/bootstrap/true'
 Truffle::Boot.require_core 'core/bootstrap/type'
-Truffle::Boot.require_core 'core/bootstrap/weakref'
+Truffle::Boot.require_core 'core/weakref'
 
 # Load platform
 
