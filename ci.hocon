@@ -31,9 +31,10 @@ common: {
 graal-core: {
   setup: [
     ${jt} [bootstrap],
+    [rm, -rf, mx.jruby],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
-    [git, clone, "https://github.com/graalvm/graal-core.git"],
+    [mx, sclone, --kind, git, "https://github.com/graalvm/graal-core.git", graal-core],
     [cd, graal-core],
     [mx, sforceimports],
     [mx, --vm, server, build],
