@@ -110,7 +110,7 @@ branches:
     - truffle-head
     - /^test-.*$/
     - /^ha-feature/
-    - ruby-2.3
+    - ruby-2.4
 
 script: tool/travis_runner.sh
 install: |
