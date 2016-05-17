@@ -119,27 +119,26 @@ class TestTimeout < Test::Unit::TestCase
   def test_nested_timeout
     result = []
     expected = [
-      'Timeout 2: Non-timeout exception',
-      'Timeout 2: ensure',
-      'Timeout 1: triggered',
-      'Timeout 1: ensure'
+        'Timeout 2: ensure',
+        'Timeout 1: triggered',
+        'Timeout 1: ensure'
     ]
 
     begin
       Timeout.timeout(1) do
-	begin
-	  Timeout.timeout(2) do
-	    sleep(5)
-	  end
-	rescue Timeout::Error
-	  result << 'Timeout 2: triggered'
+        begin
+          Timeout.timeout(2) do
+            sleep(5)
+          end
+        rescue Timeout::Error
+          result << 'Timeout 2: triggered'
           raise
         rescue Exception
           result << 'Timeout 2: Non-timeout exception'
           raise
-	ensure
-	  result << 'Timeout 2: ensure'
-	end
+        ensure
+          result << 'Timeout 2: ensure'
+        end
       end
     rescue Timeout::Error
       result << 'Timeout 1: triggered'
