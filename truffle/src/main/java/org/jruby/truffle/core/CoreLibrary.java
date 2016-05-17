@@ -912,23 +912,25 @@ public class CoreLibrary {
     }
 
     public void initializePostBoot() {
-        // Load code that can't be run until everything else is boostrapped, such as pre-loaded Ruby stdlib.
+        if (context.getOptions().PLATFORM_SAFE_LOAD) {
+            // Load code that can't be run until everything else is boostrapped, such as pre-loaded Ruby stdlib.
 
-        try {
-            Main.printTruffleTimeMetric("before-post-boot");
             try {
-                final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core/post-boot.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
-                final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
-                deferredCall.callWithoutCallNode();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+                Main.printTruffleTimeMetric("before-post-boot");
+                try {
+                    final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core/post-boot.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
+                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
+                    deferredCall.callWithoutCallNode();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
 
-            Main.printTruffleTimeMetric("after-post-boot");
-        } catch (RaiseException e) {
-            final DynamicObject rubyException = e.getException();
-            BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace(context, rubyException, Layouts.EXCEPTION.getBacktrace(rubyException));
-            throw new TruffleFatalException("couldn't load the post-boot code", e);
+                Main.printTruffleTimeMetric("after-post-boot");
+            } catch (RaiseException e) {
+                final DynamicObject rubyException = e.getException();
+                BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace(context, rubyException, Layouts.EXCEPTION.getBacktrace(rubyException));
+                throw new TruffleFatalException("couldn't load the post-boot code", e);
+            }
         }
     }
 
