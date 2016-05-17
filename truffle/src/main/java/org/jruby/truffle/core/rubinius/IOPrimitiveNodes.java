@@ -65,7 +65,6 @@ import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.core.thread.ThreadManager.ResultWithinTime;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
@@ -177,6 +176,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 }, unsafe = UnsafeGroup.IO)
     public static abstract class IOOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int open(DynamicObject path, int mode, int permission) {
             return ensureSuccessful(posix().open(StringOperations.getString(getContext(), path), mode, permission));
@@ -187,6 +187,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_truncate", needsSelf = false, unsafe = UnsafeGroup.IO)
     public static abstract class IOTruncatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int truncate(DynamicObject path, long length) {
             return ensureSuccessful(posix().truncate(StringOperations.getString(getContext(), path), length));
@@ -198,7 +199,7 @@ public abstract class IOPrimitiveNodes {
     public static abstract class IOFTruncatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
-        public int ftruncate(VirtualFrame frame, DynamicObject io, long length) {
+        public int ftruncate(DynamicObject io, long length) {
             final int fd = Layouts.IO.getDescriptor(io);
             return ensureSuccessful(posix().ftruncate(fd, length));
         }
@@ -520,7 +521,7 @@ public abstract class IOPrimitiveNodes {
     public static abstract class IOSeekPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
-        public int seek(VirtualFrame frame, DynamicObject io, int amount, int whence) {
+        public int seek(DynamicObject io, int amount, int whence) {
             final int fd = Layouts.IO.getDescriptor(io);
             // TODO (pitr-ch 15-Apr-2016): should it have ensureSuccessful too?
             return posix().lseek(fd, amount, whence);
@@ -556,8 +557,9 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO)
     public static abstract class IOSysReadPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
-        public DynamicObject sysread(VirtualFrame frame, DynamicObject file, int length) {
+        public DynamicObject sysread(DynamicObject file, int length) {
             final int fd = Layouts.IO.getDescriptor(file);
 
             final ByteBuffer buffer = ByteBuffer.allocate(length);
