@@ -148,6 +148,7 @@ import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.DefineClassNode;
 import org.jruby.truffle.language.objects.DefineModuleNode;
+import org.jruby.truffle.language.objects.DefineModuleNodeGen;
 import org.jruby.truffle.language.objects.LexicalScopeNode;
 import org.jruby.truffle.language.objects.ReadClassVariableNode;
 import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
@@ -2143,7 +2144,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode lexicalParent = translateCPath(sourceSection, node.getCPath());
 
-        final DefineModuleNode defineModuleNode = new DefineModuleNode(context, sourceSection, name, lexicalParent);
+        final DefineModuleNode defineModuleNode = DefineModuleNodeGen.create(context, sourceSection, name, lexicalParent);
 
         final RubyNode ret = openModule(sourceSection, defineModuleNode, name, node.getBodyNode(), false);
         return addNewlineIfNeeded(node, ret);
