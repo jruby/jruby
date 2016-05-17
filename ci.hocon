@@ -22,7 +22,6 @@ common: {
   }
   
   setup: [
-    [rm, -rf, mx.jruby],
     ${jt} [build]
   ]
 
@@ -32,6 +31,7 @@ common: {
 graal-core: {
   setup: [
     ${jt} [bootstrap],
+    [rm, -rf, mx.jruby],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
     [mx, sclone, --kind, git, "https://github.com/graalvm/graal-core.git", graal-core],
