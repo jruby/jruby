@@ -2,9 +2,9 @@ language: java
 
 sudo: false
 
-#cache:
-#  directories:
-#    - $HOME/.m2
+cache:
+ directories:
+   - $HOME/.m2
 
 before_install:
   - export MAVEN_SKIP_RC=true
