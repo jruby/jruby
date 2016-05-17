@@ -33,7 +33,7 @@ graal-core: {
     ${jt} [bootstrap],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
-    [git, clone, "https://github.com/graalvm/graal-core.git"],
+    [mx, sclone, --kind, git, "https://github.com/graalvm/graal-core.git", graal-core],
     [cd, graal-core],
     [git, checkout, "3a28fca1b331f9912dabd231052354cffa9dee9c"],
     [mx, sforceimports],
