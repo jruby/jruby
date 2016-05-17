@@ -1286,7 +1286,7 @@ public class BodyTranslator extends Translator {
                 rename = methodName.equals("fill") || methodName.equals("zip");
             } else if (path.equals(coreRubiniusPath + "common/float.rb")) {
                 rename = methodName.equals("round");
-            } else if (path.equals(coreRubiniusPath + "common/range.rb")) {
+            } else if (path.equals(coreRubiniusPath + "range.rb")) {
                 rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
             } else if (path.equals(coreRubiniusPath + "common/integer.rb")) {
                 rename = methodName.equals("downto") || methodName.equals("upto");
@@ -1826,7 +1826,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "common/range.rb")) {
+        } else if (path.equals(corePath + "range.rb")) {
             if (name.equals("@begin")) {
                 ret = RangeNodesFactory.InternalSetBeginNodeGen.create(self, rhs);
                 setSourceSection(ret, sourceSection);
@@ -1922,7 +1922,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "common/range.rb")) {
+        } else if (path.equals(corePath + "range.rb")) {
             if (name.equals("@begin")) {
                 ret = RangeNodesFactory.BeginNodeFactory.create(new RubyNode[]{ self });
                 setSourceSection(ret, sourceSection);
