@@ -18,6 +18,7 @@ done
 if [[ $(curl -s http://localhost:$PORT/stacks) != *"test/truffle/integration/instrumentation-server/subject.rb:1"* ]]
 then
   echo Expected line not found in stacks
+  echo $(curl -s http://localhost:$PORT/stacks)
   exit 1
 fi
 
