@@ -2944,7 +2944,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode ret;
 
-        if (node.isFrozen()) {
+        if (node.isFrozen() && !getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")) {
             final DynamicObject frozenString = context.getFrozenStrings().getFrozenString(rope);
 
             ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().METHOD,
