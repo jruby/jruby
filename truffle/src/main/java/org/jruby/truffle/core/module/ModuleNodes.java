@@ -95,7 +95,6 @@ import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.IdUtil;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -943,7 +942,6 @@ public abstract class ModuleNodes {
             return NameToJavaStringNodeGen.create(null, null, name);
         }
 
-        @TruffleBoundary
         @Specialization
         public Object constMissing(DynamicObject module, String name) {
             throw new RaiseException(coreExceptions().nameErrorUninitializedConstant(module, name, this));
