@@ -16,6 +16,10 @@ class MSpecScript
     set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G]
   end
 
+  set :capi, [
+    "spec/ruby/optional/capi"
+  ]
+
   set :command_line, [
     "spec/ruby/command_line"
   ]
