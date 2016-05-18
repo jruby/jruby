@@ -10,6 +10,8 @@
 package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -25,33 +27,24 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
-public class DefineModuleNode extends RubyNode {
+@NodeChild(value = "lexicalParentModule", type = RubyNode.class)
+public abstract class DefineModuleNode extends RubyNode {
 
     private final String name;
 
-    @Child private RubyNode lexicalParentModule;
     @Child private IndirectCallNode indirectCallNode;
 
     private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public DefineModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent) {
+    public DefineModuleNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);
         this.name = name;
-        this.lexicalParentModule = lexicalParent;
         indirectCallNode = IndirectCallNode.create();
     }
 
-    @Override
-    public Object execute(VirtualFrame frame) {
-        final Object lexicalParentObject = lexicalParentModule.execute(frame);;
-
-        if (!RubyGuards.isRubyModule(lexicalParentObject)) {
-            errorProfile.enter();
-            throw new RaiseException(coreExceptions().typeErrorIsNotA(lexicalParentObject, "module", this));
-        }
-
-        final DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
+    @Specialization(guards = "isRubyModule(lexicalParentModule)")
+    public Object defineModule(VirtualFrame frame, DynamicObject lexicalParentModule) {
         final RubyConstant constant = lookupForExistingModule(frame, getContext(), name, lexicalParentModule, indirectCallNode);
 
         final DynamicObject definingModule;
@@ -71,6 +64,11 @@ public class DefineModuleNode extends RubyNode {
         }
 
         return definingModule;
+    }
+
+    @Specialization(guards = "!isRubyModule(lexicalParentObject)")
+    public Object defineModuleWrongParent(VirtualFrame frame, Object lexicalParentObject) {
+        throw new RaiseException(coreExceptions().typeErrorIsNotA(lexicalParentObject, "module", this));
     }
 
     public static RubyConstant lookupForExistingModule(VirtualFrame frame, RubyContext context, String name,

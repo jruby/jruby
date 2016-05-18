@@ -362,7 +362,7 @@ public abstract class InteropNodes {
             }
         }
 
-        @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
+        @Specialization(guards = { "identifier == cachedIdentifier", "isRubySymbol(cachedIdentifier)" })
         public Object read(
                 VirtualFrame frame,
                 TruffleObject receiver,
@@ -455,7 +455,7 @@ public abstract class InteropNodes {
             }
         }
 
-        @Specialization(guards = {"isRubySymbol(identifier)", "identifier == cachedIdentifier"})
+        @Specialization(guards = { "identifier == cachedIdentifier", "isRubySymbol(cachedIdentifier)" })
         public Object write(
                 VirtualFrame frame,
                 TruffleObject receiver,

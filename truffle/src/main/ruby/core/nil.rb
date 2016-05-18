@@ -24,47 +24,56 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module GC
-  def self.start
-    run(false)
+class NilClass
+  def &(other)
+    false
   end
 
-  def self.run(force)
-    Rubinius.primitive :vm_gc_start
-    raise PrimitiveFailure, "GC.run primitive failed"
+  def ^(other)
+    !!other
   end
 
-  # Totally fake.
-  def self.stress
-    @stress_level ||= false
+  def to_s
+    ""
   end
 
-  # Totally fake.
-  def self.stress=(flag)
-    @stress_level = !!flag
+  def inspect
+    "nil"
   end
 
-  # Totally fake.
-  @enabled = true
-
-  def self.enable
-    # We don't support disable, so sure! enabled!
-    ret = !@enabled
-    @enabled = true
-
-    return ret
+  def nil?
+    true
   end
 
-  # Totally fake.
-  def self.disable
-    # Treat this like a request that we don't honor.
-    ret = !@enabled
-    @enabled = false
-
-    return ret
+  def to_a
+    []
   end
 
-  def garbage_collect
-    GC.start
+  def to_f
+    0.0
+  end
+
+  def to_i
+    0
+  end
+
+  alias_method :|, :^
+
+  def to_r
+    Rational(0, 1)
+  end
+
+  def rationalize(eps = nil)
+    to_r
+  end
+
+  def to_c
+    Complex(0)
+  end
+
+  def to_h
+    {}
   end
 end
+
+NIL = nil

@@ -6,10 +6,9 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-unless Truffle::Interop.mime_type_supported?('application/x-r')
-  abort 'R doesn\'t appear to be available - skipping R test'
-end
-
-if Truffle::Interop.eval('application/x-r', '14 + 2') != 16
-  abort 'result not as expected'
+module Gem
+  # Update the default_dir to match JRuby's.
+  def self.default_dir
+    File.expand_path(File.join(ConfigMap[:libdir], '..', '..', 'ruby', 'gems', 'shared'))
+  end
 end

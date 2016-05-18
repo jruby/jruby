@@ -24,36 +24,20 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-class NilClass
-  def &(other)
-    false
-  end
-
-  def ^(other)
-    !!other
-  end
+class FalseClass
 
   def to_s
-    ""
+    "false"
   end
+
+  alias_method :|, :^
 
   def inspect
-    "nil"
+    # Call #to_s rather than alias it so that people can change #to_s if they
+    # wish. Yes, sounds dumb.
+    to_s
   end
 
-  def nil?
-    true
-  end
-
-  def to_a
-    []
-  end
-
-  def to_f
-    0.0
-  end
-
-  def to_i
-    0
-  end
 end
+
+FALSE = false

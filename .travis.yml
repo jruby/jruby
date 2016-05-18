@@ -2,9 +2,9 @@ language: java
 
 sudo: false
 
-#cache:
-#  directories:
-#    - $HOME/.m2
+cache:
+ directories:
+   - $HOME/.m2
 
 before_install:
   - export MAVEN_SKIP_RC=true
@@ -69,7 +69,7 @@ branches:
     - truffle-head
     - /^test-.*$/
     - /^ha-feature/
-    - ruby-2.3
+    - ruby-2.4
 
 script: tool/travis_runner.sh
 install: |

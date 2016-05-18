@@ -6,10 +6,5 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-unless Truffle::Interop.mime_type_supported?('application/x-r')
-  abort 'R doesn\'t appear to be available - skipping R test'
-end
-
-if Truffle::Interop.eval('application/x-r', '14 + 2') != 16
-  abort 'result not as expected'
-end
+require 'rubygems'
+Truffle::Boot.require_core 'core/post-boot/shims'

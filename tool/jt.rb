@@ -31,7 +31,7 @@ module Utilities
 
   def self.truffle_version
     File.foreach("#{JRUBY_DIR}/truffle/pom.rb") do |line|
-      if /'truffle\.version' => '(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
+      if /'truffle\.version' => '(\d+\.\d+|\h+-SNAPSHOT)'/ =~ line
         break $1
       end
     end
@@ -83,6 +83,12 @@ module Utilities
     jar = ENV['GRAAL_JS_JAR']
     return jar if jar
     raise "couldn't find trufflejs.jar - download GraalVM as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and find it in there"
+  end
+
+  def self.find_sl
+    jar = ENV['SL_JAR']
+    return jar if jar
+    raise "couldn't find truffle-sl.jar - build Truffle and find it in there"
   end
 
   def self.find_sulong_dir
@@ -350,6 +356,7 @@ module Commands
     puts '  JVMCI_DIR                                    JMVCI repository checkout to use when running IGV (mx must already be on the $PATH)'
     puts '  JVMCI_DIR_...git_branch_name...              JMVCI repository to use for a given branch'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
+    puts '  SL_JAR                                       The location of truffle-sl.jar'
     puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
     puts '  SULONG_CLASSPATH                             An explicit classpath to use for Sulong, rather than working it out from SULONG_DIR'
   end
@@ -571,6 +578,17 @@ module Commands
     jruby_opts = []
 
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
+
+    if ENV['GRAAL_JS_JAR']
+      jruby_opts << '-J-classpath'
+      jruby_opts << Utilities.find_graal_js
+    end
+
+    if ENV['SL_JAR']
+      jruby_opts << '-J-classpath'
+      jruby_opts << Utilities.find_sl
+    end
+
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
     env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
@@ -659,7 +677,7 @@ module Commands
   private :test_specs
 
   def test_tck(*args)
-    mvn *args + ['test']
+    mvn *args + ["-DargLine='-Djruby.home=#{JRUBY_DIR}'", 'test']
   end
   private :test_tck
 

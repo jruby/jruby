@@ -39,10 +39,13 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
@@ -62,7 +65,6 @@ import org.jruby.truffle.core.proc.ProcSignalHandler;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ThrowException;
@@ -78,12 +80,10 @@ import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.util.io.PosixShim;
-
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
 import java.util.List;
-
 import static jnr.constants.platform.Errno.ECHILD;
 import static jnr.constants.platform.Errno.EINTR;
 import static jnr.constants.platform.WaitFlags.WNOHANG;
@@ -110,13 +110,14 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public Object doCatch(VirtualFrame frame, Object tag, DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
-
+        public Object doCatch(VirtualFrame frame, Object tag, DynamicObject block,
+                @Cached("create()") BranchProfile catchProfile,
+                @Cached("createBinaryProfile()") ConditionProfile matchProfile) {
             try {
                 return dispatchNode.dispatch(frame, block, tag);
             } catch (ThrowException e) {
-                if (areSame(frame, e.getTag(), tag)) {
+                catchProfile.enter();
+                if (matchProfile.profile(areSame(frame, e.getTag(), tag))) {
                     return e.getValue();
                 } else {
                     throw e;
@@ -196,9 +197,9 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_get_user_home", needsSelf = false, unsafe = UnsafeGroup.IO)
     public abstract static class VMGetUserHomePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(username)")
         public DynamicObject vmGetUserHome(DynamicObject username) {
-            CompilerDirectives.transferToInterpreter();
             // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
             final Passwd passwd = posix().getpwnam(username.toString());
             if (passwd == null) {

@@ -148,6 +148,7 @@ import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.DefineClassNode;
 import org.jruby.truffle.language.objects.DefineModuleNode;
+import org.jruby.truffle.language.objects.DefineModuleNodeGen;
 import org.jruby.truffle.language.objects.LexicalScopeNode;
 import org.jruby.truffle.language.objects.ReadClassVariableNode;
 import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
@@ -1286,7 +1287,7 @@ public class BodyTranslator extends Translator {
                 rename = methodName.equals("fill") || methodName.equals("zip");
             } else if (path.equals(coreRubiniusPath + "common/float.rb")) {
                 rename = methodName.equals("round");
-            } else if (path.equals(coreRubiniusPath + "common/range.rb")) {
+            } else if (path.equals(coreRubiniusPath + "range.rb")) {
                 rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
             } else if (path.equals(coreRubiniusPath + "common/integer.rb")) {
                 rename = methodName.equals("downto") || methodName.equals("upto");
@@ -1826,7 +1827,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "common/range.rb")) {
+        } else if (path.equals(corePath + "range.rb")) {
             if (name.equals("@begin")) {
                 ret = RangeNodesFactory.InternalSetBeginNodeGen.create(self, rhs);
                 setSourceSection(ret, sourceSection);
@@ -1922,7 +1923,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "common/range.rb")) {
+        } else if (path.equals(corePath + "range.rb")) {
             if (name.equals("@begin")) {
                 ret = RangeNodesFactory.BeginNodeFactory.create(new RubyNode[]{ self });
                 setSourceSection(ret, sourceSection);
@@ -2143,7 +2144,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode lexicalParent = translateCPath(sourceSection, node.getCPath());
 
-        final DefineModuleNode defineModuleNode = new DefineModuleNode(context, sourceSection, name, lexicalParent);
+        final DefineModuleNode defineModuleNode = DefineModuleNodeGen.create(context, sourceSection, name, lexicalParent);
 
         final RubyNode ret = openModule(sourceSection, defineModuleNode, name, node.getBodyNode(), false);
         return addNewlineIfNeeded(node, ret);
@@ -2800,6 +2801,8 @@ public class BodyTranslator extends Translator {
                 && rescueBody != null
                 && rescueBody.getExceptionNodes() == null
                 && rescueBody.getBodyNode() instanceof SideEffectFree
+                // allow `expression rescue $!` pattern
+                && (!(rescueBody.getBodyNode() instanceof org.jruby.ast.GlobalVarNode) || !((org.jruby.ast.GlobalVarNode) rescueBody.getBodyNode()).getName().equals("$!"))
                 && rescueBody.getOptRescueNode() == null) {
             tryPart = new DisablingBacktracesNode(context, sourceSection, tryPart);
 
@@ -2944,7 +2947,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode ret;
 
-        if (node.isFrozen()) {
+        if (node.isFrozen() && !getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")) {
             final DynamicObject frozenString = context.getFrozenStrings().getFrozenString(rope);
 
             ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().METHOD,

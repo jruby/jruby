@@ -889,12 +889,12 @@ public abstract class KernelNodes {
     @CoreMethod(names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
+        private final BranchProfile errorProfile = BranchProfile.create();
+
         @Specialization
         public Object initializeCopy(DynamicObject self, DynamicObject from) {
-            CompilerDirectives.transferToInterpreter();
-
             if (Layouts.BASIC_OBJECT.getLogicalClass(self) != Layouts.BASIC_OBJECT.getLogicalClass(from)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeError("initialize_copy should take same class object", this));
             }
 
@@ -971,7 +971,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(
-                guards = { "isRubySymbol(name)", "name == cachedName" },
+                guards = { "name == cachedName" , "isRubySymbol(cachedName)" },
                 limit = "getCacheLimit()")
         public Object instanceVariableGetSymbolCached(DynamicObject object, DynamicObject name,
                 @Cached("name") DynamicObject cachedName,
@@ -1027,7 +1027,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(
-                guards = { "isRubySymbol(name)", "name == cachedName" },
+                guards = { "name == cachedName", "isRubySymbol(cachedName)" },
                 limit = "getCacheLimit()")
         public Object instanceVariableSetSymbolCached(DynamicObject object, DynamicObject name, Object value,
                                                       @Cached("name") DynamicObject cachedName,

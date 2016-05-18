@@ -2193,6 +2193,8 @@ class Array
     false
   end
 
+  # Truffle: what follows is our changes
+
   def new_range(start, count)
     ret = Array.new(count)
 
