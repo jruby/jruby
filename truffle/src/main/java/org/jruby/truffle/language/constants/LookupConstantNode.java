@@ -61,8 +61,8 @@ public abstract class LookupConstantNode extends RubyNode {
 
     @Specialization(
             guards = {
-                    "isRubyModule(module)",
                     "module == cachedModule",
+                    "isRubyModule(cachedModule)",
                     "guardName(name, cachedName, sameNameProfile)" },
             assumptions = "getUnmodifiedAssumption(cachedModule)",
             limit = "getCacheLimit()")

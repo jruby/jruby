@@ -971,7 +971,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(
-                guards = { "isRubySymbol(name)", "name == cachedName" },
+                guards = { "name == cachedName" , "isRubySymbol(cachedName)" },
                 limit = "getCacheLimit()")
         public Object instanceVariableGetSymbolCached(DynamicObject object, DynamicObject name,
                 @Cached("name") DynamicObject cachedName,
@@ -1027,7 +1027,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(
-                guards = { "isRubySymbol(name)", "name == cachedName" },
+                guards = { "name == cachedName", "isRubySymbol(cachedName)" },
                 limit = "getCacheLimit()")
         public Object instanceVariableSetSymbolCached(DynamicObject object, DynamicObject name, Object value,
                                                       @Cached("name") DynamicObject cachedName,
