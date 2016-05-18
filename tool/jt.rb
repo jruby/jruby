@@ -571,6 +571,12 @@ module Commands
     jruby_opts = []
 
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
+
+    if ENV['GRAAL_JS_JAR']
+      jruby_opts << '-J-classpath'
+      jruby_opts << Utilities.find_graal_js
+    end
+
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
     env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
