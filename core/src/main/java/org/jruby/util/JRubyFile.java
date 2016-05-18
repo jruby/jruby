@@ -38,6 +38,7 @@ import java.io.IOException;
 import jnr.posix.JavaSecuredFile;
 import jnr.posix.POSIX;
 
+import jnr.posix.POSIXFactory;
 import org.jruby.Ruby;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
@@ -59,7 +60,7 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     public static FileResource createRestrictedResource(String cwd, String pathname) {
-      return createResource(null, null, cwd, pathname);
+      return createResource(POSIXFactory.getJavaPOSIX(), null, cwd, pathname);
     }
 
     public static FileResource createResource(Ruby runtime, String pathname) {
