@@ -412,7 +412,7 @@ public class RubyInstanceConfig {
                 final String script = getScriptFileName();
                 FileResource resource = JRubyFile.createRestrictedResource(getCurrentDirectory(), getScriptFileName());
                 if (resource != null && resource.exists()) {
-                    if (resource.isFile() || resource.isSymLink()) {
+                    if (resource.canRead()) {
                         if (isXFlag()) {
                             // search for a shebang line and
                             // return the script between shebang and __END__ or CTRL-Z (0x1A)
