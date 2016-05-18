@@ -185,9 +185,14 @@ public abstract class TimeNodes {
             Layouts.TIME.setIsUtc(time, true);
             Layouts.TIME.setRelativeOffset(time, false);
             Layouts.TIME.setZone(time, nil());
-            Layouts.TIME.setDateTime(time, dateTime.withZone(DateTimeZone.UTC));
+            Layouts.TIME.setDateTime(time, inUTC(dateTime));
 
             return time;
+        }
+
+        @TruffleBoundary
+        private DateTime inUTC(final DateTime dateTime) {
+            return dateTime.withZone(DateTimeZone.UTC);
         }
 
     }
@@ -204,8 +209,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, ZERO, 0, coreLibrary().getNilObject(),
-                    0, false, false);
+            return allocateObjectNode.allocate(rubyClass, ZERO, 0, coreLibrary().getNilObject(), 0, false, false);
         }
 
     }
@@ -284,7 +288,6 @@ public abstract class TimeNodes {
 
         @TruffleBoundary
         private DateTime offsetTime(long milliseconds, long offset) {
-
             return new DateTime(milliseconds, DateTimeZone.forOffsetMillis((int) offset * 1000));
         }
 
