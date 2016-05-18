@@ -86,7 +86,7 @@ public abstract class LookupConstantNode extends RubyNode {
     }
 
     @TruffleBoundary
-    @Specialization(guards = "isRubyModule(module)")
+    @Specialization(guards = "isRubyModuleFast(module)")
     protected RubyConstant lookupConstantUncached(DynamicObject module, String name) {
         RubyConstant constant = doLookup(module, name);
         boolean isVisible = isVisible(module, constant);
@@ -117,7 +117,7 @@ public abstract class LookupConstantNode extends RubyNode {
         }
     }
 
-    protected boolean isRubyModule(DynamicObject module) {
+    protected boolean isRubyModuleFast(DynamicObject module) {
         return checkLayoutNode.isModule(module);
     }
 
