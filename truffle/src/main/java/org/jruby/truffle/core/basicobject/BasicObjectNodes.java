@@ -209,15 +209,11 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
-
             return yield.dispatchWithModifiedSelf(frame, block, receiver, arguments);
         }
 
         @Specialization
         public Object instanceExec(Object receiver, Object[] arguments, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
-
             throw new RaiseException(coreExceptions().localJumpError("no block given", this));
         }
 
@@ -254,7 +250,6 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object methodMissingNoName(Object self, NotProvided name, Object[] args, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreExceptions().argumentError("no id given", this));
         }
 
