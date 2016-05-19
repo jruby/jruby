@@ -47,7 +47,7 @@ Truffle::Boot.require_core 'core/weakref'
 
 Truffle::Boot.require_core 'core/library'
 
-Truffle::Boot.require_core 'core/platform/ffi'
+Truffle::Boot.require_core 'core/ffi'
 Truffle::Boot.require_core 'core/pointer_accessors'
 Truffle::Boot.require_core 'core/pointer'
 Truffle::Boot.require_core 'core/platform/file'
@@ -116,7 +116,6 @@ Truffle::Boot.require_core 'core/delta/module'
 Truffle::Boot.require_core 'core/delta/class'
 Truffle::Boot.require_core 'core/delta/kernel'
 Truffle::Boot.require_core 'core/delta/struct'
-Truffle::Boot.require_core 'core/delta/ffi'
 
 # Load JRuby+Truffle classes
 
