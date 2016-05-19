@@ -1,0 +1,14 @@
+fails:C-API File function rb_file_open raises an ArgumentError if passed an empty mode string
+fails:C-API File function rb_file_open opens a file in read-only mode with 'r'
+fails:C-API File function rb_file_open creates and opens a non-existent file with 'w'
+fails:C-API File function rb_file_open truncates an existing file with 'w'
+fails:C-API File function rb_file_open_str raises an ArgumentError if passed an empty mode string
+fails:C-API File function rb_file_open_str opens a file in read-only mode with 'r'
+fails:C-API File function rb_file_open_str creates and opens a non-existent file with 'w'
+fails:C-API File function rb_file_open_str truncates an existing file with 'w'
+fails:C-API File function rb_file_open_str calls #to_path to convert on object to a path
+fails:C-API File function rb_file_open_str calls #to_str to convert an object to a path if #to_path isn't defined
+fails:C-API File function FilePathValue returns a String argument unchanged
+fails:C-API File function FilePathValue does not call #to_str on a String
+fails:C-API File function FilePathValue calls #to_path to convert an object to a String
+fails:C-API File function FilePathValue calls #to_str to convert an object to a String if #to_path isn't defined

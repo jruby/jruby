@@ -25,7 +25,7 @@ module Truffle
     def Qnil
       nil
     end
-    
+
     def rb_cObject
       Object
     end
@@ -101,7 +101,15 @@ module Truffle
     def rb_raise(object, name)
       raise 'not implemented'
     end
-    
+
+    def rb_define_class(name, superclass)
+      #raise 'not implemented'
+
+      # Return nil instead of raising an exception so the C API specs get far enough along to tag them.
+      # This implementation is clearly not correct.
+      nil
+    end
+
     def rb_define_module(name)
       Object.const_set(name, Module.new)
     end

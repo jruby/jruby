@@ -10,6 +10,7 @@
 
 # A compiler for JRuby+Truffle C extensions
 
+require 'pathname'
 require 'yaml'
 
 SULONG_DIR = ENV['SULONG_DIR']
@@ -39,12 +40,12 @@ end
 CONFIG = YAML.load_file(CONFIG_FILE)
 
 SRC = Dir[File.join(CEXT_DIR, CONFIG['src'])]
-OUT = File.join(CEXT_DIR, CONFIG['out'])
+OUT = (Pathname.new(CONFIG['out'])).absolute? ? CONFIG['out'] : File.join(CEXT_DIR, CONFIG['out'])
 
 LL = []
 
 SRC.each do |src|
-  ll = File.join(File.dirname(src), File.basename(src, '.*') + '.ll')
+  ll = File.join(File.dirname(OUT), File.basename(src, '.*') + '.ll')
   mx 'su-clang', "-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', src, '-o', ll
   mx 'su-opt', '-S', '-mem2reg', ll, '-o', ll
   LL.push ll

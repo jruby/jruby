@@ -1,0 +1,4 @@
+fails:C-API Range function rb_range_new constructs a range using the given start and end
+fails:C-API Range function rb_range_new includes the end object when the third parameter is omitted or false
+fails:C-API Range function rb_range_new raises an ArgumentError when the given start and end can't be compared by using #<=>
+fails:C-API Range function rb_range_values stores the range properties
