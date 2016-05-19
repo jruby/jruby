@@ -683,7 +683,7 @@ module Commands
   private :test_specs
 
   def test_tck(*args)
-    mvn *args + ["-DargLine='-Djruby.home=#{JRUBY_DIR}'", 'test']
+    mvn *args + ['--projects truffle', '-Ptest', 'test']
   end
   private :test_tck
 
