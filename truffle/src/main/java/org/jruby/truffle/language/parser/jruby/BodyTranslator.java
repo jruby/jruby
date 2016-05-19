@@ -1811,7 +1811,7 @@ public class BodyTranslator extends Translator {
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "common/hash.rb")) {
+        if (path.equals(corePath + "hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.SetDefaultValueNodeFactory.create(self, rhs);
                 setSourceSection(ret, sourceSection);
@@ -1909,7 +1909,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "common/hash.rb")) {
+        } else if (path.equals(corePath + "hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.DefaultValueNodeFactory.create(self);
                 setSourceSection(ret, sourceSection);
