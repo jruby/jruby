@@ -113,7 +113,7 @@ Truffle::Boot.require_core 'core/complexifier'
 
 Truffle::Boot.require_core 'core/delta/file'
 Truffle::Boot.require_core 'core/delta/module'
-Truffle::Boot.require_core 'core/delta/class'
+Truffle::Boot.require_core 'core/class'
 Truffle::Boot.require_core 'core/delta/kernel'
 Truffle::Boot.require_core 'core/delta/struct'
 
