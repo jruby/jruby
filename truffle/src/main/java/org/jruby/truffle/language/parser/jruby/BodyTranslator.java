@@ -1289,7 +1289,7 @@ public class BodyTranslator extends Translator {
                 rename = methodName.equals("round");
             } else if (path.equals(coreRubiniusPath + "range.rb")) {
                 rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
-            } else if (path.equals(coreRubiniusPath + "common/integer.rb")) {
+            } else if (path.equals(coreRubiniusPath + "integer.rb")) {
                 rename = methodName.equals("downto") || methodName.equals("upto");
             } else if (path.equals(coreRubiniusPath + "common/string.rb")) {
                 rename = methodName.equals("<<");
