@@ -1220,7 +1220,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(inheritancesearchconstinstr.getCurrentModule());
 
-        jvmMethod().inheritanceSearchConst(inheritancesearchconstinstr.getConstName(), inheritancesearchconstinstr.isNoPrivateConsts());
+        jvmMethod().inheritanceSearchConst(inheritancesearchconstinstr.getConstName(), false);
         jvmStoreLocal(inheritancesearchconstinstr.getResult());
     }
 

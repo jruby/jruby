@@ -22,18 +22,21 @@ import org.jruby.runtime.opto.Invalidator;
 
 public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     String   constName;
-    private final boolean  noPrivateConsts;
 
     // Constant caching
     private volatile transient ConstantCache cache;
 
-    public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean noPrivateConsts) {
+    public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName) {
         super(Operation.INHERITANCE_SEARCH_CONST, result, currentModule);
 
         assert result != null: "InheritanceSearchConstInstr result is null";
 
         this.constName = constName;
-        this.noPrivateConsts = noPrivateConsts;
+    }
+
+    @Deprecated
+    public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean unused) {
+        this(result, currentModule, constName);
     }
 
     public Operand getCurrentModule() {
@@ -44,19 +47,19 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
         return constName;
     }
 
+    @Deprecated
     public boolean isNoPrivateConsts() {
-        return noPrivateConsts;
+        return false;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new InheritanceSearchConstInstr(ii.getRenamedVariable(result),
-                getCurrentModule().cloneForInlining(ii), constName, noPrivateConsts);
+        return new InheritanceSearchConstInstr(ii.getRenamedVariable(result), getCurrentModule().cloneForInlining(ii), constName);
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + constName, "no_priv: " + noPrivateConsts};
+        return new String[] { "name: " + constName };
     }
 
     private Object cache(Ruby runtime, RubyModule module) {
@@ -76,11 +79,10 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
         super.encode(e);
         e.encode(getCurrentModule());
         e.encode(getConstName());
-        e.encode(isNoPrivateConsts());
     }
 
     public static InheritanceSearchConstInstr decode(IRReaderDecoder d) {
-        return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
+        return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
     }
 
     @Override
