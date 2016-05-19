@@ -2140,7 +2140,7 @@ public class Helpers {
 
     public static RubyString getDefinedConstantOrBoundMethod(IRubyObject left, String name) {
         if (isModuleAndHasConstant(left, name)) return left.getRuntime().getDefinedMessage(DefinedMessage.CONSTANT);
-        if (left.getMetaClass().isMethodBound(name, true)) left.getRuntime().getDefinedMessage(DefinedMessage.METHOD);
+        if (left.getMetaClass().isMethodBound(name, true)) return left.getRuntime().getDefinedMessage(DefinedMessage.METHOD);
         return null;
     }
 
