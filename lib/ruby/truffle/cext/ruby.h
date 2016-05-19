@@ -41,8 +41,6 @@ VALUE get_rb_eException();
 #define rb_cProc get_rb_cProc();
 #define rb_eException get_rb_eException();
 
-VALUE rb_define_class(const char*,VALUE);
-
 VALUE get_rb_cObject();
 VALUE get_rb_cArray();
 VALUE get_rb_cHash();
@@ -109,6 +107,7 @@ VALUE rb_const_get(VALUE object, ID name);
 
 void rb_raise(VALUE exception, const char *format, ...);
 
+VALUE rb_define_class(const char *name, VALUE superclass);
 VALUE rb_define_module(const char *name);
 VALUE rb_define_module_under(VALUE module, const char *name);
 

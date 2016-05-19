@@ -1,0 +1,35 @@
+fails:CApiGlobalSpecs correctly gets global values
+fails:CApiGlobalSpecs returns $~
+fails:CApiGlobalSpecs correctly sets global values
+fails:CApiGlobalSpecs lists all global variables
+fails:CApiGlobalSpecs rb_define_readonly_variable should define a new readonly global variable
+fails:CApiGlobalSpecs rb_rs returns \n by default
+fails:CApiGlobalSpecs rb_rs returns the value of $/
+fails:CApiGlobalSpecs rb_std streams rb_stdin returns $stdin
+fails:CApiGlobalSpecs rb_std streams rb_stdout returns $stdout
+fails:CApiGlobalSpecs rb_std streams rb_stderr returns $stderr
+fails:CApiGlobalSpecs rb_std streams rb_defout returns $stdout
+fails:CApiGlobalSpecs rb_default_rs returns \n
+fails:CApiGlobalSpecs rb_output_rs returns nil by default
+fails:CApiGlobalSpecs rb_output_rs returns the value of $\
+fails:CApiGlobalSpecs rb_output_fs returns nil by default
+fails:CApiGlobalSpecs rb_output_fs returns the value of $\
+fails:CApiGlobalSpecs rb_lastline_set sets the value of $_
+fails:CApiGlobalSpecs rb_lastline_set sets a Thread-local value
+fails:CApiGlobalSpecs rb_lastline_get gets the value of $_
+fails:CApiGlobalSpecs rb_lastline_get gets a Thread-local value
+fails:CApiGlobalSpecs rb_rs returns \n by default
+fails:CApiGlobalSpecs rb_rs returns the value of $/
+fails:CApiGlobalSpecs rb_std streams rb_stdin returns $stdin
+fails:CApiGlobalSpecs rb_std streams rb_stdout returns $stdout
+fails:CApiGlobalSpecs rb_std streams rb_stderr returns $stderr
+fails:CApiGlobalSpecs rb_std streams rb_defout returns $stdout
+fails:CApiGlobalSpecs rb_default_rs returns \n
+fails:CApiGlobalSpecs rb_output_rs returns nil by default
+fails:CApiGlobalSpecs rb_output_rs returns the value of $\
+fails:CApiGlobalSpecs rb_output_fs returns nil by default
+fails:CApiGlobalSpecs rb_output_fs returns the value of $\
+fails:CApiGlobalSpecs rb_lastline_set sets the value of $_
+fails:CApiGlobalSpecs rb_lastline_set sets a Thread-local value
+fails:CApiGlobalSpecs rb_lastline_get gets the value of $_
+fails:CApiGlobalSpecs rb_lastline_get gets a Thread-local value

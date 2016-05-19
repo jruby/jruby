@@ -1,0 +1,8 @@
+fails:C-API Exception function rb_exc_new creates an exception from a C string and length
+fails:C-API Exception function rb_exc_new2 creates an exception from a C string
+fails:C-API Exception function rb_exc_new3 creates an exception from a Ruby string
+fails:C-API Exception function rb_exc_raise raises passed exception
+fails:C-API Exception function rb_exc_raise raises an exception with an empty backtrace
+fails:C-API Exception function rb_set_errinfo accepts nil
+fails:C-API Exception function rb_set_errinfo accepts an Exception instance
+fails:C-API Exception function rb_set_errinfo raises a TypeError if the object is not nil or an Exception instance

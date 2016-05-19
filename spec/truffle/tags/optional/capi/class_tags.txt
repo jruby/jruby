@@ -1,0 +1,54 @@
+fails:C-API Class function rb_class_new_instance allocates and initializes a new object
+fails:C-API Class function rb_class_new_instance passes arguments to the #initialize method
+fails:C-API Class function rb_include_module includes a module into a class
+fails:C-API Class function rb_define_attr defines an attr_reader when passed true, false
+fails:C-API Class function rb_define_attr defines an attr_writer when passed false, true
+fails:C-API Class function rb_define_attr defines an attr_accessor when passed true, true
+fails:C-API Class function rb_call_super calls the method in the superclass
+fails:C-API Class function rb_call_super calls the method in the superclass through two native levels
+fails:C-API Class function rb_class2name returns the class name
+fails:C-API Class function rb_class2name returns a string for an anonymous class
+fails:C-API Class function rb_class_path returns a String of a class path with no scope modifiers
+fails:C-API Class function rb_class_path returns a String of a class path with scope modifiers
+fails:C-API Class function rb_class_name returns the class name
+fails:C-API Class function rb_class_name returns a string for an anonymous class
+fails:C-API Class function rb_path2class returns a class or module from a scoped String
+fails:C-API Class function rb_path2class resolves autoload constants
+fails:C-API Class function rb_path2class raises an ArgumentError if a constant in the path does not exist
+fails:C-API Class function rb_path2class raises an ArgumentError if the final constant does not exist
+fails:C-API Class function rb_path2class raises a TypeError if the constant is not a class or module
+fails:C-API Class function rb_path2class raises an ArgumentError even if a constant in the path exists on toplevel
+fails:C-API Class function rb_path_to_class returns a class or module from a scoped String
+fails:C-API Class function rb_path_to_class resolves autoload constants
+fails:C-API Class function rb_path_to_class raises an ArgumentError if a constant in the path does not exist
+fails:C-API Class function rb_path_to_class raises an ArgumentError if the final constant does not exist
+fails:C-API Class function rb_path_to_class raises a TypeError if the constant is not a class or module
+fails:C-API Class function rb_path_to_class raises an ArgumentError even if a constant in the path exists on toplevel
+fails:C-API Class function rb_cvar_defined returns false when the class variable is not defined
+fails:C-API Class function rb_cvar_defined returns true when the class variable is defined
+fails:C-API Class function rb_cvar_defined returns true if the class instance variable is defined
+fails:C-API Class function rb_cv_set sets a class variable
+fails:C-API Class function rb_cv_get returns the value of the class variable
+fails:C-API Class function rb_cvar_set sets a class variable
+fails:C-API Class function rb_define_class_under creates a subclass of the superclass contained in a module
+fails:C-API Class function rb_define_class_under sets the class name
+fails:C-API Class function rb_define_class_under calls #inherited on the superclass
+fails:C-API Class function rb_define_class_under raises a TypeError when given a non class object to superclass
+fails:C-API Class function rb_define_class_under raises a TypeError when given a mismatched class to superclass
+fails:C-API Class function rb_define_class_under defines a class for an existing Autoload
+fails:C-API Class function rb_define_class_under raises a TypeError if class is defined and its superclass mismatches the given one
+fails:C-API Class function rb_define_class_id_under creates a subclass of the superclass contained in a module
+fails:C-API Class function rb_define_class_id_under sets the class name
+fails:C-API Class function rb_define_class_id_under calls #inherited on the superclass
+fails:C-API Class function rb_define_class_id_under defines a class for an existing Autoload
+fails:C-API Class function rb_define_class_id_under raises a TypeError if class is defined and its superclass mismatches the given one
+fails:C-API Class function rb_define_class_variable sets a class variable
+fails:C-API Class function rb_cvar_get returns the value of the class variable
+fails:C-API Class function rb_class_new returns an new subclass of the superclass
+fails:C-API Class function rb_class_new raises a TypeError if passed Class as the superclass
+fails:C-API Class function rb_class_new raises a TypeError if passed a singleton class as the superclass
+fails:C-API Class function rb_class_superclass returns the superclass of a class
+fails:C-API Class function rb_class_superclass returns nil if the class has no superclass
+fails:C-API Class function rb_class_real returns the class of an object ignoring the singleton class
+fails:C-API Class function rb_class_real returns the class of an object ignoring included modules
+fails:C-API Class function rb_class_real returns 0 if passed 0
