@@ -657,20 +657,6 @@ module Commands
 
     if args.delete('--sulong')
       collect_sulong_args(env_vars, options, '-T')
-
-      dir = Utilities.find_sulong_dir
-      env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
-
-      if ENV["SULONG_CLASSPATH"]
-        options << '-T-J-classpath' << ENV["SULONG_CLASSPATH"]
-      else
-        options << '-T-J-classpath' << "-T#{dir}/lib/*"
-        options << '-T-J-classpath' << "-T#{dir}/build/sulong.jar"
-        nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
-        options << '-T-J-classpath' << "-T#{nfi_classes}"
-      end
-
-      options << '-T-J-XX:-UseJVMCIClassLoader'
     end
 
     if ENV['CI']
