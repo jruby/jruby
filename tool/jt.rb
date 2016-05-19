@@ -669,7 +669,7 @@ module Commands
   private :test_specs
 
   def test_tck(*args)
-    mvn *args + ['--projects truffle', '-Ptest', 'test']
+    mvn *args + ['-Ptest', 'test']
   end
   private :test_tck
 
