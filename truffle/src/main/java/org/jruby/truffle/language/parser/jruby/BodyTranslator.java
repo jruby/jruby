@@ -1899,7 +1899,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "common/time.rb")) {
+        } else if (path.equals(corePath + "time.rb")) {
             if (name.equals("@is_gmt")) {
                 ret = TimeNodesFactory.InternalGMTNodeFactory.create(self);
                 setSourceSection(ret, sourceSection);
