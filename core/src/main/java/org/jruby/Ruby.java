@@ -4846,7 +4846,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RubyString getDefinedMessage(DefinedMessage definedMessage) {
-        return definedMessages.get(definedMessage);
+        return freezeAndDedupString(definedMessages.get(definedMessage));
     }
 
     public RubyString getThreadStatus(RubyThread.Status status) {
