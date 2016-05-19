@@ -11,12 +11,14 @@ package org.jruby.truffle.core.fiber;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -36,7 +38,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.platform.UnsafeGroup;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -222,15 +223,16 @@ public abstract class FiberNodes {
         public abstract Object executeTransferControlTo(VirtualFrame frame, DynamicObject fiber, boolean isYield, Object[] args);
 
         @Specialization(guards = "isRubyFiber(fiber)")
-        protected Object transfer(VirtualFrame frame, DynamicObject fiber, boolean isYield, Object[] args) {
+        protected Object transfer(VirtualFrame frame, DynamicObject fiber, boolean isYield, Object[] args,
+                @Cached("create()") BranchProfile errorProfile) {
             if (!Layouts.FIBER.getAlive(fiber)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().deadFiberCalledError(this));
             }
 
             DynamicObject currentThread = getContext().getThreadManager().getCurrentThread();
             if (Layouts.FIBER.getRubyThread(fiber) != currentThread) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().fiberError("fiber called across threads", this));
             }
 
@@ -281,13 +283,14 @@ public abstract class FiberNodes {
         }
 
         @Specialization
-        public Object yield(VirtualFrame frame, Object[] args) {
+        public Object yield(VirtualFrame frame, Object[] args,
+                @Cached("create()") BranchProfile errorProfile) {
             final DynamicObject currentThread = getContext().getThreadManager().getCurrentThread();
             final DynamicObject yieldingFiber = Layouts.THREAD.getFiberManager(currentThread).getCurrentFiber();
             final DynamicObject fiberYieldedTo = Layouts.FIBER.getLastResumedByFiber(yieldingFiber);
 
             if (Layouts.FIBER.getRootFiber(yieldingFiber) || fiberYieldedTo == null) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().yieldFromRootFiberError(this));
             }
 

@@ -40,10 +40,12 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
@@ -81,6 +83,8 @@ public abstract class IOPrimitiveNodes {
 
     public static abstract class IOPrimitiveArrayArgumentsNode extends PrimitiveArrayArgumentsNode {
 
+        private final BranchProfile errorProfile = BranchProfile.create();
+
         public IOPrimitiveArrayArgumentsNode() {
         }
 
@@ -91,7 +95,7 @@ public abstract class IOPrimitiveNodes {
         protected int ensureSuccessful(int result) {
             assert result >= -1;
             if (result == -1) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
             }
             return result;
@@ -230,14 +234,15 @@ public abstract class IOPrimitiveNodes {
     public static abstract class IOEnsureOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject ensureOpen(VirtualFrame frame, DynamicObject file) {
+        public DynamicObject ensureOpen(VirtualFrame frame, DynamicObject file,
+                @Cached("create()") BranchProfile errorProfile) {
             // TODO BJF 13-May-2015 Handle nil case
             final int fd = Layouts.IO.getDescriptor(file);
             if (fd == -1) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().ioError("closed stream", this));
             } else if (fd == -2) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().ioError("shutdown stream", this));
             }
             return nil();
@@ -343,7 +348,6 @@ public abstract class IOPrimitiveNodes {
                     if (otherFd > 0) {
                         ensureSuccessful(posix().close(otherFd));
                     }
-                    CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(coreExceptions().errnoError(errno, this));
                 }
 

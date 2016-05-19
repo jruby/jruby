@@ -39,9 +39,11 @@ package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.Layouts;
@@ -115,7 +117,8 @@ public abstract class IOBufferPrimitiveNodes {
     public static abstract class IOBufferFillPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
-        public int fill(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject io) {
+        public int fill(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject io,
+                @Cached("create()") BranchProfile errorProfile) {
             final int fd = Layouts.IO.getDescriptor(io);
 
             // TODO CS 21-Apr-15 allocating this buffer for each read is crazy
@@ -132,7 +135,7 @@ public abstract class IOBufferPrimitiveNodes {
                 // Detect if another thread has updated the buffer
                 // and now there isn't enough room for this data.
                 if (bytesRead > left(frame, ioBuffer)) {
-                    CompilerDirectives.transferToInterpreter();
+                    errorProfile.enter();
                     throw new RaiseException(coreExceptions().internalError("IO buffer overrun", this));
                 }
                 final int used = Layouts.IO_BUFFER.getUsed(ioBuffer);
@@ -165,7 +168,6 @@ public abstract class IOBufferPrimitiveNodes {
                         getContext().getSafepointManager().poll(this);
                         continue;
                     } else {
-                        CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(ExceptionOperations.createRubyException(coreLibrary().getErrnoClass(Errno.valueOf(errno))));
                     }
                 } else {

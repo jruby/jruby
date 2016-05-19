@@ -10,14 +10,16 @@
 
 package org.jruby.truffle.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 
 public class RaiseIfFrozenNode extends RubyNode {
+
+    private final BranchProfile errorProfile = BranchProfile.create();
 
     @Child private RubyNode child;
     @Child private IsFrozenNode isFrozenNode;
@@ -33,7 +35,7 @@ public class RaiseIfFrozenNode extends RubyNode {
         Object result = child.execute(frame);
 
         if (isFrozenNode.executeIsFrozen(result)) {
-            CompilerDirectives.transferToInterpreter();
+            errorProfile.enter();
             throw new RaiseException(coreExceptions().frozenError(result, this));
         }
 

@@ -54,13 +54,11 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = {"isRegexpLiteral(regexp)", "isRubyString(pattern)"})
         public DynamicObject initializeRegexpLiteral(DynamicObject regexp, DynamicObject pattern, int options) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreExceptions().securityError("can't modify literal regexp", this));
         }
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "isInitialized(regexp)", "isRubyString(pattern)"})
         public DynamicObject initializeAlreadyInitialized(DynamicObject regexp, DynamicObject pattern, int options) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreExceptions().typeError("already initialized regexp", this));
         }
 
@@ -83,7 +81,6 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = "!isInitialized(regexp)")
         public int optionsNotInitialized(DynamicObject regexp) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreExceptions().typeError("uninitialized Regexp", this));
         }
 
@@ -106,15 +103,17 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = {"!isInitialized(regexp)", "isRubyString(string)"})
         public Object searchRegionNotInitialized(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreExceptions().typeError("uninitialized Regexp", this));
         }
 
         @Specialization(guards = {"isRubyString(string)", "!isValidEncoding(string)"})
         public Object searchRegionInvalidEncoding(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().argumentError(
-                    String.format("invalid byte sequence in %s", Layouts.STRING.getRope(string).getEncoding()), this));
+            throw new RaiseException(coreExceptions().argumentError(formatError(string), this));
+        }
+
+        @TruffleBoundary
+        private String formatError(DynamicObject string) {
+            return String.format("invalid byte sequence in %s", Layouts.STRING.getRope(string).getEncoding());
         }
 
         @TruffleBoundary

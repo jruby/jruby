@@ -10,10 +10,12 @@
 package org.jruby.truffle.extra;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
@@ -35,9 +37,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.platform.UnsafeGroup;
-
 import java.nio.charset.StandardCharsets;
-
 import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
 
 @CoreClass("Truffle::POSIX")
@@ -210,13 +210,12 @@ public abstract class TrufflePosixNodes {
     @CoreMethod(names = "getrlimit", isModuleFunction = true, required = 2, unsafe = {UnsafeGroup.PROCESSES, UnsafeGroup.MEMORY})
     public abstract static class GetRLimitNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyPointer(pointer)")
         public int getrlimit(int resource, DynamicObject pointer) {
             final int result = posix().getrlimit(resource, Layouts.POINTER.getPointer(pointer));
 
             if (result == -1) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
             }
 
@@ -265,12 +264,11 @@ public abstract class TrufflePosixNodes {
     @CoreMethod(names = "readlink", isModuleFunction = true, required = 3, unsafe = UnsafeGroup.IO)
     public abstract static class ReadlinkNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = {"isRubyString(path)", "isRubyPointer(pointer)"})
         public int readlink(DynamicObject path, DynamicObject pointer, int bufsize) {
             final int result = posix().readlink(decodeUTF8(path), Layouts.POINTER.getPointer(pointer), bufsize);
             if (result == -1) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
             }
 
@@ -341,7 +339,6 @@ public abstract class TrufflePosixNodes {
         public int utimes(DynamicObject path, DynamicObject pointer) {
             final int result = posix().utimes(decodeUTF8(path), Layouts.POINTER.getPointer(pointer));
             if (result == -1) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
             }
 
@@ -446,11 +443,12 @@ public abstract class TrufflePosixNodes {
     public abstract static class SetRLimitNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "isRubyPointer(pointer)")
-        public int setrlimit(int resource, DynamicObject pointer) {
+        public int setrlimit(int resource, DynamicObject pointer,
+                @Cached("create()") BranchProfile errorProfile) {
             final int result = posix().setrlimit(resource, Layouts.POINTER.getPointer(pointer));
 
             if (result == -1) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
             }
 

@@ -9,8 +9,9 @@
  */
 package org.jruby.truffle.core.regexp;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
@@ -39,13 +40,15 @@ public class InterpolatedRegexpNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        return createRegexp(executeChildren(frame));
+    }
 
+    @TruffleBoundary
+    private DynamicObject createRegexp(DynamicObject[] parts) {
         final org.jruby.RubyString[] strings = new org.jruby.RubyString[children.length];
 
         for (int n = 0; n < children.length; n++) {
-            final Object child = children[n].execute(frame);
-            strings[n] = org.jruby.RubyString.newString(getContext().getJRubyRuntime(), StringOperations.getByteListReadOnly((DynamicObject) toS.call(frame, child, "to_s", null)));
+            strings[n] = org.jruby.RubyString.newString(getContext().getJRubyRuntime(), StringOperations.getByteListReadOnly(parts[n]));
         }
 
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getJRubyRuntime(), strings, options);
@@ -64,4 +67,15 @@ public class InterpolatedRegexpNode extends RubyNode {
 
         return regexp;
     }
+
+    @ExplodeLoop
+    protected DynamicObject[] executeChildren(VirtualFrame frame) {
+        DynamicObject[] values = new DynamicObject[children.length];
+        for (int i = 0; i < children.length; i++) {
+            final Object value = children[i].execute(frame);
+            values[i] = (DynamicObject) toS.call(frame, value, "to_s", null);
+        }
+        return values;
+    }
+
 }

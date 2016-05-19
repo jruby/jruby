@@ -10,10 +10,12 @@
 package org.jruby.truffle.core.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -39,7 +41,8 @@ public abstract class ToAryNode extends RubyNode {
     }
 
     @Specialization(guards = "!isRubyArray(object)")
-    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
+    public DynamicObject coerceObject(VirtualFrame frame, Object object,
+            @Cached("create()") BranchProfile errorProfile) {
         if (toAryNode == null) {
             CompilerDirectives.transferToInterpreter();
             toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -49,8 +52,8 @@ public abstract class ToAryNode extends RubyNode {
         try {
             coerced = toAryNode.call(frame, object, "to_ary", null);
         } catch (RaiseException e) {
+            errorProfile.enter();
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().typeErrorNoImplicitConversion(object, "Array", this));
             } else {
                 throw e;
@@ -60,7 +63,7 @@ public abstract class ToAryNode extends RubyNode {
         if (RubyGuards.isRubyArray(coerced)) {
             return (DynamicObject) coerced;
         } else {
-            CompilerDirectives.transferToInterpreter();
+            errorProfile.enter();
             throw new RaiseException(coreExceptions().typeErrorBadCoercion(object, "Array", "to_ary", coerced, this));
         }
     }

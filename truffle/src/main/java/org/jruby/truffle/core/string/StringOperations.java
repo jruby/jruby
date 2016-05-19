@@ -149,14 +149,14 @@ public abstract class StringOperations {
         keepCodeRange(string);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary(throwsControlFlowException = true)
     public static Encoding checkEncoding(DynamicObject string, CodeRangeable other) {
         final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, ((StringCodeRangeableWrapper) other).getString());
 
         // TODO (nirvdrum 23-Mar-15) We need to raise a proper Truffle+JRuby exception here, rather than a non-Truffle JRuby exception.
         if (encoding == null) {
-            CompilerDirectives.transferToInterpreter();
-            throw Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getJRubyRuntime().newEncodingCompatibilityError(
+            final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext();
+            throw context.getJRubyRuntime().newEncodingCompatibilityError(
                     String.format("incompatible character encodings: %s and %s",
                             Layouts.STRING.getRope(string).getEncoding().toString(),
                             other.getByteList().getEncoding().toString()));

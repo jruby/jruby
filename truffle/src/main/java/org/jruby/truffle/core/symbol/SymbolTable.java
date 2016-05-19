@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.symbol;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.USASCIIEncoding;
@@ -21,7 +22,6 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
-
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -147,20 +147,20 @@ public class SymbolTable {
     }
 
     // TODO (eregon, 10/10/2015): this check could be done when a Symbol is created to be much cheaper
+    @TruffleBoundary(throwsControlFlowException = true)
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
         // if (!IdUtil.isValidInstanceVariableName(name)) {
 
         // check like Rubinius does for compatibility with their Struct Ruby implementation.
         if (!(name.startsWith("@") && name.length() > 1 && IdUtil.isInitialCharacter(name.charAt(1)))) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
         return name;
     }
 
+    @TruffleBoundary(throwsControlFlowException = true)
     public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
         if (!IdUtil.isValidClassVariableName(name)) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
         return name;

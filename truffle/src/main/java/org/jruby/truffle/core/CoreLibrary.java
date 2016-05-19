@@ -11,6 +11,7 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.java.JavaInterop;
@@ -110,7 +111,6 @@ import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
 import org.jruby.util.cli.OutputStrings;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -985,6 +985,7 @@ public class CoreLibrary {
         });
     }
 
+    @TruffleBoundary
     public DynamicObject getMetaClass(Object object) {
         if (object instanceof DynamicObject) {
             return Layouts.BASIC_OBJECT.getMetaClass(((DynamicObject) object));
@@ -1009,11 +1010,11 @@ public class CoreLibrary {
         } else if (object == null) {
             throw new RuntimeException("Can't get metaclass for null");
         } else {
-            CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException(String.format("Don't know how to get the metaclass for %s", object.getClass()));
         }
     }
 
+    @TruffleBoundary
     public DynamicObject getLogicalClass(Object object) {
         if (object instanceof DynamicObject) {
             return Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) object));
@@ -1038,7 +1039,6 @@ public class CoreLibrary {
         } else if (object == null) {
             throw new RuntimeException();
         } else {
-            CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException(String.format("Don't know how to get the logical class for %s", object.getClass()));
         }
     }

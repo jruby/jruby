@@ -9,11 +9,12 @@
  */
 package org.jruby.truffle.core.cast;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
@@ -74,7 +75,8 @@ public abstract class HashCastNode extends RubyNode {
     }
 
     @Specialization(guards = {"!isNil(object)", "!isRubyBignum(object)", "!isRubyHash(object)"})
-    public Object cast(VirtualFrame frame, DynamicObject object) {
+    public Object cast(VirtualFrame frame, DynamicObject object,
+            @Cached("create()") BranchProfile errorProfile) {
         final Object result = toHashNode.call(frame, object, "to_hash", null);
 
         if (result == DispatchNode.MISSING) {
@@ -82,7 +84,7 @@ public abstract class HashCastNode extends RubyNode {
         }
 
         if (!RubyGuards.isRubyHash(result)) {
-            CompilerDirectives.transferToInterpreter();
+            errorProfile.enter();
             throw new RaiseException(coreExceptions().typeErrorCantConvertTo(object, "Hash", "to_hash", result, this));
         }
 

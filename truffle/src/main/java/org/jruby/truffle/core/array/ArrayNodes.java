@@ -197,19 +197,21 @@ public abstract class ArrayNodes {
         protected abstract Object executeMul(VirtualFrame frame, DynamicObject array, int count);
 
         @Specialization(guards = "isNullArray(array)")
-        public DynamicObject mulEmpty(DynamicObject array, int count) {
+        public DynamicObject mulEmpty(DynamicObject array, int count,
+                @Cached("create()") BranchProfile errorProfile) {
             if (count < 0) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().argumentError("negative argument", this));
             }
             return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
         }
 
         @Specialization(guards = { "strategy.matches(array)", "!isNullArray(array)" }, limit = "ARRAY_STRATEGIES")
-        public DynamicObject mulIntegerFixnum(DynamicObject array, int count,
-                @Cached("of(array)") ArrayStrategy strategy) {
+        public DynamicObject mulOther(DynamicObject array, int count,
+                @Cached("of(array)") ArrayStrategy strategy,
+                @Cached("create()") BranchProfile errorProfile) {
             if (count < 0) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().argumentError("negative argument", this));
             }
 
@@ -483,12 +485,13 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object setRange(VirtualFrame frame, DynamicObject array, DynamicObject range, Object value, NotProvided unused,
                 @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
-                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile) {
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile,
+                @Cached("create()") BranchProfile errorProfile) {
             final int size = getSize(array);
             final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
             final int start = ArrayOperations.normalizeIndex(size, begin, negativeBeginProfile);
             if (start < 0) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().rangeError(range, this));
             }
             final int end = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);

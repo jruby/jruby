@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -104,8 +105,6 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public int eachObject(VirtualFrame frame, NotProvided ofClass, DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
-
             int count = 0;
 
             for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
@@ -120,8 +119,6 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization(guards = "isRubyModule(ofClass)")
         public int eachObject(VirtualFrame frame, DynamicObject ofClass, DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
-
             int count = 0;
 
             for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
@@ -154,13 +151,14 @@ public abstract class ObjectSpaceNodes {
         }
 
         @Specialization
-        public DynamicObject defineFinalizer(VirtualFrame frame, DynamicObject object, Object finalizer) {
+        public DynamicObject defineFinalizer(VirtualFrame frame, DynamicObject object, Object finalizer,
+                @Cached("create()") BranchProfile errorProfile) {
             if (respondToCallNode.doesRespondTo(frame, "call", finalizer)) {
                 getContext().getObjectSpaceManager().defineFinalizer(object, finalizer);
-                Object[] objects = new Object[]{ 0, finalizer };
+                Object[] objects = new Object[] { 0, finalizer };
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
             } else {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().argumentErrorWrongArgumentType(finalizer, "callable", this));
             }
         }

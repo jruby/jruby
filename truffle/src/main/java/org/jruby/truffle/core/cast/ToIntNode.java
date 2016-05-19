@@ -10,10 +10,12 @@
 package org.jruby.truffle.core.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.CoreLibrary;
@@ -78,7 +80,6 @@ public abstract class ToIntNode extends RubyNode {
 
     @Specialization(guards = "isRubyBignum(value)")
     public DynamicObject coerceRubyBignum(DynamicObject value) {
-        CompilerDirectives.transferToInterpreter();
         throw new RaiseException(coreExceptions().rangeError("bignum too big to convert into `long'", this));
     }
 
@@ -92,16 +93,18 @@ public abstract class ToIntNode extends RubyNode {
     }
 
     @Specialization
-    public Object coerceBoolean(VirtualFrame frame, boolean value) {
-        return coerceObject(frame, value);
+    public Object coerceBoolean(VirtualFrame frame, boolean value,
+            @Cached("create()") BranchProfile errorProfile) {
+        return coerceObject(frame, value, errorProfile);
     }
 
     @Specialization(guards = "!isRubyBignum(object)")
-    public Object coerceBasicObject(VirtualFrame frame, DynamicObject object) {
-        return coerceObject(frame, object);
+    public Object coerceBasicObject(VirtualFrame frame, DynamicObject object,
+            @Cached("create()") BranchProfile errorProfile) {
+        return coerceObject(frame, object, errorProfile);
     }
 
-    private Object coerceObject(VirtualFrame frame, Object object) {
+    private Object coerceObject(VirtualFrame frame, Object object, BranchProfile errorProfile) {
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreter();
             toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -111,8 +114,8 @@ public abstract class ToIntNode extends RubyNode {
         try {
             coerced = toIntNode.call(frame, object, "to_int", null);
         } catch (RaiseException e) {
+            errorProfile.enter();
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().typeErrorNoImplicitConversion(object, "Integer", this));
             } else {
                 throw e;
@@ -122,7 +125,7 @@ public abstract class ToIntNode extends RubyNode {
         if (coreLibrary().getLogicalClass(coerced) == coreLibrary().getFixnumClass()) {
             return coerced;
         } else {
-            CompilerDirectives.transferToInterpreter();
+            errorProfile.enter();
             throw new RaiseException(coreExceptions().typeErrorBadCoercion(object, "Integer", "to_int", coerced, this));
         }
     }

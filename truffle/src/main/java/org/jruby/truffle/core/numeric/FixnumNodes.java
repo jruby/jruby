@@ -450,16 +450,14 @@ public abstract class FixnumNodes {
             return mod;
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyBignum(b)")
         public Object mod(long a, DynamicObject b) {
-            CompilerDirectives.transferToInterpreter();
-
             // TODO(CS): why are we getting this case?
 
             long mod = BigInteger.valueOf(a).mod(Layouts.BIGNUM.getValue(b)).longValue();
 
             if (mod < 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) > 0 || mod > 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) < 0) {
-                adjustProfile.enter();
                 return createBignum(BigInteger.valueOf(mod).add(Layouts.BIGNUM.getValue(b)));
             }
 

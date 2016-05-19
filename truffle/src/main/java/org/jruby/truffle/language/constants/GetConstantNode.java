@@ -105,8 +105,7 @@ public abstract class GetConstantNode extends RubyNode {
             DynamicObject symbolName) {
         if (!isValidConstantName) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().
-                    nameError(String.format("wrong constant name %s", name), name, this));
+            throw new RaiseException(coreExceptions().nameError(formatError(name), name, this));
         }
 
         if (constMissingNode == null) {
@@ -115,6 +114,10 @@ public abstract class GetConstantNode extends RubyNode {
         }
 
         return constMissingNode.call(frame, module, "const_missing", null, symbolName);
+    }
+
+    private String formatError(String name) {
+        return String.format("wrong constant name %s", name);
     }
 
     protected RequireNode createRequireNode() {
