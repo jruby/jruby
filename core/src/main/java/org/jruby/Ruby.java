@@ -4437,6 +4437,69 @@ public final class Ruby implements Constantizable {
         }
     }
 
+    ThreadLocal<Map<String, Map<IRubyObject, IRubyObject>>> symMap = new ThreadLocal<>();
+
+    public IRubyObject safeRecurse(RecursiveFunction func, IRubyObject obj, String name, boolean outer) {
+        Map<IRubyObject, IRubyObject> guards = safeRecurseGetGuards(name);
+
+        boolean outermost = outer && !guards.containsKey(recursiveKey);
+
+        // check guards
+        if (guards.containsKey(obj)) {
+            if (outer && !outermost) {
+                throw new RecursiveError(guards);
+            }
+            return func.call(obj, true);
+        } else {
+            if (outermost) {
+                return safeRecurseOutermost(func, obj, guards);
+            } else {
+                return safeRecurseInner(func, obj, guards);
+            }
+        }
+    }
+
+    private IRubyObject safeRecurseOutermost(RecursiveFunction func, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
+        boolean recursed = false;
+        guards.put(recursiveKey, recursiveKey);
+
+        try {
+            return safeRecurseInner(func, obj, guards);
+        } catch (RecursiveError re) {
+            if (re.tag != guards) {
+                throw re;
+            }
+            recursed = true;
+            guards.remove(recursiveKey);
+            return func.call(obj, true);
+        } finally {
+            if (!recursed) guards.remove(recursiveKey);
+        }
+    }
+
+    private Map<IRubyObject, IRubyObject> safeRecurseGetGuards(String name) {
+        Map<String, Map<IRubyObject, IRubyObject>> symToGuards = symMap.get();
+        if (symToGuards == null) {
+            symToGuards = new HashMap<>();
+            symMap.set(symToGuards);
+        }
+
+        Map<IRubyObject, IRubyObject> guards = symToGuards.get(name);
+        if (guards == null) {
+            guards = new IdentityHashMap<>();
+            symToGuards.put(name, guards);
+        } return guards;
+    }
+
+    private IRubyObject safeRecurseInner(RecursiveFunction func, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
+        try {
+            guards.put(obj, obj);
+            return func.call(obj, false);
+        } finally {
+            guards.remove(obj);
+        }
+    }
+
     /**
      * Perform a recursive walk on the given object using the given function.
      *
