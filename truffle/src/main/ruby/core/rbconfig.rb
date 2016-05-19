@@ -16,7 +16,7 @@ module RbConfig
     'libdir' => "#{Truffle::Boot.jruby_home_directory}/lib/ruby/truffle",
     'ruby_install_name' => 'jruby',
     'RUBY_INSTALL_NAME' => 'jruby',
-    'ruby_version' => '2.3.0',
+    'ruby_version' => '2.2.0',
     'OBJEXT' => 'll',
     'DLEXT' => 'su'
   }
