@@ -7,7 +7,8 @@
 # GNU Lesser General Public License version 2.1
 
 unless Truffle::Interop.mime_type_supported?('application/javascript')
-  abort 'JavaScript doesn\'t appear to be available - skipping JavaScript test'
+  puts 'JavaScript doesn\'t appear to be available - skipping JavaScript test'
+  exit
 end
 
 if Truffle::Interop.eval('application/javascript', '14 + 2') != 16
