@@ -68,7 +68,7 @@ Truffle::Boot.require_core 'core/undefined'
 Truffle::Boot.require_core 'core/common/type'
 Truffle::Boot.require_core 'core/common/hash'
 Truffle::Boot.require_core 'core/hash' # Our changes
-Truffle::Boot.require_core 'core/common/array'
+Truffle::Boot.require_core 'core/array'
 Truffle::Boot.require_core 'core/common/kernel'
 Truffle::Boot.require_core 'core/identity_map'
 Truffle::Boot.require_core 'core/comparable'
@@ -122,7 +122,6 @@ Truffle::Boot.require_core 'core/delta/ffi'
 
 # Load JRuby+Truffle classes
 
-Truffle::Boot.require_core 'core/array'
 Truffle::Boot.require_core 'core/binding'
 Truffle::Boot.require_core 'core/fixnum'
 Truffle::Boot.require_core 'core/float'
