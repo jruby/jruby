@@ -10,7 +10,8 @@ project 'JRuby Truffle' do
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
               'truffle.version' => '0.13',
-              'jruby.basedir' => '${basedir}/..' )
+              'jruby.basedir' => '${basedir}/..',
+              'maven.test.skip' => 'true' )
 
   jar 'org.yaml:snakeyaml:1.14'
   jar 'org.antlr:antlr4-runtime:4.5.1-1'
@@ -90,5 +91,11 @@ project 'JRuby Truffle' do
                        :outputFile => '${project.build.directory}/jruby-truffle-${project.version}-complete.jar' )
       end
     end
+  end
+
+  profile 'test' do
+
+    properties( 'maven.test.skip' => 'false' )
+
   end
 end

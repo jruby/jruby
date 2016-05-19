@@ -17,6 +17,7 @@ DO NOT MODIFIY - GENERATED CODE
   <artifactId>jruby-truffle</artifactId>
   <name>JRuby Truffle</name>
   <properties>
+    <maven.test.skip>true</maven.test.skip>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
@@ -270,6 +271,12 @@ DO NOT MODIFIY - GENERATED CODE
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>test</id>
+      <properties>
+        <maven.test.skip>false</maven.test.skip>
+      </properties>
     </profile>
   </profiles>
 </project>
