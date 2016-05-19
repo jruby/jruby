@@ -230,7 +230,7 @@ public abstract class KernelNodes {
 
         private boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null));
             }
 
@@ -239,7 +239,7 @@ public abstract class KernelNodes {
 
         private boolean areEqual(VirtualFrame frame, Object left, Object right) {
             if (equalNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -509,8 +509,8 @@ public abstract class KernelNodes {
 
         protected DynamicObject getCallerBinding(VirtualFrame frame) {
             if (bindingNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(new RubyNode[]{}));
+                CompilerDirectives.transferToInterpreter();
+                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(null));
             }
 
             try {
@@ -1726,7 +1726,7 @@ public abstract class KernelNodes {
         @Specialization(guards = "!isRubiniusUndefined(duration)")
         public long sleep(VirtualFrame frame, DynamicObject duration) {
             if (floatCastNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 floatCastNode = insert(NumericToFloatNodeGen.create(getContext(), getSourceSection(), "to_f", null));
             }
             return sleep(floatCastNode.executeDouble(frame, duration));
