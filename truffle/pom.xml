@@ -157,6 +157,14 @@ DO NOT MODIFIY - GENERATED CODE
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemProperties>
+            <jruby.home>${basedir}/..</jruby.home>
+          </systemProperties>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <profiles>

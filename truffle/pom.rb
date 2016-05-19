@@ -63,6 +63,11 @@ project 'JRuby Truffle' do
                    'outputFile' => '${jruby.basedir}/lib/jruby-truffle.jar' )
   end
 
+  plugin( :surefire,
+          'systemProperties' => {
+              'jruby.home' =>  '${basedir}/..'
+          } )
+
   build do
     default_goal 'package'
 
