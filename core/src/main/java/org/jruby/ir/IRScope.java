@@ -670,8 +670,11 @@ public abstract class IRScope implements ParseResult {
                     USES_ZSUPER);
 
     private void computeNeedsDynamicScopeFlag() {
-        if (flags.containsAll(NEEDS_DYNAMIC_SCOPE_FLAGS)) {
-            flags.add(REQUIRES_DYNSCOPE);
+        for (IRFlags f : NEEDS_DYNAMIC_SCOPE_FLAGS) {
+            if (flags.contains(f)) {
+                flags.add(REQUIRES_DYNSCOPE);
+                return;
+            }
         }
     }
 
