@@ -98,9 +98,7 @@ project 'JRuby Truffle' do
     end
   end
 
-  profile 'test' do
-
+  profile 'tck' do
     properties( 'maven.test.skip' => 'false' )
-
   end
 end

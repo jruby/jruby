@@ -669,7 +669,7 @@ module Commands
   private :test_specs
 
   def test_tck(*args)
-    mvn *args + ['-Ptest', 'test']
+    mvn *args + ['-Ptck']
   end
   private :test_tck
 

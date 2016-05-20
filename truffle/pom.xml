@@ -281,7 +281,7 @@ DO NOT MODIFIY - GENERATED CODE
       </build>
     </profile>
     <profile>
-      <id>test</id>
+      <id>tck</id>
       <properties>
         <maven.test.skip>false</maven.test.skip>
       </properties>
