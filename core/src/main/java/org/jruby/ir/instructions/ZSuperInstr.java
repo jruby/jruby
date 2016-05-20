@@ -26,7 +26,6 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     public boolean computeScopeFlags(IRScope scope) {
         super.computeScopeFlags(scope);
         scope.getFlags().add(IRFlags.USES_ZSUPER);
-        scope.getFlags().add(IRFlags.CAN_CAPTURE_CALLERS_BINDING);
         return true;
     }
 
