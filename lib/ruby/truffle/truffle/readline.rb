@@ -37,6 +37,16 @@ module Readline
     end
   end
 
+  def self.input=(input)
+    # TODO (nirvdrum 20-May-16): This should do something functional.
+    nil
+  end
+
+  def self.output=(output)
+    # TODO (nirvdrum 20-May-16): This should do something functional.
+    nil
+  end
+
 end
 
 Readline::HISTORY.extend Enumerable
