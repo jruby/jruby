@@ -12,6 +12,8 @@ module Readline
 
   HISTORY = Object.new
 
+  module_function
+
   %i[
     basic_quote_characters
     basic_quote_characters=
@@ -29,19 +31,17 @@ module Readline
     vi_editing_mode?
     set_screen_size
   ].each do |method_name|
-    self.class.instance_eval do
-      define_method(method_name) do
-        raise NotImplementedError.new("#{method_name}() function is unimplemented on this machine")
-      end
+    define_method(method_name) do
+      raise NotImplementedError.new("#{method_name}() function is unimplemented on this machine")
     end
   end
 
-  def self.input=(input)
+  def input=(input)
     # TODO (nirvdrum 20-May-16): This should do something functional.
     nil
   end
 
-  def self.output=(output)
+  def output=(output)
     # TODO (nirvdrum 20-May-16): This should do something functional.
     nil
   end

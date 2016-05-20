@@ -94,7 +94,7 @@ public abstract class ReadlineNodes {
     }
 
 
-    @CoreMethod(names = "basic_word_break_characters", onSingleton = true)
+    @CoreMethod(names = "basic_word_break_characters", isModuleFunction = true)
     public abstract static class BasicWordBreakCharactersNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -104,7 +104,7 @@ public abstract class ReadlineNodes {
 
     }
 
-    @CoreMethod(names = "basic_word_break_characters=", onSingleton = true, required = 1)
+    @CoreMethod(names = "basic_word_break_characters=", isModuleFunction = true, required = 1)
     @NodeChild(type = RubyNode.class, value = "characters")
     public abstract static class SetBasicWordBreakCharactersNode extends CoreMethodNode {
 
@@ -121,7 +121,7 @@ public abstract class ReadlineNodes {
 
     }
 
-    @CoreMethod(names = "get_screen_size", onSingleton = true)
+    @CoreMethod(names = "get_screen_size", isModuleFunction = true)
     public abstract static class GetScreenSizeNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -133,7 +133,7 @@ public abstract class ReadlineNodes {
 
     }
 
-    @CoreMethod(names = "readline", onSingleton = true, optional = 2)
+    @CoreMethod(names = "readline", isModuleFunction = true, optional = 2)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "prompt"),
             @NodeChild(type = RubyNode.class, value = "addToHistory")
