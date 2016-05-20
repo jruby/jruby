@@ -1,2 +1,1 @@
-fails:Readline::HISTORY is defined
 fails:Readline::VERSION is defined and is a non-empty String

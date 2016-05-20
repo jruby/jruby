@@ -10,6 +10,8 @@ Readline = Truffle::Readline
 
 module Readline
 
+  HISTORY = Object.new
+
   %i[
     basic_quote_characters
     basic_quote_characters=
@@ -35,3 +37,5 @@ module Readline
   end
 
 end
+
+Readline::HISTORY.extend Enumerable
