@@ -103,11 +103,7 @@ module Truffle
     end
 
     def rb_define_class(name, superclass)
-      #raise 'not implemented'
-
-      # Return nil instead of raising an exception so the C API specs get far enough along to tag them.
-      # This implementation is clearly not correct.
-      nil
+      Object.const_set(name, Class.new(superclass))
     end
 
     def rb_define_module(name)
