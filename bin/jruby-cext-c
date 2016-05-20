@@ -10,7 +10,6 @@
 
 # A compiler for JRuby+Truffle C extensions
 
-require 'pathname'
 require 'yaml'
 
 SULONG_DIR = ENV['SULONG_DIR']
@@ -40,7 +39,7 @@ end
 CONFIG = YAML.load_file(CONFIG_FILE)
 
 SRC = Dir[File.join(CEXT_DIR, CONFIG['src'])]
-OUT = (Pathname.new(CONFIG['out'])).absolute? ? CONFIG['out'] : File.join(CEXT_DIR, CONFIG['out'])
+OUT = File.expand_path(CONFIG['out'], CEXT_DIR)
 
 LL = []
 
