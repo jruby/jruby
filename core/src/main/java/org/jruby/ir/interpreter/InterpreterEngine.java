@@ -4,14 +4,12 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
@@ -65,7 +63,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 
 /**
@@ -460,21 +457,6 @@ public class InterpreterEngine {
                 } else {
                     setResult(temp, currDynScope, res, retrieveOp(src, context, self, currDynScope, currScope, temp));
                 }
-                break;
-            }
-
-            case GET_FIELD: {
-                GetFieldInstr gfi = (GetFieldInstr)instr;
-                IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currScope, currDynScope, temp);
-                VariableAccessor a = gfi.getAccessor(object);
-                result = a == null ? null : (IRubyObject)a.get(object);
-                if (result == null) {
-                    if (context.runtime.isVerbose()) {
-                        context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
-                    }
-                    result = context.nil;
-                }
-                setResult(temp, currDynScope, gfi.getResult(), result);
                 break;
             }
 
