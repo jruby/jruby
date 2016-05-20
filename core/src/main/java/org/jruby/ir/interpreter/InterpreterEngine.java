@@ -384,7 +384,7 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr) instr).checkArity(context, args, block == null ? null : block.type);
+                ((CheckArityInstr) instr).checkArity(context, currScope, args, block == null ? null : block.type);
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);
