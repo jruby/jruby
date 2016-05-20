@@ -22,7 +22,7 @@ default_gems =
    ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' ),
    ImportedGem.new( 'racc', '${racc.version}'),
    ImportedGem.new( 'net-telnet', '0.1.1'),
-   #ImportedGem.new( 'did_you_mean', '1.0.1'),
+   ImportedGem.new( 'did_you_mean', '1.0.1'),
   ]
 
 project 'JRuby Lib Setup' do
