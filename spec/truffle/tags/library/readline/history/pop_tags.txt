@@ -1,0 +1,3 @@
+fails:Readline::HISTORY.pop returns nil when the history is empty
+fails:Readline::HISTORY.pop returns and removes the last item from the history
+fails:Readline::HISTORY.pop taints the returned strings

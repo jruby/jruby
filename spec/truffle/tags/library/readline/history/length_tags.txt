@@ -1,0 +1,1 @@
+fails:Readline::HISTORY.length returns the size of the history

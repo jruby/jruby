@@ -1,0 +1,1 @@
+fails:Readline::HISTORY.to_s returns 'HISTORY'

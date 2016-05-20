@@ -1,0 +1,3 @@
+fails:Readline::HISTORY.shift returns nil when the history is empty
+fails:Readline::HISTORY.shift returns and removes the first item from the history
+fails:Readline::HISTORY.shift taints the returned strings
