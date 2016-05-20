@@ -40,25 +40,28 @@
  */
 package org.jruby.truffle.stdlib.readline;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import jline.console.ConsoleReader;
 import jline.console.completer.Completer;
+import jline.console.completer.FileNameCompleter;
+import jline.console.history.History;
+import jline.console.history.MemoryHistory;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.builtins.CoreClass;
-import org.jruby.truffle.builtins.CoreMethod;
-import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.*;
+import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 
+import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,6 +70,37 @@ import java.util.List;
 
 @CoreClass("Truffle::Readline")
 public abstract class ReadlineNodes {
+
+    private static ConsoleReader readline;
+    private static Completer currentCompleter;
+    private static History history;
+
+    @Primitive(name = "initialize_readline")
+    public static abstract class InitializeReadline extends PrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject initializeReadline() {
+            try {
+                readline = new ConsoleReader();
+            } catch (IOException e) {
+                throw new UnsupportedOperationException("Couldn't initialize readline", e);
+            }
+
+            readline.setHistoryEnabled(false);
+            readline.setPaginationEnabled(true);
+            readline.setBellEnabled(true);
+
+            currentCompleter = new RubyFileNameCompleter();
+            readline.addCompleter(currentCompleter);
+
+            history = new MemoryHistory();
+            readline.setHistory(history);
+
+            return nil();
+        }
+
+    }
 
     @CoreMethod(names = "basic_word_break_characters", onSingleton = true)
     public abstract static class BasicWordBreakCharactersNode extends CoreMethodArrayArgumentsNode {
@@ -91,6 +125,18 @@ public abstract class ReadlineNodes {
             ProcCompleter.setDelimiter(RopeOperations.decodeUTF8(StringOperations.rope(characters)));
 
             return characters;
+        }
+
+    }
+
+    @CoreMethod(names = "get_screen_size", onSingleton = true)
+    public abstract static class GetScreenSizeNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject getScreenSize() {
+            final int[] store = { readline.getTerminal().getHeight(), readline.getTerminal().getWidth() };
+
+            return ArrayHelpers.createArray(getContext(), store, 2);
         }
 
     }
@@ -153,6 +199,20 @@ public abstract class ReadlineNodes {
                 Collections.sort(candidates);
             }
             return cursor - buffer.length();
+        }
+    }
+
+    // Taken from org.jruby.ext.readline.Readline.RubyFileNameCompleter.
+    // Fix FileNameCompletor to work mid-line
+    public static class RubyFileNameCompleter extends FileNameCompleter {
+        @Override
+        public int complete(String buffer, int cursor, List candidates) {
+            buffer = buffer.substring(0, cursor);
+            int index = buffer.lastIndexOf(" ");
+            if (index != -1) {
+                buffer = buffer.substring(index + 1);
+            }
+            return index + 1 + super.complete(buffer, cursor, candidates);
         }
     }
 }

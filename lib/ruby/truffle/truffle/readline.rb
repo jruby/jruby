@@ -6,6 +6,7 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+Rubinius.invoke_primitive :initialize_readline, Truffle::Readline
 Readline = Truffle::Readline
 
 module Readline
