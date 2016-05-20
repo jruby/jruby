@@ -2068,16 +2068,14 @@ public abstract class ArrayNodes {
         public Object sortLargeArray(VirtualFrame frame, DynamicObject array, NotProvided block,
                 @Cached("new()") SnippetNode snippetNode) {
             return snippetNode.execute(frame,
-                    "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted",
-                    "right", getSize(array));
+                    "sorted = dup; Rubinius.privately { sorted.mergesort! }; sorted");
         }
 
         @Specialization(guards = { "!isNullArray(array)" })
         public Object sortWithBlock(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("new()") SnippetNode snippet) {
             return snippet.execute(frame,
-                    "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted",
-                    "right", getSize(array),
+                    "sorted = dup; Rubinius.privately { sorted.mergesort_block!(block) }; sorted",
                     "block", block);
         }
 
