@@ -9,12 +9,12 @@
  */
 package org.jruby.truffle.core.cast;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -46,13 +46,14 @@ public abstract class ToProcNode extends RubyNode {
 
     @Specialization(guards = "!isRubyProc(object)")
     public DynamicObject doObject(VirtualFrame frame, Object object,
-            @Cached("createCallNode()") CallDispatchHeadNode toProc) {
+            @Cached("createCallNode()") CallDispatchHeadNode toProc,
+            @Cached("create()") BranchProfile errorProfile) {
         final Object coerced;
         try {
             coerced = toProc.call(frame, object, "to_proc", null);
         } catch (RaiseException e) {
+            errorProfile.enter();
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().typeErrorNoImplicitConversion(object, "Proc", this));
             } else {
                 throw e;
@@ -62,7 +63,7 @@ public abstract class ToProcNode extends RubyNode {
         if (RubyGuards.isRubyProc(coerced)) {
             return (DynamicObject) coerced;
         } else {
-            CompilerDirectives.transferToInterpreter();
+            errorProfile.enter();
             throw new RaiseException(coreExceptions().typeErrorBadCoercion(object, "Proc", "to_proc", coerced, this));
         }
     }

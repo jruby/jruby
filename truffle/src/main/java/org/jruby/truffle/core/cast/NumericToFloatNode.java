@@ -10,11 +10,13 @@
 package org.jruby.truffle.core.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
@@ -46,27 +48,27 @@ public abstract class NumericToFloatNode extends RubyNode {
 
     private Object callToFloat(VirtualFrame frame, DynamicObject value) {
         if (toFloatCallNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
+            CompilerDirectives.transferToInterpreter();
             toFloatCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), MissingBehavior.RETURN_MISSING));
         }
         return toFloatCallNode.call(frame, value, method, null);
     }
 
     @Specialization(guards = "isNumeric(frame, value)")
-    protected double castNumeric(VirtualFrame frame, DynamicObject value) {
+    protected double castNumeric(VirtualFrame frame, DynamicObject value,
+            @Cached("create()") BranchProfile errorProfile) {
         final Object result = callToFloat(frame, value);
 
         if (result instanceof Double) {
             return (double) result;
         } else {
-            CompilerDirectives.transferToInterpreter();
+            errorProfile.enter();
             throw new RaiseException(coreExceptions().typeErrorCantConvertTo(value, "Float", method, result, this));
         }
     }
 
     @Fallback
     protected double fallback(Object value) {
-        CompilerDirectives.transferToInterpreter();
         throw new RaiseException(coreExceptions().typeErrorCantConvertInto(value, "Float", this));
     }
 

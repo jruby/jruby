@@ -103,7 +103,7 @@ public abstract class VMPrimitiveNodes {
 
         private boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null));
             }
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
@@ -203,7 +203,6 @@ public abstract class VMPrimitiveNodes {
             // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
             final Passwd passwd = posix().getpwnam(username.toString());
             if (passwd == null) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().argumentError("user " + username.toString() + " does not exist", this));
             }
             return createString(StringOperations.encodeRope(passwd.getHome(), UTF8Encoding.INSTANCE));

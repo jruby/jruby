@@ -57,7 +57,7 @@ public abstract class MethodNodes {
 
         protected boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null));
             }
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
@@ -109,8 +109,6 @@ public abstract class MethodNodes {
 
         @Specialization
         public DynamicObject name(DynamicObject method) {
-            CompilerDirectives.transferToInterpreter();
-
             return getSymbol(Layouts.METHOD.getMethod(method).getName());
         }
 
@@ -152,17 +150,16 @@ public abstract class MethodNodes {
     @CoreMethod(names = "source_location")
     public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public Object sourceLocation(DynamicObject method) {
-            CompilerDirectives.transferToInterpreter();
-
             SourceSection sourceSection = Layouts.METHOD.getMethod(method).getSharedMethodInfo().getSourceSection();
 
             if (sourceSection.getSource() == null) {
                 return nil();
             } else {
                 DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
-                Object[] objects = new Object[]{file, sourceSection.getStartLine()};
+                Object[] objects = new Object[] { file, sourceSection.getStartLine() };
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
             }
         }

@@ -9,26 +9,30 @@
  */
 package org.jruby.truffle.core.kernel;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.platform.UnsafeGroup;
-
 import java.io.IOException;
 
 @CoreClass("Truffle::Kernel")
@@ -45,11 +49,22 @@ public abstract class TruffleKernelNodes {
         }
     }
 
+    @NodeChildren({
+            @NodeChild(value = "file", type = RubyNode.class),
+            @NodeChild(value = "wrap", type = RubyNode.class)
+    })
     @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1, unsafe = UnsafeGroup.LOAD)
-    public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class LoadNode extends CoreMethodNode {
+
+        @CreateCast("wrap")
+        public RubyNode coerceToBoolean(RubyNode inherit) {
+            return BooleanCastWithDefaultNodeGen.create(null, null, false, inherit);
+        }
 
         @Specialization(guards = "isRubyString(file)")
-        public boolean load(VirtualFrame frame, DynamicObject file, boolean wrap, @Cached("create()") IndirectCallNode callNode) {
+        public boolean load(VirtualFrame frame, DynamicObject file, boolean wrap,
+                @Cached("create()") IndirectCallNode callNode,
+                @Cached("create()") BranchProfile errorProfile) {
             if (wrap) {
                 throw new UnsupportedOperationException();
             }
@@ -59,17 +74,13 @@ public abstract class TruffleKernelNodes {
                 final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
                 deferredCall.call(frame, callNode);
             } catch (IOException e) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().loadErrorCannotLoad(file.toString(), this));
             }
 
             return true;
         }
 
-        @Specialization(guards = "isRubyString(file)")
-        public boolean load(VirtualFrame frame, DynamicObject file, NotProvided wrap, @Cached("create()") IndirectCallNode callNode) {
-            return load(frame, file, false, callNode);
-        }
     }
 
 }

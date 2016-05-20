@@ -42,6 +42,8 @@ def compile_extension(name)
   elsif RUBY_NAME == "maglev"
     require 'mkmf'
     hdrdir = $hdrdir
+  elsif RUBY_NAME == 'jruby+truffle'
+    return compile_extension_jruby_truffle(name)
   else
     raise "Don't know how to build C extensions with #{RUBY_NAME}"
   end
@@ -97,6 +99,22 @@ def compile_extension(name)
   lib
 ensure
   ENV[preloadenv] = preload if preloadenv
+end
+
+def compile_extension_jruby_truffle(name)
+  sulong_config_file = File.join(extension_path, '.jruby-cext-build.yml')
+  output_file = File.join(object_path, "#{name}_spec.#{RbConfig::CONFIG['DLEXT']}")
+
+  File.open(sulong_config_file, 'w') do |f|
+    f.puts "src: #{name}_spec.c"
+    f.puts "out: #{output_file}"
+  end
+
+  system "#{RbConfig::CONFIG['bindir']}/jruby", "#{RbConfig::CONFIG['bindir']}/jruby-cext-c", extension_path
+
+  output_file
+ensure
+  File.delete(sulong_config_file) if File.exist?(sulong_config_file)
 end
 
 def load_extension(name)

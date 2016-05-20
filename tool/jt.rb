@@ -423,19 +423,7 @@ module Commands
     end
 
     if args.delete('--sulong')
-      dir = Utilities.find_sulong_dir
-      env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
-
-      if ENV["SULONG_CLASSPATH"]
-        jruby_args << '-J-classpath' << ENV["SULONG_CLASSPATH"]
-      else
-        jruby_args << '-J-classpath' << "#{dir}/lib/*"
-        jruby_args << '-J-classpath' << "#{dir}/build/sulong.jar"
-        nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
-        jruby_args << '-J-classpath' << nfi_classes
-      end
-      
-      jruby_args << '-J-XX:-UseJVMCIClassLoader'
+      collect_sulong_args(env_vars, jruby_args)
     end
 
     if args.delete('--asm')
@@ -667,6 +655,10 @@ module Commands
       options += %w[--format spec/truffle/truffle_formatter.rb]
     end
 
+    if args.delete('--sulong')
+      collect_sulong_args(env_vars, options, '-T')
+    end
+
     if ENV['CI']
       # Need lots of output to keep Travis happy
       options += %w[--format specdoc]
@@ -677,7 +669,7 @@ module Commands
   private :test_specs
 
   def test_tck(*args)
-    mvn *args + ["-DargLine='-Djruby.home=#{JRUBY_DIR}'", 'test']
+    mvn *args + ['-Ptck']
   end
   private :test_tck
 
@@ -941,6 +933,23 @@ module Commands
     build
     run({ "TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS" => "true" }, '-e', 'exit')
   end
+
+  def collect_sulong_args(env_vars, args, arg_prefix='')
+    dir = Utilities.find_sulong_dir
+    env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
+
+    if ENV["SULONG_CLASSPATH"]
+      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{ENV["SULONG_CLASSPATH"]}"
+    else
+      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{dir}/lib/*"
+      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{dir}/build/sulong.jar"
+      nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
+      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{nfi_classes}"
+    end
+
+    args << "#{arg_prefix}-J-XX:-UseJVMCIClassLoader"
+  end
+  private :collect_sulong_args
 
 end
 

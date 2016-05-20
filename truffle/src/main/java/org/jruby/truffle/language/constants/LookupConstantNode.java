@@ -73,9 +73,7 @@ public abstract class LookupConstantNode extends RubyNode {
             @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
             @Cached("isVisible(cachedModule, constant)") boolean isVisible,
             @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
-
         if (!isVisible) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(module, name, this));
         }
         return constant;
@@ -92,7 +90,6 @@ public abstract class LookupConstantNode extends RubyNode {
         boolean isVisible = isVisible(module, constant);
 
         if (!isVisible) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(module, name, this));
         }
         return constant;
@@ -100,11 +97,7 @@ public abstract class LookupConstantNode extends RubyNode {
 
     @Specialization(guards = "!isRubyModule(module)")
     protected RubyConstant lookupNotModule(Object module, String name) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreExceptions().typeErrorIsNotA(
-                module.toString(),
-                "class/module",
-                this));
+        throw new RaiseException(coreExceptions().typeErrorIsNotAClassModule(module, this));
     }
 
     protected boolean guardName(String name, String cachedName, ConditionProfile sameNameProfile) {

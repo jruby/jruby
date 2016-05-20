@@ -12,11 +12,12 @@ DO NOT MODIFIY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.1.1.0-SNAPSHOT</version>
+    <version>9.1.2.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-truffle</artifactId>
   <name>JRuby Truffle</name>
   <properties>
+    <maven.test.skip>true</maven.test.skip>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
@@ -162,6 +163,14 @@ DO NOT MODIFIY - GENERATED CODE
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemProperties>
+            <jruby.home>${basedir}/..</jruby.home>
+          </systemProperties>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -276,6 +285,12 @@ DO NOT MODIFIY - GENERATED CODE
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>tck</id>
+      <properties>
+        <maven.test.skip>false</maven.test.skip>
+      </properties>
     </profile>
   </profiles>
 </project>

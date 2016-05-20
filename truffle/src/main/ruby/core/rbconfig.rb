@@ -17,6 +17,8 @@ module RbConfig
     'ruby_install_name' => 'jruby',
     'RUBY_INSTALL_NAME' => 'jruby',
     'ruby_version' => '2.2.0',
+    'OBJEXT' => 'll',
+    'DLEXT' => 'su'
   }
 
   def self.ruby

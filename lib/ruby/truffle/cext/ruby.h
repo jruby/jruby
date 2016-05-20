@@ -20,6 +20,8 @@ extern "C" {
 #include <string.h>
 #include <math.h>
 
+#define JRUBY_TRUFFLE 1
+
 #define xmalloc malloc
 #define xfree free
 #define ALLOC_N(type, n) malloc(sizeof(type) * n)
@@ -30,10 +32,14 @@ typedef void *VALUE;
 VALUE get_Qfalse();
 VALUE get_Qtrue();
 VALUE get_Qnil();
+VALUE get_rb_cProc();
+VALUE get_rb_eException();
 
 #define Qfalse get_Qfalse()
 #define Qtrue get_Qtrue()
 #define Qnil get_Qnil()
+#define rb_cProc get_rb_cProc();
+#define rb_eException get_rb_eException();
 
 VALUE get_rb_cObject();
 VALUE get_rb_cArray();
@@ -101,6 +107,7 @@ VALUE rb_const_get(VALUE object, ID name);
 
 void rb_raise(VALUE exception, const char *format, ...);
 
+VALUE rb_define_class(const char *name, VALUE superclass);
 VALUE rb_define_module(const char *name);
 VALUE rb_define_module_under(VALUE module, const char *name);
 

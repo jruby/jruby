@@ -248,7 +248,7 @@ public abstract class RopeNodes {
                                       @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
             try {
                 ExactMath.addExact(left.byteLength(), right.byteLength());
-            } catch(ArithmeticException e) {
+            } catch (ArithmeticException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
             }
@@ -271,7 +271,7 @@ public abstract class RopeNodes {
                            @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile) {
             try {
                 ExactMath.addExact(left.byteLength(), right.byteLength());
-            } catch(ArithmeticException e) {
+            } catch (ArithmeticException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
             }
@@ -373,7 +373,7 @@ public abstract class RopeNodes {
 
                 if (delta < 0) {
                     CompilerDirectives.transferToInterpreter();
-                    throw new UnsupportedOperationException("Code rang is reported as valid, but is invalid for the given encoding: " + encoding.toString());
+                    throw new UnsupportedOperationException("Code range is reported as valid, but is invalid for the given encoding: " + encoding.toString());
                 }
 
                 p += delta;
@@ -559,7 +559,6 @@ public abstract class RopeNodes {
             try {
                 ExactMath.multiplyExact(base.byteLength(), times);
             } catch (ArithmeticException e) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of repeating string exceeds the system maximum string length", this));
             }
 

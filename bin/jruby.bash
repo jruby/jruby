@@ -246,6 +246,7 @@ do
      -X+T)
         JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
         ruby_args=("${ruby_args[@]}" "-X+T")
+        USING_TRUFFLE="true"
         ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
@@ -356,7 +357,7 @@ if [ "$nailgun_client" != "" ]; then
     exit 1
   fi
 else
-if [ "$VERIFY_JRUBY" != "" ]; then
+if [[ "$VERIFY_JRUBY" != "" && -z "$USING_TRUFFLE" ]]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Running with instrumented profiler"
   fi

@@ -1,0 +1,25 @@
+fails:CApiIntegerSpecs rb_integer_pack converts zero
+fails:CApiIntegerSpecs rb_integer_pack without two's complement flag with big endian output converts a positive number
+fails:CApiIntegerSpecs rb_integer_pack without two's complement flag with big endian output converts a negative number
+fails:CApiIntegerSpecs rb_integer_pack without two's complement flag with big endian output converts a negative number exactly -2**(numwords*wordsize*8)
+fails:CApiIntegerSpecs rb_integer_pack without two's complement flag with little endian output converts a positive number
+fails:CApiIntegerSpecs rb_integer_pack without two's complement flag with little endian output converts a negative number
+fails:CApiIntegerSpecs rb_integer_pack without two's complement flag with little endian output converts a negative number exactly -2**(numwords*wordsize*8)
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input less than 64 bits with big endian output converts a positive number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input less than 64 bits with big endian output converts a negative number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input less than 64 bits with little endian output converts a positive number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input less than 64 bits with little endian output converts a negative number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input less than 64 bits with native endian output converts a positive number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input less than 64 bits with native endian output converts a negative number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with big endian output converts a positive number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with big endian output converts a negative number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with big endian output with overflow converts a positive number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with big endian output with overflow converts a negative number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with big endian output with overflow converts a negative number exactly -2**(numwords*wordsize*8)
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with little endian output converts a positive number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with little endian output converts a negative number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with little endian output with overflow converts a positive number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with little endian output with overflow converts a negative number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with little endian output with overflow converts a negative number exactly -2**(numwords*wordsize*8)
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with native endian output converts a positive number
+fails:CApiIntegerSpecs rb_integer_pack with two's complement flag with input greater than 64 bits with native endian output converts a negative number

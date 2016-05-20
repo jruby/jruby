@@ -10,10 +10,13 @@
 package org.jruby.truffle.core.format.read.bytes;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
@@ -39,7 +42,8 @@ public abstract class ReadUTF8CharacterNode extends FormatNode {
     }
 
     @Specialization
-    public Object read(VirtualFrame frame, byte[] source) {
+    public Object read(VirtualFrame frame, byte[] source,
+            @Cached("create()") BranchProfile errorProfile) {
         final int index = getSourcePosition(frame);
         final int sourceLength = getSourceLength(frame);
 
@@ -76,10 +80,8 @@ public abstract class ReadUTF8CharacterNode extends FormatNode {
         }
 
         if (index + length > sourceLength) {
-            CompilerDirectives.transferToInterpreter();
-            throw new InvalidFormatException(
-                    String.format("malformed UTF-8 character (expected %d bytes, given %d bytes)",
-                            length, sourceLength - index));
+            errorProfile.enter();
+            throw new InvalidFormatException(formatError(index, sourceLength, length));
         }
 
         for (int n = 1; n < length; n++) {
@@ -90,6 +92,11 @@ public abstract class ReadUTF8CharacterNode extends FormatNode {
         setSourcePosition(frame, index + length);
 
         return codepoint;
+    }
+
+    @TruffleBoundary
+    private String formatError(final int index, final int sourceLength, final int length) {
+        return String.format("malformed UTF-8 character (expected %d bytes, given %d bytes)", length, sourceLength - index);
     }
 
 }

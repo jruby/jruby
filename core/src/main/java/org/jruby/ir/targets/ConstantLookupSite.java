@@ -150,7 +150,7 @@ public class ConstantLookupSite extends MutableCallSite {
             throw runtime.newTypeError(cmVal + " is not a type/class");
         }
 
-        IRubyObject constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
+        IRubyObject constant = module.getConstantNoConstMissingSKipAutoload(name);
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
@@ -190,7 +190,7 @@ public class ConstantLookupSite extends MutableCallSite {
     public IRubyObject lexicalSearchConst(ThreadContext context, StaticScope scope) {
         Ruby runtime = context.runtime;
 
-        IRubyObject constant = scope.getConstantInner(name);
+        IRubyObject constant = scope.getConstantDefined(name);
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;

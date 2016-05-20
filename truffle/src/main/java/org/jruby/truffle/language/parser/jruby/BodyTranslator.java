@@ -1283,13 +1283,13 @@ public class BodyTranslator extends Translator {
         if (path.startsWith(coreRubiniusPath)) {
             boolean rename = false;
 
-            if (path.equals(coreRubiniusPath + "common/array.rb")) {
+            if (path.equals(coreRubiniusPath + "array.rb")) {
                 rename = methodName.equals("fill") || methodName.equals("zip");
-            } else if (path.equals(coreRubiniusPath + "common/float.rb")) {
+            } else if (path.equals(coreRubiniusPath + "float.rb")) {
                 rename = methodName.equals("round");
             } else if (path.equals(coreRubiniusPath + "range.rb")) {
                 rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
-            } else if (path.equals(coreRubiniusPath + "common/integer.rb")) {
+            } else if (path.equals(coreRubiniusPath + "integer.rb")) {
                 rename = methodName.equals("downto") || methodName.equals("upto");
             } else if (path.equals(coreRubiniusPath + "common/string.rb")) {
                 rename = methodName.equals("<<");
@@ -1811,7 +1811,7 @@ public class BodyTranslator extends Translator {
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "common/hash.rb")) {
+        if (path.equals(corePath + "hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.SetDefaultValueNodeFactory.create(self, rhs);
                 setSourceSection(ret, sourceSection);
@@ -1870,7 +1870,7 @@ public class BodyTranslator extends Translator {
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "common/array.rb")) {
+        if (path.equals(corePath + "array.rb")) {
             if (name.equals("@total")) {
                 ret = new RubyCallNode(context, sourceSection, "size", self, null, false);
                 return addNewlineIfNeeded(node, ret);
@@ -1899,7 +1899,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "common/time.rb")) {
+        } else if (path.equals(corePath + "time.rb")) {
             if (name.equals("@is_gmt")) {
                 ret = TimeNodesFactory.InternalGMTNodeFactory.create(self);
                 setSourceSection(ret, sourceSection);
@@ -1909,7 +1909,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "common/hash.rb")) {
+        } else if (path.equals(corePath + "hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.DefaultValueNodeFactory.create(self);
                 setSourceSection(ret, sourceSection);

@@ -392,12 +392,11 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return null;
     }
 
-    @TruffleBoundary
+    @TruffleBoundary(throwsControlFlowException = true)
     public void alias(RubyContext context, Node currentNode, String newName, String oldName) {
         InternalMethod method = deepMethodSearch(context, oldName);
 
         if (method == null) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreExceptions().nameErrorUndefinedMethod(
                     oldName,
                     rubyModuleObject,

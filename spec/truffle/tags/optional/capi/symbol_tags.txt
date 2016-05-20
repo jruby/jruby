@@ -1,0 +1,20 @@
+fails:C-API Symbol function rb_intern converts a string to a symbol, uniquely
+fails:C-API Symbol function rb_intern2 converts a string to a symbol, uniquely, for a string of given length
+fails:C-API Symbol function rb_intern_const converts a string to a Symbol
+fails:C-API Symbol function rb_id2name converts a symbol to a C char array
+fails:C-API Symbol function rb_id2str converts a symbol to a Ruby string
+fails:C-API Symbol function rb_id2str creates a string with the same encoding as the symbol
+fails:C-API Symbol function rb_intern_str converts a Ruby String to a Symbol
+fails:C-API Symbol function rb_is_const_id returns true given a const-like symbol
+fails:C-API Symbol function rb_is_const_id returns false given an ivar-like symbol
+fails:C-API Symbol function rb_is_const_id returns false given a cvar-like symbol
+fails:C-API Symbol function rb_is_const_id returns false given an undecorated symbol
+fails:C-API Symbol function rb_is_instance_id returns false given a const-like symbol
+fails:C-API Symbol function rb_is_instance_id returns true given an ivar-like symbol
+fails:C-API Symbol function rb_is_instance_id returns false given a cvar-like symbol
+fails:C-API Symbol function rb_is_instance_id returns false given an undecorated symbol
+fails:C-API Symbol function rb_is_class_id returns false given a const-like symbol
+fails:C-API Symbol function rb_is_class_id returns false given an ivar-like symbol
+fails:C-API Symbol function rb_is_class_id returns true given a cvar-like symbol
+fails:C-API Symbol function rb_is_class_id returns false given an undecorated symbol
+fails:C-API Symbol function rb_sym2str converts a Symbol to a String

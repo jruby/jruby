@@ -166,7 +166,7 @@ public abstract class PsychParserNodes {
                 final Charset charset = enc.getCharset();
                 reader = new StreamReader(new InputStreamReader(new InputStreamAdapter(getContext(), yaml), charset));
             } else {
-                ByteList byteList = StringOperations.getByteListReadOnly(toStrNode.coerceObject(frame, yaml));
+                ByteList byteList = StringOperations.getByteListReadOnly(toStrNode.executeToStr(frame, yaml));
                 Encoding encoding = byteList.getEncoding();
 
                 if (!(encoding instanceof UnicodeEncoding)) {

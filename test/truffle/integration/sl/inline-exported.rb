@@ -7,7 +7,8 @@
 # GNU Lesser General Public License version 2.1
 
 unless Truffle::Interop.mime_type_supported?('application/x-sl')
-  abort 'SL doesn\'t appear to be available - skipping SL test'
+  puts 'SL doesn\'t appear to be available - skipping SL test'
+  exit
 end
 
 Truffle::Interop.eval('application/x-sl', %{

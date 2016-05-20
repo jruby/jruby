@@ -248,7 +248,6 @@ public abstract class EncodingNodes {
             }
         }
 
-        @TruffleBoundary
         public static Encoding compatibleEncodingForStrings(DynamicObject first, DynamicObject second) {
             // Taken from org.jruby.RubyEncoding#areCompatible.
 

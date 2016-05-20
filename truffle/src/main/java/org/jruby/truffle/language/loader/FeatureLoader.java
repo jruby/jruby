@@ -237,9 +237,8 @@ public class FeatureLoader {
                     break;
 
                     default:
-                        throw new RaiseException(
-                                context.getCoreExceptions().internalError(
-                                        "unknown language " + expandedPath,
+                        throw new RaiseException(context.getCoreExceptions().internalError(
+                                        "unknown language " + mimeType + " for " + expandedPath,
                                         callNode));
                 }
 

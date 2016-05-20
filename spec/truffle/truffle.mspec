@@ -16,6 +16,34 @@ class MSpecScript
     set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G]
   end
 
+  set :capi, [
+    "spec/ruby/optional/capi",
+
+    # Incorrect C code for spec?
+    "^spec/ruby/optional/capi/data_spec.rb",
+
+    # Requires 'ruby/encoding.h'
+    "^spec/ruby/optional/capi/encoding_spec.rb",
+
+    # Requires 'ruby/io.h'
+    "^spec/ruby/optional/capi/io_spec.rb",
+
+    # Incorrect C code for spec?
+    "^spec/ruby/optional/capi/proc_spec.rb",
+
+    # Requires 'ruby/re.h'
+    "^spec/ruby/optional/capi/regexp_spec.rb",
+
+    # Requires 'ruby/intern.h'
+    "^spec/ruby/optional/capi/struct_spec.rb",
+
+    # Requires 'ruby/thread.h'
+    "^spec/ruby/optional/capi/thread_spec.rb",
+
+    # Missing symbol @Init_typed_data_spec.
+    "^spec/ruby/optional/capi/typed_data_spec.rb"
+  ]
+
   set :command_line, [
     "spec/ruby/command_line"
   ]
@@ -75,6 +103,7 @@ class MSpecScript
     [%r(^.*/language/),                 'spec/truffle/tags/language/'],
     [%r(^.*/core/),                     'spec/truffle/tags/core/'],
     [%r(^.*/library/),                  'spec/truffle/tags/library/'],
+    [%r(^.*/optional/capi/),            'spec/truffle/tags/optional/capi/'],
     [%r(^.*/truffle/specs/truffle),     'spec/truffle/tags/truffle/'],
     [/_spec.rb$/,                       '_tags.txt']
   ]

@@ -66,7 +66,7 @@ public class LexicalSearchConstInstr extends OneOperandResultBaseInstr implement
     private Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         StaticScope staticScope = (StaticScope) getDefiningScope().retrieve(context, self, currScope, currDynScope, temp);
 
-        IRubyObject constant = staticScope.getConstantInner(constName);
+        IRubyObject constant = staticScope.getConstantDefined(constName);
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;

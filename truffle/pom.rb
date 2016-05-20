@@ -10,7 +10,8 @@ project 'JRuby Truffle' do
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
               'truffle.version' => '39cbe78a794c79a64a52ef7bf8ef46cc65d18cd7-SNAPSHOT',
-              'jruby.basedir' => '${basedir}/..' )
+              'jruby.basedir' => '${basedir}/..',
+              'maven.test.skip' => 'true' )
 
   jar 'org.yaml:snakeyaml:1.14'
   jar 'org.antlr:antlr4-runtime:4.5.1-1'
@@ -65,6 +66,11 @@ project 'JRuby Truffle' do
                    'outputFile' => '${jruby.basedir}/lib/jruby-truffle.jar' )
   end
 
+  plugin( :surefire,
+          'systemProperties' => {
+              'jruby.home' =>  '${basedir}/..'
+          } )
+
   build do
     default_goal 'package'
 
@@ -93,5 +99,9 @@ project 'JRuby Truffle' do
                        :outputFile => '${project.build.directory}/jruby-truffle-${project.version}-complete.jar' )
       end
     end
+  end
+
+  profile 'tck' do
+    properties( 'maven.test.skip' => 'false' )
   end
 end

@@ -201,6 +201,10 @@ void rb_raise(VALUE exception, const char *format, ...) {
   truffle_invoke(RUBY_CEXT, "rb_raise", format /*, where to get args? */);
 }
 
+VALUE rb_define_class(const char *name, VALUE superclass) {
+  return truffle_invoke(RUBY_CEXT, "rb_define_class", truffle_read_string(name), superclass);
+}
+
 VALUE rb_define_module(const char *name) {
   return truffle_invoke(RUBY_CEXT, "rb_define_module", truffle_read_string(name));
 }
@@ -210,11 +214,11 @@ VALUE rb_define_module_under(VALUE module, const char *name) {
 }
 
 void rb_define_method(VALUE module, const char *name, void *function, int args) {
-  truffle_invoke(RUBY_CEXT, "rb_define_method", module, truffle_read_string(name), function, args);
+  truffle_invoke(RUBY_CEXT, "rb_define_method", module, truffle_read_string(name), truffle_address_to_function(function), args);
 }
 
 void rb_define_private_method(VALUE module, const char *name, void *function, int args) {
-  truffle_invoke(RUBY_CEXT, "rb_define_private_method", module, truffle_read_string(name), function, args);
+  truffle_invoke(RUBY_CEXT, "rb_define_private_method", module, truffle_read_string(name), truffle_address_to_function(function), args);
 }
 
 void rb_define_module_function(VALUE module, const char *name, void *function, int args) {

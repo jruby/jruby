@@ -646,7 +646,6 @@ public abstract class BignumNodes {
         @Specialization
         public DynamicObject toS(DynamicObject value, int base) {
             if (base < 2 || base > 36) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().argumentErrorInvalidRadix(base, this));
             }
 

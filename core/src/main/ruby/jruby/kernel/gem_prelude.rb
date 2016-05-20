@@ -8,6 +8,7 @@ if defined?(Gem)
     begin
       gem 'did_you_mean'
       require 'did_you_mean'
+      Gem.clear_paths
     rescue Gem::LoadError, LoadError
     end if defined?(DidYouMean)
   end

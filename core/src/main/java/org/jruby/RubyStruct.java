@@ -586,15 +586,11 @@ public class RubyStruct extends RubyObject {
         final Ruby runtime = context.runtime;
         final RubyStruct struct = this;
         // recursion guard
-        return runtime.recursiveListOperation(new Callable<RubyString>() {
-            public RubyString call() {
-                return (RubyString) runtime.execRecursive(new Ruby.RecursiveFunction() {
-                    public IRubyObject call(IRubyObject obj, boolean recur) {
-                        return inspectStruct(context, recur);
-                    }
-                }, struct);
+        return (RubyString) runtime.safeRecurse(new Ruby.RecursiveFunction() {
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                return inspectStruct(context, recur);
             }
-        });
+        }, struct, "inspect", false);
     }
 
     @JRubyMethod(name = {"to_a", "values"})

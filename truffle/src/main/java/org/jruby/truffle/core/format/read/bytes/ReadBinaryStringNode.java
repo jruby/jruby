@@ -49,8 +49,6 @@ public abstract class ReadBinaryStringNode extends FormatNode {
 
     @Specialization(guards = "isNull(source)")
     public void read(VirtualFrame frame, Object source) {
-        CompilerDirectives.transferToInterpreter();
-
         // Advance will handle the error
         advanceSourcePosition(frame, count);
 

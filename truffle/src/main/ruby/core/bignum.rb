@@ -24,19 +24,41 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module Process
-  def self.wait_pid_prim(pid, no_hang)
-    Rubinius.primitive :vm_wait_pid
-    raise PrimitiveFailure, "Process.wait_pid primitive failed"
+class Bignum < Integer
+  def <=>(other)
+    Rubinius.primitive :bignum_compare
+
+    # We do not use redo_compare here because Ruby does not
+    # raise if any part of the coercion or comparison raises
+    # an exception.
+    begin
+      coerced = other.coerce self
+      return nil unless coerced
+      coerced[0] <=> coerced[1]
+    rescue
+      return nil
+    end
   end
 
-  def self.time
-    Rubinius.primitive :vm_time
-    raise PrimitiveFailure, "Process.time primitive failed"
+  def eql?(value)
+    value.is_a?(Bignum) && self == value
   end
 
-  def self.cpu_times
-    Rubinius.primitive :vm_times
-    raise PrimitiveFailure, "Process.cpu_times primitive failed"
+  alias_method :modulo, :%
+
+  def fdiv(n)
+    to_f / n
+  end
+
+  def **(o)
+    Rubinius.primitive :bignum_pow
+
+    if o.is_a?(Float) && self < 0 && o != o.round
+      return Complex.new(self, 0) ** o
+    elsif o.is_a?(Integer) && o < 0
+      return Rational.new(self, 1) ** o
+    end
+
+    redo_coerced :**, o
   end
 end

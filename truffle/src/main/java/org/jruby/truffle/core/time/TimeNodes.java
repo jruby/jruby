@@ -275,7 +275,6 @@ public abstract class TimeNodes {
             try {
                 return ExactMath.addExact(ExactMath.multiplyExact(seconds, 1000L), (nanoseconds / 1_000_000));
             } catch (ArithmeticException e) {
-                CompilerDirectives.transferToInterpreter();
                 String message = String.format("UNIX epoch + %d seconds out of range for Time (Joda-Time limitation)", seconds);
                 throw new RaiseException(coreExceptions().rangeError(message, this));
             }

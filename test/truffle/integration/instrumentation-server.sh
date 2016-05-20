@@ -28,7 +28,7 @@ wait $pid || true
 ruby -X+T -Xtruffle.instrumentation_server_port=$PORT test/truffle/integration/instrumentation-server/subject.rb < in.txt > out.txt &
 pid=$!
 
-sleep 6
+sleep 9
 
 while ! (curl -s http://localhost:$PORT/stacks > /dev/null);
 do
@@ -38,7 +38,7 @@ done
 
 curl -s http://localhost:$PORT/break
 
-sleep 1
+sleep 3
 kill -9 $pid || true
 wait $pid || true
 
@@ -47,12 +47,14 @@ rm -f in.txt out.txt
 
 if [[ $session != *"test/truffle/integration/instrumentation-server/subject.rb:1"* ]]
 then
+  echo $session
   echo Expected line not found in backtrace
   exit 1
 fi
 
 if [[ $session != *21400* ]]
 then
+  echo $session
   echo Expected value not found after eval
   exit 1
 fi
