@@ -662,13 +662,15 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
+    private static final EnumSet<IRFlags> NEEDS_DYNAMIC_SCOPE_FLAGS =
+            EnumSet.of(
+                    CAN_RECEIVE_BREAKS,
+                    HAS_NONLOCAL_RETURNS,CAN_RECEIVE_NONLOCAL_RETURNS,
+                    BINDING_HAS_ESCAPED,
+                    USES_ZSUPER);
+
     private void computeNeedsDynamicScopeFlag() {
-        // SSS FIXME: checkArity for keyword args looks up a keyword arg in the static scope which
-        // currently requires a dynamic scope to be recovered. If there is another way to do this,
-        // we can get rid of this.
-        if (flags.contains(CAN_RECEIVE_BREAKS) || flags.contains(HAS_NONLOCAL_RETURNS) ||
-                flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS) || flags.contains(BINDING_HAS_ESCAPED) ||
-                flags.contains(USES_ZSUPER) || flags.contains(RECEIVES_KEYWORD_ARGS)) {
+        if (flags.containsAll(NEEDS_DYNAMIC_SCOPE_FLAGS)) {
             flags.add(REQUIRES_DYNSCOPE);
         }
     }
