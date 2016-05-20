@@ -2,6 +2,9 @@ language: java
 
 sudo: false
 
+before_cache:
+  - find $HOME/.m2 -type f -name \*.properties -print -delete
+
 cache:
  directories:
    - $HOME/.m2
