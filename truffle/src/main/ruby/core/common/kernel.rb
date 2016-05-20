@@ -1013,7 +1013,3 @@ module Kernel
   end
   module_function :warning
 end
-
-module Kernel
-
-end
