@@ -111,6 +111,7 @@ import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
+import org.jruby.truffle.stdlib.readline.ReadlineNodes;
 import org.jruby.truffle.stdlib.readline.ReadlineNodesFactory;
 import org.jruby.util.cli.OutputStrings;
 import java.io.File;
@@ -940,6 +941,8 @@ public class CoreLibrary {
                 throw new TruffleFatalException("couldn't load the post-boot code", e);
             }
         }
+
+        ReadlineNodes.initialize();
     }
 
     private void initializeRubiniusFFI() {

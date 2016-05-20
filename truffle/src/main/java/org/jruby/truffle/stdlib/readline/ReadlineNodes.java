@@ -75,32 +75,24 @@ public abstract class ReadlineNodes {
     private static Completer currentCompleter;
     private static History history;
 
-    @Primitive(name = "initialize_readline")
-    public static abstract class InitializeReadline extends PrimitiveArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject initializeReadline() {
-            try {
-                readline = new ConsoleReader();
-            } catch (IOException e) {
-                throw new UnsupportedOperationException("Couldn't initialize readline", e);
-            }
-
-            readline.setHistoryEnabled(false);
-            readline.setPaginationEnabled(true);
-            readline.setBellEnabled(true);
-
-            currentCompleter = new RubyFileNameCompleter();
-            readline.addCompleter(currentCompleter);
-
-            history = new MemoryHistory();
-            readline.setHistory(history);
-
-            return nil();
+    public static void initialize() {
+        try {
+            readline = new ConsoleReader();
+        } catch (IOException e) {
+            throw new UnsupportedOperationException("Couldn't initialize readline", e);
         }
 
+        readline.setHistoryEnabled(false);
+        readline.setPaginationEnabled(true);
+        readline.setBellEnabled(true);
+
+        currentCompleter = new RubyFileNameCompleter();
+        readline.addCompleter(currentCompleter);
+
+        history = new MemoryHistory();
+        readline.setHistory(history);
     }
+
 
     @CoreMethod(names = "basic_word_break_characters", onSingleton = true)
     public abstract static class BasicWordBreakCharactersNode extends CoreMethodArrayArgumentsNode {
