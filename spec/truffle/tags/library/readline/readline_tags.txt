@@ -1,2 +1,1 @@
-fails:Readline.readline returns the input string
 fails:Readline.readline taints the returned strings

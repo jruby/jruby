@@ -41,9 +41,7 @@
 package org.jruby.truffle.stdlib.readline;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.CreateCast;
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.object.DynamicObject;
 import jline.console.ConsoleReader;
 import jline.console.completer.Completer;
@@ -56,10 +54,12 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.builtins.*;
 import org.jruby.truffle.core.array.ArrayHelpers;
+import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 
 import java.io.IOException;
 import java.nio.CharBuffer;
@@ -129,6 +129,60 @@ public abstract class ReadlineNodes {
             final int[] store = { readline.getTerminal().getHeight(), readline.getTerminal().getWidth() };
 
             return ArrayHelpers.createArray(getContext(), store, 2);
+        }
+
+    }
+
+    @CoreMethod(names = "readline", onSingleton = true, optional = 2)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "prompt"),
+            @NodeChild(type = RubyNode.class, value = "addToHistory")
+    })
+    public abstract static class ReadlineNode extends CoreMethodNode {
+
+        @CreateCast("addToHistory") public RubyNode coerceToBoolean(RubyNode addToHistory) {
+            return BooleanCastWithDefaultNodeGen.create(null, null, false, addToHistory);
+        }
+
+        @Specialization(guards = "wasNotProvided(prompt)")
+        public DynamicObject readlineNoPrompt(Object prompt, boolean addToHistory) {
+            return readline(coreStrings().EMPTY_STRING.createInstance(), addToHistory);
+        }
+
+        @Specialization(guards = "isRubyString(prompt)")
+        public DynamicObject readline(DynamicObject prompt, boolean addToHistory) {
+            readline.setExpandEvents(false);
+
+            DynamicObject line = nil();
+            String value;
+            while (true) {
+                try {
+                    readline.getTerminal().setEchoEnabled(false);
+                    value = readline.readLine(RopeOperations.decodeUTF8(StringOperations.rope(prompt)));
+                    break;
+                } catch (IOException e) {
+                    throw new RaiseException(coreExceptions().ioError("readline", this));
+                } finally {
+                    readline.getTerminal().setEchoEnabled(true);
+                }
+            }
+
+            if (value != null) {
+                if (addToHistory) {
+                    readline.getHistory().add(value);
+                }
+
+                // Enebo: This is a little weird and a little broken.  We just ask
+                // for the bytes and hope they match default_external.  This will
+                // work for common cases, but not ones in which the user explicitly
+                // sets the default_external to something else.  The second problem
+                // is that no al M17n encodings are valid encodings in java.lang.String.
+                // We clearly need a byte[]-version of JLine since we cannot totally
+                // behave properly using Java Strings.
+                line = StringOperations.createString(getContext(), StringOperations.createRope(value, getContext().getJRubyRuntime().getDefaultExternalEncoding()));
+            }
+
+            return line;
         }
 
     }
