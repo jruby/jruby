@@ -1012,4 +1012,48 @@ module Kernel
     $stderr.puts message if $VERBOSE
   end
   module_function :warning
+
+  def raise(exc=undefined, msg=undefined, ctx=nil)
+    skip = false
+    if undefined.equal? exc
+      exc = $!
+      if exc
+        skip = true
+      else
+        exc = RuntimeError.new("No current exception")
+      end
+    elsif exc.respond_to? :exception
+      if undefined.equal? msg
+        exc = exc.exception
+      else
+        exc = exc.exception msg
+      end
+      raise ::TypeError, 'exception class/object expected' unless exc.kind_of?(::Exception)
+    elsif exc.kind_of? String
+      exc = ::RuntimeError.exception exc
+    else
+      raise ::TypeError, 'exception class/object expected'
+    end
+
+    unless skip
+      exc.set_context ctx if ctx
+      exc.capture_backtrace!(2) unless exc.backtrace?
+    end
+
+    if $DEBUG and $VERBOSE != nil
+      if bt = exc.backtrace and bt[1]
+        pos = bt[1]
+      else
+        pos = Rubinius::VM.backtrace(1)[0].position
+      end
+
+      STDERR.puts "Exception: `#{exc.class}' #{pos} - #{exc.message}"
+    end
+
+    Rubinius.raise_exception exc
+  end
+  module_function :raise
+
+  alias_method :fail, :raise
+  module_function :fail
 end
