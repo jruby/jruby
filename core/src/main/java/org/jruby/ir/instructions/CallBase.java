@@ -34,7 +34,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
     private transient boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
     private transient boolean dontInline;
-    private transient boolean containsArgSplat;
+    private transient boolean[] splatMap;
     private transient boolean procNew;
     private boolean potentiallyRefined;
 
@@ -48,7 +48,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         this.name = name;
         this.callType = callType;
         this.callSite = getCallSiteFor(callType, name, potentiallyRefined);
-        containsArgSplat = containsArgSplat(args);
+        splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
@@ -128,8 +128,8 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return callType;
     }
 
-    public boolean containsArgSplat() {
-        return containsArgSplat;
+    public boolean[] splatMap() {
+        return splatMap;
     }
 
     public void setProcNew(boolean procNew) {
@@ -231,8 +231,8 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         super.simplifyOperands(valueMap, force);
 
-        // Recompute containsArgSplat flag
-        containsArgSplat = containsArgSplat(operands); // also checking receiver but receiver can never be a splat
+        // Recompute splatMap
+        splatMap = IRRuntimeHelpers.buildSplatMap(getCallArgs()); // also checking receiver but receiver can never be a splat
         flagsComputed = false; // Forces recomputation of flags
     }
 
@@ -424,7 +424,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope dynamicScope, Object[] temp) {
-        return containsArgSplat ?
+        return splatMap != null ?
                 prepareArgumentsComplex(context, self, currScope, dynamicScope, temp) :
                 prepareArgumentsSimple(context, self, currScope, dynamicScope, temp);
     }
@@ -445,20 +445,12 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         // But when zsuper is converted to SuperInstr with known args, splats can appear anywhere
         // in the list.  So, this looping handles both these scenarios, although if we wanted to
         // optimize for CallInstr which has splats only in the first position, we could do that.
-        List<IRubyObject> argList = new ArrayList<>(argsCount * 2);
-        for (int i = 0; i < argsCount; i++) { // receiver is operands[0]
-            IRubyObject rArg = (IRubyObject) operands[i+1].retrieve(context, self, currScope, currDynScope, temp);
-            if (operands[i+1] instanceof Splat) {
-                RubyArray array = (RubyArray) rArg;
-                for (int j = 0; j < array.size(); j++) {
-                    argList.add(array.eltOk(j));
-                }
-            } else {
-                argList.add(rArg);
-            }
-        }
 
-        return argList.toArray(new IRubyObject[argList.size()]);
+        // CON: Using same logic as super splatting, but this will at least only allocate at
+        // most two "carrier" arrays.
+        return IRRuntimeHelpers.splatArguments(
+                prepareArgumentsSimple(context, self, currScope, currDynScope, temp),
+                splatMap);
     }
 
     public Block prepareBlock(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
