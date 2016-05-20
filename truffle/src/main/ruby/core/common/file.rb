@@ -51,6 +51,11 @@ class File < IO
   class UnableToStat < FileError; end
   class PermissionError < FileError; end
 
+  # these will be necessary when we run on Windows
+  DOSISH = false # !!(RUBY_PLATFORM =~ /mswin/)
+  CASEFOLD_FILESYSTEM = DOSISH
+  FNM_SYSCASE = CASEFOLD_FILESYSTEM ? FNM_CASEFOLD : 0
+
   module Constants
     F_GETFL  = Rubinius::Config['rbx.platform.fcntl.F_GETFL']
     F_SETFL  = Rubinius::Config['rbx.platform.fcntl.F_SETFL']
@@ -98,6 +103,8 @@ class File < IO
     else
       NULL = '/dev/null'
     end
+
+    FNM_SYSCASE = File::FNM_SYSCASE
   end
 
   FFI = Rubinius::FFI
@@ -1314,6 +1321,15 @@ class File < IO
   def size
     raise IOError, "closed stream" if closed?
     stat.size
+  end
+
+  ##
+  # Return the equivalent S-Expression of the file given.
+  # Raises +SyntaxError+ if there is a syntax issue in the
+  # file, making it unparsable.
+  #  File.to_sexp("/tmp/test.rb") #=> s(...)
+  def self.to_sexp(name)
+    File.read(name).to_sexp(name)
   end
 end     # File
 
