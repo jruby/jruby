@@ -106,10 +106,6 @@ Truffle::Boot.require_core 'core/rational'
 Truffle::Boot.require_core 'core/rationalizer'
 Truffle::Boot.require_core 'core/complex'
 Truffle::Boot.require_core 'core/complexifier'
-
-# Load delta
-
-Truffle::Boot.require_core 'core/delta/module'
 Truffle::Boot.require_core 'core/class'
 
 # Load JRuby+Truffle classes
