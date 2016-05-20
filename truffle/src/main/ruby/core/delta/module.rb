@@ -48,24 +48,4 @@ class Module
     self
   end
 
-  def prepended(mod); end
-  private :prepended
-
-  def prepend(*modules)
-    modules.reverse_each do |mod|
-      if !mod.kind_of?(Module) or mod.kind_of?(Class)
-        raise TypeError, "wrong argument type #{mod.class} (expected Module)"
-      end
-
-      Rubinius.privately do
-        mod.prepend_features self
-      end
-
-      Rubinius.privately do
-        mod.prepended self
-      end
-    end
-    self
-  end
-
 end
