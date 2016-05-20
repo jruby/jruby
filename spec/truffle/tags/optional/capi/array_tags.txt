@@ -1,7 +1,6 @@
 fails:C-API Array function rb_Array returns obj if it is an array
 fails:C-API Array function rb_Array tries to convert obj to an array
 fails:C-API Array function rb_Array returns obj wrapped in an array if it cannot be converted to an array
-fails:C-API Array function rb_ary_new returns an empty array
 fails:C-API Array function rb_ary_new2 returns an empty array
 fails:C-API Array function rb_ary_new3 returns an array with the passed cardinality and varargs
 fails:C-API Array function rb_ary_new_from_args returns an array with the passed cardinality and varargs
