@@ -47,12 +47,14 @@ rm -f in.txt out.txt
 
 if [[ $session != *"test/truffle/integration/instrumentation-server/subject.rb:1"* ]]
 then
+  echo $session
   echo Expected line not found in backtrace
   exit 1
 fi
 
 if [[ $session != *21400* ]]
 then
+  echo $session
   echo Expected value not found after eval
   exit 1
 fi
