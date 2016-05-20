@@ -130,7 +130,7 @@ public class JVMVisitor extends IRVisitor {
         if (print && Options.IR_PRINT.load()) {
             ByteArrayOutputStream baos = IRDumper.printIR(scope, true);
 
-            LOG.info("Printing JIT IR for " + scope.getName(), "\n" + new String(baos.toByteArray()));
+            LOG.info("Printing JIT IR for " + scope.getName() + ":\n" + new String(baos.toByteArray()));
         }
 
         Map<BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
