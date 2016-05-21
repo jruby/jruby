@@ -1291,7 +1291,7 @@ public class BodyTranslator extends Translator {
                 rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
             } else if (path.equals(coreRubiniusPath + "integer.rb")) {
                 rename = methodName.equals("downto") || methodName.equals("upto");
-            } else if (path.equals(coreRubiniusPath + "common/string.rb")) {
+            } else if (path.equals(coreRubiniusPath + "string.rb")) {
                 rename = methodName.equals("<<");
             }
 
@@ -1821,7 +1821,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "bootstrap/string.rb") || path.equals(corePath + "common/string.rb")) {
+        } else if (path.equals(corePath + "bootstrap/string.rb") || path.equals(corePath + "string.rb")) {
             if (name.equals("@hash")) {
                 ret = StringNodesFactory.ModifyBangNodeFactory.create(new RubyNode[]{});
                 setSourceSection(ret, sourceSection);
