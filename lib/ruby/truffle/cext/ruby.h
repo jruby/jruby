@@ -84,7 +84,7 @@ void rb_str_cat(VALUE string, const char *to_concat, long length);
 int RARRAY_LEN(VALUE array);
 VALUE *RARRAY_PTR(VALUE array);
 VALUE rb_ary_new_capa(long capacity);
-VALUE rb_ary_new2();
+#define rb_ary_new2 rb_ary_new_capa
 VALUE rb_ary_new();
 void rb_ary_push(VALUE array, VALUE value);
 void rb_ary_store(VALUE array, long index, VALUE value);

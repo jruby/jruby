@@ -78,15 +78,11 @@ module Truffle
       array
     end
 
-    def rb_ary_new_capa(capacity)
-      []
-    end
-
-    def rb_ary_new2
-      []
-    end
-
     def rb_ary_new
+      []
+    end
+
+    def rb_ary_new_capa(capacity)
       []
     end
 

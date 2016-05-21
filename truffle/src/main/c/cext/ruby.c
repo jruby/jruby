@@ -140,10 +140,6 @@ VALUE rb_ary_new_capa(long capacity) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_ary_new_capa", capacity);
 }
 
-VALUE rb_ary_new2() {
-  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_ary_new2");
-}
-
 VALUE rb_ary_new() {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_ary_new");
 }
