@@ -148,6 +148,10 @@ void rb_ary_push(VALUE array, VALUE value) {
   truffle_invoke(array, "push", value);
 }
 
+VALUE rb_ary_pop(VALUE array) {
+  return truffle_invoke(array, "pop");
+}
+
 void rb_ary_store(VALUE array, long index, VALUE value) {
   truffle_write_idx(array, (int) index, value);
 }

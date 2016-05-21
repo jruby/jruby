@@ -87,6 +87,7 @@ VALUE rb_ary_new_capa(long capacity);
 #define rb_ary_new2 rb_ary_new_capa
 VALUE rb_ary_new(void);
 void rb_ary_push(VALUE array, VALUE value);
+VALUE rb_ary_pop(VALUE array);
 void rb_ary_store(VALUE array, long index, VALUE value);
 VALUE rb_ary_entry(VALUE array, long index);
 int RARRAY_LENINT(VALUE array);

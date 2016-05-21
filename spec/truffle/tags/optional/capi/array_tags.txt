@@ -4,15 +4,10 @@ fails:C-API Array function rb_Array returns obj wrapped in an array if it cannot
 fails:C-API Array function rb_ary_new3 returns an array with the passed cardinality and varargs
 fails:C-API Array function rb_ary_new_from_args returns an array with the passed cardinality and varargs
 fails:C-API Array function rb_ary_new4 returns returns an array with the passed values
-fails:C-API Array function rb_ary_push adds an element to the array
-fails:C-API Array function rb_ary_pop removes and returns the last element in the array
 fails:C-API Array function rb_ary_join joins elements of an array with a string
 fails:C-API Array function rb_ary_to_s creates an Array literal representation as a String
 fails:C-API Array function rb_ary_reverse reverses the order of elements in the array
 fails:C-API Array function rb_ary_reverse returns the original array
-fails:C-API Array function rb_ary_entry returns nil when passed an empty array
-fails:C-API Array function rb_ary_entry returns elements from the end when passed a negative index
-fails:C-API Array function rb_ary_entry returns nil if the index is out of range
 fails:C-API Array function rb_ary_clear removes all elements from the array
 fails:C-API Array function rb_ary_dup duplicates the array
 fails:C-API Array function rb_ary_unshift prepends the element to the array
