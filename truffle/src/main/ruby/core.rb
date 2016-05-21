@@ -55,7 +55,7 @@ Truffle::Boot.require_core 'core/ffi_struct'
 
 Truffle::Boot.require_core 'core/immediate'
 Truffle::Boot.require_core 'core/string_mirror'
-Truffle::Boot.require_core 'core/common/module'
+Truffle::Boot.require_core 'core/module'
 Truffle::Boot.require_core 'core/proc'
 Truffle::Boot.require_core 'core/enumerable_helper'
 Truffle::Boot.require_core 'core/enumerable'
@@ -113,7 +113,6 @@ Truffle::Boot.require_core 'core/class'
 Truffle::Boot.require_core 'core/binding'
 Truffle::Boot.require_core 'core/math'
 Truffle::Boot.require_core 'core/method'
-Truffle::Boot.require_core 'core/module'
 Truffle::Boot.require_core 'core/unbound_method'
 
 # Dirty fixes we'd like to get rid of soon
