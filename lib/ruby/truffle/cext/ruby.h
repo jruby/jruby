@@ -29,11 +29,11 @@ extern "C" {
 typedef void *ID;
 typedef void *VALUE;
 
-VALUE get_Qfalse();
-VALUE get_Qtrue();
-VALUE get_Qnil();
-VALUE get_rb_cProc();
-VALUE get_rb_eException();
+VALUE get_Qfalse(void);
+VALUE get_Qtrue(void);
+VALUE get_Qnil(void);
+VALUE get_rb_cProc(void);
+VALUE get_rb_eException(void);
 
 #define Qfalse get_Qfalse()
 #define Qtrue get_Qtrue()
@@ -41,15 +41,15 @@ VALUE get_rb_eException();
 #define rb_cProc get_rb_cProc();
 #define rb_eException get_rb_eException();
 
-VALUE get_rb_cObject();
-VALUE get_rb_cArray();
-VALUE get_rb_cHash();
+VALUE get_rb_cObject(void);
+VALUE get_rb_cArray(void);
+VALUE get_rb_cHash(void);
 
 #define rb_cObject get_rb_cObject()
 #define rb_cArray get_rb_cArray()
 #define rb_cHash get_rb_cHash()
 
-VALUE get_rb_eRuntimeError();
+VALUE get_rb_eRuntimeError(void);
 
 #define rb_eRuntimeError get_rb_eRuntimeError()
 
@@ -85,14 +85,14 @@ int RARRAY_LEN(VALUE array);
 VALUE *RARRAY_PTR(VALUE array);
 VALUE rb_ary_new_capa(long capacity);
 #define rb_ary_new2 rb_ary_new_capa
-VALUE rb_ary_new();
+VALUE rb_ary_new(void);
 void rb_ary_push(VALUE array, VALUE value);
 void rb_ary_store(VALUE array, long index, VALUE value);
 VALUE rb_ary_entry(VALUE array, long index);
 int RARRAY_LENINT(VALUE array);
 VALUE rb_ary_dup(VALUE array);
 
-VALUE rb_hash_new();
+VALUE rb_hash_new(void);
 VALUE rb_hash_aref(VALUE hash, VALUE key);
 void rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 
