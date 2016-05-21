@@ -32,6 +32,21 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+module Rubinius
+  module Type
+    def self.const_get(mod, name, inherit=true, resolve=true)
+      raise "unsupported" unless resolve
+      mod.const_get name, inherit
+    end
+
+    def self.const_exists?(mod, name, inherit = true)
+      mod.const_defined? name, inherit
+    end
+  end
+end
+
+
 ARGV.push *Truffle::Boot.original_argv
 
 $LOAD_PATH.push *Truffle::Boot.original_load_path
