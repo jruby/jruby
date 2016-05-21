@@ -70,7 +70,6 @@ lib/ruby/stdlib/hoe*
 lib/ruby/stdlib/minitest*
 lib/ruby/stdlib/power_assert*
 lib/ruby/stdlib/psych*
-lib/ruby/stdlib/did_you_mean*
 release.properties
 share
 spaces test
