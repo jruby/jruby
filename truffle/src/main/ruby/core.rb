@@ -111,7 +111,6 @@ Truffle::Boot.require_core 'core/class'
 # Load JRuby+Truffle classes
 
 Truffle::Boot.require_core 'core/binding'
-Truffle::Boot.require_core 'core/kernel'
 Truffle::Boot.require_core 'core/math'
 Truffle::Boot.require_core 'core/method'
 Truffle::Boot.require_core 'core/module'
