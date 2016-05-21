@@ -1821,7 +1821,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "bootstrap/string.rb") || path.equals(corePath + "string.rb")) {
+        } else if (path.equals(corePath + "string.rb")) {
             if (name.equals("@hash")) {
                 ret = StringNodesFactory.ModifyBangNodeFactory.create(new RubyNode[]{});
                 setSourceSection(ret, sourceSection);
