@@ -1706,7 +1706,7 @@ public class BodyTranslator extends Translator {
             RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 
             if (name.equals("$_")) {
-                if (getSourcePath(sourceSection).equals(context.getCoreLibrary().getCoreLoadPath() + "/core/common/regexp.rb")) {
+                if (getSourcePath(sourceSection).equals(context.getCoreLibrary().getCoreLoadPath() + "/core/regexp.rb")) {
                     readNode = new RubiniusLastStringReadNode(context, sourceSection);
                 } else {
                     readNode = GetFromThreadLocalNodeGen.create(context, sourceSection, readNode);
@@ -1841,7 +1841,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "common/io.rb")) {
+        } else if (path.equals(corePath + "io.rb")) {
             // TODO (pitr 08-Aug-2015): values of predefined OM properties should be casted to defined types automatically
             if (name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
                 // Cast int-fitting longs back to int
@@ -1881,7 +1881,7 @@ public class BodyTranslator extends Translator {
                 ret = new IntegerFixnumLiteralNode(context, sourceSection, 0);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "common/regexp.rb")) {
+        } else if (path.equals(corePath + "regexp.rb")) {
             if (name.equals("@source")) {
                 ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(self);
                 setSourceSection(ret, sourceSection);
