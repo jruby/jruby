@@ -1,34 +1,19 @@
-fails:C-API Array function rb_Array returns obj if it is an array
-fails:C-API Array function rb_Array tries to convert obj to an array
 fails:C-API Array function rb_Array returns obj wrapped in an array if it cannot be converted to an array
-fails:C-API Array function rb_ary_new2 returns an empty array
 fails:C-API Array function rb_ary_new3 returns an array with the passed cardinality and varargs
 fails:C-API Array function rb_ary_new_from_args returns an array with the passed cardinality and varargs
 fails:C-API Array function rb_ary_new4 returns returns an array with the passed values
-fails:C-API Array function rb_ary_push adds an element to the array
-fails:C-API Array function rb_ary_pop removes and returns the last element in the array
 fails:C-API Array function rb_ary_join joins elements of an array with a string
 fails:C-API Array function rb_ary_to_s creates an Array literal representation as a String
 fails:C-API Array function rb_ary_reverse reverses the order of elements in the array
 fails:C-API Array function rb_ary_reverse returns the original array
-fails:C-API Array function rb_ary_entry returns nil when passed an empty array
-fails:C-API Array function rb_ary_entry returns elements from the end when passed a negative index
-fails:C-API Array function rb_ary_entry returns nil if the index is out of range
 fails:C-API Array function rb_ary_clear removes all elements from the array
-fails:C-API Array function rb_ary_dup duplicates the array
 fails:C-API Array function rb_ary_unshift prepends the element to the array
 fails:C-API Array function rb_ary_shift removes and returns the first element
 fails:C-API Array function rb_ary_shift returns nil when the array is empty
-fails:C-API Array function rb_ary_store overwrites the element at the given position
-fails:C-API Array function rb_ary_store writes to elements offset from the end if passed a negative index
-fails:C-API Array function rb_ary_store raises on IndexError if the negative index is greater than the length
-fails:C-API Array function rb_ary_store enlarges the array as needed
 fails:C-API Array function rb_ary_concat concats two arrays
 fails:C-API Array function rb_ary_plus adds two arrays together
 fails:C-API Array function RARRAY_PTR returns a pointer to a C array of the array's elements
 fails:C-API Array function RARRAY_PTR allows assigning to the elements of the C array
-fails:C-API Array function RARRAY_LEN returns the size of the array
-fails:C-API Array function RARRAY_AREF returns an element from the array
 fails:C-API Array function rb_assoc_new returns an array containing the two elements
 fails:C-API Array function rb_ary_includes returns true if the array includes the element
 fails:C-API Array function rb_ary_includes returns false if the array does not include the element

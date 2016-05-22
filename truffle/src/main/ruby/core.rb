@@ -7,17 +7,7 @@
 # GNU Lesser General Public License version 2.1
 
 Truffle::Boot.require_core 'core/pre'
-
-# Rubinius primitives written in Ruby
-
 Truffle::Boot.require_core 'core/primitives'
-
-# Load alpha.rb
-
-Truffle::Boot.require_core 'core/alpha'
-
-# Load bootstrap
-
 Truffle::Boot.require_core 'core/tuple'
 Truffle::Boot.require_core 'core/lookuptable'
 Truffle::Boot.require_core 'core/atomic'
@@ -27,35 +17,25 @@ Truffle::Boot.require_core 'core/bignum'
 Truffle::Boot.require_core 'core/channel'
 Truffle::Boot.require_core 'core/character'
 Truffle::Boot.require_core 'core/configuration'
-Truffle::Boot.require_core 'core/bootstrap/dir'
 Truffle::Boot.require_core 'core/false'
 Truffle::Boot.require_core 'core/gc'
-Truffle::Boot.require_core 'core/bootstrap/io'
 Truffle::Boot.require_core 'core/nil'
-Truffle::Boot.require_core 'core/bootstrap/regexp'
-Truffle::Boot.require_core 'core/bootstrap/rubinius'
-Truffle::Boot.require_core 'core/bootstrap/stat'
-Truffle::Boot.require_core 'core/bootstrap/string'
-Truffle::Boot.require_core 'core/bootstrap/thread'
+Truffle::Boot.require_core 'core/rubinius'
+Truffle::Boot.require_core 'core/stat'
+Truffle::Boot.require_core 'core/string'
+Truffle::Boot.require_core 'core/thread'
 Truffle::Boot.require_core 'core/true'
-Truffle::Boot.require_core 'core/bootstrap/type'
+Truffle::Boot.require_core 'core/type'
 Truffle::Boot.require_core 'core/weakref'
-
-# Load platform
-
 Truffle::Boot.require_core 'core/library'
-
 Truffle::Boot.require_core 'core/ffi'
-Truffle::Boot.require_core 'core/pointer_accessors'
 Truffle::Boot.require_core 'core/pointer'
 Truffle::Boot.require_core 'core/ffi_file'
 Truffle::Boot.require_core 'core/ffi_struct'
-
-# Load common
-
+Truffle::Boot.require_core 'core/io'
 Truffle::Boot.require_core 'core/immediate'
 Truffle::Boot.require_core 'core/string_mirror'
-Truffle::Boot.require_core 'core/common/module'
+Truffle::Boot.require_core 'core/module'
 Truffle::Boot.require_core 'core/proc'
 Truffle::Boot.require_core 'core/enumerable_helper'
 Truffle::Boot.require_core 'core/enumerable'
@@ -63,10 +43,9 @@ Truffle::Boot.require_core 'core/enumerator'
 Truffle::Boot.require_core 'core/argf'
 Truffle::Boot.require_core 'core/exception'
 Truffle::Boot.require_core 'core/undefined'
-Truffle::Boot.require_core 'core/common/type'
 Truffle::Boot.require_core 'core/hash'
 Truffle::Boot.require_core 'core/array'
-Truffle::Boot.require_core 'core/common/kernel'
+Truffle::Boot.require_core 'core/kernel'
 Truffle::Boot.require_core 'core/identity_map'
 Truffle::Boot.require_core 'core/comparable'
 Truffle::Boot.require_core 'core/numeric_mirror'
@@ -75,31 +54,28 @@ Truffle::Boot.require_core 'core/ctype'
 Truffle::Boot.require_core 'core/integer'
 Truffle::Boot.require_core 'core/fixnum'
 Truffle::Boot.require_core 'core/lru_cache'
+Truffle::Boot.require_core 'core/regexp'
 Truffle::Boot.require_core 'core/encoding'
 Truffle::Boot.require_core 'core/env'
 Truffle::Boot.require_core 'core/errno'
-Truffle::Boot.require_core 'core/common/io'
-Truffle::Boot.require_core 'core/common/file'
-Truffle::Boot.require_core 'core/common/dir'
+Truffle::Boot.require_core 'core/file'
+Truffle::Boot.require_core 'core/dir'
 Truffle::Boot.require_core 'core/dir_glob'
 Truffle::Boot.require_core 'core/file_test'
-Truffle::Boot.require_core 'core/common/stat'
 Truffle::Boot.require_core 'core/float'
 Truffle::Boot.require_core 'core/marshal'
 Truffle::Boot.require_core 'core/object_space'
-Truffle::Boot.require_core 'core/common/string'
 Truffle::Boot.require_core 'core/range_mirror'
 Truffle::Boot.require_core 'core/range'
-Truffle::Boot.require_core 'core/common/struct'
+Truffle::Boot.require_core 'core/struct'
+Truffle::Boot.require_core 'core/tms'
 Truffle::Boot.require_core 'core/process'
 Truffle::Boot.require_core 'core/process_mirror'
 Truffle::Boot.require_core 'core/random'
-Truffle::Boot.require_core 'core/common/regexp'
 Truffle::Boot.require_core 'core/signal'
 Truffle::Boot.require_core 'core/splitter'
 Truffle::Boot.require_core 'core/symbol'
 Truffle::Boot.require_core 'core/mutex'
-Truffle::Boot.require_core 'core/common/thread'
 Truffle::Boot.require_core 'core/throw_catch'
 Truffle::Boot.require_core 'core/time'
 Truffle::Boot.require_core 'core/rational'
@@ -107,32 +83,15 @@ Truffle::Boot.require_core 'core/rationalizer'
 Truffle::Boot.require_core 'core/complex'
 Truffle::Boot.require_core 'core/complexifier'
 Truffle::Boot.require_core 'core/class'
-
-# Load JRuby+Truffle classes
-
 Truffle::Boot.require_core 'core/binding'
-Truffle::Boot.require_core 'core/kernel'
 Truffle::Boot.require_core 'core/math'
 Truffle::Boot.require_core 'core/method'
-Truffle::Boot.require_core 'core/module'
-Truffle::Boot.require_core 'core/string'
-Truffle::Boot.require_core 'core/thread'
 Truffle::Boot.require_core 'core/unbound_method'
-Truffle::Boot.require_core 'core/type'
-
-# Dirty fixes we'd like to get rid of soon
 Truffle::Boot.require_core 'core/shims'
-
-# Load JRuby+Truffle specific classes
-
 Truffle::Boot.require_core 'core/truffle/attachments'
 Truffle::Boot.require_core 'core/truffle/debug'
 Truffle::Boot.require_core 'core/truffle/cext'
 Truffle::Boot.require_core 'core/truffle/interop'
-
-# Start running Ruby code outside classes
-
 Truffle::Boot.require_core 'core/rbconfig'
 Truffle::Boot.require_core 'core/main'
-
 Truffle::Boot.require_core 'core/post'

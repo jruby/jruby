@@ -24,20 +24,18 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#--
-# Be very careful about calling raise in here! Thread has its own
-# raise which, if you're calling raise, you probably don't want. Use
-# Kernel.raise to call the proper raise.
-#++
+class Struct
+  Struct.new 'Tms', :utime, :stime, :cutime, :cstime, :tutime, :tstime
 
-class Thread
-  MUTEX_FOR_THREAD_EXCLUSIVE = Mutex.new
-
-  def self.exclusive
-    MUTEX_FOR_THREAD_EXCLUSIVE.synchronize { yield }
-  end
-
-  def randomizer
-    @randomizer ||= Rubinius::Randomizer.new
+  class Tms
+    def initialize(utime=nil, stime=nil, cutime=nil, cstime=nil,
+                   tutime=nil, tstime=nil)
+      @utime = utime
+      @stime = stime
+      @cutime = cutime
+      @cstime = cstime
+      @tutime = tutime
+      @tstime = tstime
+    end
   end
 end

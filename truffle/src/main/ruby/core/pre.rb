@@ -32,7 +32,31 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+class Module
+
+  # :internal:
+  #
+  # Basic version of .include used in kernel code.
+  #
+  # Redefined in kernel/delta/module.rb.
+  #
+  def include(mod)
+    Rubinius.privately do
+      mod.append_features self # Truffle: moved the append_features inside the privately
+      mod.included self
+    end
+    self
+  end
+
+end
+
 module Kernel
+
+  # Rubinius defines this method differently, using the :object_class primitive.  The two primitives are very similar,
+  # so rather than introduce the new one, we'll just delegate to the existing one.
+  def __class__
+    Rubinius.invoke_primitive :vm_object_class, self
+  end
 
   alias_method :eql?, :equal?
 
@@ -42,10 +66,6 @@ module Kernel
   def extend(mod)
     Rubinius::Type.object_singleton_class(self).include(mod)
     self
-  end
-
-  def inspect
-    "#<#{self.class.name}"
   end
 
 end

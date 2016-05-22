@@ -8,6 +8,7 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
@@ -65,8 +66,8 @@ public class CheckArityInstr extends NoOperandInstr implements FixedArityInstr {
         return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeBoolean(), d.decodeInt());
     }
 
-    public void checkArity(ThreadContext context, Object[] args, Block.Type blockType) {
-        IRRuntimeHelpers.checkArity(context.runtime, context.getCurrentStaticScope(), args, required, opt, rest, receivesKeywords, restKey, blockType);
+    public void checkArity(ThreadContext context, StaticScope scope, Object[] args, Block.Type blockType) {
+        IRRuntimeHelpers.checkArity(context.runtime, scope, args, required, opt, rest, receivesKeywords, restKey, blockType);
     }
 
     @Override

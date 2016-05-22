@@ -35,7 +35,9 @@ static VALUE array_spec_RARRAY_PTR_assign(VALUE self, VALUE array, VALUE value) 
   }
   return Qnil;
 }
+#endif
 
+#ifdef HAVE_RARRAY_LEN
 static VALUE array_spec_RARRAY_LEN(VALUE self, VALUE array) {
   return INT2FIX(RARRAY_LEN(array));
 }
@@ -272,8 +274,11 @@ void Init_array_spec() {
   rb_define_method(cls, "rb_Array", array_spec_rb_Array, 1);
 #endif
 
-#if defined(HAVE_RARRAY_LEN) && defined(HAVE_RARRAY_PTR)
+#ifdef HAVE_RARRAY_LEN
   rb_define_method(cls, "RARRAY_LEN", array_spec_RARRAY_LEN, 1);
+#endif
+
+#if defined(HAVE_RARRAY_LEN) && defined(HAVE_RARRAY_PTR)
   rb_define_method(cls, "RARRAY_PTR_iterate", array_spec_RARRAY_PTR_iterate, 1);
   rb_define_method(cls, "RARRAY_PTR_assign", array_spec_RARRAY_PTR_assign, 2);
 #endif

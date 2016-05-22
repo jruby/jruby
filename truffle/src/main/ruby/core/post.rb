@@ -32,6 +32,19 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+module Rubinius
+  module Type
+    def self.const_get(mod, name, inherit=true, resolve=true)
+      raise "unsupported" unless resolve
+      mod.const_get name, inherit
+    end
+
+    def self.const_exists?(mod, name, inherit = true)
+      mod.const_defined? name, inherit
+    end
+  end
+end
+
 ARGV.push *Truffle::Boot.original_argv
 
 $LOAD_PATH.push *Truffle::Boot.original_load_path
@@ -51,7 +64,7 @@ $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-timeout/lib'
 $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-webrick/lib'
 $LOAD_PATH.push home + '/lib/ruby/truffle/shims'
 
-# We defined Psych at the top level becuase several things depend on its name.
+# We defined Psych at the top level because several things depend on its name.
 # Here we fix that up and put it back into Truffle.
 
 Truffle::Psych = Psych
