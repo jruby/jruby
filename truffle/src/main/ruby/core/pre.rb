@@ -32,36 +32,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module Process
-  # Terminate with given status code.
-  #
-  def self.exit(code=0)
-    case code
-      when true
-        code = 0
-      when false
-        code = 1
-      else
-        code = Rubinius::Type.coerce_to code, Integer, :to_int
-    end
-
-    raise SystemExit.new(code)
-  end
-
-  def self.exit!(code=1)
-    Rubinius.primitive :vm_exit
-
-    case code
-      when true
-        exit! 0
-      when false
-        exit! 1
-      else
-        exit! Rubinius::Type.coerce_to(code, Integer, :to_int)
-    end
-  end
-end
-
 class Module
 
   # :internal:

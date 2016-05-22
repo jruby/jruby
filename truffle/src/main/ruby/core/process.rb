@@ -74,6 +74,34 @@ module Process
     config "rbx.platform.rlimit", :rlim_cur, :rlim_max
   end
 
+  # Terminate with given status code.
+  #
+  def self.exit(code=0)
+    case code
+      when true
+        code = 0
+      when false
+        code = 1
+      else
+        code = Rubinius::Type.coerce_to code, Integer, :to_int
+    end
+
+    raise SystemExit.new(code)
+  end
+
+  def self.exit!(code=1)
+    Rubinius.primitive :vm_exit
+
+    case code
+      when true
+        exit! 0
+      when false
+        exit! 1
+      else
+        exit! Rubinius::Type.coerce_to(code, Integer, :to_int)
+    end
+  end
+
   def self.wait_pid_prim(pid, no_hang)
     Rubinius.primitive :vm_wait_pid
     raise PrimitiveFailure, "Process.wait_pid primitive failed"
