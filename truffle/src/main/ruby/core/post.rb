@@ -64,7 +64,7 @@ $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-timeout/lib'
 $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-webrick/lib'
 $LOAD_PATH.push home + '/lib/ruby/truffle/shims'
 
-# We defined Psych at the top level becuase several things depend on its name.
+# We defined Psych at the top level because several things depend on its name.
 # Here we fix that up and put it back into Truffle.
 
 Truffle::Psych = Psych
