@@ -8,7 +8,6 @@
 
 Truffle::Boot.require_core 'core/pre'
 Truffle::Boot.require_core 'core/primitives'
-Truffle::Boot.require_core 'core/alpha'
 Truffle::Boot.require_core 'core/tuple'
 Truffle::Boot.require_core 'core/lookuptable'
 Truffle::Boot.require_core 'core/atomic'

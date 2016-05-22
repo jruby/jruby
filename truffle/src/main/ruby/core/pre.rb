@@ -32,7 +32,61 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+module Process
+  # Terminate with given status code.
+  #
+  def self.exit(code=0)
+    case code
+      when true
+        code = 0
+      when false
+        code = 1
+      else
+        code = Rubinius::Type.coerce_to code, Integer, :to_int
+    end
+
+    raise SystemExit.new(code)
+  end
+
+  def self.exit!(code=1)
+    Rubinius.primitive :vm_exit
+
+    case code
+      when true
+        exit! 0
+      when false
+        exit! 1
+      else
+        exit! Rubinius::Type.coerce_to(code, Integer, :to_int)
+    end
+  end
+end
+
+class Module
+
+  # :internal:
+  #
+  # Basic version of .include used in kernel code.
+  #
+  # Redefined in kernel/delta/module.rb.
+  #
+  def include(mod)
+    Rubinius.privately do
+      mod.append_features self # Truffle: moved the append_features inside the privately
+      mod.included self
+    end
+    self
+  end
+
+end
+
 module Kernel
+
+  # Rubinius defines this method differently, using the :object_class primitive.  The two primitives are very similar,
+  # so rather than introduce the new one, we'll just delegate to the existing one.
+  def __class__
+    Rubinius.invoke_primitive :vm_object_class, self
+  end
 
   alias_method :eql?, :equal?
 
