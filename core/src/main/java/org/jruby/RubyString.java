@@ -4142,9 +4142,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         return RubyArray.newArray(runtime, new IRubyObject[]{
-                makeShared19(runtime, 0, pos),
+                substr19(runtime, 0, pos),
                 sep,
-                makeShared19(runtime, pos + sep.strLength(), value.getRealSize() - pos - sep.strLength())});
+                substr19(runtime, pos + sep.strLength(), value.getRealSize())});
     }
 
     private IRubyObject rpartitionMismatch(Ruby runtime) {
