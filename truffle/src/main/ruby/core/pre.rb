@@ -68,10 +68,6 @@ module Kernel
     self
   end
 
-  def inspect
-    "#<#{self.class.name}"
-  end
-
 end
 
 class Symbol
