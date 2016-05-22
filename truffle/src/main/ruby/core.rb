@@ -7,17 +7,8 @@
 # GNU Lesser General Public License version 2.1
 
 Truffle::Boot.require_core 'core/pre'
-
-# Rubinius primitives written in Ruby
-
 Truffle::Boot.require_core 'core/primitives'
-
-# Load alpha.rb
-
 Truffle::Boot.require_core 'core/alpha'
-
-# Load bootstrap
-
 Truffle::Boot.require_core 'core/tuple'
 Truffle::Boot.require_core 'core/lookuptable'
 Truffle::Boot.require_core 'core/atomic'
@@ -37,18 +28,11 @@ Truffle::Boot.require_core 'core/thread'
 Truffle::Boot.require_core 'core/true'
 Truffle::Boot.require_core 'core/type'
 Truffle::Boot.require_core 'core/weakref'
-
-# Load platform
-
 Truffle::Boot.require_core 'core/library'
-
 Truffle::Boot.require_core 'core/ffi'
 Truffle::Boot.require_core 'core/pointer'
 Truffle::Boot.require_core 'core/ffi_file'
 Truffle::Boot.require_core 'core/ffi_struct'
-
-# Load common
-
 Truffle::Boot.require_core 'core/io'
 Truffle::Boot.require_core 'core/immediate'
 Truffle::Boot.require_core 'core/string_mirror'
@@ -100,27 +84,15 @@ Truffle::Boot.require_core 'core/rationalizer'
 Truffle::Boot.require_core 'core/complex'
 Truffle::Boot.require_core 'core/complexifier'
 Truffle::Boot.require_core 'core/class'
-
-# Load JRuby+Truffle classes
-
 Truffle::Boot.require_core 'core/binding'
 Truffle::Boot.require_core 'core/math'
 Truffle::Boot.require_core 'core/method'
 Truffle::Boot.require_core 'core/unbound_method'
-
-# Dirty fixes we'd like to get rid of soon
 Truffle::Boot.require_core 'core/shims'
-
-# Load JRuby+Truffle specific classes
-
 Truffle::Boot.require_core 'core/truffle/attachments'
 Truffle::Boot.require_core 'core/truffle/debug'
 Truffle::Boot.require_core 'core/truffle/cext'
 Truffle::Boot.require_core 'core/truffle/interop'
-
-# Start running Ruby code outside classes
-
 Truffle::Boot.require_core 'core/rbconfig'
 Truffle::Boot.require_core 'core/main'
-
 Truffle::Boot.require_core 'core/post'
