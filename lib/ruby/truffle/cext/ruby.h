@@ -102,7 +102,7 @@ VALUE RARRAY_AREF(VALUE array, long index);
 VALUE rb_ary_new(void);
 VALUE rb_ary_new_capa(long capacity);
 #define rb_ary_new2 rb_ary_new_capa
-void rb_ary_push(VALUE array, VALUE value);
+VALUE rb_ary_push(VALUE array, VALUE value);
 VALUE rb_ary_pop(VALUE array);
 void rb_ary_store(VALUE array, long index, VALUE value);
 VALUE rb_ary_entry(VALUE array, long index);
@@ -112,11 +112,11 @@ VALUE rb_ary_dup(VALUE array);
 
 VALUE rb_hash_new(void);
 VALUE rb_hash_aref(VALUE hash, VALUE key);
-void rb_hash_aset(VALUE hash, VALUE key, VALUE value);
+VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 
 // Utilities
 
-void rb_scan_args(int argc, VALUE *argv, const char *format, ...);
+int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
 // Calls
 

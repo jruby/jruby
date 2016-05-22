@@ -162,8 +162,9 @@ VALUE rb_ary_new() {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_ary_new");
 }
 
-void rb_ary_push(VALUE array, VALUE value) {
+VALUE rb_ary_push(VALUE array, VALUE value) {
   truffle_invoke(array, "push", value);
+  return array;
 }
 
 VALUE rb_ary_pop(VALUE array) {
@@ -192,14 +193,15 @@ VALUE rb_hash_aref(VALUE hash, VALUE key) {
   return truffle_read(hash, key);
 }
 
-void rb_hash_aset(VALUE hash, VALUE key, VALUE value) {
+VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value) {
   truffle_write(hash, key, value);
+  return value;
 }
 
 // Utilities
 
-void rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
-  truffle_invoke(RUBY_CEXT, "rb_scan_args", argc, argv, format /*, where to get args? */);
+int rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
+  return truffle_invoke_i(RUBY_CEXT, "rb_scan_args", argc, argv, format /*, where to get args? */);
 }
 
 // Calls
