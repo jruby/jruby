@@ -12,10 +12,6 @@ fails:C-API Array function rb_ary_clear removes all elements from the array
 fails:C-API Array function rb_ary_unshift prepends the element to the array
 fails:C-API Array function rb_ary_shift removes and returns the first element
 fails:C-API Array function rb_ary_shift returns nil when the array is empty
-fails:C-API Array function rb_ary_store overwrites the element at the given position
-fails:C-API Array function rb_ary_store writes to elements offset from the end if passed a negative index
-fails:C-API Array function rb_ary_store raises on IndexError if the negative index is greater than the length
-fails:C-API Array function rb_ary_store enlarges the array as needed
 fails:C-API Array function rb_ary_concat concats two arrays
 fails:C-API Array function rb_ary_plus adds two arrays together
 fails:C-API Array function RARRAY_PTR returns a pointer to a C array of the array's elements
