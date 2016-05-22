@@ -12,7 +12,6 @@
 #undef RUBYSPEC_CAPI_JRUBY_TRUFFLE_H
 
 /* Array */
-#undef HAVE_RB_ARRAY
 #undef HAVE_RARRAY_PTR
 #undef HAVE_RB_ARY_AREF
 #undef HAVE_RB_ARY_CLEAR

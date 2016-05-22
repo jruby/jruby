@@ -154,6 +154,10 @@ VALUE RARRAY_AREF(VALUE array, long index) {
   return truffle_read_idx(array, (int) index);
 }
 
+VALUE rb_Array(VALUE array) {
+  return truffle_invoke(RUBY_CEXT, "rb_Array", array);
+}
+
 VALUE rb_ary_new_capa(long capacity) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_ary_new_capa", capacity);
 }

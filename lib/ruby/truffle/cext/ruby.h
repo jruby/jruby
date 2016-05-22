@@ -99,6 +99,7 @@ int RARRAY_LEN(VALUE array);
 int RARRAY_LENINT(VALUE array);
 VALUE *RARRAY_PTR(VALUE array);
 VALUE RARRAY_AREF(VALUE array, long index);
+VALUE rb_Array(VALUE value);
 VALUE rb_ary_new(void);
 VALUE rb_ary_new_capa(long capacity);
 #define rb_ary_new2 rb_ary_new_capa
