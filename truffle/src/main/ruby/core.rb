@@ -43,7 +43,6 @@ Truffle::Boot.require_core 'core/weakref'
 Truffle::Boot.require_core 'core/library'
 
 Truffle::Boot.require_core 'core/ffi'
-Truffle::Boot.require_core 'core/pointer_accessors'
 Truffle::Boot.require_core 'core/pointer'
 Truffle::Boot.require_core 'core/ffi_file'
 Truffle::Boot.require_core 'core/ffi_struct'
