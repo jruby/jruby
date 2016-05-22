@@ -32,7 +32,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 module Rubinius
   module Type
     def self.const_get(mod, name, inherit=true, resolve=true)
@@ -45,7 +44,6 @@ module Rubinius
     end
   end
 end
-
 
 ARGV.push *Truffle::Boot.original_argv
 
