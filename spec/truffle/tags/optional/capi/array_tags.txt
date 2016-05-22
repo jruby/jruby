@@ -9,7 +9,6 @@ fails:C-API Array function rb_ary_to_s creates an Array literal representation a
 fails:C-API Array function rb_ary_reverse reverses the order of elements in the array
 fails:C-API Array function rb_ary_reverse returns the original array
 fails:C-API Array function rb_ary_clear removes all elements from the array
-fails:C-API Array function rb_ary_dup duplicates the array
 fails:C-API Array function rb_ary_unshift prepends the element to the array
 fails:C-API Array function rb_ary_shift removes and returns the first element
 fails:C-API Array function rb_ary_shift returns nil when the array is empty
@@ -21,8 +20,6 @@ fails:C-API Array function rb_ary_concat concats two arrays
 fails:C-API Array function rb_ary_plus adds two arrays together
 fails:C-API Array function RARRAY_PTR returns a pointer to a C array of the array's elements
 fails:C-API Array function RARRAY_PTR allows assigning to the elements of the C array
-fails:C-API Array function RARRAY_LEN returns the size of the array
-fails:C-API Array function RARRAY_AREF returns an element from the array
 fails:C-API Array function rb_assoc_new returns an array containing the two elements
 fails:C-API Array function rb_ary_includes returns true if the array includes the element
 fails:C-API Array function rb_ary_includes returns false if the array does not include the element
