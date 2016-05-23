@@ -151,7 +151,7 @@ public abstract class IOPrimitiveNodes {
             return true;
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         private void newOpenFd(int newFd) {
             final int FD_CLOEXEC = 1;
 
@@ -184,7 +184,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 }, unsafe = UnsafeGroup.IO)
     public static abstract class IOOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(path)")
         public int open(DynamicObject path, int mode, int permission) {
             return ensureSuccessful(posix().open(StringOperations.getString(getContext(), path), mode, permission));
@@ -195,7 +195,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_truncate", needsSelf = false, unsafe = UnsafeGroup.IO)
     public static abstract class IOTruncatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(path)")
         public int truncate(DynamicObject path, long length) {
             return ensureSuccessful(posix().truncate(StringOperations.getString(getContext(), path), length));
@@ -257,7 +257,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_read_if_available", lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
     public static abstract class IOReadIfAvailableNode extends IOPrimitiveArrayArgumentsNode {
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public Object readIfAvailable(DynamicObject file, int numberOfBytes) {
             // Taken from Rubinius's IO::read_if_available.
@@ -303,7 +303,7 @@ public abstract class IOPrimitiveNodes {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         private void performReopen(DynamicObject self, DynamicObject target) {
             final int fdSelf = Layouts.IO.getDescriptor(self);
             final int fdTarget = Layouts.IO.getDescriptor(target);
@@ -335,7 +335,7 @@ public abstract class IOPrimitiveNodes {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         public void performReopenPath(DynamicObject self, DynamicObject path, int mode) {
             int fdSelf = Layouts.IO.getDescriptor(self);
             final String targetPathString = StringOperations.getString(getContext(), path);
@@ -377,7 +377,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_write", unsafe = UnsafeGroup.IO)
     public static abstract class IOWritePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(string)")
         public int write(DynamicObject file, DynamicObject string) {
             final int fd = Layouts.IO.getDescriptor(file);
@@ -421,7 +421,7 @@ public abstract class IOPrimitiveNodes {
             }
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(string)")
         public int writeNonBlock(DynamicObject io, DynamicObject string) {
             setNonBlocking(io);
@@ -540,7 +540,7 @@ public abstract class IOPrimitiveNodes {
     public abstract static class AcceptNode extends IOPrimitiveArrayArgumentsNode {
 
         @SuppressWarnings("restriction")
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public int accept(DynamicObject io) {
             final int fd = Layouts.IO.getDescriptor(io);
@@ -564,7 +564,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO)
     public static abstract class IOSysReadPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public DynamicObject sysread(DynamicObject file, int length) {
             final int fd = Layouts.IO.getDescriptor(file);
@@ -600,7 +600,7 @@ public abstract class IOPrimitiveNodes {
 
         public abstract Object executeSelect(DynamicObject readables, DynamicObject writables, DynamicObject errorables, Object Timeout);
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isNil(noTimeout)")
         public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, DynamicObject noTimeout) {
             Object result;
@@ -620,7 +620,7 @@ public abstract class IOPrimitiveNodes {
             return selectOneSet(writables, timeoutMicros, 2);
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         private Object selectOneSet(DynamicObject setToSelect, int timeoutMicros, int setNb) {
             assert setNb >= 1 && setNb <= 3;
             final Object[] readableObjects = ArrayOperations.toObjectArray(setToSelect);
