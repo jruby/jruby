@@ -1,1 +1,0 @@
-fails:Readline::HISTORY.push pushes all passed Objects into the history
