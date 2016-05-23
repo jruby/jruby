@@ -1,1 +1,0 @@
-fails:Readline::HISTORY.empty? returns true when the history is empty

@@ -1,1 +1,0 @@
-fails:Readline::HISTORY.pop returns and removes the last item from the history
