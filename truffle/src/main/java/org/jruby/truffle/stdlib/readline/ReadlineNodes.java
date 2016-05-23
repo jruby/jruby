@@ -173,6 +173,17 @@ public abstract class ReadlineNodes {
 
     }
 
+    @CoreMethod(names = "point", isModuleFunction = true)
+    public abstract static class PointNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public int point() {
+            return getContext().getConsoleHolder().getReadline().getCursorBuffer().cursor;
+        }
+
+    }
+
     // Taken from org.jruby.ext.readline.Readline.ProcCompleter.
     // Complete using a Proc object
     public static class ProcCompleter implements Completer {
