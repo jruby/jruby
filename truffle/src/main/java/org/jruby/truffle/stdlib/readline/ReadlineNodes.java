@@ -43,11 +43,8 @@ package org.jruby.truffle.stdlib.readline;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.object.DynamicObject;
-import jline.console.ConsoleReader;
 import jline.console.completer.Completer;
 import jline.console.completer.FileNameCompleter;
-import jline.console.history.History;
-import jline.console.history.MemoryHistory;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
@@ -70,29 +67,6 @@ import java.util.List;
 
 @CoreClass("Truffle::Readline")
 public abstract class ReadlineNodes {
-
-    private static ConsoleReader readline;
-    private static Completer currentCompleter;
-    private static History history;
-
-    public static void initialize() {
-        try {
-            readline = new ConsoleReader();
-        } catch (IOException e) {
-            throw new UnsupportedOperationException("Couldn't initialize readline", e);
-        }
-
-        readline.setHistoryEnabled(false);
-        readline.setPaginationEnabled(true);
-        readline.setBellEnabled(true);
-
-        currentCompleter = new RubyFileNameCompleter();
-        readline.addCompleter(currentCompleter);
-
-        history = new MemoryHistory();
-        readline.setHistory(history);
-    }
-
 
     @CoreMethod(names = "basic_word_break_characters", isModuleFunction = true)
     public abstract static class BasicWordBreakCharactersNode extends CoreMethodArrayArgumentsNode {
@@ -126,7 +100,7 @@ public abstract class ReadlineNodes {
 
         @Specialization
         public DynamicObject getScreenSize() {
-            final int[] store = { readline.getTerminal().getHeight(), readline.getTerminal().getWidth() };
+            final int[] store = { getContext().getConsoleHolder().getReadline().getTerminal().getHeight(), getContext().getConsoleHolder().getReadline().getTerminal().getWidth() };
 
             return ArrayHelpers.createArray(getContext(), store, 2);
         }
@@ -149,27 +123,28 @@ public abstract class ReadlineNodes {
             return readline(coreStrings().EMPTY_STRING.createInstance(), addToHistory);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(prompt)")
         public DynamicObject readline(DynamicObject prompt, boolean addToHistory) {
-            readline.setExpandEvents(false);
+            getContext().getConsoleHolder().getReadline().setExpandEvents(false);
 
             DynamicObject line = nil();
             String value;
             while (true) {
                 try {
-                    readline.getTerminal().setEchoEnabled(false);
-                    value = readline.readLine(RopeOperations.decodeUTF8(StringOperations.rope(prompt)));
+                    getContext().getConsoleHolder().getReadline().getTerminal().setEchoEnabled(false);
+                    value = getContext().getConsoleHolder().getReadline().readLine(RopeOperations.decodeUTF8(StringOperations.rope(prompt)));
                     break;
                 } catch (IOException e) {
                     throw new RaiseException(coreExceptions().ioError("readline", this));
                 } finally {
-                    readline.getTerminal().setEchoEnabled(true);
+                    getContext().getConsoleHolder().getReadline().getTerminal().setEchoEnabled(true);
                 }
             }
 
             if (value != null) {
                 if (addToHistory) {
-                    readline.getHistory().add(value);
+                    getContext().getConsoleHolder().getReadline().getHistory().add(value);
                 }
 
                 // Enebo: This is a little weird and a little broken.  We just ask

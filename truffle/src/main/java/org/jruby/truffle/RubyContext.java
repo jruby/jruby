@@ -47,6 +47,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
+import org.jruby.truffle.stdlib.readline.ConsoleHolder;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
@@ -91,6 +92,7 @@ public class RubyContext extends ExecutionContext {
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
     private final CoverageManager coverageManager;
+    private final ConsoleHolder consoleHolder;
 
     private final Object classVariableDefinitionLock = new Object();
 
@@ -174,6 +176,8 @@ public class RubyContext extends ExecutionContext {
         coverageManager = new CoverageManager(this, instrumenter);
 
         coreLibrary.initializePostBoot();
+
+        consoleHolder = new ConsoleHolder();
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -346,6 +350,10 @@ public class RubyContext extends ExecutionContext {
 
     public CoreExceptions getCoreExceptions() {
         return coreExceptions;
+    }
+
+    public ConsoleHolder getConsoleHolder() {
+        return consoleHolder;
     }
 
 }

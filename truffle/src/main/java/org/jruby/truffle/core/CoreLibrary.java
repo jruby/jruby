@@ -597,6 +597,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Binding");
         defineModule(truffleModule, "POSIX");
         defineModule(truffleModule, "Readline");
+        defineModule(truffleModule, "ReadlineHistory");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -942,7 +943,6 @@ public class CoreLibrary {
             }
         }
 
-        ReadlineNodes.initialize();
     }
 
     private void initializeRubiniusFFI() {
