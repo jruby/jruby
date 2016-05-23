@@ -49,3 +49,5 @@ module Readline
 end
 
 Readline::HISTORY.extend Enumerable
+Readline::HISTORY.extend Truffle::ReadlineHistory
+

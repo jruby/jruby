@@ -111,7 +111,7 @@ import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
-import org.jruby.truffle.stdlib.readline.ReadlineNodes;
+import org.jruby.truffle.stdlib.readline.ReadlineHistoryNodesFactory;
 import org.jruby.truffle.stdlib.readline.ReadlineNodesFactory;
 import org.jruby.util.cli.OutputStrings;
 import java.io.File;
@@ -751,6 +751,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ReadlineNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ReadlineHistoryNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TracePointNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(CoverageNodesFactory.getFactories());
