@@ -114,6 +114,32 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
+    @CoreMethod(names = "shift")
+    public abstract static class ShiftNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private TaintNode taintNode;
+
+        public ShiftNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            taintNode = TaintNodeGen.create(context, sourceSection, null);
+        }
+
+        @Specialization
+        public Object shift() {
+            final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
+
+            if (consoleHolder.getHistory().isEmpty()) {
+                return nil();
+            }
+
+            final String lastLine = consoleHolder.getHistory().removeFirst().toString();
+            final DynamicObject ret = createString(StringOperations.createRope(lastLine, getDefaultInternalEncoding()));
+
+            return taintNode.executeTaint(ret);
+        }
+
+    }
+
     @CoreMethod(names = { "length", "size" })
     public abstract static class LengthNode extends CoreMethodArrayArgumentsNode {
 
