@@ -37,43 +37,38 @@
                 end
               end
 
-              require 'active_model'
-              require 'active_model/secure_password'
+              require 'bcrypt'
 
-              module ActiveModel
-                module SecurePassword
-                  extend ActiveSupport::Concern
-
-                  module InstanceMethodsOnActivation
-                    def authenticate(unencrypted_password)
-                      password_digest == unencrypted_password && self
+              module BCrypt
+                class Engine
+                  def self.hash_secret(secret, salt, _ = nil)
+                    if valid_secret?(secret)
+                      if valid_salt?(salt)
+                        Truffle::Gem::BCrypt.hashpw(secret.to_s, salt.to_s)
+                      else
+                        raise Errors::InvalidSalt.new("invalid salt")
+                      end
+                    else
+                      raise Errors::InvalidSecret.new("invalid secret")
                     end
+                  end
 
-                    attr_reader :password
-
-                    def password=(unencrypted_password)
-                      self.password_digest = unencrypted_password
+                  def self.generate_salt(cost = self.cost)
+                    cost = cost.to_i
+                    if cost > 0
+                      if cost < MIN_COST
+                        cost = MIN_COST
+                      end
+                      Truffle::Gem::BCrypt.gensalt(cost)
+                    else
+                      raise Errors::InvalidCost.new("cost must be numeric and > 0")
                     end
-
                   end
                 end
               end
 
-    bcrypt.rb: |
-               puts 'bcrypt stubbed'
-
-               module BCrypt
-                 module Password
-                   def self.create(password, *args)
-                     password
-                   end
-                 end
-
-                 module Engine
-                   MIN_COST = nil
-                 end
-               end
-
+    java.rb: nil
+    bcrypt_ext.rb: nil
     bundler.rb: "module Bundler; def self.setup; end; end"
     # mock method_source gem
     # method_source.rb: nil
