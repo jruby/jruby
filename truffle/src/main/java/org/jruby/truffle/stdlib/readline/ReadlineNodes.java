@@ -149,7 +149,7 @@ public abstract class ReadlineNodes {
                     value = getContext().getConsoleHolder().getReadline().readLine(RopeOperations.decodeUTF8(StringOperations.rope(prompt)));
                     break;
                 } catch (IOException e) {
-                    throw new RaiseException(coreExceptions().ioError("readline", this));
+                    throw new RaiseException(coreExceptions().ioError(e.getMessage(), this));
                 } finally {
                     getContext().getConsoleHolder().getReadline().getTerminal().setEchoEnabled(true);
                 }
