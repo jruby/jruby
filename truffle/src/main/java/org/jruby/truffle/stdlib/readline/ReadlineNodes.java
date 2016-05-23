@@ -262,11 +262,11 @@ public abstract class ReadlineNodes {
     // Complete using a Proc object
     public static class ProcCompleter implements Completer {
 
-        IRubyObject procCompleter;
+        DynamicObject procCompleter;
         //\t\n\"\\'`@$><=;|&{(
         static private String[] delimiters = {" ", "\t", "\n", "\"", "\\", "'", "`", "@", "$", ">", "<", "=", ";", "|", "&", "{", "("};
 
-        public ProcCompleter(IRubyObject procCompleter) {
+        public ProcCompleter(DynamicObject procCompleter) {
             this.procCompleter = procCompleter;
         }
 
@@ -297,25 +297,7 @@ public abstract class ReadlineNodes {
         }
 
         public int complete(String buffer, int cursor, List candidates) {
-            buffer = buffer.substring(0, cursor);
-            int index = wordIndexOf(buffer);
-            if (index != -1) buffer = buffer.substring(index + 1);
-
-            Ruby runtime = procCompleter.getRuntime();
-            ThreadContext context = runtime.getCurrentContext();
-            IRubyObject result = procCompleter.callMethod(context, "call", runtime.newString(buffer));
-            IRubyObject comps = result.callMethod(context, "to_a");
-
-            if (comps instanceof List) {
-                for (Iterator i = ((List) comps).iterator(); i.hasNext();) {
-                    Object obj = i.next();
-                    if (obj != null) {
-                        candidates.add(obj.toString());
-                    }
-                }
-                Collections.sort(candidates);
-            }
-            return cursor - buffer.length();
+            throw new UnsupportedOperationException("auto-completion via proc not yet supported");
         }
     }
 
