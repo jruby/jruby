@@ -56,6 +56,7 @@ import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 
@@ -162,7 +163,7 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
-    @CoreMethod(names = "each", needsSelf = true, needsBlock = true)
+    @CoreMethod(names = "each", needsBlock = true)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private TaintNode taintNode;
@@ -183,6 +184,34 @@ public abstract class ReadlineHistoryNodes {
             }
 
             return history;
+        }
+
+    }
+
+    @CoreMethod(names = "[]", needsSelf = false, required = 1, lowerFixnumParameters = 0)
+    public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private TaintNode taintNode;
+
+        public GetIndexNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            taintNode = TaintNodeGen.create(context, sourceSection, null);
+        }
+
+        @Specialization
+        public Object getIndex(int index) {
+            final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
+
+            final int normalizedIndex = index < 0 ? index + consoleHolder.getHistory().size() : index;
+
+            try {
+                final String line = consoleHolder.getHistory().get(normalizedIndex).toString();
+                final DynamicObject ret = createString(StringOperations.createRope(line, getDefaultInternalEncoding()));
+
+                return taintNode.executeTaint(ret);
+            } catch (IndexOutOfBoundsException e) {
+                throw new RaiseException(coreExceptions().indexError("invalid index", this));
+            }
         }
 
     }
