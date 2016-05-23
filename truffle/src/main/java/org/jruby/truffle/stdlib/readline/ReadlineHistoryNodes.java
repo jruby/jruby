@@ -248,4 +248,32 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
+    @CoreMethod(names = "delete_at", needsSelf = false, required = 1, lowerFixnumParameters = 0)
+    public abstract static class DeleteAtNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private TaintNode taintNode;
+
+        public DeleteAtNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            taintNode = TaintNodeGen.create(context, sourceSection, null);
+        }
+
+        @Specialization
+        public Object deleteAt(int index) {
+            final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
+
+            final int normalizedIndex = index < 0 ? index + consoleHolder.getHistory().size() : index;
+
+            try {
+                final String line = consoleHolder.getHistory().remove(normalizedIndex).toString();
+                final DynamicObject ret = createString(StringOperations.createRope(line, getDefaultInternalEncoding()));
+
+                return taintNode.executeTaint(ret);
+            } catch (IndexOutOfBoundsException e) {
+                throw new RaiseException(coreExceptions().indexError("invalid index", this));
+            }
+        }
+
+    }
+
 }

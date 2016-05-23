@@ -1,3 +1,0 @@
-fails:Readline::HISTORY.delete_at deletes and returns the history entry at the specified index
-fails:Readline::HISTORY.delete_at raises an IndexError when the given index is greater than the history size
-fails:Readline::HISTORY.delete_at taints the returned strings
