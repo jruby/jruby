@@ -1233,7 +1233,7 @@ public abstract class ModuleNodes {
                 method = Layouts.MODULE.getFields(module).getMethod(name);
             }
 
-            return method != null && !method.getVisibility().isPrivate();
+            return method != null && !method.getVisibility().isPrivate() && !method.isUndefined();
         }
 
     }
