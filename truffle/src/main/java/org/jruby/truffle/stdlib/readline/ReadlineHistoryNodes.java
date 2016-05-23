@@ -220,4 +220,32 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
+    @CoreMethod(names = "[]=", needsSelf = false, required = 2, lowerFixnumParameters = 0)
+    public abstract static class SetIndexNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private ToStrNode toStrNode;
+
+        public SetIndexNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            toStrNode = ToStrNodeGen.create(context, sourceSection, null);
+        }
+
+        @Specialization
+        public Object setIndex(VirtualFrame frame, int index, Object line) {
+            final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
+
+            final int normalizedIndex = index < 0 ? index + consoleHolder.getHistory().size() : index;
+
+            try {
+                final DynamicObject asString = toStrNode.executeToStr(frame, line);
+                consoleHolder.getHistory().set(normalizedIndex, RopeOperations.decodeUTF8(StringOperations.rope(asString)));
+
+                return nil();
+            } catch (IndexOutOfBoundsException e) {
+                throw new RaiseException(coreExceptions().indexError("invalid index", this));
+            }
+        }
+
+    }
+
 }

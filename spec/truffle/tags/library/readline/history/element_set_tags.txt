@@ -1,4 +1,0 @@
-fails:Readline::HISTORY.[]= returns the new value for the passed index
-fails:Readline::HISTORY.[]= raises an IndexError when there is no item at the passed positive index
-fails:Readline::HISTORY.[]= sets the item at the given index
-fails:Readline::HISTORY.[]= raises an IndexError when there is no item at the passed negative index
