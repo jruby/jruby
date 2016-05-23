@@ -206,6 +206,18 @@ public abstract class ReadlineNodes {
 
     }
 
+    @CoreMethod(names = "delete_text", constructor = true)
+    public abstract static class DeleteTextNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject deleteText(DynamicObject readline) {
+            getContext().getConsoleHolder().getReadline().getCursorBuffer().clear();
+
+            return readline;
+        }
+
+    }
+
     // Taken from org.jruby.ext.readline.Readline.ProcCompleter.
     // Complete using a Proc object
     public static class ProcCompleter implements Completer {
