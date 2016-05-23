@@ -54,6 +54,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.*;
 import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
+import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
@@ -180,6 +181,27 @@ public abstract class ReadlineNodes {
         @Specialization
         public int point() {
             return getContext().getConsoleHolder().getReadline().getCursorBuffer().cursor;
+        }
+
+    }
+
+    @CoreMethod(names = "insert_text", constructor = true, required = 1)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "self"),
+            @NodeChild(type = RubyNode.class, value = "text")
+    })
+    public abstract static class InsertTextNode extends CoreMethodNode {
+
+        @CreateCast("text") public RubyNode coerceTextToString(RubyNode text) {
+            return NameToJavaStringNodeGen.create(null, null, text);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject insertText(DynamicObject readline, String text) {
+            getContext().getConsoleHolder().getReadline().getCursorBuffer().write(text);
+
+            return readline;
         }
 
     }
