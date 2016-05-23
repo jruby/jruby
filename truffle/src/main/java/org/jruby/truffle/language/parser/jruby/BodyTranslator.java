@@ -517,15 +517,15 @@ public class BodyTranslator extends Translator {
             } else if (methodName.equals("privately")) {
                 final RubyNode ret = translateRubiniusPrivately(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
+            } else if (methodName.equals("single_block_arg")) {
+                final RubyNode ret = translateRubiniusSingleBlockArg(sourceSection, node);
+                return addNewlineIfNeeded(node, ret);
             }
         } else if (receiver instanceof org.jruby.ast.ConstNode
                 && ((org.jruby.ast.ConstNode) receiver).getName().equals("Rubinius")) {
             // Rubinius.<method>
 
-            if (methodName.equals("single_block_arg")) {
-                final RubyNode ret = translateRubiniusSingleBlockArg(sourceSection, node);
-                return addNewlineIfNeeded(node, ret);
-            } else if (methodName.equals("check_frozen")) {
+            if (methodName.equals("check_frozen")) {
                 final RubyNode ret = translateRubiniusCheckFrozen(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }

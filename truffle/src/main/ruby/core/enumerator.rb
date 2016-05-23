@@ -114,7 +114,7 @@ module Enumerable
       idx = 0
 
       each do
-        o = Rubinius.single_block_arg
+        o = Truffle.single_block_arg
         val = yield(o, idx)
         idx += 1
         val
@@ -188,7 +188,7 @@ module Enumerable
       return to_enum(:with_index, offset) { size } unless block_given?
 
       each do
-        o = Rubinius.single_block_arg
+        o = Truffle.single_block_arg
         val = yield(o, offset)
         offset += 1
         val

@@ -29,7 +29,7 @@ public class RubiniusSingleBlockArgNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         /**
-         * This is our implementation of Rubinius.single_block_arg.
+         * This is our implementation of Truffle.single_block_arg.
          *
          * In Rubinius, this method inspects the values yielded to the block, regardless of whether the block
          * captures the values, and returns the first value in the list of values yielded to the block.

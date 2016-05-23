@@ -105,7 +105,7 @@ module Enumerable
   def each_with_object(memo)
     return to_enum(:each_with_object, memo) { enumerator_size } unless block_given?
     each do
-      obj = Rubinius.single_block_arg
+      obj = Truffle.single_block_arg
       yield obj, memo
     end
     memo
@@ -150,7 +150,7 @@ module Enumerable
 
     h = {}
     each do
-      o = Rubinius.single_block_arg
+      o = Truffle.single_block_arg
       key = yield(o)
       if h.key?(key)
         h[key] << o
@@ -189,7 +189,7 @@ module Enumerable
   def to_a(*arg)
     ary = []
     each(*arg) do
-      o = Rubinius.single_block_arg
+      o = Truffle.single_block_arg
       ary << o
       nil
     end
@@ -227,7 +227,7 @@ module Enumerable
     results = []
     i = 0
     each do
-      o = Rubinius.single_block_arg
+      o = Truffle.single_block_arg
       entry = args.inject([o]) do |ary, a|
         ary << case a
                when Array
@@ -256,7 +256,7 @@ module Enumerable
 
     idx = 0
     each(*args) do
-      o = Rubinius.single_block_arg
+      o = Truffle.single_block_arg
       yield o, idx
       idx += 1
     end
@@ -269,7 +269,7 @@ module Enumerable
 
     if block_given?
       each do
-        o = Rubinius.single_block_arg
+        o = Truffle.single_block_arg
         if pattern === o
           Regexp.set_block_last_match
           ary << yield(o)
@@ -277,7 +277,7 @@ module Enumerable
       end
     else
       each do
-        o = Rubinius.single_block_arg
+        o = Truffle.single_block_arg
         if pattern === o
           Regexp.set_block_last_match
           ary << o
@@ -311,7 +311,7 @@ module Enumerable
 
     # Transform each value to a tuple with the value and it's sort by value
     sort_values = map do
-      x = Rubinius.single_block_arg
+      x = Truffle.single_block_arg
       SortedElement.new(x, yield(x))
     end
 
@@ -334,7 +334,7 @@ module Enumerable
       sym = sym.to_sym
 
       each do
-        o = Rubinius.single_block_arg
+        o = Truffle.single_block_arg
         if undefined.equal? initial
           initial = o
         else
@@ -345,7 +345,7 @@ module Enumerable
       # Block version
     else
       each do
-        o = Rubinius.single_block_arg
+        o = Truffle.single_block_arg
         if undefined.equal? initial
           initial = o
         else
@@ -362,7 +362,7 @@ module Enumerable
     if block_given?
       each { |*e| return false unless yield(*e) }
     else
-      each { return false unless Rubinius.single_block_arg }
+      each { return false unless Truffle.single_block_arg }
     end
     true
   end
@@ -371,7 +371,7 @@ module Enumerable
     if block_given?
       each { |*o| return true if yield(*o) }
     else
-      each { return true if Rubinius.single_block_arg }
+      each { return true if Truffle.single_block_arg }
     end
     false
   end
@@ -392,7 +392,7 @@ module Enumerable
 
     cache = []
     each do
-      elem = Rubinius.single_block_arg
+      elem = Truffle.single_block_arg
       cache << elem
       yield elem
     end
@@ -430,7 +430,7 @@ module Enumerable
     ary = []
     dropping = true
     each do
-      obj = Rubinius.single_block_arg
+      obj = Truffle.single_block_arg
       ary << obj unless dropping &&= yield(obj)
     end
 
@@ -456,7 +456,7 @@ module Enumerable
 
     array = []
     each do
-      element = Rubinius.single_block_arg
+      element = Truffle.single_block_arg
       array << element
       array.shift if array.size > n
       yield array.dup if array.size == n
@@ -477,7 +477,7 @@ module Enumerable
 
     a = []
     each do
-      element = Rubinius.single_block_arg
+      element = Truffle.single_block_arg
       a << element
       if a.length == n
         yield a
@@ -493,7 +493,7 @@ module Enumerable
     return to_enum(:find, ifnone) unless block_given?
 
     each do
-      o = Rubinius.single_block_arg
+      o = Truffle.single_block_arg
       return o if yield(o)
     end
 
@@ -507,7 +507,7 @@ module Enumerable
 
     ary = []
     each do
-      o = Rubinius.single_block_arg
+      o = Truffle.single_block_arg
       ary << o if yield(o)
     end
     ary
@@ -527,7 +527,7 @@ module Enumerable
     else
       i = 0
       each do
-        e = Rubinius.single_block_arg
+        e = Truffle.single_block_arg
         return i if e == value
         i += 1
       end
@@ -544,7 +544,7 @@ module Enumerable
   def min
     min = undefined
     each do
-      o = Rubinius.single_block_arg
+      o = Truffle.single_block_arg
       if undefined.equal? min
         min = o
       else
@@ -565,7 +565,7 @@ module Enumerable
   def max
     max = undefined
     each do
-      o = Rubinius.single_block_arg
+      o = Truffle.single_block_arg
       if undefined.equal? max
         max = o
       else
@@ -590,7 +590,7 @@ module Enumerable
     max_result = undefined
 
     each do
-      object = Rubinius.single_block_arg
+      object = Truffle.single_block_arg
       result = yield object
 
       if undefined.equal?(max_result) or \
@@ -610,7 +610,7 @@ module Enumerable
     min_result = undefined
 
     each do
-      object = Rubinius.single_block_arg
+      object = Truffle.single_block_arg
       result = yield object
 
       if undefined.equal?(min_result) or \
@@ -638,7 +638,7 @@ module Enumerable
     min, max = nil
 
     each do
-      object = Rubinius.single_block_arg
+      object = Truffle.single_block_arg
       if first_time
         min = max = object
         first_time = false
@@ -668,7 +668,7 @@ module Enumerable
     max_result = undefined
 
     each do
-      object = Rubinius.single_block_arg
+      object = Truffle.single_block_arg
       result = yield object
 
       if undefined.equal?(min_result) or \
@@ -691,7 +691,7 @@ module Enumerable
     if block_given?
       each { |*o| return false if yield(*o) }
     else
-      each { return false if Rubinius.single_block_arg }
+      each { return false if Truffle.single_block_arg }
     end
 
     return true
@@ -709,7 +709,7 @@ module Enumerable
       end
     else
       each do
-        if Rubinius.single_block_arg
+        if Truffle.single_block_arg
           return false if found_one
           found_one = true
         end
@@ -725,7 +725,7 @@ module Enumerable
     left = []
     right = []
     each do
-      o = Rubinius.single_block_arg
+      o = Truffle.single_block_arg
       yield(o) ? left.push(o) : right.push(o)
     end
 
@@ -737,7 +737,7 @@ module Enumerable
 
     ary = []
     each do
-      o = Rubinius.single_block_arg
+      o = Truffle.single_block_arg
       ary << o unless yield(o)
     end
 
@@ -760,7 +760,7 @@ module Enumerable
 
     unless n <= 0
       each do
-        elem = Rubinius.single_block_arg
+        elem = Truffle.single_block_arg
         array << elem
         break if array.size >= n
       end
@@ -784,7 +784,7 @@ module Enumerable
   end
 
   def include?(obj)
-    each { return true if Rubinius.single_block_arg == obj }
+    each { return true if Truffle.single_block_arg == obj }
     false
   end
 
