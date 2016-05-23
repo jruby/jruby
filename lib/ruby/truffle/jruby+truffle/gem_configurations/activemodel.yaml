@@ -70,14 +70,6 @@
     java.rb: nil
     bcrypt_ext.rb: nil
     bundler.rb: "module Bundler; def self.setup; end; end"
-    # mock method_source gem
-    # method_source.rb: nil
-    exclude_tests.rb: |
-                      failures = { AttributeMethodsTest:       [:"test_#define_attribute_methods_generates_attribute_methods",
-                                                                :"test_#define_attribute_methods_generates_attribute_methods_with_spaces_in_their_names",
-                                                                :"test_#define_attribute_methods_works_passing_multiple_arguments"] }
-
-                      Truffle.exclude_rspec_examples failures
 
   # do not let bundler to install db gem group
   :without:
@@ -90,6 +82,5 @@
     - rubygems
     - shims
     - openssl-stubs
-    - truffle/exclude_rspec_examples
   :environment:
     N: 1
