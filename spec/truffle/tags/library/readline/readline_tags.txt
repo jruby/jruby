@@ -1,1 +1,0 @@
-fails:Readline.readline taints the returned strings

@@ -43,12 +43,14 @@ package org.jruby.truffle.stdlib.readline;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 import jline.console.completer.Completer;
 import jline.console.completer.FileNameCompleter;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.*;
 import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
@@ -57,6 +59,8 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.objects.TaintNode;
+import org.jruby.truffle.language.objects.TaintNodeGen;
 
 import java.io.IOException;
 import java.nio.CharBuffer;
@@ -114,18 +118,25 @@ public abstract class ReadlineNodes {
     })
     public abstract static class ReadlineNode extends CoreMethodNode {
 
+        @Child private TaintNode taintNode;
+
+        public ReadlineNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            taintNode = TaintNodeGen.create(context, sourceSection, null);
+        }
+
         @CreateCast("addToHistory") public RubyNode coerceToBoolean(RubyNode addToHistory) {
             return BooleanCastWithDefaultNodeGen.create(null, null, false, addToHistory);
         }
 
         @Specialization(guards = "wasNotProvided(prompt)")
-        public DynamicObject readlineNoPrompt(Object prompt, boolean addToHistory) {
+        public Object readlineNoPrompt(Object prompt, boolean addToHistory) {
             return readline(coreStrings().EMPTY_STRING.createInstance(), addToHistory);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(prompt)")
-        public DynamicObject readline(DynamicObject prompt, boolean addToHistory) {
+        public Object readline(DynamicObject prompt, boolean addToHistory) {
             getContext().getConsoleHolder().getReadline().setExpandEvents(false);
 
             DynamicObject line = nil();
@@ -157,7 +168,7 @@ public abstract class ReadlineNodes {
                 line = StringOperations.createString(getContext(), StringOperations.createRope(value, getContext().getJRubyRuntime().getDefaultExternalEncoding()));
             }
 
-            return line;
+            return taintNode.executeTaint(line);
         }
 
     }
