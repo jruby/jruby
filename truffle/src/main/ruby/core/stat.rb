@@ -162,7 +162,7 @@ module Rubinius
 
     def self.stat(path)
       stat = allocate
-      if Rubinius.privately { stat.setup path } == 0
+      if Truffle.privately { stat.setup path } == 0
         stat
       else
         nil
@@ -171,14 +171,14 @@ module Rubinius
 
     def self.fstat(fd)
       stat = allocate
-      result = Rubinius.privately { stat.fsetup fd }
+      result = Truffle.privately { stat.fsetup fd }
       Errno.handle "file descriptor #{descriptor}" unless result == 0
       stat
     end
 
     def self.lstat(path)
       stat = allocate
-      result = Rubinius.privately { stat.lsetup path }
+      result = Truffle.privately { stat.lsetup path }
       Errno.handle path unless result == 0
       stat
     end

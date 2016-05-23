@@ -178,7 +178,7 @@ class Proc
     Rubinius.invoke_primitive :object_copy_object, copy, self
     Rubinius.invoke_primitive :object_copy_singleton_class, copy, self
 
-    Rubinius.privately do
+    Truffle.privately do
       copy.initialize_copy self
     end
 

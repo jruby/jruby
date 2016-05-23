@@ -47,7 +47,7 @@ module Kernel
   module_function :Array
 
   def Complex(*args)
-    Rubinius.privately do
+    Truffle.privately do
       Complex.convert(*args)
     end
   end
@@ -138,7 +138,7 @@ module Kernel
   module_function :Integer
 
   def Rational(a, b = 1)
-    Rubinius.privately do
+    Truffle.privately do
       Rational.convert a, b
     end
   end
@@ -208,7 +208,7 @@ module Kernel
     fullpath = if script.data_path
       script.data_path
     else
-      Rubinius.privately do
+      Truffle.privately do
         File.basic_realpath(basepath)
       end
     end
@@ -359,11 +359,11 @@ module Kernel
         raise TypeError, "wrong argument type #{mod.class} (expected Module)"
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         mod.extend_object self
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         mod.extended self
       end
     end
@@ -909,7 +909,7 @@ module Kernel
 
   def to_enum(method=:each, *args, &block)
     Enumerator.new(self, method, *args).tap do |enum|
-      Rubinius.privately { enum.size = block } if block_given?
+      Truffle.privately { enum.size = block } if block_given?
     end
   end
   alias_method :enum_for, :to_enum

@@ -888,7 +888,7 @@ module Marshal
       end
 
       obj = nil
-      Rubinius.privately do
+      Truffle.privately do
         obj = klass._load data
       end
 
@@ -913,7 +913,7 @@ module Marshal
       store_unique_object obj
 
       data = construct
-      Rubinius.privately do
+      Truffle.privately do
         obj.marshal_load data
       end
 
@@ -1125,7 +1125,7 @@ module Marshal
       end
 
       str = nil
-      Rubinius.privately do
+      Truffle.privately do
         str = obj._dump @depth
       end
 
@@ -1143,7 +1143,7 @@ module Marshal
 
     def serialize_user_marshal(obj)
       val = nil
-      Rubinius.privately do
+      Truffle.privately do
         val = obj.marshal_dump
       end
 

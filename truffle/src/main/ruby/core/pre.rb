@@ -41,7 +41,7 @@ class Module
   # Redefined in kernel/delta/module.rb.
   #
   def include(mod)
-    Rubinius.privately do
+    Truffle.privately do
       mod.append_features self # Truffle: moved the append_features inside the privately
       mod.included self
     end

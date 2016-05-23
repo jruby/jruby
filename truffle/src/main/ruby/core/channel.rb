@@ -49,7 +49,7 @@ module Rubinius
     end
 
     def receive_timeout(duration)
-      Rubinius.privately do
+      Truffle.privately do
         @queue.receive_timeout(duration)
       end
     end

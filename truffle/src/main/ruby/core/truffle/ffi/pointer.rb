@@ -1205,7 +1205,7 @@ module FFI
       other.type_size = type_size
       Truffle::POSIX.memcpy other, self, total
 
-      Rubinius.privately do
+      Truffle.privately do
         other.initialize_copy self
       end
 

@@ -504,6 +504,15 @@ public class BodyTranslator extends Translator {
                     new ObjectLiteralNode(context, null, frozenString)));
         }
 
+        // Truffle.<method>
+        if (receiver instanceof org.jruby.ast.ConstNode
+                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Truffle")) {
+            if (methodName.equals("privately")) {
+                final RubyNode ret = translateRubiniusPrivately(sourceSection, node);
+                return addNewlineIfNeeded(node, ret);
+            }
+        }
+
         // Rubinius.<method>
         if (receiver instanceof org.jruby.ast.ConstNode
                 && ((org.jruby.ast.ConstNode) receiver).getName().equals("Rubinius")) {
@@ -512,9 +521,6 @@ public class BodyTranslator extends Translator {
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("invoke_primitive")) {
                 final RubyNode ret = translateRubiniusInvokePrimitive(sourceSection, node);
-                return addNewlineIfNeeded(node, ret);
-            } else if (methodName.equals("privately")) {
-                final RubyNode ret = translateRubiniusPrivately(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("single_block_arg")) {
                 final RubyNode ret = translateRubiniusSingleBlockArg(sourceSection, node);
@@ -624,7 +630,7 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         *   Rubinius.privately { foo }
+         *   Truffle.privately { foo }
          *
          * into just
          *
@@ -634,11 +640,11 @@ public class BodyTranslator extends Translator {
          */
 
         if (!(node.getIterNode() instanceof org.jruby.ast.IterNode)) {
-            throw new UnsupportedOperationException("Rubinius.privately needs a literal block");
+            throw new UnsupportedOperationException("Truffle.privately needs a literal block");
         }
 
         if (node.getArgsNode() != null && node.getArgsNode().childNodes().size() > 0) {
-            throw new UnsupportedOperationException("Rubinius.privately should not have any arguments");
+            throw new UnsupportedOperationException("Truffle.privately should not have any arguments");
         }
 
         /*
@@ -2708,7 +2714,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateRationalComplex(SourceSection sourceSection, String name, RubyNode a, RubyNode b) {
-        // Translate as Rubinius.privately { Rational.convert(a, b) }
+        // Translate as Truffle.privately { Rational.convert(a, b) }
 
         final RubyNode moduleNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         return new RubyCallNode(

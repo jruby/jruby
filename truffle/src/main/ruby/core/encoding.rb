@@ -355,7 +355,7 @@ class Encoding
         exc = UndefinedConversionError.new msg
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         exc.source_encoding_name = source_encoding_name
         src = Rubinius::Type.try_convert_to_encoding source_encoding_name
         exc.source_encoding = src unless undefined.equal? src

@@ -1058,7 +1058,7 @@ class Array
       if block
         # offensive (both definitions) copy.
         offensive = dup
-        Rubinius.privately do
+        Truffle.privately do
           offensive.__permute__(num, perm, 0, used, &block)
         end
       else
@@ -1213,7 +1213,7 @@ class Array
     if combination_size < 0
       # yield nothing
     else
-      Rubinius.privately do
+      Truffle.privately do
         dup.compile_repeated_combinations(combination_size, [], 0, combination_size, &block)
       end
     end
@@ -1247,7 +1247,7 @@ class Array
     elsif combination_size == 0
       yield []
     else
-      Rubinius.privately do
+      Truffle.privately do
         dup.compile_repeated_permutations(combination_size, [], 0, &block)
       end
     end

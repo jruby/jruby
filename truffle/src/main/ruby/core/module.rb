@@ -372,7 +372,7 @@ class Module
     @method_table.store name, nil, :undef
     Rubinius::VM.reset_method_cache self, name
     if obj = Rubinius::Type.singleton_class_object(self)
-      Rubinius.privately do
+      Truffle.privately do
         obj.singleton_method_undefined(name)
       end
     else
@@ -395,7 +395,7 @@ class Module
       Rubinius::VM.reset_method_cache self, name
 
       if obj = Rubinius::Type.singleton_class_object(self)
-        Rubinius.privately do
+        Truffle.privately do
           obj.singleton_method_removed(name)
         end
       else
@@ -924,11 +924,11 @@ class Module
         raise TypeError, "wrong argument type #{mod.class} (expected Module)"
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         mod.prepend_features self
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         mod.prepended self
       end
     end

@@ -243,7 +243,7 @@ module Rubinius
     def self.coerce_to_array(obj)
       return [obj] unless obj
 
-      return Rubinius.privately { obj.to_a } if object_respond_to?(obj, :to_a, true)
+      return Truffle.privately { obj.to_a } if object_respond_to?(obj, :to_a, true)
       return obj.to_ary if obj.respond_to?(:to_ary)
 
       # On 1.9, #to_a is not defined on all objects, so wrap the object in a
@@ -776,13 +776,13 @@ module Rubinius
     end
 
     def self.object_initialize_dup(obj, copy)
-      Rubinius.privately do
+      Truffle.privately do
         copy.initialize_dup obj
       end
     end
 
     def self.object_initialize_clone(obj, copy)
-      Rubinius.privately do
+      Truffle.privately do
         copy.initialize_clone obj
       end
     end

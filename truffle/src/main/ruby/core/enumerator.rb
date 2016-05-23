@@ -81,12 +81,12 @@ module Enumerable
         new_args = @args.empty? ? args : (@args + args)
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         enumerator.args = new_args
       end
 
       if block_given?
-        Rubinius.privately do
+        Truffle.privately do
           enumerator.each_with_block do |*yield_args|
             yield(*yield_args)
           end
@@ -144,7 +144,7 @@ module Enumerable
       end
 
       exception = StopIteration.new "iteration reached end"
-      Rubinius.privately do
+      Truffle.privately do
         exception.result = @generator.result
       end
 
@@ -265,7 +265,7 @@ module Enumerable
         size = block_given? ? block : nil
         ret = Lazy.allocate
 
-        Rubinius.privately do
+        Truffle.privately do
           ret.initialize_enumerator self, size, method_name, *method_args
         end
 

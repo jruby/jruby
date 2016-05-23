@@ -84,11 +84,11 @@ class Module
         raise TypeError, "wrong argument type #{mod.class} (expected Module)"
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         mod.append_features self
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         mod.included self
       end
     end

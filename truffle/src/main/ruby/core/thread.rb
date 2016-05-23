@@ -316,7 +316,7 @@ class Thread
       raise ArgumentError, "unknown mask signature"
     end
     exception, timing = config.first
-    Rubinius.privately do
+    Truffle.privately do
       current.handle_interrupt(exception, timing, &block)
     end
   end

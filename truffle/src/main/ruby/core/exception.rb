@@ -142,7 +142,7 @@ class Exception
         # Exception#initialize (via __initialize__) is exactly what MRI
         # does.
         e = clone
-        Rubinius.privately do
+        Truffle.privately do
           e.__initialize__(message)
         end
         return e
@@ -400,7 +400,7 @@ class SystemCallError < StandardError
 
       error = allocate
       Rubinius::Unsafe.set_class error, self
-      Rubinius.privately { error.initialize(*args) }
+      Truffle.privately { error.initialize(*args) }
       return error
     end
   end
