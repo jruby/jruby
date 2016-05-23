@@ -40,13 +40,12 @@
  */
 package org.jruby.truffle.stdlib.readline;
 
-import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jline.console.history.History;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -89,7 +88,7 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
-    @CoreMethod(names = "pop")
+    @CoreMethod(names = "pop", needsSelf = false)
     public abstract static class PopNode extends CoreMethodArrayArgumentsNode {
 
         @Child private TaintNode taintNode;
@@ -99,6 +98,7 @@ public abstract class ReadlineHistoryNodes {
             taintNode = TaintNodeGen.create(context, sourceSection, null);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object pop() {
             final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
@@ -115,7 +115,7 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
-    @CoreMethod(names = "shift")
+    @CoreMethod(names = "shift", needsSelf = false)
     public abstract static class ShiftNode extends CoreMethodArrayArgumentsNode {
 
         @Child private TaintNode taintNode;
@@ -125,6 +125,7 @@ public abstract class ReadlineHistoryNodes {
             taintNode = TaintNodeGen.create(context, sourceSection, null);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object shift() {
             final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
@@ -141,9 +142,10 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
-    @CoreMethod(names = { "length", "size" })
+    @CoreMethod(names = { "length", "size" }, needsSelf = false)
     public abstract static class LengthNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public int length() {
             return getContext().getConsoleHolder().getHistory().size();
@@ -151,9 +153,10 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
-    @CoreMethod(names = "clear")
+    @CoreMethod(names = "clear", needsSelf = false)
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject clear() {
             getContext().getConsoleHolder().getHistory().clear();
@@ -198,6 +201,7 @@ public abstract class ReadlineHistoryNodes {
             taintNode = TaintNodeGen.create(context, sourceSection, null);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object getIndex(int index) {
             final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
