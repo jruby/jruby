@@ -152,12 +152,12 @@ class Symbol
   alias_method :===, :equal?
 
   def self.all_symbols
-    Rubinius.primitive :symbol_all_symbols
+    Truffle.primitive :symbol_all_symbols
     raise PrimitiveFailure, "Symbol.all_symbols primitive failed."
   end
 
   def is_constant?
-    Rubinius.primitive :symbol_is_constant
+    Truffle.primitive :symbol_is_constant
     raise PrimitiveFailure, "Symbol#is_constant primitive failed."
   end
 end

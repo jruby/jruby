@@ -179,18 +179,18 @@ class Thread
   end
 
   def raise_prim(exc)
-    Rubinius.primitive :thread_raise
+    Truffle.primitive :thread_raise
     Kernel.raise PrimitiveFailure, "Thread#raise primitive failed"
   end
   private :raise_prim
 
   def priority
-    Rubinius.primitive :thread_get_priority
+    Truffle.primitive :thread_get_priority
     Kernel.raise ThreadError, "Thread#priority primitive failed"
   end
 
   def priority=(val)
-    Rubinius.primitive :thread_set_priority
+    Truffle.primitive :thread_set_priority
     Kernel.raise TypeError, "priority must be a Fixnum" unless val.kind_of? Fixnum
     Kernel.raise ThreadError, "Thread#priority= primitive failed"
   end

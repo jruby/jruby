@@ -32,7 +32,7 @@ module Rubinius
       end
 
       def self.fork
-        Rubinius.primitive :vm_fork
+        Truffle.primitive :vm_fork
         raise PrimitiveFailure, "Rubinius::Mirror::Process.fork primitive failed"
       end
 
@@ -56,7 +56,7 @@ module Rubinius
       end
 
       def self.backtick(str)
-        Rubinius.primitive :vm_backtick
+        Truffle.primitive :vm_backtick
         raise PrimitiveFailure, "Rubinius::Mirror::Process.backtick primitive failed"
       end
 
@@ -271,17 +271,17 @@ module Rubinius
         end
 
         def spawn_setup
-          Rubinius.invoke_primitive :vm_spawn_setup, @options
+          Truffle.invoke_primitive :vm_spawn_setup, @options
         end
 
         def spawn(exe, command, args)
-          Rubinius.primitive :vm_spawn
+          Truffle.primitive :vm_spawn
           raise PrimitiveFailure,
             "Rubinius::Mirror::Process::Execute#spawn primitive failed"
         end
 
         def exec(command, args)
-          Rubinius.primitive :vm_exec
+          Truffle.primitive :vm_exec
           raise PrimitiveFailure,
             "Rubinius::Mirror::Process::Execute#exec primitive failed"
         end

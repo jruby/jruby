@@ -96,33 +96,33 @@ module Rubinius
   end
 
   def self.watch_signal(sig, ignored)
-    Rubinius.primitive :vm_watch_signal
+    Truffle.primitive :vm_watch_signal
     raise PrimitiveFailure, "Rubinius.vm_watch_signal primitive failed" # Truffle: simplified failure
   end
 
   def self.extended_modules(obj)
-    Rubinius.primitive :vm_extended_modules
+    Truffle.primitive :vm_extended_modules
     raise PrimitiveFailure, "Rubinius.extended_modules primitive failed"
   end
 
   def self.raise_exception(exc)
-    Rubinius.primitive :vm_raise_exception
+    Truffle.primitive :vm_raise_exception
     raise PrimitiveFailure, "Rubinius.vm_raise_exception primitive failed"
   end
 
   def self.throw(dest, obj)
-    Rubinius.primitive :vm_throw
+    Truffle.primitive :vm_throw
     raise PrimitiveFailure, "Rubinius.throw primitive failed"
   end
 
   def self.catch(dest, obj)
-    Rubinius.primitive :vm_catch
+    Truffle.primitive :vm_catch
     raise PrimitiveFailure, "Rubinius.catch primitive failed"
   end
 
   module Unsafe
     def self.set_class(obj, cls)
-      Rubinius.primitive :vm_set_class
+      Truffle.primitive :vm_set_class
 
       if obj.kind_of? ImmediateValue
         raise TypeError, "Can not change the class of an immediate"
@@ -133,7 +133,7 @@ module Rubinius
   end
 
   def self.get_user_home(name)
-    Rubinius.primitive :vm_get_user_home
+    Truffle.primitive :vm_get_user_home
     raise PrimitiveFailure, "Rubinius.get_user_home primitive failed"
   end
 

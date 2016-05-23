@@ -29,17 +29,17 @@ class WeakRef < BasicObject
   class RefError < ::RuntimeError; end
 
   def self.new(obj)
-    Rubinius.primitive :weakref_new
+    Truffle.primitive :weakref_new
     ::Kernel.raise PrimitiveFailure, "WeakRef.new primitive failed"
   end
 
   def __setobj__(obj)
-    Rubinius.primitive :weakref_set_object
+    Truffle.primitive :weakref_set_object
     ::Kernel.raise PrimitiveFailure, "WeakRef#__setobj__ primitive failed"
   end
 
   def __object__
-    Rubinius.primitive :weakref_object
+    Truffle.primitive :weakref_object
     ::Kernel.raise PrimitiveFailure, "WeakRef#__object__ primitive failed"
   end
 

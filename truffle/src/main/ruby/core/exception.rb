@@ -336,7 +336,7 @@ class SystemCallError < StandardError
   attr_reader :errno
 
   def self.errno_error(message, errno, location)
-    Rubinius.primitive :exception_errno_error
+    Truffle.primitive :exception_errno_error
     raise PrimitiveFailure, "SystemCallError.errno_error failed"
   end
 

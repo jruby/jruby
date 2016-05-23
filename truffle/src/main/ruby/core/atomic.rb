@@ -39,21 +39,21 @@ module Rubinius
     end
 
     def get
-      Rubinius.primitive :atomic_get
+      Truffle.primitive :atomic_get
       raise PrimitiveFailure, "Rubinius::AtomicReference#get primitive failed"
     end
 
     alias_method :value, :get
 
     def set(val)
-      Rubinius.primitive :atomic_set
+      Truffle.primitive :atomic_set
       raise PrimitiveFailure, "Rubinius::AtomicReference#set primitive failed"
     end
 
     alias_method :value=, :set
 
     def compare_and_set(old, new)
-      Rubinius.primitive :atomic_compare_and_set
+      Truffle.primitive :atomic_compare_and_set
       raise PrimitiveFailure, "Rubinius::AtomicReference#compare_and_set primitive failed"
     end
 

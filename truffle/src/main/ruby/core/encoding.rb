@@ -128,7 +128,7 @@ class Encoding
     attr_reader :options
 
     def self.allocate
-      Rubinius.primitive :encoding_converter_allocate
+      Truffle.primitive :encoding_converter_allocate
       raise PrimitiveFailure, "Encoding::Converter.allocate primitive failed"
     end
 
@@ -286,12 +286,12 @@ class Encoding
         source.prepend putback
       end
 
-      Rubinius.invoke_primitive(:encoding_converter_primitive_convert,
+      Truffle.invoke_primitive(:encoding_converter_primitive_convert,
                                 self, source, target, offset, size, options)
     end
 
     def putback(maxbytes=nil)
-      Rubinius.primitive :encoding_converter_putback
+      Truffle.primitive :encoding_converter_putback
 
       putback maxbytes
     end
@@ -314,7 +314,7 @@ class Encoding
     end
 
     def last_error
-      error = Rubinius.invoke_primitive :encoding_converter_last_error, self
+      error = Truffle.invoke_primitive :encoding_converter_last_error, self
       return if error.nil?
 
       result = error[:result]
@@ -388,7 +388,7 @@ class Encoding
     end
 
     def primitive_errinfo
-      Rubinius.primitive :encoding_converter_primitive_errinfo
+      Truffle.primitive :encoding_converter_primitive_errinfo
       raise PrimitiveFailure, "Encoding::Converter#primitive_errinfo primitive failed"
     end
 

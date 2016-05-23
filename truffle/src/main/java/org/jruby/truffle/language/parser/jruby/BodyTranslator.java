@@ -504,25 +504,25 @@ public class BodyTranslator extends Translator {
                     new ObjectLiteralNode(context, null, frozenString)));
         }
 
-        // Truffle.<method>
         if (receiver instanceof org.jruby.ast.ConstNode
                 && ((org.jruby.ast.ConstNode) receiver).getName().equals("Truffle")) {
-            if (methodName.equals("privately")) {
-                final RubyNode ret = translateRubiniusPrivately(sourceSection, node);
-                return addNewlineIfNeeded(node, ret);
-            }
-        }
+            // Truffle.<method>
 
-        // Rubinius.<method>
-        if (receiver instanceof org.jruby.ast.ConstNode
-                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Rubinius")) {
             if (methodName.equals("primitive")) {
                 final RubyNode ret = translateRubiniusPrimitive(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("invoke_primitive")) {
                 final RubyNode ret = translateRubiniusInvokePrimitive(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
-            } else if (methodName.equals("single_block_arg")) {
+            } else if (methodName.equals("privately")) {
+                final RubyNode ret = translateRubiniusPrivately(sourceSection, node);
+                return addNewlineIfNeeded(node, ret);
+            }
+        } else if (receiver instanceof org.jruby.ast.ConstNode
+                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Rubinius")) {
+            // Rubinius.<method>
+
+            if (methodName.equals("single_block_arg")) {
                 final RubyNode ret = translateRubiniusSingleBlockArg(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("check_frozen")) {
@@ -566,7 +566,7 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         *   Rubinius.primitive :foo
+         *   Truffle.primitive :foo
          *
          * into
          *
@@ -582,7 +582,7 @@ public class BodyTranslator extends Translator {
          */
 
         if (node.getArgsNode().childNodes().size() != 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
-            throw new UnsupportedOperationException("Rubinius.primitive must have a single literal symbol argument");
+            throw new UnsupportedOperationException("Truffle.primitive must have a single literal symbol argument");
         }
 
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
@@ -596,7 +596,7 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         *   Rubinius.invoke_primitive :foo, arg1, arg2, argN
+         *   Truffle.invoke_primitive :foo, arg1, arg2, argN
          *
          * into
          *
@@ -608,7 +608,7 @@ public class BodyTranslator extends Translator {
          */
 
         if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
-            throw new UnsupportedOperationException("Rubinius.invoke_primitive must have at least an initial literal symbol argument");
+            throw new UnsupportedOperationException("Truffle.invoke_primitive must have at least an initial literal symbol argument");
         }
 
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();

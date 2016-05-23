@@ -26,7 +26,7 @@
 
 class Bignum < Integer
   def <=>(other)
-    Rubinius.primitive :bignum_compare
+    Truffle.primitive :bignum_compare
 
     # We do not use redo_compare here because Ruby does not
     # raise if any part of the coercion or comparison raises
@@ -51,7 +51,7 @@ class Bignum < Integer
   end
 
   def **(o)
-    Rubinius.primitive :bignum_pow
+    Truffle.primitive :bignum_pow
 
     if o.is_a?(Float) && self < 0 && o != o.round
       return Complex.new(self, 0) ** o

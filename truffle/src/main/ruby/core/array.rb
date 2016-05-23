@@ -490,7 +490,7 @@ class Array
   end
 
   def concat(other)
-    Rubinius.primitive :array_concat
+    Truffle.primitive :array_concat
 
     other = Rubinius::Type.coerce_to(other, Array, :to_ary)
     Rubinius.check_frozen
@@ -1020,7 +1020,7 @@ class Array
   end
 
   def pack(directives)
-    Rubinius.primitive :array_pack
+    Truffle.primitive :array_pack
 
     unless directives.kind_of? String
       return pack(StringValue(directives))
@@ -1474,7 +1474,7 @@ class Array
   end
 
   def set_index(index, ent, fin=undefined)
-    Rubinius.primitive :array_aset
+    Truffle.primitive :array_aset
 
     Rubinius.check_frozen
 

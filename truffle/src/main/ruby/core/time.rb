@@ -36,17 +36,17 @@ class Time
   include Comparable
 
   def self.now
-    Rubinius.primitive :time_s_now
+    Truffle.primitive :time_s_now
     raise PrimitiveFailure, "Time.now primitive failed"
   end
 
   def self.duplicate(other)
-    Rubinius.primitive :time_s_dup
+    Truffle.primitive :time_s_dup
     raise ArgumentError, "descriptors reference invalid time"
   end
 
   def self.specific(sec, nsec, from_gmt, offset)
-    Rubinius.primitive :time_s_specific
+    Truffle.primitive :time_s_specific
     raise ArgumentError, "descriptors reference invalid time"
   end
 
@@ -55,22 +55,22 @@ class Time
   end
 
   def seconds
-    Rubinius.primitive :time_seconds
+    Truffle.primitive :time_seconds
     raise PrimitiveFailure, "Time#second primitive failed"
   end
 
   def usec
-    Rubinius.primitive :time_useconds
+    Truffle.primitive :time_useconds
     raise PrimitiveFailure, "Time#usec primitive failed"
   end
 
   def to_a
-    Rubinius.primitive :time_decompose
+    Truffle.primitive :time_decompose
     raise PrimitiveFailure, "Time#to_a primitive failed"
   end
 
   def strftime(format)
-    Rubinius.primitive :time_strftime
+    Truffle.primitive :time_strftime
     raise PrimitiveFailure, "Time#strftime primitive failed"
   end
 
@@ -110,7 +110,7 @@ class Time
   end
 
   def self.from_array(sec, min, hour, mday, month, year, nsec, is_dst, from_gmt, utc_offset)
-    Rubinius.primitive :time_s_from_array
+    Truffle.primitive :time_s_from_array
 
     if sec.kind_of?(String)
       sec = sec.to_i
@@ -167,12 +167,12 @@ class Time
   alias_method :to_s, :inspect
 
   def nsec
-    Rubinius.primitive :time_nseconds
+    Truffle.primitive :time_nseconds
     raise PrimitiveFailure, "Time#nsec primitive failed"
   end
 
   def nsec=(nanoseconds)
-    Rubinius.primitive :time_set_nseconds
+    Truffle.primitive :time_set_nseconds
     raise PrimitiveFailure, "Time#nsec= primitive failed"
   end
   private :nsec=
@@ -267,7 +267,7 @@ class Time
       @zone = nil
     else
       @offset = gmt_offset
-      @zone = Rubinius.invoke_primitive(:time_env_zone, self)
+      @zone = Truffle.invoke_primitive(:time_env_zone, self)
     end
 
     self
@@ -515,7 +515,7 @@ class Time
   alias_method :to_i, :seconds
 
   def gmt_offset
-    Rubinius.primitive :time_utc_offset
+    Truffle.primitive :time_utc_offset
     raise PrimitiveFailure, "Time#gmt_offset primitive failed"
   end
 

@@ -283,31 +283,31 @@ class Module
   private :verify_class_variable_name
 
   def class_variable_set(name, val)
-    Rubinius.primitive :module_cvar_set
+    Truffle.primitive :module_cvar_set
 
     class_variable_set verify_class_variable_name(name), val
   end
 
   def class_variable_get(name)
-    Rubinius.primitive :module_cvar_get
+    Truffle.primitive :module_cvar_get
 
     class_variable_get verify_class_variable_name(name)
   end
 
   def class_variable_defined?(name)
-    Rubinius.primitive :module_cvar_defined
+    Truffle.primitive :module_cvar_defined
 
     class_variable_defined? verify_class_variable_name(name)
   end
 
   def remove_class_variable(name)
-    Rubinius.primitive :module_cvar_remove
+    Truffle.primitive :module_cvar_remove
 
     remove_class_variable verify_class_variable_name(name)
   end
 
   def __class_variables__
-    Rubinius.primitive :module_class_variables
+    Truffle.primitive :module_class_variables
 
     raise PrimitiveFailure, "Module#__class_variables__ primitive failed"
   end

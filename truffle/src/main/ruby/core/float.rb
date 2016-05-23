@@ -112,7 +112,7 @@ class Float < Numeric
   end
 
   def **(other)
-    Rubinius.primitive :float_pow
+    Truffle.primitive :float_pow
 
     if other.is_a?(Float) && self < 0 && other != other.round
       return Complex.new(self, 0) ** other
@@ -182,7 +182,7 @@ class Float < Numeric
     ndigits = Rubinius::Type.coerce_to(ndigits, Integer, :to_int)
 
     if ndigits == 0
-      return Rubinius.invoke_primitive :float_round, self
+      return Truffle.invoke_primitive :float_round, self
     elsif ndigits < 0
       return truncate.round ndigits
     end
@@ -200,7 +200,7 @@ class Float < Numeric
     end
 
     f = 10**ndigits
-    Rubinius.invoke_primitive(:float_round, self * f) / f.to_f
+    Truffle.invoke_primitive(:float_round, self * f) / f.to_f
   end
   def coerce(other)
     return [other, self] if other.kind_of? Float
@@ -208,7 +208,7 @@ class Float < Numeric
   end
 
   def -@
-    Rubinius.primitive :float_neg
+    Truffle.primitive :float_neg
     raise PrimitiveFailure, "Float#-@ primitive failed"
   end
 
@@ -219,24 +219,24 @@ class Float < Numeric
   alias_method :magnitude, :abs
 
   def signbit?
-    Rubinius.primitive :float_signbit_p
+    Truffle.primitive :float_signbit_p
     raise PrimitiveFailure, "Float#signbit? primitive failed"
   end
 
   def +(other)
-    Rubinius.primitive :float_add
+    Truffle.primitive :float_add
     b, a = math_coerce other
     a + b
   end
 
   def -(other)
-    Rubinius.primitive :float_sub
+    Truffle.primitive :float_sub
     b, a = math_coerce other
     a - b
   end
 
   def *(other)
-    Rubinius.primitive :float_mul
+    Truffle.primitive :float_mul
     b, a = math_coerce other
     a * b
   end
@@ -246,7 +246,7 @@ class Float < Numeric
   #++
 
   def divide(other)
-    Rubinius.primitive :float_div
+    Truffle.primitive :float_div
     redo_coerced :/, other
   end
 
@@ -257,14 +257,14 @@ class Float < Numeric
   NAN = 0.0 / 0.0
 
   def divmod(other)
-    Rubinius.primitive :float_divmod
+    Truffle.primitive :float_divmod
     b, a = math_coerce other
     a.divmod b
   end
 
   def %(other)
     return 0 / 0.to_f if other == 0
-    Rubinius.primitive :float_mod
+    Truffle.primitive :float_mod
     b, a = math_coerce other
     a % b
   end
@@ -272,31 +272,31 @@ class Float < Numeric
   alias_method :modulo, :%
 
   def <(other)
-    Rubinius.primitive :float_lt
+    Truffle.primitive :float_lt
     b, a = math_coerce other, :compare_error
     a < b
   end
 
   def <=(other)
-    Rubinius.primitive :float_le
+    Truffle.primitive :float_le
     b, a = math_coerce other, :compare_error
     a <= b
   end
 
   def >(other)
-    Rubinius.primitive :float_gt
+    Truffle.primitive :float_gt
     b, a = math_coerce other, :compare_error
     a > b
   end
 
   def >=(other)
-    Rubinius.primitive :float_ge
+    Truffle.primitive :float_ge
     b, a = math_coerce other, :compare_error
     a >= b
   end
 
   def <=>(other)
-    Rubinius.primitive :float_compare
+    Truffle.primitive :float_compare
     b, a = math_coerce other, :compare_error
     a <=> b
   rescue ArgumentError
@@ -304,7 +304,7 @@ class Float < Numeric
   end
 
   def ==(other)
-    Rubinius.primitive :float_equal
+    Truffle.primitive :float_equal
     begin
       b, a = math_coerce(other)
       return a == b
@@ -314,17 +314,17 @@ class Float < Numeric
   end
 
   def eql?(other)
-    Rubinius.primitive :float_eql
+    Truffle.primitive :float_eql
     false
   end
 
   def nan?
-    Rubinius.primitive :float_isnan
+    Truffle.primitive :float_isnan
     raise PrimitiveFailure, "Float#nan? primitive failed"
   end
 
   def infinite?
-    Rubinius.primitive :float_isinf
+    Truffle.primitive :float_isinf
     raise PrimitiveFailure, "Float#infinite? primitive failed"
   end
 
@@ -337,7 +337,7 @@ class Float < Numeric
   end
 
   def to_i
-    Rubinius.primitive :float_to_i
+    Truffle.primitive :float_to_i
     raise PrimitiveFailure, "Float#to_i primitive failed"
   end
 
@@ -351,23 +351,23 @@ class Float < Numeric
   alias_method :inspect, :to_s
 
   def to_s_minimal
-    Rubinius.primitive :float_to_s_minimal
+    Truffle.primitive :float_to_s_minimal
     raise PrimitiveFailure, "Float#to_s_minimal primitive failed: output exceeds buffer size"
   end
 
   def to_s_formatted(fmt)
-    Rubinius.primitive :float_to_s_formatted
+    Truffle.primitive :float_to_s_formatted
     raise PrimitiveFailure, "Float#to_s_formatted primitive failed: output exceeds buffer size"
   end
   private :to_s_formatted
 
   def dtoa
-    Rubinius.primitive :float_dtoa
+    Truffle.primitive :float_dtoa
     raise PrimitiveFailure, "Fload#dtoa primitive failed"
   end
 
   def to_packed(size)
-    Rubinius.primitive :float_to_packed
+    Truffle.primitive :float_to_packed
     raise PrimitiveFailure, "Float#to_packed primitive failed"
   end
 
