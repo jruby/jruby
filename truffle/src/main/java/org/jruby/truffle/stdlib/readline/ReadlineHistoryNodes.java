@@ -180,8 +180,8 @@ public abstract class ReadlineHistoryNodes {
         public DynamicObject each(VirtualFrame frame, DynamicObject history, DynamicObject block) {
             final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
 
-            for (Iterator<History.Entry> i = consoleHolder.getHistory().iterator(); i.hasNext();) {
-                final DynamicObject line = createString(StringOperations.createRope(i.next().value().toString(), getDefaultInternalEncoding()));
+            for (final History.Entry e : consoleHolder.getHistory()) {
+                final DynamicObject line = createString(StringOperations.createRope(e.value().toString(), getDefaultInternalEncoding()));
 
                 yield(frame, block, taintNode.executeTaint(line));
             }
