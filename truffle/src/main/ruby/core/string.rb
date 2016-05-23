@@ -564,7 +564,7 @@ class String
   end
 
   def encode!(to=undefined, from=undefined, options=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     case to
       when Encoding
@@ -917,11 +917,11 @@ class String
       unless block_given?
         raise ArgumentError, "method '#{__method__}': given 1, expected 2"
       end
-      Rubinius.check_frozen
+      Truffle.check_frozen
       use_yield = true
       tainted = false
     else
-      Rubinius.check_frozen
+      Truffle.check_frozen
       tainted = replacement.tainted?
       untrusted = replacement.untrusted?
 
@@ -976,7 +976,7 @@ class String
   end
 
   def slice!(one, two=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
     # This is un-DRY, but it's a simple manual argument splitting. Keeps
     # the code fast and clean since the sequence are pretty short.
     #
@@ -1017,7 +1017,7 @@ class String
   end
 
   def chop!
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     m = Rubinius::Mirror.reflect self
 
@@ -1039,7 +1039,7 @@ class String
   end
 
   def chomp!(sep=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if undefined.equal?(sep)
       sep = $/
@@ -1105,7 +1105,7 @@ class String
   end
 
   def <<(other)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     unless other.kind_of? String
       if other.kind_of? Integer
@@ -1333,11 +1333,11 @@ class String
       unless block_given?
         return to_enum(:gsub, pattern, replacement)
       end
-      Rubinius.check_frozen
+      Truffle.check_frozen
       use_yield = true
       tainted = false
     else
-      Rubinius.check_frozen
+      Truffle.check_frozen
       tainted = replacement.tainted?
       untrusted = replacement.untrusted?
 
@@ -1512,7 +1512,7 @@ class String
   end
 
   def []=(index, count_or_replacement, replacement=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if undefined.equal?(replacement)
       replacement = count_or_replacement

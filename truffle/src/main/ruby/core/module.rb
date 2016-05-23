@@ -109,7 +109,7 @@ class Module
 
     name = Rubinius::Type.coerce_to_constant_name name
 
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if entry = @constant_table.lookup(name)
       if entry.constant.kind_of? Autoload
@@ -353,7 +353,7 @@ class Module
   def undef_method(*names)
     return self if names.empty?
     names.map!{ |name| Rubinius::Type.coerce_to_symbol name }
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     names.each do |name|
       # Will raise a NameError if the method doesn't exist.
@@ -367,7 +367,7 @@ class Module
   # Like undef_method, but doesn't even check that the method exists. Used
   # mainly to implement rb_undef_method.
   def undef_method!(name)
-    Rubinius.check_frozen
+    Truffle.check_frozen
     name = Rubinius::Type.coerce_to_symbol(name)
     @method_table.store name, nil, :undef
     Rubinius::VM.reset_method_cache self, name
@@ -385,7 +385,7 @@ class Module
   def remove_method(*names)
     names.each do |name|
       name = Rubinius::Type.coerce_to_symbol(name)
-      Rubinius.check_frozen
+      Truffle.check_frozen
 
       unless @method_table.lookup(name)
         raise NameError.new("method `#{name}' not defined in #{self.name}", name)
@@ -646,7 +646,7 @@ class Module
 
   def const_set(name, value)
     name = Rubinius::Type.coerce_to_constant_name name
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if Rubinius::Type.object_kind_of? value, Module
       Rubinius::Type.set_module_name value, name, self

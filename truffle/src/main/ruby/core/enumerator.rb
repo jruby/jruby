@@ -245,7 +245,7 @@ module Enumerable
 
       def initialize(receiver, size=nil)
         raise ArgumentError, "Lazy#initialize requires a block" unless block_given?
-        Rubinius.check_frozen
+        Truffle.check_frozen
 
         super(size) do |yielder, *each_args|
           begin

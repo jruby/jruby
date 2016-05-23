@@ -520,13 +520,8 @@ public class BodyTranslator extends Translator {
             } else if (methodName.equals("single_block_arg")) {
                 final RubyNode ret = translateSingleBlockArg(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
-            }
-        } else if (receiver instanceof org.jruby.ast.ConstNode
-                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Rubinius")) {
-            // Rubinius.<method>
-
-            if (methodName.equals("check_frozen")) {
-                final RubyNode ret = translateRubiniusCheckFrozen(sourceSection);
+            } else if (methodName.equals("check_frozen")) {
+                final RubyNode ret = translateCheckFrozen(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (receiver instanceof org.jruby.ast.Colon2ConstNode // Truffle.<method>
@@ -676,7 +671,7 @@ public class BodyTranslator extends Translator {
         return new SingleBlockArgNode(context, sourceSection);
     }
 
-    private RubyNode translateRubiniusCheckFrozen(SourceSection sourceSection) {
+    private RubyNode translateCheckFrozen(SourceSection sourceSection) {
         return new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
     }
 
