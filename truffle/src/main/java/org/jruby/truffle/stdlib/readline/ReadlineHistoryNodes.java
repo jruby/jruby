@@ -120,4 +120,16 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
+    @CoreMethod(names = "clear")
+    public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject clear() {
+            getContext().getConsoleHolder().getHistory().clear();
+
+            return nil();
+        }
+
+    }
+
 }
