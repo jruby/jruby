@@ -262,7 +262,8 @@ public abstract class ReadlineNodes {
     // Complete using a Proc object
     public static class ProcCompleter implements Completer {
 
-        DynamicObject procCompleter;
+        private final DynamicObject procCompleter;
+
         //\t\n\"\\'`@$><=;|&{(
         static private String[] delimiters = {" ", "\t", "\n", "\"", "\\", "'", "`", "@", "$", ">", "<", "=", ";", "|", "&", "{", "("};
 
