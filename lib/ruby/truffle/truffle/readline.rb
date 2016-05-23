@@ -49,10 +49,16 @@ module Readline
 end
 
 class << Readline::HISTORY
+
   include Enumerable
   include Truffle::ReadlineHistory
 
   def empty?
     size == 0
   end
+
+  def to_s
+    'HISTORY'
+  end
+
 end
