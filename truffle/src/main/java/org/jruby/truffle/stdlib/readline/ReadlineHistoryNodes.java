@@ -110,4 +110,14 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
+    @CoreMethod(names = { "length", "size" })
+    public abstract static class LengthNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public int length() {
+            return getContext().getConsoleHolder().getHistory().size();
+        }
+
+    }
+
 }
