@@ -45,17 +45,21 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import jline.console.history.History;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
+
+import java.util.Iterator;
 
 @CoreClass("Truffle::ReadlineHistory")
 public abstract class ReadlineHistoryNodes {
@@ -128,6 +132,31 @@ public abstract class ReadlineHistoryNodes {
             getContext().getConsoleHolder().getHistory().clear();
 
             return nil();
+        }
+
+    }
+
+    @CoreMethod(names = "each", needsSelf = true, needsBlock = true)
+    public abstract static class EachNode extends YieldingCoreMethodNode {
+
+        @Child private TaintNode taintNode;
+
+        public EachNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            taintNode = TaintNodeGen.create(context, sourceSection, null);
+        }
+
+        @Specialization
+        public DynamicObject each(VirtualFrame frame, DynamicObject history, DynamicObject block) {
+            final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
+
+            for (Iterator<History.Entry> i = consoleHolder.getHistory().iterator(); i.hasNext();) {
+                final DynamicObject line = createString(StringOperations.createRope(i.next().value().toString(), getDefaultInternalEncoding()));
+
+                yield(frame, block, taintNode.executeTaint(line));
+            }
+
+            return history;
         }
 
     }
