@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.gem.bcrypt;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.USASCIIEncoding;
@@ -23,6 +24,7 @@ public abstract class BCryptNodes {
     @CoreMethod(names = "hashpw", required = 2, onSingleton = true)
     public abstract static class HashPassword extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization(guards = { "isRubyString(secret)", "isRubyString(salt)" })
         public Object hashpw(DynamicObject secret, DynamicObject salt) {
             final String result = BCrypt.hashpw(
@@ -37,7 +39,8 @@ public abstract class BCryptNodes {
     @CoreMethod(names = "gensalt", required = 1, onSingleton = true)
     public abstract static class GenerateSalt extends CoreMethodArrayArgumentsNode {
 
-        @Specialization()
+        @TruffleBoundary
+        @Specialization
         public Object gensalt(int cost) {
             return StringOperations.createString(
                     getContext(),
