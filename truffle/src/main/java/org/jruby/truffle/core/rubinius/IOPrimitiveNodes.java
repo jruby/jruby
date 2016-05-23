@@ -65,6 +65,7 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.core.thread.ThreadManager.ResultWithinTime;
+import org.jruby.truffle.extra.ffi.PointerPrimitiveNodes;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;

@@ -29,7 +29,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
-import org.jruby.truffle.core.rubinius.PointerPrimitiveNodes;
+import org.jruby.truffle.extra.ffi.PointerPrimitiveNodes;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;

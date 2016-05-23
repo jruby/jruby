@@ -25,7 +25,6 @@ import org.jruby.truffle.core.numeric.FloatNodesFactory;
 import org.jruby.truffle.core.rubinius.IOBufferPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.IOPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.NativeFunctionPrimitiveNodesFactory;
-import org.jruby.truffle.core.rubinius.PointerPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.RandomizerPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.StatPrimitiveNodesFactory;
@@ -37,6 +36,7 @@ import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.symbol.SymbolNodesFactory;
 import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
+import org.jruby.truffle.extra.ffi.PointerPrimitiveNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
