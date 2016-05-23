@@ -40,10 +40,12 @@
  */
 package org.jruby.truffle.stdlib.readline;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -52,6 +54,8 @@ import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.objects.TaintNode;
+import org.jruby.truffle.language.objects.TaintNodeGen;
 
 @CoreClass("Truffle::ReadlineHistory")
 public abstract class ReadlineHistoryNodes {
@@ -76,6 +80,32 @@ public abstract class ReadlineHistoryNodes {
             }
 
             return history;
+        }
+
+    }
+
+    @CoreMethod(names = "pop")
+    public abstract static class PopNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private TaintNode taintNode;
+
+        public PopNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            taintNode = TaintNodeGen.create(context, sourceSection, null);
+        }
+
+        @Specialization
+        public Object pop() {
+            final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
+
+            if (consoleHolder.getHistory().isEmpty()) {
+                return nil();
+            }
+
+            final String lastLine = consoleHolder.getHistory().removeLast().toString();
+            final DynamicObject ret = createString(StringOperations.createRope(lastLine, getDefaultInternalEncoding()));
+
+            return taintNode.executeTaint(ret);
         }
 
     }

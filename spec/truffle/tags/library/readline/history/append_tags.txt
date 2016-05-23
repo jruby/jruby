@@ -1,2 +1,1 @@
 fails:Readline::HISTORY.<< appends the given Object to the history
-fails:Readline::HISTORY.<< tries to convert the passed Object to a String using #to_str
