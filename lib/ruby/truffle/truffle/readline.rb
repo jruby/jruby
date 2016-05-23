@@ -23,11 +23,22 @@ module Readline
     completer_word_break_characters
     completer_word_break_characters=
     completion_append_character
+    completion_append_character=
+    completion_case_fold
+    completion_case_fold=
     completion_proc
+    completion_proc=
     emacs_editing_mode
     emacs_editing_mode?
     filename_quote_characters
     filename_quote_characters=
+    point=
+    pre_input_hook
+    pre_input_hook=
+    redisplay
+    set_screen_size
+    special_prefixes
+    special_prefixes=
     vi_editing_mode
     vi_editing_mode?
     set_screen_size
