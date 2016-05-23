@@ -66,7 +66,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
-import org.jruby.truffle.core.rubinius.RubiniusSingleBlockArgNode;
+import org.jruby.truffle.language.arguments.SingleBlockArgNode;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -518,7 +518,7 @@ public class BodyTranslator extends Translator {
                 final RubyNode ret = translateRubiniusPrivately(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("single_block_arg")) {
-                final RubyNode ret = translateRubiniusSingleBlockArg(sourceSection, node);
+                final RubyNode ret = translateSingleBlockArg(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (receiver instanceof org.jruby.ast.ConstNode
@@ -672,8 +672,8 @@ public class BodyTranslator extends Translator {
         }
     }
 
-    public RubyNode translateRubiniusSingleBlockArg(SourceSection sourceSection, org.jruby.ast.CallNode node) {
-        return new RubiniusSingleBlockArgNode(context, sourceSection);
+    public RubyNode translateSingleBlockArg(SourceSection sourceSection, org.jruby.ast.CallNode node) {
+        return new SingleBlockArgNode(context, sourceSection);
     }
 
     private RubyNode translateRubiniusCheckFrozen(SourceSection sourceSection) {

@@ -8,7 +8,7 @@
  * GNU Lesser General Public License version 2.1
  */
 
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -18,11 +18,11 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
-public class RubiniusSingleBlockArgNode extends RubyNode {
+public class SingleBlockArgNode extends RubyNode {
     private final ConditionProfile emptyArgsProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile singleArgProfile = ConditionProfile.createBinaryProfile();
 
-    public RubiniusSingleBlockArgNode(RubyContext context, SourceSection sourceSection) {
+    public SingleBlockArgNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
