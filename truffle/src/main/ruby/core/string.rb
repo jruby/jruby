@@ -223,7 +223,7 @@ class String
 
   def downcase
     return dup if bytesize == 0
-    transform(Rubinius::CType::Lowered)
+    transform(Truffle::CType::Lowered)
   end
 
   def end_with?(*suffixes)
