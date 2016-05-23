@@ -48,6 +48,11 @@ module Readline
 
 end
 
-Readline::HISTORY.extend Enumerable
-Readline::HISTORY.extend Truffle::ReadlineHistory
+class << Readline::HISTORY
+  include Enumerable
+  include Truffle::ReadlineHistory
 
+  def empty?
+    size == 0
+  end
+end
