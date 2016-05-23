@@ -92,13 +92,17 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        protected int ensureSuccessful(int result) {
+        protected int ensureSuccessful(int result, int errno) {
             assert result >= -1;
             if (result == -1) {
                 errorProfile.enter();
-                throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
+                throw new RaiseException(coreExceptions().errnoError(errno, this));
             }
             return result;
+        }
+
+        protected int ensureSuccessful(int result) {
+            return ensureSuccessful(result, posix().errno());
         }
     }
 
@@ -332,32 +336,31 @@ public abstract class IOPrimitiveNodes {
         }
 
         @TruffleBoundary
-        public void performReopenPath(DynamicObject file, DynamicObject path, int mode) {
-            int fd = Layouts.IO.getDescriptor(file);
-            final String pathString = StringOperations.getString(getContext(), path);
+        public void performReopenPath(DynamicObject self, DynamicObject path, int mode) {
+            int fdSelf = Layouts.IO.getDescriptor(self);
+            final String targetPathString = StringOperations.getString(getContext(), path);
 
-            int otherFd = ensureSuccessful(posix().open(pathString, mode, 666));
+            int fdTarget = ensureSuccessful(posix().open(targetPathString, mode, 666));
 
-            final int result = posix().dup2(otherFd, fd);
+            final int result = posix().dup2(fdTarget, fdSelf);
             if (result == -1) {
                 final int errno = posix().errno();
                 if (errno == Errno.EBADF.intValue()) {
-                    Layouts.IO.setDescriptor(file, otherFd);
-                    fd = otherFd;
+                    Layouts.IO.setDescriptor(self, fdTarget);
+                    fdSelf = fdTarget;
                 } else {
-                    if (otherFd > 0) {
-                        ensureSuccessful(posix().close(otherFd));
+                    if (fdTarget > 0) {
+                        ensureSuccessful(posix().close(fdTarget));
                     }
-                    throw new RaiseException(coreExceptions().errnoError(errno, this));
+                    ensureSuccessful(result, errno);
                 }
 
             } else {
-                ensureSuccessful(posix().close(otherFd));
+                ensureSuccessful(posix().close(fdTarget));
             }
 
-
-            final int newMode = ensureSuccessful(posix().fcntl(fd, Fcntl.F_GETFL));
-            Layouts.IO.setMode(file, newMode);
+            final int newSelfMode = ensureSuccessful(posix().fcntl(fdSelf, Fcntl.F_GETFL));
+            Layouts.IO.setMode(self, newSelfMode);
         }
 
         @Specialization(guards = "isRubyString(path)")
