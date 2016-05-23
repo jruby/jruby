@@ -44,6 +44,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import jline.console.CursorBuffer;
 import jline.console.completer.Completer;
 import jline.console.completer.FileNameCompleter;
 import org.jcodings.specific.UTF8Encoding;
@@ -214,6 +215,26 @@ public abstract class ReadlineNodes {
             getContext().getConsoleHolder().getReadline().getCursorBuffer().clear();
 
             return readline;
+        }
+
+    }
+
+    @CoreMethod(names = "line_buffer", onSingleton = true)
+    public abstract static class LineBufferNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private TaintNode taintNode;
+
+        public LineBufferNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            taintNode = TaintNodeGen.create(context, sourceSection, null);
+        }
+
+        @Specialization
+        public Object lineBuffer() {
+            final CursorBuffer cb = getContext().getConsoleHolder().getReadline().getCursorBuffer();
+
+            final DynamicObject ret = createString(StringOperations.createRope(cb.toString(), getDefaultInternalEncoding()));
+            return taintNode.executeTaint(ret);
         }
 
     }
