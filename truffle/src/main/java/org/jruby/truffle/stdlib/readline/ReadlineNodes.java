@@ -48,9 +48,6 @@ import jline.console.CursorBuffer;
 import jline.console.completer.Completer;
 import jline.console.completer.FileNameCompleter;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.*;
 import org.jruby.truffle.core.array.ArrayHelpers;
@@ -67,8 +64,6 @@ import org.jruby.truffle.language.objects.TaintNodeGen;
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 @CoreClass("Truffle::Readline")
