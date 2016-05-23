@@ -74,7 +74,7 @@ import java.util.List;
 @CoreClass("Truffle::Readline")
 public abstract class ReadlineNodes {
 
-    @CoreMethod(names = "basic_word_break_characters", isModuleFunction = true)
+    @CoreMethod(names = "basic_word_break_characters", onSingleton = true)
     public abstract static class BasicWordBreakCharactersNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -84,7 +84,7 @@ public abstract class ReadlineNodes {
 
     }
 
-    @CoreMethod(names = "basic_word_break_characters=", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "basic_word_break_characters=", onSingleton = true, required = 1)
     @NodeChild(type = RubyNode.class, value = "characters")
     public abstract static class SetBasicWordBreakCharactersNode extends CoreMethodNode {
 
@@ -101,7 +101,7 @@ public abstract class ReadlineNodes {
 
     }
 
-    @CoreMethod(names = "get_screen_size", isModuleFunction = true)
+    @CoreMethod(names = "get_screen_size", onSingleton = true)
     public abstract static class GetScreenSizeNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -175,7 +175,7 @@ public abstract class ReadlineNodes {
 
     }
 
-    @CoreMethod(names = "point", isModuleFunction = true)
+    @CoreMethod(names = "point", onSingleton = true)
     public abstract static class PointNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
@@ -210,6 +210,7 @@ public abstract class ReadlineNodes {
     @CoreMethod(names = "delete_text", constructor = true)
     public abstract static class DeleteTextNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject deleteText(DynamicObject readline) {
             getContext().getConsoleHolder().getReadline().getCursorBuffer().clear();
@@ -229,6 +230,7 @@ public abstract class ReadlineNodes {
             taintNode = TaintNodeGen.create(context, sourceSection, null);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object lineBuffer() {
             final CursorBuffer cb = getContext().getConsoleHolder().getReadline().getCursorBuffer();
