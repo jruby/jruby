@@ -11,6 +11,7 @@ Readline = Truffle::Readline
 module Readline
 
   HISTORY = Object.new
+  VERSION = 'JLine wrapper'
 
   module_function
 
