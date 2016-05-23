@@ -239,6 +239,23 @@ public abstract class ReadlineNodes {
 
     }
 
+    @CoreMethod(names = "refresh_line", onSingleton = true)
+    public abstract static class RefreshLineNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject refreshLine() {
+            try {
+                getContext().getConsoleHolder().getReadline().redrawLine();
+            } catch (IOException e) {
+                throw new RaiseException(coreExceptions().ioError(e.getMessage(), this));
+            }
+
+            return nil();
+        }
+
+    }
+
     // Taken from org.jruby.ext.readline.Readline.ProcCompleter.
     // Complete using a Proc object
     public static class ProcCompleter implements Completer {
