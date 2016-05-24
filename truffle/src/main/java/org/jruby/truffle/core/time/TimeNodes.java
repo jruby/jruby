@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.time;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Cached;
@@ -99,7 +98,7 @@ public abstract class TimeNodes {
 
         public LocalTimeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
+            readTimeZoneNode = ReadTimeZoneNodeGen.create();
         }
 
         @Specialization
@@ -224,7 +223,7 @@ public abstract class TimeNodes {
         public TimeSNowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
+            readTimeZoneNode = ReadTimeZoneNodeGen.create();
         }
 
         @Specialization
@@ -248,7 +247,7 @@ public abstract class TimeNodes {
 
         public TimeSSpecificPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
+            readTimeZoneNode = ReadTimeZoneNodeGen.create();
         }
 
         @Specialization(guards = { "isUTC" })
@@ -326,7 +325,7 @@ public abstract class TimeNodes {
 
         public TimeDecomposePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
+            readTimeZoneNode = ReadTimeZoneNodeGen.create();
         }
 
         @TruffleBoundary
@@ -389,7 +388,7 @@ public abstract class TimeNodes {
 
         public TimeSFromArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
+            readTimeZoneNode = ReadTimeZoneNodeGen.create();
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 

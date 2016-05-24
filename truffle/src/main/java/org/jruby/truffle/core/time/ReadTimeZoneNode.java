@@ -9,51 +9,46 @@
  */
 package org.jruby.truffle.core.time;
 
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jcodings.specific.UTF8Encoding;
 import org.joda.time.DateTimeZone;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.constants.ReadLiteralConstantNode;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.literal.ObjectLiteralNode;
+import org.jruby.truffle.language.SnippetNode;
 
-public class ReadTimeZoneNode extends RubyNode {
+public abstract class ReadTimeZoneNode extends RubyNode {
     
-    @Child private CallDispatchHeadNode hashNode;
-    @Child private ReadLiteralConstantNode envNode;
+    protected static final CyclicAssumption TZ_UNCHANGED = new CyclicAssumption("ENV['TZ'] is unmodified");
 
-    private final ConditionProfile tzNilProfile = ConditionProfile.createBinaryProfile();
-    private final ConditionProfile tzStringProfile = ConditionProfile.createBinaryProfile();
-
-    private static final Rope defaultZone = StringOperations.encodeRope(DateTimeZone.getDefault().toString(), UTF8Encoding.INSTANCE);
-    private final DynamicObject TZ;
-    
-    public ReadTimeZoneNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        hashNode = DispatchHeadNodeFactory.createMethodCall(context);
-        envNode = new ReadLiteralConstantNode(context, sourceSection,
-                new ObjectLiteralNode(context, sourceSection, coreLibrary().getObjectClass()), "ENV");
-        TZ = create7BitString("TZ", UTF8Encoding.INSTANCE);
+    public static void invalidateTZ() {
+        TZ_UNCHANGED.invalidate();
     }
 
-    @Override
-    public Object execute(VirtualFrame frame) {
-        final Object tz = hashNode.call(frame, envNode.execute(frame), "[]", null, TZ);
+    private static final Rope DEFAULT_ZONE = StringOperations.encodeRope(DateTimeZone.getDefault().toString(), UTF8Encoding.INSTANCE);
+
+    @Child SnippetNode snippetNode = new SnippetNode();
+
+    @Specialization(assumptions = "TZ_UNCHANGED.getAssumption()")
+    public DynamicObject getTZ(VirtualFrame frame,
+            @Cached("getTZValue(frame)") DynamicObject tzValue) {
+        return tzValue;
+    }
+
+    protected DynamicObject getTZValue(VirtualFrame frame) {
+        Object tz = snippetNode.execute(frame, "ENV['TZ']");
 
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 
-        if (tzNilProfile.profile(tz == nil())) {
-            return createString(defaultZone);
-        } else if (tzStringProfile.profile(RubyGuards.isRubyString(tz))) {
-            return tz;
+        if (tz == nil()) {
+            return createString(DEFAULT_ZONE);
+        } else if (RubyGuards.isRubyString(tz)) {
+            return (DynamicObject) tz;
         } else {
             throw new UnsupportedOperationException();
         }
