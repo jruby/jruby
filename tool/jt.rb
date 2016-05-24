@@ -187,22 +187,6 @@ module Utilities
     end
   end
 
-  def self.find_bench
-    bench_locations = [
-      ENV['BENCH_DIR'],
-      'bench9000',
-      '../bench9000'
-    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
-
-    not_found = -> {
-      raise "couldn't find bench9000 - clone it from https://github.com/jruby/bench9000.git into the JRuby repository or parent directory"
-    }
-
-    bench_locations.find(not_found) do |location|
-      Dir.exist?(location)
-    end
-  end
-
   def self.jruby_version
     File.read("#{JRUBY_DIR}/VERSION").strip
   end
@@ -331,14 +315,6 @@ module Commands
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt bench debug [options] [vm-args] benchmark   run a single benchmark with options for compiler debugging'
-    puts '    --igv                                      make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
-    puts '        --full                                 show all phases, not just up to the Truffle partial escape'
-    puts '    --ruby-backtrace                           print a Ruby backtrace on any compilation failures'
-    puts 'jt bench reference [benchmarks]                run a set of benchmarks and record a reference point'
-    puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
-    puts '    benchmarks can be any benchmarks or group of benchmarks supported'
-    puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
     puts 'jt metrics [--score name] alloc ...            how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
     puts '    --score name                               report results as scores'
     puts 'jt metrics ... minheap ...                     what is the smallest heap you can use to run an application'
@@ -689,55 +665,6 @@ module Commands
     puts "WARNING: untag is currently not very reliable - run `jt test #{[path,*args] * ' '}` after and manually annotate any new failures"
     puts
     test_specs('untag', path, *args)
-  end
-
-  def bench(command, *args)
-    bench_dir = Utilities.find_bench
-    env_vars = {
-      "JRUBY_DEV_DIR" => JRUBY_DIR,
-      "GRAAL_BIN" => Utilities.find_graal,
-    }
-    bench_args = ["#{bench_dir}/bin/bench9000"]
-    case command
-    when 'debug'
-      vm_args = ['-G:+TraceTruffleCompilation', '-G:+DumpOnError']
-      if args.delete '--igv'
-        warn "warning: --igv might not work on master - if it does not, use truffle-head instead which builds against latest graal" if Utilities.git_branch == 'master'
-        Utilities.ensure_igv_running
-
-        if args.delete('--full')
-          vm_args.push '-G:Dump=Truffle'
-        else
-          vm_args.push '-G:Dump=TrufflePartialEscape'
-        end
-      end
-      if args.delete '--ruby-backtrace'
-        vm_args.push '-G:+TruffleCompilationExceptionsAreThrown'
-      else
-        vm_args.push '-G:+TruffleCompilationExceptionsAreFatal'
-      end
-      remaining_args = []
-      args.each do |arg|
-        if arg.start_with? '-'
-          vm_args.push arg
-        else
-          remaining_args.push arg
-        end
-      end
-      env_vars["JRUBY_OPTS"] = vm_args.map{ |a| '-J' + a }.join(' ')
-      bench_args += ['score', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal', '--show-commands', '--show-samples']
-      raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if remaining_args.size != 1
-      args = remaining_args
-    when 'reference'
-      bench_args += ['reference', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal', '--show-commands']
-      args << "5" if args.empty?
-    when 'compare'
-      bench_args += ['compare-reference', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal']
-      args << "5" if args.empty?
-    else
-      raise ArgumentError, command
-    end
-    raw_sh env_vars, "ruby", *bench_args, *args
   end
 
   def metrics(command, *args)
