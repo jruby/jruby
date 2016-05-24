@@ -3117,7 +3117,7 @@ public abstract class StringNodes {
             return nil();
         }
 
-        @Specialization(guards = { "offset >= 0", "!offsetTooLarge(string, offset)", "isSingleByte(string)" })
+        @Specialization(guards = { "offset >= 0", "!offsetTooLarge(string, offset)", "isSingleByteOptimizable(string)" })
         public Object stringFindCharacterSingleByte(DynamicObject string, int offset) {
             // Taken from Rubinius's String::find_character.
 
@@ -3128,7 +3128,7 @@ public abstract class StringNodes {
             return propagate(string, ret);
         }
 
-        @Specialization(guards = { "offset >= 0", "!offsetTooLarge(string, offset)", "!isSingleByte(string)" })
+        @Specialization(guards = { "offset >= 0", "!offsetTooLarge(string, offset)", "!isSingleByteOptimizable(string)" })
         public Object stringFindCharacter(DynamicObject string, int offset) {
             // Taken from Rubinius's String::find_character.
 
