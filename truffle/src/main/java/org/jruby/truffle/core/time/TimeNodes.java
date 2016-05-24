@@ -94,6 +94,7 @@ public abstract class TimeNodes {
 
     @CoreMethod(names = "localtime_internal", optional = 1)
     public abstract static class LocalTimeNode extends CoreMethodArrayArgumentsNode {
+
         @Child private ReadTimeZoneNode readTimeZoneNode;
 
         public LocalTimeNode(RubyContext context, SourceSection sourceSection) {
@@ -321,11 +322,8 @@ public abstract class TimeNodes {
     @Primitive(name = "time_decompose")
     public static abstract class TimeDecomposePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private ReadTimeZoneNode readTimeZoneNode;
-
         public TimeDecomposePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTimeZoneNode = ReadTimeZoneNodeGen.create();
         }
 
         @TruffleBoundary
