@@ -72,7 +72,7 @@ public abstract class ReadlineNodes {
 
         @Specialization
         public DynamicObject basicWordBreakCharacters() {
-            return StringOperations.createString(getContext(), StringOperations.createRope(ProcCompleter.getDelimiter(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.createRope(ProcCompleter.getDelimiter(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -99,7 +99,10 @@ public abstract class ReadlineNodes {
 
         @Specialization
         public DynamicObject getScreenSize() {
-            final int[] store = { getContext().getConsoleHolder().getReadline().getTerminal().getHeight(), getContext().getConsoleHolder().getReadline().getTerminal().getWidth() };
+            final int[] store = {
+                    getContext().getConsoleHolder().getReadline().getTerminal().getHeight(),
+                    getContext().getConsoleHolder().getReadline().getTerminal().getWidth()
+            };
 
             return ArrayHelpers.createArray(getContext(), store, 2);
         }
@@ -159,7 +162,7 @@ public abstract class ReadlineNodes {
                 // is that no al M17n encodings are valid encodings in java.lang.String.
                 // We clearly need a byte[]-version of JLine since we cannot totally
                 // behave properly using Java Strings.
-                line = StringOperations.createString(getContext(), StringOperations.createRope(value, getContext().getJRubyRuntime().getDefaultExternalEncoding()));
+                line = createString(StringOperations.createRope(value, getContext().getJRubyRuntime().getDefaultExternalEncoding()));
             }
 
             return taintNode.executeTaint(line);
