@@ -49,8 +49,8 @@ graal-core: {
 graalvm: {
   downloads: {
     GRAALVM_DIR: {
-      name: graalvm-release,
-      version: "0.11",
+      name: graalvm-snapshot,
+      version: latest,
       platformspecific: true
     }
   }
