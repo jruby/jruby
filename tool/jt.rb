@@ -319,6 +319,7 @@ module Commands
     puts 'jt metrics minheap ...                         what is the smallest heap you can use to run an application'
     puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
     puts 'jt tarball                                     build the and test the distribution tarball'
+    puts 'jt benchmark args...                           run benchmark-interface (implies --graal)'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -821,6 +822,10 @@ module Commands
     else
       puts full_message unless full_message.nil?
     end
+  end
+
+  def benchmark(*args)
+    run '--graal', '-I', '../deep-benchmark/lib', '-I', '../benchmark-ips/lib', '../benchmark-interface/bin/benchmark', *args
   end
 
   def check_ambiguous_arguments
