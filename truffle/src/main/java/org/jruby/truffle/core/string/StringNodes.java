@@ -3135,7 +3135,7 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
 
             final Encoding enc = rope.getEncoding();
-            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), 0, rope.byteLength());
+            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), offset, offset + enc.maxLength());
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
