@@ -75,7 +75,7 @@ public abstract class TaintNode extends RubyNode {
             }
 
             if (isFrozenNode.executeIsFrozen(object)) {
-                frozen(object);
+                throw new RaiseException(coreExceptions().frozenError(object, this));
             }
         }
 
@@ -85,10 +85,6 @@ public abstract class TaintNode extends RubyNode {
 
     protected WriteObjectFieldNode createWriteTaintNode() {
         return WriteObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
-    }
-
-    private Object frozen(Object object) {
-        throw new RaiseException(coreExceptions().frozenError(object, this));
     }
 
 }

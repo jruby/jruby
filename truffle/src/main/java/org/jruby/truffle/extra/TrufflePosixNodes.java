@@ -31,6 +31,7 @@ import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodes;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.time.GetTimeZoneNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -283,7 +284,11 @@ public abstract class TrufflePosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = { "isRubyString(name)", "isRubyString(value)" })
         public int setenv(DynamicObject name, DynamicObject value, int overwrite) {
-            return posix().setenv(decodeUTF8(name), decodeUTF8(value), overwrite);
+            final String nameString = decodeUTF8(name);
+            if (nameString.equals("TZ")) {
+                GetTimeZoneNode.invalidateTZ();
+            }
+            return posix().setenv(nameString, decodeUTF8(value), overwrite);
         }
 
     }
