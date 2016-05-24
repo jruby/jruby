@@ -227,7 +227,6 @@ public abstract class TimeNodes {
 
         @Specialization
         public DynamicObject timeSNow(VirtualFrame frame, DynamicObject timeClass) {
-            // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
             return allocateObjectNode.allocate(timeClass, now(getTimeZoneNode.executeGetTimeZone(frame)), 0, nil(), nil(), false, false);
         }
 
