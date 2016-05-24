@@ -327,6 +327,9 @@ module Commands
     puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
     puts 'jt tarball                                     build the and test the distribution tarball'
     puts 'jt benchmark args...                           run benchmark-interface (implies --graal)'
+    puts '    note that to run most MRI benchmarks, you should translate them first with normal Ruby and cache the result, such as'
+    puts '        benchmark bench/mri/bm_vm1_not.rb --cache'
+    puts '        jt benchmark bench/mri/bm_vm1_not.rb --use-cache'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
