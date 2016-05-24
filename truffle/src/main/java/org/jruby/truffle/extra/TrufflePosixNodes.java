@@ -44,6 +44,12 @@ import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
 @CoreClass("Truffle::POSIX")
 public abstract class TrufflePosixNodes {
 
+    private static void invalidateENV(String name) {
+        if (name.equals("TZ")) {
+            GetTimeZoneNode.invalidateTZ();
+        }
+    }
+
     @CoreMethod(names = "access", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class AccessNode extends CoreMethodArrayArgumentsNode {
 
@@ -285,9 +291,7 @@ public abstract class TrufflePosixNodes {
         @Specialization(guards = { "isRubyString(name)", "isRubyString(value)" })
         public int setenv(DynamicObject name, DynamicObject value, int overwrite) {
             final String nameString = decodeUTF8(name);
-            if (nameString.equals("TZ")) {
-                GetTimeZoneNode.invalidateTZ();
-            }
+            invalidateENV(nameString);
             return posix().setenv(nameString, decodeUTF8(value), overwrite);
         }
 
@@ -331,7 +335,9 @@ public abstract class TrufflePosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public int unsetenv(DynamicObject name) {
-            return posix().unsetenv(decodeUTF8(name));
+            final String nameString = decodeUTF8(name);
+            invalidateENV(nameString);
+            return posix().unsetenv(nameString);
         }
 
     }
