@@ -32,38 +32,31 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 
+import java.lang.ref.Reference;
+import java.util.List;
+
 public class LazyRubyRootNode extends RootNode implements InternalRootNode {
 
+    private final Reference<RubyContext> contextReference;
     private final Source source;
-    private final String[] argumentNames;
+    private final List<String> argumentNames;
 
     @CompilationFinal private RubyContext cachedContext;
     @CompilationFinal private DynamicObject mainObject;
     @CompilationFinal private InternalMethod method;
 
-    @Child private Node findContextNode;
     @Child private DirectCallNode callNode;
 
-    public LazyRubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, Source source,
-                            String[] argumentNames) {
-        super(RubyLanguage.class, sourceSection, frameDescriptor);
+    public LazyRubyRootNode(Reference<RubyContext> contextReference, Source source, List<String> argumentNames) {
+        super(RubyLanguage.class, null, null);
+        this.contextReference = contextReference;
         this.source = source;
         this.argumentNames = argumentNames;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (findContextNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
-        }
-
-        final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-
-        if (cachedContext == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            cachedContext = context;
-        }
+        final RubyContext context = contextReference.get();
 
         if (callNode == null || context != cachedContext) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -71,7 +64,7 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
             final TranslatorDriver translator = new TranslatorDriver(context);
 
             final RubyRootNode rootNode = translator.parse(context, source, UTF8Encoding.INSTANCE,
-                    ParserContext.TOP_LEVEL, argumentNames, null, null, true, null);
+                    ParserContext.TOP_LEVEL, argumentNames.toArray(new String[argumentNames.size()]), null, null, true, null);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
