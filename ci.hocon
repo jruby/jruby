@@ -47,6 +47,20 @@ graal-core: {
   }
 }
 
+graalvm: {
+  downloads: {
+    GRAALVM_DIR: {
+      name: graalvm-release,
+      version: "0.11",
+      platformspecific: true
+    }
+  }
+  
+  environment: {
+    GRAAL_BIN: "$GRAALVM_DIR/bin/java"
+  }
+}
+
 gate-caps: {
   capabilities: [linux, amd64, gate, post-push]
 }
@@ -61,5 +75,6 @@ builds: [
   {name: ruby-test-integration} ${common} ${gate-caps} {run: [${jt} [test, integration]]},
   {name: ruby-test-tck} ${common} ${gate-caps} {run: [${jt} [test, tck]]},
   {name: ruby-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
-  {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]}
+  {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},
+  {name: ruby-test-compiler-graalvm} ${common} ${graalvm} ${gate-caps} {run: [${jt} [test, compiler]]}
 ]
