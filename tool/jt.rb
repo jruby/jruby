@@ -133,6 +133,14 @@ module Utilities
     end
   end
 
+  def self.find_gem(name)
+    ["#{JRUBY_DIR}/lib/ruby/gems/shared/gems", JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
+      found = Dir.glob("#{dir}/#{name}*").first
+      return found if found
+    end
+    raise "Can't find the #{name} gem - gem install it in this repository, or put it in the repository directory or its parent"
+  end
+
   def self.git_branch
     @git_branch ||= `GIT_DIR="#{JRUBY_DIR}/.git" git rev-parse --abbrev-ref HEAD`.strip
   end
@@ -825,7 +833,10 @@ module Commands
   end
 
   def benchmark(*args)
-    run '--graal', '-I', '../deep-benchmark/lib', '-I', '../benchmark-ips/lib', '../benchmark-interface/bin/benchmark', *args
+    run '--graal',
+        '-I', "#{Utilities.find_gem('deep-bench')}/lib",
+        '-I', "#{Utilities.find_gem('benchmark-ips')}/lib",
+        "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark", *args
   end
 
   def check_ambiguous_arguments
