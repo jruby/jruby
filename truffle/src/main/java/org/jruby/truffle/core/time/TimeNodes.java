@@ -84,7 +84,8 @@ public abstract class TimeNodes {
         public Object internalOffset(DynamicObject time) {
             final Object offset = Layouts.TIME.getOffset(time);
             if (offset == nil()) {
-                return Layouts.TIME.getDateTime(time).getZone().getOffset(Layouts.TIME.getDateTime(time).getMillis()) / 1_000;
+                final DateTime dateTime = Layouts.TIME.getDateTime(time);
+                return dateTime.getZone().getOffset(dateTime.getMillis()) / 1_000;
             } else {
                 return offset;
             }
