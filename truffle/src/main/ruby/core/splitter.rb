@@ -76,7 +76,7 @@ module Rubinius
           lim = 0
         end
 
-        return Rubinius.invoke_primitive :string_awk_split, string, lim
+        return Truffle.invoke_primitive :string_awk_split, string, lim
       elsif pattern.kind_of?(Regexp)
       else
         pattern = StringValue(pattern) unless pattern.kind_of?(String)

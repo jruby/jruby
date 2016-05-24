@@ -66,7 +66,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
-import org.jruby.truffle.core.rubinius.RubiniusSingleBlockArgNode;
+import org.jruby.truffle.language.arguments.SingleBlockArgNode;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -504,9 +504,10 @@ public class BodyTranslator extends Translator {
                     new ObjectLiteralNode(context, null, frozenString)));
         }
 
-        // Rubinius.<method>
         if (receiver instanceof org.jruby.ast.ConstNode
-                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Rubinius")) {
+                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Truffle")) {
+            // Truffle.<method>
+
             if (methodName.equals("primitive")) {
                 final RubyNode ret = translateRubiniusPrimitive(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
@@ -517,10 +518,10 @@ public class BodyTranslator extends Translator {
                 final RubyNode ret = translateRubiniusPrivately(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("single_block_arg")) {
-                final RubyNode ret = translateRubiniusSingleBlockArg(sourceSection, node);
+                final RubyNode ret = translateSingleBlockArg(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("check_frozen")) {
-                final RubyNode ret = translateRubiniusCheckFrozen(sourceSection);
+                final RubyNode ret = translateCheckFrozen(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (receiver instanceof org.jruby.ast.Colon2ConstNode // Truffle.<method>
@@ -560,7 +561,7 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         *   Rubinius.primitive :foo
+         *   Truffle.primitive :foo
          *
          * into
          *
@@ -576,7 +577,7 @@ public class BodyTranslator extends Translator {
          */
 
         if (node.getArgsNode().childNodes().size() != 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
-            throw new UnsupportedOperationException("Rubinius.primitive must have a single literal symbol argument");
+            throw new UnsupportedOperationException("Truffle.primitive must have a single literal symbol argument");
         }
 
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
@@ -590,7 +591,7 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         *   Rubinius.invoke_primitive :foo, arg1, arg2, argN
+         *   Truffle.invoke_primitive :foo, arg1, arg2, argN
          *
          * into
          *
@@ -602,7 +603,7 @@ public class BodyTranslator extends Translator {
          */
 
         if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
-            throw new UnsupportedOperationException("Rubinius.invoke_primitive must have at least an initial literal symbol argument");
+            throw new UnsupportedOperationException("Truffle.invoke_primitive must have at least an initial literal symbol argument");
         }
 
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
@@ -624,7 +625,7 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         *   Rubinius.privately { foo }
+         *   Truffle.privately { foo }
          *
          * into just
          *
@@ -634,11 +635,11 @@ public class BodyTranslator extends Translator {
          */
 
         if (!(node.getIterNode() instanceof org.jruby.ast.IterNode)) {
-            throw new UnsupportedOperationException("Rubinius.privately needs a literal block");
+            throw new UnsupportedOperationException("Truffle.privately needs a literal block");
         }
 
         if (node.getArgsNode() != null && node.getArgsNode().childNodes().size() > 0) {
-            throw new UnsupportedOperationException("Rubinius.privately should not have any arguments");
+            throw new UnsupportedOperationException("Truffle.privately should not have any arguments");
         }
 
         /*
@@ -666,11 +667,11 @@ public class BodyTranslator extends Translator {
         }
     }
 
-    public RubyNode translateRubiniusSingleBlockArg(SourceSection sourceSection, org.jruby.ast.CallNode node) {
-        return new RubiniusSingleBlockArgNode(context, sourceSection);
+    public RubyNode translateSingleBlockArg(SourceSection sourceSection, org.jruby.ast.CallNode node) {
+        return new SingleBlockArgNode(context, sourceSection);
     }
 
-    private RubyNode translateRubiniusCheckFrozen(SourceSection sourceSection) {
+    private RubyNode translateCheckFrozen(SourceSection sourceSection) {
         return new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
     }
 
@@ -2708,7 +2709,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateRationalComplex(SourceSection sourceSection, String name, RubyNode a, RubyNode b) {
-        // Translate as Rubinius.privately { Rational.convert(a, b) }
+        // Translate as Truffle.privately { Rational.convert(a, b) }
 
         final RubyNode moduleNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         return new RubyCallNode(

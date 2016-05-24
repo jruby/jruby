@@ -81,12 +81,12 @@ module Enumerable
         new_args = @args.empty? ? args : (@args + args)
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         enumerator.args = new_args
       end
 
       if block_given?
-        Rubinius.privately do
+        Truffle.privately do
           enumerator.each_with_block do |*yield_args|
             yield(*yield_args)
           end
@@ -114,7 +114,7 @@ module Enumerable
       idx = 0
 
       each do
-        o = Rubinius.single_block_arg
+        o = Truffle.single_block_arg
         val = yield(o, idx)
         idx += 1
         val
@@ -144,7 +144,7 @@ module Enumerable
       end
 
       exception = StopIteration.new "iteration reached end"
-      Rubinius.privately do
+      Truffle.privately do
         exception.result = @generator.result
       end
 
@@ -188,7 +188,7 @@ module Enumerable
       return to_enum(:with_index, offset) { size } unless block_given?
 
       each do
-        o = Rubinius.single_block_arg
+        o = Truffle.single_block_arg
         val = yield(o, offset)
         offset += 1
         val
@@ -245,7 +245,7 @@ module Enumerable
 
       def initialize(receiver, size=nil)
         raise ArgumentError, "Lazy#initialize requires a block" unless block_given?
-        Rubinius.check_frozen
+        Truffle.check_frozen
 
         super(size) do |yielder, *each_args|
           begin
@@ -265,7 +265,7 @@ module Enumerable
         size = block_given? ? block : nil
         ret = Lazy.allocate
 
-        Rubinius.privately do
+        Truffle.privately do
           ret.initialize_enumerator self, size, method_name, *method_args
         end
 

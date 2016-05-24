@@ -37,106 +37,39 @@
                 end
               end
 
-              require 'active_model'
-              require 'active_model/secure_password'
+              require 'bcrypt'
 
-              module ActiveModel
-                module SecurePassword
-                  extend ActiveSupport::Concern
-
-                  module InstanceMethodsOnActivation
-                    def authenticate(unencrypted_password)
-                      password_digest == unencrypted_password && self
+              module BCrypt
+                class Engine
+                  def self.hash_secret(secret, salt, _ = nil)
+                    if valid_secret?(secret)
+                      if valid_salt?(salt)
+                        Truffle::Gem::BCrypt.hashpw(secret.to_s, salt.to_s)
+                      else
+                        raise Errors::InvalidSalt.new("invalid salt")
+                      end
+                    else
+                      raise Errors::InvalidSecret.new("invalid secret")
                     end
+                  end
 
-                    attr_reader :password
-
-                    def password=(unencrypted_password)
-                      self.password_digest = unencrypted_password
+                  def self.generate_salt(cost = self.cost)
+                    cost = cost.to_i
+                    if cost > 0
+                      if cost < MIN_COST
+                        cost = MIN_COST
+                      end
+                      Truffle::Gem::BCrypt.gensalt(cost)
+                    else
+                      raise Errors::InvalidCost.new("cost must be numeric and > 0")
                     end
-
                   end
                 end
               end
 
-    bcrypt.rb: |
-               puts 'bcrypt stubbed'
-
-               module BCrypt
-                 module Password
-                   def self.create(password, *args)
-                     password
-                   end
-                 end
-
-                 module Engine
-                   MIN_COST = nil
-                 end
-               end
-
+    java.rb: nil
+    bcrypt_ext.rb: nil
     bundler.rb: "module Bundler; def self.setup; end; end"
-    # mock method_source gem
-    # method_source.rb: nil
-    exclude_tests.rb: |
-                      failures = { AttributeMethodsTest:       [:"test_#define_attribute_methods_generates_attribute_methods",
-                                                                :"test_#define_attribute_methods_generates_attribute_methods_with_spaces_in_their_names",
-                                                                :"test_#define_attribute_methods_works_passing_multiple_arguments"],
-                                   SecurePasswordTest:         [:test_Password_digest_cost_can_be_set_to_bcrypt_min_cost_to_speed_up_tests,
-                                                                :test_Password_digest_cost_defaults_to_bcrypt_default_cost_when_min_cost_is_false,
-                                                                :test_Password_digest_cost_honors_bcrypt_cost_attribute_when_min_cost_is_false,
-                                                                :test_create_a_new_user_with_validation_and_a_blank_password_confirmation,
-                                                                :test_create_a_new_user_with_validation_and_a_spaces_only_password,
-                                                                :test_create_a_new_user_with_validation_and_an_incorrect_password_confirmation,
-                                                                :test_create_a_new_user_with_validation_and_password_length_greater_than_72,
-                                                                :test_setting_a_blank_password_should_not_change_an_existing_password,
-                                                                :test_updating_an_existing_user_with_validation_and_a_blank_password,
-                                                                :test_updating_an_existing_user_with_validation_and_a_blank_password_and_password_confirmation,
-                                                                :test_updating_an_existing_user_with_validation_and_a_blank_password_confirmation,
-                                                                :test_updating_an_existing_user_with_validation_and_a_spaces_only_password,
-                                                                :test_updating_an_existing_user_with_validation_and_an_incorrect_password_confirmation,
-                                                                :test_updating_an_existing_user_with_validation_and_password_length_greater_than_72],
-                                   I18nValidationTest:         [:test_validates_acceptance_of_finds_custom_model_key_translation_when_accepted,
-                                                                :test_validates_acceptance_of_finds_custom_model_key_translation_with_interpolation_when_accepted,
-                                                                :test_validates_acceptance_of_finds_global_default_key_translation_when_accepted,
-                                                                :test_validates_confirmation_of_finds_custom_model_key_translation_when_confirmation,
-                                                                :test_validates_confirmation_of_finds_custom_model_key_translation_with_interpolation_when_confirmation,
-                                                                :test_validates_confirmation_of_finds_global_default_key_translation_when_confirmation,
-                                                                :test_validates_exclusion_of_finds_custom_model_key_translation_when_exclusion,
-                                                                :test_validates_exclusion_of_finds_custom_model_key_translation_with_interpolation_when_exclusion,
-                                                                :test_validates_exclusion_of_finds_global_default_key_translation_when_exclusion,
-                                                                :test_validates_format_of_finds_custom_model_key_translation_when_invalid,
-                                                                :test_validates_format_of_finds_custom_model_key_translation_with_interpolation_when_invalid,
-                                                                :test_validates_format_of_finds_global_default_key_translation_when_invalid,
-                                                                :test_validates_inclusion_of_finds_custom_model_key_translation_when_inclusion,
-                                                                :test_validates_inclusion_of_finds_custom_model_key_translation_with_interpolation_when_inclusion,
-                                                                :test_validates_inclusion_of_finds_global_default_key_translation_when_inclusion,
-                                                                :test_validates_length_of_finds_custom_model_key_translation_when_too_long,
-                                                                :test_validates_length_of_finds_custom_model_key_translation_when_too_short,
-                                                                :test_validates_length_of_finds_custom_model_key_translation_when_wrong_length,
-                                                                :test_validates_length_of_finds_custom_model_key_translation_with_interpolation_when_too_long,
-                                                                :test_validates_length_of_finds_custom_model_key_translation_with_interpolation_when_too_short,
-                                                                :test_validates_length_of_finds_custom_model_key_translation_with_interpolation_when_wrong_length,
-                                                                :test_validates_length_of_finds_global_default_key_translation_when_too_long,
-                                                                :test_validates_length_of_finds_global_default_key_translation_when_too_short,
-                                                                :test_validates_length_of_finds_global_default_key_translation_when_wrong_length,
-                                                                :test_validates_numericality_of_finds_custom_model_key_translation_when_less_than,
-                                                                :test_validates_numericality_of_finds_custom_model_key_translation_when_not_a_number,
-                                                                :test_validates_numericality_of_finds_custom_model_key_translation_when_not_an_integer,
-                                                                :test_validates_numericality_of_finds_custom_model_key_translation_when_odd,
-                                                                :test_validates_numericality_of_finds_custom_model_key_translation_with_interpolation_when_less_than,
-                                                                :test_validates_numericality_of_finds_custom_model_key_translation_with_interpolation_when_not_a_number,
-                                                                :test_validates_numericality_of_finds_custom_model_key_translation_with_interpolation_when_not_an_integer,
-                                                                :test_validates_numericality_of_finds_custom_model_key_translation_with_interpolation_when_odd,
-                                                                :test_validates_numericality_of_finds_global_default_key_translation_when_less_than,
-                                                                :test_validates_numericality_of_finds_global_default_key_translation_when_not_a_number,
-                                                                :test_validates_numericality_of_finds_global_default_key_translation_when_not_an_integer,
-                                                                :test_validates_numericality_of_finds_global_default_key_translation_when_odd,
-                                                                :test_validates_presence_of_finds_custom_model_key_translation_when_blank,
-                                                                :test_validates_presence_of_finds_custom_model_key_translation_with_interpolation_when_blank,
-                                                                :test_validates_presence_of_finds_global_default_key_translation_when_blank],
-                                   NumericalityValidationTest: [:test_validates_numericality_with_equal_to] }
-
-                      Truffle.exclude_rspec_examples failures
 
   # do not let bundler to install db gem group
   :without:
@@ -149,6 +82,5 @@
     - rubygems
     - shims
     - openssl-stubs
-    - truffle/exclude_rspec_examples
   :environment:
     N: 1

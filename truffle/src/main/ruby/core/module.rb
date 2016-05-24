@@ -109,7 +109,7 @@ class Module
 
     name = Rubinius::Type.coerce_to_constant_name name
 
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if entry = @constant_table.lookup(name)
       if entry.constant.kind_of? Autoload
@@ -283,31 +283,31 @@ class Module
   private :verify_class_variable_name
 
   def class_variable_set(name, val)
-    Rubinius.primitive :module_cvar_set
+    Truffle.primitive :module_cvar_set
 
     class_variable_set verify_class_variable_name(name), val
   end
 
   def class_variable_get(name)
-    Rubinius.primitive :module_cvar_get
+    Truffle.primitive :module_cvar_get
 
     class_variable_get verify_class_variable_name(name)
   end
 
   def class_variable_defined?(name)
-    Rubinius.primitive :module_cvar_defined
+    Truffle.primitive :module_cvar_defined
 
     class_variable_defined? verify_class_variable_name(name)
   end
 
   def remove_class_variable(name)
-    Rubinius.primitive :module_cvar_remove
+    Truffle.primitive :module_cvar_remove
 
     remove_class_variable verify_class_variable_name(name)
   end
 
   def __class_variables__
-    Rubinius.primitive :module_class_variables
+    Truffle.primitive :module_class_variables
 
     raise PrimitiveFailure, "Module#__class_variables__ primitive failed"
   end
@@ -353,7 +353,7 @@ class Module
   def undef_method(*names)
     return self if names.empty?
     names.map!{ |name| Rubinius::Type.coerce_to_symbol name }
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     names.each do |name|
       # Will raise a NameError if the method doesn't exist.
@@ -367,12 +367,12 @@ class Module
   # Like undef_method, but doesn't even check that the method exists. Used
   # mainly to implement rb_undef_method.
   def undef_method!(name)
-    Rubinius.check_frozen
+    Truffle.check_frozen
     name = Rubinius::Type.coerce_to_symbol(name)
     @method_table.store name, nil, :undef
     Rubinius::VM.reset_method_cache self, name
     if obj = Rubinius::Type.singleton_class_object(self)
-      Rubinius.privately do
+      Truffle.privately do
         obj.singleton_method_undefined(name)
       end
     else
@@ -385,7 +385,7 @@ class Module
   def remove_method(*names)
     names.each do |name|
       name = Rubinius::Type.coerce_to_symbol(name)
-      Rubinius.check_frozen
+      Truffle.check_frozen
 
       unless @method_table.lookup(name)
         raise NameError.new("method `#{name}' not defined in #{self.name}", name)
@@ -395,7 +395,7 @@ class Module
       Rubinius::VM.reset_method_cache self, name
 
       if obj = Rubinius::Type.singleton_class_object(self)
-        Rubinius.privately do
+        Truffle.privately do
           obj.singleton_method_removed(name)
         end
       else
@@ -646,7 +646,7 @@ class Module
 
   def const_set(name, value)
     name = Rubinius::Type.coerce_to_constant_name name
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if Rubinius::Type.object_kind_of? value, Module
       Rubinius::Type.set_module_name value, name, self
@@ -744,7 +744,7 @@ class Module
     unless name.kind_of? Symbol
       name = StringValue name
 
-      unless Rubinius::CType.isupper name.getbyte(0)
+      unless Truffle::CType.isupper name.getbyte(0)
         raise NameError, "constant names must begin with a capital letter: #{name}"
       end
     end
@@ -924,11 +924,11 @@ class Module
         raise TypeError, "wrong argument type #{mod.class} (expected Module)"
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         mod.prepend_features self
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         mod.prepended self
       end
     end

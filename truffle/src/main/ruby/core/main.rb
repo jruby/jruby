@@ -35,13 +35,13 @@
 # Truffle doesn't have a class MAIN, but it's implied by `self`, so just use that here.
 class << self
   def include(*mods)
-    Rubinius.privately do
+    Truffle.privately do
       Object.include(*mods)
     end
   end
 
   def public(*methods)
-    Rubinius.privately do
+    Truffle.privately do
       Object.public(*methods)
     end
 
@@ -49,7 +49,7 @@ class << self
   end
 
   def private(*methods)
-    Rubinius.privately do
+    Truffle.privately do
       Object.private(*methods)
     end
 
@@ -57,7 +57,7 @@ class << self
   end
 
   def define_method(*args, &block)
-    Rubinius.privately do
+    Truffle.privately do
       Object.define_method(*args, &block)
     end
   end

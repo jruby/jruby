@@ -48,7 +48,7 @@ module Rubinius
     # Converts one or more Enumerable instances to a single IdentityMap
     def self.from(*arrays, &block)
       im = allocate
-      Rubinius.privately { im.load(arrays, &block) }
+      Truffle.privately { im.load(arrays, &block) }
       im
     end
 

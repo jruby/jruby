@@ -30,7 +30,7 @@ module GC
   end
 
   def self.run(force)
-    Rubinius.primitive :vm_gc_start
+    Truffle.primitive :vm_gc_start
     raise PrimitiveFailure, "GC.run primitive failed"
   end
 

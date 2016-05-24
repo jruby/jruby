@@ -26,7 +26,7 @@
 
 module ObjectSpace
   def self.find_object(query, callable)
-    Rubinius.primitive :vm_find_object
+    Truffle.primitive :vm_find_object
     raise PrimitiveFailure, "ObjectSpace#find_object primitive failed"
   end
 
@@ -87,7 +87,7 @@ module ObjectSpace
       raise ArgumentError, "action must respond to call"
     end
 
-    unless Rubinius.invoke_primitive(:vm_set_finalizer, obj, prc)
+    unless Truffle.invoke_primitive(:vm_set_finalizer, obj, prc)
       raise RuntimeError, "cannot define a finalizer for a #{obj.class}"
     end
 
@@ -95,7 +95,7 @@ module ObjectSpace
   end
 
   def self.undefine_finalizer(obj)
-    Rubinius.invoke_primitive :vm_set_finalizer, obj, nil
+    Truffle.invoke_primitive :vm_set_finalizer, obj, nil
     return obj
   end
 

@@ -26,7 +26,7 @@
 
 class Rubinius::Randomizer
   def self.allocate
-    Rubinius.primitive :randomizer_allocate
+    Truffle.primitive :randomizer_allocate
     raise PrimitiveFailure, "Randomizer.allocate primitive failed"
   end
 
@@ -41,7 +41,7 @@ class Rubinius::Randomizer
   end
 
   def set_seed(new_seed)
-    Rubinius.primitive :randomizer_seed
+    Truffle.primitive :randomizer_seed
     raise PrimitiveFailure, "Randomizer#seed primitive failed"
   end
 
@@ -81,13 +81,13 @@ class Rubinius::Randomizer
 
   # Generate a random Float, in the range 0...1.0
   def random_float
-    Rubinius.primitive :randomizer_rand_float
+    Truffle.primitive :randomizer_rand_float
     raise PrimitiveFailure, "Randomizer#rand_float primitive failed"
   end
 
   # Generate a random Integer, in the range 0...limit
   def random_integer(limit)
-    Rubinius.primitive :randomizer_rand_int
+    Truffle.primitive :randomizer_rand_int
     raise PrimitiveFailure, "Randomizer#rand_int primitive failed"
   end
 
@@ -99,7 +99,7 @@ class Rubinius::Randomizer
   end
 
   def generate_seed
-    Rubinius.primitive :randomizer_gen_seed
+    Truffle.primitive :randomizer_gen_seed
     raise PrimitiveFailure, "Randomizer#gen_seed primitive failed"
   end
 

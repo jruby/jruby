@@ -60,7 +60,7 @@ class Array
   end
 
   def initialize(size_or_array=undefined, obj=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if undefined.equal?(size_or_array)
       unless @total == 0
@@ -116,7 +116,7 @@ class Array
   # Replaces contents of self with contents of other,
   # adjusting size as needed.
   def replace(other)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
@@ -420,7 +420,7 @@ class Array
   end
 
   def clear
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     @tuple = Rubinius::Tuple.new(1)
     @total = 0
@@ -478,7 +478,7 @@ class Array
   end
 
   def compact!
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if (deleted = @tuple.delete(@start, @total, nil)) > 0
       @total -= deleted
@@ -490,10 +490,10 @@ class Array
   end
 
   def concat(other)
-    Rubinius.primitive :array_concat
+    Truffle.primitive :array_concat
 
     other = Rubinius::Type.coerce_to(other, Array, :to_ary)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     return self if other.empty?
 
@@ -547,7 +547,7 @@ class Array
         # We MUST check frozen here, not at the top, because MRI
         # requires that #delete not raise unless an element would
         # be deleted.
-        Rubinius.check_frozen
+        Truffle.check_frozen
         tuple.put i, key
         last_matched_element = element
       end
@@ -569,7 +569,7 @@ class Array
   end
 
   def delete_at(idx)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     idx = Rubinius::Type.coerce_to_collection_index idx
 
@@ -596,7 +596,7 @@ class Array
   def delete_if
     return to_enum(:delete_if) { size } unless block_given?
 
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     return self if empty?
 
@@ -708,7 +708,7 @@ class Array
   end
 
   def fill(a=undefined, b=undefined, c=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if block_given?
       unless undefined.equal?(c)
@@ -807,7 +807,7 @@ class Array
   end
 
   def flatten!(level=-1)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     level = Rubinius::Type.coerce_to_collection_index level
     return nil if level == 0
@@ -905,7 +905,7 @@ class Array
   alias_method :index, :find_index
 
   def insert(idx, *items)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     return self if items.length == 0
 
@@ -988,7 +988,7 @@ class Array
   def keep_if(&block)
     return to_enum(:keep_if) { size } unless block_given?
 
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     replace select(&block)
   end
@@ -1020,7 +1020,7 @@ class Array
   end
 
   def pack(directives)
-    Rubinius.primitive :array_pack
+    Truffle.primitive :array_pack
 
     unless directives.kind_of? String
       return pack(StringValue(directives))
@@ -1058,7 +1058,7 @@ class Array
       if block
         # offensive (both definitions) copy.
         offensive = dup
-        Rubinius.privately do
+        Truffle.privately do
           offensive.__permute__(num, perm, 0, used, &block)
         end
       else
@@ -1096,7 +1096,7 @@ class Array
   private :__permute__
 
   def pop(many=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if undefined.equal?(many)
       return nil if @total == 0
@@ -1168,7 +1168,7 @@ class Array
   end
 
   def push(*args)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     return self if args.empty?
 
@@ -1193,7 +1193,7 @@ class Array
   def reject!(&block)
     return to_enum(:reject!) { size } unless block_given?
 
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     was = size()
     delete_if(&block)
@@ -1213,7 +1213,7 @@ class Array
     if combination_size < 0
       # yield nothing
     else
-      Rubinius.privately do
+      Truffle.privately do
         dup.compile_repeated_combinations(combination_size, [], 0, combination_size, &block)
       end
     end
@@ -1247,7 +1247,7 @@ class Array
     elsif combination_size == 0
       yield []
     else
-      Rubinius.privately do
+      Truffle.privately do
         dup.compile_repeated_permutations(combination_size, [], 0, &block)
       end
     end
@@ -1273,7 +1273,7 @@ class Array
   end
 
   def reverse!
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     return self unless @total > 1
 
@@ -1335,7 +1335,7 @@ class Array
   end
 
   def rotate!(cnt=1)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     return self if length == 0 || length == 1
 
@@ -1467,16 +1467,16 @@ class Array
   def select!(&block)
     return to_enum(:select!) { size } unless block_given?
 
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     ary = select(&block)
     replace ary unless size == ary.size
   end
 
   def set_index(index, ent, fin=undefined)
-    Rubinius.primitive :array_aset
+    Truffle.primitive :array_aset
 
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     ins_length = nil
     unless undefined.equal? fin
@@ -1619,7 +1619,7 @@ class Array
   alias_method :select, :find_all
 
   def shift(n=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if undefined.equal?(n)
       return nil if @total == 0
@@ -1643,7 +1643,7 @@ class Array
   end
 
   def shuffle!(options = undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     random_generator = Kernel
 
@@ -1661,7 +1661,7 @@ class Array
   end
 
   def slice!(start, length=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if undefined.equal? length
       if start.kind_of? Range
@@ -1749,7 +1749,7 @@ class Array
   end
 
   def sort_by!(&block)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     return to_enum(:sort_by!) { size } unless block_given?
 
@@ -1763,7 +1763,7 @@ class Array
   #
   # For results and methodology, see the commit message.
   def sort_inplace(&block)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     return self unless @total > 1
 
@@ -1829,7 +1829,7 @@ class Array
   end
 
   def uniq!(&block)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if block_given?
       im = Rubinius::IdentityMap.from(self, &block)
@@ -1847,7 +1847,7 @@ class Array
   end
 
   def unshift(*values)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     self[0, 0] = values
 
@@ -2214,7 +2214,7 @@ class Array
   # However, Rubinius::Tuple#reverse! has a different, conflicting signature from Array#reverse!.  This override avoids
   # all of those complications.
   def reverse!
-    Rubinius.check_frozen
+    Truffle.check_frozen
     return self unless @total > 1
 
     i = 0
@@ -2232,7 +2232,7 @@ class Array
   # We might be able to handle such changes by special handling in the body translator, however simply resizing could
   # delete elements from either side and we're not able to tell which without additional context.
   def slice!(start, length=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if undefined.equal? length
       if start.kind_of? Range
@@ -2338,7 +2338,7 @@ class Array
   # Rubinius expects to modify the backing store via updates to `@tuple` and we don't support that.  As such, we must
   # provide our own modifying implementation here.
   def uniq!(&block)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if block_given?
       im = Rubinius::IdentityMap.from(self, &block)

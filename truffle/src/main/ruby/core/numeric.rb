@@ -238,7 +238,7 @@ class Numeric
   end
 
   def quo(other)
-    Rubinius.privately do
+    Truffle.privately do
       Rational.convert(self, 1, false) / other
     end
   end

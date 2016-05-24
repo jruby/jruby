@@ -38,31 +38,31 @@ module Rubinius
       self.subject = ::String
 
       def character_to_byte_index(idx, start=0)
-        Rubinius.invoke_primitive :string_character_byte_index, @object, idx, start
+        Truffle.invoke_primitive :string_character_byte_index, @object, idx, start
       end
 
       def byte_to_character_index(idx, start=0)
-        Rubinius.invoke_primitive :string_byte_character_index, @object, idx, start
+        Truffle.invoke_primitive :string_byte_character_index, @object, idx, start
       end
 
       def character_index(str, start)
-        Rubinius.invoke_primitive :string_character_index, @object, str, start
+        Truffle.invoke_primitive :string_character_index, @object, str, start
       end
 
       def byte_index(value, start=0)
-        Rubinius.invoke_primitive :string_byte_index, @object, value, start
+        Truffle.invoke_primitive :string_byte_index, @object, value, start
       end
 
       def previous_byte_index(index)
-        Rubinius.invoke_primitive :string_previous_byte_index, @object, index
+        Truffle.invoke_primitive :string_previous_byte_index, @object, index
       end
 
       def copy_from(other, start, size, dest)
-        Rubinius.invoke_primitive :string_copy_from, @object, other, start, size, dest
+        Truffle.invoke_primitive :string_copy_from, @object, other, start, size, dest
       end
 
       def splice(starting_byte_index, byte_count_to_replace, replacement, encoding=nil)
-        Rubinius.invoke_primitive :string_splice, @object, replacement, starting_byte_index, byte_count_to_replace, (encoding || @object.encoding)
+        Truffle.invoke_primitive :string_splice, @object, replacement, starting_byte_index, byte_count_to_replace, (encoding || @object.encoding)
       end
     end
   end

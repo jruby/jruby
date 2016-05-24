@@ -29,93 +29,93 @@ module Rubinius
     include Comparable
 
     def self.allocate
-      Rubinius.primitive :stat_allocate
+      Truffle.primitive :stat_allocate
       raise PrimitiveFailure, "Rubinius::Stat.allocate primitive failed"
     end
 
     def setup(path)
-      Rubinius.primitive :stat_stat
+      Truffle.primitive :stat_stat
       path = Rubinius::Type.coerce_to_path(path)
       setup(path)
     end
     private :setup
 
     def fsetup(fd)
-      Rubinius.primitive :stat_fstat
+      Truffle.primitive :stat_fstat
       fd = Rubinius::Type.coerce_to fd, Integer, :to_int
       fsetup(fd)
     end
     private :fsetup
 
     def lsetup(path)
-      Rubinius.primitive :stat_lstat
+      Truffle.primitive :stat_lstat
       path = Rubinius::Type.coerce_to_path(path)
       lsetup(path)
     end
     private :lsetup
 
     def dev
-      Rubinius.primitive :stat_dev
+      Truffle.primitive :stat_dev
       raise PrimitiveFailure, "Rubinius::Stat#dev primitive failed"
     end
 
     def ino
-      Rubinius.primitive :stat_ino
+      Truffle.primitive :stat_ino
       raise PrimitiveFailure, "Rubinius::Stat#ino primitive failed"
     end
 
     def mode
-      Rubinius.primitive :stat_mode
+      Truffle.primitive :stat_mode
       raise PrimitiveFailure, "Rubinius::Stat#mode primitive failed"
     end
 
     def nlink
-      Rubinius.primitive :stat_nlink
+      Truffle.primitive :stat_nlink
       raise PrimitiveFailure, "Rubinius::Stat#nlink primitive failed"
     end
 
     def uid
-      Rubinius.primitive :stat_uid
+      Truffle.primitive :stat_uid
       raise PrimitiveFailure, "Rubinius::Stat#uid primitive failed"
     end
 
     def gid
-      Rubinius.primitive :stat_gid
+      Truffle.primitive :stat_gid
       raise PrimitiveFailure, "Rubinius::Stat#gid primitive failed"
     end
 
     def rdev
-      Rubinius.primitive :stat_rdev
+      Truffle.primitive :stat_rdev
       raise PrimitiveFailure, "Rubinius::Stat#rdev primitive failed"
     end
 
     def size
-      Rubinius.primitive :stat_size
+      Truffle.primitive :stat_size
       raise PrimitiveFailure, "Rubinius::Stat#size primitive failed"
     end
 
     def blksize
-      Rubinius.primitive :stat_blksize
+      Truffle.primitive :stat_blksize
       raise PrimitiveFailure, "Rubinius::Stat#blksize primitive failed"
     end
 
     def blocks
-      Rubinius.primitive :stat_blocks
+      Truffle.primitive :stat_blocks
       raise PrimitiveFailure, "Rubinius::Stat#blocks primitive failed"
     end
 
     def atime
-      Rubinius.primitive :stat_atime
+      Truffle.primitive :stat_atime
       raise PrimitiveFailure, "Rubinius::Stat#atime primitive failed"
     end
 
     def mtime
-      Rubinius.primitive :stat_mtime
+      Truffle.primitive :stat_mtime
       raise PrimitiveFailure, "Rubinius::Stat#mtime primitive failed"
     end
 
     def ctime
-      Rubinius.primitive :stat_ctime
+      Truffle.primitive :stat_ctime
       raise PrimitiveFailure, "Rubinius::Stat#ctime primitive failed"
     end
 
@@ -162,7 +162,7 @@ module Rubinius
 
     def self.stat(path)
       stat = allocate
-      if Rubinius.privately { stat.setup path } == 0
+      if Truffle.privately { stat.setup path } == 0
         stat
       else
         nil
@@ -171,14 +171,14 @@ module Rubinius
 
     def self.fstat(fd)
       stat = allocate
-      result = Rubinius.privately { stat.fsetup fd }
+      result = Truffle.privately { stat.fsetup fd }
       Errno.handle "file descriptor #{descriptor}" unless result == 0
       stat
     end
 
     def self.lstat(path)
       stat = allocate
-      result = Rubinius.privately { stat.lsetup path }
+      result = Truffle.privately { stat.lsetup path }
       Errno.handle path unless result == 0
       stat
     end

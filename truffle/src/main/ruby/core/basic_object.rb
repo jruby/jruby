@@ -28,7 +28,7 @@
 
 class BasicObject
   def __id__
-    Rubinius.primitive :object_id
+    Truffle.primitive :object_id
     raise ::PrimitiveFailure, "BasicObject#__id__ primitive failed"
   end
 

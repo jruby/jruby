@@ -165,7 +165,7 @@ class Hash
   # Creates a fully-formed instance of Hash.
   def self.allocate
     hash = super()
-    Rubinius.privately { hash.__setup__ }
+    Truffle.privately { hash.__setup__ }
     hash
   end
 
@@ -224,11 +224,11 @@ class Hash
   end
 
   def []=(key, value)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     redistribute @entries if @size > @max_entries
 
-    key_hash = Rubinius.privately { key.hash }
+    key_hash = Truffle.privately { key.hash }
     index = key_hash & @mask
 
     item = @entries[index]
@@ -293,7 +293,7 @@ class Hash
   end
 
   def compare_by_identity
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     @state = State.new unless @state
     @state.compare_by_identity
@@ -319,7 +319,7 @@ class Hash
 
   # Sets the default proc to be executed on each key lookup
   def default_proc=(prc)
-    Rubinius.check_frozen
+    Truffle.check_frozen
     unless prc.nil?
       prc = Rubinius::Type.coerce_to prc, Proc, :to_proc
 
@@ -333,8 +333,8 @@ class Hash
   end
 
   def delete(key)
-    Rubinius.check_frozen
-    key_hash = Rubinius.privately { key.hash }
+    Truffle.check_frozen
+    key_hash = Truffle.privately { key.hash }
 
     index = key_index key_hash
     if item = @entries[index]
@@ -397,7 +397,7 @@ class Hash
   # Searches for an item matching +key+. Returns the item
   # if found. Otherwise returns +nil+.
   def find_item(key)
-    key_hash = Rubinius.privately { key.hash }
+    key_hash = Truffle.privately { key.hash }
 
     item = @entries[key_index(key_hash)]
     while item
@@ -415,7 +415,7 @@ class Hash
   def keep_if
     return to_enum(:keep_if) { size } unless block_given?
 
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     each_item { |e| delete e.key unless yield(e.key, e.value) }
 
@@ -423,7 +423,7 @@ class Hash
   end
 
   def initialize(default=undefined, &block)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if !undefined.equal?(default) and block
       raise ArgumentError, "Specify a default or a block, not both"
@@ -442,7 +442,7 @@ class Hash
   private :initialize
 
   def merge!(other)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     other = Rubinius::Type.coerce_to other, Hash, :to_hash
 
@@ -515,7 +515,7 @@ class Hash
   end
 
   def replace(other)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     other = Rubinius::Type.coerce_to other, Hash, :to_hash
     return self if self.equal? other
@@ -561,7 +561,7 @@ class Hash
   def select!
     return to_enum(:select!) { size } unless block_given?
 
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     return nil if empty?
 
@@ -573,7 +573,7 @@ class Hash
   end
 
   def shift
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     return default(nil) if empty?
 
@@ -660,7 +660,7 @@ class Hash
   end
 
   def clear
-    Rubinius.check_frozen
+    Truffle.check_frozen
     __setup__
     self
   end
@@ -673,7 +673,7 @@ class Hash
   def delete_if(&block)
     return to_enum(:delete_if) { size } unless block_given?
 
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     select(&block).each { |k, v| delete k }
     self
@@ -781,7 +781,7 @@ class Hash
   def reject!(&block)
     return to_enum(:reject!) { size } unless block_given?
 
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     unless empty?
       size = @size

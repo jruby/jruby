@@ -81,6 +81,7 @@ import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
 import org.jruby.truffle.debug.TruffleDebugNodesFactory;
 import org.jruby.truffle.extra.AttachmentsInternalNodesFactory;
 import org.jruby.truffle.extra.TruffleGraalNodesFactory;
+import org.jruby.truffle.gem.bcrypt.BCryptNodesFactory;
 import org.jruby.truffle.interop.CExtNodesFactory;
 import org.jruby.truffle.interop.InteropNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
@@ -605,6 +606,9 @@ public class CoreLibrary {
         bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal");
         Layouts.CLASS.setInstanceFactoryUnsafe(bigDecimalClass, Layouts.BIG_DECIMAL.createBigDecimalShape(bigDecimalClass, bigDecimalClass));
 
+        final DynamicObject gem = defineModule(truffleModule, "Gem");
+        defineModule(gem, "BCrypt");
+
         // Rubinius
 
         rubiniusModule = defineModule("Rubinius");
@@ -753,6 +757,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(TruffleProcessNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleDebugNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleBindingNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(BCryptNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 

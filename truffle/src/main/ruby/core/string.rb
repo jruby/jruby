@@ -40,42 +40,42 @@ class String
   include Comparable
 
   def self.from_codepoint(code, enc)
-    Rubinius.primitive :string_from_codepoint
+    Truffle.primitive :string_from_codepoint
     raise PrimitiveFailure, "String.from_codepoint primitive failed"
   end
 
   def self.pattern(size, str)
-    Rubinius.primitive :string_pattern
+    Truffle.primitive :string_pattern
     raise PrimitiveFailure, "String.pattern primitive failed"
   end
 
   def substring(start, count)
-    Rubinius.primitive :string_substring
+    Truffle.primitive :string_substring
     raise PrimitiveFailure, "String#substring primitive failed"
   end
 
   def find_string(pattern, start)
-    Rubinius.primitive :string_index
+    Truffle.primitive :string_index
     raise PrimitiveFailure, "String#find_string primitive failed"
   end
 
   def find_string_reverse(pattern, start)
-    Rubinius.primitive :string_rindex
+    Truffle.primitive :string_rindex
     raise PrimitiveFailure, "String#find_string_reverse primitive failed"
   end
 
   def chr_at(byte)
-    Rubinius.primitive :string_chr_at
+    Truffle.primitive :string_chr_at
     raise ArgumentError, "String#chr_at primitive failed"
   end
 
   def append(str)
-    Rubinius.primitive :string_append
+    Truffle.primitive :string_append
     raise TypeError, "String#append primitive only accepts Strings"
   end
 
   def byteslice(index_or_range, length=undefined)
-    Rubinius.primitive :string_byte_substring
+    Truffle.primitive :string_byte_substring
 
     if index_or_range.kind_of? Range
       index = Rubinius::Type.coerce_to index_or_range.begin, Fixnum, :to_int
@@ -108,7 +108,7 @@ class String
   end
 
   def find_character(offset)
-    Rubinius.primitive :string_find_character
+    Truffle.primitive :string_find_character
     raise PrimitiveFailure, "String#find_character primitive failed"
   end
 
@@ -117,7 +117,7 @@ class String
   end
 
   def byte_append(str)
-    Rubinius.primitive :string_byte_append
+    Truffle.primitive :string_byte_append
     raise TypeError, "String#byte_append primitive only accepts Strings"
   end
 
@@ -125,7 +125,7 @@ class String
   # Creates a new string from copying _count_ bytes from the
   # _start_ of _bytes_.
   def self.from_bytearray(bytes, start, count)
-    Rubinius.primitive :string_from_bytearray
+    Truffle.primitive :string_from_bytearray
     raise PrimitiveFailure, "String.from_bytearray primitive failed"
   end
 
@@ -155,7 +155,7 @@ class String
   end
 
   def [](index, other = undefined)
-    Rubinius.primitive :string_aref
+    Truffle.primitive :string_aref
 
     unless undefined.equal?(other)
       if index.kind_of?(Fixnum) && other.kind_of?(Fixnum)
@@ -223,7 +223,7 @@ class String
 
   def downcase
     return dup if bytesize == 0
-    transform(Rubinius::CType::Lowered)
+    transform(Truffle::CType::Lowered)
   end
 
   def end_with?(*suffixes)
@@ -484,17 +484,17 @@ class String
   end
 
   def to_inum(base, check)
-    Rubinius.primitive :string_to_inum
+    Truffle.primitive :string_to_inum
     raise ArgumentError, "invalid value for Integer"
   end
 
   def apply_and!(other)
-    Rubinius.primitive :string_apply_and
+    Truffle.primitive :string_apply_and
     raise PrimitiveFailure, "String#apply_and! primitive failed"
   end
 
   def compare_substring(other, start, size)
-    Rubinius.primitive :string_compare_substring
+    Truffle.primitive :string_compare_substring
 
     if start > bytesize || start + bytesize < 0
       raise IndexError, "index #{start} out of string"
@@ -564,7 +564,7 @@ class String
   end
 
   def encode!(to=undefined, from=undefined, options=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     case to
       when Encoding
@@ -917,11 +917,11 @@ class String
       unless block_given?
         raise ArgumentError, "method '#{__method__}': given 1, expected 2"
       end
-      Rubinius.check_frozen
+      Truffle.check_frozen
       use_yield = true
       tainted = false
     else
-      Rubinius.check_frozen
+      Truffle.check_frozen
       tainted = replacement.tainted?
       untrusted = replacement.untrusted?
 
@@ -976,7 +976,7 @@ class String
   end
 
   def slice!(one, two=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
     # This is un-DRY, but it's a simple manual argument splitting. Keeps
     # the code fast and clean since the sequence are pretty short.
     #
@@ -1017,7 +1017,7 @@ class String
   end
 
   def chop!
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     m = Rubinius::Mirror.reflect self
 
@@ -1039,7 +1039,7 @@ class String
   end
 
   def chomp!(sep=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if undefined.equal?(sep)
       sep = $/
@@ -1105,7 +1105,7 @@ class String
   end
 
   def <<(other)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     unless other.kind_of? String
       if other.kind_of? Integer
@@ -1333,11 +1333,11 @@ class String
       unless block_given?
         return to_enum(:gsub, pattern, replacement)
       end
-      Rubinius.check_frozen
+      Truffle.check_frozen
       use_yield = true
       tainted = false
     else
-      Rubinius.check_frozen
+      Truffle.check_frozen
       tainted = replacement.tainted?
       untrusted = replacement.untrusted?
 
@@ -1512,7 +1512,7 @@ class String
   end
 
   def []=(index, count_or_replacement, replacement=undefined)
-    Rubinius.check_frozen
+    Truffle.check_frozen
 
     if undefined.equal?(replacement)
       replacement = count_or_replacement

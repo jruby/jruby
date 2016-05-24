@@ -90,7 +90,7 @@ module Process
   end
 
   def self.exit!(code=1)
-    Rubinius.primitive :vm_exit
+    Truffle.primitive :vm_exit
 
     case code
       when true
@@ -103,17 +103,17 @@ module Process
   end
 
   def self.wait_pid_prim(pid, no_hang)
-    Rubinius.primitive :vm_wait_pid
+    Truffle.primitive :vm_wait_pid
     raise PrimitiveFailure, "Process.wait_pid primitive failed"
   end
 
   def self.time
-    Rubinius.primitive :vm_time
+    Truffle.primitive :vm_time
     raise PrimitiveFailure, "Process.time primitive failed"
   end
 
   def self.cpu_times
-    Rubinius.primitive :vm_times
+    Truffle.primitive :vm_times
     raise PrimitiveFailure, "Process.cpu_times primitive failed"
   end
 
@@ -127,7 +127,7 @@ module Process
   def self.setproctitle(title)
     val = Rubinius::Type.coerce_to(title, String, :to_str)
 
-    Rubinius.invoke_primitive(:vm_set_process_title, val)
+    Truffle.invoke_primitive(:vm_set_process_title, val)
   end
 
   def self.setrlimit(resource, cur_limit, max_limit=undefined)

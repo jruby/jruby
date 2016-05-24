@@ -56,7 +56,7 @@ class String
         value = Rational.new(ip.to_i, 1)
 
         if fp
-          ctype = Rubinius::CType
+          ctype = Truffle::CType
           i = count = 0
           size = fp.size
           while i < size

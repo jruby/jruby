@@ -1,3 +1,11 @@
+# Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -29,7 +37,7 @@
 #--
 # isspace, islower, ... are not in MRI core library.
 
-module Rubinius::CType
+module Truffle::CType
   # The character literals (?x) are Fixnums in 1.8 and Strings in 1.9
   # so we use literal values instead so this is 1.8/1.9 compatible.
 
@@ -74,4 +82,8 @@ module Rubinius::CType
   def self.tolower(num)
     isupper(num) ? tolower!(num) : num
   end
+end
+
+module Rubinius
+  CType = Truffle::CType
 end

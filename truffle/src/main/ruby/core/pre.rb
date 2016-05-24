@@ -41,7 +41,7 @@ class Module
   # Redefined in kernel/delta/module.rb.
   #
   def include(mod)
-    Rubinius.privately do
+    Truffle.privately do
       mod.append_features self # Truffle: moved the append_features inside the privately
       mod.included self
     end
@@ -55,7 +55,7 @@ module Kernel
   # Rubinius defines this method differently, using the :object_class primitive.  The two primitives are very similar,
   # so rather than introduce the new one, we'll just delegate to the existing one.
   def __class__
-    Rubinius.invoke_primitive :vm_object_class, self
+    Truffle.invoke_primitive :vm_object_class, self
   end
 
   alias_method :eql?, :equal?
@@ -88,7 +88,7 @@ module Rubinius
     class Pointer
 
       def self.allocate
-        Rubinius.primitive :pointer_allocate
+        Truffle.primitive :pointer_allocate
         raise PrimitiveFailure, "FFI::Pointer.allocate primitive failed"
       end
 

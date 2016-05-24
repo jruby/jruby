@@ -86,7 +86,7 @@ end
 class Array
 
   def copy_from(other, start, length, dest)
-    Rubinius.primitive :tuple_copy_from
+    Truffle.primitive :tuple_copy_from
 
     unless other.kind_of? Array # Rubinius::Tuple # We use Array
       raise TypeError, "Tuple#copy_from was expecting an Array, not a #{other.class}"

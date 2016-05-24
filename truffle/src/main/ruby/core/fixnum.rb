@@ -79,7 +79,7 @@ class Fixnum < Integer
   end
 
   def **(o)
-    Rubinius.primitive :fixnum_pow
+    Truffle.primitive :fixnum_pow
 
     if o.is_a?(Float) && self < 0 && o != o.round
       return Complex.new(self, 0) ** o

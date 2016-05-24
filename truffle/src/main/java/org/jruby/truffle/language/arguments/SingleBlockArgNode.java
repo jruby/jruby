@@ -8,7 +8,7 @@
  * GNU Lesser General Public License version 2.1
  */
 
-package org.jruby.truffle.core.rubinius;
+package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -18,18 +18,18 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
-public class RubiniusSingleBlockArgNode extends RubyNode {
+public class SingleBlockArgNode extends RubyNode {
     private final ConditionProfile emptyArgsProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile singleArgProfile = ConditionProfile.createBinaryProfile();
 
-    public RubiniusSingleBlockArgNode(RubyContext context, SourceSection sourceSection) {
+    public SingleBlockArgNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         /**
-         * This is our implementation of Rubinius.single_block_arg.
+         * This is our implementation of Truffle.single_block_arg.
          *
          * In Rubinius, this method inspects the values yielded to the block, regardless of whether the block
          * captures the values, and returns the first value in the list of values yielded to the block.

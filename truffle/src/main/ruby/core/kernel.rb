@@ -47,7 +47,7 @@ module Kernel
   module_function :Array
 
   def Complex(*args)
-    Rubinius.privately do
+    Truffle.privately do
       Complex.convert(*args)
     end
   end
@@ -138,7 +138,7 @@ module Kernel
   module_function :Integer
 
   def Rational(a, b = 1)
-    Rubinius.privately do
+    Truffle.privately do
       Rational.convert a, b
     end
   end
@@ -208,7 +208,7 @@ module Kernel
     fullpath = if script.data_path
       script.data_path
     else
-      Rubinius.privately do
+      Truffle.privately do
         File.basic_realpath(basepath)
       end
     end
@@ -359,11 +359,11 @@ module Kernel
         raise TypeError, "wrong argument type #{mod.class} (expected Module)"
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         mod.extend_object self
       end
 
-      Rubinius.privately do
+      Truffle.privately do
         mod.extended self
       end
     end
@@ -455,7 +455,7 @@ module Kernel
   # always false.
 
   def instance_of?(cls)
-    Rubinius.primitive :object_instance_of
+    Truffle.primitive :object_instance_of
 
     arg_class = Rubinius::Type.object_class(cls)
     if arg_class != Class and arg_class != Module
@@ -467,7 +467,7 @@ module Kernel
   end
 
   def instance_variable_get(sym)
-    Rubinius.primitive :object_get_ivar
+    Truffle.primitive :object_get_ivar
 
     sym = Rubinius::Type.ivar_validate sym
     instance_variable_get sym
@@ -476,7 +476,7 @@ module Kernel
   alias_method :__instance_variable_get__, :instance_variable_get
 
   def instance_variable_set(sym, value)
-    Rubinius.primitive :object_set_ivar
+    Truffle.primitive :object_set_ivar
 
     sym = Rubinius::Type.ivar_validate sym
     instance_variable_set sym, value
@@ -494,7 +494,7 @@ module Kernel
   end
 
   def instance_variable_defined?(name)
-    Rubinius.primitive :object_ivar_defined
+    Truffle.primitive :object_ivar_defined
 
     instance_variable_defined? Rubinius::Type.ivar_validate(name)
   end
@@ -613,7 +613,7 @@ module Kernel
   end
 
   def object_id
-    Rubinius.primitive :object_id
+    Truffle.primitive :object_id
     raise PrimitiveFailure, "Kernel#object_id primitive failed"
   end
 
@@ -735,7 +735,7 @@ module Kernel
   end
 
   def public_send(message, *args)
-    Rubinius.primitive :object_public_send
+    Truffle.primitive :object_public_send
     raise PrimitiveFailure, "Kernel#public_send primitive failed"
   end
 
@@ -797,7 +797,7 @@ module Kernel
   module_function :readlines
 
   def remove_instance_variable(sym)
-    Rubinius.primitive :object_del_ivar
+    Truffle.primitive :object_del_ivar
 
     # If it's already a symbol, then we're here because it doesn't exist.
     if sym.kind_of? Symbol
@@ -825,7 +825,7 @@ module Kernel
   module_function :select
 
   def send(message, *args)
-    Rubinius.primitive :object_send
+    Truffle.primitive :object_send
     raise PrimitiveFailure, "Kernel#send primitive failed"
   end
 
@@ -843,7 +843,7 @@ module Kernel
   module_function :format
 
   def sleep(duration=undefined)
-    Rubinius.primitive :vm_sleep
+    Truffle.primitive :vm_sleep
 
     # The primitive will fail on arg count if sleep is called
     # without an argument, so we call it again passing undefined
@@ -909,7 +909,7 @@ module Kernel
 
   def to_enum(method=:each, *args, &block)
     Enumerator.new(self, method, *args).tap do |enum|
-      Rubinius.privately { enum.size = block } if block_given?
+      Truffle.privately { enum.size = block } if block_given?
     end
   end
   alias_method :enum_for, :to_enum

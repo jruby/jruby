@@ -76,7 +76,7 @@ module FFI
     # takes up on this platform.
 
     def type_size(type)
-      Rubinius.primitive :nativefunction_type_size
+      Truffle.primitive :nativefunction_type_size
 
       case type
       when Symbol

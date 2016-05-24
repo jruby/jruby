@@ -154,7 +154,7 @@ public class CoreMethodNodeManager {
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
-        final SourceSection sourceSection = SourceSection.createUnavailable(null, String.format("%s#%s", methodDetails.getClassAnnotation().value(), method.names()[0]));
+        final SourceSection sourceSection = SourceSection.createUnavailable("core", String.format("%s#%s", methodDetails.getClassAnnotation().value(), method.names()[0]));
 
         final int required = method.required();
         final int optional = method.optional();
