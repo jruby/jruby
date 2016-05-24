@@ -338,7 +338,8 @@ public abstract class IOPrimitiveNodes {
 
         @TruffleBoundary(throwsControlFlowException = true)
         public void performReopenPath(DynamicObject self, DynamicObject path, int mode) {
-            int fdSelf = Layouts.IO.getDescriptor(self);
+            final int fdSelf = Layouts.IO.getDescriptor(self);
+            final int newFdSelf;
             final String targetPathString = StringOperations.getString(getContext(), path);
 
             int fdTarget = ensureSuccessful(posix().open(targetPathString, mode, 666));
@@ -348,19 +349,20 @@ public abstract class IOPrimitiveNodes {
                 final int errno = posix().errno();
                 if (errno == Errno.EBADF.intValue()) {
                     Layouts.IO.setDescriptor(self, fdTarget);
-                    fdSelf = fdTarget;
+                    newFdSelf = fdTarget;
                 } else {
                     if (fdTarget > 0) {
                         ensureSuccessful(posix().close(fdTarget));
                     }
-                    ensureSuccessful(result, errno);
+                    ensureSuccessful(result, errno); // throws
+                    return;
                 }
-
             } else {
                 ensureSuccessful(posix().close(fdTarget));
+                newFdSelf = fdSelf;
             }
 
-            final int newSelfMode = ensureSuccessful(posix().fcntl(fdSelf, Fcntl.F_GETFL));
+            final int newSelfMode = ensureSuccessful(posix().fcntl(newFdSelf, Fcntl.F_GETFL));
             Layouts.IO.setMode(self, newSelfMode);
         }
 
