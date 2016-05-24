@@ -6,19 +6,11 @@ common: {
     maven:      ">=3.3.9"
     mercurial:  ">=3.2.4"
     ruby:       ">=2.1.0"
-  }
-  
-  downloads: {
-    JAVA_HOME: {
-      name: oraclejdk,
-      version: "8u66",
-      platformspecific: true
-    }
+    "java/jdk": "==1.8.0/60"
   }
   
   environment: {
-    CI: "true",
-    PATH: "$JAVA_HOME/bin:$PATH"
+    CI: "true"
   }
   
   setup: [
