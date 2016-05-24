@@ -41,25 +41,23 @@
 package org.jruby.truffle.stdlib.readline;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jline.console.history.History;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.builtins.CoreClass;
-import org.jruby.truffle.builtins.CoreMethod;
-import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.builtins.YieldingCoreMethodNode;
-import org.jruby.truffle.core.cast.ToStrNode;
-import org.jruby.truffle.core.cast.ToStrNodeGen;
+import org.jruby.truffle.builtins.*;
+import org.jruby.truffle.core.cast.*;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
-
-import java.util.Iterator;
 
 @CoreClass("Truffle::ReadlineHistory")
 public abstract class ReadlineHistoryNodes {
@@ -67,11 +65,11 @@ public abstract class ReadlineHistoryNodes {
     @CoreMethod(names = { "push", "<<" }, rest = true)
     public abstract static class PushNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ToStrNode toStrNode;
+        @Child private NameToJavaStringNode toJavaStringNode;
 
         public PushNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toStrNode = ToStrNodeGen.create(context, sourceSection, null);
+            toJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -79,8 +77,8 @@ public abstract class ReadlineHistoryNodes {
             final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
 
             for (Object line : lines) {
-                final DynamicObject asString = toStrNode.executeToStr(frame, line);
-                consoleHolder.getHistory().add(RopeOperations.decodeUTF8(StringOperations.rope(asString)));
+                final String asString = toJavaStringNode.executeToJavaString(frame, line);
+                consoleHolder.getHistory().add(asString);
             }
 
             return history;
@@ -220,25 +218,29 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
-    @CoreMethod(names = "[]=", needsSelf = false, required = 2, lowerFixnumParameters = 0)
-    public abstract static class SetIndexNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "[]=", needsSelf = false, required = 2)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "index"),
+            @NodeChild(type = RubyNode.class, value = "line")
+    })
+    public abstract static class SetIndexNode extends CoreMethodNode {
 
-        @Child private ToStrNode toStrNode;
+        @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
+            return ToIntNodeGen.create(index);
+        }
 
-        public SetIndexNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toStrNode = ToStrNodeGen.create(context, sourceSection, null);
+        @CreateCast("line") public RubyNode coerceLineToJavaString(RubyNode line) {
+            return NameToJavaStringNodeGen.create(null, null, line);
         }
 
         @Specialization
-        public Object setIndex(VirtualFrame frame, int index, Object line) {
+        public Object setIndex(VirtualFrame frame, int index, String line) {
             final ConsoleHolder consoleHolder = getContext().getConsoleHolder();
 
             final int normalizedIndex = index < 0 ? index + consoleHolder.getHistory().size() : index;
 
             try {
-                final DynamicObject asString = toStrNode.executeToStr(frame, line);
-                consoleHolder.getHistory().set(normalizedIndex, RopeOperations.decodeUTF8(StringOperations.rope(asString)));
+                consoleHolder.getHistory().set(normalizedIndex, line);
 
                 return nil();
             } catch (IndexOutOfBoundsException e) {

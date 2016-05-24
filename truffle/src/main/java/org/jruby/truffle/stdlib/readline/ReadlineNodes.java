@@ -51,9 +51,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.*;
 import org.jruby.truffle.core.array.ArrayHelpers;
-import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
-import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
-import org.jruby.truffle.core.cast.ToStrNodeGen;
+import org.jruby.truffle.core.cast.*;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
@@ -122,18 +120,17 @@ public abstract class ReadlineNodes {
             taintNode = TaintNodeGen.create(context, sourceSection, null);
         }
 
+        @CreateCast("prompt") public RubyNode coercePromptToJavaString(RubyNode prompt) {
+            return NameToJavaStringWithDefaultNodeGen.create(null, null, coreStrings().EMPTY_STRING.toString(), prompt);
+        }
+
         @CreateCast("addToHistory") public RubyNode coerceToBoolean(RubyNode addToHistory) {
             return BooleanCastWithDefaultNodeGen.create(null, null, false, addToHistory);
         }
 
-        @Specialization(guards = "wasNotProvided(prompt)")
-        public Object readlineNoPrompt(Object prompt, boolean addToHistory) {
-            return readline(coreStrings().EMPTY_STRING.createInstance(), addToHistory);
-        }
-
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(prompt)")
-        public Object readline(DynamicObject prompt, boolean addToHistory) {
+        @Specialization
+        public Object readline(String prompt, boolean addToHistory) {
             getContext().getConsoleHolder().getReadline().setExpandEvents(false);
 
             DynamicObject line = nil();
@@ -141,7 +138,7 @@ public abstract class ReadlineNodes {
             while (true) {
                 try {
                     getContext().getConsoleHolder().getReadline().getTerminal().setEchoEnabled(false);
-                    value = getContext().getConsoleHolder().getReadline().readLine(RopeOperations.decodeUTF8(StringOperations.rope(prompt)));
+                    value = getContext().getConsoleHolder().getReadline().readLine(prompt);
                     break;
                 } catch (IOException e) {
                     throw new RaiseException(coreExceptions().ioError(e.getMessage(), this));
