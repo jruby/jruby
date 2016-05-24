@@ -342,7 +342,7 @@ public abstract class IOPrimitiveNodes {
             final int newFdSelf;
             final String targetPathString = StringOperations.getString(getContext(), path);
 
-            int fdTarget = ensureSuccessful(posix().open(targetPathString, mode, 666));
+            int fdTarget = ensureSuccessful(posix().open(targetPathString, mode, 0_666));
 
             final int result = posix().dup2(fdTarget, fdSelf);
             if (result == -1) {
