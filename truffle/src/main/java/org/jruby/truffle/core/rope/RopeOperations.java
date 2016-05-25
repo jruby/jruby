@@ -273,7 +273,7 @@ public class RopeOperations {
 
             // Force lazy ropes
             if (current instanceof LazyRope) {
-                current.getBytes();
+                ((LazyRope) current).fulfill();
             }
 
             if (current.getRawBytes() != null) {
