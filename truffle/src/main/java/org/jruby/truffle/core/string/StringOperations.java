@@ -285,8 +285,8 @@ public abstract class StringOperations {
     public static boolean isUTF8ValidTwoBytes(byte... bytes) {
         assert bytes.length == 2;
 
-        if (bytes[0] >= 0xc2 && bytes[0] <= 0xdf) {
-            return bytes[1] >= 0x80 && bytes[1] <= 0xbf;
+        if ((bytes[0] & 0xff) >= 0xc2 && (bytes[0] & 0xff) <= 0xdf) {
+            return (bytes[1] & 0xff) >= 0x80 && (bytes[1] & 0xff) <= 0xbf;
         }
 
         return false;
@@ -295,21 +295,21 @@ public abstract class StringOperations {
     public static boolean isUTF8ValidThreeBytes(byte... bytes) {
         assert bytes.length == 3;
 
-        if (bytes[0] < 0xe0 || bytes[0] > 0xef) {
+        if ((bytes[0] & 0xff) < 0xe0 || (bytes[0] & 0xff) > 0xef) {
             return false;
         }
 
-        if (bytes[2] < 0x80 || bytes[2] > 0xbf) {
+        if ((bytes[2] & 0xff) < 0x80 || (bytes[2] & 0xff) > 0xbf) {
             return false;
         }
 
-        if (bytes[1] >= 0x80 || bytes[2] <= 0xbf) {
-            if (bytes[0] == 0xe0) {
-                return bytes[1] >= 0xa0;
+        if ((bytes[1] & 0xff) >= 0x80 || (bytes[2] & 0xff) <= 0xbf) {
+            if ((bytes[0] & 0xff) == 0xe0) {
+                return (bytes[1] & 0xff) >= 0xa0;
             }
 
-            if (bytes[0] == 0xed) {
-                return bytes[1] <= 0x9f;
+            if ((bytes[0] & 0xff) == 0xed) {
+                return (bytes[1] & 0xff) <= 0x9f;
             }
 
             return true;
@@ -321,25 +321,25 @@ public abstract class StringOperations {
     public static boolean isUTF8ValidFourBytes(byte... bytes) {
         assert bytes.length == 4;
 
-        if (bytes[3] < 0x80 || bytes[3] > 0xbf) {
+        if ((bytes[3] & 0xff) < 0x80 || (bytes[3] & 0xff) > 0xbf) {
             return false;
         }
 
-        if (bytes[2] < 0x80 || bytes[2] > 0xbf) {
+        if ((bytes[2] & 0xff) < 0x80 || (bytes[2] & 0xff) > 0xbf) {
             return false;
         }
 
-        if (bytes[0] < 0xf0 || bytes[0] > 0xf4) {
+        if ((bytes[0] & 0xff) < 0xf0 || (bytes[0] & 0xff) > 0xf4) {
             return false;
         }
 
-        if (bytes[1] >= 0x80 || bytes[2] <= 0xbf) {
-            if (bytes[0] == 0xf0) {
-                return bytes[1] >= 0x90;
+        if ((bytes[1] & 0xff) >= 0x80 || (bytes[2] & 0xff) <= 0xbf) {
+            if ((bytes[0] & 0xff) == 0xf0) {
+                return (bytes[1] & 0xff) >= 0x90;
             }
 
-            if (bytes[0] == 0xf4) {
-                return bytes[1] <= 0x8f;
+            if ((bytes[0] & 0xff) == 0xf4) {
+                return (bytes[1] & 0xff) <= 0x8f;
             }
 
             return true;
