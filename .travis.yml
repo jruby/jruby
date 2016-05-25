@@ -111,6 +111,7 @@ branches:
     - /^test-.*$/
     - /^ha-feature/
     - ruby-2.4
+    - jruby-9.1.2.0
 
 script: tool/travis_runner.sh
 install: |
