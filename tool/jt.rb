@@ -12,7 +12,6 @@
 # Recommended: function jt { ruby tool/jt.rb "$@"; }
 
 require 'fileutils'
-require 'digest/sha1'
 
 GRAALVM_VERSION = "0.11"
 
