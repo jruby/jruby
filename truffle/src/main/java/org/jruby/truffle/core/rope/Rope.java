@@ -44,7 +44,7 @@ public abstract class Rope {
         return byteLength;
     }
 
-    public boolean isEmpty() {
+    public final boolean isEmpty() {
         return byteLength == 0;
     }
 
@@ -54,7 +54,7 @@ public abstract class Rope {
         return bytes;
     }
 
-    public byte[] getBytes() {
+    public final byte[] getBytes() {
         if (bytes == null) {
             bytes = RopeOperations.flattenBytes(this);
         }
@@ -62,7 +62,7 @@ public abstract class Rope {
         return bytes;
     }
 
-    public byte[] getBytesCopy() {
+    public final byte[] getBytesCopy() {
         return getBytes().clone();
     }
 
@@ -83,7 +83,7 @@ public abstract class Rope {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         if (hashCode == 0) {
             hashCode = RopeOperations.hashForRange(this, 1, 0, byteLength);
         }
@@ -92,7 +92,7 @@ public abstract class Rope {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
