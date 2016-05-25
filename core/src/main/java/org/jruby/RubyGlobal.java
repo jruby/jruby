@@ -58,6 +58,7 @@ import org.jruby.util.KCode;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.OutputStrings;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
@@ -420,9 +421,9 @@ public class RubyGlobal {
                 return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
             }
 
-            IRubyObject keyAsStr = normalizeEnvString(Helpers.invoke(context, key, "to_str"));
+            IRubyObject keyAsStr = normalizeEnvString(context, key, Helpers.invoke(context, key, "to_str"));
             IRubyObject valueAsStr = value.isNil() ? context.nil :
-                    normalizeEnvString(Helpers.invoke(context, value, "to_str"));
+                    normalizeEnvString(context, key, Helpers.invoke(context, value, "to_str"));
 
             if (updateRealENV) {
                 POSIX posix = context.runtime.getPosix();
@@ -458,14 +459,26 @@ public class RubyGlobal {
             return actualKey;
         }
 
-        private IRubyObject normalizeEnvString(IRubyObject str) {
-            if (str instanceof RubyString) {
-                Encoding enc = getRuntime().getEncodingService().getLocaleEncoding();
-                RubyString newStr = getRuntime().newString(new ByteList(str.toString().getBytes(), enc));
+        private IRubyObject normalizeEnvString(ThreadContext context, IRubyObject key, IRubyObject value) {
+            if (value instanceof RubyString) {
+                Ruby runtime = context.runtime;
+                RubyString valueStr = (RubyString) value;
+                Encoding enc;
+
+                // Ensure PATH is encoded like filesystem
+                if (key.toString().equalsIgnoreCase("PATH")) {
+                    enc = runtime.getEncodingService().getFileSystemEncoding();
+                } else {
+                    enc = runtime.getEncodingService().getLocaleEncoding();
+                }
+
+                RubyString newStr = EncodingUtils.strConvEnc(context, valueStr, valueStr.getEncoding(), enc);
+
                 newStr.setFrozen(true);
+
                 return newStr;
             }
-            return str;
+            return value;
         }
     }
 
