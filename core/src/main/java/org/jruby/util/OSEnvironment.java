@@ -111,8 +111,9 @@ public class OSEnvironment {
             val = entry.getValue();
             if ( ! (val instanceof String) ) continue; // Java devs can stuff non-string objects into env
 
+            // Ensure PATH is encoded like filesystem
             Encoding valueEncoding = keyEncoding;
-            if ( key.equals("PATH") ) {
+            if ( key.equalsIgnoreCase("PATH") ) {
                 valueEncoding = runtime.getEncodingService().getFileSystemEncoding();
             }
 
