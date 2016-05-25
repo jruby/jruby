@@ -113,7 +113,9 @@ public class OSEnvironment {
 
             // Ensure PATH is encoded like filesystem
             Encoding valueEncoding = keyEncoding;
-            if ( key.equalsIgnoreCase("PATH") ) {
+            if ( org.jruby.platform.Platform.IS_WINDOWS ?
+                    key.toString().equalsIgnoreCase("PATH") :
+                    key.toString().equals("PATH") ) {
                 valueEncoding = runtime.getEncodingService().getFileSystemEncoding();
             }
 

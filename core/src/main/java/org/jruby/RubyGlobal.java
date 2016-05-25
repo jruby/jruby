@@ -465,7 +465,9 @@ public class RubyGlobal {
                 RubyString valueStr = (RubyString) value;
 
                 // Ensure PATH is encoded like filesystem
-                if (key.toString().equalsIgnoreCase("PATH")) {
+                if (Platform.IS_WINDOWS ?
+                        key.toString().equalsIgnoreCase("PATH") :
+                        key.toString().equals("PATH")) {
                     Encoding enc = runtime.getEncodingService().getFileSystemEncoding();
                     valueStr = EncodingUtils.strConvEnc(context, valueStr, valueStr.getEncoding(), enc);
                 } else {
