@@ -258,6 +258,25 @@ public class StaticScope implements Serializable {
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
 
+    /**
+     * Gets a constant back from lexical search from the cref in this scope.
+     * As it is for defined? we will not forced resolution of autoloads nor
+     * call const_defined
+     */
+    public IRubyObject getConstantDefined(String internedName) {
+        IRubyObject result = cref.fetchConstant(internedName);
+
+        if (result != null) return result;
+
+        return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(internedName);
+    }
+
+    public IRubyObject getConstantDefinedNoObject(String internedName) {
+        if (previousCRefScope == null) return null;
+
+        return getConstantDefined(internedName);
+    }
+
     public IRubyObject getConstant(String internedName) {
         IRubyObject result = getConstantInner(internedName);
 

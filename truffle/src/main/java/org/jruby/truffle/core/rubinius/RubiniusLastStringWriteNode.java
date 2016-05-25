@@ -10,7 +10,7 @@
 
 package org.jruby.truffle.core.rubinius;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
@@ -30,10 +30,9 @@ public abstract class RubiniusLastStringWriteNode extends RubyNode {
         super(context, sourceSection);
     }
 
+    @TruffleBoundary
     @Specialization
     public Object lastStringWrite(Object value) {
-        CompilerDirectives.transferToInterpreter();
-
         // Rubinius expects $_ to be thread-local, rather than frame-local.  If we see it in a method call, we need
         // to look to the caller's frame to get the correct value, otherwise it will be nil.
         Frame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
@@ -41,7 +40,7 @@ public abstract class RubiniusLastStringWriteNode extends RubyNode {
         FrameSlot slot = callerFrame.getFrameDescriptor().findFrameSlot("$_");
 
         while (slot == null) {
-            callerFrame = RubyArguments.getDeclarationFrame(callerFrame.getArguments());
+            callerFrame = RubyArguments.getDeclarationFrame(callerFrame);
 
             if (callerFrame == null) {
                 break;

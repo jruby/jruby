@@ -143,13 +143,11 @@ import org.jruby.util.CodeRangeable;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.StringSupport;
-
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
@@ -775,9 +773,10 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isEmpty(string)")
-        public int count(VirtualFrame frame, DynamicObject string, Object[] args) {
+        public int count(VirtualFrame frame, DynamicObject string, Object[] args,
+                @Cached("create()") BranchProfile errorProfile) {
             if (args.length == 0) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().argumentErrorEmptyVarargs(this));
             }
 
@@ -825,8 +824,8 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(null, null, other);
         }
 
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(salt)")
-        @TruffleBoundary
         public Object crypt(DynamicObject string, DynamicObject salt) {
             // Taken from org.jruby.RubyString#crypt.
 
@@ -883,15 +882,18 @@ public abstract class StringNodes {
             toStr = ToStrNodeGen.create(context, sourceSection, null);
         }
 
+        public abstract DynamicObject executeDeleteBang(VirtualFrame frame, DynamicObject string, Object[] args);
+
         @Specialization(guards = "isEmpty(string)")
-        public DynamicObject deleteBangEmpty(DynamicObject string, Object... args) {
+        public DynamicObject deleteBangEmpty(DynamicObject string, Object[] args) {
             return nil();
         }
 
         @Specialization(guards = "!isEmpty(string)")
-        public Object deleteBang(VirtualFrame frame, DynamicObject string, Object... args) {
+        public Object deleteBang(VirtualFrame frame, DynamicObject string, Object[] args,
+                @Cached("create()") BranchProfile errorProfile) {
             if (args.length == 0) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().argumentErrorEmptyVarargs(this));
             }
 
@@ -905,7 +907,7 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        private Object deleteBangSlow(DynamicObject string, DynamicObject... otherStrings) {
+        private Object deleteBangSlow(DynamicObject string, DynamicObject[] otherStrings) {
             assert RubyGuards.isRubyString(string);
 
             DynamicObject otherString = otherStrings[0];
@@ -1247,10 +1249,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRubyString(from)")
         public DynamicObject initialize(DynamicObject self, DynamicObject from) {
-            if (isFrozen(self)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().frozenError(self, this));
-            }
+            raiseIfFrozen(self);
 
             StringOperations.setRope(self, rope(from));
 
@@ -1267,12 +1266,12 @@ public abstract class StringNodes {
             return initialize(self, toStrNode.executeToStr(frame, from));
         }
 
-        protected boolean isFrozen(Object object) {
+        protected void raiseIfFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
             }
-            return isFrozenNode.executeIsFrozen(object);
+            isFrozenNode.raiseIfFrozen(object);
         }
 
     }
@@ -1501,18 +1500,23 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public DynamicObject setNumBytes(DynamicObject string, int count) {
+        public DynamicObject setNumBytes(DynamicObject string, int count,
+                @Cached("create()") BranchProfile errorProfile) {
             final Rope rope = rope(string);
 
             if (count > rope.byteLength()) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().argumentError(
-                        String.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength()), this));
+                errorProfile.enter();
+                throw new RaiseException(coreExceptions().argumentError(formatError(count, rope), this));
             }
 
             StringOperations.setRope(string, makeSubstringNode.executeMake(rope, 0, count));
 
             return string;
+        }
+
+        @TruffleBoundary
+        private String formatError(int count, final Rope rope) {
+            return String.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength());
         }
     }
 
@@ -1898,7 +1902,7 @@ public abstract class StringNodes {
             // Taken from org.jruby.RubyString#squeeze_bang19.
 
             if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
@@ -2197,7 +2201,7 @@ public abstract class StringNodes {
                     deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
                 }
 
-                return deleteBangNode.deleteBang(frame, self, fromStr);
+                return deleteBangNode.executeDeleteBang(frame, self, new DynamicObject[] { fromStr });
             }
 
             return StringNodesHelper.trTransHelper(getContext(), self, fromStr, toStr, false);
@@ -2236,7 +2240,7 @@ public abstract class StringNodes {
                     deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
                 }
 
-                return deleteBangNode.deleteBang(frame, self, fromStr);
+                return deleteBangNode.executeDeleteBang(frame, self, new DynamicObject[] { fromStr });
             }
 
             return StringNodesHelper.trTransHelper(getContext(), self, fromStr, toStr, true);
@@ -2468,7 +2472,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         public DynamicObject capitalizeBang(DynamicObject string) {
             // Taken from org.jruby.RubyString#capitalize_bang19.
 
@@ -2476,9 +2480,7 @@ public abstract class StringNodes {
             final Encoding enc = rope.getEncoding();
 
             if (enc.isDummy()) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(
-                        coreExceptions().encodingCompatibilityError(
+                throw new RaiseException(coreExceptions().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", enc), this));
             }
 
@@ -2542,7 +2544,6 @@ public abstract class StringNodes {
         public static int checkIndex(int length, int index, RubyNode node) {
             if (index > length) {
                 CompilerDirectives.transferToInterpreter();
-
                 throw new RaiseException(
                         node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
             }
@@ -2550,7 +2551,6 @@ public abstract class StringNodes {
             if (index < 0) {
                 if (-index > length) {
                     CompilerDirectives.transferToInterpreter();
-
                     throw new RaiseException(
                             node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
                 }
@@ -2568,7 +2568,6 @@ public abstract class StringNodes {
 
             if (index >= length) {
                 CompilerDirectives.transferToInterpreter();
-
                 throw new RaiseException(
                         node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
             }
@@ -2576,7 +2575,6 @@ public abstract class StringNodes {
             if (index < 0) {
                 if (-index > length) {
                     CompilerDirectives.transferToInterpreter();
-
                     throw new RaiseException(
                             node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
                 }
@@ -2852,12 +2850,13 @@ public abstract class StringNodes {
     public static abstract class StringCheckNullSafePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject stringCheckNullSafe(DynamicObject string) {
+        public DynamicObject stringCheckNullSafe(DynamicObject string,
+                @Cached("create()") BranchProfile errorProfile) {
             final byte[] bytes = rope(string).getBytes();
 
             for (int i = 0; i < bytes.length; i++) {
                 if (bytes[i] == 0) {
-                    CompilerDirectives.transferToInterpreter();
+                    errorProfile.enter();
                     throw new RaiseException(coreExceptions().argumentError("string contains NULL byte", this));
                 }
             }
@@ -2918,7 +2917,8 @@ public abstract class StringNodes {
     public static abstract class StringCompareSubstringPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(other)")
-        public int stringCompareSubstring(VirtualFrame frame, DynamicObject string, DynamicObject other, int start, int size) {
+        public int stringCompareSubstring(VirtualFrame frame, DynamicObject string, DynamicObject other, int start, int size,
+                @Cached("create()") BranchProfile errorProfile) {
             // Transliterated from Rubinius C++.
 
             final int stringLength = StringOperations.rope(string).characterLength();
@@ -2929,23 +2929,13 @@ public abstract class StringNodes {
             }
 
             if (start > otherLength) {
-                CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(
-                        coreExceptions().indexError(
-                                String.format("index %d out of string", start),
-                                this
-                        ));
+                errorProfile.enter();
+                throw new RaiseException(coreExceptions().indexError(formatError(start), this));
             }
 
             if (start < 0) {
-                CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(
-                        coreExceptions().indexError(
-                                String.format("index %d out of string", start),
-                                this
-                        ));
+                errorProfile.enter();
+                throw new RaiseException(coreExceptions().indexError(formatError(start), this));
             }
 
             if (start + size > otherLength) {
@@ -2962,6 +2952,11 @@ public abstract class StringNodes {
             // TODO (nirvdrum 21-Jan-16): Reimplement with something more friendly to rope byte[] layout?
             return ByteList.memcmp(rope.getBytes(), 0, size,
                     otherRope.getBytes(), start, size);
+        }
+
+        @TruffleBoundary
+        private String formatError(int start) {
+            return String.format("index %d out of string", start);
         }
 
     }
@@ -3117,33 +3112,30 @@ public abstract class StringNodes {
             return nil();
         }
 
-        @Specialization(guards = { "offset >= 0", "isSingleByte(string)" })
-        public Object stringFindCharacterSingleByte(DynamicObject string, int offset,
-                                                    @Cached("createBinaryProfile()") ConditionProfile offsetTooLargeProfile) {
+        @Specialization(guards = "offsetTooLarge(string, offset)")
+        public Object stringFindCharacterOffsetTooLarge(DynamicObject string, int offset) {
+            return nil();
+        }
+
+        @Specialization(guards = { "offset >= 0", "!offsetTooLarge(string, offset)", "isSingleByteOptimizable(string)" })
+        public Object stringFindCharacterSingleByte(DynamicObject string, int offset) {
             // Taken from Rubinius's String::find_character.
 
             final Rope rope = rope(string);
-            if (offsetTooLargeProfile.profile(offset >= rope.byteLength())) {
-                return nil();
-            }
 
             final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), makeSubstringNode.executeMake(rope, offset, 1), null);
 
             return propagate(string, ret);
         }
 
-        @Specialization(guards = { "offset >= 0", "!isSingleByte(string)" })
-        public Object stringFindCharacter(DynamicObject string, int offset,
-                                          @Cached("createBinaryProfile()") ConditionProfile offsetTooLargeProfile) {
+        @Specialization(guards = { "offset >= 0", "!offsetTooLarge(string, offset)", "!isSingleByteOptimizable(string)" })
+        public Object stringFindCharacter(DynamicObject string, int offset) {
             // Taken from Rubinius's String::find_character.
 
             final Rope rope = rope(string);
-            if (offsetTooLargeProfile.profile(offset >= rope.byteLength())) {
-                return nil();
-            }
 
             final Encoding enc = rope.getEncoding();
-            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), 0, rope.byteLength());
+            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), offset, offset + enc.maxLength());
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
@@ -3167,6 +3159,12 @@ public abstract class StringNodes {
             }
 
             return taintResultNode.maybeTaint(source, value);
+        }
+
+        protected static boolean offsetTooLarge(DynamicObject string, int offset) {
+            assert RubyGuards.isRubyString(string);
+
+            return offset >= rope(string).byteLength();
         }
 
     }
@@ -3195,7 +3193,7 @@ public abstract class StringNodes {
             return createString(rope);
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = {"isRubyEncoding(encoding)", "!isSimple(code, encoding)"})
         public DynamicObject stringFromCodepoint(int code, DynamicObject encoding) {
             final int length;
@@ -3203,12 +3201,10 @@ public abstract class StringNodes {
             try {
                 length = EncodingOperations.getEncoding(encoding).codeToMbcLength(code);
             } catch (EncodingException e) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().rangeError(code, encoding, this));
             }
 
             if (length <= 0) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().rangeError(code, encoding, this));
             }
 
@@ -3217,7 +3213,6 @@ public abstract class StringNodes {
             try {
                 EncodingOperations.getEncoding(encoding).codeToMbc(code, bytes, 0);
             } catch (EncodingException e) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().rangeError(code, encoding, this));
             }
 
@@ -3542,7 +3537,8 @@ public abstract class StringNodes {
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public Object stringByteIndex(DynamicObject string, int index, int start,
                                       @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile,
-                                      @Cached("createBinaryProfile()") ConditionProfile invalidByteProfile) {
+                                      @Cached("createBinaryProfile()") ConditionProfile invalidByteProfile,
+                                      @Cached("create()") BranchProfile errorProfile) {
             // Taken from Rubinius's String::byte_index.
 
             final Rope rope = rope(string);
@@ -3553,7 +3549,7 @@ public abstract class StringNodes {
             int i, k = index;
 
             if (k < 0) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().argumentError("character index is negative", this));
             }
 
@@ -3578,11 +3574,12 @@ public abstract class StringNodes {
         @Specialization(guards = "isRubyString(pattern)")
         public Object stringByteIndex(DynamicObject string, DynamicObject pattern, int offset,
                                       @Cached("createBinaryProfile()") ConditionProfile emptyPatternProfile,
-                                      @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile) {
+                @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
+                @Cached("create()") BranchProfile errorProfile) {
             // Taken from Rubinius's String::byte_index.
 
             if (offset < 0) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().argumentError("negative start given", this));
             }
 
@@ -3761,13 +3758,14 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isRubyString(pattern)")
-        public Object stringRindex(DynamicObject string, DynamicObject pattern, int start) {
+        public Object stringRindex(DynamicObject string, DynamicObject pattern, int start,
+                @Cached("create()") BranchProfile errorProfile) {
             // Taken from Rubinius's String::rindex.
 
             int pos = start;
 
             if (pos < 0) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().argumentError("negative start given", this));
             }
 

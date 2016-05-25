@@ -1241,24 +1241,18 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         final Ruby runtime = getRuntime();
-        if (size == 0) return RubyFixnum.zero(runtime);
         final ThreadContext context = runtime.getCurrentContext();
-        return (RubyFixnum) runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
-            @Override
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                if (recur) {
-                    return invokedynamic(context, runtime.getHash(), HASH).convertToInteger();
+        final long[] hval = {Helpers.hashStart(runtime, size())};
+        if (size > 0) {
+            iteratorVisitAll(new Visitor() {
+                @Override
+                public void visit(IRubyObject key, IRubyObject value) {
+                    hval[0] += Helpers.safeHash(context, key).convertToInteger().getLongValue()
+                            ^ Helpers.safeHash(context, value).convertToInteger().getLongValue();
                 }
-                final long[] h = new long[]{1};
-                visitAll(new Visitor() {
-                    @Override
-                    public void visit(IRubyObject key, IRubyObject value) {
-                        h[0] += invokedynamic(context, key, HASH).convertToInteger().getLongValue() ^ invokedynamic(context, value, HASH).convertToInteger().getLongValue();
-                    }
-                });
-                return runtime.newFixnum(h[0]);
-            }
-        }, this);
+            });
+        }
+        return runtime.newFixnum(hval[0]);
     }
 
     @Deprecated

@@ -63,7 +63,6 @@ public class BacktraceData implements Serializable {
 
             // skip unnumbered frames
             int line = element.getLineNumber();
-            if (line == -1) continue;
 
             String className = element.getClassName();
             String methodName = element.getMethodName();

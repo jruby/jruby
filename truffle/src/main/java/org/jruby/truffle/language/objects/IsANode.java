@@ -58,7 +58,7 @@ public abstract class IsANode extends RubyNode {
         return Layouts.MODULE.getFields(module).getUnmodifiedAssumption();
     }
 
-    @Specialization(guards = "isRubyModule(module)")
+    @Specialization(guards = "isRubyModule(module)", contains = "isACached")
     public boolean isAUncached(Object self, DynamicObject module) {
         return isA(getMetaClass(self), module);
     }

@@ -1,0 +1,28 @@
+fails:C-API Util function returns the C int value
+fails:C-API Util function rb_scan_args assigns the required arguments scanned
+fails:C-API Util function rb_scan_args raises an ArgumentError if there are insufficient arguments
+fails:C-API Util function rb_scan_args assigns the required and optional arguments scanned
+fails:C-API Util function rb_scan_args assigns the optional arguments scanned
+fails:C-API Util function rb_scan_args assigns nil for optional arguments that are not present
+fails:C-API Util function rb_scan_args assigns the required and optional arguments and splats the rest
+fails:C-API Util function rb_scan_args assigns the required and optional arguments and and empty Array when there are no arguments to splat
+fails:C-API Util function rb_scan_args assigns required, optional arguments scanned and the passed block
+fails:C-API Util function rb_scan_args assigns required, optional, splatted arguments scanned and the passed block
+fails:C-API Util function rb_scan_args assigns required arguments, nil for missing optional arguments and the passed block
+fails:C-API Util function rb_scan_args assigns required, splatted arguments and the passed block
+fails:C-API Util function rb_scan_args assigns post-splat arguments
+fails:C-API Util function rb_scan_args assigns required, optional, splat and post-splat arguments
+fails:C-API Util function rb_scan_args assigns required, splat, post-splat arguments
+fails:C-API Util function rb_scan_args assigns optional, splat, post-splat arguments
+fails:C-API Util function rb_scan_args assigns required, optional, splat, post-splat and block arguments
+fails:C-API Util function rb_scan_args assigns Hash arguments
+fails:C-API Util function rb_scan_args assigns required and Hash arguments
+fails:C-API Util function rb_scan_args assigns required, optional, splat, post-splat, Hash and block arguments
+fails:C-API Util function rb_scan_args rejects non-keyword arguments
+fails:C-API Util function rb_scan_args rejects required and non-keyword arguments
+fails:C-API Util function rb_scan_args considers the hash as a post argument when there is a splat
+fails:C-API Util function rb_long2int raises a RangeError if the value is outside the range of a C int
+fails:C-API Util function rb_iter_break breaks a loop
+fails:C-API Util function rb_iter_break breaks the inner loop
+fails:C-API Util function rb_sourcefile returns the current ruby file
+fails:C-API Util function rb_sourceline returns the current ruby file

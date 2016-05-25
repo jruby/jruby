@@ -66,7 +66,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
-import org.jruby.truffle.core.rubinius.RubiniusSingleBlockArgNode;
+import org.jruby.truffle.language.arguments.SingleBlockArgNode;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -148,6 +148,7 @@ import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.DefineClassNode;
 import org.jruby.truffle.language.objects.DefineModuleNode;
+import org.jruby.truffle.language.objects.DefineModuleNodeGen;
 import org.jruby.truffle.language.objects.LexicalScopeNode;
 import org.jruby.truffle.language.objects.ReadClassVariableNode;
 import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
@@ -503,9 +504,10 @@ public class BodyTranslator extends Translator {
                     new ObjectLiteralNode(context, null, frozenString)));
         }
 
-        // Rubinius.<method>
         if (receiver instanceof org.jruby.ast.ConstNode
-                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Rubinius")) {
+                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Truffle")) {
+            // Truffle.<method>
+
             if (methodName.equals("primitive")) {
                 final RubyNode ret = translateRubiniusPrimitive(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
@@ -516,10 +518,10 @@ public class BodyTranslator extends Translator {
                 final RubyNode ret = translateRubiniusPrivately(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("single_block_arg")) {
-                final RubyNode ret = translateRubiniusSingleBlockArg(sourceSection, node);
+                final RubyNode ret = translateSingleBlockArg(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("check_frozen")) {
-                final RubyNode ret = translateRubiniusCheckFrozen(sourceSection);
+                final RubyNode ret = translateCheckFrozen(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (receiver instanceof org.jruby.ast.Colon2ConstNode // Truffle.<method>
@@ -559,7 +561,7 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         *   Rubinius.primitive :foo
+         *   Truffle.primitive :foo
          *
          * into
          *
@@ -575,7 +577,7 @@ public class BodyTranslator extends Translator {
          */
 
         if (node.getArgsNode().childNodes().size() != 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
-            throw new UnsupportedOperationException("Rubinius.primitive must have a single literal symbol argument");
+            throw new UnsupportedOperationException("Truffle.primitive must have a single literal symbol argument");
         }
 
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
@@ -589,7 +591,7 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         *   Rubinius.invoke_primitive :foo, arg1, arg2, argN
+         *   Truffle.invoke_primitive :foo, arg1, arg2, argN
          *
          * into
          *
@@ -601,7 +603,7 @@ public class BodyTranslator extends Translator {
          */
 
         if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
-            throw new UnsupportedOperationException("Rubinius.invoke_primitive must have at least an initial literal symbol argument");
+            throw new UnsupportedOperationException("Truffle.invoke_primitive must have at least an initial literal symbol argument");
         }
 
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
@@ -623,7 +625,7 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         *   Rubinius.privately { foo }
+         *   Truffle.privately { foo }
          *
          * into just
          *
@@ -633,11 +635,11 @@ public class BodyTranslator extends Translator {
          */
 
         if (!(node.getIterNode() instanceof org.jruby.ast.IterNode)) {
-            throw new UnsupportedOperationException("Rubinius.privately needs a literal block");
+            throw new UnsupportedOperationException("Truffle.privately needs a literal block");
         }
 
         if (node.getArgsNode() != null && node.getArgsNode().childNodes().size() > 0) {
-            throw new UnsupportedOperationException("Rubinius.privately should not have any arguments");
+            throw new UnsupportedOperationException("Truffle.privately should not have any arguments");
         }
 
         /*
@@ -665,11 +667,11 @@ public class BodyTranslator extends Translator {
         }
     }
 
-    public RubyNode translateRubiniusSingleBlockArg(SourceSection sourceSection, org.jruby.ast.CallNode node) {
-        return new RubiniusSingleBlockArgNode(context, sourceSection);
+    public RubyNode translateSingleBlockArg(SourceSection sourceSection, org.jruby.ast.CallNode node) {
+        return new SingleBlockArgNode(context, sourceSection);
     }
 
-    private RubyNode translateRubiniusCheckFrozen(SourceSection sourceSection) {
+    private RubyNode translateCheckFrozen(SourceSection sourceSection) {
         return new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
     }
 
@@ -1150,7 +1152,7 @@ public class BodyTranslator extends Translator {
 
         final String name = ConstantReplacer.replacementName(sourceSection, node.getName());
 
-        if (name.equals("Rubinius") && getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius")) {
+        if (name.equals("Rubinius") && getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core")) {
             final RubyNode ret = new org.jruby.ast.Colon3Node(node.getPosition(), name).accept(this);
             return addNewlineIfNeeded(node, ret);
         }
@@ -1278,19 +1280,19 @@ public class BodyTranslator extends Translator {
         // method, we simply ignore the method definition.  Here we explicitly rename the method so it's always defined.
 
         final String path = getSourcePath(sourceSection);
-        final String coreRubiniusPath = context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/";
+        final String coreRubiniusPath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         if (path.startsWith(coreRubiniusPath)) {
             boolean rename = false;
 
-            if (path.equals(coreRubiniusPath + "common/array.rb")) {
+            if (path.equals(coreRubiniusPath + "array.rb")) {
                 rename = methodName.equals("fill") || methodName.equals("zip");
-            } else if (path.equals(coreRubiniusPath + "common/float.rb")) {
+            } else if (path.equals(coreRubiniusPath + "float.rb")) {
                 rename = methodName.equals("round");
-            } else if (path.equals(coreRubiniusPath + "common/range.rb")) {
+            } else if (path.equals(coreRubiniusPath + "range.rb")) {
                 rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
-            } else if (path.equals(coreRubiniusPath + "common/integer.rb")) {
+            } else if (path.equals(coreRubiniusPath + "integer.rb")) {
                 rename = methodName.equals("downto") || methodName.equals("upto");
-            } else if (path.equals(coreRubiniusPath + "common/string.rb")) {
+            } else if (path.equals(coreRubiniusPath + "string.rb")) {
                 rename = methodName.equals("<<");
             }
 
@@ -1705,7 +1707,7 @@ public class BodyTranslator extends Translator {
             RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 
             if (name.equals("$_")) {
-                if (getSourcePath(sourceSection).equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/regexp.rb")) {
+                if (getSourcePath(sourceSection).equals(context.getCoreLibrary().getCoreLoadPath() + "/core/regexp.rb")) {
                     readNode = new RubiniusLastStringReadNode(context, sourceSection);
                 } else {
                     readNode = GetFromThreadLocalNodeGen.create(context, sourceSection, readNode);
@@ -1810,7 +1812,7 @@ public class BodyTranslator extends Translator {
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "rubinius/common/hash.rb")) {
+        if (path.equals(corePath + "hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.SetDefaultValueNodeFactory.create(self, rhs);
                 setSourceSection(ret, sourceSection);
@@ -1820,13 +1822,13 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/bootstrap/string.rb") || path.equals(corePath + "rubinius/common/string.rb")) {
+        } else if (path.equals(corePath + "string.rb")) {
             if (name.equals("@hash")) {
                 ret = StringNodesFactory.ModifyBangNodeFactory.create(new RubyNode[]{});
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/range.rb")) {
+        } else if (path.equals(corePath + "range.rb")) {
             if (name.equals("@begin")) {
                 ret = RangeNodesFactory.InternalSetBeginNodeGen.create(self, rhs);
                 setSourceSection(ret, sourceSection);
@@ -1840,7 +1842,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/io.rb")) {
+        } else if (path.equals(corePath + "io.rb")) {
             // TODO (pitr 08-Aug-2015): values of predefined OM properties should be casted to defined types automatically
             if (name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
                 // Cast int-fitting longs back to int
@@ -1869,7 +1871,7 @@ public class BodyTranslator extends Translator {
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "rubinius/common/array.rb") || path.equals(corePath + "rubinius/api/shims/array.rb")) {
+        if (path.equals(corePath + "array.rb")) {
             if (name.equals("@total")) {
                 ret = new RubyCallNode(context, sourceSection, "size", self, null, false);
                 return addNewlineIfNeeded(node, ret);
@@ -1880,7 +1882,7 @@ public class BodyTranslator extends Translator {
                 ret = new IntegerFixnumLiteralNode(context, sourceSection, 0);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/regexp.rb")) {
+        } else if (path.equals(corePath + "regexp.rb")) {
             if (name.equals("@source")) {
                 ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(self);
                 setSourceSection(ret, sourceSection);
@@ -1898,7 +1900,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/time.rb")) {
+        } else if (path.equals(corePath + "time.rb")) {
             if (name.equals("@is_gmt")) {
                 ret = TimeNodesFactory.InternalGMTNodeFactory.create(self);
                 setSourceSection(ret, sourceSection);
@@ -1908,7 +1910,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/hash.rb")) {
+        } else if (path.equals(corePath + "hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.DefaultValueNodeFactory.create(self);
                 setSourceSection(ret, sourceSection);
@@ -1922,7 +1924,7 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "rubinius/common/range.rb") || path.equals(corePath + "rubinius/api/shims/range.rb")) {
+        } else if (path.equals(corePath + "range.rb")) {
             if (name.equals("@begin")) {
                 ret = RangeNodesFactory.BeginNodeFactory.create(new RubyNode[]{ self });
                 setSourceSection(ret, sourceSection);
@@ -2143,7 +2145,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode lexicalParent = translateCPath(sourceSection, node.getCPath());
 
-        final DefineModuleNode defineModuleNode = new DefineModuleNode(context, sourceSection, name, lexicalParent);
+        final DefineModuleNode defineModuleNode = DefineModuleNodeGen.create(context, sourceSection, name, lexicalParent);
 
         final RubyNode ret = openModule(sourceSection, defineModuleNode, name, node.getBodyNode(), false);
         return addNewlineIfNeeded(node, ret);
@@ -2707,7 +2709,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateRationalComplex(SourceSection sourceSection, String name, RubyNode a, RubyNode b) {
-        // Translate as Rubinius.privately { Rational.convert(a, b) }
+        // Translate as Truffle.privately { Rational.convert(a, b) }
 
         final RubyNode moduleNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         return new RubyCallNode(
@@ -2800,6 +2802,8 @@ public class BodyTranslator extends Translator {
                 && rescueBody != null
                 && rescueBody.getExceptionNodes() == null
                 && rescueBody.getBodyNode() instanceof SideEffectFree
+                // allow `expression rescue $!` pattern
+                && (!(rescueBody.getBodyNode() instanceof org.jruby.ast.GlobalVarNode) || !((org.jruby.ast.GlobalVarNode) rescueBody.getBodyNode()).getName().equals("$!"))
                 && rescueBody.getOptRescueNode() == null) {
             tryPart = new DisablingBacktracesNode(context, sourceSection, tryPart);
 
@@ -2944,7 +2948,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode ret;
 
-        if (node.isFrozen()) {
+        if (node.isFrozen() && !getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")) {
             final DynamicObject frozenString = context.getFrozenStrings().getFrozenString(rope);
 
             ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().METHOD,

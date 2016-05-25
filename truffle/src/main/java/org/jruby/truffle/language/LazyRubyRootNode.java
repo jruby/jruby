@@ -66,7 +66,7 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
         }
 
         if (callNode == null || context != cachedContext) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
 
             final TranslatorDriver translator = new TranslatorDriver(context);
 

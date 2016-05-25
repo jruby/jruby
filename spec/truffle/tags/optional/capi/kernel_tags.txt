@@ -1,0 +1,62 @@
+fails:C-API Kernel function rb_block_given_p returns false if no block is passed
+fails:C-API Kernel function rb_block_given_p returns true if a block is passed
+fails:C-API Kernel function rb_need_block raises a LocalJumpError if no block is given
+fails:C-API Kernel function rb_need_block does not raise a LocalJumpError if a block is given
+fails:C-API Kernel function rb_block_call calls the block with a single argument
+fails:C-API Kernel function rb_block_call calls the block with multiple arguments in argc / argv
+fails:C-API Kernel function rb_block_call calls the method with no function callback and no block
+fails:C-API Kernel function rb_block_call calls the method with no function callback and a block
+fails:C-API Kernel function rb_raise raises an exception
+fails:C-API Kernel function rb_raise terminates the function at the point it was called
+fails:C-API Kernel function rb_throw sets the return value of the catch block to the specified value
+fails:C-API Kernel function rb_throw terminates the function at the point it was called
+fails:C-API Kernel function rb_throw raises an ArgumentError if there is no catch block for the symbol
+fails:C-API Kernel function rb_throw_obj sets the return value of the catch block to the specified value
+fails:C-API Kernel function rb_throw_obj terminates the function at the point it was called
+fails:C-API Kernel function rb_throw_obj raises an ArgumentError if there is no catch block for the symbol
+fails:C-API Kernel function rb_warn prints a message to $stderr if $VERBOSE evaluates to true
+fails:C-API Kernel function rb_warn prints a message to $stderr if $VERBOSE evaluates to false
+fails:C-API Kernel function rb_sys_fail raises an exception from the value of errno
+fails:C-API Kernel function rb_sys_fail can take a NULL message
+fails:C-API Kernel function rb_syserr_fail raises an exception from the given error
+fails:C-API Kernel function rb_syserr_fail can take a NULL message
+fails:C-API Kernel function rb_yield yields passed argument
+fails:C-API Kernel function rb_yield returns the result from block evaluation
+fails:C-API Kernel function rb_yield raises LocalJumpError when no block is given
+fails:C-API Kernel function rb_yield_values yields passed arguments
+fails:C-API Kernel function rb_yield_values returns the result from block evaluation
+fails:C-API Kernel function rb_yield_values raises LocalJumpError when no block is given
+fails:C-API Kernel function rb_yield_splat yields with passed array's contents
+fails:C-API Kernel function rb_yield_splat returns the result from block evaluation
+fails:C-API Kernel function rb_yield_splat raises LocalJumpError when no block is given
+fails:C-API Kernel function rb_rescue executes passed function
+fails:C-API Kernel function rb_rescue executes passed 'raise function' if a StandardError exception is raised
+fails:C-API Kernel function rb_rescue passes the user supplied argument to the 'raise function' if a StandardError exception is raised
+fails:C-API Kernel function rb_rescue passes the raised exception to the 'raise function' if a StandardError exception is raised
+fails:C-API Kernel function rb_rescue raises an exception if passed function raises an exception other than StandardError
+fails:C-API Kernel function rb_rescue raises an exception if any exception is raised inside 'raise function'
+fails:C-API Kernel function rb_rescue makes $! available only during 'raise function' execution
+fails:C-API Kernel function rb_rescue returns the break value if the passed function yields to a block with a break
+fails:C-API Kernel function rb_rescue2 only rescues if one of the passed exceptions is raised
+fails:C-API Kernel function rb_catch executes passed function
+fails:C-API Kernel function rb_catch terminates the function at the point it was called
+fails:C-API Kernel function rb_catch raises an ArgumentError if the throw symbol isn't caught
+fails:C-API Kernel function rb_catch_obj executes passed function
+fails:C-API Kernel function rb_catch_obj terminates the function at the point it was called
+fails:C-API Kernel function rb_catch_obj raises an ArgumentError if the throw symbol isn't caught
+fails:C-API Kernel function rb_ensure executes passed function and returns its value
+fails:C-API Kernel function rb_ensure executes passed 'ensure function' when no exception is raised
+fails:C-API Kernel function rb_ensure executes passed 'ensure function' when an exception is raised
+fails:C-API Kernel function rb_ensure raises the same exception raised inside passed function
+fails:C-API Kernel function rb_eval_string evaluates a string of ruby code
+fails:C-API Kernel function rb_block_proc converts the implicit block into a proc
+fails:C-API Kernel function rb_exec_recursive detects recursive invocations of a method and indicates as such
+fails:C-API Kernel function rb_set_end_proc runs a C function on shutdown
+fails:C-API Kernel function rb_f_sprintf returns a string according to format and arguments
+fails:C-API Kernel function rb_make_backtrace returns a caller backtrace
+fails:C-API Kernel function rb_obj_method returns the method object for a symbol
+fails:C-API Kernel function rb_obj_method returns the method object for a string
+fails:C-API Kernel function rb_funcall3 calls a public method
+fails:C-API Kernel function rb_funcall3 does not call a private method
+fails:C-API Kernel function rb_funcall_with_block calls a method with block
+fails:C-API Kernel function rb_funcall_with_block does not call a private method

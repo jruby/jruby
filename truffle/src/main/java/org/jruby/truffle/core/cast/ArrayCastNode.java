@@ -9,11 +9,12 @@
  */
 package org.jruby.truffle.core.cast;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -96,7 +97,8 @@ public abstract class ArrayCastNode extends RubyNode {
     }
 
     @Specialization(guards = {"!isNil(object)", "!isRubyBignum(object)", "!isRubyArray(object)"})
-    public Object cast(VirtualFrame frame, DynamicObject object) {
+    public Object cast(VirtualFrame frame, DynamicObject object,
+            @Cached("create()") BranchProfile errorProfile) {
         final Object result = toArrayNode.call(frame, object, "to_ary", null);
 
         if (result == nil()) {
@@ -108,7 +110,7 @@ public abstract class ArrayCastNode extends RubyNode {
         }
 
         if (!RubyGuards.isRubyArray(result)) {
-            CompilerDirectives.transferToInterpreter();
+            errorProfile.enter();
             throw new RaiseException(coreExceptions().typeErrorCantConvertTo(object, "Array", "to_ary", result, this));
         }
 

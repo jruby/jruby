@@ -11,11 +11,13 @@ package org.jruby.truffle.core.queue;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
@@ -31,7 +33,6 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -105,12 +106,13 @@ public abstract class QueueNodes {
         }
 
         @Specialization(guards = "nonBlocking")
-        public Object popNonBlock(DynamicObject self, boolean nonBlocking) {
+        public Object popNonBlock(DynamicObject self, boolean nonBlocking,
+                @Cached("create()") BranchProfile errorProfile) {
             final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
             final Object value = doPoll(queue);
             if (value == null) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().threadError("queue empty", this));
             }
 

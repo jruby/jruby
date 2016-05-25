@@ -1,0 +1,32 @@
+fails:CApiTimeSpecs rb_time_new creates a Time from the sec and usec
+fails:CApiTimeSpecs TIMET2NUM returns an Integer
+fails:CApiTimeSpecs rb_time_nano_new creates a Time from the sec and usec
+fails:CApiTimeSpecs rb_time_num_new creates a Time in the local zone with only a timestamp
+fails:CApiTimeSpecs rb_time_num_new creates a Time with the given offset
+fails:CApiTimeSpecs rb_time_num_new creates a Time with a Float timestamp
+fails:CApiTimeSpecs rb_time_num_new creates a Time with a Rational timestamp
+fails:CApiTimeSpecs rb_time_interval creates a timeval interval for a Fixnum
+fails:CApiTimeSpecs rb_time_interval creates a timeval interval for a Float
+fails:CApiTimeSpecs rb_time_interval creates a timeval interval for a Rational
+fails:CApiTimeSpecs rb_time_interval throws an argument error for a negative value
+fails:CApiTimeSpecs rb_time_interval throws an argument error when given a Time instance
+fails:CApiTimeSpecs rb_time_timeval creates a timeval for a Fixnum
+fails:CApiTimeSpecs rb_time_timeval creates a timeval for a Float
+fails:CApiTimeSpecs rb_time_timeval creates a timeval for a Rational
+fails:CApiTimeSpecs rb_time_timeval creates a timeval for a negative Fixnum
+fails:CApiTimeSpecs rb_time_timeval creates a timeval for a negative Float
+fails:CApiTimeSpecs rb_time_timeval creates a timeval for a negative Rational
+fails:CApiTimeSpecs rb_time_timeval creates a timeval from a Time object
+fails:CApiTimeSpecs rb_time_timespec creates a timespec for a Fixnum
+fails:CApiTimeSpecs rb_time_timespec creates a timespec for a Float
+fails:CApiTimeSpecs rb_time_timespec creates a timespec for a Rational
+fails:CApiTimeSpecs rb_time_timespec creates a timespec for a negative Fixnum
+fails:CApiTimeSpecs rb_time_timespec creates a timespec for a negative Float
+fails:CApiTimeSpecs rb_time_timespec creates a timespec for a negative Rational
+fails:CApiTimeSpecs rb_time_timespec creates a timespec from a Time object
+fails:CApiTimeSpecs rb_time_timespec_new returns a time object with the given timespec and UTC offset
+fails:CApiTimeSpecs rb_time_timespec_new returns time object in UTC if offset given equals INT_MAX - 1
+fails:CApiTimeSpecs rb_time_timespec_new returns time object in localtime if offset given equals INT_MAX
+fails:CApiTimeSpecs rb_time_timespec_new raises an ArgumentError if offset passed is not within range of -86400 and 86400 (exclusive)
+fails:CApiTimeSpecs rb_time_timespec_new when offset given is within range of -86400 and 86400 (exclusive) sets time's is_gmt to false
+fails:CApiTimeSpecs rb_time_timespec_new when offset given is within range of -86400 and 86400 (exclusive) sets time's offset to the offset given

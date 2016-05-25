@@ -115,6 +115,7 @@ namespace :test do
     t.ruby_opts << '-Xaot.loadClasses=true' # disabled by default now
     t.ruby_opts << '-I.'
     t.ruby_opts << '-J-ea'
+    t.ruby_opts << '--headless'
     classpath = %w[test test/target/test-classes core/target/test-classes].join(File::PATH_SEPARATOR)
     t.ruby_opts << "-J-cp #{classpath}"
   end

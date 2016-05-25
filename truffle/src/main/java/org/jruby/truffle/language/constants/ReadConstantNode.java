@@ -23,12 +23,33 @@ public class ReadConstantNode extends RubyNode implements RestartableReadConstan
     @Child LookupConstantNode lookupConstantNode;
     @Child GetConstantNode getConstantNode;
 
-    public ReadConstantNode(RubyContext context, SourceSection sourceSection, boolean ignoreVisibility, boolean lookInObject, RubyNode moduleNode, RubyNode nameNode) {
+    public ReadConstantNode(
+            RubyContext context,
+            SourceSection sourceSection,
+            boolean ignoreVisibility,
+            boolean lookInObject,
+            RubyNode moduleNode,
+            RubyNode nameNode) {
+
         super(context, sourceSection);
         this.moduleNode = moduleNode;
         this.nameNode = nameNode;
-        this.lookupConstantNode = LookupConstantNodeGen.create(context, sourceSection, ignoreVisibility, lookInObject, null, null);
-        this.getConstantNode = GetConstantNodeGen.create(context, sourceSection, this, null, null, null);
+
+        this.lookupConstantNode = LookupConstantNodeGen.create(
+                context,
+                sourceSection,
+                ignoreVisibility,
+                lookInObject,
+                null,
+                null);
+
+        this.getConstantNode = GetConstantNodeGen.create(
+                context,
+                sourceSection,
+                this,
+                null,
+                null,
+                null);
     }
 
     @Override

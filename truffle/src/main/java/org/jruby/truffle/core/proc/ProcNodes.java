@@ -68,7 +68,7 @@ public abstract class ProcNodes {
             final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getFrame(FrameAccess.READ_ONLY, true);
 
-            final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
+            final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame);
 
             if (parentBlock == null) {
                 throw new RaiseException(coreExceptions().argumentErrorProcWithoutBlock(this));

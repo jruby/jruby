@@ -653,16 +653,17 @@ public abstract class FloatNodes {
 
         @Specialization
         public Object round(double n, NotProvided ndigits,
-                            @Cached("createBinaryProfile()") ConditionProfile positiveProfile) {
+                @Cached("createBinaryProfile()") ConditionProfile positiveProfile,
+                @Cached("create()") BranchProfile errorProfile) {
             // Algorithm copied from JRuby - not shared as we want to branch profile it
 
             if (Double.isInfinite(n)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().floatDomainError("Infinity", this));
             }
 
             if (Double.isNaN(n)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().floatDomainError("NaN", this));
             }
 
@@ -709,14 +710,15 @@ public abstract class FloatNodes {
         public abstract Object executeToI(VirtualFrame frame, double value);
 
         @Specialization
-        Object toI(double value) {
+        Object toI(double value,
+                @Cached("create()") BranchProfile errorProfile) {
             if (Double.isInfinite(value)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().floatDomainError("Infinity", this));
             }
 
             if (Double.isNaN(value)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().floatDomainError("NaN", this));
             }
 
@@ -844,16 +846,17 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public Object round(double n) {
+        public Object round(double n,
+                @Cached("create()") BranchProfile errorProfile) {
             // Algorithm copied from JRuby - not shared as we want to branch profile it
 
             if (Double.isInfinite(n)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().floatDomainError("Infinity", this));
             }
 
             if (Double.isNaN(n)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().floatDomainError("NaN", this));
             }
 

@@ -76,7 +76,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
             if (Options.IR_PRINT.load()) {
                 ByteArrayOutputStream baos = IRDumper.printIR(method, false, true);
 
-                LOG.info("Printing simple IR for " + method.getName(), "\n" + new String(baos.toByteArray()));
+                LOG.info("Printing simple IR for " + method.getName() + ":\n" + new String(baos.toByteArray()));
             }
         }
 

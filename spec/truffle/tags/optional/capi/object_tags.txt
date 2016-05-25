@@ -1,0 +1,102 @@
+fails:CApiObject rb_obj_alloc allocates a new uninitialized object
+fails:CApiObject rb_obj_dup duplicates an object
+fails:CApiObject rb_obj_call_init sends #initialize
+fails:CApiObject rb_is_instance_of returns true if an object is an instance
+fails:CApiObject rb_is_kind_of returns true if an object is an instance or descendent
+fails:CApiObject rb_respond_to returns 1 if respond_to? is true and 0 if respond_to? is false
+fails:CApiObject rb_obj_respond_to returns true if respond_to? is true and false if respond_to? is false
+fails:CApiObject rb_method_boundp returns true when the given method is bound
+fails:CApiObject rb_method_boundp returns false when the given method is not bound
+fails:CApiObject rb_to_id returns a symbol representation of the object
+fails:CApiObject rb_require requires a ruby file
+fails:CApiObject rb_attr_get gets an instance variable
+fails:CApiObject rb_obj_instance_variables returns an array with instance variable names as symbols
+fails:CApiObject rb_check_convert_type returns the passed object and does not call the converting method if the object is the specified type
+fails:CApiObject rb_check_convert_type returns the passed object and does not call the converting method if the object is a subclass of the specified type
+fails:CApiObject rb_check_convert_type returns nil if the converting method returns nil
+fails:CApiObject rb_check_convert_type raises a TypeError if the converting method returns an object that is not the specified type
+fails:CApiObject rb_convert_type returns the passed object and does not call the converting method if the object is the specified type
+fails:CApiObject rb_convert_type returns the passed object and does not call the converting method if the object is a subclass of the specified type
+fails:CApiObject rb_convert_type raises a TypeError if the converting method returns nil
+fails:CApiObject rb_convert_type raises a TypeError if the converting method returns an object that is not the specified type
+fails:CApiObject rb_check_array_type returns the argument if it's an Array
+fails:CApiObject rb_check_array_type returns the argument if it's a kind of Array
+fails:CApiObject rb_check_array_type returns nil when the argument does not respond to #to_ary
+fails:CApiObject rb_check_array_type sends #to_ary to the argument and returns the result if it's nil
+fails:CApiObject rb_check_array_type sends #to_ary to the argument and returns the result if it's an Array
+fails:CApiObject rb_check_array_type sends #to_ary to the argument and returns the result if it's a kind of Array
+fails:CApiObject rb_check_array_type sends #to_ary to the argument and raises TypeError if it's not a kind of Array
+fails:CApiObject rb_check_array_type does not rescue exceptions raised by #to_ary
+fails:CApiObject rb_check_string_type returns the argument if it's a String
+fails:CApiObject rb_check_string_type returns the argument if it's a kind of String
+fails:CApiObject rb_check_string_type returns nil when the argument does not respond to #to_str
+fails:CApiObject rb_check_string_type sends #to_str to the argument and returns the result if it's nil
+fails:CApiObject rb_check_string_type sends #to_str to the argument and returns the result if it's a String
+fails:CApiObject rb_check_string_type sends #to_str to the argument and returns the result if it's a kind of String
+fails:CApiObject rb_check_string_type sends #to_str to the argument and raises TypeError if it's not a kind of String
+fails:CApiObject rb_check_string_type does not rescue exceptions raised by #to_str
+fails:CApiObject rb_check_to_integer returns the object when passed a Fixnum
+fails:CApiObject rb_check_to_integer returns the object when passed a Bignum
+fails:CApiObject rb_check_to_integer calls the converting method and returns a Fixnum value
+fails:CApiObject rb_check_to_integer calls the converting method and returns a Bignum value
+fails:CApiObject rb_check_to_integer returns nil when the converting method returns nil
+fails:CApiObject rb_check_to_integer returns nil when the converting method does not return an Integer
+fails:CApiObject rb_inspect returns a string with the inspect representation
+fails:CApiObject rb_class_of returns the class of an object
+fails:CApiObject rb_obj_classname returns the class name of an object
+fails:CApiObject rb_type returns the type constant for the object
+fails:CApiObject rb_type_p returns whether object is of the given type
+fails:CApiObject BUILTIN_TYPE returns the type constant for the object
+fails:CApiObject RTEST returns C false if passed Qfalse
+fails:CApiObject RTEST returns C false if passed Qnil
+fails:CApiObject RTEST returns C true if passed Qtrue
+fails:CApiObject RTEST returns C true if passed a Symbol
+fails:CApiObject RTEST returns C true if passed an Object
+fails:CApiObject rb_special_const_p returns true if passed Qfalse
+fails:CApiObject rb_special_const_p returns true if passed Qtrue
+fails:CApiObject rb_special_const_p returns true if passed Qnil
+fails:CApiObject rb_special_const_p returns true if passed a Symbol
+fails:CApiObject rb_special_const_p returns true if passed a Fixnum
+fails:CApiObject rb_special_const_p returns false if passed an Object
+fails:CApiObject rb_extend_object adds the module's instance methods to the object
+fails:CApiObject OBJ_TAINT taints the object
+fails:CApiObject OBJ_TAINTED returns C true if the object is tainted
+fails:CApiObject OBJ_TAINTED returns C false if the object is not tainted
+fails:CApiObject OBJ_INFECT does not taint the first argument if the second argument is not tainted
+fails:CApiObject OBJ_INFECT taints the first argument if the second argument is tainted
+fails:CApiObject OBJ_INFECT does not untrust the first argument if the second argument is trusted
+fails:CApiObject OBJ_INFECT untrusts the first argument if the second argument is untrusted
+fails:CApiObject OBJ_INFECT propagates both taint and distrust
+fails:CApiObject rb_obj_freeze freezes the object passed to it
+fails:CApiObject rb_obj_instance_eval evaluates the block in the object context, that includes private methods
+fails:CApiObject rb_obj_frozen_p returns true if object passed to it is frozen
+fails:CApiObject rb_obj_frozen_p returns false if object passed to it is not frozen
+fails:CApiObject rb_obj_taint marks the object passed as tainted
+fails:CApiObject rb_obj_taint raises a RuntimeError if the object passed is frozen
+fails:CApiObject rb_check_frozen raises a RuntimeError if the obj is frozen
+fails:CApiObject rb_check_frozen does nothing when object isn't frozen
+fails:CApiObject rb_any_to_s converts obj to string
+fails:CApiObject rb_to_int returns self when called on an Integer
+fails:CApiObject rb_to_int returns self when called on a Bignum
+fails:CApiObject rb_to_int calls #to_int to convert and object to an integer
+fails:CApiObject rb_to_int converts a Float to an Integer by truncation
+fails:CApiObject rb_to_int raises a TypeError if #to_int does not return an Integer
+fails:CApiObject rb_to_int raises a TypeError if called with nil
+fails:CApiObject rb_to_int raises a TypeError if called with true
+fails:CApiObject rb_to_int raises a TypeError if called with false
+fails:CApiObject rb_to_int raises a TypeError if called with a String
+fails:CApiObject rb_equal returns true if the arguments are the same exact object
+fails:CApiObject rb_equal calls == to check equality and coerces to true/false
+fails:CApiObject rb_class_inherited_p returns true if mod equals arg
+fails:CApiObject rb_class_inherited_p returns true if mod is a subclass of arg
+fails:CApiObject rb_class_inherited_p returns nil if mod is not a subclass of arg
+fails:CApiObject rb_class_inherited_p raises a TypeError if arg is no class or module
+fails:CApiObject instance variable access rb_iv_get returns the instance variable on an object
+fails:CApiObject instance variable access rb_iv_get returns nil if the instance variable has not been initialized
+fails:CApiObject instance variable access rb_iv_set sets and returns the instance variable on an object
+fails:CApiObject instance variable access rb_iv_set sets and returns the instance variable with a bare name
+fails:CApiObject instance variable access rb_ivar_get returns the instance variable on an object
+fails:CApiObject instance variable access rb_ivar_get returns nil if the instance variable has not been initialized
+fails:CApiObject instance variable access rb_ivar_set sets and returns the instance variable on an object
+fails:CApiObject instance variable access rb_ivar_defined returns true if the instance variable is defined
+fails:CApiObject instance variable access rb_ivar_defined returns false if the instance variable is not defined

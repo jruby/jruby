@@ -232,7 +232,7 @@ public class MethodTranslator extends BodyTranslator {
         final RubyNode prelude;
 
         if (usesRubiniusPrimitive) {
-            // Use Rubinius.primitive seems to turn off arity checking. See Time.from_array for example.
+            // Use Truffle.primitive seems to turn off arity checking. See Time.from_array for example.
             prelude = loadArguments;
         } else {
             final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection, arity);

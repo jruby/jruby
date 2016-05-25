@@ -163,8 +163,6 @@ public class RubyCallNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
         if (receiver.isDefined(frame) == nil()) {
             return nil();
         }
@@ -175,17 +173,8 @@ public class RubyCallNode extends RubyNode {
             }
         }
 
-        final RubyContext context = getContext();
-
         final Object receiverObject;
         try {
-            /*
-             * TODO(CS): Getting a node via an accessor like this doesn't work with Truffle at the
-             * moment and will cause frame escape errors, so we don't use it in compilation mode.
-             */
-
-            CompilerAsserts.neverPartOfCompilation();
-
             receiverObject = receiver.execute(frame);
         } catch (Exception e) {
             return nil();
@@ -193,7 +182,7 @@ public class RubyCallNode extends RubyNode {
 
         // TODO(CS): this lookup should be cached
 
-        final InternalMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(receiverObject), methodName);
+        final InternalMethod method = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(receiverObject), methodName);
 
         final Object self = RubyArguments.getSelf(frame);
 
@@ -204,7 +193,7 @@ public class RubyCallNode extends RubyNode {
             }
         } else if (method.isUndefined()) {
             return nil();
-        } else if (!ignoreVisibility && !method.isVisibleTo(this, context.getCoreLibrary().getMetaClass(self))) {
+        } else if (!ignoreVisibility && !method.isVisibleTo(coreLibrary().getMetaClass(self))) {
             return nil();
         }
 

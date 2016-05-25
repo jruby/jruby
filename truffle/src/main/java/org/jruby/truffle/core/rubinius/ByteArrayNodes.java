@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
@@ -77,9 +78,10 @@ public abstract class ByteArrayNodes {
     public abstract static class SetByteNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public Object setByte(DynamicObject bytes, int index, int value) {
+        public Object setByte(DynamicObject bytes, int index, int value,
+                @Cached("create()") BranchProfile errorProfile) {
             if (index < 0 || index >= Layouts.BYTE_ARRAY.getBytes(bytes).getRealSize()) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().indexError("index out of bounds", this));
             }
 

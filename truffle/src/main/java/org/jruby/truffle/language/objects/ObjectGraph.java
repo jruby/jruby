@@ -10,6 +10,7 @@
 package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
@@ -22,7 +23,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.arguments.RubyArguments;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
@@ -31,6 +31,7 @@ import java.util.Set;
 
 public abstract class ObjectGraph {
 
+    @TruffleBoundary
     public static Set<DynamicObject> stopAndGetAllObjects(Node currentNode, final RubyContext context) {
         final Set<DynamicObject> visited = new HashSet<>();
 
@@ -73,6 +74,7 @@ public abstract class ObjectGraph {
         return visited;
     }
 
+    @TruffleBoundary
     public static Set<DynamicObject> stopAndGetRootObjects(Node currentNode, final RubyContext context) {
         final Set<DynamicObject> objects = new HashSet<>();
 
@@ -149,18 +151,17 @@ public abstract class ObjectGraph {
     public static Set<DynamicObject> getObjectsInFrame(Frame frame) {
         final Set<DynamicObject> objects = new HashSet<>();
 
-        final Object[] arguments = frame.getArguments();
-        final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(arguments);
+        final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(frame);
         if (lexicalParentFrame != null) {
             objects.addAll(getObjectsInFrame(lexicalParentFrame));
         }
 
-        final Object self = RubyArguments.tryGetSelf(arguments);
+        final Object self = RubyArguments.tryGetSelf(frame);
         if (self instanceof DynamicObject) {
             objects.add((DynamicObject) self);
         }
 
-        final DynamicObject block = RubyArguments.tryGetBlock(arguments);
+        final DynamicObject block = RubyArguments.tryGetBlock(frame);
         if (block != null) {
             objects.add(block);
         }

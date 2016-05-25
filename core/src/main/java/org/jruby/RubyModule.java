@@ -3663,6 +3663,10 @@ public class RubyModule extends RubyObject {
         return getConstantNoConstMissing(name, inherit, true);
     }
 
+    public IRubyObject getConstantNoConstMissingSKipAutoload(String name) {
+        return getConstantSkipAutoload(name, true, true);
+    }
+
     public IRubyObject getConstantNoConstMissing(String name, boolean inherit, boolean includeObject) {
         IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, true);
 

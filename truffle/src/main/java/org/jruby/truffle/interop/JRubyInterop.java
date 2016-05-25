@@ -23,6 +23,8 @@ public class JRubyInterop {
 
     private RubyContext context;
 
+    private String originalInputFile;
+
     public JRubyInterop(RubyContext context) {
         this.context = context;
     }
@@ -83,4 +85,11 @@ public class JRubyInterop {
         context.getJRubyRuntime().setVerbose(context.getJRubyRuntime().getNil());
     }
 
+    public void setOriginalInputFile(String originalInputFile) {
+        this.originalInputFile = originalInputFile;
+    }
+
+    public String getOriginalInputFile() {
+        return originalInputFile;
+    }
 }

@@ -10,10 +10,12 @@
 package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyMath;
 import org.jruby.truffle.Layouts;
@@ -264,6 +266,8 @@ public abstract class MathNodes {
     @CoreMethod(names = "frexp", isModuleFunction = true, required = 1)
     public abstract static class FrExpNode extends CoreMethodArrayArgumentsNode {
 
+        private final BranchProfile errorProfile = BranchProfile.create();
+
         @Child private IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
 
@@ -318,7 +322,7 @@ public abstract class MathNodes {
             if (isANode.executeIsA(a, coreLibrary().getNumericClass())) {
                 return frexp(floatNode.callFloat(frame, a, "to_f", null));
             } else {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
         }

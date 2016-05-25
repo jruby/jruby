@@ -139,6 +139,7 @@ public abstract class BignumNodes {
     @CoreMethod(names = {"/", "__slash__"}, required = 1)
     public abstract static class DivNode extends BignumCoreMethodNode {
 
+        @TruffleBoundary
         @Specialization
         public Object div(DynamicObject a, long b) {
             final BigInteger bBigInt = BigInteger.valueOf(b);
@@ -151,11 +152,13 @@ public abstract class BignumNodes {
             }
         }
 
+        @TruffleBoundary
         @Specialization
         public double div(DynamicObject a, double b) {
             return Layouts.BIGNUM.getValue(a).doubleValue() / b;
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyBignum(b)")
         public Object div(DynamicObject a, DynamicObject b) {
             final BigInteger aBigInt = Layouts.BIGNUM.getValue(a);
@@ -173,6 +176,7 @@ public abstract class BignumNodes {
     @CoreMethod(names = {"%", "modulo"}, required = 1)
     public abstract static class ModNode extends BignumCoreMethodNode {
 
+        @TruffleBoundary
         @Specialization
         public Object mod(DynamicObject a, long b) {
             if (b == 0) {
@@ -185,6 +189,7 @@ public abstract class BignumNodes {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).mod(BigInteger.valueOf(b)));
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyBignum(b)")
         public Object mod(DynamicObject a, DynamicObject b) {
             final BigInteger bigint = Layouts.BIGNUM.getValue(b);
@@ -646,7 +651,6 @@ public abstract class BignumNodes {
         @Specialization
         public DynamicObject toS(DynamicObject value, int base) {
             if (base < 2 || base > 36) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().argumentErrorInvalidRadix(base, this));
             }
 

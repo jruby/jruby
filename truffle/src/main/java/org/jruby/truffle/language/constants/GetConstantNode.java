@@ -36,12 +36,16 @@ public abstract class GetConstantNode extends RubyNode {
     private final RestartableReadConstantNode readConstantNode;
     private @Child CallDispatchHeadNode constMissingNode;
 
-    public GetConstantNode(RubyContext context, SourceSection sourceSection, RestartableReadConstantNode readConstantNode) {
+    public GetConstantNode(
+            RubyContext context,
+            SourceSection sourceSection,
+            RestartableReadConstantNode readConstantNode) {
         super(context, sourceSection);
         this.readConstantNode = readConstantNode;
     }
 
-    public abstract Object executeGetConstant(VirtualFrame frame, Object module, String name, RubyConstant constant);
+    public abstract Object executeGetConstant(
+            VirtualFrame frame, Object module, String name, RubyConstant constant);
 
     @Specialization(guards = { "constant != null", "!constant.isAutoload()" })
     protected Object getConstant(DynamicObject module, String name, RubyConstant constant) {
@@ -58,21 +62,27 @@ public abstract class GetConstantNode extends RubyNode {
 
         // The autoload constant must only be removed if everything succeeds.
         // We remove it first to allow lookup to ignore it and add it back if there was a failure.
-        Layouts.MODULE.getFields(constant.getDeclaringModule()).removeConstant(getContext(), this, name);
+        Layouts.MODULE.getFields(constant.getDeclaringModule()).removeConstant(getContext(),
+                this,
+                name);
         try {
             requireNode.require(frame, path, callNode);
             return readConstantNode.readConstant(frame, module, name);
         } catch (RaiseException e) {
-            Layouts.MODULE.getFields(constant.getDeclaringModule()).setAutoloadConstant(getContext(), this, name, path);
+            Layouts.MODULE.getFields(constant.getDeclaringModule()).
+                    setAutoloadConstant(getContext(), this, name, path);
             throw e;
         }
     }
 
-    @Specialization(guards = {
-            "constant == null",
-            "guardName(name, cachedName, sameNameProfile)"
-    }, limit = "getCacheLimit()")
-    protected Object missingConstantCached(VirtualFrame frame, DynamicObject module, String name, Object constant,
+    @Specialization(
+            guards = { "constant == null", "guardName(name, cachedName, sameNameProfile)" },
+            limit = "getCacheLimit()")
+    protected Object missingConstantCached(
+            VirtualFrame frame,
+            DynamicObject module,
+            String name,
+            Object constant,
             @Cached("name") String cachedName,
             @Cached("isValidConstantName(name)") boolean isValidConstantName,
             @Cached("getSymbol(name)") DynamicObject symbolName,
@@ -81,15 +91,21 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     @Specialization(guards = "constant == null")
-    protected Object missingConstantUncached(VirtualFrame frame, DynamicObject module, String name, Object constant) {
+    protected Object missingConstantUncached(
+            VirtualFrame frame, DynamicObject module, String name, Object constant) {
         final boolean isValidConstantName = isValidConstantName(name);
         return doMissingConstant(frame, module, name, isValidConstantName, getSymbol(name));
     }
 
-    private Object doMissingConstant(VirtualFrame frame, DynamicObject module, String name, boolean isValidConstantName, DynamicObject symbolName) {
+    private Object doMissingConstant(
+            VirtualFrame frame,
+            DynamicObject module,
+            String name,
+            boolean isValidConstantName,
+            DynamicObject symbolName) {
         if (!isValidConstantName) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(coreExceptions().nameError(String.format("wrong constant name %s", name), name, this));
+            throw new RaiseException(coreExceptions().nameError(formatError(name), name, this));
         }
 
         if (constMissingNode == null) {
@@ -98,6 +114,10 @@ public abstract class GetConstantNode extends RubyNode {
         }
 
         return constMissingNode.call(frame, module, "const_missing", null, symbolName);
+    }
+
+    private String formatError(String name) {
+        return String.format("wrong constant name %s", name);
     }
 
     protected RequireNode createRequireNode() {
@@ -117,7 +137,8 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     protected boolean guardName(String name, String cachedName, ConditionProfile sameNameProfile) {
-        // This is likely as for literal constant lookup the name does not change and Symbols always return the same String.
+        // This is likely as for literal constant lookup the name does not change and Symbols
+        // always return the same String.
         if (sameNameProfile.profile(name == cachedName)) {
             return true;
         } else {

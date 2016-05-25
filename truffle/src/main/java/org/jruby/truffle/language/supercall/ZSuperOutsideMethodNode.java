@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.language.supercall;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
@@ -36,11 +35,9 @@ public class ZSuperOutsideMethodNode extends RubyNode {
     @Override
     public final Object execute(VirtualFrame frame) {
         // This is MRI behavior
-        CompilerDirectives.transferToInterpreter();
         if (insideDefineMethod) { // TODO (eregon, 22 July 2015): This check should be more dynamic.
             throw new RaiseException(coreExceptions().runtimeError(
-                    "implicit argument passing of super from method defined by define_method() is not supported." +
-                            " Specify all arguments explicitly.", this));
+                    "implicit argument passing of super from method defined by define_method() is not supported. Specify all arguments explicitly.", this));
         } else {
             throw new RaiseException(coreExceptions().noSuperMethodOutsideMethodError(this));
         }

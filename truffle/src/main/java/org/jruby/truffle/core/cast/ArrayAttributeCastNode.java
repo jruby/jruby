@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.core.cast;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
@@ -50,8 +50,7 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
 
     @Specialization(guards = "!inBounds(value)")
     public int doLongFixnumOutOfBounds(long value) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreExceptions().argumentError(String.format("%s out of int range", indexName), this));
+        throw new RaiseException(coreExceptions().argumentError(formatOutOfRangeErrorMessage(), this));
     }
 
     @Specialization(guards = "inBounds(value)")
@@ -61,14 +60,12 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
 
     @Specialization(guards = "!inBounds(value)")
     public int doDoubleOutOfBounds(double value) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreExceptions().argumentError(String.format("%s out of int range", indexName), this));
+        throw new RaiseException(coreExceptions().argumentError(formatOutOfRangeErrorMessage(), this));
     }
 
     @Specialization(guards = "isRubyBignum(value)")
     public DynamicObject doBignum(DynamicObject value) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreExceptions().argumentError(String.format("%s out of int range", indexName), this));
+        throw new RaiseException(coreExceptions().argumentError(formatOutOfRangeErrorMessage(), this));
     }
 
 
@@ -90,9 +87,12 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
 
     @Fallback
     public int doBasicObject(Object object) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(coreExceptions().
-                typeErrorIsNotA(object.toString(), "Fixnum (fitting in int)", this));
+        throw new RaiseException(coreExceptions().typeErrorIsNotA(object.toString(), "Fixnum (fitting in int)", this));
+    }
+
+    @TruffleBoundary
+    private String formatOutOfRangeErrorMessage() {
+        return String.format("%s out of int range", indexName);
     }
 
     protected static boolean inBounds(long value) {

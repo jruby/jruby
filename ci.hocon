@@ -1,41 +1,72 @@
-java7: {name: oraclejdk, version: "8u66", platformspecific: true}
+jt: [ruby, tool/jt.rb]
 
 common: {
   packages: {
-    git : ">=1.8.3"
-    maven : ">=3.3.9"
-    ruby : ">=2.1.0"
-  }
-  
-  downloads: {
-    JAVA_HOME: ${java7}
+    git:        ">=1.8.3"
+    maven:      ">=3.3.9"
+    mercurial:  ">=3.2.4"
+    ruby:       ">=2.1.0"
+    "java/jdk": "==1.8.0/60"
   }
   
   environment: {
-    CI: "true",
-    PATH: "$JAVA_HOME/bin:$PATH"
+    CI: "true"
   }
   
   setup: [
-    [ruby, "tool/jt.rb", build]
+    ${jt} [build]
   ]
 
   timelimit: "30:00"
 }
 
-gate_caps: {
-  capabilities: [linux, amd64, gate]
+graal-core: {
+  setup: [
+    ${jt} [bootstrap],
+    [rm, -rf, mx.jruby],
+    [mkdir, graal-workspace],
+    [cd, graal-workspace],
+    [mx, sclone, --kind, git, "https://github.com/graalvm/graal-core.git", graal-core],
+    [cd, graal-core],
+    [git, checkout, "3a28fca1b331f9912dabd231052354cffa9dee9c"],
+    [mx, sforceimports],
+    [mx, --vm, server, build],
+    [cd, ../..]
+  ]
+  
+  environment: {
+    GRAAL_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java
+  }
 }
 
-jt: [ruby, "tool/jt.rb"]
+graalvm: {
+  downloads: {
+    GRAALVM_DIR: {
+      name: graalvm-release,
+      version: "0.11",
+      platformspecific: true
+    }
+  }
+  
+  environment: {
+    GRAAL_BIN: "$GRAALVM_DIR/bin/java"
+  }
+}
 
-builds = [
-  {name: "ruby-test-fast"} ${common} ${gate_caps} {run: [${jt} [test, fast]]},
-  {name: "ruby-test-specs-command-line"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":command_line"]]},
-  {name: "ruby-test-specs-language"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":language"]]},
-  {name: "ruby-test-specs-core"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":core"]]},
-  {name: "ruby-test-specs-library"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":library"]]},
-  {name: "ruby-test-specs-truffle"} ${common} ${gate_caps} {run: [${jt} [test, specs, ":truffle"]]},
-  {name: "ruby-test-integration"} ${common} ${gate_caps} {run: [${jt} [test, integration]]},
-  {name: "ruby-tarball"} ${common} ${gate_caps} {run: [${jt} [tarball]]}
+gate-caps: {
+  capabilities: [linux, amd64, gate, post-push]
+}
+
+builds: [
+  {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
+  {name: ruby-test-specs-command-line} ${common} ${gate-caps} {run: [${jt} [test, specs, ":command_line"]]},
+  {name: ruby-test-specs-language} ${common} ${gate-caps} {run: [${jt} [test, specs, ":language"]]},
+  {name: ruby-test-specs-core} ${common} ${gate-caps} {run: [${jt} [test, specs, ":core"]]},
+  {name: ruby-test-specs-library} ${common} ${gate-caps} {run: [${jt} [test, specs, ":library"]]},
+  {name: ruby-test-specs-truffle} ${common} ${gate-caps} {run: [${jt} [test, specs, ":truffle"]]},
+  {name: ruby-test-integration} ${common} ${gate-caps} {run: [${jt} [test, integration]]},
+  {name: ruby-test-tck} ${common} ${gate-caps} {run: [${jt} [test, tck]]},
+  {name: ruby-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
+  {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},
+  {name: ruby-test-compiler-graalvm} ${common} ${graalvm} ${gate-caps} {run: [${jt} [test, compiler]]}
 ]

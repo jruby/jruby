@@ -10,6 +10,7 @@
 package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.UnsupportedSpecializationException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
@@ -31,6 +32,7 @@ public class ExceptionTranslatingNode extends RubyNode {
 
     private final BranchProfile controlProfile = BranchProfile.create();
     private final BranchProfile arithmeticProfile = BranchProfile.create();
+    private final BranchProfile unsupportedProfile = BranchProfile.create();
 
     public ExceptionTranslatingNode(RubyContext context, SourceSection sourceSection, RubyNode child,
                                     UnsupportedOperationBehavior unsupportedOperationBehavior) {
@@ -50,7 +52,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             arithmeticProfile.enter();
             throw new RaiseException(translate(exception));
         } catch (UnsupportedSpecializationException exception) {
-            CompilerDirectives.transferToInterpreter();
+            unsupportedProfile.enter();
             throw new RaiseException(translate(exception));
         } catch (TruffleFatalException exception) {
             CompilerDirectives.transferToInterpreter();
@@ -67,6 +69,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
     }
 
+    @TruffleBoundary
     private DynamicObject translate(ArithmeticException exception) {
         if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();
@@ -83,6 +86,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         return coreExceptions().systemStackErrorStackLevelTooDeep(this, error);
     }
 
+    @TruffleBoundary
     private DynamicObject translate(UnsupportedSpecializationException exception) {
         if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();

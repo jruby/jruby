@@ -11,8 +11,10 @@ package org.jruby.truffle.core.method;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -73,11 +75,12 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public DynamicObject bind(DynamicObject unboundMethod, Object object) {
+        public DynamicObject bind(DynamicObject unboundMethod, Object object,
+                @Cached("create()") BranchProfile errorProfile) {
             final DynamicObject objectMetaClass = metaClass(object);
 
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(Layouts.UNBOUND_METHOD.getMethod(unboundMethod), objectMetaClass)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 final DynamicObject declaringModule = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
                 if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
                     throw new RaiseException(coreExceptions().typeError(

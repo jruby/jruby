@@ -9,11 +9,12 @@
  */
 package org.jruby.truffle.core.cast;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -91,7 +92,8 @@ public abstract class SplatCastNode extends RubyNode {
     }
 
     @Specialization(guards = { "!isNil(object)", "!isRubyArray(object)" })
-    public DynamicObject splat(VirtualFrame frame, Object object) {
+    public DynamicObject splat(VirtualFrame frame, Object object,
+            @Cached("create()") BranchProfile errorProfile) {
         // MRI tries to call dynamic respond_to? here.
         Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, conversionMethod, true);
         if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
@@ -100,10 +102,9 @@ public abstract class SplatCastNode extends RubyNode {
             if (RubyGuards.isRubyArray(array)) {
                 return (DynamicObject) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
-                CompilerDirectives.transferToInterpreter();
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] { object }, 1);
             } else {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorCantConvertTo(object, "Array", Layouts.SYMBOL.getString(conversionMethod), array, this));
             }
         }

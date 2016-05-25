@@ -97,17 +97,18 @@ public abstract class SymbolNodes {
         @Specialization(guards = "cachedSymbol == symbol", limit = "getCacheLimit()")
         public DynamicObject toProcCached(VirtualFrame frame, DynamicObject symbol,
                                      @Cached("symbol") DynamicObject cachedSymbol,
-                                     @Cached("createProc(frame, symbol)") DynamicObject cachedProc) {
+                                     @Cached("createProc(getMethod(frame), symbol)") DynamicObject cachedProc) {
             return cachedProc;
         }
 
         @Specialization
         public DynamicObject toProcUncached(VirtualFrame frame, DynamicObject symbol) {
-            return createProc(frame, symbol);
+            final InternalMethod method = getMethod(frame);
+            return createProc(method, symbol);
         }
 
-        protected DynamicObject createProc(VirtualFrame frame, DynamicObject symbol) {
-            CompilerDirectives.transferToInterpreter();
+        @TruffleBoundary
+        protected DynamicObject createProc(InternalMethod method, DynamicObject symbol) {
             final SourceSection sourceSection = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getCallNode().getEncapsulatingSourceSection();
 
@@ -116,7 +117,6 @@ public abstract class SymbolNodes {
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = RubyArguments.getMethod(frame);
 
             return ProcOperations.createRubyProc(
                     coreLibrary().getProcFactory(),
@@ -125,6 +125,10 @@ public abstract class SymbolNodes {
                     callTarget, callTarget, null,
                     method, coreLibrary().getNilObject(),
                     null);
+        }
+
+        protected InternalMethod getMethod(VirtualFrame frame) {
+            return RubyArguments.getMethod(frame);
         }
 
         protected int getCacheLimit() {

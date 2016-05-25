@@ -216,11 +216,11 @@ public class RubyBasicSocket extends RubyIO {
 
         switch (argc) {
             case 3:
-                str = args[3];
+                str = args[2];
             case 2:
-                flags = args[2];
+                flags = args[1];
             case 1:
-                length = args[1];
+                length = args[0];
         }
 
         boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();

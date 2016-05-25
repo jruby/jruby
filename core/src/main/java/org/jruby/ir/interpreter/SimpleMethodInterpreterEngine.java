@@ -2,17 +2,13 @@ package org.jruby.ir.interpreter;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.OpClass;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
-import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
@@ -29,7 +25,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 
 /**
@@ -211,33 +206,6 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                                 rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
                         break;
                     }
-                    case GET_FIELD: { // NO INTERP
-                        GetFieldInstr gfi = (GetFieldInstr)instr;
-                        IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currScope, currDynScope, temp);
-                        VariableAccessor a = gfi.getAccessor(object);
-                        Object result = a == null ? null : (IRubyObject)a.get(object);
-                        if (result == null) {
-                            if (context.runtime.isVerbose()) {
-                                context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
-                            }
-                            result = context.nil;
-                        }
-                        setResult(temp, currDynScope, gfi.getResult(), result);
-                        break;
-                    }
-                    case PUT_FIELD: {
-                        PutFieldInstr putField = (PutFieldInstr) instr;
-                        IRubyObject object = (IRubyObject) putField.getTarget().retrieve(context, self, currScope, currDynScope, temp);
-
-                        // We store instance variable offsets on the real class, since instance var tables are associated with the
-                        // natural type of an object.
-                        RubyClass clazz = object.getMetaClass().getRealClass();
-
-                        // FIXME: Should add this as a field for instruction
-                        clazz.getVariableAccessorForWrite(putField.getRef()).set(object,
-                                putField.getValue().retrieve(context, self, currScope, currDynScope, temp));
-                        break;
-                    }
 
                     case BUILD_COMPOUND_STRING: case CONST_MISSING:
                     default:
@@ -411,33 +379,6 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                         setResult(temp, currDynScope, rhc.getResult(),
                                 rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
-                        break;
-                    }
-                    case GET_FIELD: { // NO INTERP
-                        GetFieldInstr gfi = (GetFieldInstr)instr;
-                        IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currScope, currDynScope, temp);
-                        VariableAccessor a = gfi.getAccessor(object);
-                        Object result = a == null ? null : (IRubyObject)a.get(object);
-                        if (result == null) {
-                            if (context.runtime.isVerbose()) {
-                                context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
-                            }
-                            result = context.nil;
-                        }
-                        setResult(temp, currDynScope, gfi.getResult(), result);
-                        break;
-                    }
-                    case PUT_FIELD: {
-                        PutFieldInstr putField = (PutFieldInstr) instr;
-                        IRubyObject object = (IRubyObject) putField.getTarget().retrieve(context, self, currScope, currDynScope, temp);
-
-                        // We store instance variable offsets on the real class, since instance var tables are associated with the
-                        // natural type of an object.
-                        RubyClass clazz = object.getMetaClass().getRealClass();
-
-                        // FIXME: Should add this as a field for instruction
-                        clazz.getVariableAccessorForWrite(putField.getRef()).set(object,
-                                putField.getValue().retrieve(context, self, currScope, currDynScope, temp));
                         break;
                     }
 
@@ -614,33 +555,6 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                         setResult(temp, currDynScope, rhc.getResult(),
                                 rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
-                        break;
-                    }
-                    case GET_FIELD: { // NO INTERP
-                        GetFieldInstr gfi = (GetFieldInstr)instr;
-                        IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currScope, currDynScope, temp);
-                        VariableAccessor a = gfi.getAccessor(object);
-                        Object result = a == null ? null : (IRubyObject)a.get(object);
-                        if (result == null) {
-                            if (context.runtime.isVerbose()) {
-                                context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
-                            }
-                            result = context.nil;
-                        }
-                        setResult(temp, currDynScope, gfi.getResult(), result);
-                        break;
-                    }
-                    case PUT_FIELD: {
-                        PutFieldInstr putField = (PutFieldInstr) instr;
-                        IRubyObject object = (IRubyObject) putField.getTarget().retrieve(context, self, currScope, currDynScope, temp);
-
-                        // We store instance variable offsets on the real class, since instance var tables are associated with the
-                        // natural type of an object.
-                        RubyClass clazz = object.getMetaClass().getRealClass();
-
-                        // FIXME: Should add this as a field for instruction
-                        clazz.getVariableAccessorForWrite(putField.getRef()).set(object,
-                                putField.getValue().retrieve(context, self, currScope, currDynScope, temp));
                         break;
                     }
 
@@ -820,33 +734,6 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                                 rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
                         break;
                     }
-                    case GET_FIELD: { // NO INTERP
-                        GetFieldInstr gfi = (GetFieldInstr)instr;
-                        IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currScope, currDynScope, temp);
-                        VariableAccessor a = gfi.getAccessor(object);
-                        Object result = a == null ? null : (IRubyObject)a.get(object);
-                        if (result == null) {
-                            if (context.runtime.isVerbose()) {
-                                context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
-                            }
-                            result = context.nil;
-                        }
-                        setResult(temp, currDynScope, gfi.getResult(), result);
-                        break;
-                    }
-                    case PUT_FIELD: {
-                        PutFieldInstr putField = (PutFieldInstr) instr;
-                        IRubyObject object = (IRubyObject) putField.getTarget().retrieve(context, self, currScope, currDynScope, temp);
-
-                        // We store instance variable offsets on the real class, since instance var tables are associated with the
-                        // natural type of an object.
-                        RubyClass clazz = object.getMetaClass().getRealClass();
-
-                        // FIXME: Should add this as a field for instruction
-                        clazz.getVariableAccessorForWrite(putField.getRef()).set(object,
-                                putField.getValue().retrieve(context, self, currScope, currDynScope, temp));
-                        break;
-                    }
 
                     case BUILD_COMPOUND_STRING: case CONST_MISSING:
                     default:
@@ -1014,33 +901,6 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                         setResult(temp, currDynScope, rhc.getResult(),
                                 rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
-                        break;
-                    }
-                    case GET_FIELD: { // NO INTERP
-                        GetFieldInstr gfi = (GetFieldInstr)instr;
-                        IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currScope, currDynScope, temp);
-                        VariableAccessor a = gfi.getAccessor(object);
-                        Object result = a == null ? null : (IRubyObject)a.get(object);
-                        if (result == null) {
-                            if (context.runtime.isVerbose()) {
-                                context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
-                            }
-                            result = context.nil;
-                        }
-                        setResult(temp, currDynScope, gfi.getResult(), result);
-                        break;
-                    }
-                    case PUT_FIELD: {
-                        PutFieldInstr putField = (PutFieldInstr) instr;
-                        IRubyObject object = (IRubyObject) putField.getTarget().retrieve(context, self, currScope, currDynScope, temp);
-
-                        // We store instance variable offsets on the real class, since instance var tables are associated with the
-                        // natural type of an object.
-                        RubyClass clazz = object.getMetaClass().getRealClass();
-
-                        // FIXME: Should add this as a field for instruction
-                        clazz.getVariableAccessorForWrite(putField.getRef()).set(object,
-                                putField.getValue().retrieve(context, self, currScope, currDynScope, temp));
                         break;
                     }
 

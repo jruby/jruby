@@ -662,14 +662,19 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
+    private static final EnumSet<IRFlags> NEEDS_DYNAMIC_SCOPE_FLAGS =
+            EnumSet.of(
+                    CAN_RECEIVE_BREAKS,
+                    HAS_NONLOCAL_RETURNS,CAN_RECEIVE_NONLOCAL_RETURNS,
+                    BINDING_HAS_ESCAPED,
+                    USES_ZSUPER);
+
     private void computeNeedsDynamicScopeFlag() {
-        // SSS FIXME: checkArity for keyword args looks up a keyword arg in the static scope which
-        // currently requires a dynamic scope to be recovered. If there is another way to do this,
-        // we can get rid of this.
-        if (flags.contains(CAN_RECEIVE_BREAKS) || flags.contains(HAS_NONLOCAL_RETURNS) ||
-                flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS) || flags.contains(BINDING_HAS_ESCAPED) ||
-                flags.contains(USES_ZSUPER) || flags.contains(RECEIVES_KEYWORD_ARGS)) {
-            flags.add(REQUIRES_DYNSCOPE);
+        for (IRFlags f : NEEDS_DYNAMIC_SCOPE_FLAGS) {
+            if (flags.contains(f)) {
+                flags.add(REQUIRES_DYNSCOPE);
+                return;
+            }
         }
     }
 
@@ -943,7 +948,9 @@ public abstract class IRScope implements ParseResult {
                 if (i instanceof ResultInstr) {
                     Variable v = ((ResultInstr) i).getResult();
 
-                    if (v instanceof LocalVariable) definedLocalVars.add((LocalVariable) v);
+                    if (v instanceof LocalVariable && ((LocalVariable)v).getScopeDepth() == 0) {
+                        definedLocalVars.add((LocalVariable) v);
+                    }
                 }
             }
         }

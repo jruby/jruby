@@ -43,7 +43,7 @@ public abstract class ToJavaStringNode extends RubyNode {
         return value.toString();
     }
 
-    @Specialization(guards = { "isRubySymbol(symbol)", "symbol == cachedSymbol" }, limit = "getLimit()")
+    @Specialization(guards = { "symbol == cachedSymbol", "isRubySymbol(cachedSymbol)" }, limit = "getLimit()")
     public String symbolCached(DynamicObject symbol,
             @Cached("symbol") DynamicObject cachedSymbol,
             @Cached("symbolToString(symbol)") String convertedString) {

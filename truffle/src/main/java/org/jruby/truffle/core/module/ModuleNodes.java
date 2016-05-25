@@ -28,6 +28,7 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ValueProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
@@ -95,7 +96,6 @@ import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.IdUtil;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -255,7 +255,7 @@ public abstract class ModuleNodes {
 
         private Object isSubclass(DynamicObject self, DynamicObject other) {
             if (subclassNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 subclassNode = insert(ModuleNodesFactory.IsSubclassOfOrEqualToNodeFactory.create(null));
             }
             return subclassNode.executeIsSubclassOfOrEqualTo(self, other);
@@ -336,9 +336,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "isRubyModule(target)")
-        public DynamicObject appendFeatures(DynamicObject features, DynamicObject target) {
+        public DynamicObject appendFeatures(DynamicObject features, DynamicObject target,
+                @Cached("create()") BranchProfile errorProfile) {
             if (RubyGuards.isRubyClass(features)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeError("append_features must be called only on modules", this));
             }
             Layouts.MODULE.getFields(target).include(getContext(), this, features);
@@ -575,7 +576,7 @@ public abstract class ModuleNodes {
 
         protected DynamicObject toStr(VirtualFrame frame, Object object) {
             if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
             return toStrNode.executeToStr(frame, object);
@@ -682,7 +683,7 @@ public abstract class ModuleNodes {
             return NameToJavaStringNodeGen.create(null, null, name);
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public boolean isClassVariableDefinedString(DynamicObject module, String name) {
             SymbolTable.checkClassVariableName(getContext(), name, this);
@@ -707,7 +708,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         public Object getClassVariable(DynamicObject module, String name) {
             SymbolTable.checkClassVariableName(getContext(), name, this);
 
@@ -736,7 +737,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         public Object setClassVariable(DynamicObject module, String name, Object value) {
             SymbolTable.checkClassVariableName(getContext(), name, this);
 
@@ -943,7 +944,6 @@ public abstract class ModuleNodes {
             return NameToJavaStringNodeGen.create(null, null, name);
         }
 
-        @TruffleBoundary
         @Specialization
         public Object constMissing(DynamicObject module, String name) {
             throw new RaiseException(coreExceptions().nameErrorUninitializedConstant(module, name, this));
@@ -1078,7 +1078,7 @@ public abstract class ModuleNodes {
 
             @Override
             public Object execute(VirtualFrame frame) {
-                RubyArguments.setDeclarationFrame(frame.getArguments(), declarationFrame);
+                RubyArguments.setDeclarationFrame(frame, declarationFrame);
                 return procBody.execute(frame);
             }
 
@@ -1110,9 +1110,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public DynamicObject extendObject(DynamicObject module, DynamicObject object) {
+        public DynamicObject extendObject(DynamicObject module, DynamicObject object,
+                @Cached("create()") BranchProfile errorProfile) {
             if (RubyGuards.isRubyClass(module)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorWrongArgumentType(module, "Module", this));
             }
 
@@ -1131,7 +1132,7 @@ public abstract class ModuleNodes {
 
         void classEval(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             if (classExecNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), null));
             }
             classExecNode.executeClassExec(frame, module, new Object[]{}, block);
@@ -1160,12 +1161,13 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = {"isRubyClass(self)", "isRubyClass(from)"})
-        public Object initializeCopy(DynamicObject self, DynamicObject from) {
+        public Object initializeCopy(DynamicObject self, DynamicObject from,
+                @Cached("create()") BranchProfile errorProfile) {
             if (from == coreLibrary().getBasicObjectClass()) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeError("can't copy the root class", this));
             } else if (Layouts.CLASS.getIsSingleton(from)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeError("can't copy singleton class", this));
             }
 
@@ -1231,7 +1233,7 @@ public abstract class ModuleNodes {
                 method = Layouts.MODULE.getFields(module).getMethod(name);
             }
 
-            return method != null && !method.getVisibility().isPrivate();
+            return method != null && !method.getVisibility().isPrivate() && !method.isUndefined();
         }
 
     }
@@ -1247,9 +1249,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public DynamicObject moduleFunction(VirtualFrame frame, DynamicObject module, Object[] names) {
+        public DynamicObject moduleFunction(VirtualFrame frame, DynamicObject module, Object[] names,
+                @Cached("create()") BranchProfile errorProfile) {
             if (RubyGuards.isRubyClass(module) && !coreLibrary().isLoadingRubyCore()) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeError("module_function must be called for modules", this));
             }
 
@@ -1372,9 +1375,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "isRubyModule(target)")
-        public DynamicObject prependFeatures(DynamicObject features, DynamicObject target) {
+        public DynamicObject prependFeatures(DynamicObject features, DynamicObject target,
+                @Cached("create()") BranchProfile errorProfile) {
             if (RubyGuards.isRubyClass(features)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeError("prepend_features must be called only on modules", this));
             }
             Layouts.MODULE.getFields(target).prepend(getContext(), this, features);
@@ -1420,15 +1424,16 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public DynamicObject publicInstanceMethod(DynamicObject module, String name) {
+        public DynamicObject publicInstanceMethod(DynamicObject module, String name,
+                @Cached("create()") BranchProfile errorProfile) {
             // TODO(CS, 11-Jan-15) cache this lookup
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
             if (method == null || method.isUndefined()) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().nameErrorUndefinedMethod(name, module, this));
             } else if (method.getVisibility() != Visibility.PUBLIC) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().nameErrorPrivateMethod(name, module, this));
             }
 
@@ -1577,12 +1582,13 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public DynamicObject instanceMethod(DynamicObject module, String name) {
+        public DynamicObject instanceMethod(DynamicObject module, String name,
+                @Cached("create()") BranchProfile errorProfile) {
             // TODO(CS, 11-Jan-15) cache this lookup
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
             if (method == null || method.isUndefined()) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().nameErrorUndefinedMethod(name, module, this));
             }
 
@@ -1660,7 +1666,7 @@ public abstract class ModuleNodes {
             return NameToJavaStringNodeGen.create(null, null, name);
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public Object removeClassVariableString(DynamicObject module, String name) {
             SymbolTable.checkClassVariableName(getContext(), name, this);
@@ -1701,6 +1707,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "remove_method", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class RemoveMethodNode extends CoreMethodArrayArgumentsNode {
 
+        private final BranchProfile errorProfile = BranchProfile.create();
+
         @Child NameToJavaStringNode nameToJavaStringNode;
         @Child IsFrozenNode isFrozenNode;
         @Child CallDispatchHeadNode methodRemovedNode;
@@ -1727,7 +1735,7 @@ public abstract class ModuleNodes {
                 Layouts.MODULE.getFields(module).removeMethod(name);
                 methodRemovedNode.call(frame, module, "method_removed", null, getSymbol(name));
             } else {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().nameErrorMethodNotDefinedIn(module, name, this));
             }
         }
@@ -1830,13 +1838,14 @@ public abstract class ModuleNodes {
         public abstract DynamicObject executeSetMethodVisibility(VirtualFrame frame, DynamicObject module, Object name);
 
         @Specialization
-        public DynamicObject setMethodVisibility(VirtualFrame frame, DynamicObject module, Object name) {
+        public DynamicObject setMethodVisibility(VirtualFrame frame, DynamicObject module, Object name,
+                @Cached("create()") BranchProfile errorProfile) {
             final String methodName = nameToJavaStringNode.executeToJavaString(frame, name);
 
             final InternalMethod method = Layouts.MODULE.getFields(module).deepMethodSearch(getContext(), methodName);
 
             if (method == null) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().nameErrorUndefinedMethod(methodName, module, this));
             }
 
