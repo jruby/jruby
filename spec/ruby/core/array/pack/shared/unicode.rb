@@ -23,6 +23,12 @@ describe :array_pack_unicode, shared: true do
     ].should be_computed_by(:pack, "U")
   end
 
+  it "constructs strings with valid encodings" do
+    str = [0x85].pack("U*")
+    str.should == "\xc2\x85"
+    str.valid_encoding?.should be_true
+  end
+
   it "encodes UTF-8 max codepoints" do
     [ [[0x10000],   "\xf0\x90\x80\x80"],
       [[0xfffff],   "\xf3\xbf\xbf\xbf"],
