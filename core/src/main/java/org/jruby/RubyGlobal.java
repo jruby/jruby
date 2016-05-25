@@ -463,20 +463,18 @@ public class RubyGlobal {
             if (value instanceof RubyString) {
                 Ruby runtime = context.runtime;
                 RubyString valueStr = (RubyString) value;
-                Encoding enc;
 
                 // Ensure PATH is encoded like filesystem
                 if (key.toString().equalsIgnoreCase("PATH")) {
-                    enc = runtime.getEncodingService().getFileSystemEncoding();
+                    Encoding enc = runtime.getEncodingService().getFileSystemEncoding();
+                    valueStr = EncodingUtils.strConvEnc(context, valueStr, valueStr.getEncoding(), enc);
                 } else {
-                    enc = runtime.getEncodingService().getLocaleEncoding();
+                    valueStr = RubyString.newString(runtime, valueStr.toString(), runtime.getEncodingService().getLocaleEncoding());
                 }
 
-                RubyString newStr = EncodingUtils.strConvEnc(context, valueStr, valueStr.getEncoding(), enc);
+                valueStr.setFrozen(true);
 
-                newStr.setFrozen(true);
-
-                return newStr;
+                return valueStr;
             }
             return value;
         }
