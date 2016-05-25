@@ -87,9 +87,8 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
-
 import java.util.Arrays;
-
+import java.util.Comparator;
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
@@ -2072,7 +2071,25 @@ public abstract class ArrayNodes {
                     "right", getSize(array));
         }
 
-        @Specialization(guards = { "!isNullArray(array)" })
+        @Specialization(guards = { "isObjectArray(array)" })
+        public Object sortObjectWithBlock(DynamicObject array, DynamicObject block) {
+            final int size = getSize(array);
+            Object[] copy = ((Object[]) getStore(array)).clone();
+            doSort(copy, size, block);
+            return createArray(getContext(), copy, size);
+        }
+
+        @TruffleBoundary
+        private void doSort(Object[] copy, int size, DynamicObject block) {
+            Arrays.sort(copy, 0, size, new Comparator<Object>() {
+                @Override
+                public int compare(Object a, Object b) {
+                    return castSortValue(ProcOperations.rootCall(block, a, b));
+                }
+            });
+        }
+
+        @Specialization(guards = { "!isNullArray(array)", "!isObjectArray(array)" })
         public Object sortWithBlock(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("new()") SnippetNode snippet) {
             return snippet.execute(frame,
