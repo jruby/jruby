@@ -696,7 +696,8 @@ module Commands
     end
     log "\n", nil
     mean = samples.inject(:+) / samples.size
-    puts "#{human_size(mean)}, max #{human_size(samples.max)}"
+    error = samples.max - mean
+    puts "#{human_size(mean)} ± #{human_size(error)}"
   end
 
   def memory_allocated(trace)
