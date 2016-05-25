@@ -111,6 +111,8 @@ import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
+import org.jruby.truffle.stdlib.readline.ReadlineHistoryNodesFactory;
+import org.jruby.truffle.stdlib.readline.ReadlineNodesFactory;
 import org.jruby.util.cli.OutputStrings;
 import java.io.File;
 import java.io.IOException;
@@ -594,6 +596,8 @@ public class CoreLibrary {
         defineModule(truffleModule, "Process");
         defineModule(truffleModule, "Binding");
         defineModule(truffleModule, "POSIX");
+        defineModule(truffleModule, "Readline");
+        defineModule(truffleModule, "ReadlineHistory");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -746,6 +750,8 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(EtcNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ReadlineNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ReadlineHistoryNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TracePointNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(CoverageNodesFactory.getFactories());
@@ -937,6 +943,7 @@ public class CoreLibrary {
                 throw new TruffleFatalException("couldn't load the post-boot code", e);
             }
         }
+
     }
 
     private void initializeRubiniusFFI() {

@@ -44,8 +44,7 @@
     exclude_tests.rb: |
                       failures = { KernelTest:               [:test_silence_stream,
                                                               :test_quietly],
-                                   InflectorTest:            [:test_titleize_mixture_to_title_case_13,
-                                                              :test_titleize_mixture_to_title_case_14],
+                                   InflectorTest:            [:test_titleize_mixture_to_title_case_14],
                                    LoadPathsTest:            [:test_uniq_load_paths],
                                    LoggerTest:               [:test_buffer_multibyte],
                                    MultibyteCharsExtrasTest: [:test_titleize_should_be_unicode_aware,
@@ -55,8 +54,7 @@
                                                               :test_transliterate_should_work_with_custom_i18n_rules_and_uncomposed_utf8],
                                    StringInflectionsTest:    [:test_string_parameterized_no_separator,
                                                               :test_string_parameterized_normal,
-                                                              :test_string_parameterized_underscore,
-                                                              :test_titleize],
+                                                              :test_string_parameterized_underscore],
                                    TimeZoneTest:              :test_map_srednekolymsk_to_tzinfo }
 
 

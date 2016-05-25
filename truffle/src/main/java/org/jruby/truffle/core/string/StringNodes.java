@@ -3112,33 +3112,30 @@ public abstract class StringNodes {
             return nil();
         }
 
-        @Specialization(guards = { "offset >= 0", "isSingleByte(string)" })
-        public Object stringFindCharacterSingleByte(DynamicObject string, int offset,
-                                                    @Cached("createBinaryProfile()") ConditionProfile offsetTooLargeProfile) {
+        @Specialization(guards = "offsetTooLarge(string, offset)")
+        public Object stringFindCharacterOffsetTooLarge(DynamicObject string, int offset) {
+            return nil();
+        }
+
+        @Specialization(guards = { "offset >= 0", "!offsetTooLarge(string, offset)", "isSingleByteOptimizable(string)" })
+        public Object stringFindCharacterSingleByte(DynamicObject string, int offset) {
             // Taken from Rubinius's String::find_character.
 
             final Rope rope = rope(string);
-            if (offsetTooLargeProfile.profile(offset >= rope.byteLength())) {
-                return nil();
-            }
 
             final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), makeSubstringNode.executeMake(rope, offset, 1), null);
 
             return propagate(string, ret);
         }
 
-        @Specialization(guards = { "offset >= 0", "!isSingleByte(string)" })
-        public Object stringFindCharacter(DynamicObject string, int offset,
-                                          @Cached("createBinaryProfile()") ConditionProfile offsetTooLargeProfile) {
+        @Specialization(guards = { "offset >= 0", "!offsetTooLarge(string, offset)", "!isSingleByteOptimizable(string)" })
+        public Object stringFindCharacter(DynamicObject string, int offset) {
             // Taken from Rubinius's String::find_character.
 
             final Rope rope = rope(string);
-            if (offsetTooLargeProfile.profile(offset >= rope.byteLength())) {
-                return nil();
-            }
 
             final Encoding enc = rope.getEncoding();
-            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), 0, rope.byteLength());
+            final int clen = StringSupport.preciseLength(enc, rope.getBytes(), offset, offset + enc.maxLength());
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
@@ -3162,6 +3159,12 @@ public abstract class StringNodes {
             }
 
             return taintResultNode.maybeTaint(source, value);
+        }
+
+        protected static boolean offsetTooLarge(DynamicObject string, int offset) {
+            assert RubyGuards.isRubyString(string);
+
+            return offset >= rope(string).byteLength();
         }
 
     }
