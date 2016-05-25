@@ -89,15 +89,15 @@ public class OSEnvironment {
     private static Map<RubyString, RubyString> asMapOfRubyStrings(final Ruby runtime, final Map<?, ?> map) {
         @SuppressWarnings("unchecked")
         final Map<RubyString, RubyString> rubyMap = new HashMap(map.size() + 2);
-        Encoding encoding = runtime.getEncodingService().getLocaleEncoding();
+        Encoding keyEncoding = runtime.getEncodingService().getLocaleEncoding();
 
         // On Windows, map doesn't have corresponding keys for these
         if (Platform.IS_WINDOWS) {
             // these may be null when in a restricted environment (JRUBY-6514)
             String home = SafePropertyAccessor.getProperty("user.home");
             String user = SafePropertyAccessor.getProperty("user.name");
-            putRubyKeyValuePair(runtime, rubyMap, "HOME", home == null ? "/" : home, encoding);
-            putRubyKeyValuePair(runtime, rubyMap, "USER", user == null ? "" : user, encoding);
+            putRubyKeyValuePair(runtime, rubyMap, "HOME", keyEncoding, home == null ? "/" : home, keyEncoding);
+            putRubyKeyValuePair(runtime, rubyMap, "USER", keyEncoding, user == null ? "" : user, keyEncoding);
         }
 
         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -111,7 +111,12 @@ public class OSEnvironment {
             val = entry.getValue();
             if ( ! (val instanceof String) ) continue; // Java devs can stuff non-string objects into env
 
-            putRubyKeyValuePair(runtime, rubyMap, key, (String) val, encoding);
+            Encoding valueEncoding = keyEncoding;
+            if ( key.equals("PATH") ) {
+                valueEncoding = runtime.getEncodingService().getFileSystemEncoding();
+            }
+
+            putRubyKeyValuePair(runtime, rubyMap, key, keyEncoding, (String) val, valueEncoding);
         }
 
         return rubyMap;
@@ -119,9 +124,9 @@ public class OSEnvironment {
 
     private static void putRubyKeyValuePair(Ruby runtime,
         final Map<RubyString, RubyString> map,
-        String key, String value, Encoding encoding) {
-        ByteList keyBytes = new ByteList(key.getBytes(), encoding);
-        ByteList valueBytes = new ByteList(value.getBytes(), encoding);
+        String key, Encoding keyEncoding, String value, Encoding valueEncoding) {
+        ByteList keyBytes = RubyString.encodeBytelist(key, keyEncoding);
+        ByteList valueBytes = RubyString.encodeBytelist(value, valueEncoding);
 
         RubyString keyString = runtime.newString(keyBytes);
         RubyString valueString = runtime.newString(valueBytes);
