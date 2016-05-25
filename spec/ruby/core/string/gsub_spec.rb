@@ -43,6 +43,9 @@ describe "String#gsub with pattern and replacement" do
 
     str = "hello homely world. hah!"
     str.gsub(/\Ah\S+\s*/, "huh? ").should == "huh? homely world. hah!"
+
+    str = "¿por qué?"
+    str.gsub(/([a-z\d]*)/, "*").should == "*¿** **é*?*"
   end
 
   it "ignores a block if supplied" do
@@ -581,6 +584,12 @@ describe "String#gsub! with pattern and replacement" do
     a = "hello"
     a.gsub!(/[aeiou]/, '*').should equal(a)
     a.should == "h*ll*"
+  end
+
+  it "modifies self in place with multi-byte characters and returns self" do
+    a = "¿por qué?"
+    a.gsub!(/([a-z\d]*)/, "*").should equal(a)
+    a.should == "*¿** **é*?*"
   end
 
   it "taints self if replacement is tainted" do
