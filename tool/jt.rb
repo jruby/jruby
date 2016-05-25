@@ -819,10 +819,10 @@ module Commands
   end
 
   def log(tty_message, full_message)
-    if STDOUT.tty?
-      print(tty_message) unless tty_message.nil?
+    if STDERR.tty?
+      STDERR.print tty_message unless tty_message.nil?
     else
-      puts full_message unless full_message.nil?
+      STDERR.puts full_message unless full_message.nil?
     end
   end
 
