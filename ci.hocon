@@ -35,7 +35,7 @@ graal-core: {
   ]
   
   environment: {
-    GRAAL_BIN: graal-workspace/jvmci/jdk1.8.0_66/product/bin/java
+    GRAAL_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java
   }
 }
 
