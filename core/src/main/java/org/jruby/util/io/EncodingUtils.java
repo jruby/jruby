@@ -1268,12 +1268,7 @@ public class EncodingUtils {
     public static ByteList transcodeString(String string, Encoding toEncoding, int ecflags) {
         Encoding encoding;
 
-        // This may be inefficient if we aren't matching endianness right
-        if (Platform.BYTE_ORDER == Platform.LITTLE_ENDIAN) {
-            encoding = UTF16LEEncoding.INSTANCE;
-        } else {
-            encoding = UTF16BEEncoding.INSTANCE;
-        }
+        encoding = getUTF16ForPlatform();
 
         EConv ec = TranscoderDB.open(encoding.getName(), toEncoding.getName(), ecflags);
 
@@ -1296,6 +1291,16 @@ public class EncodingUtils {
         }
 
         return destination;
+    }
+
+    public static Encoding getUTF16ForPlatform() {
+        Encoding encoding;// This may be inefficient if we aren't matching endianness right
+        if (Platform.BYTE_ORDER == Platform.LITTLE_ENDIAN) {
+            encoding = UTF16LEEncoding.INSTANCE;
+        } else {
+            encoding = UTF16BEEncoding.INSTANCE;
+        }
+        return encoding;
     }
 
     /**

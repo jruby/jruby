@@ -44,17 +44,10 @@
     exclude_tests.rb: |
                       failures = { KernelTest:               [:test_silence_stream,
                                                               :test_quietly],
-                                   InflectorTest:            [:test_titleize_mixture_to_title_case_14],
                                    LoadPathsTest:            [:test_uniq_load_paths],
                                    LoggerTest:               [:test_buffer_multibyte],
                                    MultibyteCharsExtrasTest: [:test_titleize_should_be_unicode_aware,
                                                               :test_titleize_should_not_affect_characters_that_do_not_case_fold],
-                                   TransliterateTest:        [:test_transliterate_should_allow_a_custom_replacement_char,
-                                                              :test_transliterate_should_approximate_ascii,
-                                                              :test_transliterate_should_work_with_custom_i18n_rules_and_uncomposed_utf8],
-                                   StringInflectionsTest:    [:test_string_parameterized_no_separator,
-                                                              :test_string_parameterized_normal,
-                                                              :test_string_parameterized_underscore],
                                    TimeZoneTest:              :test_map_srednekolymsk_to_tzinfo }
 
 

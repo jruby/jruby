@@ -10,12 +10,14 @@
 package org.jruby.truffle.language.supercall;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.array.ArrayToObjectArrayNode;
+import org.jruby.truffle.core.array.ArrayToObjectArrayNodeGen;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -25,8 +27,10 @@ import org.jruby.truffle.language.RubyNode;
  */
 public class ReadZSuperArgumentsNode extends RubyNode {
 
-    private final boolean hasRestParameter;
     @Children private final RubyNode[] reloadNodes;
+    @Child private ArrayToObjectArrayNode unsplatNode;
+
+    private final boolean hasRestParameter;
 
     public ReadZSuperArgumentsNode(RubyContext context, SourceSection sourceSection, boolean hasRestParameter, RubyNode[] reloadNodes) {
         super(context, sourceSection);
@@ -51,12 +55,20 @@ public class ReadZSuperArgumentsNode extends RubyNode {
             final int restArgIndex = reloadNodes.length - 1;
             final Object restArg = superArguments[restArgIndex];
             assert RubyGuards.isRubyArray(restArg);
-            final Object[] restArgs = ArrayOperations.toObjectArray((DynamicObject) restArg);
+            final Object[] restArgs = unsplat((DynamicObject) restArg);
             superArguments = ArrayUtils.copyOf(superArguments, restArgIndex + restArgs.length);
             ArrayUtils.arraycopy(restArgs, 0, superArguments, restArgIndex, restArgs.length);
         }
 
         return superArguments;
+    }
+
+    private Object[] unsplat(DynamicObject array) {
+        if (unsplatNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            unsplatNode = insert(ArrayToObjectArrayNodeGen.create(null));
+        }
+        return unsplatNode.executeToObjectArray(array);
     }
 
 }

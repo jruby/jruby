@@ -204,10 +204,10 @@ public class ThreadManager {
      */
     @TruffleBoundary
     public <T> T runUntilResult(Node currentNode, BlockingAction<T> action) {
+        final DynamicObject runningThread = getCurrentThread();
         T result = null;
 
         do {
-            final DynamicObject runningThread = getCurrentThread();
             Layouts.THREAD.setStatus(runningThread, Status.SLEEP);
 
             try {

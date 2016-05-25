@@ -3128,6 +3128,7 @@ public abstract class StringNodes {
             return propagate(string, ret);
         }
 
+        @TruffleBoundary
         @Specialization(guards = { "offset >= 0", "!offsetTooLarge(string, offset)", "!isSingleByteOptimizable(string)" })
         public Object stringFindCharacter(DynamicObject string, int offset) {
             // Taken from Rubinius's String::find_character.

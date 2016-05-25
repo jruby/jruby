@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+# encoding: utf-8
+
 # Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
 # This code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
@@ -12,7 +14,7 @@
 # Recommended: function jt { ruby tool/jt.rb "$@"; }
 
 require 'fileutils'
-require 'digest/sha1'
+require 'json'
 
 GRAALVM_VERSION = "0.11"
 
@@ -322,7 +324,7 @@ module Commands
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt metrics alloc ...                           how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
+    puts 'jt metrics alloc [--json] ...                  how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
     puts 'jt metrics minheap ...                         what is the smallest heap you can use to run an application'
     puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
     puts 'jt tarball                                     build the and test the distribution tarball'
@@ -685,6 +687,7 @@ module Commands
   end
 
   def metrics_alloc(*args)
+    use_json = args.delete '--json'
     samples = []
     METRICS_REPS.times do
       log '.', 'sampling'
@@ -696,7 +699,12 @@ module Commands
     end
     log "\n", nil
     mean = samples.inject(:+) / samples.size
-    puts "#{human_size(mean)}, max #{human_size(samples.max)}"
+    error = samples.max - mean
+    if use_json
+      puts JSON.generate({mean: mean, error: error})
+    else
+      puts "#{human_size(mean)} ± #{human_size(error)}"
+    end
   end
 
   def memory_allocated(trace)
@@ -819,10 +827,10 @@ module Commands
   end
 
   def log(tty_message, full_message)
-    if STDOUT.tty?
-      print(tty_message) unless tty_message.nil?
+    if STDERR.tty?
+      STDERR.print tty_message unless tty_message.nil?
     else
-      puts full_message unless full_message.nil?
+      STDERR.puts full_message unless full_message.nil?
     end
   end
 

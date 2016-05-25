@@ -23,6 +23,10 @@ public abstract class ArrayStrategy {
         throw unsupported();
     }
 
+    public boolean isDefaultValue(Object value) {
+        throw unsupported();
+    }
+
     public abstract boolean matches(DynamicObject array);
 
     public abstract ArrayMirror newArray(int size);
@@ -126,6 +130,10 @@ public abstract class ArrayStrategy {
             return value instanceof Integer;
         }
 
+        public boolean isDefaultValue(Object value) {
+            return (int) value == 0;
+        }
+
         public boolean matches(DynamicObject array) {
             return ArrayGuards.isIntArray(array);
         }
@@ -176,6 +184,10 @@ public abstract class ArrayStrategy {
             return value instanceof Long;
         }
 
+        public boolean isDefaultValue(Object value) {
+            return (long) value == 0L;
+        }
+
         public boolean matches(DynamicObject array) {
             return ArrayGuards.isLongArray(array);
         }
@@ -214,6 +226,10 @@ public abstract class ArrayStrategy {
             return value instanceof Double;
         }
 
+        public boolean isDefaultValue(Object value) {
+            return (double) value == 0.0;
+        }
+
         public boolean matches(DynamicObject array) {
             return ArrayGuards.isDoubleArray(array);
         }
@@ -250,6 +266,10 @@ public abstract class ArrayStrategy {
 
         public boolean specializesFor(Object value) {
             return !(value instanceof Integer) && !(value instanceof Long) && !(value instanceof Double);
+        }
+
+        public boolean isDefaultValue(Object value) {
+            return value == null;
         }
 
         public boolean matches(DynamicObject array) {
