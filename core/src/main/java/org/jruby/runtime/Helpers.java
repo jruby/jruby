@@ -57,6 +57,7 @@ import static org.jruby.util.CodegenUtils.sig;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Helper methods which are called by the compiler.  Note: These will show no consumers, but
@@ -2645,15 +2646,14 @@ public class Helpers {
         Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
 
         if (charset == null) {
-            try {
-                return new String(unsafeBytes, begin, length, encoding.toString());
-            } catch (UnsupportedEncodingException uee) {
-                return value.toString();
-            }
+            // No JDK Charset available for this encoding; convert to UTF-16 ourselves.
+            Encoding utf16 = EncodingUtils.getUTF16ForPlatform();
+
+            return EncodingUtils.strConvEnc(runtime.getCurrentContext(), value, value.getEncoding(), utf16).toString();
         }
 
         return RubyEncoding.decode(unsafeBytes, begin, length, charset);
-        }
+    }
 
     /**
      * Convert a ByteList into a Java String by using its Encoding's Charset. If
