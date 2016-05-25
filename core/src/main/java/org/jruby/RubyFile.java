@@ -1640,7 +1640,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (path.startsWith("uri:")) {
                 cwd = path;
             } else {
-                cwd = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[1])).getUnicodeValue();
+                cwd = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[1])).toString();
 
                 // Handle ~user paths.
                 if (expandUser) {
