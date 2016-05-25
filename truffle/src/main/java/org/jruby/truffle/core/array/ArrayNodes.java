@@ -974,7 +974,7 @@ public abstract class ArrayNodes {
                 @Cached("forValue(value)") ArrayStrategy strategy,
                 @Cached("createBinaryProfile()") ConditionProfile needsFill) {
             final ArrayMirror store = strategy.newArray(size);
-            if (needsFill.profile(size > 0 && store.get(0) != value)) {
+            if (needsFill.profile(size > 0 && strategy.isDefaultValue(value))) {
                 for (int i = 0; i < size; i++) {
                     store.set(i, value);
                 }
