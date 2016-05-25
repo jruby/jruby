@@ -12,6 +12,7 @@
 # Recommended: function jt { ruby tool/jt.rb "$@"; }
 
 require 'fileutils'
+require 'json'
 
 GRAALVM_VERSION = "0.11"
 
@@ -321,7 +322,7 @@ module Commands
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt metrics alloc ...                           how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
+    puts 'jt metrics alloc [--json] ...                  how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
     puts 'jt metrics minheap ...                         what is the smallest heap you can use to run an application'
     puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
     puts 'jt tarball                                     build the and test the distribution tarball'
@@ -684,6 +685,7 @@ module Commands
   end
 
   def metrics_alloc(*args)
+    use_json = args.delete '--json'
     samples = []
     METRICS_REPS.times do
       log '.', 'sampling'
@@ -696,7 +698,11 @@ module Commands
     log "\n", nil
     mean = samples.inject(:+) / samples.size
     error = samples.max - mean
-    puts "#{human_size(mean)} ± #{human_size(error)}"
+    if use_json
+      puts JSON.generate({mean: mean, error: error})
+    else
+      puts "#{human_size(mean)} ± #{human_size(error)}"
+    end
   end
 
   def memory_allocated(trace)
