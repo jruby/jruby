@@ -563,7 +563,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO, lowerFixnumParameters = 0)
     public static abstract class IOSysReadPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary(throwsControlFlowException = true)
