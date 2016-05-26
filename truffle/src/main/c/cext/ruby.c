@@ -158,12 +158,20 @@ VALUE rb_Array(VALUE array) {
   return truffle_invoke(RUBY_CEXT, "rb_Array", array);
 }
 
+VALUE rb_ary_new() {
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_ary_new");
+}
+
 VALUE rb_ary_new_capa(long capacity) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_ary_new_capa", capacity);
 }
 
-VALUE rb_ary_new() {
-  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_ary_new");
+VALUE rb_ary_new_from_args(long n, ...) {
+  VALUE array = rb_ary_new_capa(n);
+  for (int i = 0; i < n; i++) {
+    rb_ary_store(array, i, (VALUE) truffle_get_arg(1+i));
+  }
+  return array;
 }
 
 VALUE rb_ary_push(VALUE array, VALUE value) {

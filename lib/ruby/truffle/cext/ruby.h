@@ -103,6 +103,8 @@ VALUE rb_Array(VALUE value);
 VALUE rb_ary_new(void);
 VALUE rb_ary_new_capa(long capacity);
 #define rb_ary_new2 rb_ary_new_capa
+VALUE rb_ary_new_from_args(long n, ...);
+#define rb_ary_new3 rb_ary_new_from_args
 VALUE rb_ary_push(VALUE array, VALUE value);
 VALUE rb_ary_pop(VALUE array);
 void rb_ary_store(VALUE array, long index, VALUE value);
