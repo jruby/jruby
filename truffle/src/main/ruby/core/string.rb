@@ -1104,7 +1104,7 @@ class String
     self
   end
 
-  def <<(other)
+  def concat_internal(other)
     Truffle.check_frozen
 
     unless other.kind_of? String

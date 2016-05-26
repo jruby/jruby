@@ -1273,31 +1273,6 @@ public class BodyTranslator extends Translator {
 
         String methodName = node.getName();
 
-        // If we have a method we've defined in a node, but would like to delegate some corner cases out to the
-        // Rubinius implementation for simplicity, we need a way to resolve the naming conflict.  The naive solution
-        // here is to append "_internal" to the method name, which can then be called like any other method.  This is
-        // a bit different than aliasing because normally if a Rubinius method name conflicts with an already defined
-        // method, we simply ignore the method definition.  Here we explicitly rename the method so it's always defined.
-
-        final String path = getSourcePath(sourceSection);
-        final String coreRubiniusPath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
-        if (path.startsWith(coreRubiniusPath)) {
-            boolean rename = false;
-
-            if (path.equals(coreRubiniusPath + "string.rb")) {
-                rename = methodName.equals("<<");
-            }
-
-            if (rename) {
-                // <<_internal is an invalid method name, so we need to rename to its alias for String#{<<,concat}.
-                if (methodName.equals("<<")) {
-                    methodName = "concat_internal";
-                } else {
-                    methodName = methodName + "_internal";
-                }
-            }
-        }
-
         final RubyNode ret = translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node.getBodyNode(), false);
 
         return addNewlineIfNeeded(node, ret);
