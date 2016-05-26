@@ -102,8 +102,6 @@ if org.jruby.platform.Platform::IS_WINDOWS
       end
 
       0 # Comply with spec
-    ensure
-      puts $!
     end
 
     # Returns whether or not +file+ is a symlink.
@@ -138,8 +136,6 @@ if org.jruby.platform.Platform::IS_WINDOWS
       end
 
       bool
-    ensure
-      puts $!
     end
 
     private
