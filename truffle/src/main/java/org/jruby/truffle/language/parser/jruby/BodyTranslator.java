@@ -1830,20 +1830,10 @@ public class BodyTranslator extends Translator {
         // About every case will use a SelfNode, just don't it use more than once.
         final SelfNode self = new SelfNode(context, sourceSection);
 
-        /*
-         * Rubinius uses the instance variable @total to store the size of an array. In order to use code that
-         * expects that we'll replace it statically with a call to Array#size. We also replace @tuple with
-         * self, and @start to be 0.
-         */
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "array.rb")) {
-            if (name.equals("@start")) {
-                ret = new IntegerFixnumLiteralNode(context, sourceSection, 0);
-                return addNewlineIfNeeded(node, ret);
-            }
-        } else if (path.equals(corePath + "regexp.rb")) {
+        if (path.equals(corePath + "regexp.rb")) {
             if (name.equals("@source")) {
                 ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(self);
                 setSourceSection(ret, sourceSection);

@@ -152,7 +152,7 @@ class Array
         return nil if start_idx >= size
 
         begin
-          return at(@start + start_idx)
+          return at(start_idx)
 
         # Tuple#at raises this if the index is negative or
         # past the end. This is faster than checking explicitly
@@ -191,7 +191,7 @@ class Array
         return nil if start_idx >= size
 
         begin
-          return at(@start + start_idx)
+          return at(start_idx)
 
         # Tuple#at raises this if the index is negative or
         # past the end. This is faster than checking explicitly
@@ -220,7 +220,7 @@ class Array
     end
 
     # Construct the subrange
-    return new_range(@start + start_idx, count)
+    return new_range(start_idx, count)
   end
 
   alias_method :slice, :[]
@@ -269,7 +269,7 @@ class Array
 
       offset = 0
       while offset < new_total
-        new_tuple.copy_from self, @start, size, offset
+        new_tuple.copy_from self, 0, size, offset
         offset += size
       end
 
@@ -351,7 +351,7 @@ class Array
       md = self
       od = m.tuple
 
-      i = @start
+      i = 0
       j = m.start
 
       total = i + size
@@ -479,7 +479,7 @@ class Array
   def compact!
     Truffle.check_frozen
 
-    if (deleted = delete(@start, size, nil)) > 0
+    if (deleted = delete(0, size, nil)) > 0
       @total -= deleted
       reallocate_shrink()
       return self
@@ -536,7 +536,7 @@ class Array
 
   def delete(obj)
     key = undefined
-    i = @start
+    i = 0
     total = i + size
     tuple = self
 
@@ -553,7 +553,7 @@ class Array
       i += 1
     end
 
-    deleted = delete @start, size, key
+    deleted = delete 0, size, key
     if deleted > 0
       @total -= deleted
       reallocate_shrink()
@@ -577,15 +577,15 @@ class Array
     return nil if idx < 0 or idx >= size
 
     # Grab the object and adjust the indices for the rest
-    obj = at(@start + idx)
+    obj = at(idx)
 
     # Shift style.
     if idx == 0
-      put @start, nil
-      @start += 1
+      put 0, nil
+      raise 'modifying start in delete_at'
     else
-      copy_from(self, @start+idx+1, size-idx-1, @start+idx)
-      put(@start + size - 1, nil)
+      copy_from(self, idx+1, size-idx-1, idx)
+      put(size - 1, nil)
     end
 
     size -= 1
@@ -599,7 +599,7 @@ class Array
 
     return self if empty?
 
-    i = pos = @start
+    i = pos = 0
     total = i + size
     tuple = self
 
@@ -615,7 +615,7 @@ class Array
       i += 1
     end
 
-    @total = pos - @start
+    @total = pos
 
     self
   end
@@ -648,14 +648,13 @@ class Array
         # Use a shift start optimization if we're only removing one
         # element and the shift started isn't already huge.
         if del_length == 1
-          put @start, nil
-          @start += 1
+          put 0, nil
+          raise 'modifying start in delete_range'
         else
-          copy_from self, reg_start + @start, reg_length, 0
+          copy_from self, reg_start, reg_length, 0
         end
       else
-        copy_from self, reg_start + @start, reg_length,
-          @start + index
+        copy_from self, reg_start, reg_length, index
       end
 
       # TODO we leave the old references in the Tuple, we should
@@ -757,7 +756,7 @@ class Array
       right = size
     end
 
-    total = @start + right
+    total = right
 
     if right > size
       reallocate total
@@ -768,11 +767,11 @@ class Array
     # reallocate might change @tuple
     tuple = self
 
-    i = @start + left
+    i = left
 
     if block_given?
       while i < total
-        tuple.put i, yield(i-@start)
+        tuple.put i, yield(i)
         i += 1
       end
     else
@@ -884,7 +883,7 @@ class Array
     # Ideally, this will be removed when the JIT can handle the
     # block used here.
 
-    i = @start
+    i = 0
     total = i + size
     tuple = self
 
@@ -946,7 +945,7 @@ class Array
 
       # We've manually unwound the first loop entry for performance
       # reasons.
-      x = self[@start]
+      x = self[0]
 
       if str = String.try_convert(x)
         x = str
@@ -959,8 +958,8 @@ class Array
       out.force_encoding(x.encoding)
       out << x
 
-      total = @start + size()
-      i = @start + 1
+      total = size()
+      i = 1
 
       while i < total
         out << sep if sep
@@ -1100,7 +1099,7 @@ class Array
       return nil if size == 0
 
       @total -= 1
-      index = @start + size
+      index = size
 
       elem = at(index)
       put index, nil
@@ -1275,7 +1274,7 @@ class Array
 
     return self unless size > 1
 
-    reverse! @start, size
+    reverse! 0, size
 
     return self
   end
@@ -1283,7 +1282,7 @@ class Array
   def reverse_each
     return to_enum(:reverse_each) { size } unless block_given?
 
-    stop = @start - 1
+    stop = -1
     i = stop + size
     tuple = self
 
@@ -1301,7 +1300,7 @@ class Array
 
       i = size - 1
       while i >= 0
-        return i if yield at(@start + i)
+        return i if yield at(i)
 
         # Compensate for the array being modified by the block
         i = size if i > size
@@ -1309,12 +1308,12 @@ class Array
         i -= 1
       end
     else
-      stop = @start - 1
+      stop = -1
       i = stop + size
       tuple = self
 
       while i > stop
-        return i - @start if tuple.at(i) == obj
+        return i if tuple.at(i) == obj
         i -= 1
       end
     end
@@ -1544,7 +1543,7 @@ class Array
         new_total -= ins_length - replace_count
       end
 
-      if new_total > size - @start
+      if new_total > size
         # Expand the size just like #<< does.
         # MRI uses a straight realloc here to the exact size, but
         # realloc can easily include bumper data so it's pretty fast.
@@ -1552,7 +1551,7 @@ class Array
         # having to copy data.
         new_tuple = Rubinius::Tuple.new(new_total + size / 2)
 
-        new_tuple.copy_from(self, @start, index < size ? index : size, 0)
+        new_tuple.copy_from(self, 0, index < size ? index : size, 0)
 
         case replace_count
         when 1
@@ -1565,7 +1564,7 @@ class Array
         end
 
         if index < size
-          new_tuple.copy_from(self, @start + index + ins_length,
+          new_tuple.copy_from(self, index + ins_length,
                               size - index - ins_length,
                               index + replace_count)
         end
@@ -1574,21 +1573,20 @@ class Array
       else
         # Move the elements to the right
         if index < size
-          right_start = @start + index + ins_length
+          right_start = index + ins_length
           right_len = size - index - ins_length
 
-          copy_from(self, right_start, right_len,
-                           @start + index + replace_count)
+          copy_from(self, right_start, right_len, index + replace_count)
         end
 
         case replace_count
         when 1
-          self[@start + index] = replacement
+          self[index] = replacement
         when 0
           # nothing
         else
           m = Rubinius::Mirror::Array.reflect replacement
-          copy_from m.tuple, m.start, replace_count, @start + index
+          copy_from m.tuple, m.start, replace_count, index
         end
 
         @total = new_total
@@ -1596,10 +1594,10 @@ class Array
 
       return ent
     else
-      nt = @start + index + 1
+      nt = index + 1
       reallocate(nt) if size < nt
 
-      put @start + index, ent
+      put index, ent
       if index >= size - 1
         @total = index + 1
       end
@@ -1620,9 +1618,9 @@ class Array
 
     if undefined.equal?(n)
       return nil if size == 0
-      obj = at @start
-      put @start, nil
-      @start += 1
+      obj = at 0
+      put 0, nil
+      raise 'modifying start in shift'
       @total -= 1
 
       obj
@@ -1652,7 +1650,7 @@ class Array
     size.times do |i|
       r = i + random_generator.rand(size - i).to_int
       raise RangeError, "random number too big #{r - i}" if r < 0 || r >= size
-      swap(@start + i, @start + r)
+      swap(i, r)
     end
     self
   end
@@ -1696,13 +1694,13 @@ class Array
         # of the array.
         return out unless start >= 0 and start < size
 
-        out = at start + @start
+        out = at start + 0
 
         # Check for shift style.
         if start == 0
-          put @start, nil
+          put 0, nil
           @total -= 1
-          @start += 1
+          puts 'modifying start in slice!'
         else
           delete_range(start, 1)
         end
@@ -1738,7 +1736,7 @@ class Array
     new_size = size - n
     return [] if new_size <= 0
 
-    new_range @start + n, new_size
+    new_range n, new_size
   end
 
   def sort(&block)
@@ -1764,11 +1762,11 @@ class Array
 
     return self unless size > 1
 
-    if (size - @start) < 13
+    if (size) < 13
       if block
-        isort_block! @start, (@start + size), block
+        isort_block! 0, size, block
       else
-        isort! @start, (@start + size)
+        isort! 0, size
       end
     else
       if block
@@ -1891,7 +1889,7 @@ class Array
 
     size.times do |i|
       slot = out.at(i)
-      slot << at(@start + i)
+      slot << at(i)
       others.each do |other|
         slot << case other
                 when Array
@@ -1925,7 +1923,7 @@ class Array
     end
 
     new_tuple = Rubinius::Tuple.new new_total
-    new_tuple.copy_from self, @start, size, 0
+    new_tuple.copy_from self, 0, size, 0
 
     @tuple = new_tuple
   end
@@ -1944,7 +1942,7 @@ class Array
     new_tuple = Rubinius::Tuple.new(new_total)
     # position values in the middle somewhere
     new_start = (new_total - size)/2
-    new_tuple.copy_from self, @start, size, new_start
+    new_tuple.copy_from self, 0, size, new_start
 
     raise 'start not zero' unless new_start.zero?
     @tuple = new_tuple
@@ -2013,8 +2011,8 @@ class Array
     # do a pre-loop to create a bunch of short sorted runs; isort on these
     # 7-element sublists is more efficient than doing merge sort on 1-element
     # sublists
-    left = @start
-    finish = size + @start
+    left = 0
+    finish = size
     while left < finish
       right = left + width
       right = right < finish ? right : finish
@@ -2030,7 +2028,7 @@ class Array
     # now just merge together those sorted lists from the prior loop
     width = 7
     while width < size
-      left = @start
+      left = 0
       while left < finish
         right = left + width
         right = right < finish ? right : finish
@@ -2073,8 +2071,8 @@ class Array
     width = 7
     @scratch = Rubinius::Tuple.new size
 
-    left = @start
-    finish = size + @start
+    left = 0
+    finish = size
     while left < finish
       right = left + width
       right = right < finish ? right : finish
@@ -2089,7 +2087,7 @@ class Array
 
     width = 7
     while width < size
-      left = @start
+      left = 0
       while left < finish
         right = left + width
         right = right < finish ? right : finish
@@ -2266,13 +2264,12 @@ class Array
         # of the array.
         return out unless start >= 0 and start < size
 
-        out = at start + @start
+        out = at start
 
         # Check for shift style.
         if start == 0
-          put @start, nil
+          put 0, nil
           self.shift
-          @start += 1
         else
           delete_range(start, 1)
         end
@@ -2312,13 +2309,12 @@ class Array
         # Use a shift start optimization if we're only removing one
         # element and the shift started isn't already huge.
         if del_length == 1
-          @start += 1
+          # @start += 1 seems to work with this disabled?! FIXME
         else
-          copy_from self, reg_start + @start, reg_length, 0
+          copy_from self, reg_start, reg_length, 0
         end
       else
-        copy_from self, reg_start + @start, reg_length,
-                         @start + index
+        copy_from self, reg_start, reg_length, index
       end
 
       # TODO we leave the old references in the Tuple, we should
