@@ -533,8 +533,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public int seek(DynamicObject io, int amount, int whence) {
             final int fd = Layouts.IO.getDescriptor(io);
-            // TODO (pitr-ch 15-Apr-2016): should it have ensureSuccessful too?
-            return posix().lseek(fd, amount, whence);
+            return ensureSuccessful(posix().lseek(fd, amount, whence));
         }
 
     }
