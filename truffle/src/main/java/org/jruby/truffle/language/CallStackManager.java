@@ -28,6 +28,7 @@ import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.util.Memo;
+
 import java.util.ArrayList;
 
 public class CallStackManager {
