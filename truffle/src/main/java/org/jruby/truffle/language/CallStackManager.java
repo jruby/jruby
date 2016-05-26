@@ -170,7 +170,9 @@ public class CallStackManager {
                                 .getFrame(FrameInstance.FrameAccess.READ_ONLY, true));
 
                         Node callNode = getCallNode(frameInstance, method);
-                        activations.add(new Activation(callNode, method));
+                        if (callNode != null) {
+                            activations.add(new Activation(callNode, method));
+                        }
                     }
                 }
 
