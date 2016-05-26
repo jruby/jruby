@@ -2130,15 +2130,13 @@ class Array
   def isort!(left, right)
     i = left + 1
 
-    tup = self
-
     while i < right
       j = i
 
       while j > left
         jp = j - 1
-        el1 = tup.at(jp)
-        el2 = tup.at(j)
+        el1 = at(jp)
+        el2 = at(j)
 
         unless cmp = (el1 <=> el2)
           raise ArgumentError, "comparison of #{el1.inspect} with #{el2.inspect} failed (#{j})"
@@ -2146,8 +2144,8 @@ class Array
 
         break unless cmp > 0
 
-        tup.put(j, el1)
-        tup.put(jp, el2)
+        self[j] = el1
+        self[jp] = el2
 
         j = jp
       end
@@ -2165,12 +2163,15 @@ class Array
       j = i
 
       while j > left
-        block_result = block.call(at(j - 1), at(j))
+        el1 = at(j - 1)
+        el2 = at(j)
+        block_result = block.call(el1, el2)
 
         if block_result.nil?
           raise ArgumentError, 'block returned nil'
         elsif block_result > 0
-          swap(j, (j - 1))
+          self[j] = el1
+          self[j - 1] = el2
           j -= 1
         else
           break
