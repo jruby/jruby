@@ -81,6 +81,8 @@ class MavenBuildTask(mx.BuildTask):
 
         truffle = mx.suite('truffle')
         truffle_commit = truffle.vc.parent(truffle.dir)
+        maven_version_arg = '-Dtruffle.version=' + truffle_commit
+        maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
 
         mx.run_mx(['maven-install', '--repo', mavenDir], suite=truffle)
 
@@ -89,15 +91,15 @@ class MavenBuildTask(mx.BuildTask):
         # Build jruby-truffle
 
         #mx.run(['find', '.'], nonZeroIsFatal=False, cwd=rubyDir)
-        mx.run_maven(['--version', '-Dmaven.repo.local=' + mavenDir], nonZeroIsFatal=False, cwd=rubyDir)
+        mx.run_maven(['--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir)
 
         mx.log('Building without tests')
 
-        mx.run_maven(['-DskipTests', '-Dtruffle.version=' + truffle_commit, '-Dmaven.repo.local=' + mavenDir], cwd=rubyDir)
+        mx.run_maven(['-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir)
 
         mx.log('Building complete version')
 
-        mx.run_maven(['-Pcomplete', '-DskipTests', '-Dtruffle.version=' + truffle_commit, '-Dmaven.repo.local=' + mavenDir], cwd=rubyDir)
+        mx.run_maven(['-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir)
         mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
         mx.log('...finished build of {}'.format(self.subject))
