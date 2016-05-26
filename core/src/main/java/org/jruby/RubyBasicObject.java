@@ -1157,6 +1157,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.runtime.newBoolean(!this.isTrue());
     }
 
+    /**
+     * The != method implemented for BasicObject. Note that this version is currently
+     * replaced by a Ruby version in basicobject.rb for better caching characteristics.
+     *
+     * @param context thread context
+     * @param other other object
+     * @return false if this == other, true otherwise
+     */
     @JRubyMethod(name = "!=", required = 1)
     public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
         return context.runtime.newBoolean(!invokedynamic(context, this, OP_EQUAL, other).isTrue());
