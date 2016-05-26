@@ -1929,7 +1929,7 @@ class IO
   #
   def pos
     flush
-    @ibuffer.unseek! self
+    reset_buffering
 
     prim_seek 0, SEEK_CUR
   end
@@ -2342,7 +2342,7 @@ class IO
   def seek(amount, whence=SEEK_SET)
     flush
 
-    @ibuffer.unseek! self
+    reset_buffering
     @eof = false
 
     prim_seek Integer(amount), whence
@@ -2641,7 +2641,7 @@ class IO
     if @sync
       prim_write(data)
     else
-      @ibuffer.unseek! self
+      reset_buffering
       bytes_to_write = data.bytesize
 
       while bytes_to_write > 0
