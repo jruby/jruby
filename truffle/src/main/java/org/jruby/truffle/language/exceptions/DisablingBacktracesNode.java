@@ -18,7 +18,7 @@ public class DisablingBacktracesNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    private static ThreadLocal<Boolean> areBacktracesDisabledThreadLocal = new ThreadLocal<Boolean>() {
+    private static final ThreadLocal<Boolean> BACTRACES_DISABLED = new ThreadLocal<Boolean>() {
 
         @Override
         protected Boolean initialValue() {
@@ -34,18 +34,17 @@ public class DisablingBacktracesNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final boolean backtracesPreviouslyDisabled = areBacktracesDisabledThreadLocal.get();
-
+        final boolean backtracesPreviouslyDisabled = BACTRACES_DISABLED.get();
         try {
-            areBacktracesDisabledThreadLocal.set(true);
+            BACTRACES_DISABLED.set(true);
             return child.execute(frame);
         } finally {
-            areBacktracesDisabledThreadLocal.set(backtracesPreviouslyDisabled);
+            BACTRACES_DISABLED.set(backtracesPreviouslyDisabled);
         }
     }
 
     public static boolean areBacktracesDisabled() {
-        return areBacktracesDisabledThreadLocal.get();
+        return BACTRACES_DISABLED.get();
     }
 
 }
