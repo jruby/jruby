@@ -100,7 +100,7 @@ class Array
       @tuple = Rubinius::Tuple.new size
       @total = i = 0
       while i < size
-        @tuple.put i, yield(i)
+        put i, yield(i)
         @total = i += 1
       end
     else
@@ -152,7 +152,7 @@ class Array
         return nil if start_idx >= size
 
         begin
-          return @tuple.at(@start + start_idx)
+          return at(@start + start_idx)
 
         # Tuple#at raises this if the index is negative or
         # past the end. This is faster than checking explicitly
@@ -191,7 +191,7 @@ class Array
         return nil if start_idx >= size
 
         begin
-          return @tuple.at(@start + start_idx)
+          return at(@start + start_idx)
 
         # Tuple#at raises this if the index is negative or
         # past the end. This is faster than checking explicitly
@@ -269,7 +269,7 @@ class Array
 
       offset = 0
       while offset < new_total
-        new_tuple.copy_from @tuple, @start, size, offset
+        new_tuple.copy_from self, @start, size, offset
         offset += size
       end
 
@@ -348,7 +348,7 @@ class Array
     Thread.detect_recursion self, other do
       m = Rubinius::Mirror::Array.reflect other
 
-      md = @tuple
+      md = self
       od = m.tuple
 
       i = @start
@@ -480,7 +480,7 @@ class Array
   def compact!
     Truffle.check_frozen
 
-    if (deleted = @tuple.delete(@start, size, nil)) > 0
+    if (deleted = delete(@start, size, nil)) > 0
       @total -= deleted
       reallocate_shrink()
       return self
@@ -539,7 +539,7 @@ class Array
     key = undefined
     i = @start
     total = i + size
-    tuple = @tuple
+    tuple = self
 
     while i < total
       element = tuple.at i
@@ -554,7 +554,7 @@ class Array
       i += 1
     end
 
-    deleted = @tuple.delete @start, size, key
+    deleted = delete @start, size, key
     if deleted > 0
       @total -= deleted
       reallocate_shrink()
@@ -578,15 +578,15 @@ class Array
     return nil if idx < 0 or idx >= size
 
     # Grab the object and adjust the indices for the rest
-    obj = @tuple.at(@start + idx)
+    obj = at(@start + idx)
 
     # Shift style.
     if idx == 0
-      @tuple.put @start, nil
+      put @start, nil
       @start += 1
     else
-      @tuple.copy_from(@tuple, @start+idx+1, size-idx-1, @start+idx)
-      @tuple.put(@start + size - 1, nil)
+      copy_from(self, @start+idx+1, size-idx-1, @start+idx)
+      put(@start + size - 1, nil)
     end
 
     size -= 1
@@ -602,7 +602,7 @@ class Array
 
     i = pos = @start
     total = i + size
-    tuple = @tuple
+    tuple = self
 
     while i < total
       x = tuple.at i
@@ -649,14 +649,14 @@ class Array
         # Use a shift start optimization if we're only removing one
         # element and the shift started isn't already huge.
         if del_length == 1
-          @tuple.put @start, nil
+          put @start, nil
           @start += 1
         else
-          @tuple.copy_from @tuple, reg_start + @start, reg_length, 0
+          copy_from self, reg_start + @start, reg_length, 0
           @start = 0
         end
       else
-        @tuple.copy_from @tuple, reg_start + @start, reg_length,
+        copy_from self, reg_start + @start, reg_length,
           @start + index
       end
 
@@ -768,7 +768,7 @@ class Array
 
     # Must be after the potential call to reallocate, since
     # reallocate might change @tuple
-    tuple = @tuple
+    tuple = self
 
     i = @start + left
 
@@ -888,7 +888,7 @@ class Array
 
     i = @start
     total = i + size
-    tuple = @tuple
+    tuple = self
 
     while i < total
       return true if tuple.at(i) == obj
@@ -948,7 +948,7 @@ class Array
 
       # We've manually unwound the first loop entry for performance
       # reasons.
-      x = @tuple[@start]
+      x = self[@start]
 
       if str = String.try_convert(x)
         x = str
@@ -967,7 +967,7 @@ class Array
       while i < total
         out << sep if sep
 
-        x = @tuple[i]
+        x = self[i]
 
         if str = String.try_convert(x)
           x = str
@@ -1104,8 +1104,8 @@ class Array
       @total -= 1
       index = @start + size
 
-      elem = @tuple.at(index)
-      @tuple.put index, nil
+      elem = at(index)
+      put index, nil
 
       elem
     else
@@ -1277,7 +1277,7 @@ class Array
 
     return self unless size > 1
 
-    @tuple.reverse! @start, size
+    reverse! @start, size
 
     return self
   end
@@ -1287,7 +1287,7 @@ class Array
 
     stop = @start - 1
     i = stop + size
-    tuple = @tuple
+    tuple = self
 
     while i > stop
       yield tuple.at(i)
@@ -1303,7 +1303,7 @@ class Array
 
       i = size - 1
       while i >= 0
-        return i if yield @tuple.at(@start + i)
+        return i if yield at(@start + i)
 
         # Compensate for the array being modified by the block
         i = size if i > size
@@ -1313,7 +1313,7 @@ class Array
     else
       stop = @start - 1
       i = stop + size
-      tuple = @tuple
+      tuple = self
 
       while i > stop
         return i - @start if tuple.at(i) == obj
@@ -1546,15 +1546,15 @@ class Array
         new_total -= ins_length - replace_count
       end
 
-      if new_total > @tuple.size - @start
+      if new_total > size - @start
         # Expand the size just like #<< does.
         # MRI uses a straight realloc here to the exact size, but
         # realloc can easily include bumper data so it's pretty fast.
         # We simply compensate by using the same logic to reduce
         # having to copy data.
-        new_tuple = Rubinius::Tuple.new(new_total + @tuple.size / 2)
+        new_tuple = Rubinius::Tuple.new(new_total + size / 2)
 
-        new_tuple.copy_from(@tuple, @start, index < size ? index : size, 0)
+        new_tuple.copy_from(self, @start, index < size ? index : size, 0)
 
         case replace_count
         when 1
@@ -1567,7 +1567,7 @@ class Array
         end
 
         if index < size
-          new_tuple.copy_from(@tuple, @start + index + ins_length,
+          new_tuple.copy_from(self, @start + index + ins_length,
                               size - index - ins_length,
                               index + replace_count)
         end
@@ -1580,18 +1580,18 @@ class Array
           right_start = @start + index + ins_length
           right_len = size - index - ins_length
 
-          @tuple.copy_from(@tuple, right_start, right_len,
+          copy_from(self, right_start, right_len,
                            @start + index + replace_count)
         end
 
         case replace_count
         when 1
-          @tuple[@start + index] = replacement
+          self[@start + index] = replacement
         when 0
           # nothing
         else
           m = Rubinius::Mirror::Array.reflect replacement
-          @tuple.copy_from m.tuple, m.start, replace_count, @start + index
+          copy_from m.tuple, m.start, replace_count, @start + index
         end
 
         @total = new_total
@@ -1600,9 +1600,9 @@ class Array
       return ent
     else
       nt = @start + index + 1
-      reallocate(nt) if @tuple.size < nt
+      reallocate(nt) if size < nt
 
-      @tuple.put @start + index, ent
+      put @start + index, ent
       if index >= size - 1
         @total = index + 1
       end
@@ -1623,8 +1623,8 @@ class Array
 
     if undefined.equal?(n)
       return nil if size == 0
-      obj = @tuple.at @start
-      @tuple.put @start, nil
+      obj = at @start
+      put @start, nil
       @start += 1
       @total -= 1
 
@@ -1655,7 +1655,7 @@ class Array
     size.times do |i|
       r = i + random_generator.rand(size - i).to_int
       raise RangeError, "random number too big #{r - i}" if r < 0 || r >= size
-      @tuple.swap(@start + i, @start + r)
+      swap(@start + i, @start + r)
     end
     self
   end
@@ -1699,11 +1699,11 @@ class Array
         # of the array.
         return out unless start >= 0 and start < size
 
-        out = @tuple.at start + @start
+        out = at start + @start
 
         # Check for shift style.
         if start == 0
-          @tuple.put @start, nil
+          put @start, nil
           @total -= 1
           @start += 1
         else
@@ -1894,7 +1894,7 @@ class Array
 
     size.times do |i|
       slot = out.at(i)
-      slot << @tuple.at(@start + i)
+      slot << at(@start + i)
       others.each do |other|
         slot << case other
                 when Array
@@ -1919,16 +1919,16 @@ class Array
 
   # Reallocates the internal Tuple to accommodate at least given size
   def reallocate(at_least)
-    return if at_least < @tuple.size
+    return if at_least < size
 
-    new_total = @tuple.size * 2
+    new_total = size * 2
 
     if new_total < at_least
       new_total = at_least
     end
 
     new_tuple = Rubinius::Tuple.new new_total
-    new_tuple.copy_from @tuple, @start, size, 0
+    new_tuple.copy_from self, @start, size, 0
 
     @start = 0
     @tuple = new_tuple
@@ -1937,7 +1937,7 @@ class Array
   private :reallocate
 
   def reallocate_shrink
-    new_total = @tuple.size
+    new_total = size
     return if size > (new_total / 3)
 
     # halve the tuple size until the total > 1/3 the size of the total
@@ -1948,7 +1948,7 @@ class Array
     new_tuple = Rubinius::Tuple.new(new_total)
     # position values in the middle somewhere
     new_start = (new_total - size)/2
-    new_tuple.copy_from @tuple, @start, size, new_start
+    new_tuple.copy_from self, @start, size, new_start
 
     @start = new_start
     @tuple = new_tuple
@@ -2012,7 +2012,7 @@ class Array
   # runs back together.
   def mergesort!
     width = 7
-    @scratch = Rubinius::Tuple.new @tuple.size
+    @scratch = Rubinius::Tuple.new size
 
     # do a pre-loop to create a bunch of short sorted runs; isort on these
     # 7-element sublists is more efficient than doing merge sort on 1-element
@@ -2045,7 +2045,7 @@ class Array
         left += 2 * width
       end
 
-      @tuple, @scratch = @scratch, @tuple
+      @tuple, @scratch = @scratch, self
       width *= 2
     end
 
@@ -2060,11 +2060,11 @@ class Array
     i = left
 
     while i < last
-      if left_index < right && (right_index >= last || (@tuple.at(left_index) <=> @tuple.at(right_index)) <= 0)
-        @scratch[i] = @tuple.at(left_index)
+      if left_index < right && (right_index >= last || (at(left_index) <=> at(right_index)) <= 0)
+        @scratch[i] = at(left_index)
         left_index += 1
       else
-        @scratch[i] = @tuple.at(right_index)
+        @scratch[i] = at(right_index)
         right_index += 1
       end
 
@@ -2075,7 +2075,7 @@ class Array
 
   def mergesort_block!(block)
     width = 7
-    @scratch = Rubinius::Tuple.new @tuple.size
+    @scratch = Rubinius::Tuple.new size
 
     left = @start
     finish = size + @start
@@ -2104,7 +2104,7 @@ class Array
         left += 2 * width
       end
 
-      @tuple, @scratch = @scratch, @tuple
+      @tuple, @scratch = @scratch, self
       width *= 2
     end
 
@@ -2119,11 +2119,11 @@ class Array
     i = left
 
     while i < last
-      if left_index < right && (right_index >= last || block.call(@tuple.at(left_index), @tuple.at(right_index)) <= 0)
-        @scratch[i] = @tuple.at(left_index)
+      if left_index < right && (right_index >= last || block.call(at(left_index), at(right_index)) <= 0)
+        @scratch[i] = at(left_index)
         left_index += 1
       else
-        @scratch[i] = @tuple.at(right_index)
+        @scratch[i] = at(right_index)
         right_index += 1
       end
 
@@ -2136,7 +2136,7 @@ class Array
   def isort!(left, right)
     i = left + 1
 
-    tup = @tuple
+    tup = self
 
     while i < right
       j = i
@@ -2171,12 +2171,12 @@ class Array
       j = i
 
       while j > left
-        block_result = block.call(@tuple.at(j - 1), @tuple.at(j))
+        block_result = block.call(at(j - 1), at(j))
 
         if block_result.nil?
           raise ArgumentError, 'block returned nil'
         elsif block_result > 0
-          @tuple.swap(j, (j - 1))
+          swap(j, (j - 1))
           j -= 1
         else
           break
@@ -2270,11 +2270,11 @@ class Array
         # of the array.
         return out unless start >= 0 and start < size
 
-        out = @tuple.at start + @start
+        out = at start + @start
 
         # Check for shift style.
         if start == 0
-          @tuple.put @start, nil
+          put @start, nil
           self.shift
           @start += 1
         else
@@ -2318,11 +2318,11 @@ class Array
         if del_length == 1
           @start += 1
         else
-          @tuple.copy_from @tuple, reg_start + @start, reg_length, 0
+          copy_from self, reg_start + @start, reg_length, 0
           @start = 0
         end
       else
-        @tuple.copy_from @tuple, reg_start + @start, reg_length,
+        copy_from self, reg_start + @start, reg_length,
                          @start + index
       end
 
