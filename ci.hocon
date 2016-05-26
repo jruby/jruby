@@ -1,5 +1,13 @@
 jt: [ruby, tool/jt.rb]
 
+common-setup: [
+  [rm, -rf, mx.jruby],
+  [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
+  [cp, bin/jruby.bash, bin/jruby],
+  [chmod, +x, bin/jruby],
+  ${jt} [build, --offline]
+]
+
 common: {
   packages: {
     git:        ">=1.8.3"
@@ -13,17 +21,13 @@ common: {
     CI: "true"
   }
   
-  setup: [
-    ${jt} [build]
-  ]
+  setup: ${common-setup}
 
   timelimit: "30:00"
 }
 
 graal-core: {
-  setup: [
-    ${jt} [bootstrap],
-    [rm, -rf, mx.jruby],
+  setup: ${common-setup} [
     [mkdir, graal-workspace],
     [cd, graal-workspace],
     [mx, sclone, --kind, git, "https://github.com/graalvm/graal-core.git", graal-core],

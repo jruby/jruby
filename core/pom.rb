@@ -287,41 +287,6 @@ project 'JRuby Core' do
     end
   end
 
-  jruby_bin_config = [ 'run', { :id => 'copy',
-                                'tasks' => {
-                                  'exec' => {
-                                    '@executable' =>  '/bin/sh',
-                                    '@osfamily' =>  'unix',
-                                    'arg' => {
-                                      '@line' =>  '-c \'cp "${jruby.basedir}/bin/jruby.bash" "${jruby.basedir}/bin/jruby"\''
-                                    }
-                                  },
-                                  'chmod' => {
-                                    '@file' =>  '${jruby.basedir}/bin/jruby',
-                                    '@perm' =>  '755'
-                                  }
-                                } } ]
-
-  phase :clean do
-    plugin :antrun do
-      execute_goals( *jruby_bin_config )
-    end
-  end
-
-  profile 'jruby.bash' do
-
-    activation do
-      file( :missing => '../bin/jruby' )
-    end
-
-    phase :initialize do
-      plugin :antrun do
-        execute_goals( *jruby_bin_config )
-      end
-    end
-
-  end
-
   jni_config = [ 'unpack', { :id => 'unzip native',
                              'excludes' =>  'META-INF,META-INF/*',
                              'artifactItems' => [ { 'groupId' =>  'com.github.jnr',
