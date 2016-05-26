@@ -349,9 +349,9 @@ class IO
     end
 
     def inspect # :nodoc:
-      "#<IO::InternalBuffer:0x%x total=%p start=%p used=%p data=%p>" % [
-        object_id, @total, @start, @used, @storage
-      ]
+      content = (@start..@used).map { |i| @storage[i].chr }.join.inspect
+      format "#<IO::InternalBuffer:0x%x total=%p start=%p used=%p data=%p %s>",
+             object_id, @total, @start, @used, @storage, content
     end
 
     ##
