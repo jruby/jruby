@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.time;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Cached;
@@ -34,7 +33,6 @@ import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -86,7 +84,8 @@ public abstract class TimeNodes {
         public Object internalOffset(DynamicObject time) {
             final Object offset = Layouts.TIME.getOffset(time);
             if (offset == nil()) {
-                return Layouts.TIME.getDateTime(time).getZone().getOffset(Layouts.TIME.getDateTime(time).getMillis()) / 1_000;
+                final DateTime dateTime = Layouts.TIME.getDateTime(time);
+                return dateTime.getZone().getOffset(dateTime.getMillis()) / 1_000;
             } else {
                 return offset;
             }
@@ -95,17 +94,17 @@ public abstract class TimeNodes {
 
     @CoreMethod(names = "localtime_internal", optional = 1)
     public abstract static class LocalTimeNode extends CoreMethodArrayArgumentsNode {
-        @Child private ReadTimeZoneNode readTimeZoneNode;
+
+        @Child private GetTimeZoneNode getTimeZoneNode;
 
         public LocalTimeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
+            getTimeZoneNode = GetTimeZoneNodeGen.create();
         }
 
         @Specialization
         public DynamicObject localtime(VirtualFrame frame, DynamicObject time, NotProvided offset) {
-            final DynamicObject zoneName = (DynamicObject) readTimeZoneNode.execute(frame);
-            final DateTimeZone dateTimeZone = TimeZoneParser.parse(this, StringOperations.getString(getContext(), zoneName));
+            final DateTimeZone dateTimeZone = getTimeZoneNode.executeGetTimeZone(frame);
             final String shortZoneName = TimeZoneParser.getShortZoneName(time, dateTimeZone);
             final DynamicObject zone = createString(StringOperations.encodeRope(shortZoneName, UTF8Encoding.INSTANCE));
             final DateTime dateTime = Layouts.TIME.getDateTime(time);
@@ -185,9 +184,14 @@ public abstract class TimeNodes {
             Layouts.TIME.setIsUtc(time, true);
             Layouts.TIME.setRelativeOffset(time, false);
             Layouts.TIME.setZone(time, nil());
-            Layouts.TIME.setDateTime(time, dateTime.withZone(DateTimeZone.UTC));
+            Layouts.TIME.setDateTime(time, inUTC(dateTime));
 
             return time;
+        }
+
+        @TruffleBoundary
+        private DateTime inUTC(final DateTime dateTime) {
+            return dateTime.withZone(DateTimeZone.UTC);
         }
 
     }
@@ -204,8 +208,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, ZERO, 0, coreLibrary().getNilObject(),
-                    0, false, false);
+            return allocateObjectNode.allocate(rubyClass, ZERO, 0, coreLibrary().getNilObject(), 0, false, false);
         }
 
     }
@@ -215,24 +218,22 @@ public abstract class TimeNodes {
     public static abstract class TimeSNowPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
-        @Child private ReadTimeZoneNode readTimeZoneNode;
+        @Child private GetTimeZoneNode getTimeZoneNode;
 
         public TimeSNowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
+            getTimeZoneNode = GetTimeZoneNodeGen.create();
         }
 
         @Specialization
         public DynamicObject timeSNow(VirtualFrame frame, DynamicObject timeClass) {
-            // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
-            return allocateObjectNode.allocate(timeClass, now((DynamicObject) readTimeZoneNode.execute(frame)), 0, nil(), nil(), false, false);
+            return allocateObjectNode.allocate(timeClass, now(getTimeZoneNode.executeGetTimeZone(frame)), 0, nil(), nil(), false, false);
         }
 
         @TruffleBoundary
-        private DateTime now(DynamicObject timeZone) {
-            assert RubyGuards.isRubyString(timeZone);
-            return DateTime.now(TimeZoneParser.parse(this, StringOperations.getString(getContext(), timeZone)));
+        private DateTime now(DateTimeZone timeZone) {
+            return DateTime.now(timeZone);
         }
 
     }
@@ -240,11 +241,11 @@ public abstract class TimeNodes {
     @Primitive(name = "time_s_specific", needsSelf = false, lowerFixnumParameters = { 1 })
     public static abstract class TimeSSpecificPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private ReadTimeZoneNode readTimeZoneNode;
+        @Child private GetTimeZoneNode getTimeZoneNode;
 
         public TimeSSpecificPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
+            getTimeZoneNode = GetTimeZoneNodeGen.create();
         }
 
         @Specialization(guards = { "isUTC" })
@@ -257,7 +258,8 @@ public abstract class TimeNodes {
         public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
             return Layouts.TIME.createTime(coreLibrary().getTimeFactory(),
-                    localtime(milliseconds, (DynamicObject) readTimeZoneNode.execute(frame)), nanoseconds % 1_000_000, nil(), offset, false, isUTC);
+                    localtime(milliseconds, getTimeZoneNode.executeGetTimeZone(frame)),
+                    nanoseconds % 1_000_000, nil(), offset, false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC" })
@@ -271,7 +273,6 @@ public abstract class TimeNodes {
             try {
                 return ExactMath.addExact(ExactMath.multiplyExact(seconds, 1000L), (nanoseconds / 1_000_000));
             } catch (ArithmeticException e) {
-                CompilerDirectives.transferToInterpreter();
                 String message = String.format("UNIX epoch + %d seconds out of range for Time (Joda-Time limitation)", seconds);
                 throw new RaiseException(coreExceptions().rangeError(message, this));
             }
@@ -284,14 +285,12 @@ public abstract class TimeNodes {
 
         @TruffleBoundary
         private DateTime offsetTime(long milliseconds, long offset) {
-
             return new DateTime(milliseconds, DateTimeZone.forOffsetMillis((int) offset * 1000));
         }
 
         @TruffleBoundary
-        private DateTime localtime(long milliseconds, DynamicObject zoneName) {
-            assert RubyGuards.isRubyString(zoneName);
-            return new DateTime(milliseconds, TimeZoneParser.parse(this, StringOperations.getString(getContext(), zoneName)));
+        private DateTime localtime(long milliseconds, DateTimeZone timeZone) {
+            return new DateTime(milliseconds, timeZone);
         }
 
     }
@@ -320,11 +319,8 @@ public abstract class TimeNodes {
     @Primitive(name = "time_decompose")
     public static abstract class TimeDecomposePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private ReadTimeZoneNode readTimeZoneNode;
-
         public TimeDecomposePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
         @TruffleBoundary
@@ -382,12 +378,12 @@ public abstract class TimeNodes {
     @Primitive(name = "time_s_from_array", needsSelf = true, lowerFixnumParameters = { 0 /*sec*/, 1 /* min */, 2 /* hour */, 3 /* mday */, 4 /* month */, 5 /* year */, 6 /*nsec*/, 7 /*isdst*/ })
     public static abstract class TimeSFromArrayPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child ReadTimeZoneNode readTimeZoneNode;
+        @Child GetTimeZoneNode getTimeZoneNode;
         @Child AllocateObjectNode allocateObjectNode;
 
         public TimeSFromArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
+            getTimeZoneNode = GetTimeZoneNodeGen.create();
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
@@ -396,25 +392,25 @@ public abstract class TimeNodes {
                                             int nsec, int isdst, boolean fromutc, DynamicObject utcoffset,
                                             @Cached("new()") SnippetNode snippetNode) {
 
-            DynamicObject envZon = null;
+            DateTimeZone envZone = null;
             if (!fromutc && utcoffset == nil()) {
-                envZon = (DynamicObject) readTimeZoneNode.execute(frame);
+                envZone = getTimeZoneNode.executeGetTimeZone(frame);
             }
 
             final int millis = cast(snippetNode.execute(frame, "(offset * 1000).to_i", "offset", utcoffset));
 
-            return buildTime(timeClass, sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset, envZon, millis);
+            return buildTime(timeClass, sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset, envZone, millis);
         }
 
         @Specialization(guards = "(fromutc || !isDynamicObject(utcoffset)) || isNil(utcoffset)")
         public DynamicObject timeSFromArray(VirtualFrame frame, DynamicObject timeClass, int sec, int min, int hour, int mday, int month, int year,
                                             int nsec, int isdst, boolean fromutc, Object utcoffset) {
 
-            DynamicObject envZon = null;
+            DateTimeZone envZone = null;
             if (!fromutc && utcoffset == nil()) {
-                envZon = (DynamicObject) readTimeZoneNode.execute(frame);
+                envZone = getTimeZoneNode.executeGetTimeZone(frame);
             }
-            return buildTime(timeClass, sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset, envZon, -1);
+            return buildTime(timeClass, sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset, envZone, -1);
         }
 
         @Specialization(guards = "!isInteger(sec) || !isInteger(nsec)")
@@ -425,7 +421,7 @@ public abstract class TimeNodes {
 
         @TruffleBoundary
         private DynamicObject buildTime(DynamicObject timeClass, int sec, int min, int hour, int mday, int month, int year,
-                                        int nsec, int isdst, boolean fromutc, Object utcoffset, DynamicObject envZon, int millis) {
+                int nsec, int isdst, boolean fromutc, Object utcoffset, DateTimeZone envZone, int millis) {
             if (sec < 0 || sec > 59 ||
                     min < 0 || min > 59 ||
                     hour < 0 || hour > 23 ||
@@ -451,7 +447,7 @@ public abstract class TimeNodes {
                 relativeOffset = false;
                 zoneToStore = nil();
             } else if (utcoffset == nil()) {
-                zone = TimeZoneParser.parse(this, StringOperations.getString(getContext(), envZon));
+                zone = envZone;
                 // TODO BJF 16-Feb-2016 verify which zone the following date time should be in
                 final String zoneName = TimeZoneParser.getShortZoneName(dt.withZoneRetainFields(zone), zone);
                 zoneToStore = createString(StringOperations.encodeRope(zoneName, UTF8Encoding.INSTANCE));
@@ -592,7 +588,7 @@ public abstract class TimeNodes {
             return zone.getShortName(dateTime.getMillis());
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         public static DateTimeZone parse(RubyNode node, String zone) {
             String upZone = zone.toUpperCase(Locale.ENGLISH);
 

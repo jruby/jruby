@@ -764,6 +764,7 @@ describe "The defined? keyword for a scoped constant" do
   end
 
   it "returns nil when a constant is scoped to an undefined constant" do
+    Object.should_not_receive(:const_missing)
     defined?(Undefined::Object).should be_nil
   end
 

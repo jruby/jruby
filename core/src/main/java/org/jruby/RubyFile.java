@@ -518,15 +518,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 case 2:
                     return RubyString.newEmptyString(runtime, origString.getEncoding()).infectBy(args[0]);
                 case 3:
-                    if (origEncoding.getCharset() != null) {
-                        try {
-                            return RubyString.newString(runtime, new ByteList(name.substring(2).getBytes(origEncoding.getCharsetName()), origString.getEncoding())).infectBy(args[0]);
-                        } catch (UnsupportedEncodingException uee) {
-                            // fall through to UTF-8 logic
-                        }
-                    }
-
-                    return RubyString.newString(runtime, name.substring(2)).infectBy(args[0]);
+                    return RubyString.newString(runtime, RubyString.encodeBytelist(name.substring(2), origEncoding));
                 default:
                     switch (name.charAt(2)) {
                     case '/':
@@ -581,15 +573,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 name = name.substring(0, name.length() - ext.length());
             }
         }
-        if (origEncoding.getCharset() != null) {
-            try {
-                return RubyString.newString(runtime, new ByteList(name.getBytes(origEncoding.getCharsetName()), origString.getEncoding())).infectBy(args[0]);
-            } catch (UnsupportedEncodingException uee) {
-                // fall through to UTF-8 logic
-            }
-        }
 
-        return RubyString.newString(runtime, name).infectBy(args[0]);
+        return RubyString.newString(runtime, RubyString.encodeBytelist(name, origEncoding));
     }
 
     @JRubyMethod(required = 2, rest = true, meta = true)
@@ -1370,8 +1355,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     pathEncoding != encodingService.getAscii8bitEncoding() &&
                     pathEncoding != encodingService.getFileSystemEncoding(runtime) &&
                     !path.isAsciiOnly()) {
-                ByteList bytes = EncodingUtils.strConvEnc(context, path.getByteList(), pathEncoding, encodingService.getFileSystemEncoding(runtime));
-                path = RubyString.newString(runtime, bytes);
+                path = EncodingUtils.strConvEnc(context, path, pathEncoding, encodingService.getFileSystemEncoding(runtime));
             }
         }
 
@@ -1656,7 +1640,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (path.startsWith("uri:")) {
                 cwd = path;
             } else {
-                cwd = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[1])).getUnicodeValue();
+                cwd = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[1])).toString();
 
                 // Handle ~user paths.
                 if (expandUser) {

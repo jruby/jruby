@@ -158,19 +158,15 @@ public class RopeTable {
     }
 
     public boolean contains(Rope rope) {
+        final Key key = new Key(rope.getBytes(), rope.getEncoding());
+
         lock.readLock().lock();
 
         try {
-            for (Map.Entry<Key, WeakReference<Rope>> entry : ropesTable.entrySet()) {
-                if (entry.getValue().get() == rope) {
-                    return true;
-                }
-            }
+            return ropesTable.get(key) != null;
         } finally {
             lock.readLock().unlock();
         }
-
-        return false;
     }
 
     public int getByteArrayReusedCount() {

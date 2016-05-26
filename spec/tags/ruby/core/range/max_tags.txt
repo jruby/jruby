@@ -1,1 +1,0 @@
-fails:Range#max returns the maximum value in the range when called with no arguments

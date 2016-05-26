@@ -10,14 +10,14 @@
 package org.jruby.truffle.language.yield;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.array.ArrayToObjectArrayNode;
+import org.jruby.truffle.core.array.ArrayToObjectArrayNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -29,6 +29,7 @@ public class YieldExpressionNode extends RubyNode {
 
     @Children private final RubyNode[] arguments;
     @Child private YieldNode yieldNode;
+    @Child private ArrayToObjectArrayNode unsplatNode;
 
     private final BranchProfile useCapturedBlock = BranchProfile.create();
     private final BranchProfile noCapturedBlock = BranchProfile.create();
@@ -69,11 +70,12 @@ public class YieldExpressionNode extends RubyNode {
         return getYieldNode().dispatch(frame, block, argumentsObjects);
     }
 
-    @TruffleBoundary
     private Object[] unsplat(Object[] argumentsObjects) {
-        assert argumentsObjects.length == 1;
-        assert RubyGuards.isRubyArray(argumentsObjects[0]);
-        return ArrayOperations.toObjectArray(((DynamicObject) argumentsObjects[0]));
+        if (unsplatNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            unsplatNode = insert(ArrayToObjectArrayNodeGen.create(null));
+        }
+        return unsplatNode.unsplat(argumentsObjects);
     }
 
     @Override

@@ -1,6 +1,5 @@
 import mx
 import os
-from os.path import join, exists
 import subprocess
 import shutil
 
@@ -85,9 +84,9 @@ class MavenBuildTask(mx.BuildTask):
 
         mx.run_mx(['maven-install', '--repo', mavenDir], suite=truffle)
 
-        open(join(rubyDir, 'VERSION'), 'w').write('graal-vm\n')
+        open(os.path.join(rubyDir, 'VERSION'), 'w').write('graal-vm\n')
 
-        # Build jruby-truffle and
+        # Build jruby-truffle
 
         #mx.run(['find', '.'], nonZeroIsFatal=False, cwd=rubyDir)
         mx.run_maven(['--version', '-Dmaven.repo.local=' + mavenDir], nonZeroIsFatal=False, cwd=rubyDir)
@@ -101,10 +100,6 @@ class MavenBuildTask(mx.BuildTask):
         mx.run_maven(['-Pcomplete', '-DskipTests', '-Dtruffle.version=' + truffle_commit, '-Dmaven.repo.local=' + mavenDir], cwd=rubyDir)
         mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
-#        shutil.rmtree(os.path.join(_suite.dir, "lib", "target"), True)
-#        shutil.rmtree(os.path.join(_suite.dir, 'lib', 'lib', 'jni'), True)
-#        shutil.copytree(os.path.join(_suite.dir, 'lib', 'jni'), os.path.join(_suite.dir, 'lib', 'lib', 'jni'))
-#        shutil.rmtree(os.path.join(_suite.dir, 'lib', 'jni'), True)
         mx.log('...finished build of {}'.format(self.subject))
 
     def clean(self, forBuild=False):
@@ -112,4 +107,3 @@ class MavenBuildTask(mx.BuildTask):
             return
         rubyDir = _suite.dir
         mx.run_maven(['clean'], nonZeroIsFatal=False, cwd=rubyDir)
-

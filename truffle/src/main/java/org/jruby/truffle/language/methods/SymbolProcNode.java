@@ -9,7 +9,9 @@
  */
 package org.jruby.truffle.language.methods;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -22,21 +24,34 @@ public class SymbolProcNode extends RubyNode {
 
     private final String symbol;
 
-    @Child private CallDispatchHeadNode dispatch;
+    @Child private CallDispatchHeadNode callNode;
 
     public SymbolProcNode(RubyContext context, SourceSection sourceSection, String symbol) {
         super(context, sourceSection);
         this.symbol = symbol;
-        dispatch = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object[] args = frame.getArguments();
-        final Object receiver = RubyArguments.getArgument(args, 0);
-        final Object[] arguments = RubyArguments.getArguments(args);
-        final Object[] sendArgs = ArrayUtils.extractRange(arguments, 1, arguments.length);
-        return dispatch.call(frame, receiver, symbol, RubyArguments.getBlock(args), sendArgs);
+        final Object receiver = RubyArguments.getArgument(frame, 0);
+
+        final DynamicObject block = RubyArguments.getBlock(frame);
+
+        final Object[] arguments = ArrayUtils.extractRange(
+                RubyArguments.getArguments(frame),
+                1,
+                RubyArguments.getArgumentsCount(frame));
+
+        return getCallNode().call(frame, receiver, symbol, block, arguments);
+    }
+
+    private CallDispatchHeadNode getCallNode() {
+        if (callNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            callNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+        }
+
+        return callNode;
     }
 
 }

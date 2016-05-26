@@ -28,7 +28,6 @@ import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
@@ -36,14 +35,13 @@ import org.jruby.truffle.language.parser.ParserContext;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class FeatureLoader {
 
     private final RubyContext context;
 
-    private final ConcurrentHashMap<String, ReentrantLock> fileLocks = new ConcurrentHashMap<>();
+    private final ReentrantLockFreeingMap<String> fileLocks = new ReentrantLockFreeingMap<String>();
 
     private final Object cextImplementationLock = new Object();
     private boolean cextImplementationLoaded = false;
@@ -56,7 +54,9 @@ public class FeatureLoader {
         final String featurePath = findFeature(feature);
 
         if (featurePath == null) {
-            throw new RaiseException(context.getCoreExceptions().loadErrorCannotLoad(feature, callNode));
+            throw new RaiseException(context.getCoreExceptions().loadErrorCannotLoad(
+                    feature,
+                    callNode));
         }
 
         return doRequire(frame, featurePath, callNode);
@@ -68,7 +68,9 @@ public class FeatureLoader {
         if (feature.startsWith("./")) {
             feature = currentDirectory + "/" + feature.substring(2);
         } else if (feature.startsWith("../")) {
-            feature = currentDirectory.substring(0, currentDirectory.lastIndexOf('/')) + "/" + feature.substring(3);
+            feature = currentDirectory.substring(
+                    0,
+                    currentDirectory.lastIndexOf('/')) + "/" + feature.substring(3);
         }
 
         if (feature.startsWith(SourceLoader.TRUFFLE_SCHEME)
@@ -126,128 +128,131 @@ public class FeatureLoader {
             if (file.isAbsolute()) {
                 return file.getCanonicalPath();
             } else {
-                return new File(context.getNativePlatform().getPosix().getcwd(), file.getPath()).getCanonicalPath();
+                return new File(
+                        context.getNativePlatform().getPosix().getcwd(),
+                        file.getPath()).getCanonicalPath();
             }
         } catch (IOException e) {
             return null;
         }
     }
 
-    private boolean doRequire(final VirtualFrame frame, final String expandedPath, final IndirectCallNode callNode) {
+    private boolean doRequire(
+            final VirtualFrame frame,
+            final String expandedPath,
+            final IndirectCallNode callNode) {
+
         if (isFeatureLoaded(expandedPath)) {
             return false;
         }
 
-        final ReentrantLock currentLock = fileLocks.get(expandedPath);
-        final ReentrantLock lock;
+        while (true) {
+            final ReentrantLock lock = fileLocks.get(expandedPath);
 
-        if (currentLock == null) {
-            ReentrantLock newLock = new ReentrantLock();
-            final ReentrantLock wasLock = fileLocks.putIfAbsent(expandedPath, newLock);
-            lock = (wasLock == null) ? newLock : wasLock;
-        } else {
-            lock = currentLock;
-        }
-
-        if (lock.isHeldByCurrentThread()) {
-            // circular require
-            // TODO (pitr-ch 20-Mar-2016): warn user
-            return false;
-        }
-
-        context.getThreadManager().runUntilResult(callNode, new ThreadManager.BlockingAction<Boolean>() {
-            @Override
-            public Boolean block() throws InterruptedException {
-                lock.lockInterruptibly();
-                return SUCCESS;
-            }
-        });
-
-        try {
-            if (isFeatureLoaded(expandedPath)) {
+            if (lock.isHeldByCurrentThread()) {
+                // circular require
+                // TODO (pitr-ch 20-Mar-2016): warn user
                 return false;
             }
 
-            final Source source;
+            if (!fileLocks.lock(callNode, context.getThreadManager(), expandedPath, lock)) {
+                continue;
+            }
 
             try {
-                source = context.getSourceCache().getSource(expandedPath);
-            } catch (IOException e) {
-                return false;
+                if (isFeatureLoaded(expandedPath)) {
+                    return false;
+                }
+
+                final Source source;
+
+                try {
+                    source = context.getSourceCache().getSource(expandedPath);
+                } catch (IOException e) {
+                    return false;
+                }
+
+                final String mimeType = source.getMimeType();
+
+                switch (mimeType) {
+                    case RubyLanguage.MIME_TYPE: {
+                        final RubyRootNode rootNode = context.getCodeLoader().parse(
+                                source,
+                                UTF8Encoding.INSTANCE,
+                                ParserContext.TOP_LEVEL,
+                                null,
+                                true,
+                                callNode);
+
+                        final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
+                                ParserContext.TOP_LEVEL,
+                                DeclarationContext.TOP_LEVEL,
+                                rootNode,
+                                null,
+                                context.getCoreLibrary().getMainObject());
+
+                        deferredCall.call(frame, callNode);
+                    }
+                    break;
+
+                    case RubyLanguage.CEXT_MIME_TYPE: {
+                        ensureCExtImplementationLoaded(frame, callNode);
+
+                        final CallTarget callTarget;
+
+                        try {
+                            callTarget = context.getEnv().parse(source);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        callNode.call(frame, callTarget, new Object[]{});
+
+                        final Object initFunction = context.getEnv().importSymbol("@Init_" + getBaseName(
+                                expandedPath));
+
+                        if (!(initFunction instanceof TruffleObject)) {
+                            throw new UnsupportedOperationException();
+                        }
+
+                        final TruffleObject initFunctionObject = (TruffleObject) initFunction;
+
+                        final Node isExecutableNode = Message.IS_EXECUTABLE.createNode();
+
+                        if (!ForeignAccess.sendIsExecutable(
+                                isExecutableNode,
+                                frame,
+                                initFunctionObject)) {
+                            throw new UnsupportedOperationException();
+                        }
+
+                        final Node executeNode = Message.createExecute(0).createNode();
+
+                        try {
+                            ForeignAccess.sendExecute(executeNode, frame, initFunctionObject);
+                        } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    break;
+
+                    default:
+                        throw new RaiseException(context.getCoreExceptions().internalError(
+                                        "unknown language " + mimeType + " for " + expandedPath,
+                                        callNode));
+                }
+
+                final DynamicObject pathString = StringOperations.createString(
+                        context,
+                        StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
+
+                addToLoadedFeatures(pathString);
+
+                return true;
+            } finally {
+                fileLocks.unlock(expandedPath, lock);
             }
-
-            final String mimeType = source.getMimeType();
-
-            switch (mimeType) {
-                case RubyLanguage.MIME_TYPE: {
-                    final RubyRootNode rootNode = context.getCodeLoader().parse(
-                            source,
-                            UTF8Encoding.INSTANCE,
-                            ParserContext.TOP_LEVEL,
-                            null,
-                            true,
-                            callNode);
-
-                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
-                            ParserContext.TOP_LEVEL,
-                            DeclarationContext.TOP_LEVEL,
-                            rootNode, null,
-                            context.getCoreLibrary().getMainObject());
-
-                    deferredCall.call(frame, callNode);
-                } break;
-
-                case RubyLanguage.CEXT_MIME_TYPE: {
-                    ensureCExtImplementationLoaded(frame, callNode);
-
-                    final CallTarget callTarget;
-
-                    try {
-                        callTarget = context.getEnv().parse(source);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    callNode.call(frame, callTarget, new Object[]{});
-
-                    final Object initFunction = context.getEnv().importSymbol("@Init_" + getBaseName(expandedPath));
-
-                    if (!(initFunction instanceof TruffleObject)) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    final TruffleObject initFunctionObject = (TruffleObject) initFunction;
-
-                    final Node isExecutableNode = Message.IS_EXECUTABLE.createNode();
-
-                    if (!ForeignAccess.sendIsExecutable(isExecutableNode, frame, initFunctionObject)) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    final Node executeNode = Message.createExecute(0).createNode();
-
-                    try {
-                        ForeignAccess.sendExecute(executeNode, frame, initFunctionObject);
-                    } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
-                        throw new RuntimeException(e);
-                    }
-                } break;
-
-                default:
-                    throw new RaiseException(
-                            context.getCoreExceptions().internalError("unknown language " + expandedPath, callNode));
-            }
-
-            final DynamicObject pathString = StringOperations.createString(context,
-                    StringOperations.encodeRope(expandedPath, UTF8Encoding.INSTANCE));
-
-            addToLoadedFeatures(pathString);
-
-            return true;
-        } finally {
-            lock.unlock();
         }
-
     }
 
     private void ensureCExtImplementationLoaded(VirtualFrame frame, IndirectCallNode callNode) {
@@ -310,7 +315,9 @@ public class FeatureLoader {
             if (size < store.length) {
                 store[size] = feature;
             } else {
-                final Object[] newStore = ArrayUtils.grow(store, ArrayUtils.capacityForOneMore(context, store.length));
+                final Object[] newStore = ArrayUtils.grow(
+                        store,
+                        ArrayUtils.capacityForOneMore(context, store.length));
                 newStore[size] = feature;
                 Layouts.ARRAY.setStore(loadedFeatures, newStore);
             }

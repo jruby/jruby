@@ -10,7 +10,6 @@
 package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
@@ -191,7 +190,7 @@ public class InternalMethod implements ObjectGraphNode {
                 capturedDefaultDefinee);
     }
 
-    public boolean isVisibleTo(Node currentNode, DynamicObject callerClass) {
+    public boolean isVisibleTo(DynamicObject callerClass) {
         assert RubyGuards.isRubyClass(callerClass);
 
         switch (visibility) {

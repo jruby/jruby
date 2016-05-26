@@ -209,15 +209,11 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
-
             return yield.dispatchWithModifiedSelf(frame, block, receiver, arguments);
         }
 
         @Specialization
         public Object instanceExec(Object receiver, Object[] arguments, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
-
             throw new RaiseException(coreExceptions().localJumpError("no block given", this));
         }
 
@@ -254,7 +250,6 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object methodMissingNoName(Object self, NotProvided name, Object[] args, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreExceptions().argumentError("no id given", this));
         }
 
@@ -268,18 +263,22 @@ public abstract class BasicObjectNodes {
             return methodMissing(self, name, args, block);
         }
 
-        @TruffleBoundary
         private Object methodMissing(Object self, DynamicObject nameObject, Object[] args, DynamicObject block) {
+            throw new RaiseException(buildMethodMissingException(self, nameObject, args, block));
+        }
+
+        @TruffleBoundary
+        private DynamicObject buildMethodMissingException(Object self, DynamicObject nameObject, Object[] args, DynamicObject block) {
             final String name = nameObject.toString();
 
             if (lastCallWasSuper()) {
-                throw new RaiseException(coreExceptions().noSuperMethodError(name, this));
+                return coreExceptions().noSuperMethodError(name, this);
             } else if (lastCallWasCallingPrivateMethod(self, name)) {
-                throw new RaiseException(coreExceptions().privateMethodError(name, self, this));
+                return coreExceptions().privateMethodError(name, self, this);
             } else if (lastCallWasVCall()) {
-                throw new RaiseException(coreExceptions().nameErrorUndefinedLocalVariableOrMethod(name, self, this));
+                return coreExceptions().nameErrorUndefinedLocalVariableOrMethod(name, self, this);
             } else {
-                throw new RaiseException(coreExceptions().noMethodErrorOnReceiver(name, self, this));
+                return coreExceptions().noMethodErrorOnReceiver(name, self, this);
             }
         }
 

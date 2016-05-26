@@ -176,7 +176,6 @@ public abstract class ModuleOperations {
             } else if (RubyGuards.isRubyModule(constant.getValue())) {
                 module = (DynamicObject) constant.getValue();
             } else {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(context.getCoreExceptions().typeError(fullName.substring(0, next) + " does not refer to class/module", currentNode));
             }
             start = next + 2;
@@ -361,7 +360,7 @@ public abstract class ModuleOperations {
         });
     }
 
-    @TruffleBoundary
+    @TruffleBoundary(throwsControlFlowException = true)
     public static void setClassVariable(final RubyContext context, DynamicObject module, final String name, final Object value, final Node currentNode) {
         assert RubyGuards.isRubyModule(module);
         ModuleFields moduleFields = Layouts.MODULE.getFields(module);
@@ -393,13 +392,12 @@ public abstract class ModuleOperations {
         return found != null;
     }
 
-    @TruffleBoundary
+    @TruffleBoundary(throwsControlFlowException = true)
     public static Object removeClassVariable(ModuleFields moduleFields, RubyContext context, Node currentNode, String name) {
         moduleFields.checkFrozen(context, currentNode);
 
         final Object found = moduleFields.getClassVariables().remove(name);
         if (found == null) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreExceptions().nameErrorClassVariableNotDefined(name, moduleFields.rubyModuleObject, currentNode));
         }
         return found;

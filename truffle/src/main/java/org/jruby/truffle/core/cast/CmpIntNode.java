@@ -86,15 +86,16 @@ public abstract class CmpIntNode extends RubyNode {
         return Layouts.BIGNUM.getValue(value).signum();
     }
 
-    @TruffleBoundary
     @Specialization(guards = "isNil(nil)")
     public int cmpNil(Object nil, Object receiver, Object other) {
-        throw new RaiseException(
-            coreExceptions().argumentError(
-                String.format("comparison of %s with %s failed",
-                        Layouts.MODULE.getFields(coreLibrary().getLogicalClass(receiver)).getName(),
-                        Layouts.MODULE.getFields(coreLibrary().getLogicalClass(other)).getName()), this)
-        );
+        throw new RaiseException(coreExceptions().argumentError(formatMessage(receiver, other), this));
+    }
+
+    @TruffleBoundary
+    private String formatMessage(Object receiver, Object other) {
+        return String.format("comparison of %s with %s failed",
+                Layouts.MODULE.getFields(coreLibrary().getLogicalClass(receiver)).getName(),
+                Layouts.MODULE.getFields(coreLibrary().getLogicalClass(other)).getName());
     }
 
     @Specialization(guards = {

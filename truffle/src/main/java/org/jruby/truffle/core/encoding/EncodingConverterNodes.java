@@ -378,8 +378,6 @@ public abstract class EncodingConverterNodes {
 
         @Specialization
         public Object encodingConverterLastError(VirtualFrame frame, DynamicObject encodingConverter) {
-            CompilerDirectives.transferToInterpreter();
-
             final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
             final EConv.LastError lastError = ec.lastError;
 
@@ -422,10 +420,9 @@ public abstract class EncodingConverterNodes {
     @Primitive(name = "encoding_converter_primitive_errinfo")
     public static abstract class EncodingConverterErrinfoNode extends PrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public Object encodingConverterLastError(DynamicObject encodingConverter) {
-            CompilerDirectives.transferToInterpreter();
-
             final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
 
             final Object[] ret = { getSymbol(ec.lastError.getResult().symbolicName()), nil(), nil(), nil(), nil() };

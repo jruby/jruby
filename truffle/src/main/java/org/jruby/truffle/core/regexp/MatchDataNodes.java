@@ -11,10 +11,12 @@ package org.jruby.truffle.core.regexp;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.joni.Region;
@@ -41,7 +43,6 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-
 import java.util.Arrays;
 
 @CoreClass("MatchData")
@@ -172,7 +173,7 @@ public abstract class MatchDataNodes {
 
         @Child private ToIntNode toIntNode;
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, NotProvided length) {
             final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
@@ -185,7 +186,7 @@ public abstract class MatchDataNodes {
             }
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, int length) {
             // TODO BJF 15-May-2015 Need to handle negative indexes and lengths and out of bounds
@@ -195,23 +196,22 @@ public abstract class MatchDataNodes {
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, length);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubySymbol(index)")
-        public Object getIndexSymbol(DynamicObject matchData, DynamicObject index, NotProvided length) {
+        public Object getIndexSymbol(DynamicObject matchData, DynamicObject index, NotProvided length,
+                @Cached("create()") BranchProfile errorProfile) {
             try {
                 final Rope value = Layouts.SYMBOL.getRope(index);
                 final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), 0, value.byteLength(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             } catch (final ValueException e) {
-                CompilerDirectives.transferToInterpreter();
-
                 throw new RaiseException(
                         coreExceptions().indexError(String.format("undefined group name reference: %s", Layouts.SYMBOL.getString(index)), this));
             }
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(index)")
         public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length) {
             try {
@@ -221,8 +221,6 @@ public abstract class MatchDataNodes {
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             }
             catch (final ValueException e) {
-                CompilerDirectives.transferToInterpreter();
-
                 throw new RaiseException(
                         coreExceptions().indexError(String.format("undefined group name reference: %s", index.toString()), this));
             }

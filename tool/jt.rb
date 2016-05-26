@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+# encoding: utf-8
+
 # Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
 # This code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
@@ -12,7 +14,7 @@
 # Recommended: function jt { ruby tool/jt.rb "$@"; }
 
 require 'fileutils'
-require 'digest/sha1'
+require 'json'
 
 GRAALVM_VERSION = "0.11"
 
@@ -31,7 +33,7 @@ module Utilities
 
   def self.truffle_version
     File.foreach("#{JRUBY_DIR}/truffle/pom.rb") do |line|
-      if /'truffle\.version' => '(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
+      if /'truffle\.version' => '(\d+\.\d+|\h+-SNAPSHOT)'/ =~ line
         break $1
       end
     end
@@ -45,12 +47,17 @@ module Utilities
     yield File.expand_path(from_branch) if from_branch
 
     rel_java_bin = "bin/java" # "jre/bin/javao"
-    %w[dk re].each { |kind|
-      ["", "../", "../../"].each { |prefix|
+    ['', '../', '../../'].each do |prefix|
+      %w[dk re].each do |kind|
         path = "#{prefix}graalvm-#{GRAALVM_VERSION}-#{kind}/#{rel_java_bin}"
         yield File.expand_path(path, JRUBY_DIR)
-      }
-    }
+      end
+    end
+
+    ['', '../', '../../'].each do |prefix|
+      path = Dir["#{prefix}graal/jvmci/jdk1.8.*/product/#{rel_java_bin}"].sort.last
+      yield File.expand_path(path, JRUBY_DIR) if path
+    end
   end
 
   def self.find_graal
@@ -59,17 +66,31 @@ module Utilities
     end
     raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
   end
-  
+
   def self.find_sulong_graal(dir)
-    jvmci = File.expand_path("../jvmci", dir)
-    Dir["#{jvmci}/jdk*/product/bin/java"].first or
-      raise "couldn't find the Java build in the Sulong repository - you need to check it out and build it"
+    searches = [
+      "#{dir}/../jvmci/jdk*/product/bin/java",
+      "#{dir}/../graal-core/mx.imports/binary/jvmci/jdk*/product/bin/java"
+    ]
+
+    searches.each do |search|
+      java = Dir[search].first
+      return java if java
+    end
+
+    raise "couldn't find the Java build in the Sulong repository - you need to check it out and build it"
   end
 
   def self.find_graal_js
     jar = ENV['GRAAL_JS_JAR']
     return jar if jar
     raise "couldn't find trufflejs.jar - download GraalVM as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and find it in there"
+  end
+
+  def self.find_sl
+    jar = ENV['SL_JAR']
+    return jar if jar
+    raise "couldn't find truffle-sl.jar - build Truffle and find it in there"
   end
 
   def self.find_sulong_dir
@@ -114,6 +135,14 @@ module Utilities
     end
   end
 
+  def self.find_gem(name)
+    ["#{JRUBY_DIR}/lib/ruby/gems/shared/gems", JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
+      found = Dir.glob("#{dir}/#{name}*").first
+      return found if found
+    end
+    raise "Can't find the #{name} gem - gem install it in this repository, or put it in the repository directory or its parent"
+  end
+
   def self.git_branch
     @git_branch ||= `GIT_DIR="#{JRUBY_DIR}/.git" git rev-parse --abbrev-ref HEAD`.strip
   end
@@ -121,7 +150,7 @@ module Utilities
   def self.mangle_for_env(name)
     name.upcase.tr('-', '_')
   end
-  
+
   def self.find_jvmci
     jvmci_locations = [
       ENV['JVMCI_DIR'],
@@ -136,7 +165,7 @@ module Utilities
       Dir.exist?(location)
     end
   end
-  
+
   def self.igv_running?
     `ps ax`.include?('IdealGraphVisualizer')
   end
@@ -155,32 +184,16 @@ module Utilities
       puts "-------------"
       puts
       puts
-      
+
       sleep 3
-      
+
       until igv_running?
         puts 'still waiting for IGV to appear in ps ax...'
         sleep 3
       end
-      
+
       puts 'just a few more seconds...'
       sleep 6
-    end
-  end
-
-  def self.find_bench
-    bench_locations = [
-      ENV['BENCH_DIR'],
-      'bench9000',
-      '../bench9000'
-    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
-
-    not_found = -> {
-      raise "couldn't find bench9000 - clone it from https://github.com/jruby/bench9000.git into the JRuby repository or parent directory"
-    }
-
-    bench_locations.find(not_found) do |location|
-      Dir.exist?(location)
     end
   end
 
@@ -275,10 +288,10 @@ module Commands
 
   def help
     puts 'jt checkout name                               checkout a different Git branch and rebuild'
+    puts 'jt bootstrap                                   run the build system\'s bootstrap phase'
     puts 'jt build [options]                             build'
     puts 'jt build truffle [options]                     build only the Truffle part, assumes the rest is up-to-date'
     puts 'jt rebuild [options]                           clean and build'
-    puts '    --no-tests       don\'t run JUnit unit tests'
     puts 'jt clean                                       clean'
     puts 'jt irb                                         irb'
     puts 'jt rebuild                                     clean and build'
@@ -290,7 +303,6 @@ module Commands
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
     puts '        --full      show all phases, not just up to the Truffle partial escape'
-    puts '    --bips          run with benchmark-ips on the load path (implies --graal)'
     puts '    --jdebug        run a JDWP debug server on #{JDEBUG_PORT}'
     puts '    --jexception[s] print java exceptions'
     puts 'jt e 14 + 2                                    evaluate an expression'
@@ -312,19 +324,14 @@ module Commands
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt bench debug [options] [vm-args] benchmark   run a single benchmark with options for compiler debugging'
-    puts '    --igv                                      make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
-    puts '        --full                                 show all phases, not just up to the Truffle partial escape'
-    puts '    --ruby-backtrace                           print a Ruby backtrace on any compilation failures'
-    puts 'jt bench reference [benchmarks]                run a set of benchmarks and record a reference point'
-    puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
-    puts '    benchmarks can be any benchmarks or group of benchmarks supported'
-    puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
-    puts 'jt metrics [--score name] alloc ...            how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
-    puts '    --score name                               report results as scores'
-    puts 'jt metrics ... minheap ...                     what is the smallest heap you can use to run an application'
-    puts 'jt metrics ... time ...                        how long does it take to run a command, broken down into different phases'
+    puts 'jt metrics alloc [--json] ...                  how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
+    puts 'jt metrics minheap ...                         what is the smallest heap you can use to run an application'
+    puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
     puts 'jt tarball                                     build the and test the distribution tarball'
+    puts 'jt benchmark args...                           run benchmark-interface (implies --graal)'
+    puts '    note that to run most MRI benchmarks, you should translate them first with normal Ruby and cache the result, such as'
+    puts '        benchmark bench/mri/bm_vm1_not.rb --cache'
+    puts '        jt benchmark bench/mri/bm_vm1_not.rb --use-cache'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -337,12 +344,18 @@ module Commands
     puts '  JVMCI_DIR                                    JMVCI repository checkout to use when running IGV (mx must already be on the $PATH)'
     puts '  JVMCI_DIR_...git_branch_name...              JMVCI repository to use for a given branch'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
+    puts '  SL_JAR                                       The location of truffle-sl.jar'
     puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
+    puts '  SULONG_CLASSPATH                             An explicit classpath to use for Sulong, rather than working it out from SULONG_DIR'
   end
 
   def checkout(branch)
     sh 'git', 'checkout', branch
     rebuild
+  end
+
+  def bootstrap
+    mvn '-DskipTests', '-Pbootstrap-no-launcher'
   end
 
   def build(project = nil)
@@ -381,9 +394,7 @@ module Commands
 
     {
       '--asm' => '--graal',
-      '--igv' => '--graal',
-      '--sulong' => '--graal',
-      '--bips' => '--graal'
+      '--igv' => '--graal'
     }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
     end
@@ -399,24 +410,11 @@ module Commands
     end
 
     if args.delete('--sulong')
-      dir = Utilities.find_sulong_dir
-      env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
-      jruby_args << '-J-classpath' << "#{dir}/lib/*"
-      jruby_args << '-J-classpath' << "#{dir}/build/sulong.jar"
-      nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
-      jruby_args << '-J-classpath' << nfi_classes
-      jruby_args << '-J-XX:-UseJVMCIClassLoader'
+      collect_sulong_args(env_vars, jruby_args)
     end
 
     if args.delete('--asm')
       jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
-    end
-
-    if args.delete('--bips')
-      bips_version = '2.6.1'
-      bips = "#{JRUBY_DIR}/lib/ruby/gems/shared/gems/benchmark-ips-#{bips_version}/lib"
-      sh 'bin/jruby', 'bin/gem', 'install', 'benchmark-ips', '-v', bips_version unless Dir.exist?(bips)
-      jruby_args << "-I#{bips}"
     end
 
     if args.delete('--jdebug')
@@ -464,9 +462,9 @@ module Commands
     when nil
       test_tck
       test_specs('run')
-      # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled
-      test_integration({'HAS_REDIS' => 'true'}, 'all')
-      test_gems
+      # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled since it uses refinements
+      test_integration
+      test_gems('HAS_REDIS' => 'true')
       test_compiler
       test_cexts if ENV['SULONG_DIR']
     when 'compiler' then test_compiler(*rest)
@@ -509,19 +507,19 @@ module Commands
     jruby_opts = []
     jruby_opts << '-J-Djvmci.Compiler=graal'
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
-    
+
     if ENV['GRAAL_JS_JAR']
       jruby_opts << '-J-classpath'
       jruby_opts << Utilities.find_graal_js
     end
-    
+
     jruby_opts << '-Xtruffle.exceptions.print_java=true'
-    
+
     env_vars = {}
     env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
-    
+
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
       sh env_vars, test_script
     end
@@ -539,15 +537,26 @@ module Commands
       end
     end
   ensure
-    File.delete output_file
+    File.delete output_file rescue nil
   end
   private :test_cexts
 
-  def test_integration(env, *args)
+  def test_integration(env={}, *args)
     env_vars   = env
     jruby_opts = []
 
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
+
+    if ENV['GRAAL_JS_JAR']
+      jruby_opts << '-J-classpath'
+      jruby_opts << Utilities.find_graal_js
+    end
+
+    if ENV['SL_JAR']
+      jruby_opts << '-J-classpath'
+      jruby_opts << Utilities.find_sl
+    end
+
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
     env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
@@ -561,7 +570,7 @@ module Commands
   end
   private :test_integration
 
-  def test_gems(env, *args)
+  def test_gems(env={}, *args)
     env_vars   = env
     jruby_opts = []
 
@@ -626,6 +635,10 @@ module Commands
       options += %w[--format spec/truffle/truffle_formatter.rb]
     end
 
+    if args.delete('--sulong')
+      collect_sulong_args(env_vars, options, '-T')
+    end
+
     if ENV['CI']
       # Need lots of output to keep Travis happy
       options += %w[--format specdoc]
@@ -636,7 +649,7 @@ module Commands
   private :test_specs
 
   def test_tck(*args)
-    mvn *args + ['test']
+    mvn *args + ['-Ptck']
   end
   private :test_tck
 
@@ -658,77 +671,23 @@ module Commands
     test_specs('untag', path, *args)
   end
 
-  def bench(command, *args)
-    bench_dir = Utilities.find_bench
-    env_vars = {
-      "JRUBY_DEV_DIR" => JRUBY_DIR,
-      "GRAAL_BIN" => Utilities.find_graal,
-    }
-    bench_args = ["#{bench_dir}/bin/bench9000"]
-    case command
-    when 'debug'
-      vm_args = ['-G:+TraceTruffleCompilation', '-G:+DumpOnError']
-      if args.delete '--igv'
-        warn "warning: --igv might not work on master - if it does not, use truffle-head instead which builds against latest graal" if Utilities.git_branch == 'master'
-        Utilities.ensure_igv_running
-
-        if args.delete('--full')
-          vm_args.push '-G:Dump=Truffle'
-        else
-          vm_args.push '-G:Dump=TrufflePartialEscape'
-        end
-      end
-      if args.delete '--ruby-backtrace'
-        vm_args.push '-G:+TruffleCompilationExceptionsAreThrown'
-      else
-        vm_args.push '-G:+TruffleCompilationExceptionsAreFatal'
-      end
-      remaining_args = []
-      args.each do |arg|
-        if arg.start_with? '-'
-          vm_args.push arg
-        else
-          remaining_args.push arg
-        end
-      end
-      env_vars["JRUBY_OPTS"] = vm_args.map{ |a| '-J' + a }.join(' ')
-      bench_args += ['score', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal', '--show-commands', '--show-samples']
-      raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if remaining_args.size != 1
-      args = remaining_args
-    when 'reference'
-      bench_args += ['reference', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal', '--show-commands']
-      args << "5" if args.empty?
-    when 'compare'
-      bench_args += ['compare-reference', '--config', "#{bench_dir}/benchmarks/default.config.rb", 'jruby-dev-truffle-graal']
-      args << "5" if args.empty?
-    else
-      raise ArgumentError, command
-    end
-    raw_sh env_vars, "ruby", *bench_args, *args
-  end
-
   def metrics(command, *args)
     trap(:INT) { puts; exit }
     args = args.dup
-    if args.first == '--score'
-      args.shift
-      score_name = args.shift
-    else
-      score_name = nil
-    end
     case command
     when 'alloc'
-      metrics_alloc score_name, *args
+      metrics_alloc *args
     when 'minheap'
-        metrics_minheap score_name, *args
+        metrics_minheap *args
     when 'time'
-        metrics_time score_name, *args
+        metrics_time *args
     else
       raise ArgumentError, command
     end
   end
-  
-  def metrics_alloc(score_name, *args)
+
+  def metrics_alloc(*args)
+    use_json = args.delete '--json'
     samples = []
     METRICS_REPS.times do
       log '.', 'sampling'
@@ -740,10 +699,11 @@ module Commands
     end
     log "\n", nil
     mean = samples.inject(:+) / samples.size
-    if score_name
-      puts "alloc-#{score_name}: #{mean}"
+    error = samples.max - mean
+    if use_json
+      puts JSON.generate({mean: mean, error: error})
     else
-      puts "#{human_size(mean)}, max #{human_size(samples.max)}"
+      puts "#{human_size(mean)} ± #{human_size(error)}"
     end
   end
 
@@ -762,8 +722,8 @@ module Commands
     end
     allocated
   end
-  
-  def metrics_minheap(score_name, *args)
+
+  def metrics_minheap(*args)
     heap = 10
     log '>', "Trying #{heap} MB"
     until can_run_in_heap(heap, *args)
@@ -788,18 +748,14 @@ module Commands
       end
     end
     log "\n", nil
-    if score_name
-      puts "minheap-#{score_name}: #{heap*1024*1024}"
-    else
-      puts "#{heap} MB"
-    end
+    puts "#{heap} MB"
   end
-  
+
   def can_run_in_heap(heap, *command)
     run("-J-Xmx#{heap}M", *command, {err: '/dev/null', out: '/dev/null'}, :continue_on_failure, :no_print_cmd)
   end
-  
-  def metrics_time(score_name, *args)
+
+  def metrics_time(*args)
     samples = []
     METRICS_REPS.times do
       log '.', 'sampling'
@@ -815,11 +771,7 @@ module Commands
     samples[0].each_key do |region|
       region_samples = samples.map { |s| s[region] }
       mean = region_samples.inject(:+) / samples.size
-      if score_name
-        puts "time-#{region.strip}-#{score_name}: #{(mean*1000).round}"
-      else
-        puts "#{region} #{mean.round(2)} s"
-      end
+      puts "#{region} #{mean.round(2)} s"
     end
   end
 
@@ -864,7 +816,7 @@ module Commands
       "#{(bytes/1024.0**4).round(2)} TB"
     end
   end
-  
+
   def tarball
     mvn '-Pdist'
     generated_file = "#{JRUBY_DIR}/maven/jruby-dist/target/jruby-dist-#{Utilities.jruby_version}-bin.tar.gz"
@@ -873,13 +825,20 @@ module Commands
     FileUtils.copy "#{generated_file}.sha256", "#{final_file}.sha256"
     sh 'test/truffle/tarball.sh', final_file
   end
-  
+
   def log(tty_message, full_message)
-    if STDOUT.tty?
-      print(tty_message) unless tty_message.nil?
+    if STDERR.tty?
+      STDERR.print tty_message unless tty_message.nil?
     else
-      puts full_message unless full_message.nil?
+      STDERR.puts full_message unless full_message.nil?
     end
+  end
+
+  def benchmark(*args)
+    run '--graal',
+        '-I', "#{Utilities.find_gem('deep-bench')}/lib",
+        '-I', "#{Utilities.find_gem('benchmark-ips')}/lib",
+        "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark", *args
   end
 
   def check_ambiguous_arguments
@@ -900,6 +859,23 @@ module Commands
     build
     run({ "TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS" => "true" }, '-e', 'exit')
   end
+
+  def collect_sulong_args(env_vars, args, arg_prefix='')
+    dir = Utilities.find_sulong_dir
+    env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
+
+    if ENV["SULONG_CLASSPATH"]
+      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{ENV["SULONG_CLASSPATH"]}"
+    else
+      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{dir}/lib/*"
+      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{dir}/build/sulong.jar"
+      nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
+      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{nfi_classes}"
+    end
+
+    args << "#{arg_prefix}-J-XX:-UseJVMCIClassLoader"
+  end
+  private :collect_sulong_args
 
 end
 

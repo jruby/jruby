@@ -11,6 +11,7 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.java.JavaInterop;
@@ -67,7 +68,7 @@ import org.jruby.truffle.core.regexp.RegexpNodesFactory;
 import org.jruby.truffle.core.rope.TruffleRopesNodesFactory;
 import org.jruby.truffle.core.rubinius.AtomicReferenceNodesFactory;
 import org.jruby.truffle.core.rubinius.ByteArrayNodesFactory;
-import org.jruby.truffle.core.rubinius.PosixNodesFactory;
+import org.jruby.truffle.extra.TrufflePosixNodesFactory;
 import org.jruby.truffle.core.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -80,6 +81,7 @@ import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
 import org.jruby.truffle.debug.TruffleDebugNodesFactory;
 import org.jruby.truffle.extra.AttachmentsInternalNodesFactory;
 import org.jruby.truffle.extra.TruffleGraalNodesFactory;
+import org.jruby.truffle.gem.bcrypt.BCryptNodesFactory;
 import org.jruby.truffle.interop.CExtNodesFactory;
 import org.jruby.truffle.interop.InteropNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
@@ -109,8 +111,9 @@ import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
+import org.jruby.truffle.stdlib.readline.ReadlineHistoryNodesFactory;
+import org.jruby.truffle.stdlib.readline.ReadlineNodesFactory;
 import org.jruby.util.cli.OutputStrings;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -231,6 +234,7 @@ public class CoreLibrary {
     private final DynamicObject digestClass;
 
     @CompilationFinal private DynamicObject eagainWaitReadable;
+    @CompilationFinal private DynamicObject eagainWaitWritable;
 
     @CompilationFinal private ArrayNodes.MinBlock arrayMinBlock;
     @CompilationFinal private ArrayNodes.MaxBlock arrayMaxBlock;
@@ -326,6 +330,10 @@ public class CoreLibrary {
 
     public DynamicObject getEagainWaitReadable() {
         return eagainWaitReadable;
+    }
+
+    public DynamicObject getEagainWaitWritable() {
+        return eagainWaitWritable;
     }
 
     private enum State {
@@ -587,6 +595,9 @@ public class CoreLibrary {
         defineModule(truffleModule, "Kernel");
         defineModule(truffleModule, "Process");
         defineModule(truffleModule, "Binding");
+        defineModule(truffleModule, "POSIX");
+        defineModule(truffleModule, "Readline");
+        defineModule(truffleModule, "ReadlineHistory");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -599,12 +610,14 @@ public class CoreLibrary {
         bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal");
         Layouts.CLASS.setInstanceFactoryUnsafe(bigDecimalClass, Layouts.BIG_DECIMAL.createBigDecimalShape(bigDecimalClass, bigDecimalClass));
 
+        final DynamicObject gem = defineModule(truffleModule, "Gem");
+        defineModule(gem, "BCrypt");
+
         // Rubinius
 
         rubiniusModule = defineModule("Rubinius");
 
         rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
-        defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
         rubiniusFFIPointerClass = defineClass(rubiniusFFIModule, objectClass, "Pointer");
         Layouts.CLASS.setInstanceFactoryUnsafe(rubiniusFFIPointerClass, Layouts.POINTER.createPointerShape(rubiniusFFIPointerClass, rubiniusFFIPointerClass));
 
@@ -728,7 +741,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(UnboundMethodNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ByteArrayNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TimeNodesFactory.getFactories());
-        coreMethodNodeManager.addCoreMethodNodes(PosixNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TrufflePosixNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(RubiniusTypeNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ThreadBacktraceLocationNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
@@ -737,6 +750,8 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(EtcNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ReadlineNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ReadlineHistoryNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TracePointNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(CoverageNodesFactory.getFactories());
@@ -748,6 +763,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(TruffleProcessNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleDebugNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleBindingNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(BCryptNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
 
@@ -900,6 +916,34 @@ public class CoreLibrary {
         // Get some references to things defined in the Ruby core
 
         eagainWaitReadable = (DynamicObject) Layouts.MODULE.getFields(ioClass).getConstant("EAGAINWaitReadable").getValue();
+        assert Layouts.CLASS.isClass(eagainWaitReadable);
+
+        eagainWaitWritable = (DynamicObject) Layouts.MODULE.getFields(ioClass).getConstant("EAGAINWaitWritable").getValue();
+        assert Layouts.CLASS.isClass(eagainWaitWritable);
+    }
+
+    public void initializePostBoot() {
+        if (context.getOptions().PLATFORM_SAFE_LOAD) {
+            // Load code that can't be run until everything else is boostrapped, such as pre-loaded Ruby stdlib.
+
+            try {
+                Main.printTruffleTimeMetric("before-post-boot");
+                try {
+                    final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core/post-boot.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
+                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
+                    deferredCall.callWithoutCallNode();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                Main.printTruffleTimeMetric("after-post-boot");
+            } catch (RaiseException e) {
+                final DynamicObject rubyException = e.getException();
+                BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace(context, rubyException, Layouts.EXCEPTION.getBacktrace(rubyException));
+                throw new TruffleFatalException("couldn't load the post-boot code", e);
+            }
+        }
+
     }
 
     private void initializeRubiniusFFI() {
@@ -953,6 +997,7 @@ public class CoreLibrary {
         });
     }
 
+    @TruffleBoundary
     public DynamicObject getMetaClass(Object object) {
         if (object instanceof DynamicObject) {
             return Layouts.BASIC_OBJECT.getMetaClass(((DynamicObject) object));
@@ -977,11 +1022,11 @@ public class CoreLibrary {
         } else if (object == null) {
             throw new RuntimeException("Can't get metaclass for null");
         } else {
-            CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException(String.format("Don't know how to get the metaclass for %s", object.getClass()));
         }
     }
 
+    @TruffleBoundary
     public DynamicObject getLogicalClass(Object object) {
         if (object instanceof DynamicObject) {
             return Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) object));
@@ -1006,7 +1051,6 @@ public class CoreLibrary {
         } else if (object == null) {
             throw new RuntimeException();
         } else {
-            CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException(String.format("Don't know how to get the logical class for %s", object.getClass()));
         }
     }

@@ -645,64 +645,52 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(frame = true)
     public IRubyObject min(ThreadContext context, Block block) {
-        IRubyObject receiver = getReceiverForMinMax(context, end, block);
-        if(receiver.isNil()) return receiver;
-        return Helpers.invokeSuper(context, receiver, block);
+        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
+
+        int cmp = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
+        if (cmp > 0 || (cmp == 0 && isExclusive)) return context.nil;
+
+        return begin;
     }
 
     @JRubyMethod(frame = true)
     public IRubyObject max(ThreadContext context, Block block) {
-        IRubyObject rangeEnd;
+        boolean isNumeric = end instanceof RubyNumeric;
+
+        if (block.isGiven() || (isExclusive && !isNumeric)) {
+            return Helpers.invokeSuper(context, this, block);
+        }
+
+        int cmp = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
+        if (cmp > 0) return context.nil;
         if (isExclusive) {
             if (!(end instanceof RubyInteger)) {
                 throw context.runtime.newTypeError("cannot exclude non Integer end value");
             }
+
+            if (cmp == 0) return context.nil;
+
             if (!(begin instanceof RubyInteger)) {
                 throw context.runtime.newTypeError("cannot exclude end value with non Integer begin value");
             }
             if (end instanceof RubyFixnum) {
-                rangeEnd = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum)end).getLongValue() - 1);
-            } else {
-                rangeEnd =  end.callMethod(context, "-", RubyFixnum.one(context.runtime));
+                return RubyFixnum.newFixnum(context.runtime, ((RubyFixnum)end).getLongValue() - 1);
             }
-        } else {
-            rangeEnd = end;
+
+            return end.callMethod(context, "-", RubyFixnum.one(context.runtime));
         }
 
-        IRubyObject receiver = getReceiverForMinMax(context, rangeEnd, block);
-        if(receiver.isNil()) return receiver;
-        return Helpers.invokeSuper(context, receiver, block);
+        return end;
     }
 
     @JRubyMethod(frame = true)
     public IRubyObject min(ThreadContext context, IRubyObject arg, Block block) {
-        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
-
-        return first(context, arg);
+        return Helpers.invokeSuper(context, this, arg, block);
     }
 
     @JRubyMethod(frame = true)
     public IRubyObject max(ThreadContext context, IRubyObject arg, Block block) {
-        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
-
-        return ((RubyArray) last(context, arg)).reverse();
-    }
-
-    private boolean rangeEmpty_p(ThreadContext context) {
-        int cmp = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
-        return cmp > 0 || (cmp == 0 && isExclusive);
-    }
-
-    private IRubyObject getReceiverForMinMax(ThreadContext context, IRubyObject rangeEnd, Block block) {
-        RubyObject receiver;
-
-        if (block.isGiven()) {
-            receiver = this;
-        } else {
-            if(rangeEmpty_p(context)) return context.runtime.getNil();
-            receiver = RubyArray.newArray(context.runtime, new IRubyObject[]{begin, rangeEnd});
-        }
-        return receiver;
+        return Helpers.invokeSuper(context, this, arg, block);
     }
 
     @JRubyMethod

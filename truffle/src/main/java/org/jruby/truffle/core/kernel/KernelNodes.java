@@ -159,13 +159,14 @@ public abstract class KernelNodes {
                 toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            CompilerDirectives.transferToInterpreter();
-
-            final RubyContext context = getContext();
-
-            final DynamicObject env = context.getCoreLibrary().getENV();
+            final DynamicObject env = getContext().getCoreLibrary().getENV();
             final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash", null);
 
+            return spawnAndCaptureOutput(command, envAsHash);
+        }
+
+        @TruffleBoundary
+        private DynamicObject spawnAndCaptureOutput(DynamicObject command, final DynamicObject envAsHash) {
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
@@ -230,7 +231,7 @@ public abstract class KernelNodes {
 
         private boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null));
             }
 
@@ -239,7 +240,7 @@ public abstract class KernelNodes {
 
         private boolean areEqual(VirtualFrame frame, Object left, Object right) {
             if (equalNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -316,13 +317,13 @@ public abstract class KernelNodes {
         @Specialization
         public boolean blockGiven(MaterializedFrame callerFrame,
                                   @Cached("createBinaryProfile()") ConditionProfile blockProfile) {
-            return blockProfile.profile(RubyArguments.getBlock(callerFrame.getArguments()) != null);
+            return blockProfile.profile(RubyArguments.getBlock(callerFrame) != null);
         }
 
         @TruffleBoundary
         @Specialization
         public boolean blockGiven(NotProvided noCallerFrame) {
-            return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
+            return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false)) != null;
         }
 
     }
@@ -332,7 +333,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public DynamicObject calleeName() {
-            CompilerDirectives.transferToInterpreter();
             // the "called name" of a method.
             return getSymbol(getContext().getCallStack().getCallingMethodIgnoringSend().getName());
         }
@@ -425,8 +425,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "clone", taintFromSelf = true)
     public abstract static class CloneNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile frozenProfile = ConditionProfile.createBinaryProfile();
-
         @Child private CopyNode copyNode;
         @Child private CallDispatchHeadNode initializeCloneNode;
         @Child private IsFrozenNode isFrozenNode;
@@ -444,19 +442,19 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject clone(VirtualFrame frame, DynamicObject self) {
-            CompilerDirectives.transferToInterpreter();
-
+        public DynamicObject clone(VirtualFrame frame, DynamicObject self,
+                @Cached("createBinaryProfile()") ConditionProfile isSingletonProfile,
+                @Cached("createBinaryProfile()") ConditionProfile isFrozenProfile) {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
             // Copy the singleton class if any.
-            if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(self))) {
+            if (isSingletonProfile.profile(Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(self)))) {
                 Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(newObject)).initCopy(Layouts.BASIC_OBJECT.getMetaClass(self));
             }
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
 
-            if (frozenProfile.profile(isFrozenNode.executeIsFrozen(self))) {
+            if (isFrozenProfile.profile(isFrozenNode.executeIsFrozen(self))) {
                 freezeNode.executeFreeze(newObject);
             }
 
@@ -509,8 +507,8 @@ public abstract class KernelNodes {
 
         protected DynamicObject getCallerBinding(VirtualFrame frame) {
             if (bindingNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(new RubyNode[]{}));
+                CompilerDirectives.transferToInterpreter();
+                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(null));
             }
 
             try {
@@ -556,11 +554,11 @@ public abstract class KernelNodes {
             final InternalMethod method = new InternalMethod(
                     cachedRootNode.getRootNode().getSharedMethodInfo(),
                     cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
-                    RubyArguments.getMethod(parentFrame.getArguments()).getDeclaringModule(),
+                    RubyArguments.getMethod(parentFrame).getDeclaringModule(),
                     Visibility.PUBLIC,
                     cachedCallTarget);
 
-            return callNode.call(frame, RubyArguments.pack(parentFrame, null, method, RubyArguments.getDeclarationContext(parentFrame.getArguments()), null, callerSelf, null, new Object[]{}));
+            return callNode.call(frame, RubyArguments.pack(parentFrame, null, method, RubyArguments.getDeclarationContext(parentFrame), null, callerSelf, null, new Object[]{}));
         }
 
         @Specialization(guards = {
@@ -570,7 +568,7 @@ public abstract class KernelNodes {
                                             NotProvided filename, NotProvided lineNumber, @Cached("create()") IndirectCallNode callNode) {
             final DynamicObject binding = getCallerBinding(frame);
             final MaterializedFrame topFrame = Layouts.BINDING.getFrame(binding);
-            RubyArguments.setSelf(topFrame.getArguments(), RubyArguments.getSelf(frame));
+            RubyArguments.setSelf(topFrame, RubyArguments.getSelf(frame));
             final CodeLoader.DeferredCall deferredCall = doEvalX(source, binding, "(eval)", 1, true);
             return deferredCall.call(frame, callNode);
 
@@ -806,10 +804,9 @@ public abstract class KernelNodes {
     @CoreMethod(names = "gets", isModuleFunction = true, unsafe = UnsafeGroup.IO)
     public abstract static class GetsNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
-        public DynamicObject gets(VirtualFrame frame) {
-            CompilerDirectives.transferToInterpreter();
-
+        public DynamicObject gets() {
             // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
             final InputStream in = getContext().getJRubyRuntime().getInstanceConfig().getInput();
 
@@ -889,12 +886,12 @@ public abstract class KernelNodes {
     @CoreMethod(names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
+        private final BranchProfile errorProfile = BranchProfile.create();
+
         @Specialization
         public Object initializeCopy(DynamicObject self, DynamicObject from) {
-            CompilerDirectives.transferToInterpreter();
-
             if (Layouts.BASIC_OBJECT.getLogicalClass(self) != Layouts.BASIC_OBJECT.getLogicalClass(from)) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeError("initialize_copy should take same class object", this));
             }
 
@@ -971,7 +968,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(
-                guards = { "isRubySymbol(name)", "name == cachedName" },
+                guards = { "name == cachedName" , "isRubySymbol(cachedName)" },
                 limit = "getCacheLimit()")
         public Object instanceVariableGetSymbolCached(DynamicObject object, DynamicObject name,
                 @Cached("name") DynamicObject cachedName,
@@ -1027,7 +1024,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(
-                guards = { "isRubySymbol(name)", "name == cachedName" },
+                guards = { "name == cachedName", "isRubySymbol(cachedName)" },
                 limit = "getCacheLimit()")
         public Object instanceVariableSetSymbolCached(DynamicObject object, DynamicObject name, Object value,
                                                       @Cached("name") DynamicObject cachedName,
@@ -1089,7 +1086,6 @@ public abstract class KernelNodes {
             final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, this);
             final Object value = object.get(ivar, nil());
             if (!object.delete(name)) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().nameErrorInstanceVariableNotDefined(name, this));
             }
             return value;
@@ -1131,7 +1127,6 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "!isRubyModule(module)")
         public boolean isATypeError(Object self, Object module) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreExceptions().typeError("class or module required", this));
         }
 
@@ -1144,7 +1139,7 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject lambda(NotProvided block) {
             final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
-            final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
+            final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame);
 
             if (parentBlock == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1185,7 +1180,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public DynamicObject methodName() {
-            CompilerDirectives.transferToInterpreter();
             // the "original/definition name" of the method.
             return getSymbol(getContext().getCallStack().getCallingMethodIgnoringSend().getSharedMethodInfo().getName());
         }
@@ -1216,30 +1210,36 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject method(VirtualFrame frame, Object self, DynamicObject name) {
+        public DynamicObject method(VirtualFrame frame, Object self, DynamicObject name,
+                @Cached("createBinaryProfile()") ConditionProfile notFoundProfile,
+                @Cached("createBinaryProfile()") ConditionProfile respondToMissingProfile) {
             final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
             InternalMethod method = lookupMethodNode.executeLookupMethod(self, normalizedName);
 
-            if (method == null) {
-                CompilerDirectives.transferToInterpreter();
-
-                if (respondToMissingNode.callBoolean(frame, self, "respond_to_missing?", null, name, true)) {
-                    final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(self, "method_missing").withName(normalizedName);
-                    final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
-
-                    final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
-                    final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody, false);
-                    final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
-
-                    final DynamicObject module = coreLibrary().getMetaClass(self);
-                    method = new InternalMethod(info, normalizedName, module, Visibility.PUBLIC, newCallTarget);
+            if (notFoundProfile.profile(method == null)) {
+                if (respondToMissingProfile.profile(respondToMissingNode.callBoolean(frame, self, "respond_to_missing?", null, name, true))) {
+                    method = createMissingMethod(self, name, normalizedName);
                 } else {
-                    throw new RaiseException(coreExceptions().nameErrorUndefinedMethod(
-                            normalizedName, coreLibrary().getLogicalClass(self), this));
+                    throw new RaiseException(coreExceptions().nameErrorUndefinedMethod(normalizedName, coreLibrary().getLogicalClass(self), this));
                 }
             }
 
             return Layouts.METHOD.createMethod(coreLibrary().getMethodFactory(), self, method);
+        }
+
+        @TruffleBoundary
+        private InternalMethod createMissingMethod(Object self, DynamicObject name, final String normalizedName) {
+            InternalMethod method;
+            final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(self, "method_missing").withName(normalizedName);
+            final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
+
+            final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
+            final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody, false);
+            final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
+
+            final DynamicObject module = coreLibrary().getMetaClass(self);
+            method = new InternalMethod(info, normalizedName, module, Visibility.PUBLIC, newCallTarget);
+            return method;
         }
 
         private static class CallMethodMissingWithStaticName extends RubyNode {
@@ -1275,12 +1275,12 @@ public abstract class KernelNodes {
             return BooleanCastWithDefaultNodeGen.create(null, null, true, regular);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "regular")
         public DynamicObject methodsRegular(Object self, boolean regular,
                                             @Cached("createMetaClassNode()") MetaClassNode metaClassNode) {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
-            CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), regular, MethodFilter.PUBLIC_PROTECTED).toArray();
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
@@ -1329,11 +1329,11 @@ public abstract class KernelNodes {
             return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject privateMethods(Object self, boolean includeAncestors) {
             DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
-            CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PRIVATE).toArray();
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
@@ -1376,11 +1376,11 @@ public abstract class KernelNodes {
             return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject protectedMethods(Object self, boolean includeAncestors) {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
-            CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PROTECTED).toArray();
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
@@ -1406,11 +1406,11 @@ public abstract class KernelNodes {
             return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject publicMethods(Object self, boolean includeAncestors) {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
-            CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PUBLIC).toArray();
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
@@ -1678,6 +1678,7 @@ public abstract class KernelNodes {
             return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject singletonMethods(Object self, boolean includeAncestors) {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
@@ -1686,7 +1687,6 @@ public abstract class KernelNodes {
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
             }
 
-            CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterSingletonMethods(getContext(), includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
@@ -1726,7 +1726,7 @@ public abstract class KernelNodes {
         @Specialization(guards = "!isRubiniusUndefined(duration)")
         public long sleep(VirtualFrame frame, DynamicObject duration) {
             if (floatCastNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 floatCastNode = insert(NumericToFloatNodeGen.create(getContext(), getSourceSection(), "to_f", null));
             }
             return sleep(floatCastNode.executeDouble(frame, duration));
@@ -1939,13 +1939,16 @@ public abstract class KernelNodes {
 
         @Specialization
         public DynamicObject toS(VirtualFrame frame, Object self) {
-            CompilerDirectives.transferToInterpreter();
-
             String className = Layouts.MODULE.getFields(classNode.executeLogicalClass(self)).getName();
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
-            return createString(StringOperations.encodeRope("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE));
+            return createString(formatToS(className, hexID));
+        }
+
+        @TruffleBoundary
+        private Rope formatToS(String className, String hexID) {
+            return StringOperations.encodeRope("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE);
         }
 
     }

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
@@ -29,6 +30,8 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 public class SuperCallNode extends RubyNode {
+
+    private final ConditionProfile missingProfile = ConditionProfile.createBinaryProfile();
 
     @Child private RubyNode arguments;
     @Child private RubyNode block;
@@ -60,8 +63,7 @@ public class SuperCallNode extends RubyNode {
 
         final InternalMethod superMethod = lookupSuperMethodNode.executeLookupSuperMethod(frame, self);
 
-        if (superMethod == null) {
-            CompilerDirectives.transferToInterpreter();
+        if (missingProfile.profile(superMethod == null)) {
             final String name = RubyArguments.getMethod(frame).getSharedMethodInfo().getName(); // use the original name
             final Object[] methodMissingArguments = ArrayUtils.unshift(superArguments, getContext().getSymbolTable().getSymbol(name));
             return callMethodMissing(frame, self, blockObject, methodMissingArguments);

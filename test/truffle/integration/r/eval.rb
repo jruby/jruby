@@ -7,7 +7,7 @@
 # GNU Lesser General Public License version 2.1
 
 unless Truffle::Interop.mime_type_supported?('application/x-r')
-  puts "R doesn't appear to be available - skipping R test"
+  puts 'R doesn\'t appear to be available - skipping R test'
   exit
 end
 

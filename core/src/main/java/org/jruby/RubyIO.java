@@ -2853,9 +2853,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     //                n = arg.len;
                     n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), len);
                     if (n < 0) {
+                        Errno e = fptr.errno();
                         if (!nonblock && fptr.waitReadable(context))
                             continue again;
-                        if (nonblock && (fptr.errno() == Errno.EWOULDBLOCK || fptr.errno() == Errno.EAGAIN)) {
+                        if (nonblock && (e == Errno.EWOULDBLOCK || e == Errno.EAGAIN)) {
                             if (noException) return runtime.newSymbol("wait_readable");
                             throw runtime.newErrnoEAGAINReadableError("read would block");
                         }

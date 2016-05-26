@@ -71,7 +71,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
             if (Options.IR_PRINT.load()) {
                 ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
 
-                LOG.info("Printing simple IR for " + closure.getName(), "\n" + new String(baos.toByteArray()));
+                LOG.info("Printing simple IR for " + closure.getName() + ":\n" + new String(baos.toByteArray()));
             }
 
             interpreterContext = closure.getInterpreterContext();

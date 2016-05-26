@@ -10,11 +10,11 @@
 
 package org.jruby.truffle.core.cast;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -32,6 +32,8 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 public abstract class NameToJavaStringNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toStr;
+
+    private final BranchProfile errorProfile = BranchProfile.create();
 
     public NameToJavaStringNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -61,8 +63,8 @@ public abstract class NameToJavaStringNode extends RubyNode {
         try {
             coerced = toStr.call(frame, object, "to_str", null);
         } catch (RaiseException e) {
+            errorProfile.enter();
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().typeErrorNoImplicitConversion(object, "String", this));
             } else {
                 throw e;
@@ -72,7 +74,7 @@ public abstract class NameToJavaStringNode extends RubyNode {
         if (RubyGuards.isRubyString(coerced)) {
             return coerced.toString();
         } else {
-            CompilerDirectives.transferToInterpreter();
+            errorProfile.enter();
             throw new RaiseException(coreExceptions().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
         }
     }

@@ -1,0 +1,3 @@
+fails:Readline.completion_proc returns nil
+fails:Readline.completion_proc= returns the passed Proc
+fails:Readline.completion_proc= returns an ArgumentError if not given an Proc or #call

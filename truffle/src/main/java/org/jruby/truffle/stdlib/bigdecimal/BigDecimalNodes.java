@@ -792,7 +792,6 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "precision < 0")
         public Object sqrtNegativePrecision(VirtualFrame frame, DynamicObject a, int precision) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(coreExceptions().argumentError("precision must be positive", this));
         }
 

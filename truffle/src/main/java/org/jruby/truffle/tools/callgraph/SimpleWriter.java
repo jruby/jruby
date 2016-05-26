@@ -41,15 +41,25 @@ public class SimpleWriter {
 
         final String sourceName;
 
-        if (sourceSection.getSource() == null) {
+        if (sourceSection == null || sourceSection.getSource() == null) {
             sourceName = "(unknown)";
         } else {
             sourceName = sourceSection.getSource().getName();
         }
 
+        final int startLine;
+
+        if (sourceSection == null) {
+            startLine = -1;
+        } else {
+            startLine = sourceSection.getStartLine();
+        }
+
         final int endLine;
 
-        if (sourceSection.getSource() == null) {
+        if (sourceSection == null) {
+            endLine = -1;
+        } else if (sourceSection.getSource() == null) {
             endLine = sourceSection.getStartLine();
         } else {
             endLine = sourceSection.getEndLine();
@@ -59,7 +69,7 @@ public class SimpleWriter {
                 ids.getId(method),
                 sharedInfo.getName(),
                 sourceName,
-                sourceSection.getStartLine(),
+                startLine,
                 endLine);
 
         for (CallSite callSite : method.getCallSites().values()) {

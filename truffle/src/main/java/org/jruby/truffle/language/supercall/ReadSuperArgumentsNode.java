@@ -10,12 +10,13 @@
 package org.jruby.truffle.language.supercall;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.array.ArrayToObjectArrayNode;
+import org.jruby.truffle.core.array.ArrayToObjectArrayNodeGen;
 import org.jruby.truffle.language.RubyNode;
 
 /**
@@ -24,6 +25,8 @@ import org.jruby.truffle.language.RubyNode;
 public class ReadSuperArgumentsNode extends RubyNode {
 
     @Children private final RubyNode[] arguments;
+    @Child private ArrayToObjectArrayNode unsplatNode;
+
     private final boolean isSplatted;
 
     public ReadSuperArgumentsNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean isSplatted) {
@@ -45,11 +48,18 @@ public class ReadSuperArgumentsNode extends RubyNode {
         }
 
         if (isSplatted) {
-            // TODO(CS): need something better to splat the arguments array
-            return ArrayOperations.toObjectArray((DynamicObject) argumentsObjects[0]);
+            return unsplat(argumentsObjects);
         } else {
             return argumentsObjects;
         }
+    }
+
+    private Object[] unsplat(Object[] argumentsObjects) {
+        if (unsplatNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            unsplatNode = insert(ArrayToObjectArrayNodeGen.create(null));
+        }
+        return unsplatNode.unsplat(argumentsObjects);
     }
 
 }

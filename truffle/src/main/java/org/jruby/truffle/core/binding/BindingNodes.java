@@ -45,10 +45,8 @@ import java.util.List;
 public abstract class BindingNodes {
 
     public static DynamicObject createBinding(RubyContext context, MaterializedFrame frame) {
-        final Object[] arguments = frame.getArguments();
-
         final MaterializedFrame bindingFrame = Truffle.getRuntime().createMaterializedFrame(
-                RubyArguments.pack(frame, null, RubyArguments.getMethod(arguments), RubyArguments.getDeclarationContext(arguments), null, RubyArguments.getSelf(arguments), RubyArguments.getBlock(arguments), RubyArguments.getArguments(arguments)),
+                RubyArguments.pack(frame, null, RubyArguments.getMethod(frame), RubyArguments.getDeclarationContext(frame), null, RubyArguments.getSelf(frame), RubyArguments.getBlock(frame), RubyArguments.getArguments(frame)),
                 newFrameDescriptor(context));
 
         return Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), bindingFrame);
@@ -66,7 +64,7 @@ public abstract class BindingNodes {
 
     public static MaterializedFrame getDeclarationFrame(DynamicObject binding) {
         assert RubyGuards.isRubyBinding(binding);
-        return RubyArguments.getDeclarationFrame(Layouts.BINDING.getFrame(binding).getArguments());
+        return RubyArguments.getDeclarationFrame(Layouts.BINDING.getFrame(binding));
     }
 
     protected static class FrameSlotAndDepth {
@@ -329,7 +327,7 @@ public abstract class BindingNodes {
 
         @Specialization
         public Object receiver(DynamicObject binding) {
-            return RubyArguments.getSelf(Layouts.BINDING.getFrame(binding).getArguments());
+            return RubyArguments.getSelf(Layouts.BINDING.getFrame(binding));
         }
     }
 

@@ -1,0 +1,1 @@
+fails:Array#hash produces different hashes for nested arrays with different values and empty terminator

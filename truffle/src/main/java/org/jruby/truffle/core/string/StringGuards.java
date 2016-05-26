@@ -34,11 +34,6 @@ public class StringGuards {
         return Layouts.STRING.getRope(string).getEncoding().isAsciiCompatible();
     }
 
-    public static boolean isSingleByte(DynamicObject string) {
-        assert RubyGuards.isRubyString(string);
-        return Layouts.STRING.getRope(string).getEncoding().isSingleByte();
-    }
-
     public static boolean isValidOr7BitEncoding(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
         final Rope rope = StringOperations.rope(string);

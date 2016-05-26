@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
@@ -276,7 +277,7 @@ public abstract class ClassNodes {
 
         void moduleInitialize(VirtualFrame frame, DynamicObject rubyClass, DynamicObject block) {
             if (moduleInitializeNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                CompilerDirectives.transferToInterpreter();
                 moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(null));
             }
             moduleInitializeNode.executeInitialize(frame, rubyClass, block);
@@ -346,12 +347,13 @@ public abstract class ClassNodes {
         }
 
         @Specialization(contains = "getSuperClass")
-        DynamicObject getSuperClassUncached(DynamicObject rubyClass) {
+        DynamicObject getSuperClassUncached(DynamicObject rubyClass,
+                @Cached("create()") BranchProfile errorProfile) {
             final DynamicObject superclass = fastLookUp(rubyClass);
             if (superclass != null) {
                 return superclass;
             } else {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(getContext().getCoreExceptions().typeError("uninitialized class", this));
             }
         }

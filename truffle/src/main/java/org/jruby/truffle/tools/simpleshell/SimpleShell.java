@@ -112,9 +112,9 @@ public class SimpleShell {
 
                         final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
                                 ParserContext.EVAL,
-                                RubyArguments.getDeclarationContext(currentFrame.getArguments()),
+                                RubyArguments.getDeclarationContext(currentFrame),
                                 rootNode, currentFrame,
-                                RubyArguments.getSelf(currentFrame.getArguments()));
+                                RubyArguments.getSelf(currentFrame));
 
                         final Object result = deferredCall.callWithoutCallNode();
 

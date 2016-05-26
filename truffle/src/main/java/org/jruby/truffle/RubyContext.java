@@ -47,6 +47,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
+import org.jruby.truffle.stdlib.readline.ConsoleHolder;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
@@ -91,10 +92,10 @@ public class RubyContext extends ExecutionContext {
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
     private final CoverageManager coverageManager;
+    private final ConsoleHolder consoleHolder;
 
     private final Object classVariableDefinitionLock = new Object();
 
-    private org.jruby.ast.RootNode initialJRubyRootNode;
     private final AttachmentsManager attachmentsManager;
 
     public RubyContext(Ruby jrubyRuntime, TruffleLanguage.Env env) {
@@ -173,6 +174,10 @@ public class RubyContext extends ExecutionContext {
         attachmentsManager = new AttachmentsManager(this, instrumenter);
         traceManager = new TraceManager(this, instrumenter);
         coverageManager = new CoverageManager(this, instrumenter);
+
+        coreLibrary.initializePostBoot();
+
+        consoleHolder = new ConsoleHolder();
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -221,14 +226,6 @@ public class RubyContext extends ExecutionContext {
                 }
             }
         }
-    }
-
-    public void setInitialJRubyRootNode(org.jruby.ast.RootNode initialJRubyRootNode) {
-        this.initialJRubyRootNode = initialJRubyRootNode;
-    }
-
-    public org.jruby.ast.RootNode getInitialJRubyRootNode() {
-        return initialJRubyRootNode;
     }
 
     public Options getOptions() {
@@ -353,6 +350,10 @@ public class RubyContext extends ExecutionContext {
 
     public CoreExceptions getCoreExceptions() {
         return coreExceptions;
+    }
+
+    public ConsoleHolder getConsoleHolder() {
+        return consoleHolder;
     }
 
 }

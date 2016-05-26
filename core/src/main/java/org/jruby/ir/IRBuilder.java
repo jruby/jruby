@@ -1403,7 +1403,7 @@ public class IRBuilder {
         // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
         addInstr(new LabelInstr(rescueLabel));
         addInstr(new ReceiveRubyExceptionInstr(exc));
-        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "Exception", false));
+        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "Exception"));
         outputExceptionCheck(excType, exc, caughtLabel);
 
         // Fall-through when the exc !== Exception; rethrow 'exc'
@@ -1525,7 +1525,7 @@ public class IRBuilder {
             String constName = ((ConstNode) node).getName();
             addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(), constName));
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
-            addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName, false)); // SSS FIXME: should this be the current-module var or something else?
+            addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName)); // SSS FIXME: should this be the current-module var or something else?
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
             addInstr(new CopyInstr(tmpVar, manager.getNil()));
             addInstr(new JumpInstr(doneLabel));
@@ -2471,7 +2471,7 @@ public class IRBuilder {
         // for JIT/AOT.  Also it means needing to grow the size of any heap scope for variables.
         if (nearestNonClosureBuilder == null) {
             Variable excType = createTemporaryVariable();
-            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "NotImplementedError", false));
+            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "NotImplementedError"));
             Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), "new", excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
             addInstr(new ThrowExceptionInstr(exc));
             return buildNil();

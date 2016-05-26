@@ -178,8 +178,8 @@ public class RubyDebugTest {
                         "nMOFact", 1,
                         "res", null);
         stepOut();
-        assertLocation(13, "res = fac(2)\n"
-            + "  puts res\n" // wrong!?
+        assertLocation(13, "res = fac(2)" + System.lineSeparator()
+            + "  puts res" + System.lineSeparator() // wrong!?
             + "  res", // wrong!?
                         "res", 2);
 

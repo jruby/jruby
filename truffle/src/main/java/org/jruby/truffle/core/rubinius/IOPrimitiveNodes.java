@@ -40,18 +40,23 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
+import jnr.constants.platform.OpenFlags;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.core.array.ArrayGuards;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.rope.BytesVisitor;
 import org.jruby.truffle.core.rope.Rope;
@@ -59,6 +64,8 @@ import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
+import org.jruby.truffle.core.thread.ThreadManager.ResultWithinTime;
+import org.jruby.truffle.extra.ffi.PointerPrimitiveNodes;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -77,6 +84,8 @@ public abstract class IOPrimitiveNodes {
 
     public static abstract class IOPrimitiveArrayArgumentsNode extends PrimitiveArrayArgumentsNode {
 
+        private final BranchProfile errorProfile = BranchProfile.create();
+
         public IOPrimitiveArrayArgumentsNode() {
         }
 
@@ -84,17 +93,21 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        protected int ensureSuccessful(int result) {
+        protected int ensureSuccessful(int result, int errno) {
             assert result >= -1;
             if (result == -1) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
+                errorProfile.enter();
+                throw new RaiseException(coreExceptions().errnoError(errno, this));
             }
             return result;
         }
+
+        protected int ensureSuccessful(int result) {
+            return ensureSuccessful(result, posix().errno());
+        }
     }
 
-    private static int STDOUT = 1;
+    private static final int STDOUT = 1;
 
     @Primitive(name = "io_allocate", unsafe = UnsafeGroup.IO)
     public static abstract class IOAllocatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
@@ -139,7 +152,7 @@ public abstract class IOPrimitiveNodes {
             return true;
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         private void newOpenFd(int newFd) {
             final int FD_CLOEXEC = 1;
 
@@ -172,6 +185,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 }, unsafe = UnsafeGroup.IO)
     public static abstract class IOOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(path)")
         public int open(DynamicObject path, int mode, int permission) {
             return ensureSuccessful(posix().open(StringOperations.getString(getContext(), path), mode, permission));
@@ -182,6 +196,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_truncate", needsSelf = false, unsafe = UnsafeGroup.IO)
     public static abstract class IOTruncatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(path)")
         public int truncate(DynamicObject path, long length) {
             return ensureSuccessful(posix().truncate(StringOperations.getString(getContext(), path), length));
@@ -193,7 +208,7 @@ public abstract class IOPrimitiveNodes {
     public static abstract class IOFTruncatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
-        public int ftruncate(VirtualFrame frame, DynamicObject io, long length) {
+        public int ftruncate(DynamicObject io, long length) {
             final int fd = Layouts.IO.getDescriptor(io);
             return ensureSuccessful(posix().ftruncate(fd, length));
         }
@@ -224,14 +239,15 @@ public abstract class IOPrimitiveNodes {
     public static abstract class IOEnsureOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject ensureOpen(VirtualFrame frame, DynamicObject file) {
+        public DynamicObject ensureOpen(VirtualFrame frame, DynamicObject file,
+                @Cached("create()") BranchProfile errorProfile) {
             // TODO BJF 13-May-2015 Handle nil case
             final int fd = Layouts.IO.getDescriptor(file);
             if (fd == -1) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().ioError("closed stream", this));
             } else if (fd == -2) {
-                CompilerDirectives.transferToInterpreter();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().ioError("shutdown stream", this));
             }
             return nil();
@@ -242,7 +258,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_read_if_available", lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
     public static abstract class IOReadIfAvailableNode extends IOPrimitiveArrayArgumentsNode {
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public Object readIfAvailable(DynamicObject file, int numberOfBytes) {
             // Taken from Rubinius's IO::read_if_available.
@@ -288,7 +304,7 @@ public abstract class IOPrimitiveNodes {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         private void performReopen(DynamicObject self, DynamicObject target) {
             final int fdSelf = Layouts.IO.getDescriptor(self);
             final int fdTarget = Layouts.IO.getDescriptor(target);
@@ -320,34 +336,34 @@ public abstract class IOPrimitiveNodes {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @TruffleBoundary
-        public void performReopenPath(DynamicObject file, DynamicObject path, int mode) {
-            int fd = Layouts.IO.getDescriptor(file);
-            final String pathString = StringOperations.getString(getContext(), path);
+        @TruffleBoundary(throwsControlFlowException = true)
+        public void performReopenPath(DynamicObject self, DynamicObject path, int mode) {
+            final int fdSelf = Layouts.IO.getDescriptor(self);
+            final int newFdSelf;
+            final String targetPathString = StringOperations.getString(getContext(), path);
 
-            int otherFd = ensureSuccessful(posix().open(pathString, mode, 666));
+            int fdTarget = ensureSuccessful(posix().open(targetPathString, mode, 0_666));
 
-            final int result = posix().dup2(otherFd, fd);
+            final int result = posix().dup2(fdTarget, fdSelf);
             if (result == -1) {
                 final int errno = posix().errno();
                 if (errno == Errno.EBADF.intValue()) {
-                    Layouts.IO.setDescriptor(file, otherFd);
-                    fd = otherFd;
+                    Layouts.IO.setDescriptor(self, fdTarget);
+                    newFdSelf = fdTarget;
                 } else {
-                    if (otherFd > 0) {
-                        ensureSuccessful(posix().close(otherFd));
+                    if (fdTarget > 0) {
+                        ensureSuccessful(posix().close(fdTarget));
                     }
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(coreExceptions().errnoError(errno, this));
+                    ensureSuccessful(result, errno); // throws
+                    return;
                 }
-
             } else {
-                ensureSuccessful(posix().close(otherFd));
+                ensureSuccessful(posix().close(fdTarget));
+                newFdSelf = fdSelf;
             }
 
-
-            final int newMode = ensureSuccessful(posix().fcntl(fd, Fcntl.F_GETFL));
-            Layouts.IO.setMode(file, newMode);
+            final int newSelfMode = ensureSuccessful(posix().fcntl(newFdSelf, Fcntl.F_GETFL));
+            Layouts.IO.setMode(self, newSelfMode);
         }
 
         @Specialization(guards = "isRubyString(path)")
@@ -364,7 +380,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_write", unsafe = UnsafeGroup.IO)
     public static abstract class IOWritePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(string)")
         public int write(DynamicObject file, DynamicObject string) {
             final int fd = Layouts.IO.getDescriptor(file);
@@ -393,6 +409,86 @@ public abstract class IOPrimitiveNodes {
             });
 
             return rope.byteLength();
+        }
+
+    }
+
+    @Primitive(name = "io_write_nonblock", unsafe = UnsafeGroup.IO)
+    public static abstract class IOWriteNonBlockPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
+
+        static class StopWriting extends ControlFlowException {
+            final int bytesWritten;
+
+            public StopWriting(int bytesWritten) {
+                this.bytesWritten = bytesWritten;
+            }
+        }
+
+        @TruffleBoundary(throwsControlFlowException = true)
+        @Specialization(guards = "isRubyString(string)")
+        public int writeNonBlock(DynamicObject io, DynamicObject string) {
+            setNonBlocking(io);
+
+            final int fd = Layouts.IO.getDescriptor(io);
+            final Rope rope = rope(string);
+
+            if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
+                // TODO (eregon, 13 May 2015): this looks like it would block
+                getContext().getDebugStandardOut().write(rope.getBytes(), 0, rope.byteLength());
+                return rope.byteLength();
+            }
+
+            final IOWriteNonBlockPrimitiveNode currentNode = this;
+
+            try {
+                RopeOperations.visitBytes(rope, new BytesVisitor() {
+
+                    int totalWritten = 0;
+
+                    @Override
+                    public void accept(byte[] bytes, int offset, int length) {
+                        final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
+
+                        while (buffer.hasRemaining()) {
+                            getContext().getSafepointManager().poll(currentNode);
+
+                            final int result = posix().write(fd, buffer, buffer.remaining());
+                            if (result <= 0) {
+                                int errno = posix().errno();
+                                if (errno == Errno.EAGAIN.intValue() || errno == Errno.EWOULDBLOCK.intValue()) {
+                                    throw new RaiseException(coreExceptions().eAGAINWaitWritable(currentNode));
+                                } else {
+                                    ensureSuccessful(result);
+                                }
+                            } else {
+                                totalWritten += result;
+                            }
+
+                            if (result < buffer.remaining()) {
+                                throw new StopWriting(totalWritten);
+                            }
+
+                            buffer.position(buffer.position() + result);
+                        }
+                    }
+
+                });
+            } catch (StopWriting e) {
+                return e.bytesWritten;
+            }
+
+            return rope.byteLength();
+        }
+
+        protected void setNonBlocking(DynamicObject io) {
+            final int fd = Layouts.IO.getDescriptor(io);
+            int flags = ensureSuccessful(posix().fcntl(fd, Fcntl.F_GETFL));
+
+            if ((flags & OpenFlags.O_NONBLOCK.intValue()) == 0) {
+                flags |= OpenFlags.O_NONBLOCK.intValue();
+                ensureSuccessful(posix().fcntlInt(fd, Fcntl.F_SETFL, flags));
+                Layouts.IO.setMode(io, flags);
+            }
         }
 
     }
@@ -435,7 +531,7 @@ public abstract class IOPrimitiveNodes {
     public static abstract class IOSeekPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
-        public int seek(VirtualFrame frame, DynamicObject io, int amount, int whence) {
+        public int seek(DynamicObject io, int amount, int whence) {
             final int fd = Layouts.IO.getDescriptor(io);
             // TODO (pitr-ch 15-Apr-2016): should it have ensureSuccessful too?
             return posix().lseek(fd, amount, whence);
@@ -447,7 +543,7 @@ public abstract class IOPrimitiveNodes {
     public abstract static class AcceptNode extends IOPrimitiveArrayArgumentsNode {
 
         @SuppressWarnings("restriction")
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public int accept(DynamicObject io) {
             final int fd = Layouts.IO.getDescriptor(io);
@@ -471,8 +567,9 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO)
     public static abstract class IOSysReadPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
-        public DynamicObject sysread(VirtualFrame frame, DynamicObject file, int length) {
+        public DynamicObject sysread(DynamicObject file, int length) {
             final int fd = Layouts.IO.getDescriptor(file);
 
             final ByteBuffer buffer = ByteBuffer.allocate(length);
@@ -504,33 +601,45 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3, unsafe = UnsafeGroup.IO)
     public static abstract class IOSelectPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @TruffleBoundary
-        @Specialization(guards = { "isRubyArray(readables)", "isNil(writables)", "isNil(errorables)", "isNil(noTimeout)" })
+        public abstract Object executeSelect(DynamicObject readables, DynamicObject writables, DynamicObject errorables, Object Timeout);
+
+        @TruffleBoundary(throwsControlFlowException = true)
+        @Specialization(guards = "isNil(noTimeout)")
         public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, DynamicObject noTimeout) {
             Object result;
             do {
-                result = select(readables, writables, errorables, Integer.MAX_VALUE);
+                result = executeSelect(readables, writables, errorables, Integer.MAX_VALUE);
             } while (result == nil());
             return result;
         }
 
-        @TruffleBoundary
-        @Specialization(guards = { "isRubyArray(readables)", "isNil(writables)", "isNil(errorables)" })
-        public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
-            final Object[] readableObjects = ArrayOperations.toObjectArray(readables);
-            final int[] readableFds = getFileDescriptors(readables);
-            final int nfds = max(readableFds) + 1;
+        @Specialization(guards = { "isRubyArray(readables)", "isNilOrEmpty(writables)", "isNilOrEmpty(errorables)" })
+        public Object selectReadables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
+            return selectOneSet(readables, timeoutMicros, 1);
+        }
 
-            final FDSet readableSet = new FDSet();
+        @Specialization(guards = { "isNilOrEmpty(readables)", "isRubyArray(writables)", "isNilOrEmpty(errorables)" })
+        public Object selectWritables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
+            return selectOneSet(writables, timeoutMicros, 2);
+        }
 
-            final ThreadManager.ResultOrTimeout<Integer> result = getContext().getThreadManager().runUntilTimeout(this, timeoutMicros, new ThreadManager.BlockingTimeoutAction<Integer>() {
+        @TruffleBoundary(throwsControlFlowException = true)
+        private Object selectOneSet(DynamicObject setToSelect, int timeoutMicros, int setNb) {
+            assert setNb >= 1 && setNb <= 3;
+            final Object[] readableObjects = ArrayOperations.toObjectArray(setToSelect);
+            final int[] fds = getFileDescriptors(setToSelect);
+            final int nfds = max(fds) + 1;
+
+            final FDSet fdSet = new FDSet();
+
+            final ThreadManager.ResultOrTimeout<Integer> resultOrTimeout = getContext().getThreadManager().runUntilTimeout(this, timeoutMicros, new ThreadManager.BlockingTimeoutAction<Integer>() {
                 @Override
                 public Integer block(Timeval timeoutToUse) throws InterruptedException {
                     // Set each fd each time since they are removed if the fd was not available
-                    for (int fd : readableFds) {
-                        readableSet.set(fd);
+                    for (int fd : fds) {
+                        fdSet.set(fd);
                     }
-                    final int result = callSelect(nfds, readableSet, timeoutToUse);
+                    final int result = callSelect(nfds, fdSet, timeoutToUse);
 
                     if (result == 0) {
                         return null;
@@ -539,72 +648,36 @@ public abstract class IOPrimitiveNodes {
                     return result;
                 }
 
-                private int callSelect(int nfds, FDSet readableSet, Timeval timeoutToUse) {
+                private int callSelect(int nfds, FDSet fdSet, Timeval timeoutToUse) {
                     return nativeSockets().select(
                             nfds,
-                            readableSet.getPointer(),
-                            PointerPrimitiveNodes.NULL_POINTER,
-                            PointerPrimitiveNodes.NULL_POINTER,
+                            setNb == 1 ? fdSet.getPointer() : PointerPrimitiveNodes.NULL_POINTER,
+                            setNb == 2 ? fdSet.getPointer() : PointerPrimitiveNodes.NULL_POINTER,
+                            setNb == 3 ? fdSet.getPointer() : PointerPrimitiveNodes.NULL_POINTER,
                             timeoutToUse);
                 }
             });
 
-            if (result instanceof ThreadManager.TimedOut) {
+            if (resultOrTimeout instanceof ThreadManager.TimedOut) {
                 return nil();
             }
 
-            final int resultCode = ensureSuccessful(((ThreadManager.ResultWithinTime<Integer>) result).getValue());
+            final ResultWithinTime<Integer> result = (ThreadManager.ResultWithinTime<Integer>) resultOrTimeout;
+            final int resultCode = ensureSuccessful(result.getValue());
 
             if (resultCode == 0) {
                 return nil();
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
-                            getSetObjects(readableObjects, readableFds, readableSet),
-                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
-                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) },
-                    3);
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] {
+                    setNb == 1 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray(),
+                    setNb == 2 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray(),
+                    setNb == 3 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray()
+            }, 3);
         }
 
-        @TruffleBoundary
-        @Specialization(guards = { "isNil(readables)", "isRubyArray(writables)", "isNil(errorables)" })
-        public Object selectNilReadables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
-            final Object[] writableObjects = ArrayOperations.toObjectArray(writables);
-            final int[] writableFds = getFileDescriptors(writables);
-            final int nfds = max(writableFds) + 1;
-
-            final FDSet writableSet = new FDSet();
-
-
-            final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
-                @Override
-                public Integer block() throws InterruptedException {
-                    // Set each fd each time since they are removed if the fd was not available
-                    for (int fd : writableFds) {
-                        writableSet.set(fd);
-                    }
-                    return callSelect(nfds, writableSet);
-                }
-
-                private int callSelect(int nfds, FDSet writableSet) {
-                    return nativeSockets().select(
-                            nfds,
-                            PointerPrimitiveNodes.NULL_POINTER,
-                            writableSet.getPointer(),
-                            PointerPrimitiveNodes.NULL_POINTER,
-                            null);
-                }
-            });
-
-            ensureSuccessful(result);
-
-            assert result != 0;
-
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
-                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0),
-                            getSetObjects(writableObjects, writableFds, writableSet),
-                            Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0) },
-                    3);
+        public DynamicObject createEmptyArray() {
+            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
         }
 
         private int[] getFileDescriptors(DynamicObject fileDescriptorArray) {
@@ -649,6 +722,10 @@ public abstract class IOPrimitiveNodes {
             }
 
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), setObjects, setFdsCount);
+        }
+
+        protected boolean isNilOrEmpty(DynamicObject fds) {
+            return isNil(fds) || (RubyGuards.isRubyArray(fds) && ArrayGuards.isEmptyArray(fds));
         }
 
     }

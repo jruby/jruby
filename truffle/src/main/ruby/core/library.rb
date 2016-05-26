@@ -60,12 +60,12 @@ module Rubinius::FFI::Library
 
     caller = Truffle::Boot.source_of_caller
 
-    suffixes = ['ruby/truffle/rubysl/rubysl-socket/lib/rubysl/socket.rb', 'core/rubinius/platform/env.rb']
+    suffixes = ['ruby/truffle/rubysl/rubysl-socket/lib/rubysl/socket.rb', 'core/env.rb']
 
     suffixes.each do |suffix|
       if caller[-suffix.length, suffix.length] == suffix
-        if Rubinius::FFI::Platform::POSIX.respond_to? mname
-          define_method mname, &Rubinius::FFI::Platform::POSIX.method(mname)
+        if Truffle::POSIX.respond_to? mname
+          define_method mname, &Truffle::POSIX.method(mname)
           module_function mname
           return
         end

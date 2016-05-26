@@ -92,7 +92,6 @@ public abstract class ProcessNodes {
             TimeSpec timeSpec = new TimeSpec(jnr.ffi.Runtime.getRuntime(libCClockGetTime));
             int r = libCClockGetTime.clock_gettime(clock_id, timeSpec);
             if (r != 0) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().systemCallError("clock_gettime failed: " + r, this));
             }
             long nanos = timeSpec.getTVsec() * 1_000_000_000 + timeSpec.getTVnsec();

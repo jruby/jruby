@@ -535,12 +535,12 @@ public class IRRuntimeHelpers {
         return block;
     }
 
-    public static void checkArity(ThreadContext context, Object[] args, int required, int opt, boolean rest,
+    public static void checkArity(Ruby runtime, StaticScope scope, Object[] args, int required, int opt, boolean rest,
                                   boolean receivesKwargs, int restKey, Block.Type blockType) {
         int argsLength = args.length;
         RubyHash keywordArgs = extractKwargsHash(args, required, receivesKwargs);
 
-        if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(context, keywordArgs);
+        if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(runtime, scope, keywordArgs);
 
         // keyword arguments value is not used for arity checking.
         if (keywordArgs != null) argsLength -= 1;
@@ -549,7 +549,7 @@ public class IRRuntimeHelpers {
 //            System.out.println("NUMARGS: " + argsLength + ", REQUIRED: " + required + ", OPT: " + opt + ", AL: " + args.length + ",RKW: " + receivesKwargs );
 //            System.out.println("ARGS[0]: " + args[0]);
 
-            Arity.raiseArgumentError(context.runtime, argsLength, required, required + opt);
+            Arity.raiseArgumentError(runtime, argsLength, required, required + opt);
         }
     }
 
@@ -588,9 +588,7 @@ public class IRRuntimeHelpers {
         return null;
     }
 
-    public static void checkForExtraUnwantedKeywordArgs(final ThreadContext context, RubyHash keywordArgs) {
-        final StaticScope scope = context.getCurrentStaticScope();
-
+    public static void checkForExtraUnwantedKeywordArgs(final Ruby runtime, final StaticScope scope, RubyHash keywordArgs) {
         keywordArgs.visitAll(new RubyHash.Visitor() {
             @Override
             public void visit(IRubyObject key, IRubyObject value) {
@@ -598,9 +596,9 @@ public class IRRuntimeHelpers {
                 int slot = scope.isDefined((keyAsString));
 
                 // Found name in higher variable scope.  Therefore non for this block/method def.
-                if ((slot >> 16) > 0) throw context.runtime.newArgumentError("unknown keyword: " + keyAsString);
+                if ((slot >> 16) > 0) throw runtime.newArgumentError("unknown keyword: " + keyAsString);
                 // Could not find it anywhere.
-                if (((short) (slot & 0xffff)) < 0) throw context.runtime.newArgumentError("unknown keyword: " + keyAsString);
+                if (((short) (slot & 0xffff)) < 0) throw runtime.newArgumentError("unknown keyword: " + keyAsString);
             }
         });
     }
@@ -1003,7 +1001,12 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject zSuperSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
         if (block == null || !block.isGiven()) block = context.getFrameBlock();
-        return unresolvedSuperSplatArgs(context, self, args, block, splatMap);
+        return unresolvedSuper(context, self, splatArguments(args, splatMap), block);
+    }
+
+    public static IRubyObject zSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        if (block == null || !block.isGiven()) block = context.getFrameBlock();
+        return unresolvedSuper(context, self, args, block);
     }
 
     public static IRubyObject[] splatArguments(IRubyObject[] args, boolean[] splatMap) {
@@ -1051,24 +1054,32 @@ public class IRRuntimeHelpers {
                 }
             }
         } else {
-            splatMap = new boolean[0];
+            splatMap = null;
         }
         return splatMap;
     }
 
-    public static boolean[] buildSplatMap(Operand[] args, boolean containsArgSplat) {
-        boolean[] splatMap = new boolean[args.length];
+    public static boolean[] buildSplatMap(Operand[] args) {
+        boolean[] splatMap = null;
 
-        if (containsArgSplat) {
-            for (int i = 0; i < args.length; i++) {
-                Operand operand = args[i];
-                if (operand instanceof Splat) {
-                    splatMap[i] = true;
-                }
+        for (int i = 0; i < args.length; i++) {
+            Operand operand = args[i];
+            if (operand instanceof Splat) {
+                if (splatMap == null) splatMap = new boolean[args.length];
+                splatMap[i] = true;
             }
         }
 
         return splatMap;
+    }
+
+    public static boolean anyTrue(boolean[] booleans) {
+        for (boolean b : booleans) if (b) return true;
+        return false;
+    }
+
+    public static boolean needsSplatting(boolean[] splatmap) {
+        return splatmap != null && splatmap.length > 0 && anyTrue(splatmap);
     }
 
     public static final Type[] typesFromSignature(Signature signature) {
