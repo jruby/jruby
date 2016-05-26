@@ -1267,7 +1267,6 @@ class File < IO
   end
 
   def reopen(other, mode = 'r+')
-    rewind unless closed?
     unless other.kind_of? IO
       other = Rubinius::Type.coerce_to_path(other)
     end
