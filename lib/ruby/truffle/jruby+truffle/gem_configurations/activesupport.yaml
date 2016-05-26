@@ -50,6 +50,7 @@
                                                               :test_titleize_should_not_affect_characters_that_do_not_case_fold],
                                    TimeZoneTest:              :test_map_srednekolymsk_to_tzinfo }
 
+                      require 'truffle/exclude_rspec_examples'
 
                       Truffle.exclude_rspec_examples failures
 
@@ -67,6 +68,5 @@
     - bigdecimal
     - pathname
     - openssl-stubs
-    - truffle/exclude_rspec_examples
   :environment:
     N: 1
