@@ -292,6 +292,7 @@ module Commands
     puts 'jt build [options]                             build'
     puts 'jt build truffle [options]                     build only the Truffle part, assumes the rest is up-to-date'
     puts 'jt rebuild [options]                           clean and build'
+    puts '    --offline                                  use the build pack to build offline (should be in ../jruby-build-pack)'
     puts 'jt clean                                       clean'
     puts 'jt irb                                         irb'
     puts 'jt rebuild                                     clean and build'
@@ -358,14 +359,25 @@ module Commands
   def bootstrap
     mvn '-DskipTests', '-Pbootstrap-no-launcher'
   end
+  
+  def maven_options(*options)
+    maven_options = %w[-DskipTests]
+    offline = options.delete('--offline')
+    if offline
+      maven_options.push '-Dmaven.repo.local=../jruby-build-pack/maven'
+      maven_options.push '--offline'
+    end
+    return [maven_options, options]
+  end
 
-  def build(project = nil)
-    opts = %w[-DskipTests]
+  def build(*options)
+    maven_options, other_options = maven_options(*options)
+    project = other_options.first
     case project
     when 'truffle'
-      mvn *opts, '-pl', 'truffle', 'package'
+      mvn *maven_options, '-pl', 'truffle', 'package'
     when nil
-      mvn *opts, 'package'
+      mvn *maven_options, 'package'
     else
       raise ArgumentError, project
     end
@@ -818,8 +830,9 @@ module Commands
     end
   end
 
-  def tarball
-    mvn '-Pdist'
+  def tarball(*options)
+    maven_options, other_options = maven_options(*options)
+    mvn *maven_options, '-Pdist'
     generated_file = "#{JRUBY_DIR}/maven/jruby-dist/target/jruby-dist-#{Utilities.jruby_version}-bin.tar.gz"
     final_file = "#{JRUBY_DIR}/jruby-bin-#{Utilities.jruby_version}.tar.gz"
     FileUtils.copy generated_file, final_file
@@ -897,6 +910,7 @@ class JT
     when "build"
       command = [args.shift]
       command << args.shift if args.first == "truffle"
+      command << args.shift if args.first == "--offline"
       send(*command)
     end
 
