@@ -1839,10 +1839,7 @@ public class BodyTranslator extends Translator {
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
         if (path.equals(corePath + "array.rb")) {
-            if (name.equals("@total")) {
-                ret = new RubyCallNode(context, sourceSection, "size", self, null, false);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@tuple")) {
+            if (name.equals("@tuple")) {
                 ret = self;
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@start")) {
