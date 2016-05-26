@@ -64,7 +64,7 @@ class Array
 
     if undefined.equal?(size_or_array)
       unless size == 0
-        @total = @start = 0
+        @total = 0
         @tuple = Rubinius::Tuple.new 8
       end
 
@@ -85,7 +85,7 @@ class Array
       if ary
         m = Rubinius::Mirror::Array.reflect ary
         @tuple = m.tuple.dup
-        @start = m.start
+        raise 'start not zero' unless m.start.zero?
         @total = m.total
 
         return self
@@ -123,7 +123,7 @@ class Array
     m = Rubinius::Mirror::Array.reflect other
     @tuple = m.tuple.dup
     @total = m.total
-    @start = m.start
+    raise 'start not zero' unless m.start.zero?
 
     Rubinius::Type.infect(self, other)
     self
@@ -424,7 +424,6 @@ class Array
 
     @tuple = Rubinius::Tuple.new(1)
     @total = 0
-    @start = 0
     self
   end
 
@@ -653,7 +652,6 @@ class Array
           @start += 1
         else
           copy_from self, reg_start + @start, reg_length, 0
-          @start = 0
         end
       else
         copy_from self, reg_start + @start, reg_length,
@@ -1571,7 +1569,6 @@ class Array
                               size - index - ins_length,
                               index + replace_count)
         end
-        @start = 0
         @tuple = new_tuple
         @total = new_total
       else
@@ -1840,7 +1837,7 @@ class Array
 
     m = Rubinius::Mirror::Array.reflect im.to_array
     @tuple = m.tuple
-    @start = m.start
+    raise 'start not zero' unless m.start.zero?
     @total = m.total
 
     self
@@ -1930,7 +1927,6 @@ class Array
     new_tuple = Rubinius::Tuple.new new_total
     new_tuple.copy_from self, @start, size, 0
 
-    @start = 0
     @tuple = new_tuple
   end
 
@@ -1950,7 +1946,7 @@ class Array
     new_start = (new_total - size)/2
     new_tuple.copy_from self, @start, size, new_start
 
-    @start = new_start
+    raise 'start not zero' unless new_start.zero?
     @tuple = new_tuple
   end
 
@@ -2319,7 +2315,6 @@ class Array
           @start += 1
         else
           copy_from self, reg_start + @start, reg_length, 0
-          @start = 0
         end
       else
         copy_from self, reg_start + @start, reg_length,
@@ -2349,7 +2344,7 @@ class Array
 
     m = Rubinius::Mirror::Array.reflect im.to_array
     @tuple = m.tuple
-    @start = m.start
+    raise 'start not zero' unless m.start.zero?
     @total = m.total
 
     copy_from(m.tuple, 0, m.total, 0)
