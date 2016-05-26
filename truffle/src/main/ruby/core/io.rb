@@ -2296,6 +2296,7 @@ class IO
         mode = IO.parse_mode(mode)
       end
 
+      reset_buffering
       reopen_path Rubinius::Type.coerce_to_path(other), mode
       seek 0, SEEK_SET
     end
