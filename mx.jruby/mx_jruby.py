@@ -90,7 +90,6 @@ class MavenBuildTask(mx.BuildTask):
 
         # Build jruby-truffle
 
-        #mx.run(['find', '.'], nonZeroIsFatal=False, cwd=rubyDir)
         mx.run_maven(['--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir)
 
         mx.log('Building without tests')
