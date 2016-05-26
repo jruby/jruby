@@ -19,8 +19,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
-
 /**
  * Instruction representing Ruby code of the form: "a['str']"
  * which is equivalent to: a.[]('str'). Because a Hash receiver
