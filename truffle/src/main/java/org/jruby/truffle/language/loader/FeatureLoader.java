@@ -191,7 +191,7 @@ public class FeatureLoader {
                                 null,
                                 context.getCoreLibrary().getMainObject());
 
-                        deferredCall.call(frame, callNode);
+                        deferredCall.callWithoutCallNode();
                     }
                     break;
 
