@@ -66,8 +66,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
-        if (block == null || !block.isGiven()) block = context.getFrameBlock();
-        return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
+        return IRRuntimeHelpers.zSuper(context, self, args, block);
     }
 
     @Override

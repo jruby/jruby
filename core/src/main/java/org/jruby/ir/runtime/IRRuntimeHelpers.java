@@ -1001,7 +1001,12 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject zSuperSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
         if (block == null || !block.isGiven()) block = context.getFrameBlock();
-        return unresolvedSuperSplatArgs(context, self, args, block, splatMap);
+        return unresolvedSuper(context, self, splatArguments(args, splatMap), block);
+    }
+
+    public static IRubyObject zSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        if (block == null || !block.isGiven()) block = context.getFrameBlock();
+        return unresolvedSuper(context, self, args, block);
     }
 
     public static IRubyObject[] splatArguments(IRubyObject[] args, boolean[] splatMap) {
@@ -1049,24 +1054,32 @@ public class IRRuntimeHelpers {
                 }
             }
         } else {
-            splatMap = new boolean[0];
+            splatMap = null;
         }
         return splatMap;
     }
 
-    public static boolean[] buildSplatMap(Operand[] args, boolean containsArgSplat) {
-        boolean[] splatMap = new boolean[args.length];
+    public static boolean[] buildSplatMap(Operand[] args) {
+        boolean[] splatMap = null;
 
-        if (containsArgSplat) {
-            for (int i = 0; i < args.length; i++) {
-                Operand operand = args[i];
-                if (operand instanceof Splat) {
-                    splatMap[i] = true;
-                }
+        for (int i = 0; i < args.length; i++) {
+            Operand operand = args[i];
+            if (operand instanceof Splat) {
+                if (splatMap == null) splatMap = new boolean[args.length];
+                splatMap[i] = true;
             }
         }
 
         return splatMap;
+    }
+
+    public static boolean anyTrue(boolean[] booleans) {
+        for (boolean b : booleans) if (b) return true;
+        return false;
+    }
+
+    public static boolean needsSplatting(boolean[] splatmap) {
+        return splatmap != null && splatmap.length > 0 && anyTrue(splatmap);
     }
 
     public static final Type[] typesFromSignature(Signature signature) {

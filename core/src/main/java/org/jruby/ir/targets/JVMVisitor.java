@@ -1087,10 +1087,10 @@ public class JVMVisitor extends IRVisitor {
         String name = classsuperinstr.getName();
         Operand[] args = classsuperinstr.getCallArgs();
         Operand definingModule = classsuperinstr.getDefiningModule();
-        boolean containsArgSplat = classsuperinstr.containsArgSplat();
+        boolean[] splatMap = classsuperinstr.splatMap();
         Operand closure = classsuperinstr.getClosureArg(null);
 
-        superCommon(name, classsuperinstr, args, definingModule, containsArgSplat, closure);
+        superCommon(name, classsuperinstr, args, definingModule, splatMap, closure);
     }
 
     @Override
@@ -1331,13 +1331,13 @@ public class JVMVisitor extends IRVisitor {
         String name = instancesuperinstr.getName();
         Operand[] args = instancesuperinstr.getCallArgs();
         Operand definingModule = instancesuperinstr.getDefiningModule();
-        boolean containsArgSplat = instancesuperinstr.containsArgSplat();
+        boolean[] splatMap = instancesuperinstr.splatMap();
         Operand closure = instancesuperinstr.getClosureArg(null);
 
-        superCommon(name, instancesuperinstr, args, definingModule, containsArgSplat, closure);
+        superCommon(name, instancesuperinstr, args, definingModule, splatMap, closure);
     }
 
-    private void superCommon(String name, CallInstr instr, Operand[] args, Operand definingModule, boolean containsArgSplat, Operand closure) {
+    private void superCommon(String name, CallInstr instr, Operand[] args, Operand definingModule, boolean[] splatMap, Operand closure) {
         IRBytecodeAdapter m = jvmMethod();
         Operation operation = instr.getOperation();
 
@@ -1358,9 +1358,6 @@ public class JVMVisitor extends IRVisitor {
             Operand operand = args[i];
             visit(operand);
         }
-
-        // if there's splats, provide a map and let the call site sort it out
-        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, containsArgSplat);
 
         boolean hasClosure = closure != null;
         if (hasClosure) {
@@ -2146,10 +2143,10 @@ public class JVMVisitor extends IRVisitor {
         Operand[] args = unresolvedsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
-        boolean containsArgSplat = unresolvedsuperinstr.containsArgSplat();
+        boolean[] splatMap = unresolvedsuperinstr.splatMap();
         Operand closure = unresolvedsuperinstr.getClosureArg(null);
 
-        superCommon(name, unresolvedsuperinstr, args, definingModule, containsArgSplat, closure);
+        superCommon(name, unresolvedsuperinstr, args, definingModule, splatMap, closure);
     }
 
     @Override
@@ -2195,10 +2192,10 @@ public class JVMVisitor extends IRVisitor {
         Operand[] args = zsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
-        boolean containsArgSplat = zsuperinstr.containsArgSplat();
+        boolean[] splatMap = zsuperinstr.splatMap();
         Operand closure = zsuperinstr.getClosureArg(null);
 
-        superCommon(name, zsuperinstr, args, definingModule, containsArgSplat, closure);
+        superCommon(name, zsuperinstr, args, definingModule, splatMap, closure);
     }
 
     @Override

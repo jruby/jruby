@@ -61,6 +61,12 @@ import static org.jruby.util.CodegenUtils.sig;
  * CON FIXME: These are all dirt-stupid impls that will not be as efficient.
  */
 public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
+
+    public static final String SUPER_SPLAT_UNRESOLVED = sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class));
+    public static final String SUPER_NOSPLAT_UNRESOLVED = sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, JVM.OBJECT_ARRAY, Block.class));
+    public static final String SUPER_SPLAT_RESOLVED = sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, String.class, RubyModule.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class));
+    public static final String SUPER_NOSPLAT_RESOLVED = sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, String.class, RubyModule.class, JVM.OBJECT_ARRAY, Block.class));
+
     public IRBytecodeAdapter6(SkinnyMethodAdapter adapter, Signature signature, ClassData classData) {
         super(adapter, signature, classData);
     }
@@ -629,42 +635,52 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     public void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to instance super has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(name, arity, hasClosure, splatmap, "instanceSuperSplatArgs", false);
+        performSuper(name, arity, hasClosure, splatmap, "instanceSuper", "instanceSuperSplatArgs", false);
     }
 
     public void invokeClassSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to class super has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(name, arity, hasClosure, splatmap, "classSuperSplatArgs", false);
+        performSuper(name, arity, hasClosure, splatmap, "classSuper", "classSuperSplatArgs", false);
     }
 
     public void invokeUnresolvedSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to unresolved super has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(name, arity, hasClosure, splatmap, "unresolvedSuperSplatArgs", true);
+        performSuper(name, arity, hasClosure, splatmap, "unresolvedSuper", "unresolvedSuperSplatArgs", true);
     }
 
     public void invokeZSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to zsuper has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(name, arity, hasClosure, splatmap, "zSuperSplatArgs", true);
+        performSuper(name, arity, hasClosure, splatmap, "zSuper", "zSuperSplatArgs", true);
     }
 
-    private void performSuper(String name, int arity, boolean hasClosure, boolean[] splatmap, String helperName, boolean unresolved) {
+    private void performSuper(String name, int arity, boolean hasClosure, boolean[] splatmap, String superHelper, String splatHelper, boolean unresolved) {
         SkinnyMethodAdapter adapter2;
         String incomingSig;
         String outgoingSig;
 
+        boolean needsSplatting = IRRuntimeHelpers.needsSplatting(splatmap);
+
         if (hasClosure) {
             incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class));
-            outgoingSig = unresolved ?
-                    sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class)) :
-                    sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, String.class, RubyModule.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class));
         } else {
             incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity));
-            outgoingSig = unresolved ?
-                    sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class)) :
-                    sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, String.class, RubyModule.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class));
+        }
+
+        if (unresolved) {
+            if (needsSplatting) {
+                outgoingSig = SUPER_SPLAT_UNRESOLVED;
+            } else {
+                outgoingSig = SUPER_NOSPLAT_UNRESOLVED;
+            }
+        } else {
+            if (needsSplatting) {
+                outgoingSig = SUPER_SPLAT_RESOLVED;
+            } else {
+                outgoingSig = SUPER_NOSPLAT_RESOLVED;
+            }
         }
 
         String methodName = "invokeSuper" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
@@ -690,25 +706,20 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             adapter2.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
-        if (splatmap != null || splatmap.length > 0 || anyTrue(splatmap)) {
+        if (needsSplatting) {
             String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
             adapter2.ldc(splatmapString);
             adapter2.invokestatic(p(IRRuntimeHelpers.class), "decodeSplatmap", sig(boolean[].class, String.class));
+            adapter2.invokestatic(p(IRRuntimeHelpers.class), splatHelper, outgoingSig);
         } else {
-            adapter2.getstatic(p(IRRuntimeHelpers.class), "EMPTY_BOOLEAN_ARRAY", ci(boolean[].class));
+            adapter2.invokestatic(p(IRRuntimeHelpers.class), superHelper, outgoingSig);
         }
 
-        adapter2.invokestatic(p(IRRuntimeHelpers.class), helperName, outgoingSig);
         adapter2.areturn();
         adapter2.end();
 
         // now call it
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
-    }
-
-    private static boolean anyTrue(boolean[] booleans) {
-        for (boolean b : booleans) if (b) return true;
-        return false;
     }
 
     public void searchConst(String name, boolean noPrivateConsts) {
