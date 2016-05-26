@@ -1284,9 +1284,7 @@ public class BodyTranslator extends Translator {
         if (path.startsWith(coreRubiniusPath)) {
             boolean rename = false;
 
-            if (path.equals(coreRubiniusPath + "array.rb")) {
-                rename = methodName.equals("fill") || methodName.equals("zip");
-            } else if (path.equals(coreRubiniusPath + "float.rb")) {
+            if (path.equals(coreRubiniusPath + "float.rb")) {
                 rename = methodName.equals("round");
             } else if (path.equals(coreRubiniusPath + "range.rb")) {
                 rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");

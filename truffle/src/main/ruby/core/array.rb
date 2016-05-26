@@ -707,7 +707,7 @@ class Array
     at(idx)
   end
 
-  def fill(a=undefined, b=undefined, c=undefined)
+  def fill_internal(a=undefined, b=undefined, c=undefined)
     Truffle.check_frozen
 
     if block_given?
@@ -1882,7 +1882,7 @@ class Array
     out
   end
 
-  def zip(*others)
+  def zip_internal(*others)
     out = Array.new(size) { [] }
     others = others.map do |other|
       if other.respond_to?(:to_ary)
