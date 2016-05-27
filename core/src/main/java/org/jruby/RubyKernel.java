@@ -246,16 +246,16 @@ public class RubyKernel {
         String format = null;
 
         if (visibility == PRIVATE) {
-            format = "private method `%s' called for %s";
+            format = "private method `%1$s' called for %2$s";
         } else if (visibility == PROTECTED) {
-            format = "protected method `%s' called for %s";
+            format = "protected method `%1$s' called for %2$s";
         } else if (callType == CallType.VARIABLE) {
-            format = "undefined local variable or method `%s' for %s";
+            format = "undefined local variable or method `%1$s' for %2$s";
         } else if (callType == CallType.SUPER) {
-            format = "super: no superclass method `%s'";
+            format = "super: no superclass method `%1$s'";
         }
 
-        if (format == null) format = "undefined method `%s' for %s";
+        if (format == null) format = "undefined method `%1$s' for %2$s";
 
         return format;
     }
