@@ -7,6 +7,9 @@ if [[ -v USE_BUILD_PACK ]]
 then
   git clone --depth 1 https://github.com/jruby/jruby-build-pack.git
   MAVEN_CLI_OPTS="-Dmaven.repo.local=jruby-build-pack/maven --offline"
+  cp bin/jruby.bash bin/jruby
+  chmod +x bin/jruby
+  export JRUBY_NO_ANT=yes
 fi
 
 if [[ -n "$PHASE" && $JAVA_HOME == *"java-8"* ]]
