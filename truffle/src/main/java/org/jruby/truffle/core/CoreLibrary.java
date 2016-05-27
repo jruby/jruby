@@ -33,6 +33,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
 import org.jruby.truffle.core.array.ArrayNodes;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
+import org.jruby.truffle.core.array.TruffleArrayNodesFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.binding.BindingNodesFactory;
 import org.jruby.truffle.core.binding.TruffleBindingNodesFactory;
@@ -585,6 +586,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Graal");
         defineModule(truffleModule, "Ropes");
         defineModule(truffleModule, "GC");
+        defineModule(truffleModule, "Array");
         final DynamicObject attachments = defineModule(truffleModule, "Attachments");
         defineModule(attachments, "Internal");
         defineModule(truffleModule, "Boot");
@@ -758,6 +760,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(TruffleProcessNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleDebugNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleBindingNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleArrayNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BCryptNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
