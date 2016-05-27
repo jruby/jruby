@@ -287,43 +287,41 @@ project 'JRuby Core' do
     end
   end
 
-  unless ENV['JRUBY_NO_ANT']
-    
-    jruby_bin_config = [ 'run', { :id => 'copy',
-                                  'tasks' => {
-                                    'exec' => {
-                                      '@executable' =>  '/bin/sh',
-                                      '@osfamily' =>  'unix',
-                                      'arg' => {
-                                        '@line' =>  '-c \'cp "${jruby.basedir}/bin/jruby.bash" "${jruby.basedir}/bin/jruby"\''
-                                      }
-                                    },
-                                    'chmod' => {
-                                      '@file' =>  '${jruby.basedir}/bin/jruby',
-                                      '@perm' =>  '755'
-                                    }
-                                  } } ]
+  copy_goal = [:exec, :executable => '/bin/sh', :arguments => ['-c', 'cp ${jruby.basedir}/bin/jruby.bash ${jruby.basedir}/bin/jruby']]
+
+  profile :clean do
+    activation do
+      # hack to get the os triggeer into the model
+      os = org.apache.maven.model.ActivationOS.new
+      os.family = 'unix'
+      @current.os = os
+    end
 
     phase :clean do
-      plugin :antrun do
-        execute_goals( *jruby_bin_config )
+      plugin 'org.codehaus.mojo:exec-maven-plugin' do
+        execute_goals( *copy_goal )
+      end
+    end
+  end
+
+  profile 'jruby.bash' do
+
+    activation do
+      file( :missing => '../bin/jruby' )
+    end
+    activation do
+      # hack to get the os triggeer into the model
+      os = org.apache.maven.model.ActivationOS.new
+      os.family = 'unix'
+      @current.os = os
+    end
+
+    phase :initialize do
+      plugin 'org.codehaus.mojo:exec-maven-plugin' do
+        execute_goals *copy_goal
       end
     end
 
-    profile 'jruby.bash' do
-
-      activation do
-        file( :missing => '../bin/jruby' )
-      end
-
-      phase :initialize do
-        plugin :antrun do
-          execute_goals( *jruby_bin_config )
-        end
-      end
-
-    end
-    
   end
 
   jni_config = [ 'unpack', { :id => 'unzip native',
