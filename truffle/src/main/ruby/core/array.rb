@@ -2056,11 +2056,14 @@ class Array
     i = left
 
     while i < last
-      if left_index < right && (right_index >= last || (source.at(left_index) <=> source.at(right_index)) <= 0)
-        scratch[i] = source.at(left_index)
+      left_element = source.at(left_index)
+      right_element = source.at(right_index)
+
+      if left_index < right && (right_index >= last || (left_element <=> right_element) <= 0)
+        scratch[i] = left_element
         left_index += 1
       else
-        scratch[i] = source.at(right_index)
+        scratch[i] = right_element
         right_index += 1
       end
 
@@ -2117,11 +2120,14 @@ class Array
     i = left
 
     while i < last
-      if left_index < right && (right_index >= last || block.call(source.at(left_index), source.at(right_index)) <= 0)
-        scratch[i] = source.at(left_index)
+      left_element = source.at(left_index)
+      right_element = source.at(right_index)
+
+      if left_index < right && (right_index >= last || block.call(left_element, right_element) <= 0)
+        scratch[i] = left_element
         left_index += 1
       else
-        scratch[i] = source.at(right_index)
+        scratch[i] = right_element
         right_index += 1
       end
 
