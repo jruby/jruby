@@ -565,9 +565,9 @@ class Hash
 
     return nil if empty?
 
-    size = @size
+    previous_size = size
     each_item { |e| delete e.key unless yield(e.key, e.value) }
-    return nil if size == @size
+    return nil if previous_size == size
 
     self
   end
@@ -695,7 +695,7 @@ class Hash
 
   # Returns true if there are no entries.
   def empty?
-    @size == 0
+    size == 0
   end
 
   def index(value)
@@ -784,9 +784,9 @@ class Hash
     Truffle.check_frozen
 
     unless empty?
-      size = @size
+      previous_size = size
       delete_if(&block)
-      return self if size != @size
+      return self if previous_size != size
     end
 
     nil

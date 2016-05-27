@@ -1860,10 +1860,6 @@ public class BodyTranslator extends Translator {
                 ret = HashNodesFactory.DefaultProcNodeFactory.create(new RubyNode[]{ self });
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@size")) {
-                ret = HashNodesFactory.SizeNodeFactory.create(new RubyNode[]{ self });
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
             }
         } else if (path.equals(corePath + "range.rb")) {
             if (name.equals("@begin")) {
