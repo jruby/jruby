@@ -308,7 +308,10 @@ public class LoadService {
         if (path == null || path.length() == 0) return;
         final RubyArray loadPath = this.loadPath;
         synchronized(loadPath) {
-            loadPath.append(runtime.newString(path.replace('\\', '/')));
+            final RubyString pathToAdd = runtime.newString(path.replace('\\', '/'));
+            // Do not add duplicated paths
+            if (loadPath.includes(runtime.getCurrentContext(), pathToAdd)) return;
+            loadPath.append(pathToAdd);
         }
     }
 
