@@ -41,12 +41,6 @@
     bundler.rb: "module Bundler; def self.setup; end; end"
     # mock method_source gem
     method_source.rb: nil
-    exclude_tests.rb: |
-                      failures = { LoadPathsTest:            [:test_uniq_load_paths] }
-
-                      require 'truffle/exclude_rspec_examples'
-
-                      Truffle.exclude_rspec_examples failures
 
   # do not let bundler to install db gem group
   :without:
