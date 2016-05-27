@@ -124,7 +124,6 @@ class MSpecScript
   MSpec.disable_feature :continuation_library
   MSpec.disable_feature :fork
   MSpec.enable_feature :encoding
-  MSpec.enable_feature :readline
 
   set :files, get(:language) + get(:core) + get(:library) + get(:truffle)
 end
