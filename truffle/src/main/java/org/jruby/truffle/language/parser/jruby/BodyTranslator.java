@@ -1856,10 +1856,6 @@ public class BodyTranslator extends Translator {
                 ret = RangeNodesFactory.BeginNodeFactory.create(new RubyNode[]{ self });
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@end")) {
-                ret = RangeNodesFactory.EndNodeFactory.create(new RubyNode[]{ self });
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@excl")) {
                 ret = RangeNodesFactory.ExcludeEndNodeFactory.create(new RubyNode[]{ self });
                 setSourceSection(ret, sourceSection);

@@ -63,12 +63,12 @@ class Range
   def bsearch
     return to_enum :bsearch unless block_given?
 
-    unless @begin.kind_of? Numeric and @end.kind_of? Numeric
+    unless @begin.kind_of? Numeric and self.end.kind_of? Numeric
       raise TypeError, "bsearch is not available for #{@begin.class}"
     end
 
     min = @begin
-    max = @end
+    max = self.end
 
     max -= 1 if max.kind_of? Integer and @excl
 
@@ -130,7 +130,7 @@ class Range
 
   def each_internal
     return to_enum { size } unless block_given?
-    first, last = @begin, @end
+    first, last = @begin, self.end
 
     unless first.respond_to?(:succ) && !first.kind_of?(Time)
       raise TypeError, "can't iterate from #{first.class}"
@@ -182,7 +182,7 @@ class Range
     excl = @excl ? 1 : 0
     hash = excl
     hash ^= @begin.hash << 1
-    hash ^= @end.hash << 9
+    hash ^= self.end.hash << 9
     hash ^= excl << 24;
     # Are we throwing away too much here for a good hash value distribution?
     return hash & Fixnum::MAX
@@ -190,9 +190,9 @@ class Range
 
   def include?(value)
     if @begin.respond_to?(:to_int) ||
-       @end.respond_to?(:to_int) ||
+       self.end.respond_to?(:to_int) ||
        @begin.kind_of?(Numeric) ||
-       @end.kind_of?(Numeric)
+       self.end.kind_of?(Numeric)
       cover? value
     else
       super
@@ -206,21 +206,21 @@ class Range
   end
 
   def inspect
-    "#{@begin.inspect}#{@excl ? "..." : ".."}#{@end.inspect}"
+    "#{@begin.inspect}#{@excl ? "..." : ".."}#{self.end.inspect}"
   end
 
   def last(n=undefined)
-    return @end if undefined.equal? n
+    return self.end if undefined.equal? n
 
     to_a.last(n)
   end
 
   def max
-    return super if block_given? || (@excl && !@end.kind_of?(Numeric))
-    return nil if @end < @begin || (@excl && @end == @begin)
-    return @end unless @excl
+    return super if block_given? || (@excl && !self.end.kind_of?(Numeric))
+    return nil if self.end < @begin || (@excl && self.end == @begin)
+    return self.end unless @excl
 
-    unless @end.kind_of?(Integer)
+    unless self.end.kind_of?(Integer)
       raise TypeError, "cannot exclude non Integer end value"
     end
 
@@ -228,12 +228,12 @@ class Range
       raise TypeError, "cannot exclude end value with non Integer begin value"
     end
 
-    @end - 1
+    self.end - 1
   end
 
   def min
     return super if block_given?
-    return nil if @end < @begin || (@excl && @end == @begin)
+    return nil if self.end < @begin || (@excl && self.end == @begin)
 
     @begin
   end
@@ -241,11 +241,11 @@ class Range
   def step_internal(step_size=1) # :yields: object
     return to_enum(:step, step_size) do
       m = Rubinius::Mirror::Range.reflect(self)
-      m.step_iterations_size(*m.validate_step_size(@begin, @end, step_size))
+      m.step_iterations_size(*m.validate_step_size(@begin, self.end, step_size))
     end unless block_given?
 
     m = Rubinius::Mirror::Range.reflect(self)
-    values = m.validate_step_size(@begin, @end, step_size)
+    values = m.validate_step_size(@begin, self.end, step_size)
     first = values[0]
     last = values[1]
     step_size = values[2]
@@ -281,13 +281,13 @@ class Range
   end
 
   def to_s
-    "#{@begin}#{@excl ? "..." : ".."}#{@end}"
+    "#{@begin}#{@excl ? "..." : ".."}#{self.end}"
   end
 
   def to_a_internal
-    return super unless @begin.kind_of? Fixnum and @end.kind_of? Fixnum
+    return super unless @begin.kind_of? Fixnum and self.end.kind_of? Fixnum
 
-    fin = @end
+    fin = self.end
     fin += 1 unless @excl
 
     size = fin - @begin
@@ -311,7 +311,7 @@ class Range
     return false unless beg_compare
 
     if Comparable.compare_int(beg_compare) <= 0
-      end_compare = (value <=> @end)
+      end_compare = (value <=> self.end)
 
       if @excl
         return true if Comparable.compare_int(end_compare) < 0
@@ -326,13 +326,13 @@ class Range
   def size
     return nil unless @begin.kind_of?(Numeric)
 
-    delta = @end - @begin
+    delta = self.end - @begin
     return 0 if delta < 0
 
-    if @begin.kind_of?(Float) || @end.kind_of?(Float)
+    if @begin.kind_of?(Float) || self.end.kind_of?(Float)
       return delta if delta == Float::INFINITY
 
-      err = (@begin.abs + @end.abs + delta.abs) * Float::EPSILON
+      err = (@begin.abs + self.end.abs + delta.abs) * Float::EPSILON
       err = 0.5 if err > 0.5
 
       (@excl ? delta - err : delta + err).floor + 1
@@ -343,9 +343,9 @@ class Range
   end
 
   def to_a_internal # MODIFIED called from java to_a
-    return to_a_from_enumerable unless @begin.kind_of? Fixnum and @end.kind_of? Fixnum
+    return to_a_from_enumerable unless @begin.kind_of? Fixnum and self.end.kind_of? Fixnum
 
-    fin = @end
+    fin = self.end
     fin += 1 unless @excl
 
     size = fin - @begin
