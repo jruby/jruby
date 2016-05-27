@@ -70,7 +70,7 @@ class Range
     min = self.begin
     max = self.end
 
-    max -= 1 if max.kind_of? Integer and @excl
+    max -= 1 if max.kind_of? Integer and exclude_end?
 
     start = min = Rubinius::Type.coerce_to min, Integer, :to_int
     total = max = Rubinius::Type.coerce_to max, Integer, :to_int
@@ -138,7 +138,7 @@ class Range
 
     case first
     when Fixnum
-      last -= 1 if @excl
+      last -= 1 if exclude_end?
 
       i = first
       while i <= last
@@ -146,16 +146,16 @@ class Range
         i += 1
       end
     when String
-      first.upto(last, @excl) do |str|
+      first.upto(last, exclude_end?) do |str|
         yield str
       end
     when Symbol
-      first.to_s.upto(last.to_s, @excl) do |str|
+      first.to_s.upto(last.to_s, exclude_end?) do |str|
         yield str.to_sym
       end
     else
       current = first
-      if @excl
+      if exclude_end?
         while (current <=> last) < 0
           yield current
           current = current.succ
@@ -179,7 +179,7 @@ class Range
   end
 
   def hash
-    excl = @excl ? 1 : 0
+    excl = exclude_end? ? 1 : 0
     hash = excl
     hash ^= self.begin.hash << 1
     hash ^= self.end.hash << 9
@@ -206,7 +206,7 @@ class Range
   end
 
   def inspect
-    "#{self.begin.inspect}#{@excl ? "..." : ".."}#{self.end.inspect}"
+    "#{self.begin.inspect}#{exclude_end? ? "..." : ".."}#{self.end.inspect}"
   end
 
   def last(n=undefined)
@@ -216,9 +216,9 @@ class Range
   end
 
   def max
-    return super if block_given? || (@excl && !self.end.kind_of?(Numeric))
-    return nil if self.end < self.begin || (@excl && self.end == self.begin)
-    return self.end unless @excl
+    return super if block_given? || (exclude_end? && !self.end.kind_of?(Numeric))
+    return nil if self.end < self.begin || (exclude_end? && self.end == self.begin)
+    return self.end unless exclude_end?
 
     unless self.end.kind_of?(Integer)
       raise TypeError, "cannot exclude non Integer end value"
@@ -233,7 +233,7 @@ class Range
 
   def min
     return super if block_given?
-    return nil if self.end < self.begin || (@excl && self.end == self.begin)
+    return nil if self.end < self.begin || (exclude_end? && self.end == self.begin)
 
     self.begin
   end
@@ -263,7 +263,7 @@ class Range
       end
     when Numeric
       curr = first
-      last -= 1 if @excl
+      last -= 1 if exclude_end?
 
       while curr <= last
         yield curr
@@ -281,14 +281,14 @@ class Range
   end
 
   def to_s
-    "#{self.begin}#{@excl ? "..." : ".."}#{self.end}"
+    "#{self.begin}#{exclude_end? ? "..." : ".."}#{self.end}"
   end
 
   def to_a_internal
     return super unless self.begin.kind_of? Fixnum and self.end.kind_of? Fixnum
 
     fin = self.end
-    fin += 1 unless @excl
+    fin += 1 unless exclude_end?
 
     size = fin - self.begin
     return [] if size <= 0
@@ -313,7 +313,7 @@ class Range
     if Comparable.compare_int(beg_compare) <= 0
       end_compare = (value <=> self.end)
 
-      if @excl
+      if exclude_end?
         return true if Comparable.compare_int(end_compare) < 0
       else
         return true if Comparable.compare_int(end_compare) <= 0
@@ -335,9 +335,9 @@ class Range
       err = (self.begin.abs + self.end.abs + delta.abs) * Float::EPSILON
       err = 0.5 if err > 0.5
 
-      (@excl ? delta - err : delta + err).floor + 1
+      (exclude_end? ? delta - err : delta + err).floor + 1
     else
-      delta += 1 unless @excl
+      delta += 1 unless exclude_end?
       delta
     end
   end
@@ -346,7 +346,7 @@ class Range
     return to_a_from_enumerable unless self.begin.kind_of? Fixnum and self.end.kind_of? Fixnum
 
     fin = self.end
-    fin += 1 unless @excl
+    fin += 1 unless exclude_end?
 
     size = fin - self.begin
     return [] if size <= 0
