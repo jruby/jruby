@@ -2006,7 +2006,8 @@ class Array
   # runs back together.
   def mergesort!
     width = 7
-    @scratch = Rubinius::Tuple.new size
+    source = self
+    scratch = Array.new(size, at(0))
 
     # do a pre-loop to create a bunch of short sorted runs; isort on these
     # 7-element sublists is more efficient than doing merge sort on 1-element
@@ -2035,30 +2036,31 @@ class Array
         last = left + (2 * width)
         last = last < finish ? last : finish
 
-        bottom_up_merge(left, right, last)
+        bottom_up_merge(left, right, last, source, scratch)
         left += 2 * width
       end
 
-      @tuple, @scratch = @scratch, self
+      source, scratch = scratch, source
       width *= 2
     end
 
-    @scratch = nil
+    replace(source) if source != self
+
     self
   end
   private :mergesort!
 
-  def bottom_up_merge(left, right, last)
+  def bottom_up_merge(left, right, last, source, scratch)
     left_index = left
     right_index = right
     i = left
 
     while i < last
-      if left_index < right && (right_index >= last || (at(left_index) <=> at(right_index)) <= 0)
-        @scratch[i] = at(left_index)
+      if left_index < right && (right_index >= last || (source.at(left_index) <=> source.at(right_index)) <= 0)
+        scratch[i] = source.at(left_index)
         left_index += 1
       else
-        @scratch[i] = at(right_index)
+        scratch[i] = source.at(right_index)
         right_index += 1
       end
 
@@ -2069,7 +2071,8 @@ class Array
 
   def mergesort_block!(block)
     width = 7
-    @scratch = Rubinius::Tuple.new size
+    source = self
+    scratch = Array.new(size, at(0))
 
     left = 0
     finish = size
@@ -2094,30 +2097,31 @@ class Array
         last = left + (2 * width)
         last = last < finish ? last : finish
 
-        bottom_up_merge_block(left, right, last, block)
+        bottom_up_merge_block(left, right, last, source, scratch, block)
         left += 2 * width
       end
 
-      @tuple, @scratch = @scratch, self
+      source, scratch = scratch, source
       width *= 2
     end
 
-    @scratch = nil
+    replace(source) if source != self
+
     self
   end
   private :mergesort_block!
 
-  def bottom_up_merge_block(left, right, last, block)
+  def bottom_up_merge_block(left, right, last, source, scratch, block)
     left_index = left
     right_index = right
     i = left
 
     while i < last
-      if left_index < right && (right_index >= last || block.call(at(left_index), at(right_index)) <= 0)
-        @scratch[i] = at(left_index)
+      if left_index < right && (right_index >= last || block.call(source.at(left_index), source.at(right_index)) <= 0)
+        scratch[i] = source.at(left_index)
         left_index += 1
       else
-        @scratch[i] = at(right_index)
+        scratch[i] = source.at(right_index)
         right_index += 1
       end
 
