@@ -1851,12 +1851,6 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "time.rb")) {
-            if (name.equals("@offset")) {
-                ret = TimeNodesFactory.InternalOffsetNodeFactory.create(self);
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            }
         } else if (path.equals(corePath + "hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.DefaultValueNodeFactory.create(self);

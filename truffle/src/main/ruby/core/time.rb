@@ -236,7 +236,7 @@ class Time
     end
 
     # Don't use self.class, MRI doesn't honor subclasses here
-    Time.specific(seconds + other_sec, nsec + other_nsec, gmt?, @offset)
+    Time.specific(seconds + other_sec, nsec + other_nsec, gmt?, internal_offset)
   end
 
   def -(other)
@@ -254,7 +254,7 @@ class Time
     end
 
     # Don't use self.class, MRI doesn't honor subclasses here
-    Time.specific(seconds - other_sec, nsec - other_nsec, gmt?, @offset)
+    Time.specific(seconds - other_sec, nsec - other_nsec, gmt?, internal_offset)
   end
 
   def localtime(offset=nil)
@@ -308,7 +308,7 @@ class Time
     sec = roundable_time.floor
     nano = ((roundable_time - sec) * 1_000_000_000).floor
 
-    Time.specific(sec, nano, gmt?, @offset)
+    Time.specific(sec, nano, gmt?, internal_offset)
   end
 
   class << self

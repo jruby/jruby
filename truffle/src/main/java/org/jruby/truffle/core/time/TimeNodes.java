@@ -29,6 +29,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
@@ -209,6 +210,24 @@ public abstract class TimeNodes {
         @Specialization
         public boolean allocate(DynamicObject time) {
             return internalGMTNode.internalGMT(time);
+        }
+
+    }
+
+    @NonStandard
+    @CoreMethod(names = "internal_offset")
+    public abstract static class InternalOffsetCoreNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private InternalOffsetNode internalOffsetNode;
+
+        public InternalOffsetCoreNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            internalOffsetNode = TimeNodesFactory.InternalOffsetNodeFactory.create(null);
+        }
+
+        @Specialization
+        public Object allocate(DynamicObject time) {
+            return internalOffsetNode.internalOffset(time);
         }
 
     }
