@@ -525,6 +525,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return constants.entrySet();
     }
 
+    @TruffleBoundary
     public RubyConstant getConstant(String name) {
         return constants.get(name);
     }

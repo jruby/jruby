@@ -1,7 +1,8 @@
 # Windows symlink support borrowed from djberg96/win32-file and ffi-win32-extensions
 
 if org.jruby.platform.Platform::IS_WINDOWS
-
+  require 'ffi'
+  
   module JRuby
     module Windows
       module File
@@ -77,9 +78,9 @@ if org.jruby.platform.Platform::IS_WINDOWS
   end
 
   class File
-    include Windows::File::Constants
-    include Windows::File::Structs
-    extend Windows::File::Functions
+    include JRuby::Windows::File::Constants
+    include JRuby::Windows::File::Structs
+    extend JRuby::Windows::File::Functions
 
     # Creates a symbolic link called +new_name+ for the file or directory
     # +old_name+.

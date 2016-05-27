@@ -3388,6 +3388,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     public IRubyObject stringToInum19(int base, boolean badcheck) {
         ByteList s = this.value;
+        if (!s.getEncoding().isAsciiCompatible()) {
+            throw getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + s.getEncoding());
+        }
+
         return ConvertBytes.byteListToInum19(getRuntime(), s, base, badcheck);
     }
 
@@ -3400,9 +3404,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "oct")
     public IRubyObject oct19(ThreadContext context) {
-        if (!value.getEncoding().isAsciiCompatible()) {
-            throw context.runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + value.getEncoding());
-        }
         return stringToInum19(-8, false);
     }
 
@@ -3415,9 +3416,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "hex")
     public IRubyObject hex19(ThreadContext context) {
-        if (!value.getEncoding().isAsciiCompatible()) {
-            throw context.runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + value.getEncoding());
-        }
         return stringToInum19(16, false);
     }
 
@@ -4119,7 +4117,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private IRubyObject partitionMismatch(Ruby runtime) {
-        return RubyArray.newArray(runtime, new IRubyObject[]{this, newEmptyString(runtime), newEmptyString(runtime)});
+        final Encoding enc = getEncoding();
+        return RubyArray.newArray(runtime, new IRubyObject[]{this, newEmptyString(runtime, enc), newEmptyString(runtime, enc)});
     }
 
     @JRubyMethod(name = "rpartition", reads = BACKREF, writes = BACKREF)
@@ -4149,7 +4148,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private IRubyObject rpartitionMismatch(Ruby runtime) {
-        return RubyArray.newArray(runtime, new IRubyObject[]{newEmptyString(runtime), newEmptyString(runtime), this});
+        final Encoding enc = getEncoding();
+        return RubyArray.newArray(runtime, new IRubyObject[]{newEmptyString(runtime, enc), newEmptyString(runtime, enc), this});
     }
 
     /** rb_str_chop / rb_str_chop_bang
@@ -4417,6 +4417,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return runtime.getNil();
         }
 
+        checkDummyEncoding();
         Encoding enc = EncodingUtils.STR_ENC_GET(this);
         IRubyObject result = singleByteOptimizable(enc) ?
             singleByteRStrip19(runtime) : multiByteRStrip19(runtime, context);

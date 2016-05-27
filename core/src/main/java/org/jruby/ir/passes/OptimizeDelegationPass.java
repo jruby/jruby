@@ -6,6 +6,7 @@ import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReifyClosureInstr;
+import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
@@ -41,6 +42,11 @@ public class OptimizeDelegationPass extends CompilerPass {
             for (Instr i: bb.getInstrs()) {
                 if (i instanceof ReifyClosureInstr) {
                     ReifyClosureInstr ri = (ReifyClosureInstr) i;
+
+                    // can't store un-reified block in DynamicScope (only accepts IRubyObject)
+                    // FIXME: (con) it would be nice to not have this limitation
+                    if (ri.getResult() instanceof LocalVariable) continue;
+
                     unusedExplicitBlocks.put(ri.getResult(), ri.getSource());
                 } else {
                     Iterator<Operand> it = unusedExplicitBlocks.keySet().iterator();

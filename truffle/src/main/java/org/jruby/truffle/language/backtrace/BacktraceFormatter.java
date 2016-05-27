@@ -205,7 +205,7 @@ public class BacktraceFormatter {
         return null;
     }
 
-    private boolean isCore(SourceSection sourceSection) {
+    public static boolean isCore(SourceSection sourceSection) {
         if (sourceSection == null) {
             return true;
         }

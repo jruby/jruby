@@ -390,7 +390,43 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void jvmStoreLocal(Variable variable) {
-        if (variable instanceof TemporaryLocalVariable) {
+        if (variable instanceof LocalVariable) {
+
+            LocalVariable localvariable = (LocalVariable) variable;
+
+            jvmLoadLocal(DYNAMIC_SCOPE);
+
+            jvmAdapter().swap();
+
+            if (localvariable.getScopeDepth() == 0) {
+
+                switch (localvariable.getOffset()) {
+                    case 0:
+                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueZeroDepthZeroVoid", sig(void.class, IRubyObject.class));
+                        break;
+                    case 1:
+                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueOneDepthZeroVoid", sig(void.class, IRubyObject.class));
+                        break;
+                    case 2:
+                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueTwoDepthZeroVoid", sig(void.class, IRubyObject.class));
+                        break;
+                    case 3:
+                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueThreeDepthZeroVoid", sig(void.class, IRubyObject.class));
+                        break;
+                    default:
+                        jvmAdapter().ldc(localvariable.getOffset());
+                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueDepthZeroVoid", sig(void.class, IRubyObject.class, int.class));
+                        break;
+                }
+
+            } else {
+
+                jvmAdapter().ldc(localvariable.getOffset());
+                jvmAdapter().ldc(localvariable.getScopeDepth());
+                jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueVoid", sig(void.class, IRubyObject.class, int.class, int.class));
+
+            }
+        } else if (variable instanceof TemporaryLocalVariable) {
             switch (((TemporaryLocalVariable)variable).getType()) {
             case FLOAT: jvmAdapter().dstore(getJVMLocalVarIndex(variable)); break;
             case FIXNUM: jvmAdapter().lstore(getJVMLocalVarIndex(variable)); break;
@@ -398,6 +434,62 @@ public class JVMVisitor extends IRVisitor {
             default: jvmMethod().storeLocal(getJVMLocalVarIndex(variable)); break;
             }
         } else {
+            jvmMethod().storeLocal(getJVMLocalVarIndex(variable));
+        }
+    }
+
+    private void jvmStoreLocal(Runnable source, Variable variable) {
+        if (variable instanceof LocalVariable) {
+
+            LocalVariable localvariable = (LocalVariable) variable;
+
+            jvmLoadLocal(DYNAMIC_SCOPE);
+
+            if (localvariable.getScopeDepth() == 0) {
+
+                source.run();
+
+                switch (localvariable.getOffset()) {
+                    case 0:
+                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueZeroDepthZeroVoid", sig(void.class, IRubyObject.class));
+                        break;
+                    case 1:
+                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueOneDepthZeroVoid", sig(void.class, IRubyObject.class));
+                        break;
+                    case 2:
+                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueTwoDepthZeroVoid", sig(void.class, IRubyObject.class));
+                        break;
+                    case 3:
+                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueThreeDepthZeroVoid", sig(void.class, IRubyObject.class));
+                        break;
+                    default:
+                        jvmAdapter().ldc(localvariable.getOffset());
+                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueDepthZeroVoid", sig(void.class, IRubyObject.class, int.class));
+                        break;
+                }
+
+            } else {
+
+                source.run();
+
+                jvmAdapter().ldc(localvariable.getOffset());
+                jvmAdapter().ldc(localvariable.getScopeDepth());
+
+                jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueVoid", sig(void.class, IRubyObject.class, int.class, int.class));
+
+            }
+        } else if (variable instanceof TemporaryLocalVariable) {
+            source.run();
+
+            switch (((TemporaryLocalVariable)variable).getType()) {
+                case FLOAT: jvmAdapter().dstore(getJVMLocalVarIndex(variable)); break;
+                case FIXNUM: jvmAdapter().lstore(getJVMLocalVarIndex(variable)); break;
+                case BOOLEAN: jvmAdapter().istore(getJVMLocalVarIndex(variable)); break;
+                default: jvmMethod().storeLocal(getJVMLocalVarIndex(variable)); break;
+            }
+        } else {
+            source.run();
+
             jvmMethod().storeLocal(getJVMLocalVarIndex(variable));
         }
     }
@@ -995,10 +1087,10 @@ public class JVMVisitor extends IRVisitor {
         String name = classsuperinstr.getName();
         Operand[] args = classsuperinstr.getCallArgs();
         Operand definingModule = classsuperinstr.getDefiningModule();
-        boolean containsArgSplat = classsuperinstr.containsArgSplat();
+        boolean[] splatMap = classsuperinstr.splatMap();
         Operand closure = classsuperinstr.getClosureArg(null);
 
-        superCommon(name, classsuperinstr, args, definingModule, containsArgSplat, closure);
+        superCommon(name, classsuperinstr, args, definingModule, splatMap, closure);
     }
 
     @Override
@@ -1017,14 +1109,23 @@ public class JVMVisitor extends IRVisitor {
     public void CopyInstr(CopyInstr copyinstr) {
         Operand  src = copyinstr.getSource();
         Variable res = copyinstr.getResult();
-        if (res instanceof TemporaryFloatVariable) {
-            loadFloatArg(src);
-        } else if (res instanceof TemporaryFixnumVariable) {
-            loadFixnumArg(src);
-        } else {
-            visit(src);
-        }
-        jvmStoreLocal(res);
+
+        storeHeapOrStack(src, res);
+    }
+
+    private void storeHeapOrStack(final Operand value, final Variable res) {
+        jvmStoreLocal(new Runnable() {
+            @Override
+            public void run() {
+                if (res instanceof TemporaryFloatVariable) {
+                    loadFloatArg(value);
+                } else if (res instanceof TemporaryFixnumVariable) {
+                    loadFixnumArg(value);
+                } else {
+                    visit(value);
+                }
+            }
+        }, res);
     }
 
     @Override
@@ -1230,13 +1331,13 @@ public class JVMVisitor extends IRVisitor {
         String name = instancesuperinstr.getName();
         Operand[] args = instancesuperinstr.getCallArgs();
         Operand definingModule = instancesuperinstr.getDefiningModule();
-        boolean containsArgSplat = instancesuperinstr.containsArgSplat();
+        boolean[] splatMap = instancesuperinstr.splatMap();
         Operand closure = instancesuperinstr.getClosureArg(null);
 
-        superCommon(name, instancesuperinstr, args, definingModule, containsArgSplat, closure);
+        superCommon(name, instancesuperinstr, args, definingModule, splatMap, closure);
     }
 
-    private void superCommon(String name, CallInstr instr, Operand[] args, Operand definingModule, boolean containsArgSplat, Operand closure) {
+    private void superCommon(String name, CallInstr instr, Operand[] args, Operand definingModule, boolean[] splatMap, Operand closure) {
         IRBytecodeAdapter m = jvmMethod();
         Operation operation = instr.getOperation();
 
@@ -1257,9 +1358,6 @@ public class JVMVisitor extends IRVisitor {
             Operand operand = args[i];
             visit(operand);
         }
-
-        // if there's splats, provide a map and let the call site sort it out
-        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, containsArgSplat);
 
         boolean hasClosure = closure != null;
         if (hasClosure) {
@@ -2045,10 +2143,10 @@ public class JVMVisitor extends IRVisitor {
         Operand[] args = unresolvedsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
-        boolean containsArgSplat = unresolvedsuperinstr.containsArgSplat();
+        boolean[] splatMap = unresolvedsuperinstr.splatMap();
         Operand closure = unresolvedsuperinstr.getClosureArg(null);
 
-        superCommon(name, unresolvedsuperinstr, args, definingModule, containsArgSplat, closure);
+        superCommon(name, unresolvedsuperinstr, args, definingModule, splatMap, closure);
     }
 
     @Override
@@ -2094,10 +2192,10 @@ public class JVMVisitor extends IRVisitor {
         Operand[] args = zsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
-        boolean containsArgSplat = zsuperinstr.containsArgSplat();
+        boolean[] splatMap = zsuperinstr.splatMap();
         Operand closure = zsuperinstr.getClosureArg(null);
 
-        superCommon(name, zsuperinstr, args, definingModule, containsArgSplat, closure);
+        superCommon(name, zsuperinstr, args, definingModule, splatMap, closure);
     }
 
     @Override

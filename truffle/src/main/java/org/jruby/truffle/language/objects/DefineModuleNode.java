@@ -73,7 +73,7 @@ public abstract class DefineModuleNode extends RubyNode {
 
     public static RubyConstant lookupForExistingModule(VirtualFrame frame, RubyContext context, String name,
                                                        DynamicObject lexicalParent, IndirectCallNode callNode) {
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.bailout("require cannot be compiled but needs the frame");
 
         RubyConstant constant = Layouts.MODULE.getFields(lexicalParent).getConstant(name);
 

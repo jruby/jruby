@@ -128,7 +128,7 @@ class Range
     nil
   end
 
-  def each
+  def each_internal
     return to_enum { size } unless block_given?
     first, last = @begin, @end
 
@@ -238,7 +238,7 @@ class Range
     @begin
   end
 
-  def step(step_size=1) # :yields: object
+  def step_internal(step_size=1) # :yields: object
     return to_enum(:step, step_size) do
       m = Rubinius::Mirror::Range.reflect(self)
       m.step_iterations_size(*m.validate_step_size(@begin, @end, step_size))
@@ -284,7 +284,7 @@ class Range
     "#{@begin}#{@excl ? "..." : ".."}#{@end}"
   end
 
-  def to_a
+  def to_a_internal
     return super unless @begin.kind_of? Fixnum and @end.kind_of? Fixnum
 
     fin = @end

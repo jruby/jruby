@@ -42,14 +42,9 @@
     # mock method_source gem
     method_source.rb: nil
     exclude_tests.rb: |
-                      failures = { KernelTest:               [:test_silence_stream,
-                                                              :test_quietly],
-                                   LoadPathsTest:            [:test_uniq_load_paths],
-                                   LoggerTest:               [:test_buffer_multibyte],
-                                   MultibyteCharsExtrasTest: [:test_titleize_should_be_unicode_aware,
-                                                              :test_titleize_should_not_affect_characters_that_do_not_case_fold],
-                                   TimeZoneTest:              :test_map_srednekolymsk_to_tzinfo }
+                      failures = { LoadPathsTest:            [:test_uniq_load_paths] }
 
+                      require 'truffle/exclude_rspec_examples'
 
                       Truffle.exclude_rspec_examples failures
 
@@ -67,6 +62,5 @@
     - bigdecimal
     - pathname
     - openssl-stubs
-    - truffle/exclude_rspec_examples
   :environment:
     N: 1

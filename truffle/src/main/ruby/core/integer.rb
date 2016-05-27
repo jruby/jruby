@@ -225,7 +225,7 @@ class Integer < Numeric
     self
   end
 
-  def upto(val)
+  def upto_internal(val)
     return to_enum(:upto, val) { self <= val ? val - self + 1 : 0 } unless block_given?
 
     i = self
@@ -236,7 +236,7 @@ class Integer < Numeric
     self
   end
 
-  def downto(val)
+  def downto_internal(val)
     return to_enum(:downto, val) { self >= val ? self - val + 1 : 0 } unless block_given?
 
     i = self

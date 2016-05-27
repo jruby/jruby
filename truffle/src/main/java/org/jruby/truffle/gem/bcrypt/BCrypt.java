@@ -17,10 +17,6 @@ package org.jruby.truffle.gem.bcrypt;
 import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 
-import java.io.UnsupportedEncodingException;
-
-import java.security.SecureRandom;
-
 /**
  * BCrypt implements OpenBSD-style Blowfish password hashing using
  * the scheme described in "A Future-Adaptable Password Scheme" by

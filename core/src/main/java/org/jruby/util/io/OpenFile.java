@@ -492,7 +492,7 @@ public class OpenFile implements Finalizable {
 
     // rb_io_wait_readable
     public boolean waitReadable(ThreadContext context) {
-        return waitReadable(context, 0);
+        return waitReadable(context, -1);
     }
 
     /**

@@ -66,7 +66,6 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
-import org.jruby.truffle.language.arguments.SingleBlockArgNode;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -75,6 +74,7 @@ import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
+import org.jruby.truffle.language.arguments.SingleBlockArgNode;
 import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
 import org.jruby.truffle.language.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.language.constants.WriteConstantNode;
@@ -1273,39 +1273,6 @@ public class BodyTranslator extends Translator {
 
         String methodName = node.getName();
 
-        // If we have a method we've defined in a node, but would like to delegate some corner cases out to the
-        // Rubinius implementation for simplicity, we need a way to resolve the naming conflict.  The naive solution
-        // here is to append "_internal" to the method name, which can then be called like any other method.  This is
-        // a bit different than aliasing because normally if a Rubinius method name conflicts with an already defined
-        // method, we simply ignore the method definition.  Here we explicitly rename the method so it's always defined.
-
-        final String path = getSourcePath(sourceSection);
-        final String coreRubiniusPath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
-        if (path.startsWith(coreRubiniusPath)) {
-            boolean rename = false;
-
-            if (path.equals(coreRubiniusPath + "array.rb")) {
-                rename = methodName.equals("fill") || methodName.equals("zip");
-            } else if (path.equals(coreRubiniusPath + "float.rb")) {
-                rename = methodName.equals("round");
-            } else if (path.equals(coreRubiniusPath + "range.rb")) {
-                rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
-            } else if (path.equals(coreRubiniusPath + "integer.rb")) {
-                rename = methodName.equals("downto") || methodName.equals("upto");
-            } else if (path.equals(coreRubiniusPath + "string.rb")) {
-                rename = methodName.equals("<<");
-            }
-
-            if (rename) {
-                // <<_internal is an invalid method name, so we need to rename to its alias for String#{<<,concat}.
-                if (methodName.equals("<<")) {
-                    methodName = "concat_internal";
-                } else {
-                    methodName = methodName + "_internal";
-                }
-            }
-        }
-
         final RubyNode ret = translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node.getBodyNode(), false);
 
         return addNewlineIfNeeded(node, ret);
@@ -1863,26 +1830,10 @@ public class BodyTranslator extends Translator {
         // About every case will use a SelfNode, just don't it use more than once.
         final SelfNode self = new SelfNode(context, sourceSection);
 
-        /*
-         * Rubinius uses the instance variable @total to store the size of an array. In order to use code that
-         * expects that we'll replace it statically with a call to Array#size. We also replace @tuple with
-         * self, and @start to be 0.
-         */
         final String path = getSourcePath(sourceSection);
         final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
         final RubyNode ret;
-        if (path.equals(corePath + "array.rb")) {
-            if (name.equals("@total")) {
-                ret = new RubyCallNode(context, sourceSection, "size", self, null, false);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@tuple")) {
-                ret = self;
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@start")) {
-                ret = new IntegerFixnumLiteralNode(context, sourceSection, 0);
-                return addNewlineIfNeeded(node, ret);
-            }
-        } else if (path.equals(corePath + "regexp.rb")) {
+        if (path.equals(corePath + "regexp.rb")) {
             if (name.equals("@source")) {
                 ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(self);
                 setSourceSection(ret, sourceSection);

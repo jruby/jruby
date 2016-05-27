@@ -1454,9 +1454,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isRubyString(featureString)")
         public boolean require(VirtualFrame frame, DynamicObject featureString, @Cached("create()") IndirectCallNode callNode) {
-            // We transfer because we want the virtual frame when requring but can't compile that code
-
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.bailout("require cannot be compiled but needs the frame");
 
             final String feature = featureString.toString();
 
@@ -1493,7 +1491,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isRubyString(feature)")
         public boolean requireRelative(VirtualFrame frame, DynamicObject feature, @Cached("create()") IndirectCallNode callNode) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.bailout("require cannot be compiled but needs the frame");
 
             final FeatureLoader featureLoader = getContext().getFeatureLoader();
 

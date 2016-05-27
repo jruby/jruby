@@ -178,7 +178,7 @@ class Float < Numeric
     end
   end
 
-  def round(ndigits=0)
+  def round_internal(ndigits=0)
     ndigits = Rubinius::Type.coerce_to(ndigits, Integer, :to_int)
 
     if ndigits == 0

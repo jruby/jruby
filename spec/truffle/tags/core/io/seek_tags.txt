@@ -1,2 +1,1 @@
 fails:IO#seek does not accept Bignums that don't fit in a C long
-fails:IO#seek moves the read position relative to the current position with SEEK_CUR

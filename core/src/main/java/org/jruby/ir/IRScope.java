@@ -666,8 +666,7 @@ public abstract class IRScope implements ParseResult {
             EnumSet.of(
                     CAN_RECEIVE_BREAKS,
                     HAS_NONLOCAL_RETURNS,CAN_RECEIVE_NONLOCAL_RETURNS,
-                    BINDING_HAS_ESCAPED,
-                    USES_ZSUPER);
+                    BINDING_HAS_ESCAPED);
 
     private void computeNeedsDynamicScopeFlag() {
         for (IRFlags f : NEEDS_DYNAMIC_SCOPE_FLAGS) {

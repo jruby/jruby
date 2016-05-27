@@ -77,7 +77,9 @@ import org.jruby.truffle.platform.posix.FDSet;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;
+
 import java.nio.ByteBuffer;
+
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
 public abstract class IOPrimitiveNodes {
@@ -533,8 +535,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public int seek(DynamicObject io, int amount, int whence) {
             final int fd = Layouts.IO.getDescriptor(io);
-            // TODO (pitr-ch 15-Apr-2016): should it have ensureSuccessful too?
-            return posix().lseek(fd, amount, whence);
+            return ensureSuccessful(posix().lseek(fd, amount, whence));
         }
 
     }
@@ -564,7 +565,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO, lowerFixnumParameters = 0)
     public static abstract class IOSysReadPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary(throwsControlFlowException = true)
