@@ -4066,11 +4066,11 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Construct a NoMethodError that formats its message with an sprintf format string.
+     * Construct a NoMethodError with a pre-formatted message.
      *
-     * This is the same as {@link #newNoMethodError(String, IRubyObject, String, RubyArray)} but without
-     * capturing the receiver.
-     *
+     * @param message the pre-formatted message
+     * @param name the name that failed
+     * @param args the original arguments to the call that failed
      * @return a new NoMethodError
      */
     public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
