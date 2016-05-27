@@ -3301,12 +3301,11 @@ public class RubyModule extends RubyObject {
         String longName;
 
         if (this != runtime.getObject()) {
-            longName = getName() + "::" + shortName;
+            throw runtime.newNameError("uninitialized constant %2$s::%1$s", this, rubyName);
         } else {
-            longName = shortName;
+            throw runtime.newNameError("uninitialized constant %1$s", this, rubyName);
         }
 
-        throw runtime.newNameError("uninitialized constant " + longName, this, rubyName);
     }
 
     public RubyArray constants(ThreadContext context) {
