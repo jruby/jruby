@@ -18,6 +18,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_LIMIT;
 import static org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_OMIT_UNUSED;
 import static org.jruby.util.cli.Options.TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_BIND_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_CALL_FREQUENCY;
 import static org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH;
 import static org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH_WRITE;
 import static org.jruby.util.cli.Options.TRUFFLE_CLASS_CACHE;
@@ -151,6 +152,7 @@ public class Options {
     public final boolean BACKTRACES_INTERLEAVE_JAVA = TRUFFLE_BACKTRACES_INTERLEAVE_JAVA.load();
     public final int BACKTRACES_LIMIT = TRUFFLE_BACKTRACES_LIMIT.load();
     public final boolean BACKTRACES_OMIT_UNUSED = TRUFFLE_BACKTRACES_OMIT_UNUSED.load();
+    public final boolean CALL_FREQUENCY = TRUFFLE_CALL_FREQUENCY.load();
 
     // Call graph
 
