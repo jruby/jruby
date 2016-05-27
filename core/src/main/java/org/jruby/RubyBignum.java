@@ -714,22 +714,16 @@ public class RubyBignum extends RubyInteger {
     @JRubyMethod(name = "<<", required = 1)
     public IRubyObject op_lshift(IRubyObject other) {
         long shift;
-        boolean neg = false;
 
         for (;;) {
             if (other instanceof RubyFixnum) {
                 shift = ((RubyFixnum)other).getLongValue();
-                if (shift < 0) {
-                    neg = true;
-                    shift = -shift;
-                }
                 break;
             } else if (other instanceof RubyBignum) {
                 RubyBignum otherBignum = (RubyBignum)other;
                 if (otherBignum.value.signum() < 0) {
                     IRubyObject tmp = otherBignum.checkShiftDown(this);
                     if (!tmp.isNil()) return tmp;
-                    neg = true;
                 }
                 shift = big2long(otherBignum);
                 break;
@@ -737,7 +731,7 @@ public class RubyBignum extends RubyInteger {
             other = other.convertToInteger();
         }
 
-        return bignorm(getRuntime(), neg ? value.shiftRight((int)shift) : value.shiftLeft((int)shift));
+        return bignorm(getRuntime(), value.shiftLeft((int)shift));
     }
 
     /** rb_big_rshift
@@ -746,30 +740,24 @@ public class RubyBignum extends RubyInteger {
     @JRubyMethod(name = ">>", required = 1)
     public IRubyObject op_rshift(IRubyObject other) {
         long shift;
-        boolean neg = false;
 
         for (;;) {
             if (other instanceof RubyFixnum) {
                 shift = ((RubyFixnum)other).getLongValue();
-                if (shift < 0) {
-                    neg = true;
-                    shift = -shift;
-                }
                 break;
             } else if (other instanceof RubyBignum) {
                 RubyBignum otherBignum = (RubyBignum)other;
                 if (otherBignum.value.signum() >= 0) {
                     IRubyObject tmp = otherBignum.checkShiftDown(this);
                     if (!tmp.isNil()) return tmp;
-                } else {
-                    neg = true;
                 }
                 shift = big2long(otherBignum);
                 break;
             }
             other = other.convertToInteger();
         }
-        return bignorm(getRuntime(), neg ? value.shiftLeft((int)shift) : value.shiftRight((int)shift));
+
+        return bignorm(getRuntime(), value.shiftRight((int)shift));
     }
 
     /** rb_big_aref
