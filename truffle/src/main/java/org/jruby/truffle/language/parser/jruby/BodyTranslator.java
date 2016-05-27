@@ -1852,11 +1852,7 @@ public class BodyTranslator extends Translator {
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (path.equals(corePath + "range.rb")) {
-            if (name.equals("@begin")) {
-                ret = RangeNodesFactory.BeginNodeFactory.create(new RubyNode[]{ self });
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@excl")) {
+            if (name.equals("@excl")) {
                 ret = RangeNodesFactory.ExcludeEndNodeFactory.create(new RubyNode[]{ self });
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);

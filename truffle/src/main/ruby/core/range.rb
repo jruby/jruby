@@ -28,7 +28,7 @@ class Range
   include Enumerable
 
   def initialize(first, last, exclude_end = false)
-    raise NameError, "`initialize' called twice" if @begin
+    raise NameError, "`initialize' called twice" if self.begin
 
     unless first.kind_of?(Fixnum) && last.kind_of?(Fixnum)
       begin
@@ -63,11 +63,11 @@ class Range
   def bsearch
     return to_enum :bsearch unless block_given?
 
-    unless @begin.kind_of? Numeric and self.end.kind_of? Numeric
-      raise TypeError, "bsearch is not available for #{@begin.class}"
+    unless self.begin.kind_of? Numeric and self.end.kind_of? Numeric
+      raise TypeError, "bsearch is not available for #{self.begin.class}"
     end
 
-    min = @begin
+    min = self.begin
     max = self.end
 
     max -= 1 if max.kind_of? Integer and @excl
@@ -116,13 +116,13 @@ class Range
     end
 
     if min < max
-      return @begin if mid == start
-      return @begin.kind_of?(Float) ? mid.to_f : mid
+      return self.begin if mid == start
+      return self.begin.kind_of?(Float) ? mid.to_f : mid
     end
 
     if last_true
-      return @begin if last_true == start
-      return @begin.kind_of?(Float) ? last_true.to_f : last_true
+      return self.begin if last_true == start
+      return self.begin.kind_of?(Float) ? last_true.to_f : last_true
     end
 
     nil
@@ -130,7 +130,7 @@ class Range
 
   def each_internal
     return to_enum { size } unless block_given?
-    first, last = @begin, self.end
+    first, last = self.begin, self.end
 
     unless first.respond_to?(:succ) && !first.kind_of?(Time)
       raise TypeError, "can't iterate from #{first.class}"
@@ -173,7 +173,7 @@ class Range
   end
 
   def first(n=undefined)
-    return @begin if undefined.equal? n
+    return self.begin if undefined.equal? n
 
     super
   end
@@ -181,7 +181,7 @@ class Range
   def hash
     excl = @excl ? 1 : 0
     hash = excl
-    hash ^= @begin.hash << 1
+    hash ^= self.begin.hash << 1
     hash ^= self.end.hash << 9
     hash ^= excl << 24;
     # Are we throwing away too much here for a good hash value distribution?
@@ -189,9 +189,9 @@ class Range
   end
 
   def include?(value)
-    if @begin.respond_to?(:to_int) ||
+    if self.begin.respond_to?(:to_int) ||
        self.end.respond_to?(:to_int) ||
-       @begin.kind_of?(Numeric) ||
+        self.begin.kind_of?(Numeric) ||
        self.end.kind_of?(Numeric)
       cover? value
     else
@@ -206,7 +206,7 @@ class Range
   end
 
   def inspect
-    "#{@begin.inspect}#{@excl ? "..." : ".."}#{self.end.inspect}"
+    "#{self.begin.inspect}#{@excl ? "..." : ".."}#{self.end.inspect}"
   end
 
   def last(n=undefined)
@@ -217,14 +217,14 @@ class Range
 
   def max
     return super if block_given? || (@excl && !self.end.kind_of?(Numeric))
-    return nil if self.end < @begin || (@excl && self.end == @begin)
+    return nil if self.end < self.begin || (@excl && self.end == self.begin)
     return self.end unless @excl
 
     unless self.end.kind_of?(Integer)
       raise TypeError, "cannot exclude non Integer end value"
     end
 
-    unless @begin.kind_of?(Integer)
+    unless self.begin.kind_of?(Integer)
       raise TypeError, "cannot exclude end value with non Integer begin value"
     end
 
@@ -233,19 +233,19 @@ class Range
 
   def min
     return super if block_given?
-    return nil if self.end < @begin || (@excl && self.end == @begin)
+    return nil if self.end < self.begin || (@excl && self.end == self.begin)
 
-    @begin
+    self.begin
   end
 
   def step_internal(step_size=1) # :yields: object
     return to_enum(:step, step_size) do
       m = Rubinius::Mirror::Range.reflect(self)
-      m.step_iterations_size(*m.validate_step_size(@begin, self.end, step_size))
+      m.step_iterations_size(*m.validate_step_size(self.begin, self.end, step_size))
     end unless block_given?
 
     m = Rubinius::Mirror::Range.reflect(self)
-    values = m.validate_step_size(@begin, self.end, step_size)
+    values = m.validate_step_size(self.begin, self.end, step_size)
     first = values[0]
     last = values[1]
     step_size = values[2]
@@ -281,23 +281,23 @@ class Range
   end
 
   def to_s
-    "#{@begin}#{@excl ? "..." : ".."}#{self.end}"
+    "#{self.begin}#{@excl ? "..." : ".."}#{self.end}"
   end
 
   def to_a_internal
-    return super unless @begin.kind_of? Fixnum and self.end.kind_of? Fixnum
+    return super unless self.begin.kind_of? Fixnum and self.end.kind_of? Fixnum
 
     fin = self.end
     fin += 1 unless @excl
 
-    size = fin - @begin
+    size = fin - self.begin
     return [] if size <= 0
 
     ary = Array.new(size)
 
     i = 0
     while i < size
-      ary[i] = @begin + i
+      ary[i] = self.begin + i
       i += 1
     end
 
@@ -307,7 +307,7 @@ class Range
   def cover?(value)
     # MRI uses <=> to compare, so must we.
 
-    beg_compare = (@begin <=> value)
+    beg_compare = (self.begin <=> value)
     return false unless beg_compare
 
     if Comparable.compare_int(beg_compare) <= 0
@@ -324,15 +324,15 @@ class Range
   end
 
   def size
-    return nil unless @begin.kind_of?(Numeric)
+    return nil unless self.begin.kind_of?(Numeric)
 
-    delta = self.end - @begin
+    delta = self.end - self.begin
     return 0 if delta < 0
 
-    if @begin.kind_of?(Float) || self.end.kind_of?(Float)
+    if self.begin.kind_of?(Float) || self.end.kind_of?(Float)
       return delta if delta == Float::INFINITY
 
-      err = (@begin.abs + self.end.abs + delta.abs) * Float::EPSILON
+      err = (self.begin.abs + self.end.abs + delta.abs) * Float::EPSILON
       err = 0.5 if err > 0.5
 
       (@excl ? delta - err : delta + err).floor + 1
@@ -343,19 +343,19 @@ class Range
   end
 
   def to_a_internal # MODIFIED called from java to_a
-    return to_a_from_enumerable unless @begin.kind_of? Fixnum and self.end.kind_of? Fixnum
+    return to_a_from_enumerable unless self.begin.kind_of? Fixnum and self.end.kind_of? Fixnum
 
     fin = self.end
     fin += 1 unless @excl
 
-    size = fin - @begin
+    size = fin - self.begin
     return [] if size <= 0
 
     ary = Array.new(size)
 
     i = 0
     while i < size
-      ary[i] = @begin + i
+      ary[i] = self.begin + i
       i += 1
     end
 
