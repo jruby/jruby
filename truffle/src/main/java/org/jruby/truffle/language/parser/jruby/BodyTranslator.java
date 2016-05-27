@@ -1852,11 +1852,7 @@ public class BodyTranslator extends Translator {
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (path.equals(corePath + "time.rb")) {
-            if (name.equals("@is_gmt")) {
-                ret = TimeNodesFactory.InternalGMTNodeFactory.create(self);
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@offset")) {
+            if (name.equals("@offset")) {
                 ret = TimeNodesFactory.InternalOffsetNodeFactory.create(self);
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);

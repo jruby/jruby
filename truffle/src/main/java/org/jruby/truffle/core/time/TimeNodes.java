@@ -196,6 +196,23 @@ public abstract class TimeNodes {
 
     }
 
+    @CoreMethod(names = "gmt?")
+    public abstract static class GmtNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private InternalGMTNode internalGMTNode;
+
+        public GmtNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            internalGMTNode = TimeNodesFactory.InternalGMTNodeFactory.create(null);
+        }
+
+        @Specialization
+        public boolean allocate(DynamicObject time) {
+            return internalGMTNode.internalGMT(time);
+        }
+
+    }
+
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
@@ -212,7 +229,6 @@ public abstract class TimeNodes {
         }
 
     }
-
 
     @Primitive(name = "time_s_now")
     public static abstract class TimeSNowPrimitiveNode extends PrimitiveArrayArgumentsNode {
