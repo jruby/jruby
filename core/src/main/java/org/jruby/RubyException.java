@@ -65,20 +65,19 @@ public class RubyException extends RubyObject {
 
     protected RubyException(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
-        // this.message = null; its an internal constructor for sub-classes
         this.cause = RubyBasicObject.UNDEF;
     }
 
     public RubyException(Ruby runtime, RubyClass rubyClass, String message) {
         super(runtime, rubyClass);
 
-        this.message = message == null ? runtime.getNil() : runtime.newString(message);
+        this.setMessage(message == null ? runtime.getNil() : runtime.newString(message));
         this.cause = RubyBasicObject.UNDEF;
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if ( args.length == 1 ) message = args[0];
+        if ( args.length == 1 ) setMessage(args[0]);
         // cause filled in at RubyKernel#raise ... Exception.new does not fill-in cause!
         return this;
     }
@@ -273,6 +272,7 @@ public class RubyException extends RubyObject {
     }
 
     @Override
+    @SuppressWarnings("deprecated")
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyException exception = (RubyException)clone;
         exception.backtraceData = backtraceData;
@@ -360,7 +360,7 @@ public class RubyException extends RubyObject {
             // just use real vars all the time for these?
             unmarshalStream.defaultVariablesUnmarshal(exc);
 
-            exc.message = (IRubyObject)exc.removeInternalVariable("mesg");
+            exc.setMessage((IRubyObject)exc.removeInternalVariable("mesg"));
             exc.set_backtrace((IRubyObject)exc.removeInternalVariable("bt"));
 
             return exc;
@@ -392,8 +392,18 @@ public class RubyException extends RubyObject {
     /**
      * @return error message if provided or nil
      */
+    @SuppressWarnings("deprecated")
     public IRubyObject getMessage() {
         return message == null ? getRuntime().getNil() : message;
+    }
+
+    /**
+     * Set the message for this NameError.
+     * @param message the message
+     */
+    @SuppressWarnings("deprecated")
+    public void setMessage(IRubyObject message) {
+        this.message = message;
     }
 
     public String getMessageAsJavaString() {
