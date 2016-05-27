@@ -5,7 +5,6 @@ set -x
 
 if [[ -v USE_BUILD_PACK ]]
 then
-  git clone --depth 1 https://github.com/jruby/jruby-build-pack.git
   MAVEN_CLI_OPTS="-Dmaven.repo.local=jruby-build-pack/maven --offline"
 fi
 
