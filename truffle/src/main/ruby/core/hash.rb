@@ -309,7 +309,7 @@ class Hash
     if default_proc and !undefined.equal?(key)
       default_proc.call(self, key)
     else
-      @default
+      internal_default_value
     end
   end
 
