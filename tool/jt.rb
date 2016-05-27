@@ -135,6 +135,14 @@ module Utilities
     end
   end
 
+  def self.find_repo(name)
+    [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
+      found = Dir.glob("#{dir}/#{name}*").first
+      return found if found
+    end
+    raise "Can't find the #{name} repo - clone it into the repository directory or its parent"
+  end
+
   def self.find_gem(name)
     ["#{JRUBY_DIR}/lib/ruby/gems/shared/gems", JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
       found = Dir.glob("#{dir}/#{name}*").first
@@ -267,6 +275,16 @@ module ShellUtils
   def mvn(*args)
     sh './mvnw', *(['-q'] + args)
   end
+  
+  def maven_options(*options)
+    maven_options = %w[-DskipTests]
+    offline = options.delete('--offline')
+    if offline
+      maven_options.push "-Dmaven.repo.local=#{Utilities.find_repo('jruby-build-pack')}/maven"
+      maven_options.push '--offline'
+    end
+    return [maven_options, options]
+  end
 
   def mspec(command, *args)
     env_vars = {}
@@ -288,10 +306,11 @@ module Commands
 
   def help
     puts 'jt checkout name                               checkout a different Git branch and rebuild'
-    puts 'jt bootstrap                                   run the build system\'s bootstrap phase'
+    puts 'jt bootstrap [options]                         run the build system\'s bootstrap phase'
     puts 'jt build [options]                             build'
     puts 'jt build truffle [options]                     build only the Truffle part, assumes the rest is up-to-date'
     puts 'jt rebuild [options]                           clean and build'
+    puts '    --offline                                  use the build pack to build offline'
     puts 'jt clean                                       clean'
     puts 'jt irb                                         irb'
     puts 'jt rebuild                                     clean and build'
@@ -355,17 +374,19 @@ module Commands
     rebuild
   end
 
-  def bootstrap
-    mvn '-DskipTests', '-Pbootstrap-no-launcher'
+  def bootstrap(*options)
+    maven_options, other_options = maven_options(*options)
+    mvn *maven_options, '-DskipTests', '-Pbootstrap-no-launcher'
   end
 
-  def build(project = nil)
-    opts = %w[-DskipTests]
+  def build(*options)
+    maven_options, other_options = maven_options(*options)
+    project = other_options.first
     case project
     when 'truffle'
-      mvn *opts, '-pl', 'truffle', 'package'
+      mvn *maven_options, '-pl', 'truffle', 'package'
     when nil
-      mvn *opts, 'package'
+      mvn *maven_options, 'package'
     else
       raise ArgumentError, project
     end
@@ -818,8 +839,9 @@ module Commands
     end
   end
 
-  def tarball
-    mvn '-Pdist'
+  def tarball(*options)
+    maven_options, other_options = maven_options(*options)
+    mvn *maven_options, '-Pdist'
     generated_file = "#{JRUBY_DIR}/maven/jruby-dist/target/jruby-dist-#{Utilities.jruby_version}-bin.tar.gz"
     final_file = "#{JRUBY_DIR}/jruby-bin-#{Utilities.jruby_version}.tar.gz"
     FileUtils.copy generated_file, final_file
@@ -897,6 +919,7 @@ class JT
     when "build"
       command = [args.shift]
       command << args.shift if args.first == "truffle"
+      command << args.shift if args.first == "--offline"
       send(*command)
     end
 
