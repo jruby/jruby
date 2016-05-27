@@ -306,15 +306,11 @@ class Hash
   end
 
   def default(key=undefined)
-    if @default_proc and !undefined.equal?(key)
-      @default_proc.call(self, key)
+    if default_proc and !undefined.equal?(key)
+      default_proc.call(self, key)
     else
       @default
     end
-  end
-
-  def default_proc
-    @default_proc
   end
 
   # Sets the default proc to be executed on each key lookup
