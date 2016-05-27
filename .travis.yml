@@ -47,6 +47,10 @@ matrix:
       jdk: oraclejdk8
     - env: JT=check_ambiguous_arguments SKIP_BUILD=true
       jdk: oraclejdk8
+    - env:
+      - USE_BUILD_PACK=yes
+      - JT='test fast'
+      jdk: oraclejdk8
   allow_failures:
     - env: JT='test mri'
       jdk: oraclejdk8
@@ -69,13 +73,8 @@ branches:
     - /^ha-feature/
     - ruby-2.4
 
-script: tool/travis_runner.sh
-install: |
-  if [[ -n "$PHASE" && $JAVA_HOME == *"java-8"* ]]; then
-    travis_retry ./mvnw package -B --projects '!truffle' -Dinvoker.skip -Dmaven.test.skip;
-  else
-    if [ -z "$SKIP_BUILD" ]; then travis_retry ./mvnw package -B -Dinvoker.skip -Dmaven.test.skip; fi
-  fi
+install: travis_retry tool/travis-install.sh
+script: tool/travis-script.sh
 
 notifications:
   irc:

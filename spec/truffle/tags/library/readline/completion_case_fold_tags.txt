@@ -1,2 +1,0 @@
-fails:Readline.completion_case_fold returns nil
-fails:Readline.completion_case_fold= returns the passed boolean

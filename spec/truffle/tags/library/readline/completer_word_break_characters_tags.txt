@@ -1,2 +1,0 @@
-fails:Readline.completer_word_break_characters returns nil
-fails:Readline.completer_word_break_characters= returns the passed string
