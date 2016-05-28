@@ -18,8 +18,7 @@ common: {
   }
   
   environment: {
-    CI: "true",
-    JRUBY_NO_ANT: "true"
+    CI: "true"
   }
   
   setup: ${common-setup}

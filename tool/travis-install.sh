@@ -9,7 +9,6 @@ then
   MAVEN_CLI_OPTS="-Dmaven.repo.local=jruby-build-pack/maven --offline"
   cp bin/jruby.bash bin/jruby
   chmod +x bin/jruby
-  export JRUBY_NO_ANT=yes
 fi
 
 if [[ -n "$PHASE" && $JAVA_HOME == *"java-8"* ]]
