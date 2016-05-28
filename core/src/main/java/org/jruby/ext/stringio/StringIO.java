@@ -32,6 +32,7 @@ package org.jruby.ext.stringio;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.FlagRegistry;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -48,6 +49,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -79,8 +81,8 @@ public class StringIO extends RubyObject implements EncodingCapable {
     }
     StringIOData ptr;
 
-    private static final int STRIO_READABLE = USER4_F;
-    private static final int STRIO_WRITABLE = USER5_F;
+    private static final int STRIO_READABLE = Constants.STRIO_READABLE;
+    private static final int STRIO_WRITABLE = Constants.STRIO_WRITABLE;
     private static final int STRIO_READWRITE = (STRIO_READABLE | STRIO_WRITABLE);
 
     private static ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {

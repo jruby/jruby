@@ -35,6 +35,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
+import org.jruby.FlagRegistry;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
@@ -42,6 +43,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
@@ -54,11 +56,20 @@ import java.util.Collections;
 import java.util.List;
 
 public final class StringSupport {
-    public static final int CR_MASK      = RubyObject.USER0_F | RubyObject.USER1_F;
+    public static final int CR_7BIT_F    = Constants.CR_7BIT_F;
+    public static final int CR_VALID_F   = Constants.CR_VALID_F;
     public static final int CR_UNKNOWN   = 0;
-    public static final int CR_7BIT      = RubyObject.USER0_F;
-    public static final int CR_VALID     = RubyObject.USER1_F;
-    public static final int CR_BROKEN    = RubyObject.USER0_F | RubyObject.USER1_F;
+
+    // We hardcode these so they can be used in a switch below. The assert verifies they match FlagRegistry's value.
+    public static final int CR_7BIT      = 16;
+    public static final int CR_VALID     = 32;
+    static {
+        assert CR_7BIT == CR_7BIT_F : "CR_7BIT = " + CR_7BIT + " but should be " + CR_7BIT_F;
+        assert CR_VALID == CR_VALID_F : "CR_VALID = " + CR_VALID + " but should be " + CR_VALID_F;
+    }
+
+    public static final int CR_BROKEN    = CR_7BIT | CR_VALID;
+    public static final int CR_MASK      = CR_7BIT | CR_VALID;
 
     static final int ARRAY_BYTE_BASE_OFFSET;
     static {

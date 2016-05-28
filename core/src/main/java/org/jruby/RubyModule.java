@@ -88,6 +88,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
@@ -127,6 +128,11 @@ public class RubyModule extends RubyObject {
 
     private static final Logger LOG = LoggerFactory.getLogger(RubyModule.class);
     // static { LOG.setDebugEnable(true); } // enable DEBUG output
+
+    public static final int CACHEPROXY_F = Constants.CACHEPROXY_F;
+    public static final int NEEDSIMPL_F = Constants.NEEDSIMPL_F;
+    public static final int REFINED_MODULE_F = Constants.REFINED_MODULE_F;
+    public static final int IS_OVERLAID_F = Constants.IS_OVERLAID_F;
 
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         @Override
@@ -297,7 +303,7 @@ public class RubyModule extends RubyObject {
         id = runtime.allocModuleId();
         runtime.addModule(this);
         // if (parent == null) parent = runtime.getObject();
-        setFlag(USER7_F, !isClass());
+        setFlag(NEEDSIMPL_F, !isClass());
         generationObject = generation = runtime.getNextModuleGeneration();
 
         if (runtime.getInstanceConfig().isProfiling()) {
@@ -325,7 +331,7 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean needsImplementer() {
-        return getFlag(USER7_F);
+        return getFlag(NEEDSIMPL_F);
     }
 
     /** rb_module_new
@@ -607,7 +613,7 @@ public class RubyModule extends RubyObject {
         RubyModule newRefinement = new RubyModule(context.runtime);
         newRefinement.setSuperClass(classWeAreRefining);
         newRefinement.setFlag(REFINED_MODULE_F, true);
-        newRefinement.setFlag(RubyObject.USER7_F, false); // Refinement modules should not do implementer check
+        newRefinement.setFlag(NEEDSIMPL_F, false); // Refinement modules should not do implementer check
         newRefinement.refinedClass = classWeAreRefining;
         newRefinement.definedAt = this;
         refinements.put(classWeAreRefining, newRefinement);
@@ -4606,7 +4612,7 @@ public class RubyModule extends RubyObject {
      * and alive using the ObjectProxyCache.
      */
     public boolean getCacheProxy() {
-        return getFlag(USER0_F);
+        return getFlag(CACHEPROXY_F);
     }
 
     /**
@@ -4614,7 +4620,7 @@ public class RubyModule extends RubyObject {
      * and alive using the ObjectProxyCache.
      */
     public void setCacheProxy(boolean cacheProxy) {
-        setFlag(USER0_F, cacheProxy);
+        setFlag(CACHEPROXY_F, cacheProxy);
     }
 
     @Override

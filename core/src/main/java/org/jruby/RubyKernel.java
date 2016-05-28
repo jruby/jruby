@@ -120,7 +120,7 @@ public class RubyKernel {
 
         module.defineAnnotatedMethods(RubyKernel.class);
 
-        module.setFlag(RubyObject.USER7_F, false); //Kernel is the only normal Module that doesn't need an implementor
+        module.setFlag(RubyModule.NEEDSIMPL_F, false); //Kernel is the only normal Module that doesn't need an implementor
 
         runtime.setPrivateMethodMissing(new MethodMissingMethod(module, PRIVATE, CallType.NORMAL));
         runtime.setProtectedMethodMissing(new MethodMissingMethod(module, PROTECTED, CallType.NORMAL));

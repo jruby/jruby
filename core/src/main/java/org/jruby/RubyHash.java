@@ -48,6 +48,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
@@ -115,6 +116,8 @@ import static org.jruby.RubyEnumerator.SizeFn;
 @JRubyClass(name = "Hash", include="Enumerable")
 public class RubyHash extends RubyObject implements Map {
     public static final int DEFAULT_INSPECT_STR_SIZE = 20;
+
+    public static final int COMPARE_BY_IDENTITY_F = Constants.COMPARE_BY_IDENTITY_F;
 
     public static RubyClass createHashClass(Ruby runtime) {
         RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), HASH_ALLOCATOR);
@@ -227,7 +230,7 @@ public class RubyHash extends RubyObject implements Map {
     protected int size = 0;
     private int threshold;
 
-    private static final int PROCDEFAULT_HASH_F = 1 << 10;
+    private static final int PROCDEFAULT_HASH_F = Constants.PROCDEFAULT_HASH_F;
 
     private IRubyObject ifNone;
 
