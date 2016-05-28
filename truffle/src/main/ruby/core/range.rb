@@ -28,7 +28,7 @@ class Range
   include Enumerable
 
   def initialize(first, last, exclude_end = false)
-    raise NameError, "`initialize' called twice" if @begin
+    raise NameError, "`initialize' called twice" if self.begin
 
     unless first.kind_of?(Fixnum) && last.kind_of?(Fixnum)
       begin
@@ -63,14 +63,14 @@ class Range
   def bsearch
     return to_enum :bsearch unless block_given?
 
-    unless @begin.kind_of? Numeric and @end.kind_of? Numeric
-      raise TypeError, "bsearch is not available for #{@begin.class}"
+    unless self.begin.kind_of? Numeric and self.end.kind_of? Numeric
+      raise TypeError, "bsearch is not available for #{self.begin.class}"
     end
 
-    min = @begin
-    max = @end
+    min = self.begin
+    max = self.end
 
-    max -= 1 if max.kind_of? Integer and @excl
+    max -= 1 if max.kind_of? Integer and exclude_end?
 
     start = min = Rubinius::Type.coerce_to min, Integer, :to_int
     total = max = Rubinius::Type.coerce_to max, Integer, :to_int
@@ -116,13 +116,13 @@ class Range
     end
 
     if min < max
-      return @begin if mid == start
-      return @begin.kind_of?(Float) ? mid.to_f : mid
+      return self.begin if mid == start
+      return self.begin.kind_of?(Float) ? mid.to_f : mid
     end
 
     if last_true
-      return @begin if last_true == start
-      return @begin.kind_of?(Float) ? last_true.to_f : last_true
+      return self.begin if last_true == start
+      return self.begin.kind_of?(Float) ? last_true.to_f : last_true
     end
 
     nil
@@ -130,7 +130,7 @@ class Range
 
   def each_internal
     return to_enum { size } unless block_given?
-    first, last = @begin, @end
+    first, last = self.begin, self.end
 
     unless first.respond_to?(:succ) && !first.kind_of?(Time)
       raise TypeError, "can't iterate from #{first.class}"
@@ -138,7 +138,7 @@ class Range
 
     case first
     when Fixnum
-      last -= 1 if @excl
+      last -= 1 if exclude_end?
 
       i = first
       while i <= last
@@ -146,16 +146,16 @@ class Range
         i += 1
       end
     when String
-      first.upto(last, @excl) do |str|
+      first.upto(last, exclude_end?) do |str|
         yield str
       end
     when Symbol
-      first.to_s.upto(last.to_s, @excl) do |str|
+      first.to_s.upto(last.to_s, exclude_end?) do |str|
         yield str.to_sym
       end
     else
       current = first
-      if @excl
+      if exclude_end?
         while (current <=> last) < 0
           yield current
           current = current.succ
@@ -173,26 +173,26 @@ class Range
   end
 
   def first(n=undefined)
-    return @begin if undefined.equal? n
+    return self.begin if undefined.equal? n
 
     super
   end
 
   def hash
-    excl = @excl ? 1 : 0
+    excl = exclude_end? ? 1 : 0
     hash = excl
-    hash ^= @begin.hash << 1
-    hash ^= @end.hash << 9
+    hash ^= self.begin.hash << 1
+    hash ^= self.end.hash << 9
     hash ^= excl << 24;
     # Are we throwing away too much here for a good hash value distribution?
     return hash & Fixnum::MAX
   end
 
   def include?(value)
-    if @begin.respond_to?(:to_int) ||
-       @end.respond_to?(:to_int) ||
-       @begin.kind_of?(Numeric) ||
-       @end.kind_of?(Numeric)
+    if self.begin.respond_to?(:to_int) ||
+       self.end.respond_to?(:to_int) ||
+        self.begin.kind_of?(Numeric) ||
+       self.end.kind_of?(Numeric)
       cover? value
     else
       super
@@ -206,46 +206,46 @@ class Range
   end
 
   def inspect
-    "#{@begin.inspect}#{@excl ? "..." : ".."}#{@end.inspect}"
+    "#{self.begin.inspect}#{exclude_end? ? "..." : ".."}#{self.end.inspect}"
   end
 
   def last(n=undefined)
-    return @end if undefined.equal? n
+    return self.end if undefined.equal? n
 
     to_a.last(n)
   end
 
   def max
-    return super if block_given? || (@excl && !@end.kind_of?(Numeric))
-    return nil if @end < @begin || (@excl && @end == @begin)
-    return @end unless @excl
+    return super if block_given? || (exclude_end? && !self.end.kind_of?(Numeric))
+    return nil if self.end < self.begin || (exclude_end? && self.end == self.begin)
+    return self.end unless exclude_end?
 
-    unless @end.kind_of?(Integer)
+    unless self.end.kind_of?(Integer)
       raise TypeError, "cannot exclude non Integer end value"
     end
 
-    unless @begin.kind_of?(Integer)
+    unless self.begin.kind_of?(Integer)
       raise TypeError, "cannot exclude end value with non Integer begin value"
     end
 
-    @end - 1
+    self.end - 1
   end
 
   def min
     return super if block_given?
-    return nil if @end < @begin || (@excl && @end == @begin)
+    return nil if self.end < self.begin || (exclude_end? && self.end == self.begin)
 
-    @begin
+    self.begin
   end
 
   def step_internal(step_size=1) # :yields: object
     return to_enum(:step, step_size) do
       m = Rubinius::Mirror::Range.reflect(self)
-      m.step_iterations_size(*m.validate_step_size(@begin, @end, step_size))
+      m.step_iterations_size(*m.validate_step_size(self.begin, self.end, step_size))
     end unless block_given?
 
     m = Rubinius::Mirror::Range.reflect(self)
-    values = m.validate_step_size(@begin, @end, step_size)
+    values = m.validate_step_size(self.begin, self.end, step_size)
     first = values[0]
     last = values[1]
     step_size = values[2]
@@ -263,7 +263,7 @@ class Range
       end
     when Numeric
       curr = first
-      last -= 1 if @excl
+      last -= 1 if exclude_end?
 
       while curr <= last
         yield curr
@@ -281,23 +281,23 @@ class Range
   end
 
   def to_s
-    "#{@begin}#{@excl ? "..." : ".."}#{@end}"
+    "#{self.begin}#{exclude_end? ? "..." : ".."}#{self.end}"
   end
 
   def to_a_internal
-    return super unless @begin.kind_of? Fixnum and @end.kind_of? Fixnum
+    return super unless self.begin.kind_of? Fixnum and self.end.kind_of? Fixnum
 
-    fin = @end
-    fin += 1 unless @excl
+    fin = self.end
+    fin += 1 unless exclude_end?
 
-    size = fin - @begin
+    size = fin - self.begin
     return [] if size <= 0
 
     ary = Array.new(size)
 
     i = 0
     while i < size
-      ary[i] = @begin + i
+      ary[i] = self.begin + i
       i += 1
     end
 
@@ -307,13 +307,13 @@ class Range
   def cover?(value)
     # MRI uses <=> to compare, so must we.
 
-    beg_compare = (@begin <=> value)
+    beg_compare = (self.begin <=> value)
     return false unless beg_compare
 
     if Comparable.compare_int(beg_compare) <= 0
-      end_compare = (value <=> @end)
+      end_compare = (value <=> self.end)
 
-      if @excl
+      if exclude_end?
         return true if Comparable.compare_int(end_compare) < 0
       else
         return true if Comparable.compare_int(end_compare) <= 0
@@ -324,38 +324,38 @@ class Range
   end
 
   def size
-    return nil unless @begin.kind_of?(Numeric)
+    return nil unless self.begin.kind_of?(Numeric)
 
-    delta = @end - @begin
+    delta = self.end - self.begin
     return 0 if delta < 0
 
-    if @begin.kind_of?(Float) || @end.kind_of?(Float)
+    if self.begin.kind_of?(Float) || self.end.kind_of?(Float)
       return delta if delta == Float::INFINITY
 
-      err = (@begin.abs + @end.abs + delta.abs) * Float::EPSILON
+      err = (self.begin.abs + self.end.abs + delta.abs) * Float::EPSILON
       err = 0.5 if err > 0.5
 
-      (@excl ? delta - err : delta + err).floor + 1
+      (exclude_end? ? delta - err : delta + err).floor + 1
     else
-      delta += 1 unless @excl
+      delta += 1 unless exclude_end?
       delta
     end
   end
 
   def to_a_internal # MODIFIED called from java to_a
-    return to_a_from_enumerable unless @begin.kind_of? Fixnum and @end.kind_of? Fixnum
+    return to_a_from_enumerable unless self.begin.kind_of? Fixnum and self.end.kind_of? Fixnum
 
-    fin = @end
-    fin += 1 unless @excl
+    fin = self.end
+    fin += 1 unless exclude_end?
 
-    size = fin - @begin
+    size = fin - self.begin
     return [] if size <= 0
 
     ary = Array.new(size)
 
     i = 0
     while i < size
-      ary[i] = @begin + i
+      ary[i] = self.begin + i
       i += 1
     end
 

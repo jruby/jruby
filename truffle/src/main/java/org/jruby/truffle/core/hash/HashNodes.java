@@ -1404,6 +1404,24 @@ public abstract class HashNodes {
     }
 
     @NonStandard
+    @CoreMethod(names = "internal_default_value")
+    public abstract static class InternalDefaultValueNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private DefaultValueNode defaultValueNode;
+
+        public InternalDefaultValueNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            defaultValueNode = HashNodesFactory.DefaultValueNodeFactory.create(null);
+        }
+
+        @Specialization
+        public Object internalDefaultValue(DynamicObject hash) {
+            return defaultValueNode.defaultValue(hash);
+        }
+
+    }
+
+    @NonStandard
     @NodeChild(type = RubyNode.class, value = "self")
     public abstract static class DefaultValueNode extends CoreMethodNode {
 

@@ -243,19 +243,17 @@ public class RubyKernel {
 
     private static String getMethodMissingFormat(Visibility visibility, CallType callType) {
 
-        String format = null;
+        String format = "undefined method `%s' for %s%s%s";
 
         if (visibility == PRIVATE) {
-            format = "private method `%s' called for %s";
+            format = "private method `%s' called for %s%s%s";
         } else if (visibility == PROTECTED) {
-            format = "protected method `%s' called for %s";
+            format = "protected method `%s' called for %s%s%s";
         } else if (callType == CallType.VARIABLE) {
-            format = "undefined local variable or method `%s' for %s";
+            format = "undefined local variable or method `%s' for %s%s%s";
         } else if (callType == CallType.SUPER) {
-            format = "super: no superclass method `%s'";
+            format = "super: no superclass method `%s' for %s%s%s";
         }
-
-        if (format == null) format = "undefined method `%s' for %s";
 
         return format;
     }

@@ -155,7 +155,7 @@ class Time
   end
 
   def inspect
-    if @is_gmt
+    if gmt?
       str = strftime("%Y-%m-%d %H:%M:%S UTC")
     else
       str = strftime("%Y-%m-%d %H:%M:%S %z")
@@ -236,7 +236,7 @@ class Time
     end
 
     # Don't use self.class, MRI doesn't honor subclasses here
-    Time.specific(seconds + other_sec, nsec + other_nsec, @is_gmt, @offset)
+    Time.specific(seconds + other_sec, nsec + other_nsec, gmt?, internal_offset)
   end
 
   def -(other)
@@ -254,7 +254,7 @@ class Time
     end
 
     # Don't use self.class, MRI doesn't honor subclasses here
-    Time.specific(seconds - other_sec, nsec - other_nsec, @is_gmt, @offset)
+    Time.specific(seconds - other_sec, nsec - other_nsec, gmt?, internal_offset)
   end
 
   def localtime(offset=nil)
@@ -308,7 +308,7 @@ class Time
     sec = roundable_time.floor
     nano = ((roundable_time - sec) * 1_000_000_000).floor
 
-    Time.specific(sec, nano, @is_gmt, @offset)
+    Time.specific(sec, nano, gmt?, internal_offset)
   end
 
   class << self
@@ -363,7 +363,7 @@ class Time
       raise ArgumentError, "year too big to marshal: #{year}"
     end
 
-    gmt = @is_gmt ? 1 : 0
+    gmt = gmt? ? 1 : 0
 
     major =  1             << 31 | # 1 bit
              gmt           << 30 | # 1 bit
@@ -508,10 +508,6 @@ class Time
     end
   end
 
-  def gmt?
-    @is_gmt
-  end
-
   alias_method :to_i, :seconds
 
   def gmt_offset
@@ -520,7 +516,7 @@ class Time
   end
 
   def gmtime
-    unless @is_gmt
+    unless gmt?
       @is_gmt = true
       @offset = nil
       @decomposed = nil

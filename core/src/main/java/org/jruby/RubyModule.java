@@ -128,8 +128,6 @@ public class RubyModule extends RubyObject {
     private static final Logger LOG = LoggerFactory.getLogger(RubyModule.class);
     // static { LOG.setDebugEnable(true); } // enable DEBUG output
 
-    protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
-
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -3301,12 +3299,11 @@ public class RubyModule extends RubyObject {
         String longName;
 
         if (this != runtime.getObject()) {
-            longName = getName() + "::" + shortName;
+            throw runtime.newNameError("uninitialized constant %2$s::%1$s", this, rubyName);
         } else {
-            longName = shortName;
+            throw runtime.newNameError("uninitialized constant %1$s", this, rubyName);
         }
 
-        throw runtime.newNameError("uninitialized constant " + longName, this, rubyName);
     }
 
     public RubyArray constants(ThreadContext context) {
@@ -3504,7 +3501,7 @@ public class RubyModule extends RubyObject {
         IRubyObject value = getClassVarQuiet(name);
 
         if (value == null) {
-            throw getRuntime().newNameError("uninitialized class variable %s in %s", this, name);
+            throw getRuntime().newNameError("uninitialized class variable %1$s in %2$s", this, name);
         }
 
         return value;
@@ -3514,7 +3511,7 @@ public class RubyModule extends RubyObject {
         IRubyObject value = getClassVarQuiet(name);
 
         if (value == null) {
-            throw getRuntime().newNameError("uninitialized class variable %s in %s", this, nameObject);
+            throw getRuntime().newNameError("uninitialized class variable %1$s in %2$s", this, nameObject);
         }
 
         return value;
@@ -4091,14 +4088,14 @@ public class RubyModule extends RubyObject {
         if (IdUtil.isValidClassVariableName(name)) {
             return name;
         }
-        throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", this, name);
+        throw getRuntime().newNameError("`%1$s' is not allowed as a class variable name", this, name);
     }
 
     protected final String validateClassVariable(IRubyObject nameObj, String name) {
         if (IdUtil.isValidClassVariableName(name)) {
             return name;
         }
-        throw getRuntime().newNameError("`" + name + "' is not allowed as a class variable name", this, nameObj);
+        throw getRuntime().newNameError("`%1$s' is not allowed as a class variable name", this, nameObj);
     }
 
     protected final void ensureClassVariablesSettable() {

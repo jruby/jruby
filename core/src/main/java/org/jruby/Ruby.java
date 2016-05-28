@@ -3956,25 +3956,25 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getClass("Iconv").getClass("IllegalSequence"), message);
     }
 
-    public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
-        return new RaiseException(new RubyNoMethodError(this, getNoMethodError(), message, name, args), true);
-    }
-
-    public RaiseException newNameError(String message, String name) {
-        return newNameError(message, name, null);
-    }
-
-    @Deprecated
-    public RaiseException newNameErrorObject(String message, IRubyObject name) {
-        RubyException error = new RubyNameError(this, getNameError(), message, name);
-
-        return new RaiseException(error, false);
-    }
-
-    public RaiseException newNameError(String message, String name, Throwable origException) {
-        return newNameError(message, name, origException, false);
-    }
-
+    /**
+     * Construct a NameError that formats its message with an sprintf format string.
+     *
+     * The arguments given to sprintf are as follows:
+     *
+     * 0: the name that failed
+     * 1: the receiver object that failed
+     * 2: a ":" character for non-singleton recv, blank otherwise
+     * 3: the name of the a non-singleton recv's class, blank if recv is a singleton
+     *
+     * Passing a string with no format characters will warn in verbose mode and error in debug mode.
+     *
+     * See jruby/jruby#3934.
+     *
+     * @param message an sprintf format string for the message
+     * @param recv the receiver object
+     * @param name the name that failed
+     * @return a new NameError
+     */
     public RaiseException newNameError(String message, IRubyObject recv, IRubyObject name) {
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, name);
         RubyException err = RubyNameError.newNameError(getNameError(), msg, name);
@@ -3982,19 +3982,30 @@ public final class Ruby implements Constantizable {
         return new RaiseException(err);
     }
 
+    /**
+     * Construct a NameError that formats its message with an sprintf format string.
+     *
+     * This version just accepts a java.lang.String for the name.
+     *
+     * @see Ruby#newNameError(String, IRubyObject, IRubyObject)
+     */
     public RaiseException newNameError(String message, IRubyObject recv, String name) {
         RubySymbol nameSym = newSymbol(name);
         return newNameError(message, recv, nameSym);
     }
 
-    public RaiseException newNoMethodError(String message, IRubyObject recv, String name, RubyArray args) {
-        RubySymbol nameStr = newSymbol(name);
-        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
-        RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args);
-
-        return new RaiseException(err);
-    }
-
+    /**
+     * Construct a NameError with the given pre-formatted message, name, and optional original exception.
+     *
+     * If the original exception is given, and either we are in verbose mode with printWhenVerbose set to true
+     * or we are in debug mode.
+     *
+     * @param message the pre-formatted message for the NameError
+     * @param name the name that failed
+     * @param origException the original exception, or null
+     * @param printWhenVerbose whether to log this exception when verbose mode is enabled
+     * @return a new NameError
+     */
     public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
         if (origException != null) {
             if (printWhenVerbose && isVerbose()) {
@@ -4005,6 +4016,65 @@ public final class Ruby implements Constantizable {
         }
 
         return new RaiseException(new RubyNameError(this, getNameError(), message, name), false);
+    }
+
+    /**
+     * Construct a NameError with a pre-formatted message and name.
+     *
+     * This is the same as calling {@link #newNameError(String, String, Throwable)} with a null
+     * originating exception.
+     *
+     * @param message the pre-formatted message for the error
+     * @param name the name that failed
+     * @return a new NameError
+     */
+    public RaiseException newNameError(String message, String name) {
+        return newNameError(message, name, null);
+    }
+
+    /**
+     * Construct a NameError with an optional originating exception and a pre-formatted message.
+     *
+     * This is the same as calling {@link #newNameError(String, String, Throwable, boolean)} with a null
+     * originating exception and false for verbose-mode logging.
+     *
+     * @param message a formatted string message for the error
+     * @param name the name that failed
+     * @param origException the original exception, or null if none
+     * @return a new NameError
+     */
+    public RaiseException newNameError(String message, String name, Throwable origException) {
+        return newNameError(message, name, origException, false);
+    }
+
+    /**
+     * Construct a NoMethodError that formats its message with an sprintf format string.
+     *
+     * This works like {@link #newNameError(String, IRubyObject, IRubyObject)} but accepts
+     * a java.lang.String for name and a RubyArray of the original call arguments.
+     *
+     * @see Ruby#newNameError(String, IRubyObject, IRubyObject)
+     *
+     * @return a new NoMethodError
+     */
+    public RaiseException newNoMethodError(String message, IRubyObject recv, String name, RubyArray args) {
+        RubySymbol nameStr = newSymbol(name);
+        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
+        RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args);
+
+        return new RaiseException(err);
+    }
+
+    /**
+     * Construct a NoMethodError with a pre-formatted message.
+     *
+     * @param message the pre-formatted message
+     * @param name the name that failed
+     * @param args the original arguments to the call that failed
+     * @return a new NoMethodError
+     */
+    public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
+        return new RaiseException(new RubyNoMethodError(this, getNoMethodError(), message, name, args), true);
     }
 
     public RaiseException newLocalJumpError(RubyLocalJumpError.Reason reason, IRubyObject exitValue, String message) {
@@ -5029,6 +5099,13 @@ public final class Ruby implements Constantizable {
 
     @Deprecated
     public void secure(int level) {
+    }
+
+    @Deprecated
+    public RaiseException newNameErrorObject(String message, IRubyObject name) {
+        RubyException error = new RubyNameError(this, getNameError(), message, name);
+
+        return new RaiseException(error, false);
     }
 
     // Parser stats methods

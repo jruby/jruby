@@ -708,17 +708,6 @@ public class IRRuntimeHelpers {
         return flag ? context.runtime.getDefinedMessage(DefinedMessage.SUPER) : context.nil;
     }
 
-    protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String methodName) {
-        // FIXME: super/zsuper in top-level script still seems to have a frameClass so it will not make it into this if
-        if (frameClass == null) {
-            if (methodName == null || !methodName.equals("")) {
-                throw context.runtime.newNameError("superclass method '" + methodName + "' disabled", methodName);
-            } else {
-                throw context.runtime.newNoMethodError("super called outside of method", null, context.nil);
-            }
-        }
-    }
-
     public static IRubyObject nthMatch(ThreadContext context, int matchNumber) {
         return RubyRegexp.nth_match(matchNumber, context.getBackRef());
     }
@@ -984,7 +973,7 @@ public class IRRuntimeHelpers {
         RubyModule klazz = context.getFrameKlazz();
         String methodName = context.getCurrentFrame().getName();
 
-        checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
+        Helpers.checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
         RubyModule implMod = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz);
         RubyClass superClass = implMod.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;

@@ -1851,44 +1851,6 @@ public class BodyTranslator extends Translator {
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "time.rb")) {
-            if (name.equals("@is_gmt")) {
-                ret = TimeNodesFactory.InternalGMTNodeFactory.create(self);
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@offset")) {
-                ret = TimeNodesFactory.InternalOffsetNodeFactory.create(self);
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            }
-        } else if (path.equals(corePath + "hash.rb")) {
-            if (name.equals("@default")) {
-                ret = HashNodesFactory.DefaultValueNodeFactory.create(self);
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@default_proc")) {
-                ret = HashNodesFactory.DefaultProcNodeFactory.create(new RubyNode[]{ self });
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@size")) {
-                ret = HashNodesFactory.SizeNodeFactory.create(new RubyNode[]{ self });
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            }
-        } else if (path.equals(corePath + "range.rb")) {
-            if (name.equals("@begin")) {
-                ret = RangeNodesFactory.BeginNodeFactory.create(new RubyNode[]{ self });
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@end")) {
-                ret = RangeNodesFactory.EndNodeFactory.create(new RubyNode[]{ self });
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@excl")) {
-                ret = RangeNodesFactory.ExcludeEndNodeFactory.create(new RubyNode[]{ self });
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            }
         }
 
         ret = new ReadInstanceVariableNode(context, sourceSection, name, self);

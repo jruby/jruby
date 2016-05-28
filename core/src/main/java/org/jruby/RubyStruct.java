@@ -63,9 +63,9 @@ import static org.jruby.RubyEnumerator.SizeFn;
  */
 @JRubyClass(name="Struct")
 public class RubyStruct extends RubyObject {
-    public static final String NO_MEMBER_IN_STRUCT = "no member '%s' in struct";
-    public static final String IDENTIFIER_NEEDS_TO_BE_CONSTANT = "identifier %s needs to be constant";
-    public static final String UNINITIALIZED_CONSTANT = "uninitialized constant %s";
+    public static final String NO_MEMBER_IN_STRUCT = "no member '%1$s' in struct";
+    public static final String IDENTIFIER_NEEDS_TO_BE_CONSTANT = "identifier %1$s needs to be constant";
+    public static final String UNINITIALIZED_CONSTANT = "uninitialized constant %1$s";
     private final IRubyObject[] values;
 
     /**
@@ -468,7 +468,7 @@ public class RubyStruct extends RubyObject {
         return values[index] = value;
     }
 
-    private RaiseException notStructMemberError(String name) {
+    private RaiseException notStructMemberError(IRubyObject name) {
         return getRuntime().newNameError(NO_MEMBER_IN_STRUCT, this, name);
     }
 
@@ -655,7 +655,7 @@ public class RubyStruct extends RubyObject {
             final IRubyObject value = getByName(name);
             if ( value == null ) {
                 if ( nilOnNoMember ) return getRuntime().getNil();
-                throw notStructMemberError(name);
+                throw notStructMemberError(key);
             }
             return value;
         }
@@ -680,7 +680,7 @@ public class RubyStruct extends RubyObject {
         if (key instanceof RubyString || key instanceof RubySymbol) {
             final String name = key.asJavaString();
             final IRubyObject val = setByName(name, value);
-            if ( val == null ) throw notStructMemberError(name);
+            if ( val == null ) throw notStructMemberError(key);
             return value;
         }
 

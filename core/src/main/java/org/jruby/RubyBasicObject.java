@@ -2792,7 +2792,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if ((value = (IRubyObject)variableTableRemove(validateInstanceVariable(name, name.asJavaString()))) != null) {
             return value;
         }
-        throw context.runtime.newNameError("instance variable " + name.asJavaString() + " not defined", this, name);
+        throw context.runtime.newNameError("instance variable %1$s not defined", this, name);
     }
 
     /** rb_obj_instance_variables
@@ -2885,13 +2885,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected String validateInstanceVariable(String name) {
         if (IdUtil.isValidInstanceVariableName(name)) return name;
 
-        throw getRuntime().newNameError("`" + name + "' is not allowable as an instance variable name", this, name);
+        throw getRuntime().newNameError("`%1$s' is not allowable as an instance variable name", this, name);
     }
 
     protected String validateInstanceVariable(IRubyObject nameObj, String name) {
         if (IdUtil.isValidInstanceVariableName(name)) return name;
 
-        throw getRuntime().newNameError("`" + name + "' is not allowable as an instance variable name", this, nameObj);
+        throw getRuntime().newNameError("`%1$s' is not allowable as an instance variable name", this, nameObj);
     }
 
     /**

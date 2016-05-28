@@ -2069,8 +2069,7 @@ public abstract class ArrayNodes {
         public Object sortLargeArray(VirtualFrame frame, DynamicObject array, NotProvided block,
                 @Cached("new()") SnippetNode snippetNode) {
             return snippetNode.execute(frame,
-                    "sorted = dup; Truffle.privately { sorted.isort!(0, right) }; sorted",
-                    "right", getSize(array));
+                    "sorted = dup; Truffle.privately { sorted.mergesort! }; sorted");
         }
 
         @Specialization(guards = { "isObjectArray(array)" })
@@ -2095,8 +2094,7 @@ public abstract class ArrayNodes {
         public Object sortWithBlock(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("new()") SnippetNode snippet) {
             return snippet.execute(frame,
-                    "sorted = dup; Truffle.privately { sorted.isort_block!(0, right, block) }; sorted",
-                    "right", getSize(array),
+                    "sorted = dup; Truffle.privately { sorted.mergesort_block!(block) }; sorted",
                     "block", block);
         }
 
