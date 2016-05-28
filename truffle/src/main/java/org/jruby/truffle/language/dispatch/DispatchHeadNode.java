@@ -41,10 +41,6 @@ public class DispatchHeadNode extends Node {
             Object methodName,
             DynamicObject blockObject,
             Object[] argumentsObjects) {
-        if (context.getOptions().CALL_FREQUENCY) {
-            context.getCallFrequency().called(receiverObject, methodName);
-        }
-
         return first.executeDispatch(
                 frame,
                 receiverObject,

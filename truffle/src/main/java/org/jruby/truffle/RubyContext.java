@@ -47,7 +47,6 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
-import org.jruby.truffle.tools.CallFrequency;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
@@ -92,7 +91,6 @@ public class RubyContext extends ExecutionContext {
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
     private final CoverageManager coverageManager;
-    private final CallFrequency callFrequency;
 
     private final Object classVariableDefinitionLock = new Object();
 
@@ -153,15 +151,6 @@ public class RubyContext extends ExecutionContext {
         coreLibrary.addCoreMethods();
         primitiveManager.addAnnotatedPrimitives();
         org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
-
-        // Systems which need to be loaded before we load Ruby core
-
-        if (options.CALL_FREQUENCY) {
-            callFrequency = new CallFrequency(this);
-            callFrequency.start();
-        } else {
-            callFrequency = null;
-        }
 
         // Load the reset of the core library
 
@@ -359,7 +348,4 @@ public class RubyContext extends ExecutionContext {
         return coreExceptions;
     }
 
-    public CallFrequency getCallFrequency() {
-        return callFrequency;
-    }
 }
