@@ -128,8 +128,6 @@ public class RubyModule extends RubyObject {
     private static final Logger LOG = LoggerFactory.getLogger(RubyModule.class);
     // static { LOG.setDebugEnable(true); } // enable DEBUG output
 
-    protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
-
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
