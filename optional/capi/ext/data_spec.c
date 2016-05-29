@@ -73,7 +73,7 @@ VALUE sws_change_struct(VALUE self, VALUE obj, VALUE new_val) {
   return Qnil;
 }
 
-void Init_data_spec() {
+void Init_data_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiAllocSpecs", rb_cObject);
 

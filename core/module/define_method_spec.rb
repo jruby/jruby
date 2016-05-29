@@ -73,19 +73,60 @@ end
 
 describe "Module#define_method when name is not a special private name" do
   describe "given an UnboundMethod" do
-    it "sets the visibility of the method to the current visibility" do
-      m = Module.new do
-        def foo
+    describe "and called from the target module" do
+      it "sets the visibility of the method to the current visibility" do
+        klass = Class.new do
+          define_method(:bar, ModuleSpecs::EmptyFooMethod)
+          private
+          define_method(:baz, ModuleSpecs::EmptyFooMethod)
         end
-        private :foo
+
+        klass.should have_public_instance_method(:bar)
+        klass.should have_private_instance_method(:baz)
       end
-      klass = Class.new do
-        define_method(:bar, m.instance_method(:foo))
-        private
-        define_method(:baz, m.instance_method(:foo))
+    end
+
+    describe "and called from another module" do
+      it "sets the visibility of the method to public" do
+        klass = Class.new
+        Class.new do
+          klass.send(:define_method, :bar, ModuleSpecs::EmptyFooMethod)
+          private
+          klass.send(:define_method, :baz, ModuleSpecs::EmptyFooMethod)
+        end
+
+        klass.should have_public_instance_method(:bar)
+        klass.should have_public_instance_method(:baz)
       end
-      klass.should have_public_instance_method(:bar)
-      klass.should have_private_instance_method(:baz)
+    end
+  end
+
+  describe "passed a block" do
+    describe "and called from the target module" do
+      it "sets the visibility of the method to the current visibility" do
+        klass = Class.new do
+          define_method(:bar) {}
+          private
+          define_method(:baz) {}
+        end
+
+        klass.should have_public_instance_method(:bar)
+        klass.should have_private_instance_method(:baz)
+      end
+    end
+
+    describe "and called from another module" do
+      it "sets the visibility of the method to public" do
+        klass = Class.new
+        Class.new do
+          klass.send(:define_method, :bar) {}
+          private
+          klass.send(:define_method, :baz) {}
+        end
+
+        klass.should have_public_instance_method(:bar)
+        klass.should have_public_instance_method(:baz)
+      end
     end
   end
 end

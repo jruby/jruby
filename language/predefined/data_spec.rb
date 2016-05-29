@@ -23,22 +23,7 @@ describe "The DATA constant" do
     str.chomp.should == "data only"
   end
 
-  platform_is_not :windows, :solaris do
-    it "succeeds in locking the file DATA came from" do
-      path = fixture(__FILE__, "data_flock.rb")
-
-      data = ruby_exe(path)
-      data.should == "0"
-
-      begin
-        file = File.open(path)
-        file.flock(File::LOCK_EX)
-        data = ruby_exe(path)
-        data.should == "false"
-      ensure
-        file.flock(File::LOCK_UN) if file
-        file.close if file
-      end
-    end
+  it "rewinds to the head of the main script" do
+    ruby_exe(fixture(__FILE__, "data5.rb")).chomp.should == "DATA.rewind"
   end
 end

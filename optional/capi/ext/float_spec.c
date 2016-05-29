@@ -31,7 +31,7 @@ static VALUE float_spec_RFLOAT_VALUE(VALUE self, VALUE float_h) {
 }
 #endif
 
-void Init_float_spec() {
+void Init_float_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiFloatSpecs", rb_cObject);
 
