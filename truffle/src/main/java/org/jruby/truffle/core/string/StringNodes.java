@@ -143,13 +143,11 @@ import org.jruby.util.CodeRangeable;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.StringSupport;
-
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
@@ -1246,6 +1244,13 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject initialize(DynamicObject self, NotProvided from) {
+            return self;
+        }
+
+        @Specialization
+        public DynamicObject initializeJavaString(DynamicObject self, String from) {
+            raiseIfFrozen(self);
+            StringOperations.setRope(self, StringOperations.createRope(from, UTF8Encoding.INSTANCE));
             return self;
         }
 

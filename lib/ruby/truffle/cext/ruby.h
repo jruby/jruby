@@ -74,6 +74,7 @@ VALUE LONG2FIX(long value);
 
 // Type checks
 
+int NIL_P(VALUE value);
 int FIXNUM_P(VALUE value);
 
 // Float
@@ -85,7 +86,8 @@ VALUE rb_float_new(double value);
 char *RSTRING_PTR(VALUE string);
 int RSTRING_LEN(VALUE string);
 VALUE rb_intern_str(VALUE string);
-VALUE rb_str_new2(const char *string);
+VALUE rb_str_new_cstr(const char *string);
+#define rb_str_new2 rb_str_new_cstr
 void rb_str_cat(VALUE string, const char *to_concat, long length);
 
 // Symbol

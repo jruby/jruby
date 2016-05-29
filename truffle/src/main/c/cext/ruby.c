@@ -92,8 +92,12 @@ VALUE LONG2FIX(long value) {
 
 // Type checks
 
+int NIL_P(VALUE value) {
+  return truffle_invoke_b(RUBY_CEXT, "NIL_P", value);
+}
+
 int FIXNUM_P(VALUE value) {
-  return truffle_invoke_i(RUBY_CEXT, "FIXNUM_P", value);
+  return truffle_invoke_b(RUBY_CEXT, "FIXNUM_P", value);
 }
 
 // Float
@@ -113,8 +117,8 @@ int RSTRING_LEN(VALUE string) {
   return truffle_get_size(string);
 }
 
-VALUE rb_str_new2(const char *string) {
-  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new2", truffle_read_string(string));
+VALUE rb_str_new_cstr(const char *string) {
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_cstr", truffle_read_string(string));
 }
 
 VALUE rb_intern_str(VALUE string) {
@@ -248,7 +252,7 @@ void rb_raise(VALUE exception, const char *format, ...) {
 // Defining classes, modules and methods
 
 VALUE rb_define_class(const char *name, VALUE superclass) {
-  return truffle_invoke(RUBY_CEXT, "rb_define_class", truffle_read_string(name), superclass);
+  return truffle_invoke(RUBY_CEXT, "rb_define_class", rb_str_new_cstr(name), superclass);
 }
 
 VALUE rb_define_module(const char *name) {
