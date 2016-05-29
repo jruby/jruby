@@ -72,6 +72,9 @@ VALUE UINT2NUM(unsigned int value);
 VALUE LONG2NUM(long value);
 VALUE LONG2FIX(long value);
 
+ID SYM2ID(VALUE value);
+VALUE ID2SYM(ID value);
+
 // Type checks
 
 int NIL_P(VALUE value);
@@ -93,7 +96,8 @@ void rb_str_cat(VALUE string, const char *to_concat, long length);
 // Symbol
 
 ID rb_intern(const char *string);
-VALUE ID2SYM(ID id);
+ID rb_intern2(const char *string, long length);
+#define rb_intern_const(str) rb_intern2((str), strlen(str))
 
 // Array
 
@@ -143,6 +147,8 @@ void rb_raise(VALUE exception, const char *format, ...);
 // Defining classes, modules and methods
 
 VALUE rb_define_class(const char *name, VALUE superclass);
+VALUE rb_define_class_under(VALUE module, const char *name, VALUE superclass);
+VALUE rb_define_class_id_under(VALUE module, ID name, VALUE superclass);
 VALUE rb_define_module(const char *name);
 VALUE rb_define_module_under(VALUE module, const char *name);
 

@@ -58,8 +58,8 @@ module Truffle
       string
     end
 
-    def rb_intern
-      raise 'not implemented'
+    def rb_intern(str)
+      str.intern
     end
 
     def rb_str_new_cstr(java_string)
@@ -68,10 +68,6 @@ module Truffle
 
     def rb_intern_str(string)
       string.intern
-    end
-
-    def ID2SYM(id)
-      id
     end
 
     def rb_str_cat(string, to_concat, length)
@@ -106,15 +102,15 @@ module Truffle
       raise 'not implemented'
     end
 
-    def rb_define_class(name, superclass)
-      if Object.const_defined?(name)
-        klass = Object.const_get(name)
+    def rb_define_class_under(mod, name, superclass)
+      if mod.const_defined?(name)
+        klass = mod.const_get(name)
         if superclass != klass.superclass
           raise TypeError, "superclass mismatch for class #{name}"
         end
         klass
       else
-        Object.const_set(name, Class.new(superclass))
+        mod.const_set(name, Class.new(superclass))
       end
     end
 
@@ -126,19 +122,19 @@ module Truffle
       mod.const_set(name, Module.new)
     end
 
-    def rb_define_method(mod, name, function, args)
+    def rb_define_method(mod, name, function, argc)
       mod.send(:define_method, name) do |*args|
         function.call(self, *args)
       end
     end
 
-    def rb_define_private_method(mod, name, function, args)
-      rb_define_method mod, name, function, args
+    def rb_define_private_method(mod, name, function, argc)
+      rb_define_method mod, name, function, argc
       mod.send :private, name
     end
 
-    def rb_define_module_function(mod, name, function, args)
-      rb_define_method mod, name, function, args
+    def rb_define_module_function(mod, name, function, argc)
+      rb_define_method mod, name, function, argc
       mod.send :module_function, name
     end
 

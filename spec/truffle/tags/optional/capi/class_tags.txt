@@ -30,17 +30,6 @@ fails:C-API Class function rb_cvar_defined returns true if the class instance va
 fails:C-API Class function rb_cv_set sets a class variable
 fails:C-API Class function rb_cv_get returns the value of the class variable
 fails:C-API Class function rb_cvar_set sets a class variable
-fails:C-API Class function rb_define_class_under creates a subclass of the superclass contained in a module
-fails:C-API Class function rb_define_class_under sets the class name
-fails:C-API Class function rb_define_class_under calls #inherited on the superclass
-fails:C-API Class function rb_define_class_under raises a TypeError when given a non class object to superclass
-fails:C-API Class function rb_define_class_under raises a TypeError when given a mismatched class to superclass
-fails:C-API Class function rb_define_class_under defines a class for an existing Autoload
-fails:C-API Class function rb_define_class_under raises a TypeError if class is defined and its superclass mismatches the given one
-fails:C-API Class function rb_define_class_id_under creates a subclass of the superclass contained in a module
-fails:C-API Class function rb_define_class_id_under sets the class name
-fails:C-API Class function rb_define_class_id_under calls #inherited on the superclass
-fails:C-API Class function rb_define_class_id_under defines a class for an existing Autoload
 fails:C-API Class function rb_define_class_id_under raises a TypeError if class is defined and its superclass mismatches the given one
 fails:C-API Class function rb_define_class_variable sets a class variable
 fails:C-API Class function rb_cvar_get returns the value of the class variable
