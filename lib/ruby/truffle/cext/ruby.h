@@ -26,8 +26,8 @@ extern "C" {
 #define xfree free
 #define ALLOC_N(type, n) malloc(sizeof(type) * n)
 
-typedef void *ID;
-typedef void *VALUE;
+typedef void* ID;
+typedef void* VALUE;
 
 // Constants
 
