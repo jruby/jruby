@@ -42,3 +42,4 @@ fails:CApiModule rb_undef_method when given a frozen Class raises a RuntimeError
 fails:CApiModule rb_undef_method when given a frozen Class raises a RuntimeError when passed a missing name
 fails:CApiModule rb_undef undef'ines a method on a class
 fails:CApiModule rb_class2name returns the module name
+fails:CApiModule rb_define_module_under defines a module for an existing Autoload with a ruby object
