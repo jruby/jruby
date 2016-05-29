@@ -130,6 +130,13 @@ VALUE class_spec_define_attr(VALUE self, VALUE klass, VALUE sym, VALUE read, VAL
 }
 #endif
 
+#ifdef HAVE_RB_DEFINE_CLASS
+static VALUE class_spec_rb_define_class(VALUE self, VALUE name, VALUE super) {
+  if(NIL_P(super)) super = 0;
+  return rb_define_class(RSTRING_PTR(name), super);
+}
+#endif
+
 #ifdef HAVE_RB_DEFINE_CLASS_UNDER
 static VALUE class_spec_rb_define_class_under(VALUE self, VALUE outer,
                                                  VALUE name, VALUE super) {
@@ -160,7 +167,7 @@ static VALUE class_spec_include_module(VALUE self, VALUE klass, VALUE module) {
 }
 #endif
 
-void Init_class_spec() {
+void Init_class_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiClassSpecs", rb_cObject);
 
@@ -226,6 +233,10 @@ void Init_class_spec() {
 
 #ifdef HAVE_RB_DEFINE_ATTR
   rb_define_method(cls, "rb_define_attr", class_spec_define_attr, 4);
+#endif
+
+#ifdef HAVE_RB_DEFINE_CLASS
+  rb_define_method(cls, "rb_define_class", class_spec_rb_define_class, 2);
 #endif
 
 #ifdef HAVE_RB_DEFINE_CLASS_UNDER

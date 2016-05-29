@@ -416,7 +416,7 @@ static VALUE string_spec_rb_usascii_str_new_cstr(VALUE self, VALUE str) {
 }
 #endif
 
-void Init_string_spec() {
+void Init_string_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiStringSpecs", rb_cObject);
 

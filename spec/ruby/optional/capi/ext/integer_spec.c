@@ -15,7 +15,7 @@ static VALUE integer_spec_rb_integer_pack(VALUE self, VALUE value,
 }
 #endif
 
-void Init_integer_spec() {
+void Init_integer_spec(void) {
 #ifdef HAVE_RB_INTEGER_PACK
   VALUE cls;
   cls = rb_define_class("CApiIntegerSpecs", rb_cObject);

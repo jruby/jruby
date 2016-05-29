@@ -394,6 +394,7 @@
 #define HAVE_RB_CONST_GET_FROM             1
 #define HAVE_RB_CONST_SET                  1
 #define HAVE_RB_DEFINE_ALIAS               1
+#define HAVE_RB_DEFINE_CLASS               1
 #define HAVE_RB_DEFINE_CLASS_UNDER         1
 #define HAVE_RB_DEFINE_CLASS_ID_UNDER      1
 #define HAVE_RB_DEFINE_CONST               1

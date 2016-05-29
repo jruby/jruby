@@ -53,7 +53,7 @@ static VALUE rational_spec_rb_rational_den(VALUE self, VALUE rational) {
 }
 #endif
 
-void Init_rational_spec() {
+void Init_rational_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiRationalSpecs", rb_cObject);
 

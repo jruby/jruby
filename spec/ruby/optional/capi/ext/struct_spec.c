@@ -50,7 +50,7 @@ static VALUE struct_spec_rb_struct_new(VALUE self, VALUE klass,
 }
 #endif
 
-void Init_struct_spec() {
+void Init_struct_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiStructSpecs", rb_cObject);
 

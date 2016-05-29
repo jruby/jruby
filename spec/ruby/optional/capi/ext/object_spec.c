@@ -394,7 +394,7 @@ static VALUE object_spec_rb_class_inherited_p(VALUE self, VALUE mod, VALUE arg) 
 #endif
 
 
-void Init_object_spec() {
+void Init_object_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiObjectSpecs", rb_cObject);
 

@@ -96,7 +96,7 @@ static VALUE numeric_spec_rb_num_coerce_relop(VALUE self, VALUE x, VALUE y, VALU
 }
 #endif
 
-void Init_numeric_spec() {
+void Init_numeric_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiNumericSpecs", rb_cObject);
 

@@ -31,7 +31,7 @@ static VALUE gc_spec_rb_gc_disable() {
 #endif
 
 
-void Init_gc_spec() {
+void Init_gc_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiGCSpecs", rb_cObject);
 

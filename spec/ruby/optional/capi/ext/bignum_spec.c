@@ -83,7 +83,7 @@ static VALUE bignum_spec_RBIGNUM_LEN(VALUE self, VALUE num) {
 }
 #endif
 
-void Init_bignum_spec() {
+void Init_bignum_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiBignumSpecs", rb_cObject);
 
