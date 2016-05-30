@@ -158,5 +158,15 @@ module Truffle
     def rb_define_singleton_method(object, name, function, argc)
       rb_define_method(object.singleton_class, name, function, argc)
     end
+
+    def rb_alias(mod, new_name, old_name)
+      mod.send(:alias_method, new_name, old_name)
+    end
+
+    def rb_undef(mod, name)
+      if mod.frozen? or mod.method_defined?(name)
+        mod.send(:undef_method, name)
+      end
+    end
   end
 end

@@ -9,10 +9,21 @@
  */
 package org.jruby.truffle.interop;
 
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
+import org.jruby.truffle.language.RubyConstant;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.constants.GetConstantNode;
+import org.jruby.truffle.language.constants.LookupConstantNode;
 
 @CoreClass("Truffle::CExt")
 public class CExtNodes {
@@ -126,6 +137,29 @@ public class CExtNodes {
         @Specialization
         public int long2fix(int num) {
             return num;
+        }
+
+    }
+
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    @CoreMethod(names = "rb_const_get_from", isModuleFunction = true, required = 2)
+    public abstract static class ConstGetFromNode extends CoreMethodNode {
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(null, null, name);
+        }
+
+        @Child LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, false);
+        @Child GetConstantNode getConstantNode = GetConstantNode.create();
+
+        @Specialization
+        public Object constGetFrom(VirtualFrame frame, DynamicObject module, String name) {
+            final RubyConstant constant = lookupConstantNode.lookupConstant(frame, module, name);
+            return getConstantNode.executeGetConstant(frame, module, name, constant, lookupConstantNode);
         }
 
     }
