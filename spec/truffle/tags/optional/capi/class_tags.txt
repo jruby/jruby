@@ -30,7 +30,6 @@ fails:C-API Class function rb_cvar_defined returns true if the class instance va
 fails:C-API Class function rb_cv_set sets a class variable
 fails:C-API Class function rb_cv_get returns the value of the class variable
 fails:C-API Class function rb_cvar_set sets a class variable
-fails:C-API Class function rb_define_class_id_under raises a TypeError if class is defined and its superclass mismatches the given one
 fails:C-API Class function rb_define_class_variable sets a class variable
 fails:C-API Class function rb_cvar_get returns the value of the class variable
 fails:C-API Class function rb_class_new returns an new subclass of the superclass

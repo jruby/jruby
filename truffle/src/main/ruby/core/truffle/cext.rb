@@ -55,7 +55,7 @@ module Truffle
     end
 
     def RSTRING_PTR(string)
-      string
+      Truffle::Interop.to_java_string(string)
     end
 
     def rb_intern(str)
@@ -124,7 +124,8 @@ module Truffle
 
     def rb_define_method(mod, name, function, argc)
       mod.send(:define_method, name) do |*args|
-        function.call(self, *args)
+        # Using raw execute instead of #call here to avoid argument conversion
+        Truffle::Interop.execute(function, self, *args)
       end
     end
 
