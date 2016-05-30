@@ -236,6 +236,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_PLATFORM_USE_JAVA = bool(TRUFFLE, "truffle.platform.use_java", false, "Use a pure-Java platform, so no native POSIX.");
 
     public static final Option<Boolean> TRUFFLE_COVERAGE_GLOBAL = bool(TRUFFLE, "truffle.coverage.global", false, "Run coverage for all code and print results on exit.");
+    public static final Option<Boolean> TRUFFLE_PROFILER = bool(TRUFFLE, "truffle.profiler", false, "Run the Truffle profiler.");
 
     public static final Option<String> TRUFFLE_CORE_LOAD_PATH = string(TRUFFLE, "truffle.core.load_path", "truffle:/jruby-truffle", "Location to load the Truffle core library from.");
 

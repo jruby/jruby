@@ -11,14 +11,14 @@ package org.jruby.truffle;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
+import com.oracle.truffle.tools.TruffleProfiler;
+import java.io.IOException;
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
 import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
-
-import java.io.IOException;
 
 public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
@@ -31,6 +31,10 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         engine = PolyglotEngine.newBuilder()
                 .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new JRubyContextWrapper(runtime))
                 .build();
+
+        if (Options.TRUFFLE_PROFILER.load()) {
+            engine.getInstruments().get(TruffleProfiler.ID).setEnabled(true);
+        }
 
         try {
             context = (RubyContext) engine.eval(Source.fromText("Truffle::Boot.context", "context")
