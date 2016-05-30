@@ -41,5 +41,4 @@ fails:C-API Class function rb_class_real returns the class of an object ignoring
 fails:C-API Class function rb_class_real returns the class of an object ignoring included modules
 fails:C-API Class function rb_class_real returns 0 if passed 0
 fails:C-API Class function rb_cv_get raises a NameError if the class variable is not defined
-fails:C-API Class function rb_define_class_under raises a NameError when given a mismatched class to superclass
 fails:C-API Class function rb_cvar_get raises a NameError if the class variable is not defined

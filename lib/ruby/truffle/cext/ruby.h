@@ -46,10 +46,12 @@ VALUE get_rb_eException(void);
 VALUE get_rb_cObject(void);
 VALUE get_rb_cArray(void);
 VALUE get_rb_cHash(void);
+VALUE get_rb_mKernel(void);
 
 #define rb_cObject get_rb_cObject()
 #define rb_cArray get_rb_cArray()
 #define rb_cHash get_rb_cHash()
+#define rb_mKernel get_rb_mKernel()
 
 VALUE get_rb_eRuntimeError(void);
 
@@ -152,9 +154,12 @@ VALUE rb_define_class_id_under(VALUE module, ID name, VALUE superclass);
 VALUE rb_define_module(const char *name);
 VALUE rb_define_module_under(VALUE module, const char *name);
 
-void rb_define_method(VALUE module, const char *name, void *function, int args);
-void rb_define_private_method(VALUE module, const char *name, void *function, int args);
-void rb_define_module_function(VALUE module, const char *name, void *function, int args);
+void rb_define_method(VALUE module, const char *name, void *function, int argc);
+void rb_define_private_method(VALUE module, const char *name, void *function, int argc);
+void rb_define_protected_method(VALUE module, const char *name, void *function, int argc);
+void rb_define_module_function(VALUE module, const char *name, void *function, int argc);
+void rb_define_global_function(const char *name, void *function, int argc);
+void rb_define_singleton_method(VALUE object, const char *name, void *function, int argc);
 
 #if defined(__cplusplus)
 }

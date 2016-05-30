@@ -38,6 +38,10 @@ module Truffle
       Hash
     end
 
+    def rb_mKernel
+      ::Kernel
+    end
+
     def rb_eRuntimeError
       raise 'not implemented'
     end
@@ -105,6 +109,9 @@ module Truffle
     def rb_define_class_under(mod, name, superclass)
       if mod.const_defined?(name)
         klass = mod.const_get(name)
+        unless klass.class == Class
+          raise TypeError, "#{mod}::#{name} is not a class"
+        end
         if superclass != klass.superclass
           raise TypeError, "superclass mismatch for class #{name}"
         end
@@ -114,12 +121,16 @@ module Truffle
       end
     end
 
-    def rb_define_module(name)
-      Object.const_set(name, Module.new)
-    end
-
     def rb_define_module_under(mod, name)
-      mod.const_set(name, Module.new)
+      if mod.const_defined?(name)
+        val = mod.const_get(name)
+        unless val.class == Module
+          raise TypeError, "#{mod}::#{name} is not a module"
+        end
+        val
+      else
+        mod.const_set(name, Module.new)
+      end
     end
 
     def rb_define_method(mod, name, function, argc)
@@ -130,14 +141,22 @@ module Truffle
     end
 
     def rb_define_private_method(mod, name, function, argc)
-      rb_define_method mod, name, function, argc
+      rb_define_method(mod, name, function, argc)
       mod.send :private, name
     end
 
+    def rb_define_protected_method(mod, name, function, argc)
+      rb_define_method(mod, name, function, argc)
+      mod.send :protected, name
+    end
+
     def rb_define_module_function(mod, name, function, argc)
-      rb_define_method mod, name, function, argc
+      rb_define_method(mod, name, function, argc)
       mod.send :module_function, name
     end
 
+    def rb_define_singleton_method(object, name, function, argc)
+      rb_define_method(object.singleton_class, name, function, argc)
+    end
   end
 end

@@ -40,6 +40,10 @@ VALUE get_rb_cHash() {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cHash");
 }
 
+VALUE get_rb_mKernel() {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_mKernel");
+}
+
 VALUE get_rb_eRuntimeError() {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eRuntimeError");
 }
@@ -268,21 +272,33 @@ VALUE rb_define_class_id_under(VALUE module, ID name, VALUE superclass) {
 }
 
 VALUE rb_define_module(const char *name) {
-  return truffle_invoke(RUBY_CEXT, "rb_define_module", rb_str_new_cstr(name));
+  return rb_define_module_under(rb_cObject, name);
 }
 
 VALUE rb_define_module_under(VALUE module, const char *name) {
-  return truffle_invoke(RUBY_CEXT, "rb_define_module_under", module, name);
+  return truffle_invoke(RUBY_CEXT, "rb_define_module_under", module, rb_str_new_cstr(name));
 }
 
-void rb_define_method(VALUE module, const char *name, void *function, int args) {
-  truffle_invoke(RUBY_CEXT, "rb_define_method", module, rb_str_new_cstr(name), truffle_address_to_function(function), args);
+void rb_define_method(VALUE module, const char *name, void *function, int argc) {
+  truffle_invoke(RUBY_CEXT, "rb_define_method", module, rb_str_new_cstr(name), truffle_address_to_function(function), argc);
 }
 
-void rb_define_private_method(VALUE module, const char *name, void *function, int args) {
-  truffle_invoke(RUBY_CEXT, "rb_define_private_method", module, rb_str_new_cstr(name), truffle_address_to_function(function), args);
+void rb_define_private_method(VALUE module, const char *name, void *function, int argc) {
+  truffle_invoke(RUBY_CEXT, "rb_define_private_method", module, rb_str_new_cstr(name), truffle_address_to_function(function), argc);
 }
 
-void rb_define_module_function(VALUE module, const char *name, void *function, int args) {
-  truffle_invoke(RUBY_CEXT, "rb_define_module_function", module, rb_str_new_cstr(name), truffle_address_to_function(function), args);
+void rb_define_protected_method(VALUE module, const char *name, void *function, int argc) {
+  truffle_invoke(RUBY_CEXT, "rb_define_protected_method", module, rb_str_new_cstr(name), truffle_address_to_function(function), argc);
+}
+
+void rb_define_module_function(VALUE module, const char *name, void *function, int argc) {
+  truffle_invoke(RUBY_CEXT, "rb_define_module_function", module, rb_str_new_cstr(name), truffle_address_to_function(function), argc);
+}
+
+void rb_define_global_function(const char *name, void *function, int argc) {
+  rb_define_module_function(rb_mKernel, name, function, argc);
+}
+
+void rb_define_singleton_method(VALUE object, const char *name, void *function, int argc) {
+  truffle_invoke(RUBY_CEXT, "rb_define_singleton_method", object, rb_str_new_cstr(name), truffle_address_to_function(function), argc);
 }
