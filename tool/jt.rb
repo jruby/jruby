@@ -144,8 +144,13 @@ module Utilities
   end
 
   def self.find_gem(name)
-    ["#{JRUBY_DIR}/lib/ruby/gems/shared/gems", JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
+    ["#{JRUBY_DIR}/lib/ruby/gems/shared/gems"].each do |dir|
       found = Dir.glob("#{dir}/#{name}*").first
+      return found if found
+    end
+    
+    [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
+      found = Dir.glob("#{dir}/#{name}").first
       return found if found
     end
     raise "Can't find the #{name} gem - gem install it in this repository, or put it in the repository directory or its parent"
