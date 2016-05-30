@@ -37,6 +37,7 @@ public class RubyRootNode extends RootNode {
         this.body = body;
 
         body.unsafeSetIsCall();
+        body.unsafeSetIsRoot();
 
         if (context.getCallGraph() != null) {
             context.getCallGraph().registerRootNode(this);

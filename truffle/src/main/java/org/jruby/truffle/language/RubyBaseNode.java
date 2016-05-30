@@ -45,6 +45,7 @@ public abstract class RubyBaseNode extends Node {
 
     private static final int FLAG_NEWLINE = 0;
     private static final int FLAG_CALL = 1;
+    private static final int FLAG_ROOT = 2;
 
     @CompilationFinal private RubyContext context;
     @CompilationFinal private SourceSection sourceSection;
@@ -186,6 +187,10 @@ public abstract class RubyBaseNode extends Node {
         flags |= 1 << FLAG_CALL;
     }
 
+    public void unsafeSetIsRoot() {
+        flags |= 1 << FLAG_ROOT;
+    }
+
     private boolean isNewLine() {
         return ((flags >> FLAG_NEWLINE) & 1) == 1;
     }
@@ -195,11 +200,7 @@ public abstract class RubyBaseNode extends Node {
     }
 
     private boolean isRoot() {
-        Node parent = getParent();
-        while (parent instanceof WrapperNode) {
-            parent = parent.getParent();
-        }
-        return parent instanceof RubyRootNode;
+        return ((flags >> FLAG_ROOT) & 1) == 1;
     }
 
     @Override
