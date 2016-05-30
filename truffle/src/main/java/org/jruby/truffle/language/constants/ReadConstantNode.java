@@ -19,18 +19,19 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
-public class ReadLiteralConstantNode extends RubyNode {
+/** Read a literal constant on a given module: MOD::CONST */
+public class ReadConstantNode extends RubyNode {
 
-    @Child RubyNode moduleNode;
     private final String name;
 
+    @Child RubyNode moduleNode;
     @Child LookupConstantNode lookupConstantNode;
     @Child GetConstantNode getConstantNode;
 
-    public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, String name) {
+    public ReadConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, String name) {
         super(context, sourceSection);
-        this.moduleNode = moduleNode;
         this.name = name;
+        this.moduleNode = moduleNode;
         this.lookupConstantNode = LookupConstantNodeGen.create(false, false);
         this.getConstantNode = GetConstantNode.create();
     }

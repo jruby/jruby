@@ -76,7 +76,7 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
 import org.jruby.truffle.language.arguments.SingleBlockArgNode;
 import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
-import org.jruby.truffle.language.constants.ReadLiteralConstantNode;
+import org.jruby.truffle.language.constants.ReadConstantNode;
 import org.jruby.truffle.language.constants.WriteConstantNode;
 import org.jruby.truffle.language.control.AndNode;
 import org.jruby.truffle.language.control.BreakID;
@@ -1056,7 +1056,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode lhs = node.getLeftNode().accept(this);
 
-        final RubyNode ret = new ReadLiteralConstantNode(context, sourceSection, lhs, name);
+        final RubyNode ret = new ReadConstantNode(context, sourceSection, lhs, name);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1069,7 +1069,7 @@ public class BodyTranslator extends Translator {
 
         final ObjectLiteralNode root = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
 
-        final RubyNode ret = new ReadLiteralConstantNode(context, sourceSection, root, name);
+        final RubyNode ret = new ReadConstantNode(context, sourceSection, root, name);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2627,7 +2627,7 @@ public class BodyTranslator extends Translator {
         final RubyNode moduleNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         return new RubyCallNode(
                 context, sourceSection, "convert",
-                new ReadLiteralConstantNode(context, sourceSection, moduleNode, name),
+                new ReadConstantNode(context, sourceSection, moduleNode, name),
                 null, false, true, new RubyNode[]{ a, b });
     }
 
