@@ -18,9 +18,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.CheckLayoutNode;
 import org.jruby.truffle.language.LexicalScope;
@@ -36,19 +34,18 @@ import org.jruby.truffle.language.control.RaiseException;
         @NodeChild(value = "module", type = RubyNode.class),
         @NodeChild(value = "name", type = RubyNode.class)
 })
-public abstract class LookupConstantNode extends RubyNode {
+public abstract class LookupConstantNode extends RubyNode implements LookupConstantInterface {
 
     private final boolean ignoreVisibility;
     private final boolean lookInObject;
 
+    public static LookupConstantNode create(boolean ignoreVisibility, boolean lookInObject) {
+        return LookupConstantNodeGen.create(ignoreVisibility, lookInObject, null, null);
+    }
+
     @Child CheckLayoutNode checkLayoutNode = new CheckLayoutNode();
 
-    public LookupConstantNode(
-            RubyContext context,
-            SourceSection sourceSection,
-            boolean ignoreVisibility,
-            boolean lookInObject) {
-        super(context, sourceSection);
+    public LookupConstantNode(boolean ignoreVisibility, boolean lookInObject) {
         this.ignoreVisibility = ignoreVisibility;
         this.lookInObject = lookInObject;
     }
@@ -57,6 +54,11 @@ public abstract class LookupConstantNode extends RubyNode {
             VirtualFrame frame,
             Object module,
             String name);
+
+    @Override
+    public RubyConstant lookupConstant(VirtualFrame frame, Object module, String name) {
+        return executeLookupConstant(frame, module, name);
+    }
 
     @Specialization(
             guards = {

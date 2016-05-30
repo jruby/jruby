@@ -1,9 +1,6 @@
 fails:CApiModule rb_define_global_const defines a constant on Object
 fails:CApiModule rb_const_set given a symbol name and a value sets a new constant on a module
 fails:CApiModule rb_const_set given a symbol name and a value sets an existing constant's value
-fails:CApiModule rb_define_module_under creates a new module inside the inner class
-fails:CApiModule rb_define_module_under sets the module name
-fails:CApiModule rb_define_module_under defines a module for an existing Autoload with an extension
 fails:CApiModule rb_define_const given a String name and a value defines a new constant on a module
 fails:CApiModule rb_define_const given a String name and a value sets an existing constant's value
 fails:CApiModule rb_const_defined returns C non-zero if a constant is defined
@@ -27,15 +24,6 @@ fails:CApiModule rb_const_get_at calls #const_missing if the constant is not def
 fails:CApiModule rb_define_alias defines an alias for an existing method
 fails:CApiModule rb_alias defines an alias for an existing method
 fails:CApiModule rb_define_global_function defines a method on Object
-fails:CApiModule rb_define_method defines a method on a class
-fails:CApiModule rb_define_method defines a method on a module
-fails:CApiModule rb_define_module_function defines a module function
-fails:CApiModule rb_define_module_function defines a private instance method
-fails:CApiModule rb_define_private_method defines a private method on a class
-fails:CApiModule rb_define_private_method defines a private method on a module
-fails:CApiModule rb_define_protected_method defines a protected method on a class
-fails:CApiModule rb_define_protected_method defines a protected method on a module
-fails:CApiModule rb_define_singleton_method defines a method on the singleton class
 fails:CApiModule rb_undef_method undef'ines a method on a class
 fails:CApiModule rb_undef_method does not raise exceptions when passed a missing name
 fails:CApiModule rb_undef_method when given a frozen Class raises a RuntimeError when passed a name

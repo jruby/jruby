@@ -262,5 +262,13 @@ describe "The super keyword" do
       b = Super::KeywordArguments::B.new
       b.foo.should == {}
     end
+
+    describe 'when using splat arguments' do
+      it 'passes splat arguments and keyword arguments to the parent' do
+        b = Super::SplatAndKeyword::B.new
+
+        b.foo('bar', baz: true).should == [['bar'], {baz: true}]
+      end
+    end
   end
 end

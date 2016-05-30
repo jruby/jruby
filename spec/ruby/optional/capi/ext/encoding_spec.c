@@ -269,7 +269,7 @@ static VALUE encoding_spec_rb_enc_codepoint_len(VALUE self, VALUE str) {
 }
 #endif
 
-void Init_encoding_spec() {
+void Init_encoding_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiEncodingSpecs", rb_cObject);
 

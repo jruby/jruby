@@ -26,8 +26,8 @@ extern "C" {
 #define xfree free
 #define ALLOC_N(type, n) malloc(sizeof(type) * n)
 
-typedef void *ID;
-typedef void *VALUE;
+typedef void* ID;
+typedef void* VALUE;
 
 // Constants
 
@@ -46,10 +46,12 @@ VALUE get_rb_eException(void);
 VALUE get_rb_cObject(void);
 VALUE get_rb_cArray(void);
 VALUE get_rb_cHash(void);
+VALUE get_rb_mKernel(void);
 
 #define rb_cObject get_rb_cObject()
 #define rb_cArray get_rb_cArray()
 #define rb_cHash get_rb_cHash()
+#define rb_mKernel get_rb_mKernel()
 
 VALUE get_rb_eRuntimeError(void);
 
@@ -72,8 +74,12 @@ VALUE UINT2NUM(unsigned int value);
 VALUE LONG2NUM(long value);
 VALUE LONG2FIX(long value);
 
+ID SYM2ID(VALUE value);
+VALUE ID2SYM(ID value);
+
 // Type checks
 
+int NIL_P(VALUE value);
 int FIXNUM_P(VALUE value);
 
 // Float
@@ -85,13 +91,15 @@ VALUE rb_float_new(double value);
 char *RSTRING_PTR(VALUE string);
 int RSTRING_LEN(VALUE string);
 VALUE rb_intern_str(VALUE string);
-VALUE rb_str_new2(const char *string);
+VALUE rb_str_new_cstr(const char *string);
+#define rb_str_new2 rb_str_new_cstr
 void rb_str_cat(VALUE string, const char *to_concat, long length);
 
 // Symbol
 
 ID rb_intern(const char *string);
-VALUE ID2SYM(ID id);
+ID rb_intern2(const char *string, long length);
+#define rb_intern_const(str) rb_intern2((str), strlen(str))
 
 // Array
 
@@ -141,12 +149,17 @@ void rb_raise(VALUE exception, const char *format, ...);
 // Defining classes, modules and methods
 
 VALUE rb_define_class(const char *name, VALUE superclass);
+VALUE rb_define_class_under(VALUE module, const char *name, VALUE superclass);
+VALUE rb_define_class_id_under(VALUE module, ID name, VALUE superclass);
 VALUE rb_define_module(const char *name);
 VALUE rb_define_module_under(VALUE module, const char *name);
 
-void rb_define_method(VALUE module, const char *name, void *function, int args);
-void rb_define_private_method(VALUE module, const char *name, void *function, int args);
-void rb_define_module_function(VALUE module, const char *name, void *function, int args);
+void rb_define_method(VALUE module, const char *name, void *function, int argc);
+void rb_define_private_method(VALUE module, const char *name, void *function, int argc);
+void rb_define_protected_method(VALUE module, const char *name, void *function, int argc);
+void rb_define_module_function(VALUE module, const char *name, void *function, int argc);
+void rb_define_global_function(const char *name, void *function, int argc);
+void rb_define_singleton_method(VALUE object, const char *name, void *function, int argc);
 
 #if defined(__cplusplus)
 }

@@ -48,12 +48,5 @@ class MSpecScript
   MSpec.enable_feature :continuation_library
   MSpec.enable_feature :fork unless PlatformGuard.windows?
   MSpec.enable_feature :encoding
-
-  # The Readline specs are not enabled by default because the functionality
-  # depends heavily on the underlying library, including whether certain
-  # methods are implemented or not. This makes it extremely difficult to
-  # make the specs consistently pass. Until a suitable scheme to handle
-  # all these issues, the specs will not be enabled by default.
-  #
-  # MSpec.enable_feature :readline
+  MSpec.enable_feature :readline unless PlatformGuard.windows?
 end

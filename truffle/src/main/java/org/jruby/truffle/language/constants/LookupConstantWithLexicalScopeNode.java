@@ -14,22 +14,19 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
-public abstract class LookupConstantWithLexicalScopeNode extends RubyNode {
+public abstract class LookupConstantWithLexicalScopeNode extends RubyNode implements LookupConstantInterface {
 
     private final LexicalScope lexicalScope;
     private final String name;
 
-    public LookupConstantWithLexicalScopeNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope, String name) {
-        super(context, sourceSection);
+    public LookupConstantWithLexicalScopeNode(LexicalScope lexicalScope, String name) {
         this.lexicalScope = lexicalScope;
         this.name = name;
     }
@@ -39,6 +36,11 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode {
     }
 
     public abstract RubyConstant executeLookupConstant(VirtualFrame frame);
+
+    public RubyConstant lookupConstant(VirtualFrame frame, Object module, String name) {
+        assert name == this.name;
+        return executeLookupConstant(frame);
+    }
 
     @Specialization(assumptions = "getUnmodifiedAssumption(getModule())")
     protected RubyConstant lookupConstant(VirtualFrame frame,

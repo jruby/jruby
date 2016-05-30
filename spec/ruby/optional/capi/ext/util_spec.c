@@ -66,7 +66,7 @@ static VALUE util_spec_rb_sourceline(VALUE self) {
 }
 #endif
 
-void Init_util_spec() {
+void Init_util_spec(void) {
   VALUE cls = rb_define_class("CApiUtilSpecs", rb_cObject);
 
 #ifdef HAVE_RB_SCAN_ARGS

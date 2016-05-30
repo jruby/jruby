@@ -17,7 +17,7 @@ VALUE marshal_spec_rb_marshal_load(VALUE self, VALUE data) {
 }
 #endif
 
-void Init_marshal_spec() {
+void Init_marshal_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiMarshalSpecs", rb_cObject);
 

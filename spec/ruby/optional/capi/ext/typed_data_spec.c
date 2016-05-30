@@ -118,7 +118,7 @@ VALUE sws_typed_change_struct(VALUE self, VALUE obj, VALUE new_val) {
   return Qnil;
 }
 
-void Init_typed_data_spec() {
+void Init_typed_data_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiAllocTypedSpecs", rb_cObject);
 
