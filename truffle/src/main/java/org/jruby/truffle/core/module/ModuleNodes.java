@@ -891,7 +891,8 @@ public abstract class ModuleNodes {
 
             RubyConstant constant = ModuleOperations.lookupConstantWithInherit(getContext(), module, name, false, currentNode);
             if (constant == null) {
-                throw new RaiseException(coreExceptions().nameErrorUninitializedConstant(module, name, this));
+                // Call const_missing
+                return getConstantNode.executeGetConstant(frame, module, name, null, lookupConstantNode);
             } else {
                 if (constant.isAutoload()) {
                     loadAutoloadedConstant(frame, constant);
