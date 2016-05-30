@@ -18,42 +18,49 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.literal.ObjectLiteralNode;
 
 public class ReadLiteralConstantNode extends RubyNode {
 
-    @Child private ReadConstantNode readConstantNode;
+    @Child RubyNode moduleNode;
+    private final String name;
+
+    @Child LookupConstantNode lookupConstantNode;
+    @Child GetConstantNode getConstantNode;
 
     public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, String name) {
         super(context, sourceSection);
-        RubyNode nameNode = new ObjectLiteralNode(context, sourceSection, name);
-        this.readConstantNode = new ReadConstantNode(context, sourceSection, false, false, moduleNode, nameNode);
+        this.moduleNode = moduleNode;
+        this.name = name;
+        this.lookupConstantNode = LookupConstantNodeGen.create(false, false);
+        this.getConstantNode = GetConstantNode.create();
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return readConstantNode.execute(frame);
+        final Object module = moduleNode.execute(frame);
+
+        final RubyConstant constant = lookupConstantNode.lookupConstant(frame, module, name);
+
+        return getConstantNode.executeGetConstant(frame, module, name, constant, lookupConstantNode);
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        final String name = (String) readConstantNode.nameNode.execute(frame);
-
         // TODO (eregon, 17 May 2016): We execute moduleNode twice here but we both want to make sure the LHS is defined and get the result value.
         // Possible solution: have a isDefinedAndReturnValue()?
-        Object isModuleDefined = readConstantNode.moduleNode.isDefined(frame);
+        Object isModuleDefined = moduleNode.isDefined(frame);
         if (isModuleDefined == nil()) {
             return nil();
         }
 
-        final Object module = readConstantNode.moduleNode.execute(frame);
+        final Object module = moduleNode.execute(frame);
         if (!RubyGuards.isRubyModule(module)) {
             return nil();
         }
 
         final RubyConstant constant;
         try {
-            constant = readConstantNode.lookupConstantNode.executeLookupConstant(frame, module, name);
+            constant = lookupConstantNode.lookupConstant(frame, module, name);
         } catch (RaiseException e) {
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNameErrorClass()) {
                 // private constant

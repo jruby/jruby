@@ -68,7 +68,8 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.constants.ReadConstantNode;
+import org.jruby.truffle.language.constants.GetConstantNode;
+import org.jruby.truffle.language.constants.LookupConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -96,7 +97,6 @@ import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.IdUtil;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -837,14 +837,11 @@ public abstract class ModuleNodes {
     })
     public abstract static class ConstGetNode extends CoreMethodNode {
 
-        @Child private ReadConstantNode readConstantNode;
         @Child private KernelNodes.RequireNode requireNode;
         @Child private IndirectCallNode indirectCallNode;
 
-        public ConstGetNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.readConstantNode = new ReadConstantNode(context, sourceSection, true, true, null, null);
-        }
+        @Child LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, true);
+        @Child GetConstantNode getConstantNode = GetConstantNode.create();
 
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {
@@ -859,7 +856,7 @@ public abstract class ModuleNodes {
         // Symbol
         @Specialization(guards = { "inherit", "isRubySymbol(name)" })
         public Object getConstant(VirtualFrame frame, DynamicObject module, DynamicObject name, boolean inherit) {
-            return readConstantNode.readConstant(frame, module, Layouts.SYMBOL.getString(name));
+            return getConstant(frame, module, Layouts.SYMBOL.getString(name));
         }
 
         @Specialization(guards = { "!inherit", "isRubySymbol(name)" })
@@ -870,7 +867,7 @@ public abstract class ModuleNodes {
         // String
         @Specialization(guards = { "inherit", "isRubyString(name)", "!isScoped(name)" })
         public Object getConstantString(VirtualFrame frame, DynamicObject module, DynamicObject name, boolean inherit) {
-            return readConstantNode.readConstant(frame, module, name.toString());
+            return getConstant(frame, module, name.toString());
         }
 
         @Specialization(guards = { "!inherit", "isRubyString(name)", "!isScoped(name)" })
@@ -882,6 +879,11 @@ public abstract class ModuleNodes {
         @Specialization(guards = {"isRubyString(fullName)", "isScoped(fullName)"})
         public Object getConstantScoped(DynamicObject module, DynamicObject fullName, boolean inherit) {
             return getConstantScoped(module, fullName.toString(), inherit);
+        }
+
+        private Object getConstant(VirtualFrame frame, Object module, String name) {
+            final RubyConstant constant = lookupConstantNode.lookupConstant(frame, module, name);
+            return getConstantNode.executeGetConstant(frame, module, name, constant, lookupConstantNode);
         }
 
         private Object getConstantNoInherit(VirtualFrame frame, DynamicObject module, String name, Node currentNode) {
