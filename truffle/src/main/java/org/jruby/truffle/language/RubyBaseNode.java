@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
+import com.oracle.truffle.api.instrumentation.InstrumentableFactory.WrapperNode;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -36,7 +37,6 @@ import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
-
 import java.math.BigInteger;
 
 @TypeSystemReference(RubyTypes.class)
@@ -195,7 +195,11 @@ public abstract class RubyBaseNode extends Node {
     }
 
     private boolean isRoot() {
-        return getParent() instanceof RubyRootNode;
+        Node parent = getParent();
+        while (parent instanceof WrapperNode) {
+            parent = parent.getParent();
+        }
+        return parent instanceof RubyRootNode;
     }
 
     @Override
