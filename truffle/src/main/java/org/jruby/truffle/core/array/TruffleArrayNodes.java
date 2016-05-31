@@ -22,7 +22,7 @@ import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 @CoreClass("Truffle::Array")
 public class TruffleArrayNodes {
 
-    @CoreMethod(names = "take_ownership_of_store", onSingleton = true, required = 2)
+    @CoreMethod(names = "steal_storage", onSingleton = true, required = 2)
     public abstract static class TakeOwnershipOfStoreNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "array == other")
