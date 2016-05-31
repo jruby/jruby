@@ -811,7 +811,7 @@ class Array
 
     out = new_reserved size
     if recursively_flatten(self, out, level)
-      replace(out)
+      Truffle::Array.steal_storage(self, out)
       return self
     end
 
@@ -987,7 +987,7 @@ class Array
 
     Truffle.check_frozen
 
-    replace select(&block)
+    Truffle::Array.steal_storage(self, select(&block))
   end
 
   def last(n=undefined)
@@ -1337,7 +1337,7 @@ class Array
     return self if length == 0 || length == 1
 
     ary = rotate(cnt)
-    replace ary
+    Truffle::Array.steal_storage(self, ary)
   end
 
   class SampleRandom
@@ -1467,7 +1467,7 @@ class Array
     Truffle.check_frozen
 
     ary = select(&block)
-    replace ary unless size == ary.size
+    Truffle::Array.steal_storage(self, ary) unless size == ary.size
   end
 
   def set_index(index, ent, fin=undefined)
@@ -1748,7 +1748,7 @@ class Array
 
     return to_enum(:sort_by!) { size } unless block_given?
 
-    replace sort_by(&block)
+    Truffle::Array.steal_storage(self, sort_by(&block))
   end
 
   # Sorts this Array in-place. See #sort.
@@ -2044,7 +2044,7 @@ class Array
       width *= 2
     end
 
-    replace(source) if source != self
+    Truffle::Array.steal_storage(self, source)
 
     self
   end
@@ -2108,7 +2108,7 @@ class Array
       width *= 2
     end
 
-    replace(source) if source != self
+    Truffle::Array.steal_storage(self, source)
 
     self
   end
@@ -2397,7 +2397,9 @@ class Array
   end
 
   def sort!(&block)
-    replace sort(&block)
+    Truffle.check_frozen
+
+    Truffle::Array.steal_storage(self, sort(&block))
   end
   public :sort!
 end
