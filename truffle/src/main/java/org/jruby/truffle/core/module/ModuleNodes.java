@@ -294,12 +294,12 @@ public abstract class ModuleNodes {
 
         @CreateCast("newName")
         public RubyNode coercetNewNameToString(RubyNode newName) {
-            return NameToJavaStringNodeGen.create(null, null, newName);
+            return NameToJavaStringNodeGen.create(newName);
         }
 
         @CreateCast("oldName")
         public RubyNode coerceOldNameToString(RubyNode oldName) {
-            return NameToJavaStringNodeGen.create(null, null, oldName);
+            return NameToJavaStringNodeGen.create(oldName);
         }
 
         @Specialization
@@ -358,7 +358,7 @@ public abstract class ModuleNodes {
         public GenerateAccessorNode(RubyContext context, SourceSection sourceSection, boolean isGetter) {
             super(context, sourceSection);
             this.isGetter = isGetter;
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
+            this.nameToJavaStringNode = NameToJavaStringNode.create();
         }
 
         public abstract DynamicObject executeGenerateAccessor(VirtualFrame frame, DynamicObject module, Object name);
@@ -512,7 +512,7 @@ public abstract class ModuleNodes {
         }
 
         @CreateCast("name") public RubyNode coerceNameToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @CreateCast("filename") public RubyNode coerceFilenameToPath(RubyNode filename) {
@@ -681,7 +681,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -705,7 +705,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -734,7 +734,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -813,7 +813,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @CreateCast("inherit")
@@ -945,7 +945,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -965,7 +965,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @TruffleBoundary
@@ -999,7 +999,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @TruffleBoundary
@@ -1219,7 +1219,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @CreateCast("inherit")
@@ -1424,7 +1424,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -1515,7 +1515,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -1582,7 +1582,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -1604,12 +1604,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "private_constant", rest = true)
     public abstract static class PrivateConstantNode extends CoreMethodArrayArgumentsNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode;
-
-        public PrivateConstantNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
-        }
+        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
 
         @Specialization
         public DynamicObject privateConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
@@ -1624,12 +1619,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "public_constant", rest = true)
     public abstract static class PublicConstantNode extends CoreMethodArrayArgumentsNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode;
-
-        public PublicConstantNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
-        }
+        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
 
         @Specialization
         public DynamicObject publicConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
@@ -1667,7 +1657,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -1688,7 +1678,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @TruffleBoundary
@@ -1719,7 +1709,7 @@ public abstract class ModuleNodes {
 
         public RemoveMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
+            this.nameToJavaStringNode = NameToJavaStringNode.create();
             this.isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             this.methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
@@ -1767,7 +1757,7 @@ public abstract class ModuleNodes {
 
         public UndefMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
+            this.nameToJavaStringNode = NameToJavaStringNode.create();
             this.raiseIfFrozenNode = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
             this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
@@ -1835,7 +1825,7 @@ public abstract class ModuleNodes {
         public SetMethodVisibilityNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
             super(context, sourceSection);
             this.visibility = visibility;
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
+            this.nameToJavaStringNode = NameToJavaStringNode.create();
             this.addMethodNode = AddMethodNodeGen.create(context, sourceSection, true, false, null, null, null);
         }
 

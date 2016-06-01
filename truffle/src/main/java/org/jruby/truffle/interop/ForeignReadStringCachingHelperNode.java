@@ -19,6 +19,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -39,9 +40,9 @@ abstract class ForeignReadStringCachingHelperNode extends RubyNode {
 
     @Specialization(guards = "isStringLike(name)")
     public Object cacheStringLikeAndForward(VirtualFrame frame, DynamicObject receiver, Object name,
-            @Cached("create()") ToJavaStringNode toJavaStringNode,
+            @Cached("create()") NameToJavaStringNode toJavaStringNode,
             @Cached("createNextHelper()") ForeignReadStringCachedHelperNode nextHelper) {
-        String nameAsJavaString = toJavaStringNode.executeToJavaString(name);
+        String nameAsJavaString = toJavaStringNode.executeToJavaString(frame, name);
         boolean isIVar = isIVar(nameAsJavaString);
         return nextHelper.executeStringCachedHelper(frame, receiver, name, nameAsJavaString, isIVar);
     }

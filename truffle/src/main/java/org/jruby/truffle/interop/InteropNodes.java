@@ -34,6 +34,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
@@ -128,14 +129,14 @@ public abstract class InteropNodes {
                 Object[] args,
                 @Cached("args.length") int cachedArgsLength,
                 @Cached("createInvokeNode(cachedArgsLength)") Node invokeNode,
-                        @Cached("create()") ToJavaStringNode toJavaStringNode,
+                        @Cached("create()") NameToJavaStringNode toJavaStringNode,
                 @Cached("create()") BranchProfile exceptionProfile) {
             try {
                 return ForeignAccess.sendInvoke(
                         invokeNode,
                         frame,
                         receiver,
-                        toJavaStringNode.executeToJavaString(identifier),
+                        toJavaStringNode.executeToJavaString(frame, identifier),
                         args);
             } catch (UnsupportedTypeException
                     | ArityException
@@ -615,11 +616,11 @@ public abstract class InteropNodes {
     @CoreMethod(names = "to_java_string", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class InteropToJavaStringNode extends CoreMethodArrayArgumentsNode {
 
-        @Child ToJavaStringNode toJavaStringNode = ToJavaStringNode.create();
+        @Child NameToJavaStringNode toJavaStringNode = NameToJavaStringNode.create();
 
         @Specialization
-        public Object toJavaString(Object value) {
-            return toJavaStringNode.executeToJavaString(value);
+        public Object toJavaString(VirtualFrame frame, Object value) {
+            return toJavaStringNode.executeToJavaString(frame, value);
         }
 
     }

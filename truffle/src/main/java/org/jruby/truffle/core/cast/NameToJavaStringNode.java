@@ -10,55 +10,75 @@
 
 package org.jruby.truffle.core.cast;
 
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.string.StringCachingGuards;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
 /**
  * Take a Symbol or some object accepting #to_str
  * and convert it to a Java String.
  */
-@NodeChild(value = "child", type = RubyNode.class)
+@ImportStatic(StringCachingGuards.class)
+@NodeChild(value = "value", type = RubyNode.class)
 public abstract class NameToJavaStringNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode toStr;
-
-    private final BranchProfile errorProfile = BranchProfile.create();
-
-    public NameToJavaStringNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        toStr = DispatchHeadNodeFactory.createMethodCall(context);
+    public static NameToJavaStringNode create() {
+        return NameToJavaStringNodeGen.create(null);
     }
 
     public abstract String executeToJavaString(VirtualFrame frame, Object name);
 
-    @Specialization
-    public String passThroughJavaString(String string) {
-        return string;
+    @Specialization(guards = { "isRubyString(value)", "ropesEqual(value, cachedRope)" }, limit = "getLimit()")
+    String stringCached(DynamicObject value,
+            @Cached("privatizeRope(value)") Rope cachedRope,
+            @Cached("value.toString()") String convertedString) {
+        return convertedString;
     }
 
-    @Specialization(guards = "isRubySymbol(symbol)")
-    public String coerceRubySymbol(DynamicObject symbol) {
-        return Layouts.SYMBOL.getString(symbol);
+    @Specialization(guards = "isRubyString(value)", contains = "stringCached")
+    public String stringUncached(DynamicObject value) {
+        return StringOperations.getString(getContext(), value);
     }
 
-    @Specialization(guards = "isRubyString(string)")
-    public String coerceRubyString(DynamicObject string) {
-        return string.toString();
+    @Specialization(guards = { "symbol == cachedSymbol", "isRubySymbol(cachedSymbol)" }, limit = "getLimit()")
+    public String symbolCached(DynamicObject symbol,
+            @Cached("symbol") DynamicObject cachedSymbol,
+            @Cached("symbolToString(symbol)") String convertedString) {
+        return convertedString;
+    }
+
+    @Specialization(guards = "isRubySymbol(symbol)", contains = "symbolCached")
+    public String symbolUncached(DynamicObject symbol) {
+        return symbolToString(symbol);
+    }
+
+    @Specialization(guards = "string == cachedString", limit = "getLimit()")
+    public String javaStringCached(String string,
+            @Cached("string") String cachedString) {
+        return cachedString;
+    }
+
+    @Specialization(contains = "javaStringCached")
+    public String javaStringUncached(String value) {
+        return value;
     }
 
     @Specialization(guards = { "!isString(object)", "!isRubySymbol(object)", "!isRubyString(object)" })
-    public String coerceObject(VirtualFrame frame, Object object) {
+    public String coerceObjectToStr(VirtualFrame frame, Object object,
+            @Cached("create()") BranchProfile errorProfile,
+            @Cached("createMethodCall()") CallDispatchHeadNode toStr) {
         final Object coerced;
         try {
             coerced = toStr.call(frame, object, "to_str", null);
@@ -72,10 +92,18 @@ public abstract class NameToJavaStringNode extends RubyNode {
         }
 
         if (RubyGuards.isRubyString(coerced)) {
-            return coerced.toString();
+            return StringOperations.getString(getContext(), (DynamicObject) coerced);
         } else {
             errorProfile.enter();
             throw new RaiseException(coreExceptions().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
         }
+    }
+
+    protected String symbolToString(DynamicObject symbol) {
+        return Layouts.SYMBOL.getString(symbol);
+    }
+
+    protected int getLimit() {
+        return getContext().getOptions().INTEROP_CONVERT_CACHE;
     }
 }

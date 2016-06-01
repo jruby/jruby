@@ -17,10 +17,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
+import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.cast.ToSymbolNode;
 import org.jruby.truffle.core.cast.ToSymbolNodeGen;
-import org.jruby.truffle.interop.ToJavaStringNode;
-import org.jruby.truffle.interop.ToJavaStringNodeGen;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
@@ -35,7 +34,7 @@ public class UncachedDispatchNode extends DispatchNode {
 
     @Child private IndirectCallNode indirectCallNode;
     @Child private ToSymbolNode toSymbolNode;
-    @Child private ToJavaStringNode toJavaStringNode;
+    @Child private NameToJavaStringNode toJavaStringNode;
     @Child private MetaClassNode metaClassNode;
 
     private final BranchProfile methodMissingProfile = BranchProfile.create();
@@ -47,7 +46,7 @@ public class UncachedDispatchNode extends DispatchNode {
         this.missingBehavior = missingBehavior;
         this.indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
         this.toSymbolNode = ToSymbolNodeGen.create(context, null, null);
-        this.toJavaStringNode = ToJavaStringNodeGen.create();
+        this.toJavaStringNode = NameToJavaStringNode.create();
         this.metaClassNode = MetaClassNodeGen.create(context, null, null);
     }
 
@@ -67,7 +66,7 @@ public class UncachedDispatchNode extends DispatchNode {
 
         final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(RubyArguments.getSelf(frame));
 
-        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeToJavaString(name), ignoreVisibility);
+        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeToJavaString(frame, name), ignoreVisibility);
 
         if (method != null) {
             if (dispatchAction == DispatchAction.CALL_METHOD) {

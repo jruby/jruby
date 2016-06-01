@@ -150,7 +150,7 @@ public class CExtNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Child LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, false);
