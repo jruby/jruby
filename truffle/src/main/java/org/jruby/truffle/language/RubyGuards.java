@@ -23,6 +23,14 @@ public abstract class RubyGuards {
         return value instanceof Boolean;
     }
 
+    public static boolean isByte(Object value) {
+        return value instanceof Byte;
+    }
+
+    public static boolean isShort(Object value) {
+        return value instanceof Short;
+    }
+
     public static boolean isInteger(Object value) {
         return value instanceof Integer;
     }

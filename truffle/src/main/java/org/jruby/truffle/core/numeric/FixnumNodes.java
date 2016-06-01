@@ -612,6 +612,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = {
+                "!isByte(b)",
+                "!isShort(b)",
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isRubyBignum(b)" })
