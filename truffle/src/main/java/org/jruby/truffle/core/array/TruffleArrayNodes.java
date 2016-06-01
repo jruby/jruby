@@ -23,15 +23,15 @@ import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 public class TruffleArrayNodes {
 
     @CoreMethod(names = "steal_storage", onSingleton = true, required = 2)
-    public abstract static class TakeOwnershipOfStoreNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class StealStorageNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "array == other")
-        public DynamicObject takeOwnershipOfStoreNoOp(DynamicObject array, DynamicObject other) {
+        public DynamicObject stealStorageNoOp(DynamicObject array, DynamicObject other) {
             return array;
         }
 
         @Specialization(guards = { "array != other", "isRubyArray(other)" })
-        public DynamicObject takeOwnershipOfStore(DynamicObject array, DynamicObject other) {
+        public DynamicObject stealStorage(DynamicObject array, DynamicObject other) {
             final int size = getSize(other);
             final Object store = getStore(other);
             setStoreAndSize(array, store, size);
