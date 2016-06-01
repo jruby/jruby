@@ -477,4 +477,14 @@ public abstract class ThreadNodes {
         }
     }
 
+    @Primitive(name = "thread_get_fiber_locals", unsafe = UnsafeGroup.THREADS)
+    public static abstract class ThreadGetFiberLocalsNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public DynamicObject getFiberLocals(DynamicObject thread) {
+            final DynamicObject fiber = Layouts.THREAD.getFiberManager(thread).getCurrentFiber();
+            return Layouts.FIBER.getFiberLocals(fiber);
+        }
+    }
+
 }

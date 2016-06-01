@@ -44,18 +44,21 @@ import java.util.concurrent.LinkedBlockingQueue;
 @CoreClass("Fiber")
 public abstract class FiberNodes {
 
-    public static DynamicObject createFiber(DynamicObject thread, DynamicObjectFactory factory, String name) {
-        return createFiber(thread, factory, name, false);
+    public static DynamicObject createFiber(RubyContext context, DynamicObject thread, DynamicObjectFactory factory, String name) {
+        return createFiber(context, thread, factory, name, false);
     }
 
     public static DynamicObject createRootFiber(RubyContext context, DynamicObject thread) {
-        return createFiber(thread, context.getCoreLibrary().getFiberFactory(), "root Fiber for Thread", true);
+        return createFiber(context, thread, context.getCoreLibrary().getFiberFactory(), "root Fiber for Thread", true);
     }
 
-    private static DynamicObject createFiber(DynamicObject thread, DynamicObjectFactory factory, String name, boolean isRootFiber) {
+    private static DynamicObject createFiber(RubyContext context, DynamicObject thread, DynamicObjectFactory factory, String name, boolean isRootFiber) {
         assert RubyGuards.isRubyThread(thread);
+        final DynamicObjectFactory instanceFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getObjectClass());
+        final DynamicObject fiberLocals = Layouts.BASIC_OBJECT.createBasicObject(instanceFactory);
         return Layouts.FIBER.createFiber(
                 factory,
+                fiberLocals,
                 isRootFiber,
                 new CountDownLatch(1),
                 new LinkedBlockingQueue<FiberMessage>(2),
@@ -376,7 +379,7 @@ public abstract class FiberNodes {
         public DynamicObject allocate(DynamicObject rubyClass) {
             DynamicObject parent = getContext().getThreadManager().getCurrentThread();
             DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(rubyClass);
-            return createFiber(parent, factory, null);
+            return createFiber(getContext(), parent, factory, null);
         }
 
     }

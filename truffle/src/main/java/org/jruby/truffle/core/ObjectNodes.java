@@ -23,6 +23,10 @@ import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
+import org.jruby.truffle.language.objects.ObjectIVarGetNode;
+import org.jruby.truffle.language.objects.ObjectIVarGetNodeGen;
+import org.jruby.truffle.language.objects.ObjectIVarSetNode;
+import org.jruby.truffle.language.objects.ObjectIVarSetNodeGen;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
@@ -134,6 +138,36 @@ public abstract class ObjectNodes {
             }
 
             return host;
+        }
+
+    }
+
+    @Primitive(name = "object_ivar_get")
+    public abstract static class ObjectIVarGetPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public Object ivarGet(DynamicObject object, DynamicObject name,
+                @Cached("createObjectIVarGetNode()") ObjectIVarGetNode iVarGetNode) {
+            return iVarGetNode.executeIVarGet(object, Layouts.SYMBOL.getString(name));
+        }
+
+        protected ObjectIVarGetNode createObjectIVarGetNode() {
+            return ObjectIVarGetNodeGen.create(false, null, null);
+        }
+
+    }
+
+    @Primitive(name = "object_ivar_set")
+    public abstract static class ObjectIVarSetPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public Object ivarGet(DynamicObject object, DynamicObject name, Object value,
+                @Cached("createObjectIVarSetNode()") ObjectIVarSetNode iVarSetNode) {
+            return iVarSetNode.executeIVarSet(object, Layouts.SYMBOL.getString(name), value);
+        }
+
+        protected ObjectIVarSetNode createObjectIVarSetNode() {
+            return ObjectIVarSetNodeGen.create(false, null, null, null);
         }
 
     }

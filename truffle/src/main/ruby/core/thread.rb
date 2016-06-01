@@ -253,23 +253,35 @@ class Thread
     @randomizer ||= Rubinius::Randomizer.new
   end
 
+  # Fiber-local variables
+
+  def [](name)
+    locals = Truffle.invoke_primitive :thread_get_fiber_locals, self
+    Truffle.invoke_primitive :object_ivar_get, locals, name.to_sym
+  end
+
+  def []=(name, value)
+    Truffle.check_frozen
+    locals = Truffle.invoke_primitive :thread_get_fiber_locals, self
+    Truffle.invoke_primitive :object_ivar_set, locals, name.to_sym, value
+  end
+
+  # Thread-local variables
+
   # TODO (pitr-ch 06-Apr-2016): thread local variables do not have to be synchronized,
   # they are only to protect against non-thread-safe Hash implementation
 
-  def [](symbol)
-    __thread_local_variables_lock { __thread_local_variables[symbol.to_sym] }
+  def thread_variable_get(name)
+    __thread_local_variables_lock { __thread_local_variables[name.to_sym] }
   end
 
-  def []=(symbol, value)
-    __thread_local_variables_lock { __thread_local_variables[symbol.to_sym] = value }
+  def thread_variable_set(name, value)
+    __thread_local_variables_lock { __thread_local_variables[name.to_sym] = value }
   end
 
   def thread_variable?(symbol)
     __thread_local_variables_lock { __thread_local_variables.has_key? symbol.to_sym }
   end
-
-  alias_method :thread_variable_get, :[]
-  alias_method :thread_variable_set, :[]=
 
   LOCK = Mutex.new
 
