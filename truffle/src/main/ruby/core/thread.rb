@@ -256,14 +256,20 @@ class Thread
   # Fiber-local variables
 
   def [](name)
-    locals = Truffle.invoke_primitive :thread_get_fiber_locals, self
-    Truffle.invoke_primitive :object_ivar_get, locals, name.to_sym
+    var = name.to_sym
+    Rubinius.synchronize(self) do
+      locals = Truffle.invoke_primitive :thread_get_fiber_locals, self
+      Truffle.invoke_primitive :object_ivar_get, locals, var
+    end
   end
 
   def []=(name, value)
-    Truffle.check_frozen
-    locals = Truffle.invoke_primitive :thread_get_fiber_locals, self
-    Truffle.invoke_primitive :object_ivar_set, locals, name.to_sym, value
+    var = name.to_sym
+    Rubinius.synchronize(self) do
+      Truffle.check_frozen
+      locals = Truffle.invoke_primitive :thread_get_fiber_locals, self
+      Truffle.invoke_primitive :object_ivar_set, locals, var, value
+    end
   end
 
   # Thread-local variables
