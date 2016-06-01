@@ -19,6 +19,7 @@ require 'json'
 GRAALVM_VERSION = "0.11"
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
+M2_REPO = File.expand_path('~/.m2/repository')
 
 JDEBUG_PORT = 51819
 JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
@@ -454,6 +455,13 @@ module Commands
 
     if args.delete('--server')
       jruby_args += %w[-Xtruffle.instrumentation_server_port=8080]
+    end
+
+    if args.delete('--profile')
+      v = Utilities.truffle_version
+      jruby_args << "-J-Xbootclasspath/a:#{M2_REPO}/com/oracle/truffle/truffle-debug/#{v}/truffle-debug-#{v}.jar"
+      jruby_args << "-J-Dtruffle.profiling.enabled=true"
+      jruby_args << "-Xtruffle.profiler=true"
     end
 
     if args.delete('--igv')
