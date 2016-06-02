@@ -72,7 +72,7 @@ module Utilities
     searches = [
       "#{dir}/../jvmci/jdk*/product/bin/java",
       "#{dir}/../graal-core/mx.imports/binary/jvmci/jdk*/product/bin/java"
-    ]
+    ].map { |path| File.expand_path(path) }
 
     searches.each do |search|
       java = Dir[search].first
