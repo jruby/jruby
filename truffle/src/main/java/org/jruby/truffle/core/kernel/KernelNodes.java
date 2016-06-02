@@ -1461,7 +1461,7 @@ public abstract class KernelNodes {
         }
 
         private String dirname(String path) {
-            int lastSlash = path.lastIndexOf('/');
+            int lastSlash = path.lastIndexOf(File.separatorChar);
             assert lastSlash > 0;
             return path.substring(0, lastSlash);
         }

@@ -671,7 +671,8 @@ module Rubinius
 
     def self.coerce_to_path(obj)
       if object_kind_of?(obj, String)
-        obj
+        # TODO (nirvdrum 02-Jun-16) Revisit when we have more uniform handling of path separator chars.
+        obj.gsub('\\', '/')
       else
         if object_respond_to? obj, :to_path
           obj = obj.to_path
