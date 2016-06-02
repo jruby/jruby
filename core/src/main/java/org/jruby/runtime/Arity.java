@@ -42,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public final class Arity implements Serializable {
     private static final long serialVersionUID = 1L;
-    private static final Map<Integer, Arity> arities = new HashMap<Integer, Arity>();
+    private static final Map<Integer, Arity> arities = new HashMap<>();
     private final int value;
     
     public final static Arity NO_ARGUMENTS = newArity(0);
@@ -112,12 +112,13 @@ public final class Arity implements Serializable {
     }
     
     private static Arity newArity(int value) {
-        Arity result;
-        synchronized (arities) {
-            result = arities.get(value);
-            if (result == null) {
-                result = new Arity(value);
-                arities.put(value, result);
+        Arity result = arities.get(value);
+        if (result == null) {
+            synchronized (arities) {
+                result = arities.get(value);
+                if (result == null) {
+                    arities.put(value, result = new Arity(value));
+                }
             }
         }
         return result;
