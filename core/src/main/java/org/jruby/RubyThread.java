@@ -850,7 +850,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             ts.setCritical(critical);
         }
 
-        return recv.getRuntime().getNil();
+        return runtime.getNil();
     }
 
     @JRubyMethod(meta = true)
@@ -937,7 +937,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if ((value = getThreadLocals().get(getSymbolKey(key))) != null) {
             return value;
         }
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "thread_variable_set", required = 2)
@@ -1150,7 +1150,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             }
         }
 
-        return receiver.getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(required = 1, meta = true)
