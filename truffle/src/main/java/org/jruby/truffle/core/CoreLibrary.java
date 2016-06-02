@@ -95,6 +95,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
 import org.jruby.truffle.language.globals.GlobalVariables;
 import org.jruby.truffle.language.loader.CodeLoader;
+import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.FreezeNode;
@@ -253,7 +254,7 @@ public class CoreLibrary {
             path = path.substring(0, path.length() - 1);
         }
 
-        if (path.startsWith("truffle:")) {
+        if (path.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
             return path;
         }
 
