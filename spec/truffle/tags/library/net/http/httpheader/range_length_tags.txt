@@ -1,3 +1,0 @@
-fails:Net::HTTPHeader#range_length returns the length of the Range represented by the 'Content-Range' header entry
-fails:Net::HTTPHeader#range_length returns nil when there is no 'Content-Range' header entry
-fails:Net::HTTPHeader#range_length raises a Net::HTTPHeaderSyntaxError when the 'Content-Range' has an invalid format

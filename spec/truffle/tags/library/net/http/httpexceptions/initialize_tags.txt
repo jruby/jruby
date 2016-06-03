@@ -1,2 +1,0 @@
-fails:Net::HTTPExceptions#initialize when passed message, response calls super with the passed message
-fails:Net::HTTPExceptions#initialize when passed message, response sets self's response to the passed response

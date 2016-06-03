@@ -1,2 +1,0 @@
-fails:REXML::Attributes#prefixes returns an array with the prefixes of each attribute
-fails:REXML::Attributes#prefixes does not include the default namespace

@@ -1,3 +1,0 @@
-fails:Net::HTTPHeader#content_range returns a Range object that represents the 'Content-Range' header entry
-fails:Net::HTTPHeader#content_range returns nil when there is no 'Content-Range' header entry
-fails:Net::HTTPHeader#content_range raises a Net::HTTPHeaderSyntaxError when the 'Content-Range' has an invalid format

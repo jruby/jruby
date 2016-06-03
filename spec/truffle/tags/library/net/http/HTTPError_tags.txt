@@ -1,2 +1,0 @@
-fails:Net::HTTPError is a subclass of Net::ProtocolError
-fails:Net::HTTPError includes the Net::HTTPExceptions module

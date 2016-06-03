@@ -1,1 +1,0 @@
-fails:Net::HTTPHeader#initialize_http_header when passed Hash initializes the HTTP Header using the passed Hash

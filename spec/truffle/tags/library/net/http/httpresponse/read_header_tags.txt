@@ -1,1 +1,0 @@
-fails:Net::HTTPResponse#read_header returns self

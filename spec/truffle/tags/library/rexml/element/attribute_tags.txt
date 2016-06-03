@@ -1,2 +1,0 @@
-fails:REXML::Element#attribute returns an attribute by name
-fails:REXML::Element#attribute supports attributes inside namespaces

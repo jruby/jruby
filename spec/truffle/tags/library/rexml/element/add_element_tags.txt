@@ -1,1 +1,0 @@
-fails:REXML::Element#add_element adds a child with name

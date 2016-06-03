@@ -1,2 +1,0 @@
-fails:Net::HTTP#trace sends a TRACE request to the passed path and returns the response
-fails:Net::HTTP#trace returns a Net::HTTPResponse
