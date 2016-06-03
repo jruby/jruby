@@ -80,26 +80,20 @@ public class JavaProxy extends RubyObject {
     }
 
     @Override
-    public Object dataGetStruct() {
-        return getJavaObject();
+    public final Object dataGetStruct() {
+        if (javaObject == null) {
+            javaObject = asJavaObject(object);
+        }
+        return javaObject;
     }
 
     @Override
-    public void dataWrapStruct(Object object) {
+    public final void dataWrapStruct(Object object) {
         this.javaObject = (JavaObject) object;
         this.object = javaObject.getValue();
     }
 
     public final Object getObject() {
-        // FIXME: Added this because marshal_spec seemed to reconstitute objects without calling dataWrapStruct
-        // this resulted in object being null after unmarshalling...
-        if (object == null) {
-            if (javaObject == null) {
-                throw getRuntime().newRuntimeError("Java wrapper with no contents: " + this.getMetaClass().getName());
-            } else {
-                object = javaObject.getValue();
-            }
-        }
         return object;
     }
 
@@ -109,15 +103,12 @@ public class JavaProxy extends RubyObject {
 
     public Object unwrap() { return getObject(); }
 
-    private JavaObject getJavaObject() {
-        if (javaObject == null) {
-            javaObject = JavaObject.wrap(getRuntime(), object);
-        }
-        return javaObject;
+    protected JavaObject asJavaObject(final Object object) {
+        return JavaObject.wrap(getRuntime(), object);
     }
 
     @Override
-    public Class getJavaClass() {
+    public Class<?> getJavaClass() {
         return getObject().getClass();
     }
 
