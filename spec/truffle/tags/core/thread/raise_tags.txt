@@ -1,1 +1,0 @@
-fails:Thread#raise on a sleeping thread raises the given exception and the backtrace is the one of the interrupted thread

@@ -16,5 +16,4 @@ fails:Marshal.restore when a class with the same name as the dumped one exists o
 fails:Marshal.restore when called with a proc returns the value of the proc
 fails:Marshal.restore when called with a proc calls the proc for recursively visited data
 fails:Marshal.restore when called with a proc loads an Array with proc
-fails:Marshal.restore for a Hash loads an extended hash object containing a user-marshaled object
 fails:Marshal.restore when a class does not exist in the namespace raises an ArgumentError
