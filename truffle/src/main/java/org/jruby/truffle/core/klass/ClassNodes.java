@@ -26,6 +26,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.kernel.KernelNodes;
+import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.module.ModuleFields;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
@@ -34,6 +36,8 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.objects.SingletonClassNode;
+import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 
 @CoreClass("Class")
 public abstract class ClassNodes {
@@ -258,6 +262,37 @@ public abstract class ClassNodes {
             initialize.call(frame, instance, "initialize", block, args);
             return instance;
         }
+    }
+
+    @CoreMethod(names = "dup", taintFromSelf = true)
+    public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private KernelNodes.CopyNode copyNode;
+        @Child private CallDispatchHeadNode initializeDupNode;
+        @Child private SingletonClassNode singletonClassNode;
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            copyNode = KernelNodesFactory.CopyNodeFactory.create(context, sourceSection, null);
+            initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
+            singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+        }
+
+        @Specialization
+        public DynamicObject dup(VirtualFrame frame, DynamicObject self) {
+            final DynamicObject newObject = copyNode.executeCopy(frame, self);
+            final DynamicObject newObjectMetaClass = singletonClassNode.executeSingletonClass(newObject);
+            final DynamicObject selfMetaClass = Layouts.BASIC_OBJECT.getMetaClass(self);
+
+            assert Layouts.CLASS.getIsSingleton(selfMetaClass);
+            assert Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(newObject));
+
+            Layouts.MODULE.getFields(newObjectMetaClass).initCopy(selfMetaClass); // copies class methods
+            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
+
+            return newObject;
+        }
+
     }
 
     @CoreMethod(names = "initialize", optional = 1, needsBlock = true)
