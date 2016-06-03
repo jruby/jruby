@@ -75,23 +75,9 @@ public abstract class SingletonClassNode extends RubyNode {
         return noSingletonClass();
     }
 
+    // TODO (pitr-ch 03-Jun-2016): add caching
     @Specialization(
-            guards = {
-                    "isRubyClass(rubyClass)",
-                    "rubyClass.getShape() == cachedShape"
-            },
-            limit = "getCacheLimit()"
-    )
-    protected DynamicObject singletonClassClassCached(
-            DynamicObject rubyClass,
-            @Cached("rubyClass.getShape()") Shape cachedShape,
-            @Cached("getSingletonClassForClass(rubyClass)") DynamicObject cachedSingletonClass) {
-        return cachedSingletonClass;
-    }
-
-    @Specialization(
-            guards = "isRubyClass(rubyClass)",
-            contains = "singletonClassClassCached"
+            guards = "isRubyClass(rubyClass)"
     )
     protected DynamicObject singletonClassClassUncached(DynamicObject rubyClass) {
         return getSingletonClassForClass(rubyClass);
