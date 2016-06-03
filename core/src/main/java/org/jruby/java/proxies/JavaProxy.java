@@ -181,7 +181,7 @@ public class JavaProxy extends RubyObject {
      * Create a name/newname map of fields to be exposed as methods.
      */
     private static Map<String, String> getFieldListFromArgs(final IRubyObject[] args) {
-        final Map<String, String> map = new HashMap<String, String>();
+        final HashMap<String, String> map = new HashMap<>(args.length, 1);
         // Get map of all fields we want to define.
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
