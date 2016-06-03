@@ -161,7 +161,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
             this.parentModule = fields.parentModule;
         }
 
-        for (DynamicObject ancestor : fields.ancestors()) {
+        for (DynamicObject ancestor : fields.parentAncestors()) {
             Layouts.MODULE.getFields(ancestor).addDependent(rubyModuleObject);
         }
     }
