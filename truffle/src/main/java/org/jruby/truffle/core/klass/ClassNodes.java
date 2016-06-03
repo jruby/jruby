@@ -112,13 +112,13 @@ public abstract class ClassNodes {
         // Allocator is null here, we cannot create instances of singleton classes.
         assert RubyGuards.isRubyClass(superclass);
         assert attached != null;
-        return ensureSingletonConsistency(context, createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), null, superclass, name, true, attached, true));
+        return ensureItHasSingletonClassCreated(context, createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), null, superclass, name, true, attached, true));
     }
 
     @TruffleBoundary
     public static DynamicObject createInitializedRubyClass(RubyContext context, DynamicObject lexicalParent, DynamicObject superclass, String name) {
         final DynamicObject rubyClass = createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), lexicalParent, superclass, name, false, null, true);
-        ensureSingletonConsistency(context, rubyClass);
+        ensureItHasSingletonClassCreated(context, rubyClass);
         return rubyClass;
     }
 
@@ -177,7 +177,7 @@ public abstract class ClassNodes {
         Layouts.MODULE.getFields(superclass).addDependent(rubyClass);
 
         Layouts.MODULE.getFields(rubyClass).newVersion();
-        ensureSingletonConsistency(context, rubyClass);
+        ensureItHasSingletonClassCreated(context, rubyClass);
 
         DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(superclass);
         factory = Layouts.BASIC_OBJECT.setLogicalClass(factory, rubyClass);
@@ -187,8 +187,8 @@ public abstract class ClassNodes {
         Layouts.CLASS.setSuperclass(rubyClass, superclass);
     }
 
-    public static DynamicObject ensureSingletonConsistency(RubyContext context, DynamicObject rubyClass) {
-        createOneSingletonClass(context, rubyClass);
+    private static DynamicObject ensureItHasSingletonClassCreated(RubyContext context, DynamicObject rubyClass) {
+        getLazyCreatedSingletonClass(context, rubyClass);
         return rubyClass;
     }
 
@@ -196,10 +196,10 @@ public abstract class ClassNodes {
     public static DynamicObject getSingletonClass(RubyContext context, DynamicObject rubyClass) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
-        return ensureSingletonConsistency(context, createOneSingletonClass(context, rubyClass));
+        return ensureItHasSingletonClassCreated(context, getLazyCreatedSingletonClass(context, rubyClass));
     }
 
-    public static DynamicObject createOneSingletonClass(RubyContext context, DynamicObject rubyClass) {
+    private static DynamicObject getLazyCreatedSingletonClass(RubyContext context, DynamicObject rubyClass) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(rubyClass))) {
@@ -210,7 +210,7 @@ public abstract class ClassNodes {
         if (getSuperClass(rubyClass) == null) {
             singletonSuperclass = Layouts.BASIC_OBJECT.getLogicalClass(rubyClass);
         } else {
-            singletonSuperclass = createOneSingletonClass(context, getSuperClass(rubyClass));
+            singletonSuperclass = getLazyCreatedSingletonClass(context, getSuperClass(rubyClass));
         }
 
         String name = String.format("#<Class:%s>", Layouts.MODULE.getFields(rubyClass).getName());
