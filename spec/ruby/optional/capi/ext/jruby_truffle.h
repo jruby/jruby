@@ -413,9 +413,6 @@
 #undef HAVE_RB_TYPE_P
 #undef HAVE_BUILTIN_TYPE
 
-/* Proc */
-#undef HAVE_RB_PROC_NEW
-
 /* Range */
 #undef HAVE_RB_RANGE_NEW
 #undef HAVE_RB_RANGE_VALUES

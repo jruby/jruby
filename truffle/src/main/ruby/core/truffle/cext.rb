@@ -38,6 +38,10 @@ module Truffle
       Hash
     end
 
+    def rb_cProc
+      Proc
+    end
+
     def rb_mKernel
       ::Kernel
     end
@@ -96,6 +100,12 @@ module Truffle
 
     def rb_hash_new
       {}
+    end
+
+    def rb_proc_new(function, value)
+      proc { |*args|
+        Truffle::Interop.execute(function, *args)
+      }
     end
 
     def rb_scan_args

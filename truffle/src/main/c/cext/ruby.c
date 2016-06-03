@@ -40,6 +40,11 @@ VALUE get_rb_cHash() {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cHash");
 }
 
+VALUE get_rb_cProc() {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_cProc");
+}
+
+
 VALUE get_rb_mKernel() {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_mKernel");
 }
@@ -228,16 +233,16 @@ const char* rb_class2name(VALUE module) {
   return RSTRING_PTR(truffle_invoke(module, "name"));
 }
 
+// Proc
+
+VALUE rb_proc_new(void *function, VALUE value) {
+  return truffle_invoke(RUBY_CEXT, "rb_proc_new", truffle_address_to_function(function), value);
+}
+
 // Utilities
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
   return truffle_invoke_i(RUBY_CEXT, "rb_scan_args", argc, argv, format /*, where to get args? */);
-}
-
-// Calls
-
-VALUE rb_funcall(VALUE object, ID name, int argc, ...) {
-  return truffle_invoke(object, name /*, where to get args? */);
 }
 
 // Instance variables

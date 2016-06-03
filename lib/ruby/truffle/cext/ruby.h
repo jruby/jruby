@@ -22,6 +22,8 @@ extern "C" {
 
 #define JRUBY_TRUFFLE 1
 
+#include <truffle.h>
+
 #define xmalloc malloc
 #define xfree free
 #define ALLOC_N(type, n) malloc(sizeof(type) * n)
@@ -40,8 +42,8 @@ VALUE get_rb_eException(void);
 #define Qfalse get_Qfalse()
 #define Qtrue get_Qtrue()
 #define Qnil get_Qnil()
-#define rb_cProc get_rb_cProc();
-#define rb_eException get_rb_eException();
+#define rb_cProc get_rb_cProc()
+#define rb_eException get_rb_eException()
 
 VALUE get_rb_cObject(void);
 VALUE get_rb_cArray(void);
@@ -129,13 +131,17 @@ VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 
 const char* rb_class2name(VALUE module);
 
+// Proc
+
+VALUE rb_proc_new(void *function, VALUE value);
+
 // Utilities
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
 // Calls
 
-VALUE rb_funcall(VALUE object, ID name, int argc, ...);
+#define rb_funcall(object, name, argc, ...) truffle_invoke(object, "__send__", name, ##__VA_ARGS__)
 
 // Instance variables
 
