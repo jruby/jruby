@@ -31,6 +31,8 @@ extern "C" {
 typedef void* ID;
 typedef void* VALUE;
 
+#define NORETURN __attribute__((__noreturn__))
+
 // Constants
 
 VALUE get_Qfalse(void);
@@ -163,7 +165,7 @@ void rb_define_global_const(const char *name, VALUE value);
 
 // Raising exceptions
 
-void rb_raise(VALUE exception, const char *format, ...);
+NORETURN void rb_raise(VALUE exception, const char *format, ...);
 
 // Defining classes, modules and methods
 
