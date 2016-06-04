@@ -1769,13 +1769,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     // so that we can ensure one failing does not affect the others
                     // running.
 
-                    // clean up the key in the selector
-                    try {
-                        if (key != null) key.cancel();
-                        if (currentSelector != null) currentSelector.selectNow();
-                    } catch (Exception e) {
-                        // ignore
-                    }
 
                     // shut down and null out the selector
                     try {
