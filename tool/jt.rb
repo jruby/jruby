@@ -763,13 +763,15 @@ module Commands
     range = samples.max - samples.min
     error = range / 2
     median = samples.min + error
+    human_readable = "#{Utilities.human_size(median)} ± #{Utilities.human_size(error)}"
     if use_json
       puts JSON.generate({
         median: median,
-        error: error
+        error: error,
+        human: human_readable
       })
     else
-      puts "#{Utilities.human_size(median)} ± #{Utilities.human_size(error)}"
+      puts human_readable
     end
   end
 
