@@ -11,6 +11,9 @@ package org.jruby.truffle.core.mutex;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -20,13 +23,13 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.core.cast.DurationToMillisecondsNodeGen;
 import org.jruby.truffle.core.kernel.KernelNodes;
-import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-
 import java.util.concurrent.locks.ReentrantLock;
 
 @CoreClass("Mutex")
@@ -124,36 +127,24 @@ public abstract class MutexNodes {
 
     }
 
+    @NodeChildren({
+            @NodeChild(value = "mutex", type = RubyNode.class),
+            @NodeChild(value = "duration", type = RubyNode.class)
+    })
     @CoreMethod(names = "sleep", optional = 1)
-    public abstract static class SleepNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class SleepNode extends CoreMethodNode {
 
-        private final ConditionProfile durationLessThanZeroProfile = ConditionProfile.createBinaryProfile();
-
-        @Specialization
-        public long sleep(DynamicObject mutex, NotProvided duration) {
-            return doSleepMillis(mutex, Long.MAX_VALUE);
-        }
-
-        @Specialization(guards = "isNil(duration)")
-        public long sleep(DynamicObject mutex, DynamicObject duration) {
-            return sleep(mutex, NotProvided.INSTANCE);
+        @CreateCast("duration")
+        public RubyNode coerceDuration(RubyNode duration) {
+            return DurationToMillisecondsNodeGen.create(duration);
         }
 
         @Specialization
-        public long sleep(DynamicObject mutex, long duration) {
-            return doSleepMillis(mutex, duration * 1000);
-        }
-
-        @Specialization
-        public long sleep(DynamicObject mutex, double duration) {
-            return doSleepMillis(mutex, (long) (duration * 1000.0));
+        public long sleep(DynamicObject mutex, long millis) {
+            return doSleepMillis(mutex, millis);
         }
 
         public long doSleepMillis(DynamicObject mutex, long durationInMillis) {
-            if (durationLessThanZeroProfile.profile(durationInMillis < 0)) {
-                throw new RaiseException(coreExceptions().argumentErrorTimeItervalPositive(this));
-            }
-
             final ReentrantLock lock = Layouts.MUTEX.getLock(mutex);
             final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
 

@@ -53,6 +53,7 @@ import org.jruby.truffle.core.method.MethodNodesFactory;
 import org.jruby.truffle.core.method.UnboundMethodNodesFactory;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
+import org.jruby.truffle.core.mutex.ConditionVariableNodesFactory;
 import org.jruby.truffle.core.mutex.MutexNodesFactory;
 import org.jruby.truffle.core.numeric.BignumNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
@@ -497,6 +498,8 @@ public class CoreLibrary {
         bindingClass = defineClass("Binding");
         bindingFactory = Layouts.BINDING.createBindingShape(bindingClass, bindingClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(bindingClass, bindingFactory);
+        final DynamicObject conditionVariableClass = defineClass("ConditionVariable");
+        Layouts.CLASS.setInstanceFactoryUnsafe(conditionVariableClass, Layouts.CONDITION_VARIABLE.createConditionVariableShape(conditionVariableClass, conditionVariableClass));
         dirClass = defineClass("Dir");
         Layouts.CLASS.setInstanceFactoryUnsafe(dirClass, Layouts.DIR.createDirShape(dirClass, dirClass));
         encodingClass = defineClass("Encoding");
@@ -708,6 +711,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(BindingNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BignumNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ClassNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ConditionVariableNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ExceptionNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(FalseClassNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(FiberNodesFactory.getFactories());

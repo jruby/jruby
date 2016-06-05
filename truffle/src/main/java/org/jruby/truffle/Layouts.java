@@ -38,6 +38,8 @@ import org.jruby.truffle.core.method.UnboundMethodLayout;
 import org.jruby.truffle.core.method.UnboundMethodLayoutImpl;
 import org.jruby.truffle.core.module.ModuleLayout;
 import org.jruby.truffle.core.module.ModuleLayoutImpl;
+import org.jruby.truffle.core.mutex.ConditionVariableLayout;
+import org.jruby.truffle.core.mutex.ConditionVariableLayoutImpl;
 import org.jruby.truffle.core.mutex.MutexLayout;
 import org.jruby.truffle.core.mutex.MutexLayoutImpl;
 import org.jruby.truffle.core.numeric.BignumLayout;
@@ -102,6 +104,7 @@ public abstract class Layouts {
     public static final BindingLayout BINDING = BindingLayoutImpl.INSTANCE;
     public static final ByteArrayLayout BYTE_ARRAY = ByteArrayLayoutImpl.INSTANCE;
     public static final ClassLayout CLASS = ClassLayoutImpl.INSTANCE;
+    public static final ConditionVariableLayout CONDITION_VARIABLE = ConditionVariableLayoutImpl.INSTANCE;
     public static final DirLayout DIR = DirLayoutImpl.INSTANCE;
     public static final EncodingConverterLayout ENCODING_CONVERTER = EncodingConverterLayoutImpl.INSTANCE;
     public static final EncodingLayout ENCODING = EncodingLayoutImpl.INSTANCE;
