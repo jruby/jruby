@@ -104,7 +104,8 @@ metrics: {
   run: [
     [mx, benchmark, allocation],
     [tool/truffle/post-process-results-json.rb, bench-results.json, bench-results-processed.json],
-    [cat, bench-results-processed.json]
+    [cat, bench-results-processed.json],
+    [bench-uploader.py, bench-results-processed.json]
   ]
 }
 
