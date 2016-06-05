@@ -73,7 +73,7 @@ jruby-noindy: {
   environment: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: noindy,
-    JRUBY_OPTS: '-X-T -Xcompile.invokedynamic=false'
+    JRUBY_OPTS: "-X-T -Xcompile.invokedynamic=false"
   }
 }
 
@@ -81,7 +81,7 @@ jruby-indy: {
   environment: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: indy,
-    JRUBY_OPTS: '-X-T -Xcompile.invokedynamic=true'
+    JRUBY_OPTS: "-X-T -Xcompile.invokedynamic=true"
   }
 }
 
