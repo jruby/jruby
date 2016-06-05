@@ -414,11 +414,16 @@ module Commands
 
   def run(*args)
     env_vars = args.first.is_a?(Hash) ? args.shift : {}
+    
     jruby_args = [
       '-X+T',
       "-Xtruffle.core.load_path=#{JRUBY_DIR}/truffle/src/main/ruby",
       '-Xtruffle.graal.warn_unless=false'
     ]
+    
+    if ENV['JRUBY_OPTS'] && ENV['JRUBY_OPTS'].include?('-X-T')
+      jruby_args.delete '-X+T'
+    end
 
     {
       '--asm' => '--graal',
