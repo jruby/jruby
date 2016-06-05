@@ -169,8 +169,8 @@ class AllocationBenchmarkSuite(RubyBenchmarkSuite):
             'benchmark': benchmark,
             'metric.name': 'memory',
             'metric.value': data['median'],
-            'metric.unit': 'B',,
-            'metric.better': 'lower'
+            'metric.unit': 'B',
+            'metric.better': 'lower',
             'extra.metric.error-num': data['error'],
             'extra.metric.human': data['human']
         }
