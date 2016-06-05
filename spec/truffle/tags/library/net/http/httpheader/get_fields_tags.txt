@@ -1,4 +1,0 @@
-fails:Net::HTTPHeader#get_fields when passed key returns an Array containing the values of the header entry with the passed key
-fails:Net::HTTPHeader#get_fields when passed key returns a copy of the header entry values
-fails:Net::HTTPHeader#get_fields when passed key returns nil for non-existing header entries
-fails:Net::HTTPHeader#get_fields when passed key is case-insensitive

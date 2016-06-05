@@ -1,3 +1,0 @@
-fails:Net::HTTP#read_timeout returns the seconds to wait until reading one block
-fails:Net::HTTP#read_timeout= sets the seconds to wait till the connection is open
-fails:Net::HTTP#read_timeout= returns the newly set value

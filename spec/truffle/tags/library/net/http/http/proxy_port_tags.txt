@@ -1,6 +1,0 @@
-fails:Net::HTTP.proxy_port when self is no proxy class returns nil
-fails:Net::HTTP.proxy_port when self is a proxy class returns 80 if no port was set for self's proxy connection
-fails:Net::HTTP.proxy_port when self is a proxy class returns the port for self's proxy connection
-fails:Net::HTTP#proxy_port when self is no proxy class instance returns nil
-fails:Net::HTTP#proxy_port when self is a proxy class instance returns 80 if no port was set for self's proxy connection
-fails:Net::HTTP#proxy_port when self is a proxy class instance returns the port for self's proxy connection

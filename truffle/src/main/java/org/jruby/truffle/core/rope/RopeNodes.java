@@ -189,16 +189,6 @@ public abstract class RopeNodes {
                 }
             }
 
-            // We short-circuit here to avoid the costly process of recalculating information we already know, such as
-            // whether the string has a valid code range.
-            if (isBinaryStringProfile.profile(base.getEncoding() == ASCIIEncoding.INSTANCE)) {
-                if (getContext().getOptions().ROPE_LAZY_SUBSTRINGS) {
-                    return new SubstringRope(base, offset, byteLength, byteLength, CR_VALID);
-                } else {
-                    return new ValidLeafRope(RopeOperations.extractRange(base, offset, byteLength), base.getEncoding(), byteLength);
-                }
-            }
-
             return makeSubstringNon7Bit(base, offset, byteLength);
         }
 

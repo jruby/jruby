@@ -15,17 +15,16 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.core.kernel.KernelNodes.RequireNode;
-import org.jruby.truffle.core.kernel.KernelNodesFactory;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.loader.RequireNode;
 import org.jruby.util.IdUtil;
 
 @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("constant"), @NodeChild("lookupConstantNode") })
@@ -47,8 +46,7 @@ public abstract class GetConstantNode extends RubyNode {
 
     @Specialization(guards = { "constant != null", "constant.isAutoload()" })
     protected Object autoloadConstant(VirtualFrame frame, DynamicObject module, String name, RubyConstant constant, LookupConstantInterface lookupConstantNode,
-            @Cached("createRequireNode()") RequireNode requireNode,
-            @Cached("create()") IndirectCallNode callNode) {
+            @Cached("create()") RequireNode requireNode) {
 
         final DynamicObject path = (DynamicObject) constant.getValue();
 
@@ -56,7 +54,7 @@ public abstract class GetConstantNode extends RubyNode {
         // We remove it first to allow lookup to ignore it and add it back if there was a failure.
         Layouts.MODULE.getFields(constant.getDeclaringModule()).removeConstant(getContext(), this, name);
         try {
-            requireNode.require(frame, path, callNode);
+            requireNode.executeRequire(frame, StringOperations.getString(getContext(), path));
             final RubyConstant resolvedConstant = lookupConstantNode.lookupConstant(frame, module, name);
             return executeGetConstant(frame, module, name, resolvedConstant, lookupConstantNode);
         } catch (RaiseException e) {
@@ -108,10 +106,6 @@ public abstract class GetConstantNode extends RubyNode {
 
     private String formatError(String name) {
         return String.format("wrong constant name %s", name);
-    }
-
-    protected RequireNode createRequireNode() {
-        return KernelNodesFactory.RequireNodeFactory.create(null);
     }
 
     protected boolean isValidConstantName(String name) {

@@ -1,1 +1,0 @@
-fails:Net::HTTPGenericRequest#body_exist? returns true when the response is expected to have a body

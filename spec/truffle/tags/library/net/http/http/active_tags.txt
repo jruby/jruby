@@ -1,3 +1,0 @@
-fails:Net::HTTP#active? returns true when self has been started
-fails:Net::HTTP#active? returns false when self has not been started yet
-fails:Net::HTTP#active? returns false when self has been stopped again

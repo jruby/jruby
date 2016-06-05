@@ -1,2 +1,0 @@
-fails:Net::FTP#resume returns true when self is set to resume uploads/downloads
-fails:Net::FTP#resume= sets self to resume uploads/downloads when set to true

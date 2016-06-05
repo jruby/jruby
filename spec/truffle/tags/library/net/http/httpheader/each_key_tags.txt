@@ -1,2 +1,0 @@
-fails:Net::HTTPHeader#each_key when passed a block yields each header key to the passed block (keys in lower case)
-fails:Net::HTTPHeader#each_key when passed no block returns an Enumerator

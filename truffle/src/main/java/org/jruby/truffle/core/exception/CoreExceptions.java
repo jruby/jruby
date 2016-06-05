@@ -460,9 +460,9 @@ public class CoreExceptions {
         final DynamicObject logicalClass = context.getCoreLibrary().getLogicalClass(receiver);
         final String moduleName = Layouts.MODULE.getFields(logicalClass).getName();
 
-        // e.g. BasicObject does not have to_s
-        final boolean hasToS = ModuleOperations.lookupMethod(logicalClass, "to_s", Visibility.PUBLIC) != null;
-        final Object stringRepresentation = hasToS ? context.send(receiver, "to_s", null) : context.getCoreLibrary().getNilObject();
+        // e.g. BasicObject does not have inspect
+        final boolean hasInspect = ModuleOperations.lookupMethod(logicalClass, "inspect", Visibility.PUBLIC) != null;
+        final Object stringRepresentation = hasInspect ? context.send(receiver, "inspect", null) : context.getCoreLibrary().getNilObject();
 
         return noMethodError(String.format("undefined method `%s' for %s:%s", name, stringRepresentation, moduleName), name, currentNode);
     }

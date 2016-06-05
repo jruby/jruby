@@ -40,6 +40,11 @@ VALUE get_rb_cHash() {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cHash");
 }
 
+VALUE get_rb_cProc() {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_cProc");
+}
+
+
 VALUE get_rb_mKernel() {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_mKernel");
 }
@@ -222,16 +227,22 @@ VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value) {
   return value;
 }
 
+// Class
+
+const char* rb_class2name(VALUE module) {
+  return RSTRING_PTR(truffle_invoke(module, "name"));
+}
+
+// Proc
+
+VALUE rb_proc_new(void *function, VALUE value) {
+  return truffle_invoke(RUBY_CEXT, "rb_proc_new", truffle_address_to_function(function), value);
+}
+
 // Utilities
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
   return truffle_invoke_i(RUBY_CEXT, "rb_scan_args", argc, argv, format /*, where to get args? */);
-}
-
-// Calls
-
-VALUE rb_funcall(VALUE object, ID name, int argc, ...) {
-  return truffle_invoke(object, name /*, where to get args? */);
 }
 
 // Instance variables
@@ -247,8 +258,36 @@ VALUE rb_iv_set(VALUE object, const char *name, VALUE value) {
 
 // Accessing constants
 
-VALUE rb_const_get(VALUE object, ID name) {
-  return truffle_invoke(object, "const_get", name);
+int rb_const_defined(VALUE module, ID name) {
+  return truffle_invoke_b(module, "const_defined?", name);
+}
+
+int rb_const_defined_at(VALUE module, ID name) {
+  return truffle_invoke_b(module, "const_defined?", name, Qfalse);
+}
+
+VALUE rb_const_get(VALUE module, ID name) {
+  return truffle_invoke(module, "const_get", name);
+}
+
+VALUE rb_const_get_at(VALUE module, ID name) {
+  return truffle_invoke(module, "const_get", name, Qfalse);
+}
+
+VALUE rb_const_get_from(VALUE module, ID name) {
+  return truffle_invoke(RUBY_CEXT, "rb_const_get_from", module, name);
+}
+
+VALUE rb_const_set(VALUE module, ID name, VALUE value) {
+  return truffle_invoke(module, "const_set", name, value);
+}
+
+VALUE rb_define_const(VALUE module, const char *name, VALUE value) {
+  return rb_const_set(module, rb_str_new_cstr(name), value);
+}
+
+void rb_define_global_const(const char *name, VALUE value) {
+  rb_define_const(rb_cObject, name, value);
 }
 
 // Raising exceptions
@@ -301,4 +340,20 @@ void rb_define_global_function(const char *name, void *function, int argc) {
 
 void rb_define_singleton_method(VALUE object, const char *name, void *function, int argc) {
   truffle_invoke(RUBY_CEXT, "rb_define_singleton_method", object, rb_str_new_cstr(name), truffle_address_to_function(function), argc);
+}
+
+void rb_define_alias(VALUE module, const char *new_name, const char *old_name) {
+  rb_alias(module, rb_str_new_cstr(new_name), rb_str_new_cstr(old_name));
+}
+
+void rb_alias(VALUE module, ID new_name, ID old_name) {
+  truffle_invoke(RUBY_CEXT, "rb_alias", module, new_name, old_name);
+}
+
+void rb_undef_method(VALUE module, const char *name) {
+  rb_undef(module, rb_str_new_cstr(name));
+}
+
+void rb_undef(VALUE module, ID name) {
+  truffle_invoke(RUBY_CEXT, "rb_undef", module, name);
 }

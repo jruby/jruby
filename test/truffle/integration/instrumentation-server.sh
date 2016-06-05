@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
 PORT=14873
+SLEEP_LINE=4
+
+# Test /stacks
 
 ruby -X+T -Xtruffle.instrumentation_server_port=$PORT test/truffle/integration/instrumentation-server/subject.rb &
 pid=$!
 
-sleep 6
+while [ ! -e ready.txt ]; do
+  sleep 1
+done
 
 while ! (curl -s http://localhost:$PORT/stacks > /dev/null);
 do
@@ -15,7 +21,7 @@ do
   sleep 1
 done
 
-if [[ $(curl -s http://localhost:$PORT/stacks) != *"test/truffle/integration/instrumentation-server/subject.rb:1"* ]]
+if [[ $(curl -s http://localhost:$PORT/stacks) != *"test/truffle/integration/instrumentation-server/subject.rb:$SLEEP_LINE"* ]]
 then
   echo Expected line not found in stacks
   exit 1
@@ -23,12 +29,17 @@ fi
 
 kill -9 $pid || true
 wait $pid || true
+rm ready.txt
 
-( echo backtrace ; echo 20000+1400 ; echo continue ) > in.txt
+# Test /break
+
+( echo backtrace ; echo 20000+1400 ; echo exit ) > in.txt
 ruby -X+T -Xtruffle.instrumentation_server_port=$PORT test/truffle/integration/instrumentation-server/subject.rb < in.txt > out.txt &
 pid=$!
 
-sleep 9
+while [ ! -e ready.txt ]; do
+  sleep 1
+done
 
 while ! (curl -s http://localhost:$PORT/stacks > /dev/null);
 do
@@ -38,14 +49,13 @@ done
 
 curl -s http://localhost:$PORT/break
 
-sleep 3
-kill -9 $pid || true
-wait $pid || true
+# Wait for the script to finish and write the output
+wait $pid
 
 session=$(cat out.txt)
-rm -f in.txt out.txt
+rm -f ready.txt in.txt out.txt
 
-if [[ $session != *"test/truffle/integration/instrumentation-server/subject.rb:1"* ]]
+if [[ $session != *"test/truffle/integration/instrumentation-server/subject.rb:$SLEEP_LINE"* ]]
 then
   echo $session
   echo Expected line not found in backtrace

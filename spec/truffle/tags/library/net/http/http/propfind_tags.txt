@@ -1,2 +1,0 @@
-fails:Net::HTTP#propfind sends an propfind request to the passed path and returns the response
-fails:Net::HTTP#propfind returns a Net::HTTPResponse

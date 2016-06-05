@@ -56,7 +56,8 @@ public class SubstringRope extends Rope {
     @Override
     public String toString() {
         // This should be used for debugging only.
-        return child.toString().substring(offset, offset + byteLength());
+        final byte[] childBytes = RopeOperations.extractRange(child, offset, byteLength());
+        return RopeOperations.decodeUTF8(childBytes, 0, childBytes.length);
     }
 
 }

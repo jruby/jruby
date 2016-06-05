@@ -202,6 +202,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             modifiedScope = true;
             scope.getFlags().add(USES_EVAL);
 
+            // If eval contains a return then a nonlocal may pass through (e.g. def foo; eval "return 1"; end).
+            scope.getFlags().add(CAN_RECEIVE_NONLOCAL_RETURNS);
+
             // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
             // it could be using the closure as a binding -- which means it could be using pretty much any
             // variable from the caller's binding!

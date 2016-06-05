@@ -22,12 +22,16 @@ extern "C" {
 
 #define JRUBY_TRUFFLE 1
 
+#include <truffle.h>
+
 #define xmalloc malloc
 #define xfree free
 #define ALLOC_N(type, n) malloc(sizeof(type) * n)
 
 typedef void* ID;
 typedef void* VALUE;
+
+#define NORETURN __attribute__((__noreturn__))
 
 // Constants
 
@@ -40,8 +44,8 @@ VALUE get_rb_eException(void);
 #define Qfalse get_Qfalse()
 #define Qtrue get_Qtrue()
 #define Qnil get_Qnil()
-#define rb_cProc get_rb_cProc();
-#define rb_eException get_rb_eException();
+#define rb_cProc get_rb_cProc()
+#define rb_eException get_rb_eException()
 
 VALUE get_rb_cObject(void);
 VALUE get_rb_cArray(void);
@@ -125,13 +129,21 @@ VALUE rb_hash_new(void);
 VALUE rb_hash_aref(VALUE hash, VALUE key);
 VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 
+// Class
+
+const char* rb_class2name(VALUE module);
+
+// Proc
+
+VALUE rb_proc_new(void *function, VALUE value);
+
 // Utilities
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
 // Calls
 
-VALUE rb_funcall(VALUE object, ID name, int argc, ...);
+#define rb_funcall(object, name, argc, ...) truffle_invoke(object, "__send__", name, ##__VA_ARGS__)
 
 // Instance variables
 
@@ -140,11 +152,20 @@ VALUE rb_iv_set(VALUE object, const char *name, VALUE value);
 
 // Accessing constants
 
-VALUE rb_const_get(VALUE object, ID name);
+int rb_const_defined(VALUE module, ID name);
+int rb_const_defined_at(VALUE module, ID name);
+
+VALUE rb_const_get(VALUE module, ID name);
+VALUE rb_const_get_at(VALUE module, ID name);
+VALUE rb_const_get_from(VALUE module, ID name);
+
+VALUE rb_const_set(VALUE module, ID name, VALUE value);
+VALUE rb_define_const(VALUE module, const char *name, VALUE value);
+void rb_define_global_const(const char *name, VALUE value);
 
 // Raising exceptions
 
-void rb_raise(VALUE exception, const char *format, ...);
+NORETURN void rb_raise(VALUE exception, const char *format, ...);
 
 // Defining classes, modules and methods
 
@@ -160,6 +181,12 @@ void rb_define_protected_method(VALUE module, const char *name, void *function, 
 void rb_define_module_function(VALUE module, const char *name, void *function, int argc);
 void rb_define_global_function(const char *name, void *function, int argc);
 void rb_define_singleton_method(VALUE object, const char *name, void *function, int argc);
+
+void rb_define_alias(VALUE module, const char *new_name, const char *old_name);
+void rb_alias(VALUE module, ID new_name, ID old_name);
+
+void rb_undef_method(VALUE module, const char *name);
+void rb_undef(VALUE module, ID name);
 
 #if defined(__cplusplus)
 }

@@ -1,2 +1,0 @@
-fails:Module#module_function as a toggle (no arguments) in a Module body affects evaled method definitions also even when outside the eval itself
-fails:Module#module_function as a toggle (no arguments) in a Module body functions normally if both toggle and definitions inside a eval

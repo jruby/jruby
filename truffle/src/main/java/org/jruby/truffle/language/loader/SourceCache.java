@@ -10,8 +10,8 @@
 
 package org.jruby.truffle.language.loader;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.source.Source;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,6 +30,7 @@ public class SourceCache {
         this.loader = loader;
     }
 
+    @TruffleBoundary
     public synchronized Source getSource(String canonicalPath) throws IOException {
         Source source = sources.get(canonicalPath);
 

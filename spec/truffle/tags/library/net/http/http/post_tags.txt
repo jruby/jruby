@@ -1,4 +1,0 @@
-fails:Net::HTTP#post sends an post request to the passed path and returns the response
-fails:Net::HTTP#post returns a Net::HTTPResponse
-fails:Net::HTTP#post when passed a block yields fragments of the response body to the passed block
-fails:Net::HTTP#post when passed a block returns a Net::HTTPResponse

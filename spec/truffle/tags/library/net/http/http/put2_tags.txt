@@ -1,5 +1,0 @@
-fails:Net::HTTP#put2 when passed no block sends a put request to the passed path and returns the response
-fails:Net::HTTP#put2 when passed no block returns a Net::HTTPResponse object
-fails:Net::HTTP#put2 when passed a block sends a put request to the passed path and returns the response
-fails:Net::HTTP#put2 when passed a block yields the response to the passed block
-fails:Net::HTTP#put2 when passed a block returns a Net::HTTPResponse object

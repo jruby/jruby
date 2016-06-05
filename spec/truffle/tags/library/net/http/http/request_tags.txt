@@ -1,2 +1,0 @@
-fails:Net::HTTP#request when passed request_object makes a HTTP Request based on the passed request_object
-fails:Net::HTTP#request when passed request_object and request_body sends the passed request_body when making the HTTP Request

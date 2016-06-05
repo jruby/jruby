@@ -1,9 +1,17 @@
-import mx
 import os
 import subprocess
 import shutil
+import json
+
+import mx
+import mx_benchmark
 
 _suite = mx.suite('jruby')
+
+def jt(args, suite=None, nonZeroIsFatal=True, out=None, err=None, timeout=None, env=None, cwd=None):
+    rubyDir = _suite.dir
+    jt = os.path.join(rubyDir, 'tool', 'jt.rb')
+    mx.run(['ruby', jt] + args, nonZeroIsFatal=nonZeroIsFatal, out=out, err=err, timeout=timeout, env=env, cwd=cwd)
 
 class MavenProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
@@ -108,3 +116,63 @@ class MavenBuildTask(mx.BuildTask):
             return
         rubyDir = _suite.dir
         mx.run_maven(['clean'], nonZeroIsFatal=False, cwd=rubyDir)
+
+class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
+    def group(self):
+        return 'Graal'
+
+    def subgroup(self):
+        return 'jrubytruffle'
+
+    def vmArgs(self, bmSuiteArgs):
+        return mx_benchmark.splitArgs(bmSuiteArgs, bmSuiteArgs)[0]
+
+    def runArgs(self, bmSuiteArgs):
+        return mx_benchmark.splitArgs(bmSuiteArgs, bmSuiteArgs)[1]
+
+    def run(self, benchmarks, bmSuiteArgs):
+        def fixUpResult(result):
+            result.update({
+                'host-vm': os.environ['HOST_VM'],
+                'host-vm-config': os.environ['HOST_VM_CONFIG'],
+                'guest-vm': os.environ['GUEST_VM'],
+                'guest-vm-config': os.environ['GUEST_VM_CONFIG']
+            })
+            return result
+        
+        return [fixUpResult(self.runBenchmark(b, bmSuiteArgs)) for b in benchmarks or self.benchmarks()]
+    
+    def runBenchmark(self, benchmark, bmSuiteArgs):
+        raise NotImplementedError()
+
+allocation_benchmarks = {
+    'hello': ['-e', "puts 'hello'"]
+}
+
+class AllocationBenchmarkSuite(RubyBenchmarkSuite):
+    def name(self):
+        return 'allocation'
+
+    def benchmarks(self):
+        return allocation_benchmarks.keys()
+
+    def runBenchmark(self, benchmark, bmSuiteArgs):
+        out = mx.OutputCapture()
+        
+        options = []
+        
+        jt(['metrics', 'alloc', '--json'] + allocation_benchmarks[benchmark] + bmSuiteArgs, out=out)
+        
+        data = json.loads(out.data)
+        
+        result = {
+            'benchmark': benchmark,
+            'metric.name': 'memory',
+            'metric.value': data['median'],
+            'metric.unit': 'B',
+            'extra.metric.error-num': data['error']
+        }
+        
+        return result
+
+mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())

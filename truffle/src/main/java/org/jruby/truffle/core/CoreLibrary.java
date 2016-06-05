@@ -33,6 +33,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
 import org.jruby.truffle.core.array.ArrayNodes;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
+import org.jruby.truffle.core.array.TruffleArrayNodesFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.binding.BindingNodesFactory;
 import org.jruby.truffle.core.binding.TruffleBindingNodesFactory;
@@ -92,8 +93,10 @@ import org.jruby.truffle.language.TruffleSafeNodesFactory;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
+import org.jruby.truffle.language.globals.GlobalVariableStorage;
 import org.jruby.truffle.language.globals.GlobalVariables;
 import org.jruby.truffle.language.loader.CodeLoader;
+import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.FreezeNode;
@@ -112,7 +115,6 @@ import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
 import org.jruby.util.cli.OutputStrings;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -243,6 +245,9 @@ public class CoreLibrary {
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
 
+    @CompilationFinal private GlobalVariableStorage loadPathStorage;
+    @CompilationFinal private GlobalVariableStorage loadedFeaturesStorage;
+
     private static final Object systemObject = TruffleOptions.AOT ? null : JavaInterop.asTruffleObject(System.class);
 
     public String getCoreLoadPath() {
@@ -252,7 +257,7 @@ public class CoreLibrary {
             path = path.substring(0, path.length() - 1);
         }
 
-        if (path.startsWith("truffle:")) {
+        if (path.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
             return path;
         }
 
@@ -585,6 +590,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Graal");
         defineModule(truffleModule, "Ropes");
         defineModule(truffleModule, "GC");
+        defineModule(truffleModule, "Array");
         final DynamicObject attachments = defineModule(truffleModule, "Attachments");
         defineModule(attachments, "Internal");
         defineModule(truffleModule, "Boot");
@@ -758,6 +764,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(TruffleProcessNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleDebugNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(TruffleBindingNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleArrayNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BCryptNodesFactory.getFactories());
 
         coreMethodNodeManager.allMethodInstalled();
@@ -769,10 +776,14 @@ public class CoreLibrary {
     private void initializeGlobalVariables() {
         GlobalVariables globals = globalVariables;
 
-        globals.put("$LOAD_PATH", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0));
-        globals.put("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), new Object[0], 0));
-        globals.put("$:", globals.getOrDefault("$LOAD_PATH", nilObject));
-        globals.put("$\"", globals.getOrDefault("$LOADED_FEATURES", nilObject));
+        loadPathStorage = globals.put("$LOAD_PATH",
+                Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0));
+        globals.alias("$:", loadPathStorage);
+
+        loadedFeaturesStorage = globals.put("$LOADED_FEATURES",
+                Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0));
+        globals.alias("$\"", loadedFeaturesStorage);
+
         globals.put("$,", nilObject);
         globals.put("$*", argv);
         globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)));
@@ -1200,11 +1211,11 @@ public class CoreLibrary {
     }
 
     public DynamicObject getLoadPath() {
-        return (DynamicObject) globalVariables.getOrDefault("$LOAD_PATH", context.getCoreLibrary().getNilObject());
+        return (DynamicObject) loadPathStorage.value;
     }
 
     public DynamicObject getLoadedFeatures() {
-        return (DynamicObject) globalVariables.getOrDefault("$LOADED_FEATURES", context.getCoreLibrary().getNilObject());
+        return (DynamicObject) loadedFeaturesStorage.value;
     }
 
     public DynamicObject getMainObject() {

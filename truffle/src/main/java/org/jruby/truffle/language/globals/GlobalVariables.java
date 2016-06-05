@@ -50,8 +50,14 @@ public class GlobalVariables {
         }
     }
 
-    public void put(String key, Object value) {
-        getStorage(key).value = value;
+    public GlobalVariableStorage put(String key, Object value) {
+        GlobalVariableStorage storage = getStorage(key);
+        storage.value = value;
+        return storage;
+    }
+
+    public void alias(String name, GlobalVariableStorage storage) {
+        variables.put(name, storage);
     }
 
     public Collection<DynamicObject> dynamicObjectValues() {

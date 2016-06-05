@@ -1,2 +1,0 @@
-fails:Net::HTTPHeader#type_params returns additional 'Content-Type' information as a Hash
-fails:Net::HTTPHeader#type_params returns an empty Hash when no additional 'Content-Type' information is set

@@ -18,12 +18,20 @@ common: {
   }
   
   environment: {
-    CI: "true"
+    CI: "true",
+    JAVA_OPTS: -Xmx2G
   }
   
   setup: ${common-setup}
 
   timelimit: "30:00"
+}
+
+no-graal: {
+  environment: {
+    HOST_VM: server,
+    HOST_VM_CONFIG: default
+  }
 }
 
 graal-core: {
@@ -38,7 +46,9 @@ graal-core: {
   ]
   
   environment: {
-    GRAAL_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java
+    GRAAL_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java,
+    HOST_VM: server,
+    HOST_VM_CONFIG: graal-core
   }
 }
 
@@ -53,6 +63,31 @@ graalvm: {
   
   environment: {
     GRAAL_BIN: "$GRAALVM_DIR/bin/java"
+    HOST_VM: server,
+    HOST_VM_CONFIG: graal-enterprise
+  }
+}
+
+jruby-noindy: {
+  environment: {
+    GUEST_VM: jruby,
+    GUEST_VM_CONFIG: noindy,
+    JRUBY_OPTS: '-X-T -Xcompile.invokedynamic=false'
+  }
+}
+
+jruby-indy: {
+  environment: {
+    GUEST_VM: jruby,
+    GUEST_VM_CONFIG: indy,
+    JRUBY_OPTS: '-X-T -Xcompile.invokedynamic=true'
+  }
+}
+
+jruby-truffle: {
+  environment: {
+    GUEST_VM: jruby,
+    GUEST_VM_CONFIG: truffle,
   }
 }
 

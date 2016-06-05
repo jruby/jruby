@@ -26,6 +26,7 @@ public interface FiberLayout extends BasicObjectLayout {
                                           DynamicObject metaClass);
 
     DynamicObject createFiber(DynamicObjectFactory factory,
+                              DynamicObject fiberLocals,
                               boolean rootFiber,
                               CountDownLatch initializedLatch,
                               BlockingQueue<FiberNodes.FiberMessage> messageQueue,
@@ -35,6 +36,8 @@ public interface FiberLayout extends BasicObjectLayout {
                               @Volatile @Nullable Thread thread);
 
     boolean isFiber(DynamicObject object);
+
+    DynamicObject getFiberLocals(DynamicObject object);
 
     boolean getRootFiber(DynamicObject object);
 

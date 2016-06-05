@@ -402,6 +402,11 @@ public abstract class FloatNodes {
             return a == b;
         }
 
+        @Specialization
+        public boolean equal(double a, boolean b) {
+            return false;
+        }
+
         @Specialization(guards = "isRubyBignum(b)")
         public boolean equal(double a, DynamicObject b) {
             return a == Layouts.BIGNUM.getValue(b).doubleValue();

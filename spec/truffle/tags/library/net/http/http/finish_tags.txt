@@ -1,2 +1,0 @@
-fails:Net::HTTP#finish when self has been started closes the tcp connection
-fails:Net::HTTP#finish when self has not been started yet raises an IOError

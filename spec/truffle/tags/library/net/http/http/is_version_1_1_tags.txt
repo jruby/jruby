@@ -1,1 +1,0 @@
-fails:Net::HTTP.is_version_1_1? returns the state of net/http 1.1 features

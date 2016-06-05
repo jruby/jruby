@@ -15,7 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *  while (true) {
  *      final ReentrantLock lock = fileLocks.getLock(key);
  *
- *      if (!fileLocks.lock(callNode, context, lock);) {
+ *      if (!fileLocks.lock(callNode, context, lock)) {
  *          continue;
  *      }
  *

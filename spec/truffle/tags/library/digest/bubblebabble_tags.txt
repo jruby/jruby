@@ -1,1 +1,0 @@
-fails:Digest.bubblebabble returns a String in the The Bubble Babble Binary Data Encoding format

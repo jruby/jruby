@@ -1,2 +1,0 @@
-fails:REXML::Document#new can use other document context
-fails:REXML::Document#new clones source attributes

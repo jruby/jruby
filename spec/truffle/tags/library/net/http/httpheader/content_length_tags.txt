@@ -1,6 +1,0 @@
-fails:Net::HTTPHeader#content_length returns nil if no 'Content-Length' header entry is set
-fails:Net::HTTPHeader#content_length raises a Net::HTTPHeaderSyntaxError when the 'Content-Length' header entry has an invalid format
-fails:Net::HTTPHeader#content_length returns the value of the 'Content-Length' header entry as an Integer
-fails:Net::HTTPHeader#content_length= removes the 'Content-Length' entry if passed false or nil
-fails:Net::HTTPHeader#content_length= sets the 'Content-Length' entry to the passed value
-fails:Net::HTTPHeader#content_length= sets the 'Content-Length' entry to 0 if the passed value is not valid

@@ -1,2 +1,0 @@
-fails:Net::FTPPermError is an Exception
-fails:Net::FTPPermError is a subclass of Net::FTPError

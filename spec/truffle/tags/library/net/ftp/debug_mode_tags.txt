@@ -1,2 +1,0 @@
-fails:Net::FTP#debug_mode returns true when self is in debug mode
-fails:Net::FTP#debug_mode= sets self into debug mode when passed true

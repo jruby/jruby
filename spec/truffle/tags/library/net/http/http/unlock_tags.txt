@@ -1,2 +1,0 @@
-fails:Net::HTTP#unlock sends an UNLOCK request to the passed path and returns the response
-fails:Net::HTTP#unlock returns a Net::HTTPResponse

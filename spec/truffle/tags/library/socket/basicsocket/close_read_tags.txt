@@ -1,6 +1,0 @@
-fails:Socket::BasicSocket#close_read closes the reading end of the socket
-fails:Socket::BasicSocket#close_read it works on sockets with closed ends
-fails:Socket::BasicSocket#close_read does not close the socket
-fails:Socket::BasicSocket#close_read fully closes the socket if it was already closed for writing
-fails:Socket::BasicSocket#close_read raises IOError on closed socket
-fails:Socket::BasicSocket#close_read returns nil

@@ -44,7 +44,10 @@ public abstract class ObjectGraph {
                 synchronized (visited) {
                     final Deque<DynamicObject> stack = new ArrayDeque<>();
 
+                    // Thread.current
                     stack.add(thread);
+                    // Fiber.current
+                    stack.add(Layouts.THREAD.getFiberManager(thread).getCurrentFiber());
 
                     if (Thread.currentThread() == stoppingThread) {
                         visitContextRoots(context, stack);

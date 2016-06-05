@@ -1,1 +1,0 @@
-fails:Net::HTTPResponse#http_version returns self's http version

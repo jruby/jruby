@@ -38,6 +38,10 @@ module Truffle
       Hash
     end
 
+    def rb_cProc
+      Proc
+    end
+
     def rb_mKernel
       ::Kernel
     end
@@ -96,6 +100,12 @@ module Truffle
 
     def rb_hash_new
       {}
+    end
+
+    def rb_proc_new(function, value)
+      proc { |*args|
+        Truffle::Interop.execute(function, *args)
+      }
     end
 
     def rb_scan_args
@@ -157,6 +167,16 @@ module Truffle
 
     def rb_define_singleton_method(object, name, function, argc)
       rb_define_method(object.singleton_class, name, function, argc)
+    end
+
+    def rb_alias(mod, new_name, old_name)
+      mod.send(:alias_method, new_name, old_name)
+    end
+
+    def rb_undef(mod, name)
+      if mod.frozen? or mod.method_defined?(name)
+        mod.send(:undef_method, name)
+      end
     end
   end
 end

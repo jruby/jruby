@@ -69,7 +69,7 @@ branches:
     - /^ha-feature/
     - ruby-2.4
 
-install: travis_retry tool/travis-install.sh
+install: tool/travis-install.sh
 script: tool/travis-script.sh
 
 notifications:

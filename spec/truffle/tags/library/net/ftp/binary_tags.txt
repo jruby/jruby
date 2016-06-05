@@ -1,2 +1,0 @@
-fails:Net::FTP#binary returns true when self is in binary mode
-fails:Net::FTP#binary= sets self to binary mode when passed true

@@ -1,4 +1,0 @@
-fails:Net::HTTPHeader#[] when passed key returns the value of the header entry with the passed key
-fails:Net::HTTPHeader#[] when passed key is case-insensitive
-fails:Net::HTTPHeader#[] when passed key returns multi-element values joined together
-fails:Net::HTTPHeader#[] when passed key returns nil for non-existing entries
