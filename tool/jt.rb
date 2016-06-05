@@ -214,6 +214,28 @@ module Utilities
   def self.jruby_version
     File.read("#{JRUBY_DIR}/VERSION").strip
   end
+  
+  def self.human_size(bytes)
+    if bytes < 1024
+      "#{bytes} B"
+    elsif bytes < 1000**2
+      "#{(bytes/1024.0).round(2)} KB"
+    elsif bytes < 1000**3
+      "#{(bytes/1024.0**2).round(2)} MB"
+    elsif bytes < 1000**4
+      "#{(bytes/1024.0**3).round(2)} GB"
+    else
+      "#{(bytes/1024.0**4).round(2)} TB"
+    end
+  end
+
+  def self.log(tty_message, full_message)
+    if STDERR.tty?
+      STDERR.print tty_message unless tty_message.nil?
+    else
+      STDERR.print full_message unless full_message.nil?
+    end
+  end
 
 end
 
@@ -730,14 +752,14 @@ module Commands
     use_json = args.delete '--json'
     samples = []
     METRICS_REPS.times do
-      log '.', "sampling\n"
+      Utilities.log '.', "sampling\n"
       r, w = IO.pipe
       run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {err: w, out: w}, :no_print_cmd
       w.close
       samples.push memory_allocated(r.read)
       r.close
     end
-    log "\n", nil
+    Utilities.log "\n", nil
     range = samples.max - samples.min
     error = range / 2
     median = samples.min + error
@@ -747,7 +769,7 @@ module Commands
         error: error
       })
     else
-      puts "#{human_size(median)} ± #{human_size(error)}"
+      puts "#{Utilities.human_size(median)} ± #{Utilities.human_size(error)}"
     end
   end
 
@@ -769,19 +791,19 @@ module Commands
 
   def metrics_minheap(*args)
     heap = 10
-    log '>', "Trying #{heap} MB\n"
+    Utilities.log '>', "Trying #{heap} MB\n"
     until can_run_in_heap(heap, *args)
       heap += 10
-      log '>', "Trying #{heap} MB\n"
+      Utilities.log '>', "Trying #{heap} MB\n"
     end
     heap -= 9
     heap = 1 if heap == 0
     successful = 0
     loop do
       if successful > 0
-        log '?', "Verifying #{heap} MB\n"
+        Utilities.log '?', "Verifying #{heap} MB\n"
       else
-        log '+', "Trying #{heap} MB\n"
+        Utilities.log '+', "Trying #{heap} MB\n"
       end
       if can_run_in_heap(heap, *args)
         successful += 1
@@ -791,7 +813,7 @@ module Commands
         successful = 0
       end
     end
-    log "\n", nil
+    Utilities.log "\n", nil
     puts "#{heap} MB"
   end
 
@@ -802,7 +824,7 @@ module Commands
   def metrics_time(*args)
     samples = []
     METRICS_REPS.times do
-      log '.', "sampling\n"
+      Utilities.log '.', "sampling\n"
       r, w = IO.pipe
       start = Time.now
       run '-Xtruffle.metrics.time=true', *args, {err: w, out: w}, :no_print_cmd
@@ -811,7 +833,7 @@ module Commands
       samples.push get_times(r.read, finish - start)
       r.close
     end
-    log "\n", nil
+    Utilities.log "\n", nil
     samples[0].each_key do |region|
       region_samples = samples.map { |s| s[region] }
       mean = region_samples.inject(:+) / samples.size
@@ -847,20 +869,6 @@ module Commands
     times
   end
 
-  def human_size(bytes)
-    if bytes < 1024
-      "#{bytes} B"
-    elsif bytes < 1000**2
-      "#{(bytes/1024.0).round(2)} KB"
-    elsif bytes < 1000**3
-      "#{(bytes/1024.0**2).round(2)} MB"
-    elsif bytes < 1000**4
-      "#{(bytes/1024.0**3).round(2)} GB"
-    else
-      "#{(bytes/1024.0**4).round(2)} TB"
-    end
-  end
-
   def tarball(*options)
     maven_options, other_options = maven_options(*options)
     mvn *maven_options, '-Pdist'
@@ -869,14 +877,6 @@ module Commands
     FileUtils.copy generated_file, final_file
     FileUtils.copy "#{generated_file}.sha256", "#{final_file}.sha256"
     sh 'test/truffle/tarball.sh', final_file
-  end
-
-  def log(tty_message, full_message)
-    if STDERR.tty?
-      STDERR.print tty_message unless tty_message.nil?
-    else
-      STDERR.print full_message unless full_message.nil?
-    end
   end
 
   def benchmark(*args)
