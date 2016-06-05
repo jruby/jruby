@@ -725,7 +725,7 @@ module Commands
     use_json = args.delete '--json'
     samples = []
     METRICS_REPS.times do
-      log '.', 'sampling'
+      log '.', "sampling\n"
       r, w = IO.pipe
       run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {err: w, out: w}, :no_print_cmd
       w.close
@@ -733,12 +733,16 @@ module Commands
       r.close
     end
     log "\n", nil
-    mean = samples.inject(:+) / samples.size
-    error = samples.max - mean
+    range = samples.max - samples.min
+    error = range / 2
+    median = samples.min + error
     if use_json
-      puts JSON.generate({mean: mean, error: error})
+      puts JSON.generate({
+        median: median,
+        error: error
+      })
     else
-      puts "#{human_size(mean)} ± #{human_size(error)}"
+      puts "#{human_size(median)} ± #{human_size(error)}"
     end
   end
 
@@ -760,19 +764,19 @@ module Commands
 
   def metrics_minheap(*args)
     heap = 10
-    log '>', "Trying #{heap} MB"
+    log '>', "Trying #{heap} MB\n"
     until can_run_in_heap(heap, *args)
       heap += 10
-      log '>', "Trying #{heap} MB"
+      log '>', "Trying #{heap} MB\n"
     end
     heap -= 9
     heap = 1 if heap == 0
     successful = 0
     loop do
       if successful > 0
-        log '?', "Verifying #{heap} MB"
+        log '?', "Verifying #{heap} MB\n"
       else
-        log '+', "Trying #{heap} MB"
+        log '+', "Trying #{heap} MB\n"
       end
       if can_run_in_heap(heap, *args)
         successful += 1
@@ -793,7 +797,7 @@ module Commands
   def metrics_time(*args)
     samples = []
     METRICS_REPS.times do
-      log '.', 'sampling'
+      log '.', "sampling\n"
       r, w = IO.pipe
       start = Time.now
       run '-Xtruffle.metrics.time=true', *args, {err: w, out: w}, :no_print_cmd
@@ -866,7 +870,7 @@ module Commands
     if STDERR.tty?
       STDERR.print tty_message unless tty_message.nil?
     else
-      STDERR.puts full_message unless full_message.nil?
+      STDERR.print full_message unless full_message.nil?
     end
   end
 
