@@ -51,8 +51,6 @@ import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.cast.ToPathNodeGen;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
-import org.jruby.truffle.core.kernel.KernelNodes;
-import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringNodes;
@@ -74,6 +72,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.loader.CodeLoader;
+import org.jruby.truffle.language.loader.RequireNode;
 import org.jruby.truffle.language.methods.AddMethodNode;
 import org.jruby.truffle.language.methods.AddMethodNodeGen;
 import org.jruby.truffle.language.methods.Arity;
@@ -837,8 +836,7 @@ public abstract class ModuleNodes {
     })
     public abstract static class ConstGetNode extends CoreMethodNode {
 
-        @Child private KernelNodes.RequireNode requireNode;
-        @Child private IndirectCallNode indirectCallNode;
+        @Child private RequireNode requireNode;
 
         @Child LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, true);
         @Child GetConstantNode getConstantNode = GetConstantNode.create();
@@ -923,15 +921,11 @@ public abstract class ModuleNodes {
         private void loadAutoloadedConstant(VirtualFrame frame, RubyConstant constant) {
             if (requireNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(null));
+                requireNode = insert(RequireNode.create());
             }
 
-            if (indirectCallNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                indirectCallNode = insert(IndirectCallNode.create());
-            }
-
-            requireNode.require(frame, (DynamicObject) constant.getValue(), indirectCallNode);
+            final String feature = StringOperations.getString(getContext(), (DynamicObject) constant.getValue());
+            requireNode.executeRequire(frame, feature);
         }
 
     }

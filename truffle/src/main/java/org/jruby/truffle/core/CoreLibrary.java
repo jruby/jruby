@@ -93,6 +93,7 @@ import org.jruby.truffle.language.TruffleSafeNodesFactory;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
+import org.jruby.truffle.language.globals.GlobalVariableStorage;
 import org.jruby.truffle.language.globals.GlobalVariables;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
@@ -114,7 +115,6 @@ import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
 import org.jruby.util.cli.OutputStrings;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -244,6 +244,9 @@ public class CoreLibrary {
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
+
+    @CompilationFinal private GlobalVariableStorage loadPathStorage;
+    @CompilationFinal private GlobalVariableStorage loadedFeaturesStorage;
 
     private static final Object systemObject = TruffleOptions.AOT ? null : JavaInterop.asTruffleObject(System.class);
 
@@ -773,10 +776,14 @@ public class CoreLibrary {
     private void initializeGlobalVariables() {
         GlobalVariables globals = globalVariables;
 
-        globals.put("$LOAD_PATH", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0));
-        globals.put("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), new Object[0], 0));
-        globals.put("$:", globals.getOrDefault("$LOAD_PATH", nilObject));
-        globals.put("$\"", globals.getOrDefault("$LOADED_FEATURES", nilObject));
+        loadPathStorage = globals.put("$LOAD_PATH",
+                Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0));
+        globals.alias("$:", loadPathStorage);
+
+        loadedFeaturesStorage = globals.put("$LOADED_FEATURES",
+                Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0));
+        globals.alias("$\"", loadedFeaturesStorage);
+
         globals.put("$,", nilObject);
         globals.put("$*", argv);
         globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)));
@@ -1204,11 +1211,11 @@ public class CoreLibrary {
     }
 
     public DynamicObject getLoadPath() {
-        return (DynamicObject) globalVariables.getOrDefault("$LOAD_PATH", context.getCoreLibrary().getNilObject());
+        return (DynamicObject) loadPathStorage.value;
     }
 
     public DynamicObject getLoadedFeatures() {
-        return (DynamicObject) globalVariables.getOrDefault("$LOADED_FEATURES", context.getCoreLibrary().getNilObject());
+        return (DynamicObject) loadedFeaturesStorage.value;
     }
 
     public DynamicObject getMainObject() {

@@ -100,6 +100,7 @@ import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.FeatureLoader;
+import org.jruby.truffle.language.loader.RequireNode;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -1379,10 +1380,8 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "require", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.LOAD)
-    @NodeChildren({
-            @NodeChild(type = RubyNode.class, value = "feature")
-    })
-    public abstract static class RequireNode extends CoreMethodNode {
+    @NodeChild(type = RubyNode.class, value = "feature")
+    public abstract static class KernelRequireNode extends CoreMethodNode {
 
         @CreateCast("feature")
         public RubyNode coerceFeatureToPath(RubyNode feature) {
@@ -1390,15 +1389,14 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "isRubyString(featureString)")
-        public boolean require(VirtualFrame frame, DynamicObject featureString, @Cached("create()") IndirectCallNode callNode) {
-            CompilerDirectives.bailout("require cannot be compiled but needs the frame");
+        public boolean require(VirtualFrame frame, DynamicObject featureString,
+                @Cached("create()") RequireNode requireNode) {
 
-            final String feature = featureString.toString();
+            String feature = StringOperations.getString(getContext(), featureString);
 
             // Pysch loads either the jar or the so - we need to intercept
             if (feature.equals("psych.so") && callerIs("stdlib/psych.rb")) {
-                getContext().getFeatureLoader().require(frame, "truffle/psych.rb", callNode);
-                return true;
+                feature = "truffle/psych.rb";
             }
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
@@ -1406,9 +1404,10 @@ public abstract class KernelNodes {
                 throw new RaiseException(coreExceptions().loadErrorCannotLoad(feature, this));
             }
 
-            return getContext().getFeatureLoader().require(frame, feature, callNode);
+            return requireNode.executeRequire(frame, feature);
         }
 
+        @TruffleBoundary
         private boolean callerIs(String caller) {
             for (Activation activation : getContext().getCallStack().getBacktrace(this).getActivations()) {
 
@@ -1427,12 +1426,16 @@ public abstract class KernelNodes {
     public abstract static class RequireRelativeNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(feature)")
-        public boolean requireRelative(VirtualFrame frame, DynamicObject feature, @Cached("create()") IndirectCallNode callNode) {
-            CompilerDirectives.bailout("require cannot be compiled but needs the frame");
+        public boolean requireRelative(VirtualFrame frame, DynamicObject feature,
+                @Cached("create()") RequireNode requireNode) {
+            final String featureString = StringOperations.getString(getContext(), feature);
+            final String featurePath = getFullPath(featureString);
 
-            final FeatureLoader featureLoader = getContext().getFeatureLoader();
+            return requireNode.executeRequire(frame, featurePath);
+        }
 
-            final String featureString = feature.toString();
+        @TruffleBoundary
+        private String getFullPath(final String featureString) {
             final String featurePath;
 
             if (featureString.startsWith(SourceLoader.TRUFFLE_SCHEME) || featureString.startsWith(SourceLoader.JRUBY_SCHEME) || new File(featureString).isAbsolute()) {
@@ -1454,10 +1457,7 @@ public abstract class KernelNodes {
 
                 featurePath = dirname(sourcePath) + "/" + featureString;
             }
-
-            featureLoader.require(frame, featurePath, callNode);
-
-            return true;
+            return featurePath;
         }
 
         private String dirname(String path) {

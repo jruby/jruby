@@ -13,15 +13,12 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleNodes;
-import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -32,7 +29,7 @@ public abstract class DefineModuleNode extends RubyNode {
 
     private final String name;
 
-    @Child private IndirectCallNode indirectCallNode;
+    @Child LookupForExistingModuleNode lookupForExistingModuleNode;
 
     private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
     private final BranchProfile errorProfile = BranchProfile.create();
@@ -40,12 +37,11 @@ public abstract class DefineModuleNode extends RubyNode {
     public DefineModuleNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);
         this.name = name;
-        indirectCallNode = IndirectCallNode.create();
     }
 
     @Specialization(guards = "isRubyModule(lexicalParentModule)")
     public Object defineModule(VirtualFrame frame, DynamicObject lexicalParentModule) {
-        final RubyConstant constant = lookupForExistingModule(frame, getContext(), name, lexicalParentModule, indirectCallNode);
+        final RubyConstant constant = lookupForExistingModule(frame, name, lexicalParentModule);
 
         final DynamicObject definingModule;
 
@@ -71,43 +67,12 @@ public abstract class DefineModuleNode extends RubyNode {
         throw new RaiseException(coreExceptions().typeErrorIsNotA(lexicalParentObject, "module", this));
     }
 
-    public static RubyConstant lookupForExistingModule(VirtualFrame frame, RubyContext context, String name,
-                                                       DynamicObject lexicalParent, IndirectCallNode callNode) {
-        CompilerDirectives.bailout("require cannot be compiled but needs the frame");
-
-        RubyConstant constant = Layouts.MODULE.getFields(lexicalParent).getConstant(name);
-
-        final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
-
-        if (constant == null && lexicalParent == objectClass) {
-            for (DynamicObject included : Layouts.MODULE.getFields(objectClass).prependedAndIncludedModules()) {
-                constant = Layouts.MODULE.getFields(included).getConstant(name);
-
-                if (constant != null) {
-                    break;
-                }
-            }
+    private RubyConstant lookupForExistingModule(VirtualFrame frame, String name, DynamicObject lexicalParent) {
+        if (lookupForExistingModuleNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            lookupForExistingModuleNode = insert(LookupForExistingModuleNodeGen.create(null, null));
         }
-
-        if (constant != null && !constant.isVisibleTo(context, LexicalScope.NONE, lexicalParent)) {
-            throw new RaiseException(context.getCoreExceptions().nameErrorPrivateConstant(lexicalParent, name, callNode));
-        }
-
-        // If a constant already exists with this class/module name and it's an autoload module, we have to trigger
-        // the autoload behavior before proceeding.
-
-        if ((constant != null) && constant.isAutoload()) {
-
-            // We know that we're redefining this constant as we're defining a class/module with that name.  We remove
-            // the constant here rather than just overwrite it in order to prevent autoload loops in either the require
-            // call or the recursive execute call.
-
-            Layouts.MODULE.getFields(lexicalParent).removeConstant(context, callNode, name);
-            context.getFeatureLoader().require(frame, constant.getValue().toString(), callNode);
-            return lookupForExistingModule(frame, context, name, lexicalParent, callNode);
-        }
-
-        return constant;
+        return lookupForExistingModuleNode.executeLookupForExistingModule(frame, name, lexicalParent);
     }
 
 }
