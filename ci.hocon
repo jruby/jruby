@@ -18,7 +18,8 @@ common: {
   }
   
   environment: {
-    CI: "true"
+    CI: "true",
+    JAVA_OPTS: -Xmx2G
   }
   
   setup: ${common-setup}
