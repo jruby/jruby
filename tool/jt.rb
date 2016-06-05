@@ -367,6 +367,9 @@ module Commands
     puts 'jt test integration TESTS                      runs the given integration tests'
     puts 'jt test gems                                   tests installing and using gems'
     puts 'jt test cexts                                  run C extension tests (set SULONG_DIR)'
+    puts 'jt test report :language                       build a report on language specs'
+    puts '               :core                               (results go into test/target/mspec-html-report)'
+    puts '               :library'
     puts 'jt tag spec/ruby/language                      tag failing specs in this directory'
     puts 'jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file'
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
@@ -531,6 +534,7 @@ module Commands
       test_cexts if ENV['SULONG_DIR']
     when 'compiler' then test_compiler(*rest)
     when 'cexts' then test_cexts(*rest)
+    when 'report' then test_report(*rest)
     when 'integration' then test_integration({}, *rest)
     when 'gems' then test_gems({}, *rest)
     when 'specs' then test_specs('run', *rest)
@@ -600,6 +604,12 @@ module Commands
     end
   ensure
     File.delete output_file rescue nil
+  end
+  private :test_cexts
+
+  def test_report(component)
+    test 'specs', '--truffle-formatter', component
+    sh 'ant', '-f', 'spec/truffle/buildTestReports.xml'
   end
   private :test_cexts
 
