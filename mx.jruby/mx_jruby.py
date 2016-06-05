@@ -171,7 +171,8 @@ class AllocationBenchmarkSuite(RubyBenchmarkSuite):
             'metric.value': data['median'],
             'metric.unit': 'B',
             'extra.metric.error-num': data['error'],
-            'extra.metric.human': data['human']
+            'extra.metric.human': data['human'],
+            'better': 'lower'
         }
         
         return result
