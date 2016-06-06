@@ -802,6 +802,7 @@ module Commands
   end
 
   def metrics_minheap(*args)
+    use_json = args.delete '--json'
     heap = 10
     Utilities.log '>', "Trying #{heap} MB\n"
     until can_run_in_heap(heap, *args)
@@ -826,7 +827,15 @@ module Commands
       end
     end
     Utilities.log "\n", nil
-    puts "#{heap} MB"
+    human_readable = "#{heap} MB"
+    if use_json
+      puts JSON.generate({
+        min: heap,
+        human: human_readable
+      })
+    else
+      puts human_readable
+    end
   end
 
   def can_run_in_heap(heap, *command)
