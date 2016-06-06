@@ -15,6 +15,7 @@
 
 require 'fileutils'
 require 'json'
+require 'timeout'
 
 GRAALVM_VERSION = "0.11"
 
@@ -241,6 +242,24 @@ end
 
 module ShellUtils
   private
+
+  def system_timeout(timeout, *args)
+    begin
+      pid = Process.spawn(*args)
+    rescue SystemCallError
+      return nil
+    end
+    
+    begin
+      Timeout.timeout timeout do
+        Process.waitpid pid
+        $?.exitstatus == 0
+      end
+    rescue Timeout::Error
+      Process.kill('TERM', pid)
+      nil
+    end
+  end
 
   def raw_sh(*args)
     continue_on_failure = false
