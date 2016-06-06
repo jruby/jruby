@@ -243,15 +243,13 @@ module ShellUtils
   private
 
   def raw_sh(*args)
-    if args.last == :no_print_cmd
-      args.pop
-    else
-      puts "$ #{printable_cmd(args)}"
-    end
     continue_on_failure = false
     if args.last == :continue_on_failure
       args.pop
       continue_on_failure = true
+    end
+    if !args.last.is_a?(Hash) || !args.last.delete(:no_print_cmd)
+      puts "$ #{printable_cmd(args)}"
     end
     result = system(*args)
     if result
@@ -764,7 +762,7 @@ module Commands
     METRICS_REPS.times do
       Utilities.log '.', "sampling\n"
       r, w = IO.pipe
-      run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {err: w, out: w}, :no_print_cmd
+      run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {err: w, out: w, no_print_cmd: true}
       w.close
       samples.push memory_allocated(r.read)
       r.close
@@ -839,7 +837,7 @@ module Commands
   end
 
   def can_run_in_heap(heap, *command)
-    run("-J-Xmx#{heap}M", *command, {err: '/dev/null', out: '/dev/null'}, :continue_on_failure, :no_print_cmd)
+    run("-J-Xmx#{heap}M", *command, {err: '/dev/null', out: '/dev/null', no_print_cmd: true}, :continue_on_failure)
   end
 
   def metrics_time(*args)
@@ -849,7 +847,7 @@ module Commands
       Utilities.log '.', "sampling\n"
       r, w = IO.pipe
       start = Time.now
-      run '-Xtruffle.metrics.time=true', *args, {err: w, out: w}, :no_print_cmd
+      run '-Xtruffle.metrics.time=true', *args, {err: w, out: w, no_print_cmd: true}
       finish = Time.now
       w.close
       samples.push get_times(r.read, finish - start)
