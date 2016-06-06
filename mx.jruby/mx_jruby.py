@@ -199,5 +199,32 @@ class MinHeapBenchmarkSuite(RubyBenchmarkSuite):
             'extra.metric.human': data['human']
         }]
 
+class TimeBenchmarkSuite(RubyBenchmarkSuite):
+    def name(self):
+        return 'time'
+
+    def benchmarks(self):
+        return metrics_benchmarks.keys()
+
+    def runBenchmark(self, benchmark, bmSuiteArgs):
+        out = mx.OutputCapture()
+        
+        options = []
+        
+        jt(['metrics', 'time', '--json'] + metrics_benchmarks[benchmark] + bmSuiteArgs, out=out)
+        
+        data = json.loads(out.data)
+        
+        return [{
+            'benchmark': benchmark,
+            'extra.metric.region': r,
+            'metric.name': 'time',
+            'metric.value': t,
+            'metric.unit': 's',
+            'metric.better': 'lower',
+            'extra.metric.human': data['human']
+        } for r, t in data.items() if r != 'human']
+
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
 mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())
+mx_benchmark.add_bm_suite(TimeBenchmarkSuite())
