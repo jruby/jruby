@@ -133,10 +133,10 @@ class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
     def run(self, benchmarks, bmSuiteArgs):
         def fixUpResult(result):
             result.update({
-                'host-vm': os.environ['HOST_VM'],
-                'host-vm-config': os.environ['HOST_VM_CONFIG'],
-                'guest-vm': os.environ['GUEST_VM'],
-                'guest-vm-config': os.environ['GUEST_VM_CONFIG']
+                'host-vm': os.environ.get('HOST_VM', 'host-vm'),
+                'host-vm-config': os.environ.get('HOST_VM_CONFIG', 'host-vm-config'),
+                'guest-vm': os.environ.get('GUEST_VM', 'guest-vm'),
+                'guest-vm-config': os.environ.get('GUEST_VM_CONFIG', 'guest-vm-config')
             })
             return result
         
