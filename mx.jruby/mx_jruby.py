@@ -145,7 +145,7 @@ class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
     def runBenchmark(self, benchmark, bmSuiteArgs):
         raise NotImplementedError()
 
-allocation_benchmarks = {
+metrics_benchmarks = {
     'hello': ['-e', "puts 'hello'"]
 }
 
@@ -154,14 +154,14 @@ class AllocationBenchmarkSuite(RubyBenchmarkSuite):
         return 'allocation'
 
     def benchmarks(self):
-        return allocation_benchmarks.keys()
+        return metrics_benchmarks.keys()
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         out = mx.OutputCapture()
         
         options = []
         
-        jt(['metrics', 'alloc', '--json'] + allocation_benchmarks[benchmark] + bmSuiteArgs, out=out)
+        jt(['metrics', 'alloc', '--json'] + metrics_benchmarks[benchmark] + bmSuiteArgs, out=out)
         
         data = json.loads(out.data)
         
@@ -177,4 +177,32 @@ class AllocationBenchmarkSuite(RubyBenchmarkSuite):
         
         return result
 
+class MinHeapBenchmarkSuite(RubyBenchmarkSuite):
+    def name(self):
+        return 'minheap'
+
+    def benchmarks(self):
+        return metrics_benchmarks.keys()
+
+    def runBenchmark(self, benchmark, bmSuiteArgs):
+        out = mx.OutputCapture()
+        
+        options = []
+        
+        jt(['metrics', 'minheap', '--json'] + metrics_benchmarks[benchmark] + bmSuiteArgs, out=out)
+        
+        data = json.loads(out.data)
+        
+        result = {
+            'benchmark': benchmark,
+            'metric.name': 'memory',
+            'metric.value': data['min'],
+            'metric.unit': 'MB',
+            'metric.better': 'lower',
+            'extra.metric.human': data['human']
+        }
+        
+        return result
+
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
+mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())
