@@ -269,7 +269,15 @@ module ShellUtils
     if !args.last.is_a?(Hash) || !args.last.delete(:no_print_cmd)
       puts "$ #{printable_cmd(args)}"
     end
-    result = system(*args)
+    timeout = nil
+    if args.last.is_a?(Hash)
+      timeout = args.last.delete(:timeout)
+    end
+    if timeout
+      result = system_timeout(timeout, *args)
+    else
+      result = system(*args)
+    end
     if result
       true
     else
@@ -855,7 +863,7 @@ module Commands
   end
 
   def can_run_in_heap(heap, *command)
-    run("-J-Xmx#{heap}M", *command, {err: '/dev/null', out: '/dev/null', no_print_cmd: true, continue_on_failure: true})
+    run("-J-Xmx#{heap}M", *command, {err: '/dev/null', out: '/dev/null', no_print_cmd: true, continue_on_failure: true, timeout: 60})
   end
 
   def metrics_time(*args)
