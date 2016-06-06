@@ -244,8 +244,7 @@ module ShellUtils
 
   def raw_sh(*args)
     continue_on_failure = false
-    if args.last == :continue_on_failure
-      args.pop
+    if args.last.is_a?(Hash) && args.last.delete(:continue_on_failure)
       continue_on_failure = true
     end
     if !args.last.is_a?(Hash) || !args.last.delete(:no_print_cmd)
@@ -837,7 +836,7 @@ module Commands
   end
 
   def can_run_in_heap(heap, *command)
-    run("-J-Xmx#{heap}M", *command, {err: '/dev/null', out: '/dev/null', no_print_cmd: true}, :continue_on_failure)
+    run("-J-Xmx#{heap}M", *command, {err: '/dev/null', out: '/dev/null', no_print_cmd: true, continue_on_failure: true})
   end
 
   def metrics_time(*args)
