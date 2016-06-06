@@ -857,6 +857,7 @@ module Commands
     end
     Utilities.log "\n", nil
     results = {}
+    results['human'] = ''
     samples[0].each_key do |region|
       region_samples = samples.map { |s| s[region] }
       mean = region_samples.inject(:+) / samples.size
@@ -866,7 +867,9 @@ module Commands
       else
         file = STDOUT
       end
-      file.puts "#{region} #{mean.round(2)} s"
+      human = "#{region} #{mean.round(2)} s\n"
+      file.print human
+      results['human'] += human
     end
     if use_json
       puts JSON.generate(Hash[results.map { |key, value| [key.strip, value] }])
