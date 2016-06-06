@@ -115,6 +115,8 @@ metrics: {
     [mx, benchmark, allocation]
   ] ${post-process-and-upload-results} [
     [mx, benchmark, minheap]
+  ] ${post-process-and-upload-results} [
+    [mx, benchmark, time]
   ] ${post-process-and-upload-results}
 }
 
