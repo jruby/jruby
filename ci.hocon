@@ -120,6 +120,16 @@ metrics: {
   ] ${post-process-and-upload-results}
 }
 
+compiler-metrics: {
+  run: [
+    [mx, benchmark, "allocation:compile-mandelbrot"]
+  ] ${post-process-and-upload-results} [
+    [mx, benchmark, "minheap:compile-mandelbrot"]
+  ] ${post-process-and-upload-results} [
+    [mx, benchmark, "time:compile-mandelbrot"]
+  ] ${post-process-and-upload-results}
+}
+
 builds: [
   {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
   {name: ruby-test-specs-command-line} ${common} ${gate-caps} {run: [${jt} [test, specs, ":command_line"]]},
@@ -136,5 +146,6 @@ builds: [
   
   {name: ruby-test-metrics-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy} ${metrics},
   {name: ruby-test-metrics-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy} ${metrics},
-  {name: ruby-test-metrics-truffle} ${common} ${no-graal} ${bench-caps} ${jruby-truffle} ${metrics}
+  {name: ruby-test-metrics-truffle} ${common} ${no-graal} ${bench-caps} ${jruby-truffle} ${metrics},
+  {name: ruby-test-metrics-compiler} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${compiler-metrics}
 ]

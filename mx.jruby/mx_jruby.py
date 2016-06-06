@@ -129,6 +129,9 @@ class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
 
     def runArgs(self, bmSuiteArgs):
         return mx_benchmark.splitArgs(bmSuiteArgs, bmSuiteArgs)[1]
+    
+    def default_benchmarks(self):
+        return self.benchmarks()
 
     def run(self, benchmarks, bmSuiteArgs):
         def fixUpResult(result):
@@ -140,21 +143,28 @@ class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
             })
             return result
         
-        return [fixUpResult(r) for b in benchmarks or self.benchmarks() for r in self.runBenchmark(b, bmSuiteArgs)]
+        return [fixUpResult(r) for b in benchmarks or self.default_benchmarks() for r in self.runBenchmark(b, bmSuiteArgs)]
     
     def runBenchmark(self, benchmark, bmSuiteArgs):
         raise NotImplementedError()
 
 metrics_benchmarks = {
-    'hello': ['-e', "puts 'hello'"]
+    'hello': ['-e', "puts 'hello'"],
+    'compile-mandelbrot': ['--graal', 'bench/truffle/metrics/mandelbrot.rb']
 }
 
-class AllocationBenchmarkSuite(RubyBenchmarkSuite):
-    def name(self):
-        return 'allocation'
+default_metrics_benchmarks = ['hello']
 
+class MetricsBenchmarkSuite(RubyBenchmarkSuite):
     def benchmarks(self):
         return metrics_benchmarks.keys()
+    
+    def default_benchmarks(self):
+        return default_metrics_benchmarks
+
+class AllocationBenchmarkSuite(MetricsBenchmarkSuite):
+    def name(self):
+        return 'allocation'
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         out = mx.OutputCapture()
@@ -174,12 +184,9 @@ class AllocationBenchmarkSuite(RubyBenchmarkSuite):
             'extra.metric.human': data['human']
         }]
 
-class MinHeapBenchmarkSuite(RubyBenchmarkSuite):
+class MinHeapBenchmarkSuite(MetricsBenchmarkSuite):
     def name(self):
         return 'minheap'
-
-    def benchmarks(self):
-        return metrics_benchmarks.keys()
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         out = mx.OutputCapture()
@@ -199,12 +206,9 @@ class MinHeapBenchmarkSuite(RubyBenchmarkSuite):
             'extra.metric.human': data['human']
         }]
 
-class TimeBenchmarkSuite(RubyBenchmarkSuite):
+class TimeBenchmarkSuite(MetricsBenchmarkSuite):
     def name(self):
         return 'time'
-
-    def benchmarks(self):
-        return metrics_benchmarks.keys()
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         out = mx.OutputCapture()
