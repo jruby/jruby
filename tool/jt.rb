@@ -843,6 +843,7 @@ module Commands
   end
 
   def metrics_time(*args)
+    use_json = args.delete '--json'
     samples = []
     METRICS_REPS.times do
       Utilities.log '.', "sampling\n"
@@ -855,10 +856,20 @@ module Commands
       r.close
     end
     Utilities.log "\n", nil
+    results = {}
     samples[0].each_key do |region|
       region_samples = samples.map { |s| s[region] }
       mean = region_samples.inject(:+) / samples.size
-      puts "#{region} #{mean.round(2)} s"
+      results[region] = mean
+      if use_json
+        file = STDERR
+      else
+        file = STDOUT
+      end
+      file.puts "#{region} #{mean.round(2)} s"
+    end
+    if use_json
+      puts JSON.generate(Hash[results.map { |key, value| [key.strip, value] }])
     end
   end
 
