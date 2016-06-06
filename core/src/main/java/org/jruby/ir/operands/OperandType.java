@@ -5,6 +5,8 @@
  */
 package org.jruby.ir.operands;
 
+import org.jruby.ir.persistence.flat.OperandTypeFlat;
+
 public enum OperandType {
 
     ARRAY("ary", (byte) 'A'),
@@ -12,7 +14,7 @@ public enum OperandType {
     BIGNUM("big", (byte) 'B'),
     BOOLEAN("bool", (byte) 'b'),
     COMPLEX("com", (byte) 'C'),
-    CURRENT_SCOPE("scope", (byte) 's'),
+    CURRENT_SCOPE("scope", (byte) 's', OperandTypeFlat.CURRENT_SCOPE),
     DYNAMIC_SYMBOL("dsym", (byte) 'd'),
     FIXNUM("fix", (byte) 'f'),
     FLOAT("flo", (byte) 'F'),
@@ -27,14 +29,14 @@ public enum OperandType {
     RANGE("rng", (byte) '.'),
     RATIONAL("rat", (byte) 'r'),
     REGEXP("reg", (byte) '/'),
-    SCOPE_MODULE("mod", (byte) '_'),
-    SELF("self", (byte) 'S'),
+    SCOPE_MODULE("mod", (byte) '_', OperandTypeFlat.SCOPE_MODULE),
+    SELF("self", (byte) 'S', OperandTypeFlat.SELF),
     SPLAT("splat", (byte) '*'),
     STANDARD_ERROR("stderr", (byte) 'E'),
-    STRING_LITERAL("str", (byte) '\''),
+    STRING_LITERAL("str", (byte) '\'', OperandTypeFlat.STRING_LITERAL),
     SVALUE("sval", (byte) 'V'),
     SYMBOL("sym", (byte) ':'),
-    TEMPORARY_VARIABLE("reg", (byte) 't'),
+    TEMPORARY_VARIABLE("reg", (byte) 't', OperandTypeFlat.TEMPORARY_VARIABLE),
     UNBOXED_BOOLEAN("rawbool", (byte) 'v'),
     UNBOXED_FIXNUM("rawfix", (byte) 'j'),
     UNBOXED_FLOAT("rawflo", (byte) 'J'),
@@ -49,15 +51,38 @@ public enum OperandType {
 
     private final String shortName;
     private final byte coded;
+    private final byte flat;
     private static final OperandType[] byteToOperand = new OperandType[256];
 
-    OperandType(String shortName, byte coded) {
+    private static final OperandType[] FLAT_MAP = new OperandType[OperandType.values().length];
+
+    static {
+        for (OperandType opType : OperandType.values()) {
+            if (opType.flat == -1) continue;
+            FLAT_MAP[opType.flat] = opType;
+        }
+    }
+
+    public static OperandType flatMap(byte flat) {
+        return FLAT_MAP[flat];
+    }
+
+    OperandType(String shortName, byte coded, byte flat) {
         this.shortName = shortName;
         this.coded = coded;
+        this.flat = flat;
+    }
+
+    OperandType(String shortName, byte coded) {
+        this(shortName, coded, (byte) -1);
     }
 
     public byte getCoded() {
         return coded;
+    }
+
+    public byte getFlat() {
+        return flat;
     }
 
     @Override

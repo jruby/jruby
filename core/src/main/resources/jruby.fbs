@@ -1,0 +1,32 @@
+namespace org.jruby.ir.persistence.flat;
+
+table IRScopeFlat {
+    name:string;
+    //lexicalParent:IRScopeFlat;
+    nestedClosures:[IRClosureFlat];
+    lexicalChildren:[IRScopeFlat];
+    instrs:[InstrFlat];
+}
+
+table IRClosureFlat {
+    scope:IRScopeFlat;
+}
+
+enum OperationFlat : short {
+    COPY, RECEIVE_SELF, LINE_NUMBER, CALL_1_OBJ, RETURN, LOAD_IMPLICIT_CLOSURE, LOAD_FRAME_CLOSURE
+}
+
+table InstrFlat {
+    operation:OperationFlat;
+    operands:[OperandFlat];
+}
+
+enum OperandTypeFlat : byte {
+    TEMPORARY_VARIABLE, CURRENT_SCOPE, SCOPE_MODULE, STRING_LITERAL, SELF
+}
+
+table OperandFlat {
+    operandType:OperandTypeFlat;
+}
+
+root_type IRScopeFlat;

@@ -1,5 +1,7 @@
 package org.jruby.ir;
 
+import org.jruby.ir.persistence.flat.OperationFlat;
+
 class OpFlags {
     final static int f_has_side_effect     = 0x00001; // Used by analyses
     final static int f_can_raise_exception = 0x00002; // Used by analyses
@@ -42,7 +44,7 @@ public enum Operation {
     B_FALSE(OpFlags.f_is_jump_or_branch),
 
     /** argument receive in methods and blocks **/
-    RECV_SELF(0),
+    RECV_SELF(0, OperationFlat.RECEIVE_SELF),
     RECV_PRE_REQD_ARG(OpFlags.f_is_arg_receive),
     RECV_POST_REQD_ARG(OpFlags.f_is_arg_receive),
     RECV_KW_ARG(OpFlags.f_is_arg_receive),
@@ -55,7 +57,7 @@ public enum Operation {
 
     /** Instruction to reify an passed-in block to a Proc for def foo(&b) */
     REIFY_CLOSURE(0),
-    LOAD_FRAME_CLOSURE(0),
+    LOAD_FRAME_CLOSURE(0, OperationFlat.LOAD_FRAME_CLOSURE),
 
     /* By default, call instructions cannot be deleted even if their results
      * aren't used by anyone unless we know more about what the call is,
@@ -74,7 +76,7 @@ public enum Operation {
     /* specialized calls */
     CALL_1F(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_1D(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
-    CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception, OperationFlat.CALL_1_OBJ),
     CALL_1OB(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_0O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     NORESULT_CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
@@ -88,7 +90,7 @@ public enum Operation {
     YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
 
     /** returns -- returns unwind stack, etc. */
-    RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
+    RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return, OperationFlat.RETURN),
     /* These two insructions use exceptions to exit closures
      * BREAK is a return because it can only be used within closures
      * and the net result is to return from the closure. */
@@ -138,7 +140,7 @@ public enum Operation {
     PUT_FIELD(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
 
     /** debugging ops **/
-    LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
+    LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op, OperationFlat.LINE_NUMBER),
     TRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
 
     /** JRuby-impl instructions **/
@@ -156,7 +158,7 @@ public enum Operation {
     CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
     CHECK_FOR_LJE(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     CLASS_VAR_MODULE(0),
-    COPY(0),
+    COPY(0, OperationFlat.COPY),
     GET_ENCODING(0),
     MASGN_OPT(0),
     MASGN_REQD(0),
@@ -227,10 +229,29 @@ public enum Operation {
     PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception);
 
     public final OpClass opClass;
-    private int flags;
+    private final int flags;
+    private final short flat;
+
+    private static final Operation[] FLAT_MAP = new Operation[Operation.values().length];
+
+    static {
+        for (Operation op : Operation.values()) {
+            if (op.flat == -1) continue;
+            FLAT_MAP[op.flat] = op;
+        }
+    }
+
+    public static Operation flatMap(short flat) {
+        return FLAT_MAP[flat];
+    }
 
     Operation(int flags) {
+        this(flags, (short) -1);
+    }
+
+    Operation(int flags, short flat) {
         this.flags = flags;
+        this.flat = flat;
 
         if (this.isArgReceive()) {
             this.opClass = OpClass.ARG_OP;
@@ -249,6 +270,10 @@ public enum Operation {
         } else {
             this.opClass = OpClass.OTHER_OP;
         }
+    }
+
+    public short getFlat() {
+        return flat;
     }
 
     public boolean transfersControl() {
