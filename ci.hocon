@@ -100,13 +100,18 @@ bench-caps: {
   capabilities: [x52, linux, amd64, bench]
 }
 
+post-process-and-upload-results: [
+  [tool/truffle/post-process-results-json.rb, bench-results.json, bench-results-processed.json],
+  [cat, bench-results-processed.json],
+  [bench-uploader.py, bench-results-processed.json]
+]
+
 metrics: {
   run: [
-    [mx, benchmark, allocation],
-    [tool/truffle/post-process-results-json.rb, bench-results.json, bench-results-processed.json],
-    [cat, bench-results-processed.json],
-    [bench-uploader.py, bench-results-processed.json]
-  ]
+    [mx, benchmark, allocation]
+  ] ${post-process-and-upload-results} [
+    [mx, benchmark, minheap]
+  ] ${post-process-and-upload-results}
 }
 
 builds: [
