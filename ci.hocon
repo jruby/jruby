@@ -100,6 +100,10 @@ bench-caps: {
   capabilities: [x52, linux, amd64, bench, post-merge]
 }
 
+daily-bench-caps: {
+  capabilities: [x52, linux, amd64, daily]
+}
+
 post-process-and-upload-results: [
   [tool/truffle/post-process-results-json.rb, bench-results.json, bench-results-processed.json],
   [cat, bench-results-processed.json],
@@ -128,7 +132,7 @@ builds: [
   {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},
   {name: ruby-test-compiler-graalvm} ${common} ${graalvm} ${gate-caps} {run: [${jt} [test, compiler]]},
   
-  {name: ruby-test-metrics-noindy} ${common} ${no-graal} ${bench-caps} ${jruby-noindy} ${metrics},
-  {name: ruby-test-metrics-indy} ${common} ${no-graal} ${bench-caps} ${jruby-indy} ${metrics},
+  {name: ruby-test-metrics-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy} ${metrics},
+  {name: ruby-test-metrics-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy} ${metrics},
   {name: ruby-test-metrics-truffle} ${common} ${no-graal} ${bench-caps} ${jruby-truffle} ${metrics}
 ]
