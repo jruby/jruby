@@ -136,7 +136,7 @@ public abstract class MutexNodes {
 
         @CreateCast("duration")
         public RubyNode coerceDuration(RubyNode duration) {
-            return DurationToMillisecondsNodeGen.create(duration);
+            return DurationToMillisecondsNodeGen.create(true, duration);
         }
 
         @Specialization

@@ -25,11 +25,16 @@ public abstract class DurationToMillisecondsNode extends RubyNode {
     @Child NumericToFloatNode floatCastNode;
 
     private final ConditionProfile durationLessThanZeroProfile = ConditionProfile.createBinaryProfile();
+    private final boolean acceptsNil;
+
+    public DurationToMillisecondsNode(boolean acceptsNil) {
+        this.acceptsNil = acceptsNil;
+    }
 
     public abstract long executeDurationToMillis(VirtualFrame frame, Object duration);
 
     @Specialization
-    public long duration(NotProvided duration) {
+    public long noDuration(NotProvided duration) {
         return Long.MAX_VALUE;
     }
 
@@ -50,10 +55,19 @@ public abstract class DurationToMillisecondsNode extends RubyNode {
 
     @Specialization(guards = "isRubiniusUndefined(duration)")
     public long duration(DynamicObject duration) {
-        return duration(NotProvided.INSTANCE);
+        return noDuration(NotProvided.INSTANCE);
     }
 
-    @Specialization(guards = "!isRubiniusUndefined(duration)")
+    @Specialization(guards = "isNil(duration)")
+    public long durationNil(DynamicObject duration) {
+        if (acceptsNil) {
+            return noDuration(NotProvided.INSTANCE);
+        } else {
+            throw new RaiseException(coreExceptions().typeError("TypeError: can't convert NilClass into time interval", this));
+        }
+    }
+
+    @Specialization(guards = { "!isRubiniusUndefined(duration)", "!isNil(duration)" })
     public long duration(VirtualFrame frame, DynamicObject duration) {
         if (floatCastNode == null) {
             CompilerDirectives.transferToInterpreter();

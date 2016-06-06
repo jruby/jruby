@@ -1633,7 +1633,7 @@ public abstract class KernelNodes {
 
         @CreateCast("duration")
         public RubyNode coerceDuration(RubyNode duration) {
-            return DurationToMillisecondsNodeGen.create(duration);
+            return DurationToMillisecondsNodeGen.create(false, duration);
         }
 
         @Specialization
