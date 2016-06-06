@@ -140,7 +140,7 @@ class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
             })
             return result
         
-        return [fixUpResult(self.runBenchmark(b, bmSuiteArgs)) for b in benchmarks or self.benchmarks()]
+        return [fixUpResult(r) for b in benchmarks or self.benchmarks() for r in self.runBenchmark(b, bmSuiteArgs)]
     
     def runBenchmark(self, benchmark, bmSuiteArgs):
         raise NotImplementedError()
@@ -165,17 +165,14 @@ class AllocationBenchmarkSuite(RubyBenchmarkSuite):
         
         data = json.loads(out.data)
         
-        result = {
+        return [{
             'benchmark': benchmark,
-            'metric.name': 'memory',
+            'metric.name': 'time',
             'metric.value': data['median'],
-            'metric.unit': 'B',
+            'metric.unit': 's',
             'metric.better': 'lower',
-            'extra.metric.error-num': data['error'],
             'extra.metric.human': data['human']
-        }
-        
-        return result
+        }]
 
 class MinHeapBenchmarkSuite(RubyBenchmarkSuite):
     def name(self):
@@ -193,16 +190,14 @@ class MinHeapBenchmarkSuite(RubyBenchmarkSuite):
         
         data = json.loads(out.data)
         
-        result = {
+        return [{
             'benchmark': benchmark,
             'metric.name': 'memory',
             'metric.value': data['min'],
             'metric.unit': 'MB',
             'metric.better': 'lower',
             'extra.metric.human': data['human']
-        }
-        
-        return result
+        }]
 
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
 mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())
