@@ -17,7 +17,7 @@ require 'fileutils'
 require 'json'
 require 'timeout'
 
-GRAALVM_VERSION = "0.11"
+GRAALVM_VERSION = '0.12'
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 M2_REPO = File.expand_path('~/.m2/repository')

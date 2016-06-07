@@ -40,7 +40,7 @@ graal-core: {
     [cd, graal-workspace],
     [mx, sclone, --kind, git, "https://github.com/graalvm/graal-core.git", graal-core],
     [cd, graal-core],
-    [git, checkout, "3a28fca1b331f9912dabd231052354cffa9dee9c"],
+    [git, checkout, graal-vm-0.12],
     [mx, sforceimports],
     [mx, --vm, server, build],
     [cd, ../..]
@@ -57,7 +57,7 @@ graalvm: {
   downloads: {
     GRAALVM_DIR: {
       name: graalvm-release,
-      version: "0.11",
+      version: "0.12",
       platformspecific: true
     }
   }
