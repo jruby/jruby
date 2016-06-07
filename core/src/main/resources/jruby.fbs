@@ -6,27 +6,95 @@ table IRScopeFlat {
     nestedClosures:[IRClosureFlat];
     lexicalChildren:[IRScopeFlat];
     instrs:[InstrFlat];
+    tempVariables:short;
+    acceptsKeywordArguments:bool;
 }
 
 table IRClosureFlat {
     scope:IRScopeFlat;
 }
 
-enum OperationFlat : short {
-    COPY, RECEIVE_SELF, LINE_NUMBER, CALL_1_OBJ, RETURN, LOAD_IMPLICIT_CLOSURE, LOAD_FRAME_CLOSURE
-}
-
-table InstrFlat {
-    operation:OperationFlat;
-    operands:[OperandFlat];
-}
-
-enum OperandTypeFlat : byte {
-    TEMPORARY_VARIABLE, CURRENT_SCOPE, SCOPE_MODULE, STRING_LITERAL, SELF
+union OperandUnion {
+    StringLiteralFlat, FrozenStringFlat, TemporaryVariableFlat, CurrentScopeFlat, ScopeModuleFlat, SelfFlat
 }
 
 table OperandFlat {
-    operandType:OperandTypeFlat;
+    operand:OperandUnion;
+}
+
+table StringLiteralFlat {
+    frozenString:FrozenStringFlat;
+}
+
+table FrozenStringFlat {
+    bytes:[byte];
+    encoding:string;
+    str:string;
+    coderange:int;
+    file:string;
+    line:int;
+}
+
+table TemporaryVariableFlat {
+    offset:int;
+}
+
+table CurrentScopeFlat {
+    dummy:byte;
+}
+
+table ScopeModuleFlat {
+     dummy:byte;
+}
+
+table SelfFlat {
+     dummy:byte;
+}
+
+union InstrUnion {
+    CopyFlat, ReceiveSelfFlat, LineNumberFlat, CallFlat, ReturnFlat, LoadImplicitClosureFlat, LoadFrameClosureFlat
+}
+
+table CopyFlat {
+    dummy:byte;
+}
+
+table ReceiveSelfFlat {
+    dummy:byte;
+}
+
+table LineNumberFlat {
+    line:int;
+}
+
+table CallFlat {
+    callType:int;
+    name:string;
+    argsCount:int;
+    hasClosure:bool;
+    canBeEval:bool;
+    targetRequiresCallersBinding:bool;    // Does this call make use of the caller's binding?
+    targetRequiresCallersFrame:bool;    // Does this call make use of the caller's frame?
+    splatMap:[bool];
+    potentiallyRefined:bool;
+}
+
+table ReturnFlat {
+    dummy:byte;
+}
+
+table LoadImplicitClosureFlat {
+    dummy:byte;
+}
+
+table LoadFrameClosureFlat {
+    dummy:byte;
+}
+
+table InstrFlat {
+    result:TemporaryVariableFlat;
+    operands:[OperandFlat];
+    instr:InstrUnion;
 }
 
 root_type IRScopeFlat;

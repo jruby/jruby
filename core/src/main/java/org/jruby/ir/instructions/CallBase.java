@@ -6,6 +6,11 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.persistence.flat.CallFlat;
+import org.jruby.ir.persistence.flat.FlatIRInterpreter;
+import org.jruby.ir.persistence.flat.FlatIRWriter;
+import org.jruby.ir.persistence.flat.InstrFlat;
+import org.jruby.ir.persistence.flat.OperandFlat;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -460,5 +465,32 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         if (getClosureArg() == null) return Block.NULL_BLOCK;
 
         return IRRuntimeHelpers.getBlockFromObject(context, getClosureArg().retrieve(context, self, currScope, currDynScope, temp));
+    }
+
+    public static Object interpret(InstrFlat instrFlat, CallFlat callFlat, ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
+        IRubyObject object = (IRubyObject) FlatIRInterpreter.interpretOperand(instrFlat.operands(0), context, currScope, dynamicScope, self, temp);
+        IRubyObject[] values = prepareArguments(instrFlat, callFlat, context, self, currScope, dynamicScope, temp);
+//        Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
+
+        return object.callMethod(context, callFlat.name(), values/*, preparedBlock*/);
+    }
+
+    protected static IRubyObject[] prepareArguments(InstrFlat instrFlat, CallFlat callFlat, ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope dynamicScope, Object[] temp) {
+//        if (call.splatMapLength() > 0) {
+//            return prepareArgumentsComplex(context, self, currScope, dynamicScope, temp);
+//        }
+
+        return prepareArgumentsSimple(instrFlat, callFlat, context, self, currScope, dynamicScope, temp);
+    }
+
+    protected static IRubyObject[] prepareArgumentsSimple(InstrFlat instr, CallFlat call, ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        IRubyObject[] newArgs = new IRubyObject[call.argsCount()];
+
+        OperandFlat operandFlat = new OperandFlat();
+        for (int i = 0; i < call.argsCount(); i++) { // receiver is operands[0]
+            newArgs[i] = (IRubyObject) FlatIRInterpreter.interpretOperand(instr.operands(operandFlat, i+1), context, currScope, currDynScope, self, temp);
+        }
+
+        return newArgs;
     }
 }

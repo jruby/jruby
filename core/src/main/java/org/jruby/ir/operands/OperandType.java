@@ -5,7 +5,7 @@
  */
 package org.jruby.ir.operands;
 
-import org.jruby.ir.persistence.flat.OperandTypeFlat;
+import org.jruby.ir.persistence.flat.OperandUnion;
 
 public enum OperandType {
 
@@ -14,7 +14,7 @@ public enum OperandType {
     BIGNUM("big", (byte) 'B'),
     BOOLEAN("bool", (byte) 'b'),
     COMPLEX("com", (byte) 'C'),
-    CURRENT_SCOPE("scope", (byte) 's', OperandTypeFlat.CURRENT_SCOPE),
+    CURRENT_SCOPE("scope", (byte) 's', OperandUnion.CurrentScopeFlat),
     DYNAMIC_SYMBOL("dsym", (byte) 'd'),
     FIXNUM("fix", (byte) 'f'),
     FLOAT("flo", (byte) 'F'),
@@ -29,21 +29,21 @@ public enum OperandType {
     RANGE("rng", (byte) '.'),
     RATIONAL("rat", (byte) 'r'),
     REGEXP("reg", (byte) '/'),
-    SCOPE_MODULE("mod", (byte) '_', OperandTypeFlat.SCOPE_MODULE),
-    SELF("self", (byte) 'S', OperandTypeFlat.SELF),
+    SCOPE_MODULE("mod", (byte) '_', OperandUnion.ScopeModuleFlat),
+    SELF("self", (byte) 'S', OperandUnion.SelfFlat),
     SPLAT("splat", (byte) '*'),
     STANDARD_ERROR("stderr", (byte) 'E'),
-    STRING_LITERAL("str", (byte) '\'', OperandTypeFlat.STRING_LITERAL),
+    STRING_LITERAL("str", (byte) '\'', OperandUnion.StringLiteralFlat),
     SVALUE("sval", (byte) 'V'),
     SYMBOL("sym", (byte) ':'),
-    TEMPORARY_VARIABLE("reg", (byte) 't', OperandTypeFlat.TEMPORARY_VARIABLE),
+    TEMPORARY_VARIABLE("reg", (byte) 't', OperandUnion.TemporaryVariableFlat),
     UNBOXED_BOOLEAN("rawbool", (byte) 'v'),
     UNBOXED_FIXNUM("rawfix", (byte) 'j'),
     UNBOXED_FLOAT("rawflo", (byte) 'J'),
     UNDEFINED_VALUE("undef", (byte) 'u'),
     UNEXECUTABLE_NIL("noex", (byte) 'n'),
     WRAPPED_IR_CLOSURE("block", (byte) 'w'),
-    FROZEN_STRING("fstr", (byte) 'z'),
+    FROZEN_STRING("fstr", (byte) 'z', OperandUnion.FrozenStringFlat),
     NULL_BLOCK("noblock", (byte) 'o'),
     FILENAME("file", (byte) 'm'),
     SYMBOL_PROC("symproc", (byte) 'P')

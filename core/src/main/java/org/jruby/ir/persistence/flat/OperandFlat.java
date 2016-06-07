@@ -14,16 +14,20 @@ public final class OperandFlat extends Table {
   public OperandFlat __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public byte operandType() { int o = __offset(4); return o != 0 ? bb.get(o + bb_pos) : 0; }
+  public Table operand(Table obj) { int o = __offset(6); return o != 0 ? __union(obj, o) : null; }
 
   public static int createOperandFlat(FlatBufferBuilder builder,
-      byte operandType) {
-    builder.startObject(1);
-    OperandFlat.addOperandType(builder, operandType);
+      byte operand_type,
+      int operandOffset) {
+    builder.startObject(2);
+    OperandFlat.addOperand(builder, operandOffset);
+    OperandFlat.addOperandType(builder, operand_type);
     return OperandFlat.endOperandFlat(builder);
   }
 
-  public static void startOperandFlat(FlatBufferBuilder builder) { builder.startObject(1); }
+  public static void startOperandFlat(FlatBufferBuilder builder) { builder.startObject(2); }
   public static void addOperandType(FlatBufferBuilder builder, byte operandType) { builder.addByte(0, operandType, 0); }
+  public static void addOperand(FlatBufferBuilder builder, int operandOffset) { builder.addOffset(1, operandOffset, 0); }
   public static int endOperandFlat(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;
