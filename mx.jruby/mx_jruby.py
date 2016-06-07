@@ -177,9 +177,9 @@ class AllocationBenchmarkSuite(MetricsBenchmarkSuite):
         
         return [{
             'benchmark': benchmark,
-            'metric.name': 'time',
+            'metric.name': 'memory',
             'metric.value': data['median'],
-            'metric.unit': 's',
+            'metric.unit': 'B',
             'metric.better': 'lower',
             'extra.metric.human': data['human']
         }]
