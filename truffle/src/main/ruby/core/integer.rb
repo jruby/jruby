@@ -48,10 +48,6 @@ class Integer < Numeric
     self ^ Rubinius::Type.coerce_to_bitwise_operand(other)
   end
 
-  def to_i
-    self
-  end
-
   alias_method :to_int, :to_i
   alias_method :truncate, :to_i
   alias_method :ceil, :to_i
@@ -212,17 +208,6 @@ class Integer < Numeric
 
   def pred
     self - 1
-  end
-
-  def times
-    return to_enum(:times) { self } unless block_given?
-
-    i = 0
-    while i < self
-      yield i
-      i += 1
-    end
-    self
   end
 
   def upto_internal(val)

@@ -515,16 +515,6 @@ class Time
     raise PrimitiveFailure, "Time#gmt_offset primitive failed"
   end
 
-  def gmtime
-    unless gmt?
-      @is_gmt = true
-      @offset = nil
-      @decomposed = nil
-    end
-
-    self
-  end
-
   def getgm
     dup.gmtime
   end

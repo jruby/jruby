@@ -127,11 +127,6 @@ class Encoding
     attr_reader :replacement
     attr_reader :options
 
-    def self.allocate
-      Truffle.primitive :encoding_converter_allocate
-      raise PrimitiveFailure, "Encoding::Converter.allocate primitive failed"
-    end
-
     def self.asciicompat_encoding(string_or_encoding)
       encoding = Rubinius::Type.try_convert_to_encoding string_or_encoding
 
@@ -609,14 +604,6 @@ class Encoding
     return enc unless undefined.equal? enc
 
     raise ArgumentError, "unknown encoding name - #{name}"
-  end
-
-  def self.list
-    EncodingList
-  end
-
-  def self.locale_charmap
-    LocaleCharmap
   end
 
   def self.name_list

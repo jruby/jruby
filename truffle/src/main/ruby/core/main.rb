@@ -40,22 +40,6 @@ class << self
     end
   end
 
-  def public(*methods)
-    Truffle.privately do
-      Object.public(*methods)
-    end
-
-    Object
-  end
-
-  def private(*methods)
-    Truffle.privately do
-      Object.private(*methods)
-    end
-
-    Object
-  end
-
   def define_method(*args, &block)
     Truffle.privately do
       Object.define_method(*args, &block)

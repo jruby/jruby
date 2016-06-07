@@ -182,16 +182,6 @@ module Kernel
   end
   module_function :StringValue
 
-  def __method__
-    scope = Rubinius::VariableScope.of_sender
-
-    name = scope.method.name
-
-    return nil if scope.method.for_module_body?
-    # If the name is still __block__, then it's in a script, so return nil
-    return nil if name == :__block__ or name == :__script__
-    name
-  end
   module_function :__method__
 
   alias_method :__callee__, :__method__
@@ -216,27 +206,6 @@ module Kernel
     File.dirname fullpath
   end
   module_function :__dir__
-
-  def `(str) #`
-    str = StringValue(str) unless str.kind_of?(String)
-    pid, output = Rubinius::Mirror::Process.backtick str
-    Process.waitpid(pid)
-
-    Rubinius::Type.external_string output
-  end
-  module_function :` # `
-
-  def =~(other)
-    nil
-  end
-
-  def <=>(other)
-    self == other ? 0 : nil
-  end
-
-  def ===(other)
-    equal?(other) || self == other
-  end
 
   def itself
     self
@@ -274,59 +243,8 @@ module Kernel
   end
   private :autoload?
 
-  def block_given?
-    Rubinius::VariableScope.of_sender.block != nil
-  end
-  module_function :block_given?
-
   alias_method :iterator?, :block_given?
   module_function :iterator?
-
-  def caller(start = 1, length = nil)
-    frames = []
-
-    # The + 1 is to skip this frame
-    Rubinius.mri_backtrace(start + 1).map do |tup|
-      if length and frames.length == length
-        break
-      end
-
-      code     = tup[0]
-      line     = tup[1]
-      is_block = tup[2]
-      name     = tup[3]
-
-      frames << "#{code.active_path}:#{line}:in `#{name}'"
-    end
-
-    frames
-  end
-  module_function :caller
-
-  ##
-  # Returns the current call stack as an Array of Thread::Backtrace::Location
-  # instances. This method is available starting with Ruby 2.0.
-  #
-  def caller_locations(start = 1, length = nil)
-    full_trace = Rubinius.mri_backtrace(start + 1)
-    locations  = []
-
-    full_trace.each do |tup|
-      if length and locations.length == length
-        break
-      end
-
-      scope    = tup[0].scope
-      abs_path = tup[0].active_path
-      path     = scope ? scope.active_path : abs_path
-      label    = tup[3].to_s
-
-      locations << Thread::Backtrace::Location.new(label, abs_path, path, tup[1])
-    end
-
-    locations
-  end
-  module_function :caller_locations
 
   def define_singleton_method(*args, &block)
     singleton_class.send(:define_method, *args, &block)
@@ -335,11 +253,6 @@ module Kernel
   def display(port=$>)
     port.write self
   end
-
-  def exec(*args)
-    Process.exec(*args)
-  end
-  module_function :exec
 
   def exit(code=0)
     Process.exit(code)
@@ -372,42 +285,15 @@ module Kernel
 
   alias_method :__extend__, :extend
 
-  def fork(&block)
-    Process.fork(&block)
-  end
-  module_function :fork
-
   def getc
     $stdin.getc
   end
   module_function :getc
 
-  def gets(sep=$/)
-    ARGF.gets(sep)
-  end
-  module_function :gets
-
   def global_variables
     Rubinius::Globals.variables
   end
   module_function :global_variables
-
-  def initialize_dup(other)
-    initialize_copy(other)
-  end
-  private :initialize_dup
-
-  def initialize_clone(other)
-    initialize_copy(other)
-  end
-  private :initialize_clone
-
-  def initialize_copy(source)
-    unless instance_of?(Rubinius::Type.object_class(source))
-      raise TypeError, "initialize_copy should take same class object"
-    end
-  end
-  private :initialize_copy
 
   def inspect
     prefix = "#<#{self.class}:0x#{self.__id__.to_s(16)}"
@@ -447,57 +333,9 @@ module Kernel
     return str
   end
 
-  ##
-  # Returns true if this object is an instance of the given class, otherwise
-  # false. Raises a TypeError if a non-Class object given.
-  #
-  # Module objects can also be given for MRI compatibility but the result is
-  # always false.
-
-  def instance_of?(cls)
-    Truffle.primitive :object_instance_of
-
-    arg_class = Rubinius::Type.object_class(cls)
-    if arg_class != Class and arg_class != Module
-      # We can obviously compare against Modules but result is always false
-      raise TypeError, "instance_of? requires a Class argument"
-    end
-
-    Rubinius::Type.object_class(self) == cls
-  end
-
-  def instance_variable_get(sym)
-    Truffle.primitive :object_get_ivar
-
-    sym = Rubinius::Type.ivar_validate sym
-    instance_variable_get sym
-  end
-
   alias_method :__instance_variable_get__, :instance_variable_get
 
-  def instance_variable_set(sym, value)
-    Truffle.primitive :object_set_ivar
-
-    sym = Rubinius::Type.ivar_validate sym
-    instance_variable_set sym, value
-  end
-
   alias_method :__instance_variable_set__, :instance_variable_set
-
-  def instance_variables
-    ary = []
-    __all_instance_variables__.each do |sym|
-      ary << sym if sym.is_ivar?
-    end
-
-    ary
-  end
-
-  def instance_variable_defined?(name)
-    Truffle.primitive :object_ivar_defined
-
-    instance_variable_defined? Rubinius::Type.ivar_validate(name)
-  end
 
   # Both of these are for defined? when used inside a proxy obj that
   # may undef the regular method. The compiler generates __ calls.
@@ -505,28 +343,6 @@ module Kernel
   alias_method :__respond_to_p__, :respond_to?
 
   alias_method :is_a?, :kind_of?
-
-  def lambda
-    env = nil
-
-    Rubinius.asm do
-      push_block
-      # assign a pushed block to the above local variable "env"
-      # Note that "env" is indexed at 0.
-      set_local 0
-    end
-
-    raise ArgumentError, "block required" unless env
-
-    prc = Rubinius::Mirror::Proc.from_block ::Proc, env
-
-    # Make a proc lambda only when passed an actual block (ie, not using the
-    # "&block" notation), otherwise don't modify it at all.
-    prc.lambda_style! if env.is_a?(Rubinius::BlockEnvironment)
-
-    return prc
-  end
-  module_function :lambda
 
   def load(filename, wrap = false)
     filename = Rubinius::Type.coerce_to_path filename
@@ -571,47 +387,6 @@ module Kernel
   end
   module_function :loop
 
-  def method(name)
-    name = Rubinius::Type.coerce_to_symbol name
-    code = Rubinius.find_method(self, name)
-
-    if code
-      Method.new(self, code[1], code[0], name)
-    elsif respond_to_missing?(name, true)
-      Method.new(self, self.class, Rubinius::MissingMethod.new(self,  name), name)
-    else
-      raise NameError, "undefined method `#{name}' for class #{self.class}"
-    end
-  end
-
-  def methods(all=true)
-    methods = singleton_methods(all)
-
-    if all
-      # We have to special case these because unlike true, false, nil,
-      # Type.object_singleton_class raises a TypeError.
-      case self
-      when Fixnum, Symbol
-        methods |= Rubinius::Type.object_class(self).instance_methods(true)
-      else
-        methods |= Rubinius::Type.object_singleton_class(self).instance_methods(true)
-      end
-    end
-
-    return methods if kind_of?(ImmediateValue)
-
-    undefs = []
-    Rubinius::Type.object_singleton_class(self).method_table.filter_entries do |entry|
-      undefs << entry.name.to_s if entry.visibility == :undef
-    end
-
-    return methods - undefs
-  end
-
-  def nil?
-    false
-  end
-
   def object_id
     Truffle.primitive :object_id
     raise PrimitiveFailure, "Kernel#object_id primitive failed"
@@ -655,22 +430,6 @@ module Kernel
   end
   module_function :print
 
-  def printf(target, *args)
-    if target.kind_of?(String)
-      output = $stdout
-    else
-      output = target
-      target = args.shift
-    end
-    output.write Rubinius::Sprinter.get(target).call(*args)
-    nil
-  end
-  module_function :printf
-
-  def private_methods(all=true)
-    private_singleton_methods() | Rubinius::Type.object_class(self).private_instance_methods(all)
-  end
-
   def private_singleton_methods
     sc = Rubinius::Type.object_singleton_class self
     methods = sc.method_table.private_names
@@ -689,16 +448,6 @@ module Kernel
     methods
   end
   private :private_singleton_methods
-
-  def proc(&prc)
-    raise ArgumentError, "block required" unless prc
-    return prc
-  end
-  module_function :proc
-
-  def protected_methods(all=true)
-    protected_singleton_methods() | Rubinius::Type.object_class(self).protected_instance_methods(all)
-  end
 
   def protected_singleton_methods
     m = Rubinius::Type.object_singleton_class self
@@ -728,15 +477,6 @@ module Kernel
     else
       raise NameError, "undefined method `#{name}' for #{self.inspect}"
     end
-  end
-
-  def public_methods(all=true)
-    public_singleton_methods | Rubinius::Type.object_class(self).public_instance_methods(all)
-  end
-
-  def public_send(message, *args)
-    Truffle.primitive :object_public_send
-    raise PrimitiveFailure, "Kernel#public_send primitive failed"
   end
 
   def public_singleton_methods
@@ -796,71 +536,10 @@ module Kernel
   end
   module_function :readlines
 
-  def remove_instance_variable(sym)
-    Truffle.primitive :object_del_ivar
-
-    # If it's already a symbol, then we're here because it doesn't exist.
-    if sym.kind_of? Symbol
-      raise NameError, "instance variable '#{sym}' not defined"
-    end
-
-    # Otherwise because sym isn't a symbol, coerce it and try again.
-    remove_instance_variable Rubinius::Type.ivar_validate(sym)
-  end
-
-  def require(name)
-    Rubinius::CodeLoader.require name
-  end
-  module_function :require
-
-  def require_relative(name)
-    scope = Rubinius::ConstantScope.of_sender
-    Rubinius::CodeLoader.require_relative(name, scope)
-  end
-  module_function :require_relative
-
   def select(*args)
     IO.select(*args)
   end
   module_function :select
-
-  def send(message, *args)
-    Truffle.primitive :object_send
-    raise PrimitiveFailure, "Kernel#send primitive failed"
-  end
-
-  def set_trace_func(*args)
-    raise NotImplementedError
-  end
-  module_function :set_trace_func
-
-  def sprintf(str, *args)
-    Rubinius::Sprinter.get(str).call(*args)
-  end
-  module_function :sprintf
-
-  alias_method :format, :sprintf
-  module_function :format
-
-  def sleep(duration=undefined)
-    Truffle.primitive :vm_sleep
-
-    # The primitive will fail on arg count if sleep is called
-    # without an argument, so we call it again passing undefined
-    # to mean "sleep forever"
-    #
-    if undefined.equal? duration
-      return sleep(undefined)
-    end
-
-    if duration.kind_of? Numeric
-      float = Rubinius::Type.coerce_to duration, Float, :to_f
-      return sleep(float)
-    else
-      raise TypeError, 'time interval must be a numeric value'
-    end
-  end
-  module_function :sleep
 
   def srand(seed=undefined)
     if undefined.equal? seed
@@ -919,27 +598,6 @@ module Kernel
   end
   module_function :trap
 
-  def singleton_methods(all=true)
-    m = Rubinius::Type.object_singleton_class self
-    mt = m.method_table
-    methods = mt.public_names + mt.protected_names
-
-    if all
-      while m = m.direct_superclass
-        unless Rubinius::Type.object_kind_of?(m, Rubinius::IncludedModule) or
-               Rubinius::Type.singleton_class_object(m)
-          break
-        end
-
-        mt = m.method_table
-        methods.concat mt.public_names
-        methods.concat mt.protected_names
-      end
-    end
-
-    methods.uniq
-  end
-
   def spawn(*args)
     Process.spawn(*args)
   end
@@ -961,10 +619,6 @@ module Kernel
     $?.exitstatus == 0
   end
   module_function :system
-
-  def to_s
-    Rubinius::Type.infect("#<#{self.class}:0x#{self.__id__.to_s(16)}>", self)
-  end
 
   def trace_var(name, cmd = nil, &block)
     if !cmd && !block

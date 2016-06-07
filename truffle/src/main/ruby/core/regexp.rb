@@ -90,16 +90,6 @@ class Regexp
     raise PrimitiveFailure, "Regexp#search_region primitive failed"
   end
 
-  def match_start(str, offset) # equiv to MRI's re_match
-    Truffle.primitive :regexp_match_start
-    raise PrimitiveFailure, "Regexp#match_start primitive failed"
-  end
-
-  def search_from(str, offset) # equiv to MRI's rb_reg_search
-    Truffle.primitive :regexp_search_from
-    raise PrimitiveFailure, "Regexp#search_from primitive failed"
-  end
-
   def options
     Truffle.primitive :regexp_options
     raise PrimitiveFailure, "Regexp#options primitive failed"
@@ -196,18 +186,6 @@ class Regexp
     Regexp.new(str)
   end
 
-  def self.escape(str)
-    str = str.to_s if str.is_a?(Symbol)
-    escaped = StringValue(str).transform(ESCAPE_TABLE)
-    if escaped.ascii_only?
-      escaped.force_encoding Encoding::US_ASCII
-    elsif str.valid_encoding?
-      escaped.force_encoding str.encoding
-    else
-      escaped.force_encoding Encoding::ASCII_8BIT
-    end
-  end
-
   class << self
     alias_method :quote, :escape
   end
@@ -258,24 +236,6 @@ class Regexp
     end
   end
 
-  # Returns the index of the first character in the region that
-  # matched or nil if there was no match. See #match for returning
-  # the MatchData instead.
-  def =~(str)
-    str = str.to_s if str.is_a?(Symbol)
-    # unless str.nil? because it's nil and only nil, not false.
-    str = StringValue(str) unless str.nil?
-
-    match = match_from(str, 0)
-    if match
-      Regexp.last_match = match
-      return match.begin(0)
-    else
-      Regexp.last_match = nil
-      return nil
-    end
-  end
-
   def ===(other)
     if other.kind_of? Symbol
       other = other.to_s
@@ -304,11 +264,6 @@ class Regexp
 
   alias_method :==, :eql?
 
-  def hash
-    str = '/' << source << '/' << option_to_string(options)
-    str.hash
-  end
-
   def inspect
     # the regexp matches any / that is after anything except for a \
     escape = source.gsub(%r!(\\.)|/!) { $1 || '\/' }
@@ -319,11 +274,6 @@ class Regexp
 
   def encoding
     source.encoding
-  end
-
-
-  def source
-    @source.dup
   end
 
   def ~
@@ -581,10 +531,6 @@ class Regexp
 
   end
 
-  def to_s
-    SourceParser.new(source, options).string
-  end
-
   def option_to_string(option)
     string = ""
     string << 'm' if (option & MULTILINE) > 0
@@ -657,74 +603,12 @@ end
 
 class MatchData
 
-  def begin(idx)
-    if idx == 0
-      start = @full.at(0)
-    else
-      start = @region.at(idx - 1).at(0)
-      return nil if start == -1
-    end
-    m = Rubinius::Mirror.reflect @source
-    m.byte_to_character_index start
-  end
-
-  def end(idx)
-    if idx == 0
-      fin = @full.at(1)
-    else
-      fin = @region.at(idx - 1).at(1)
-      return nil if fin == -1
-    end
-    m = Rubinius::Mirror.reflect @source
-    m.byte_to_character_index fin
-  end
-
   def offset(idx)
     out = []
     out << self.begin(idx)
     out << self.end(idx)
     return out
   end
-
-  def [](idx, len = nil)
-    return to_a[idx, len] if len
-
-    case idx
-    when Fixnum
-      if idx <= 0
-        return matched_area() if idx == 0
-        return to_a[idx]
-      elsif idx <= @region.size
-        tup = @region[idx - 1]
-
-        x = tup.at(0)
-        return nil if x == -1
-
-        y = tup.at(1)
-        return @source.byteslice(x, y-x)
-      end
-    when String
-      if @regexp.name_table
-        return self[idx.to_sym]
-      end
-      raise IndexError, "Unknown named group '#{idx}'"
-    when Symbol
-      if @regexp.name_table
-        if nums = @regexp.name_table[idx]
-          nums.reverse_each do |num|
-            val = self[num]
-            return val if val
-          end
-          return nil
-        end
-      end
-      raise IndexError, "Unknown named group '#{idx}'"
-    end
-
-    return to_a[idx]
-  end
-
-  attr_reader :regexp
 
   def ==(other)
     other.kind_of?(MatchData) &&
@@ -742,43 +626,8 @@ class MatchData
     @source
   end
 
-  def full
-    @full
-  end
-
-  def length
-    @region.fields + 1
-  end
-
-  def captures
-    out = Array.new(@region.fields)
-
-    idx = 0
-    @region.each do |tup|
-      x = tup.at(0)
-
-      if x == -1
-        val = nil
-      else
-        y = tup.at(1)
-        val = @source.byteslice(x, y-x)
-      end
-
-      out[idx] = val
-      idx += 1
-    end
-
-    return out
-  end
-
   def names
     @regexp.names
-  end
-
-  def pre_match
-    return @source.byteslice(0, 0) if @full.at(0) == 0
-    nd = @full.at(0) - 1
-    @source.byteslice(0, nd+1)
   end
 
   def pre_match_from(idx)
@@ -789,12 +638,6 @@ class MatchData
 
   def collapsing?
     @full[0] == @full[1]
-  end
-
-  def post_match
-    nd = @source.bytesize - 1
-    st = @full.at(1)
-    @source.byteslice(st, nd-st+1)
   end
 
   def inspect
@@ -827,12 +670,6 @@ class MatchData
 
   alias_method :size, :length
 
-  def to_a
-    ary = captures()
-    ary.unshift matched_area()
-    return ary
-  end
-
   def values_at(*indexes)
     indexes.map { |i| self[i] }.flatten(1)
   end
@@ -843,7 +680,6 @@ class MatchData
     @source.byteslice(x, y-x)
   end
 
-  alias_method :to_s, :matched_area
   private :matched_area
 
   def get_capture(num)

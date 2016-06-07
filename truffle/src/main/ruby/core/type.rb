@@ -129,24 +129,6 @@ module Rubinius
       end
     end
 
-    def self.each_ancestor(mod)
-      unless object_kind_of?(mod, Class) and singleton_class_object(mod)
-        yield mod
-      end
-
-      sup = mod.direct_superclass()
-      while sup
-        if object_kind_of?(sup, IncludedModule)
-          yield sup.module
-        elsif object_kind_of?(sup, Class)
-          yield sup unless singleton_class_object(sup)
-        else
-          yield sup
-        end
-        sup = sup.direct_superclass()
-      end
-    end
-
     def self.ivar_validate(name)
       # adapted from rb_to_id
       case name
@@ -382,18 +364,6 @@ module Rubinius
         raise ArgumentError, "comparison of #{a.inspect} with #{b.inspect} failed"
       end
       cmp
-    end
-
-    def self.each_ancestor(mod)
-      sup = mod
-      while sup
-        if object_kind_of?(sup, IncludedModule)
-          yield sup.module
-        else
-          yield sup if sup == sup.origin
-        end
-        sup = sup.direct_superclass
-      end
     end
 
     def self.coerce_to_constant_name(name)

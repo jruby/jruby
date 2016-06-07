@@ -111,17 +111,6 @@ class Float < Numeric
     end
   end
 
-  def **(other)
-    Truffle.primitive :float_pow
-
-    if other.is_a?(Float) && self < 0 && other != other.round
-      return Complex.new(self, 0) ** other
-    end
-
-    b, a = math_coerce other
-    a ** b
-  end
-
   def imaginary
     0
   end
@@ -202,18 +191,10 @@ class Float < Numeric
     f = 10**ndigits
     Truffle.invoke_primitive(:float_round, self * f) / f.to_f
   end
+
   def coerce(other)
     return [other, self] if other.kind_of? Float
     [Float(other), self]
-  end
-
-  def -@
-    Truffle.primitive :float_neg
-    raise PrimitiveFailure, "Float#-@ primitive failed"
-  end
-
-  def abs
-    FFI::Platform::Math.fabs(self)
   end
 
   alias_method :magnitude, :abs
@@ -221,24 +202,6 @@ class Float < Numeric
   def signbit?
     Truffle.primitive :float_signbit_p
     raise PrimitiveFailure, "Float#signbit? primitive failed"
-  end
-
-  def +(other)
-    Truffle.primitive :float_add
-    b, a = math_coerce other
-    a + b
-  end
-
-  def -(other)
-    Truffle.primitive :float_sub
-    b, a = math_coerce other
-    a - b
-  end
-
-  def *(other)
-    Truffle.primitive :float_mul
-    b, a = math_coerce other
-    a * b
   end
 
   #--
@@ -256,104 +219,15 @@ class Float < Numeric
   INFINITY = 1.0 / 0.0
   NAN = 0.0 / 0.0
 
-  def divmod(other)
-    Truffle.primitive :float_divmod
-    b, a = math_coerce other
-    a.divmod b
-  end
-
-  def %(other)
-    return 0 / 0.to_f if other == 0
-    Truffle.primitive :float_mod
-    b, a = math_coerce other
-    a % b
-  end
-
   alias_method :modulo, :%
-
-  def <(other)
-    Truffle.primitive :float_lt
-    b, a = math_coerce other, :compare_error
-    a < b
-  end
-
-  def <=(other)
-    Truffle.primitive :float_le
-    b, a = math_coerce other, :compare_error
-    a <= b
-  end
-
-  def >(other)
-    Truffle.primitive :float_gt
-    b, a = math_coerce other, :compare_error
-    a > b
-  end
-
-  def >=(other)
-    Truffle.primitive :float_ge
-    b, a = math_coerce other, :compare_error
-    a >= b
-  end
-
-  def <=>(other)
-    Truffle.primitive :float_compare
-    b, a = math_coerce other, :compare_error
-    a <=> b
-  rescue ArgumentError
-    nil
-  end
-
-  def ==(other)
-    Truffle.primitive :float_equal
-    begin
-      b, a = math_coerce(other)
-      return a == b
-    rescue TypeError
-      return other == self
-    end
-  end
-
-  def eql?(other)
-    Truffle.primitive :float_eql
-    false
-  end
-
-  def nan?
-    Truffle.primitive :float_isnan
-    raise PrimitiveFailure, "Float#nan? primitive failed"
-  end
-
-  def infinite?
-    Truffle.primitive :float_isinf
-    raise PrimitiveFailure, "Float#infinite? primitive failed"
-  end
 
   def finite?
     not (nan? or infinite?)
   end
 
-  def to_f
-    self
-  end
-
-  def to_i
-    Truffle.primitive :float_to_i
-    raise PrimitiveFailure, "Float#to_i primitive failed"
-  end
-
   alias_method :to_int, :to_i
   alias_method :truncate, :to_i
-
-  def to_s
-    to_s_minimal
-  end
-
   alias_method :inspect, :to_s
-
-  def to_s_minimal
-    Truffle.primitive :float_to_s_minimal
-    raise PrimitiveFailure, "Float#to_s_minimal primitive failed: output exceeds buffer size"
-  end
 
   def to_s_formatted(fmt)
     Truffle.primitive :float_to_s_formatted
@@ -369,19 +243,5 @@ class Float < Numeric
   def to_packed(size)
     Truffle.primitive :float_to_packed
     raise PrimitiveFailure, "Float#to_packed primitive failed"
-  end
-
-  def ceil
-    int = to_i()
-
-    return int if self == int or self < 0
-    return int + 1
-  end
-
-  def floor
-    int = to_i()
-
-    return int if self > 0 or self == int
-    return int - 1
   end
 end

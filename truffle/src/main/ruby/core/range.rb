@@ -57,9 +57,6 @@ class Range
 
   attr_reader_specific :excl, :exclude_end?
 
-  attr_reader :begin
-  attr_reader :end
-
   def bsearch
     return to_enum :bsearch unless block_given?
 

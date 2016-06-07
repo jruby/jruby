@@ -154,56 +154,6 @@ class String
     end
   end
 
-  def [](index, other = undefined)
-    Truffle.primitive :string_aref
-
-    unless undefined.equal?(other)
-      if index.kind_of?(Fixnum) && other.kind_of?(Fixnum)
-        return substring(index, other)
-      elsif index.kind_of? Regexp
-        match, str = subpattern(index, other)
-        Regexp.last_match = match
-        return str
-      else
-        length = Rubinius::Type.coerce_to(other, Fixnum, :to_int)
-        start  = Rubinius::Type.coerce_to(index, Fixnum, :to_int)
-        return substring(start, length)
-      end
-    end
-
-    case index
-      when Regexp
-        match_data = index.search_region(self, 0, bytesize, true)
-        Regexp.last_match = match_data
-        if match_data
-          result = match_data.to_s
-          Rubinius::Type.infect result, index
-          return result
-        end
-      when String
-        return include?(index) ? index.dup : nil
-      when Range
-        start   = Rubinius::Type.coerce_to index.first, Fixnum, :to_int
-        length  = Rubinius::Type.coerce_to index.last,  Fixnum, :to_int
-
-        start += size if start < 0
-
-        length += size if length < 0
-        length += 1 unless index.exclude_end?
-
-        return "" if start == size
-        return nil if start < 0 || start > size
-
-        length = size if length > size
-        length = length - start
-        length = 0 if length < 0
-
-        return substring(start, length)
-      else
-        index = Rubinius::Type.coerce_to index, Fixnum, :to_int
-        return self[index]
-    end
-  end
   alias_method :slice, :[]
 
   def chomp(separator=$/)
@@ -416,11 +366,6 @@ class String
   def tr_s(source, replacement)
     str = dup
     str.tr_s!(source, replacement) || str
-  end
-
-  def upcase
-    str = dup
-    str.upcase! || str
   end
 
   def to_sub_replacement(result, match)

@@ -36,7 +36,6 @@ unless Rubinius::Config['hash.hamt']
 class Hash
   include Enumerable
 
-  attr_reader :size
   attr_reader :capacity
   attr_reader :max_entries
 
@@ -162,13 +161,6 @@ class Hash
     allocate
   end
 
-  # Creates a fully-formed instance of Hash.
-  def self.allocate
-    hash = super()
-    Truffle.privately { hash.__setup__ }
-    hash
-  end
-
   def self.new_from_associate_array(associate_array)
     hash = new
     associate_array.each do |array|
@@ -223,39 +215,6 @@ class Hash
     hash
   end
 
-  def []=(key, value)
-    Truffle.check_frozen
-
-    redistribute @entries if @size > @max_entries
-
-    key_hash = Truffle.privately { key.hash }
-    index = key_hash & @mask
-
-    item = @entries[index]
-    unless item
-      @entries[index] = new_bucket key, key_hash, value
-      return value
-    end
-
-    if @state.match? item.key, item.key_hash, key, key_hash
-      return item.value = value
-    end
-
-    last = item
-    item = item.link
-    while item
-      if @state.match? item.key, item.key_hash, key, key_hash
-        return item.value = value
-      end
-
-      last = item
-      item = item.link
-    end
-    last.link = new_bucket key, key_hash, value
-
-    value
-  end
-
   alias_method :store, :[]=
 
   # Used internally to get around subclasses redefining #[]=
@@ -292,19 +251,6 @@ class Hash
     each_item { |e| return e.key, e.value if key == e.key }
   end
 
-  def compare_by_identity
-    Truffle.check_frozen
-
-    @state = State.new unless @state
-    @state.compare_by_identity
-    self
-  end
-
-  def compare_by_identity?
-    return false unless @state
-    @state.compare_by_identity?
-  end
-
   def default(key=undefined)
     if default_proc and !undefined.equal?(key)
       default_proc.call(self, key)
@@ -328,32 +274,6 @@ class Hash
     @default_proc = prc
   end
 
-  def delete(key)
-    Truffle.check_frozen
-    key_hash = Truffle.privately { key.hash }
-
-    index = key_index key_hash
-    if item = @entries[index]
-      if item.delete key, key_hash
-        @entries[index] = item.link
-        @size -= 1
-        return item.value
-      end
-
-      last = item
-      while item = item.link
-        if item.delete key, key_hash
-          last.link = item.link
-          @size -= 1
-          return item.value
-        end
-        last = item
-      end
-    end
-
-    return yield(key) if block_given?
-  end
-
   def each_item
     return unless @state
 
@@ -362,20 +282,6 @@ class Hash
       yield item
       item = item.next
     end
-  end
-
-  def each
-    return to_enum(:each) { size } unless block_given?
-
-    return unless @state
-
-    item = @state.head
-    while item
-      yield [item.key, item.value]
-      item = item.next
-    end
-
-    self
   end
 
   alias_method :each_pair, :each
@@ -418,23 +324,6 @@ class Hash
     self
   end
 
-  def initialize(default=undefined, &block)
-    Truffle.check_frozen
-
-    if !undefined.equal?(default) and block
-      raise ArgumentError, "Specify a default or a block, not both"
-    end
-
-    if block
-      @default = nil
-      @default_proc = block
-    elsif !undefined.equal?(default)
-      @default = default
-      @default_proc = nil
-    end
-
-    self
-  end
   private :initialize
 
   def merge!(other)
@@ -510,33 +399,6 @@ class Hash
     each_item { |e| return e.key, e.value if value == e.value }
   end
 
-  def replace(other)
-    Truffle.check_frozen
-
-    other = Rubinius::Type.coerce_to other, Hash, :to_hash
-    return self if self.equal? other
-
-    # Normally this would be a call to __setup__, but that will create a new
-    # unused Tuple that we would wind up replacing anyways.
-    @capacity = other.capacity
-    @entries  = Entries.new @capacity
-    @mask     = @capacity - 1
-    @size     = 0
-    @max_entries = other.max_entries
-
-    @state = State.new
-    @state.compare_by_identity if other.compare_by_identity?
-
-    other.each_item do |item|
-      __store__ item.key, item.value
-    end
-
-    @default = other.default
-    @default_proc = other.default_proc
-
-    self
-  end
-
   alias_method :initialize_copy, :replace
   private :initialize_copy
 
@@ -566,17 +428,6 @@ class Hash
     return nil if previous_size == size
 
     self
-  end
-
-  def shift
-    Truffle.check_frozen
-
-    return default(nil) if empty?
-
-    item = @state.head
-    delete item.key
-
-    return item.key, item.value
   end
 
   # Sets the underlying data structures.
@@ -647,25 +498,6 @@ class Hash
     val
   end
 
-  def [](key)
-    if item = find_item(key)
-      item.value
-    else
-      default key
-    end
-  end
-
-  def clear
-    Truffle.check_frozen
-    __setup__
-    self
-  end
-
-  def default=(value)
-    @default_proc = nil
-    @default = value
-  end
-
   def delete_if(&block)
     return to_enum(:delete_if) { size } unless block_given?
 
@@ -687,11 +519,6 @@ class Hash
 
     each_item { |item| yield item.value }
     self
-  end
-
-  # Returns true if there are no entries.
-  def empty?
-    size == 0
   end
 
   def index(value)
@@ -740,38 +567,6 @@ class Hash
       ary << item.key
     end
     ary
-  end
-
-  def merge(other, &block)
-    dup.merge!(other, &block)
-  end
-
-  # Recalculates the cached key_hash values and reorders the entries
-  # into a new +@entries+ vector. Does NOT change the size of the
-  # hash. See +#redistribute+.
-  def rehash
-    capacity = @capacity
-    entries  = @entries
-
-    @entries = Entries.new @capacity
-
-    i = -1
-    while (i += 1) < capacity
-      next unless old = entries[i]
-      while old
-        old.link = nil if nxt = old.link
-
-        index = key_index(old.key_hash = old.key.hash)
-        if item = @entries[index]
-          old.link = item
-        end
-        @entries[index] = old
-
-        old = nxt
-      end
-    end
-
-    self
   end
 
   def reject!(&block)

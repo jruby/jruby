@@ -37,12 +37,6 @@ class Exception
   attr_accessor :parent
   attr_accessor :custom_backtrace
 
-  def initialize(message = nil)
-    @reason_message = message
-    @backtrace = nil
-    @custom_backtrace = nil
-  end
-
   def ==(other)
     other.instance_of?(__class__) &&
       message == other.message &&
@@ -67,23 +61,9 @@ class Exception
     return list
   end
 
-  def message
-    @reason_message
-  end
-
   # Needed to properly implement #exception, which must clone and call
   # #initialize again, BUT not a subclasses initialize.
   alias_method :__initialize__, :initialize
-
-  def backtrace
-    return @custom_backtrace if @custom_backtrace
-
-    if backtrace?
-      awesome_backtrace.to_mri
-    else
-      nil
-    end
-  end
 
   # Indicates if the Exception has a backtrace set
   def backtrace?
@@ -113,12 +93,6 @@ class Exception
     else
       set_backtrace(ctx)
     end
-  end
-
-  # This is important, because I subclass can just override #to_s and calling
-  # #message will call it. Using an alias doesn't achieve that.
-  def message
-    to_s
   end
 
   def inspect

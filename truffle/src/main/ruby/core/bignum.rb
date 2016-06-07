@@ -44,8 +44,6 @@ class Bignum < Integer
     value.is_a?(Bignum) && self == value
   end
 
-  alias_method :modulo, :%
-
   def fdiv(n)
     to_f / n
   end
