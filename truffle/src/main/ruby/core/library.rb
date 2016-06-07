@@ -5,9 +5,7 @@
 # Eclipse Public License version 1.0
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
-#
-# Contains code adapted from platform/library.rb in Rubinius
-#
+
 # Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -40,19 +38,7 @@
 
 module Rubinius::FFI::Library
 
-  def attach_function(name, a2, a3, a4=nil, a5=nil)
-    # Argument handling from Rubinius
-
-    if a4 && (a2.kind_of?(String) || a2.kind_of?(Symbol))
-      cname = a2.to_s
-      args = a3
-      ret = a4
-    else
-      cname = name.to_s
-      args = a2
-      ret = a3
-    end
-
+  def attach_function(name, _, _, _=nil, _=nil)
     mname = name.to_sym
 
     # The difference is we already have the methods available in our version of
