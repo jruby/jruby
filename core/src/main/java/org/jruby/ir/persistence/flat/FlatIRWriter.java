@@ -1,37 +1,17 @@
 package org.jruby.ir.persistence.flat;
 
 import com.google.flatbuffers.FlatBufferBuilder;
-import org.jruby.ParseResult;
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.ast.RootNode;
-import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-
-import java.io.ByteArrayInputStream;
-import java.io.FileOutputStream;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 
 public class FlatIRWriter {
     public static int createIRScopeFlat(FlatBufferBuilder builder, IRScope scope) {
