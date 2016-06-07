@@ -133,7 +133,7 @@ public class InterpreterEngine {
 
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {" + ipc + "} ", instr);
+                Interpreter.LOG.info("I: {" + ipc + "} " + instr);
                 Interpreter.interpInstrsCount++;
             } else if (profile) {
                 Profiler.instrTick(operation);

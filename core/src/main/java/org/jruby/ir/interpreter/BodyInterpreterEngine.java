@@ -55,7 +55,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
 
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {" + ipc + "} ", instr);
+                Interpreter.LOG.info("I: {" + ipc + "} " + instr);
                 Interpreter.interpInstrsCount++;
             }
 
