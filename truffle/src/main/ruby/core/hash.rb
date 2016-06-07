@@ -39,8 +39,6 @@ class Hash
   attr_reader :capacity
   attr_reader :max_entries
 
-  alias_method :length, :size
-
   Entries = Rubinius::Tuple
 
   # Initial size of Hash. MUST be a power of 2.
@@ -284,8 +282,6 @@ class Hash
     end
   end
 
-  alias_method :each_pair, :each
-
   def fetch(key, default=undefined)
     if item = find_item(key)
       return item.value
@@ -323,8 +319,6 @@ class Hash
 
     self
   end
-
-  private :initialize
 
   def merge!(other)
     Truffle.check_frozen
@@ -398,9 +392,6 @@ class Hash
   def rassoc(value)
     each_item { |e| return e.key, e.value if value == e.value }
   end
-
-  alias_method :initialize_copy, :replace
-  private :initialize_copy
 
   def select
     return to_enum(:select) { size } unless block_given?

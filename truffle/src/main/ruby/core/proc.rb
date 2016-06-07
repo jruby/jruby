@@ -98,9 +98,6 @@ class Proc
     self
   end
 
-  alias_method :[], :call
-  alias_method :yield, :call
-
   def self.from_method(meth)
     if meth.kind_of? Method
       return __from_method__(meth)

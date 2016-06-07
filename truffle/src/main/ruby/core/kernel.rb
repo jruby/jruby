@@ -182,11 +182,6 @@ module Kernel
   end
   module_function :StringValue
 
-  module_function :__method__
-
-  alias_method :__callee__, :__method__
-  module_function :__callee__
-
   def __dir__
     scope = Rubinius::ConstantScope.of_sender
     script = scope.current_script
@@ -244,7 +239,6 @@ module Kernel
   private :autoload?
 
   alias_method :iterator?, :block_given?
-  module_function :iterator?
 
   def define_singleton_method(*args, &block)
     singleton_class.send(:define_method, *args, &block)
@@ -335,14 +329,10 @@ module Kernel
 
   alias_method :__instance_variable_get__, :instance_variable_get
 
-  alias_method :__instance_variable_set__, :instance_variable_set
-
   # Both of these are for defined? when used inside a proxy obj that
   # may undef the regular method. The compiler generates __ calls.
   alias_method :__instance_variable_defined_p__, :instance_variable_defined?
   alias_method :__respond_to_p__, :respond_to?
-
-  alias_method :is_a?, :kind_of?
 
   def load(filename, wrap = false)
     filename = Rubinius::Type.coerce_to_path filename

@@ -33,9 +33,6 @@ class Symbol
     to_s <=> other.to_s
   end
 
-  # Use equal? for == (and not Comparable version)
-  alias_method :==, :equal?
-
   def capitalize
     to_s.capitalize.to_sym
   end

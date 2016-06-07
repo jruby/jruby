@@ -197,8 +197,6 @@ class Float < Numeric
     [Float(other), self]
   end
 
-  alias_method :magnitude, :abs
-
   def signbit?
     Truffle.primitive :float_signbit_p
     raise PrimitiveFailure, "Float#signbit? primitive failed"
@@ -224,10 +222,6 @@ class Float < Numeric
   def finite?
     not (nan? or infinite?)
   end
-
-  alias_method :to_int, :to_i
-  alias_method :truncate, :to_i
-  alias_method :inspect, :to_s
 
   def to_s_formatted(fmt)
     Truffle.primitive :float_to_s_formatted

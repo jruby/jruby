@@ -59,15 +59,6 @@ class Array
     Rubinius::Type.try_convert obj, Array, :to_ary
   end
 
-  private :initialize
-
-  alias_method :initialize_copy, :replace
-  private :initialize_copy
-
-  alias_method :slice, :[]
-
-  alias_method :__append__, :<<
-
   def &(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
@@ -640,10 +631,6 @@ class Array
     n = size if n > size
     Array.new self[-n..-1]
   end
-
-  alias_method :collect, :map
-
-  alias_method :collect!, :map!
 
   def nitems
     sum = 0

@@ -49,10 +49,6 @@ class Module
   attr_reader :constant_table
   attr_writer :method_table
 
-  private :included
-
-  private :attr
-
   def visibility_for_aliased_method(new_name, current_name_visibility)
     special_methods = [
       :initialize,
@@ -136,8 +132,6 @@ class Module
 
   private :filter_methods
 
-  private :define_method
-
   def thunk_method(name, value)
     thunk = Rubinius::Thunk.new(value)
     name = Rubinius::Type.coerce_to_symbol name
@@ -180,10 +174,6 @@ class Module
   end
   private :set_class_visibility
 
-  alias_method :class_exec, :module_exec
-
-  private :remove_const
-
   def extended(name)
   end
 
@@ -203,8 +193,6 @@ class Module
   end
 
   private :method_undefined
-
-  private :initialize_copy
 
   def add_ivars(code)
     case code

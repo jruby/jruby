@@ -186,10 +186,6 @@ class Regexp
     Regexp.new(str)
   end
 
-  class << self
-    alias_method :quote, :escape
-  end
-
   def initialize(pattern, opts=nil, lang=nil)
     if pattern.kind_of?(Regexp)
       opts = pattern.options
@@ -667,8 +663,6 @@ class MatchData
     end
     return out
   end
-
-  alias_method :size, :length
 
   def values_at(*indexes)
     indexes.map { |i| self[i] }.flatten(1)

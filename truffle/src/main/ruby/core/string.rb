@@ -154,8 +154,6 @@ class String
     end
   end
 
-  alias_method :slice, :[]
-
   def chomp(separator=$/)
     str = dup
     str.chomp!(separator) || str
@@ -345,8 +343,6 @@ class String
     str = dup
     str.swapcase! || str
   end
-
-  alias_method :intern, :to_sym
 
   def to_i(base=10)
     base = Rubinius::Type.coerce_to base, Integer, :to_int
@@ -1067,7 +1063,6 @@ class String
     Rubinius::Type.infect(self, other)
     append(other)
   end
-  alias_method :concat, :<<
 
   def chr
     substring 0, 1
