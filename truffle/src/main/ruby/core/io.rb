@@ -150,14 +150,6 @@ class IO
     raise PrimitiveFailure, "IO#query primitive failed"
   end
 
-  def reopen(other)
-    reopen_io other
-  end
-
-  def tty?
-    query :tty?
-  end
-
   def ttyname
     query :ttyname
   end

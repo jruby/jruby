@@ -286,37 +286,6 @@ class Array
     self
   end
 
-  # WARNING: This method does no boundary checking. It is expected that
-  # the caller handle that, eg #slice!
-  def delete_range(index, del_length)
-    # optimize for fast removal..
-    reg_start = index + del_length
-    reg_length = size - reg_start
-
-    if reg_start <= size
-      # If we're removing from the front, also reset @start to better
-      # use the Tuple
-      if index == 0
-        # Use a shift start optimization if we're only removing one
-        # element and the shift started isn't already huge.
-        if del_length == 1
-          put 0, nil
-          raise 'modifying start in delete_range'
-        else
-          copy_from self, reg_start, reg_length, 0
-        end
-      else
-        copy_from self, reg_start, reg_length, index
-      end
-
-      # TODO we leave the old references in the Tuple, we should
-      # probably clear them out though.
-      @total -= del_length
-    end
-  end
-
-  private :delete_range
-
   def eql?(other)
     return true if equal? other
     return false unless other.kind_of?(Array)
@@ -824,16 +793,6 @@ class Array
     Array.new dup.reverse!
   end
 
-  def reverse!
-    Truffle.check_frozen
-
-    return self unless size > 1
-
-    reverse! 0, size
-
-    return self
-  end
-
   def reverse_each
     return to_enum(:reverse_each) { size } unless block_given?
 
@@ -1048,78 +1007,6 @@ class Array
     self
   end
 
-  def slice!(start, length=undefined)
-    Truffle.check_frozen
-
-    if undefined.equal? length
-      if start.kind_of? Range
-        range = start
-        out = self[range]
-
-        range_start = Rubinius::Type.coerce_to_collection_index range.begin
-        if range_start < 0
-          range_start = range_start + size
-        end
-
-        range_end = Rubinius::Type.coerce_to_collection_index range.end
-        if range_end < 0
-          range_end = range_end + size
-        elsif range_end >= size
-          range_end = size - 1
-          range_end += 1 if range.exclude_end?
-        end
-
-        range_length = range_end - range_start
-        range_length += 1 unless range.exclude_end?
-        range_end    -= 1 if     range.exclude_end?
-
-        if range_start < size && range_start >= 0 && range_end < size && range_end >= 0 && range_length > 0
-          delete_range(range_start, range_length)
-        end
-      else
-        # make sure that negative values are not passed through to the
-        # []= assignment
-        start = Rubinius::Type.coerce_to_collection_index start
-        start = start + size if start < 0
-
-        # This is to match the MRI behaviour of not extending the array
-        # with nil when specifying an index greater than the length
-        # of the array.
-        return out unless start >= 0 and start < size
-
-        out = at start + 0
-
-        # Check for shift style.
-        if start == 0
-          put 0, nil
-          @total -= 1
-          puts 'modifying start in slice!'
-        else
-          delete_range(start, 1)
-        end
-      end
-    else
-      start = Rubinius::Type.coerce_to_collection_index start
-      length = Rubinius::Type.coerce_to_collection_length length
-      return nil if length < 0
-
-      out = self[start, length]
-
-      if start < 0
-        start = size + start
-      end
-      if start + length > size
-        length = size - start
-      end
-
-      if start < size && start >= 0
-        delete_range(start, length)
-      end
-    end
-
-    out
-  end
-
   def drop(n)
     n = Rubinius::Type.coerce_to_collection_index n
     raise ArgumentError, "attempt to drop negative size" if n < 0
@@ -1210,24 +1097,6 @@ class Array
 
   def uniq(&block)
     dup.uniq!(&block) or dup
-  end
-
-  def uniq!(&block)
-    Truffle.check_frozen
-
-    if block_given?
-      im = Rubinius::IdentityMap.from(self, &block)
-    else
-      im = Rubinius::IdentityMap.from(self)
-    end
-    return if im.size == size
-
-    m = Rubinius::Mirror::Array.reflect im.to_array
-    @tuple = m.tuple
-    raise 'start not zero' unless m.start.zero?
-    @total = m.total
-
-    self
   end
 
   def unshift(*values)
@@ -1725,6 +1594,8 @@ class Array
 
     end
   end
+
+  private :delete_range
 
   # Rubinius expects to modify the backing store via updates to `@tuple` and we don't support that.  As such, we must
   # provide our own modifying implementation here.

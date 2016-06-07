@@ -182,26 +182,6 @@ module Kernel
   end
   module_function :StringValue
 
-  def __dir__
-    scope = Rubinius::ConstantScope.of_sender
-    script = scope.current_script
-    basepath = script.file_path
-    fullpath = nil
-
-    return nil unless basepath
-
-    fullpath = if script.data_path
-      script.data_path
-    else
-      Truffle.privately do
-        File.basic_realpath(basepath)
-      end
-    end
-
-    File.dirname fullpath
-  end
-  module_function :__dir__
-
   def itself
     self
   end
@@ -210,23 +190,6 @@ module Kernel
     Process.abort msg
   end
   module_function :abort
-
-  def at_exit(prc=nil, &block)
-    if prc
-      unless prc.respond_to?(:call)
-        raise "Argument must respond to #call"
-      end
-    else
-      prc = block
-    end
-
-    unless prc
-      raise "must pass a #call'able or block"
-    end
-
-    Rubinius::AtExit.unshift(prc)
-  end
-  module_function :at_exit
 
   def autoload(name, file)
     Object.autoload(name, file)

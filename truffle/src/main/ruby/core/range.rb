@@ -281,26 +281,6 @@ class Range
     "#{self.begin}#{exclude_end? ? "..." : ".."}#{self.end}"
   end
 
-  def to_a_internal
-    return super unless self.begin.kind_of? Fixnum and self.end.kind_of? Fixnum
-
-    fin = self.end
-    fin += 1 unless exclude_end?
-
-    size = fin - self.begin
-    return [] if size <= 0
-
-    ary = Array.new(size)
-
-    i = 0
-    while i < size
-      ary[i] = self.begin + i
-      i += 1
-    end
-
-    ary
-  end
-
   def cover?(value)
     # MRI uses <=> to compare, so must we.
 

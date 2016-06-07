@@ -272,16 +272,6 @@ class Hash
     @default_proc = prc
   end
 
-  def each_item
-    return unless @state
-
-    item = @state.head
-    while item
-      yield item
-      item = item.next
-    end
-  end
-
   def fetch(key, default=undefined)
     if item = find_item(key)
       return item.value
@@ -290,20 +280,6 @@ class Hash
     return yield(key) if block_given?
     return default unless undefined.equal?(default)
     raise KeyError, "key #{key} not found"
-  end
-
-  # Searches for an item matching +key+. Returns the item
-  # if found. Otherwise returns +nil+.
-  def find_item(key)
-    key_hash = Truffle.privately { key.hash }
-
-    item = @entries[key_index(key_hash)]
-    while item
-      if @state.match? item.key, item.key_hash, key, key_hash
-        return item
-      end
-      item = item.link
-    end
   end
 
   def flatten(level=1)
