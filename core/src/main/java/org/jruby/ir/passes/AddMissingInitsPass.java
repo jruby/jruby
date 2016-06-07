@@ -28,15 +28,14 @@ public class AddMissingInitsPass extends CompilerPass {
 
         // Add inits to entry
         BasicBlock bb = scope.getCFG().getEntryBB();
-        int i = 0;
         Variable first = null;
         for (Variable v : undefinedVars) {
             // System.out.println("Adding missing init for " + v + " in " + scope);
             if (first == null) {
-                bb.getInstrs().add(i++, new CopyInstr(v, new Nil()));
+                bb.getInstrs().add(new CopyInstr(v, new Nil()));
                 first = v;
             } else {
-                bb.getInstrs().add(i++, new CopyInstr(v, first));
+                bb.getInstrs().add(new CopyInstr(v, first));
             }
         }
 

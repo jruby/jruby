@@ -30,7 +30,7 @@ import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
 public class IRManager {
     public static final String SAFE_COMPILER_PASSES = "";
     public static final String DEFAULT_BUILD_PASSES = "";
-    public static final String DEFAULT_JIT_PASSES = "LocalOptimizationPass,DeadCodeElimination,OptimizeDynScopesPass,OptimizeDelegationPass,AddCallProtocolInstructions,EnsureTempsAssigned";
+    public static final String DEFAULT_JIT_PASSES = "LocalOptimizationPass,DeadCodeElimination,OptimizeDynScopesPass,OptimizeDelegationPass,AddCallProtocolInstructions,AddMissingInitsPass";
     public static final String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
 
     private final CompilerPass deadCodeEliminationPass = new DeadCodeElimination();
