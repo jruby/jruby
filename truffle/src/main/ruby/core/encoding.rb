@@ -43,10 +43,6 @@ class Encoding
     attr_accessor :source
     attr_accessor :target
 
-    def inspect
-      "#<#{super} #{source} to #{target}"
-    end
-
     def self.create(source, target)
       ret = new
 
@@ -110,15 +106,6 @@ class Encoding
   end
 
   class CompatibilityError < EncodingError
-  end
-
-  class Transcoding
-    attr_accessor :source
-    attr_accessor :target
-
-    def inspect
-      "#<#{super} #{source} to #{target}"
-    end
   end
 
   class Converter
@@ -442,11 +429,6 @@ class Encoding
         @load_cache = false
       end
 
-      def self.cache_loaded
-        @cache_valid = true
-        @load_cache = false
-      end
-
       def self.load_cache?
         @load_cache
       end
@@ -457,10 +439,6 @@ class Encoding
 
       def self.cache_threshold?
         @paths.size > 5
-      end
-
-      def self.default_transcoders?
-        @transcoders_count == TranscodingMap.size
       end
 
       def self.cache_valid?
@@ -625,14 +603,6 @@ class Encoding
       names << aname if aname and r.last == entry.last
     end
     names
-  end
-
-  def _dump(depth)
-    name
-  end
-
-  def self._load(name)
-    find name
   end
 end
 

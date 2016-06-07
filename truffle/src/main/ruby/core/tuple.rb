@@ -52,32 +52,6 @@ module Rubinius
       ret
     end
 
-    # Taken from Rubinius.
-    def reverse!(start, total)
-      if total <= 0 || start < 0 || start >= size
-        return self
-      end
-
-      _end = start + total - 1
-      if _end > size
-        _end = size - 1
-      end
-
-      head_ptr = start
-      tail_ptr = _end
-
-      while head_ptr < tail_ptr
-        tmp = self[head_ptr]
-        self[head_ptr] = self[tail_ptr]
-        self[tail_ptr] = tmp
-
-        head_ptr += 1
-        tail_ptr -= 1
-      end
-
-      self
-    end
-
   end
 
 end

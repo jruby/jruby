@@ -53,17 +53,5 @@ module Rubinius
         @queue.receive_timeout(duration)
       end
     end
-
-    def try_receive
-      begin
-        @queue.pop(true)
-      rescue ThreadError # queue empty
-        nil
-      end
-    end
-
-    def inspect
-      "#<Rubinius::Channel:0x#{object_id.to_s(16)}>"
-    end
   end
 end

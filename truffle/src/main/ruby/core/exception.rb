@@ -34,9 +34,6 @@
 
 class Exception
 
-  attr_accessor :parent
-  attr_accessor :custom_backtrace
-
   def ==(other)
     other.instance_of?(__class__) &&
       message == other.message &&
@@ -233,10 +230,6 @@ class NotImplementedError < ScriptError
 end
 
 class Interrupt < SignalException
-  def initialize(*args)
-    super(args.shift)
-    @name = args.shift
-  end
 end
 
 class IOError < StandardError
@@ -253,15 +246,6 @@ class SyntaxError < ScriptError
   attr_accessor :line
   attr_accessor :file
   attr_accessor :code
-
-  def self.from(message, column, line, code, file)
-    exc = new message
-    exc.file = file
-    exc.line = line
-    exc.column = column
-    exc.code = code
-    exc
-  end
 
   def reason
     @reason_message

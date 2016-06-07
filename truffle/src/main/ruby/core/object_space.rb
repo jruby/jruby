@@ -25,20 +25,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 module ObjectSpace
-  def self.find_object(query, callable)
-    Truffle.primitive :vm_find_object
-    raise PrimitiveFailure, "ObjectSpace#find_object primitive failed"
-  end
-
-  def self.find_references(obj)
-    ary = []
-    find_object([:references, obj], ary)
-    return ary
-  end
-
-  def self.run_finalizers
-  end
-
   def self.garbage_collect
     GC.start
   end

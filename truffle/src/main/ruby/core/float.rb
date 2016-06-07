@@ -77,16 +77,6 @@ class Float < Numeric
   DIG        = 15
   MANT_DIG   = 53
 
-  # for Float ** Rational we would normally do Rational.convert(a) ** b, but
-  # this ends up being recursive using Rubinius' code, so we use this helper
-  # instead.
-
-  def pow_rational(rational)
-    self ** rational.to_f
-  end
-
-  private :pow_rational
-
   def equal_fallback(other)
     # Fallback from Rubinius' Float#==, after the primitive call
 
@@ -101,15 +91,6 @@ class Float < Numeric
   private :equal_fallback
 
   FFI = Rubinius::FFI
-
-  def self.induced_from(obj)
-    case obj
-    when Float, Bignum, Fixnum
-      obj.to_f
-    else
-      raise TypeError, "failed to convert #{obj.class} into Float"
-    end
-  end
 
   def imaginary
     0
@@ -202,15 +183,6 @@ class Float < Numeric
     raise PrimitiveFailure, "Float#signbit? primitive failed"
   end
 
-  #--
-  # see README-DEVELOPERS regarding safe math compiler plugin
-  #++
-
-  def divide(other)
-    Truffle.primitive :float_div
-    redo_coerced :/, other
-  end
-
   alias_method :quo, :/
   alias_method :fdiv, :/
 
@@ -223,19 +195,8 @@ class Float < Numeric
     not (nan? or infinite?)
   end
 
-  def to_s_formatted(fmt)
-    Truffle.primitive :float_to_s_formatted
-    raise PrimitiveFailure, "Float#to_s_formatted primitive failed: output exceeds buffer size"
-  end
-  private :to_s_formatted
-
   def dtoa
     Truffle.primitive :float_dtoa
     raise PrimitiveFailure, "Fload#dtoa primitive failed"
-  end
-
-  def to_packed(size)
-    Truffle.primitive :float_to_packed
-    raise PrimitiveFailure, "Float#to_packed primitive failed"
   end
 end

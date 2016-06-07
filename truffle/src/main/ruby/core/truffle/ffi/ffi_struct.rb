@@ -30,83 +30,6 @@ module FFI
   # Represents a C struct as ruby class.
 
   class Struct
-
-    class InlineArray
-      def initialize(type, ptr)
-        @pointer = ptr
-        @type = type.element_type
-        @size = type.size
-      end
-
-      attr_reader :size
-
-      def [](idx)
-        if idx >= @size
-          raise ArgumentError, "index out of range (#{idx} >= #{@size})"
-        end
-
-        @pointer.get_at_offset(idx * @type, @type)
-      end
-
-      def []=(idx, val)
-        if idx >= @size
-          raise ArgumentError, "index out of range (#{idx} >= #{@size})"
-        end
-
-        @pointer.set_at_offset(idx * @type, @type, val)
-      end
-
-      def each
-        @size.times do |ele|
-          yield @pointer.get_at_offset(ele * @type, @type)
-        end
-      end
-
-      def to_a
-        ary = []
-        each { |x| ary << x }
-        ary
-      end
-
-      def to_ptr
-        @pointer
-      end
-    end
-
-    class InlineCharArray < InlineArray
-      def to_s
-        str = @pointer.read_string(@size)
-
-        # NULL clamp this, to be the same as the ffi gem.
-        if idx = str.index(0)
-          return str[0, idx]
-        end
-
-        return str
-      end
-
-      alias_method :to_str, :to_s
-      alias_method :inspect, :to_s
-    end
-
-    def self.find_nested_parent
-      return nil if self.name.nil?
-
-      path = self.name.split("::")
-      path.pop # remove ourself
-
-      mod = Object
-
-      begin
-        path.each { |c| mod = mod.const_get(c) }
-      rescue NameError
-        # bail.
-        return nil
-      end
-
-      mod.respond_to?(:find_type) ? mod : nil
-    end
-
     attr_reader :pointer
 
     def self.layout(*spec)
@@ -222,34 +145,6 @@ module FFI
       self.class.size
     end
 
-    def self.offset_of(name)
-      @layout[name].first
-    end
-
-    def offset_of(name)
-      @cspec[name].first
-    end
-
-    def self.offsets
-      members.map do |member|
-        [member, @layout[member].first]
-      end
-    end
-
-    def offsets
-      members.map do |member|
-        [member, @cspec[member].first]
-      end
-    end
-
-    def self.members
-      @members
-    end
-
-    def members
-      self.class.members
-    end
-
     def initialize(pointer=nil, *spec)
       @cspec = self.class.layout(*spec)
 
@@ -260,21 +155,8 @@ module FFI
       end
     end
 
-    def to_ptr
-      @pointer
-    end
-
     def free
       @pointer.free
-    end
-
-    def ==(other)
-      return false unless other.is_a?(self.class)
-      @pointer == other.pointer
-    end
-
-    def initialize_copy(ptr)
-      @pointer = ptr.pointer.dup
     end
 
     def []=(field, val)
@@ -323,14 +205,6 @@ module FFI
       else
         @pointer.get_at_offset(offset, type)
       end
-    end
-
-    def values
-      members.map { |m| self[m] }
-    end
-
-    def null?
-      @pointer == FFI::Pointer::NULL
     end
 
   end

@@ -1158,6 +1158,7 @@ module Marshal
         end
       end
     end
+
     def construct_object
       name = get_symbol
       klass = const_lookup name, Class

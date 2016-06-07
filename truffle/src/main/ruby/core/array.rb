@@ -601,12 +601,6 @@ class Array
     Array.new self[-n..-1]
   end
 
-  def nitems
-    sum = 0
-    each { |elem| sum += 1 unless elem.equal? nil }
-    sum
-  end
-
   def permutation(num=undefined, &block)
     unless block_given?
       return to_enum(:permutation, num) do
@@ -1027,36 +1021,6 @@ class Array
     Truffle::Array.steal_storage(self, sort_by(&block))
   end
 
-  # Sorts this Array in-place. See #sort.
-  #
-  # The threshold for choosing between Insertion sort and Mergesort
-  # is 13, as determined by a bit of quick tests.
-  #
-  # For results and methodology, see the commit message.
-  def sort_inplace(&block)
-    Truffle.check_frozen
-
-    return self unless size > 1
-
-    if (size) < 13
-      if block
-        isort_block! 0, size, block
-      else
-        isort! 0, size
-      end
-    else
-      if block
-        mergesort_block! block
-      else
-        mergesort!
-      end
-    end
-
-    self
-  end
-
-  protected :sort_inplace
-
   def to_a
     if self.instance_of? Array
       self
@@ -1187,26 +1151,6 @@ class Array
   end
 
   private :reallocate
-
-  def reallocate_shrink
-    new_total = size
-    return if size > (new_total / 3)
-
-    # halve the tuple size until the total > 1/3 the size of the total
-    begin
-      new_total /= 2
-    end while size < (new_total / 6)
-
-    new_tuple = Rubinius::Tuple.new(new_total)
-    # position values in the middle somewhere
-    new_start = (new_total - size)/2
-    new_tuple.copy_from self, 0, size, new_start
-
-    raise 'start not zero' unless new_start.zero?
-    @tuple = new_tuple
-  end
-
-  private :reallocate_shrink
 
   # Helper to recurse through flattening since the method
   # is not allowed to recurse itself. Detects recursive structures.
@@ -1450,12 +1394,6 @@ class Array
     end
   end
   private :isort_block!
-
-  # Move to compiler runtime
-  def __rescue_match__(exception)
-    each { |x| return true if x === exception }
-    false
-  end
 
   # Truffle: what follows is our changes
 

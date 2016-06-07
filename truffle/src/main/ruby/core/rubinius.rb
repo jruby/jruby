@@ -90,9 +90,6 @@ module Rubinius
   end
 
   class Backtrace
-    def self.detect_backtrace(bt)
-      false
-    end
   end
 
   def self.watch_signal(sig, ignored)

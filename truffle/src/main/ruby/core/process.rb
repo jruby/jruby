@@ -165,37 +165,7 @@ module Process
   end
 
   def self.fork
-    pid = Rubinius::Mirror::Process.fork
-
-    if block_given? and pid.nil?
-      begin
-        yield nil
-        status = 0
-      rescue SystemExit => e
-        status = e.status
-      rescue Exception => e
-        e.render "An exception occurred in a forked block"
-        status = 1
-      end
-
-      until Rubinius::AtExit.empty?
-        begin
-          Rubinius::AtExit.shift.call
-        rescue SystemExit => e
-          status = e.status
-        end
-      end
-
-      ObjectSpace.run_finalizers
-
-      # Do not use Kernel.exit. This raises a SystemExit exception, which
-      # will run ensure blocks. This is not what MRI does and causes bugs
-      # in programs. See issue http://github.com/rubinius/rubinius/issues#issue/289 for
-      # an example
-
-      Kernel.exit! status
-    end
-    pid
+    raise 'unsupported'
   end
 
   def self.times

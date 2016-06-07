@@ -247,11 +247,6 @@ module Kernel
   end
   module_function :getc
 
-  def global_variables
-    Rubinius::Globals.variables
-  end
-  module_function :global_variables
-
   def inspect
     prefix = "#<#{self.class}:0x#{self.__id__.to_s(16)}"
 
@@ -382,42 +377,6 @@ module Kernel
     nil
   end
   module_function :print
-
-  def private_singleton_methods
-    sc = Rubinius::Type.object_singleton_class self
-    methods = sc.method_table.private_names
-
-    m = sc
-
-    while m = m.direct_superclass
-      unless Rubinius::Type.object_kind_of?(m, Rubinius::IncludedModule) or
-             Rubinius::Type.singleton_class_object(m)
-        break
-      end
-
-      methods.concat m.method_table.private_names
-    end
-
-    methods
-  end
-  private :private_singleton_methods
-
-  def protected_singleton_methods
-    m = Rubinius::Type.object_singleton_class self
-    methods = m.method_table.protected_names
-
-    while m = m.direct_superclass
-      unless Rubinius::Type.object_kind_of?(m, Rubinius::IncludedModule) or
-             Rubinius::Type.singleton_class_object(m)
-        break
-      end
-
-      methods.concat m.method_table.protected_names
-    end
-
-    methods
-  end
-  private :protected_singleton_methods
 
   def public_method(name)
     name = Rubinius::Type.coerce_to_symbol name

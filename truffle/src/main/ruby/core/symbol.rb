@@ -133,9 +133,4 @@ class Symbol
 
   # Use equal? for ===
   alias_method :===, :equal?
-
-  def is_constant?
-    Truffle.primitive :symbol_is_constant
-    raise PrimitiveFailure, "Symbol#is_constant primitive failed."
-  end
 end

@@ -132,10 +132,6 @@ module Rubinius
     Truffle::System.synchronized(object, &block)
   end
 
-  def self.memory_barrier
-    Truffle::System.full_memory_barrier
-  end
-
 end
 
 module Errno
@@ -195,15 +191,6 @@ end
 
 # Find out why Rubinius doesn't implement this
 class Rubinius::ARGFClass
-
-  def inplace_mode
-    @ext
-  end
-
-  def inplace_mode=(ext)
-    @ext = ext
-  end
-
 end
 
 module Enumerable

@@ -36,9 +36,6 @@ unless Rubinius::Config['hash.hamt']
 class Hash
   include Enumerable
 
-  attr_reader :capacity
-  attr_reader :max_entries
-
   Entries = Rubinius::Tuple
 
   # Initial size of Hash. MUST be a power of 2.
@@ -47,117 +44,6 @@ class Hash
   # Allocate more storage when this full. This value grows with
   # the size of the Hash so that the max load factor is 0.75.
   MAX_ENTRIES = 12
-
-  class State
-    attr_accessor :head
-    attr_accessor :tail
-
-    def self.from(state)
-      new_state = new
-      new_state.compare_by_identity if state and state.compare_by_identity?
-      new_state
-    end
-
-    def initialize
-      @compare_by_identity = false
-      @head = nil
-      @tail = nil
-    end
-
-    def compare_by_identity?
-      @compare_by_identity
-    end
-
-    def compare_by_identity
-      @compare_by_identity = true
-
-      class << self
-        def match?(this_key, this_hash, other_key, other_hash)
-          Rubinius::Type.object_equal other_key, this_key
-        end
-      end
-
-      self
-    end
-
-    def match?(this_key, this_hash, other_key, other_hash)
-      other_hash == this_hash and (Rubinius::Type::object_equal(other_key, this_key) or other_key.eql?(this_key))
-    end
-  end
-
-  # Bucket stores key, value pairs in Hash. The key's hash
-  # is also cached in the item and recalculated when the
-  # Hash#rehash method is called.
-
-  class Bucket
-    attr_accessor :key
-    attr_accessor :key_hash
-    attr_accessor :value
-    attr_accessor :link
-    attr_accessor :previous
-    attr_accessor :next
-    attr_accessor :state
-
-    def initialize(key, key_hash, value, state)
-      @key      = key
-      @key_hash = key_hash
-      @value    = value
-      @link     = nil
-      @state    = state
-
-      if tail = state.tail
-        @previous = tail
-        state.tail = tail.next = self
-      else
-        state.head = state.tail = self
-      end
-    end
-
-    def delete(key, key_hash)
-      if @state.match? @key, @key_hash, key, key_hash
-        remove
-        self
-      end
-    end
-
-    def remove
-      if @previous
-        @previous.next = @next
-      else
-        @state.head = @next
-      end
-
-      if @next
-        @next.previous = @previous
-      else
-        @state.tail = @previous
-      end
-    end
-  end
-
-  # An external iterator that returns entries in insertion order.  While
-  # somewhat following the API of Enumerator, it is named Iterator because it
-  # does not provide <code>#each</code> and should not conflict with
-  # +Enumerator+ in MRI 1.8.7+. Returned by <code>Hash#to_iter</code>.
-
-  class Iterator
-    def initialize(state)
-      @state = state
-    end
-
-    # Returns the next object or +nil+.
-    def next(item)
-      if item
-        return item if item = item.next
-      else
-        return @state.head
-      end
-    end
-  end
-
-  def self.new_from_literal(size)
-    allocate
-  end
 
   def self.new_from_associate_array(associate_array)
     hash = new
@@ -320,51 +206,6 @@ class Hash
 
   alias_method :update, :merge!
 
-  # Returns a new +Bucket+ instance having +key+, +key_hash+,
-  # and +value+. If +key+ is a kind of +String+, +key+ is
-  # duped and frozen.
-  def new_bucket(key, key_hash, value)
-    if key.kind_of?(String) and !key.frozen? and !compare_by_identity?
-      key = key.dup
-      key.freeze
-    end
-
-    @size += 1
-    Bucket.new key, key_hash, value, @state
-  end
-  private :new_bucket
-
-  # Adjusts the hash storage and redistributes the entries among
-  # the new bins. Any Iterator instance will be invalid after a
-  # call to #redistribute. Does not recalculate the cached key_hash
-  # values. See +#rehash+.
-  def redistribute(entries)
-    capacity = @capacity
-
-    # Rather than using __setup__, initialize the specific values we need to
-    # change so we don't eg overwrite @state.
-    @capacity    = capacity * 2
-    @entries     = Entries.new @capacity
-    @mask        = @capacity - 1
-    @max_entries = @max_entries * 2
-
-    i = -1
-    while (i += 1) < capacity
-      next unless old = entries[i]
-      while old
-        old.link = nil if nxt = old.link
-
-        index = key_index old.key_hash
-        if item = @entries[index]
-          old.link = item
-        end
-        @entries[index] = old
-
-        old = nxt
-      end
-    end
-  end
-
   def rassoc(value)
     each_item { |e| return e.key, e.value if value == e.value }
   end
@@ -397,22 +238,6 @@ class Hash
     self
   end
 
-  # Sets the underlying data structures.
-  #
-  # @capacity is the maximum number of +@entries+.
-  # @max_entries is the maximum number of entries before redistributing.
-  # @size is the number of pairs, equivalent to <code>hsh.size</code>.
-  # @entrien is the vector of storage for the item chains.
-  def __setup__(capacity=MIN_SIZE, max=MAX_ENTRIES, size=0)
-    @capacity = capacity
-    @mask     = capacity - 1
-    @max_entries = max
-    @size     = size
-    @entries  = Entries.new capacity
-    @state    = State.new
-  end
-  private :__setup__
-
   def to_h
     if instance_of? Hash
       self
@@ -421,10 +246,6 @@ class Hash
     end
   end
 
-  # Returns an external iterator for the bins. See +Iterator+
-  def to_iter
-    Iterator.new @state
-  end
   def eql?(other)
     # Just like ==, but uses eql? to compare values.
     return true if self.equal? other
@@ -521,12 +342,6 @@ class Hash
   alias_method :has_key?, :key?
   alias_method :include?, :key?
   alias_method :member?, :key?
-
-  # Calculates the +@entries+ slot given a key_hash value.
-  def key_index(key_hash)
-    key_hash & @mask
-  end
-  private :key_index
 
   def keys
     ary = []

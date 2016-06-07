@@ -133,14 +133,6 @@ class String
     Rubinius::Type.try_convert obj, String, :to_str
   end
 
-  def %(args)
-    *args = args
-    ret = Rubinius::Sprinter.get(self).call(*args)
-
-    ret.taint if tainted?
-    return ret
-  end
-
   def =~(pattern)
     case pattern
       when Regexp
@@ -167,21 +159,6 @@ class String
   def delete(*strings)
     str = dup
     str.delete!(*strings) || str
-  end
-
-  def downcase
-    return dup if bytesize == 0
-    transform(Truffle::CType::Lowered)
-  end
-
-  def end_with?(*suffixes)
-    suffixes.each do |suffix|
-      suffix = Rubinius::Type.check_convert_type suffix, String, :to_str
-      next unless suffix
-
-      return true if self[-suffix.length, suffix.length] == suffix
-    end
-    false
   end
 
   def include?(needle)
@@ -315,15 +292,6 @@ class String
     str.squeeze!(*strings) || str
   end
 
-  def start_with?(*prefixes)
-    prefixes.each do |prefix|
-      prefix = Rubinius::Type.check_convert_type prefix, String, :to_str
-      next unless prefix
-      return true if self[0, prefix.length] == prefix
-    end
-    false
-  end
-
   def strip
     str = dup
     str.strip! || str
@@ -427,11 +395,6 @@ class String
   def to_inum(base, check)
     Truffle.primitive :string_to_inum
     raise ArgumentError, "invalid value for Integer"
-  end
-
-  def apply_and!(other)
-    Truffle.primitive :string_apply_and
-    raise PrimitiveFailure, "String#apply_and! primitive failed"
   end
 
   def compare_substring(other, start, size)

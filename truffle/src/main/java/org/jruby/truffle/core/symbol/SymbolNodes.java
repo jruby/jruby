@@ -157,16 +157,4 @@ public abstract class SymbolNodes {
 
     }
 
-    @Primitive(name = "symbol_is_constant")
-    public static abstract class SymbolIsConstantPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(symbol)")
-        public boolean symbolIsConstant(DynamicObject symbol) {
-            final String string = symbol.toString();
-            return string.length() > 0 && Character.isUpperCase(string.charAt(0));
-        }
-
-    }
-
 }

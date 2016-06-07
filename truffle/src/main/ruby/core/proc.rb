@@ -25,11 +25,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class Proc
-  def self.__from_block__(env)
-    # The compiler must be fixed before this method can be removed.
-    Rubinius::Mirror::Proc.from_block self, env
-  end
-
   attr_accessor :block
   attr_accessor :bound_method
   attr_accessor :ruby_method
@@ -81,28 +76,7 @@ class Proc
 
   alias_method :inspect, :to_s
 
-  def self.__from_method__(meth)
-    obj = __allocate__
-    obj.ruby_method = meth
-    obj.lambda_style!
-
-    return obj
-  end
-
-  def __yield__(*args, &block)
-    @ruby_method.call(*args, &block)
-  end
-
-
   def to_proc
     self
-  end
-
-  def self.from_method(meth)
-    if meth.kind_of? Method
-      return __from_method__(meth)
-    else
-      raise ArgumentError, "tried to create a Proc object without a Method"
-    end
   end
 end

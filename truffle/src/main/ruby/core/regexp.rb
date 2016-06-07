@@ -95,13 +95,6 @@ class Regexp
     raise PrimitiveFailure, "Regexp#options primitive failed"
   end
 
-  def self.last_match(field=nil)
-    Truffle.primitive :regexp_last_match
-
-    return last_match(Integer(field)) if field
-    raise PrimitiveFailure, "Regexp#last_match primitive failed"
-  end
-
   def self.last_match=(match)
     Truffle.primitive :regexp_set_last_match
 
@@ -284,20 +277,6 @@ class Regexp
     return res ? res.begin(0) : nil
   end
 
-  def match_all(str)
-    start = 0
-    arr = []
-    while match = self.match_from(str, start)
-      arr << match
-      if match.collapsing?
-        start += 1
-      else
-        start = match.full.at(1)
-      end
-    end
-    arr
-  end
-
   def casefold?
     (options & IGNORECASE) > 0 ? true : false
   end
@@ -314,81 +293,12 @@ class Regexp
         'i' => Regexp::IGNORECASE,
         'x' => Regexp::EXTENDED
       }
-
-      attr_accessor :options
-      attr_accessor :source
-
-      def initialize(source="")
-        @source = source
-        @options = []
-        @negated_options = []
-      end
-
-      def <<(str)
-        @source << str
-      end
-
-      def empty?
-        @source.empty?
-      end
-
-      def flatten
-      end
-
-      def to_s
-        # Put in the proper \'s to escape /'s
-        # This is the same regexp used by #inspect
-        source.gsub(%r!(\\.)|/!) { $1 || '\/' }
-      end
-
-      def has_options!
-        @has_options = true
-      end
-
-      def has_options?
-        @has_options
-      end
     end
 
     class OptionsGroupPart < Part
-      def to_s
-        @flatten ? "#{source}" : "(#{options_string}#{source})"
-      end
-
-      def push_option!(identifier)
-        @options << identifier
-      end
-
-      def push_negated_option!(identifier)
-        @negated_options << identifier
-      end
-
-      def flatten
-        @flatten = true
-      end
-
-      def options_string
-        string = @options.join + (@negated_options.empty? ? "" : @negated_options.join)
-        "?#{string}:"
-      end
-      private :options_string
     end
 
     class LookAheadGroupPart < Part
-      def to_s
-        "(#{source})"
-      end
-    end
-
-    def initialize(source, options = 0)
-      @source = source
-      @options = options
-      @parts = [Part.new]
-    end
-
-
-    def string
-      "(?#{options_string}:#{parts_string})"
     end
 
     def parts_string
@@ -396,86 +306,6 @@ class Regexp
         parts.first.flatten
       end
       parts.map { |part| part.to_s }.join
-    end
-
-    def parts
-      return @parts if @already_parsed
-      @index = 0
-      create_parts
-      @parts.reject! { |part| part.empty? }
-      @already_parsed = true
-      @parts
-    end
-
-    # TODO: audit specs for this method when specs are running
-    def create_parts
-      while @index < @source.size
-        if @source[@index].chr == '('
-          idx = @index + 1
-          if idx < @source.size and @source[idx].chr == '?'
-            process_group
-          else
-            push_current_character!
-          end
-        else
-          push_current_character!
-        end
-      end
-    end
-
-    def process_group
-      @index += 1
-      @parts << group_part_class.new
-
-      if in_group_with_options?
-        @index += 1
-        process_group_options
-      end
-
-      process_look_ahead if in_lookahead_group?
-      process_until_group_finished
-      add_part!
-    end
-
-    def group_part_class
-      if in_group_with_options?
-        OptionsGroupPart
-      else
-        LookAheadGroupPart
-      end
-    end
-
-    def in_lookahead_group?
-      @source[@index, 2] == "?=" || @source[@index, 2] == "?!"
-    end
-
-    def process_look_ahead
-      push_current_character!
-      push_current_character!
-    end
-
-    def in_group_with_options?
-      return false if @source[@index, 1] != '?'
-
-      @source[@index + 1..-1].each_byte do |b|
-        c = b.chr
-        return true if ':' == c
-        return false unless %w[m i x -].include? c
-      end
-    end
-
-    def process_group_options
-      @parts.last.has_options!
-      case @source[@index].chr
-      when ')'
-        return
-      when ':'
-        @index += 1
-        return
-      else
-        push_option!
-        process_group_options
-      end
     end
 
     def process_until_group_finished
@@ -486,20 +316,6 @@ class Regexp
         push_current_character!
         process_until_group_finished
       end
-    end
-
-    def push_current_character!
-      @parts.last << @source[@index].chr
-      @index += 1
-    end
-
-    def push_option!
-      @parts.last.push_option!(@source[@index].chr)
-      @index += 1
-    end
-
-    def add_part!
-      @parts << Part.new
     end
 
     PossibleOptions = [[MULTILINE, "m"], [IGNORECASE, "i"], [EXTENDED, "x"]]
@@ -533,10 +349,6 @@ class Regexp
     string << 'i' if (option & IGNORECASE) > 0
     string << 'x' if (option & EXTENDED) > 0
     string
-  end
-
-  def name_table
-    @names
   end
 
   #
@@ -618,10 +430,6 @@ class MatchData
     @source.dup.freeze
   end
 
-  def source
-    @source
-  end
-
   def names
     @regexp.names
   end
@@ -647,23 +455,6 @@ class MatchData
     end
   end
 
-  def select
-    unless block_given?
-      raise LocalJumpError, "no block given"
-    end
-
-    out = []
-    ma = matched_area()
-    out << ma if yield ma
-
-    each_capture do |str|
-      if yield(str)
-        out << str
-      end
-    end
-    return out
-  end
-
   def values_at(*indexes)
     indexes.map { |i| self[i] }.flatten(1)
   end
@@ -675,24 +466,6 @@ class MatchData
   end
 
   private :matched_area
-
-  def get_capture(num)
-    x, y = @region[num]
-    return nil if !y or x == -1
-
-    return @source.byteslice(x, y-x)
-  end
-
-  private :get_capture
-
-  def each_capture
-    @region.each do |tup|
-      x, y = *tup
-      yield @source.byteslice(x, y-x)
-    end
-  end
-
-  private :each_capture
 
 end
 

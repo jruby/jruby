@@ -25,29 +25,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class Integer < Numeric
-  def self.induced_from(obj)
-    case obj
-    when Fixnum, Bignum
-      obj
-    when Float
-      obj.to_i
-    else
-      raise TypeError, "failed to convert #{obj.class} into Integer"
-    end
-  end
-
-  def &(other)
-    self & Rubinius::Type.coerce_to_bitwise_operand(other)
-  end
-
-  def |(other)
-    self | Rubinius::Type.coerce_to_bitwise_operand(other)
-  end
-
-  def ^(other)
-    self ^ Rubinius::Type.coerce_to_bitwise_operand(other)
-  end
-
   alias_method :truncate, :to_i
   alias_method :ceil, :to_i
   alias_method :floor, :to_i
@@ -173,14 +150,6 @@ class Integer < Numeric
     index = Rubinius::Type.coerce_to(index, Integer, :to_int)
     return 0 if index.is_a?(Bignum)
     index < 0 ? 0 : (self >> index) & 1
-  end
-
-  # FIXME: implement a fast way to calculate bignum exponents
-  def **(exp)
-    if exp.is_a?(Bignum)
-      raise TypeError, "Bignum exponent #{exp} too large"
-    end
-    super(exp)
   end
 
   def next
