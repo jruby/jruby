@@ -129,50 +129,106 @@ class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
 
     def runArgs(self, bmSuiteArgs):
         return mx_benchmark.splitArgs(bmSuiteArgs, bmSuiteArgs)[1]
+    
+    def default_benchmarks(self):
+        return self.benchmarks()
 
     def run(self, benchmarks, bmSuiteArgs):
         def fixUpResult(result):
             result.update({
-                'host-vm': os.environ['HOST_VM'],
-                'host-vm-config': os.environ['HOST_VM_CONFIG'],
-                'guest-vm': os.environ['GUEST_VM'],
-                'guest-vm-config': os.environ['GUEST_VM_CONFIG']
+                'host-vm': os.environ.get('HOST_VM', 'host-vm'),
+                'host-vm-config': os.environ.get('HOST_VM_CONFIG', 'host-vm-config'),
+                'guest-vm': os.environ.get('GUEST_VM', 'guest-vm'),
+                'guest-vm-config': os.environ.get('GUEST_VM_CONFIG', 'guest-vm-config')
             })
             return result
         
-        return [fixUpResult(self.runBenchmark(b, bmSuiteArgs)) for b in benchmarks or self.benchmarks()]
+        return [fixUpResult(r) for b in benchmarks or self.default_benchmarks() for r in self.runBenchmark(b, bmSuiteArgs)]
     
     def runBenchmark(self, benchmark, bmSuiteArgs):
         raise NotImplementedError()
 
-allocation_benchmarks = {
-    'hello': ['-e', "puts 'hello'"]
+metrics_benchmarks = {
+    'hello': ['-e', "puts 'hello'"],
+    'compile-mandelbrot': ['--graal', 'bench/truffle/metrics/mandelbrot.rb']
 }
 
-class AllocationBenchmarkSuite(RubyBenchmarkSuite):
+default_metrics_benchmarks = ['hello']
+
+class MetricsBenchmarkSuite(RubyBenchmarkSuite):
+    def benchmarks(self):
+        return metrics_benchmarks.keys()
+    
+    def default_benchmarks(self):
+        return default_metrics_benchmarks
+
+class AllocationBenchmarkSuite(MetricsBenchmarkSuite):
     def name(self):
         return 'allocation'
-
-    def benchmarks(self):
-        return allocation_benchmarks.keys()
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         out = mx.OutputCapture()
         
         options = []
         
-        jt(['metrics', 'alloc', '--json'] + allocation_benchmarks[benchmark] + bmSuiteArgs, out=out)
+        jt(['metrics', 'alloc', '--json'] + metrics_benchmarks[benchmark] + bmSuiteArgs, out=out)
         
         data = json.loads(out.data)
         
-        result = {
+        return [{
+            'benchmark': benchmark,
+            'metric.name': 'time',
+            'metric.value': data['median'],
+            'metric.unit': 's',
+            'metric.better': 'lower',
+            'extra.metric.human': data['human']
+        }]
+
+class MinHeapBenchmarkSuite(MetricsBenchmarkSuite):
+    def name(self):
+        return 'minheap'
+
+    def runBenchmark(self, benchmark, bmSuiteArgs):
+        out = mx.OutputCapture()
+        
+        options = []
+        
+        jt(['metrics', 'minheap', '--json'] + metrics_benchmarks[benchmark] + bmSuiteArgs, out=out)
+        
+        data = json.loads(out.data)
+        
+        return [{
             'benchmark': benchmark,
             'metric.name': 'memory',
-            'metric.value': data['median'],
-            'metric.unit': 'B',
-            'extra.metric.error-num': data['error']
-        }
+            'metric.value': data['min'],
+            'metric.unit': 'MB',
+            'metric.better': 'lower',
+            'extra.metric.human': data['human']
+        }]
+
+class TimeBenchmarkSuite(MetricsBenchmarkSuite):
+    def name(self):
+        return 'time'
+
+    def runBenchmark(self, benchmark, bmSuiteArgs):
+        out = mx.OutputCapture()
         
-        return result
+        options = []
+        
+        jt(['metrics', 'time', '--json'] + metrics_benchmarks[benchmark] + bmSuiteArgs, out=out)
+        
+        data = json.loads(out.data)
+        
+        return [{
+            'benchmark': benchmark,
+            'extra.metric.region': r,
+            'metric.name': 'time',
+            'metric.value': t,
+            'metric.unit': 's',
+            'metric.better': 'lower',
+            'extra.metric.human': data['human']
+        } for r, t in data.items() if r != 'human']
 
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
+mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())
+mx_benchmark.add_bm_suite(TimeBenchmarkSuite())

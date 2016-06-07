@@ -214,7 +214,6 @@ public abstract class QueueNodes {
     public abstract static class MarshalDumpNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        @TruffleBoundary
         public Object marshal_dump(DynamicObject self) {
             throw new RaiseException(coreExceptions().typeErrorCantDump(self, this));
         }

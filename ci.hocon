@@ -1,7 +1,6 @@
 jt: [ruby, tool/jt.rb]
 
 common-setup: [
-  [rm, -rf, mx.jruby],
   [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
   [cp, bin/jruby.bash, bin/jruby],
   [chmod, +x, bin/jruby],
@@ -36,6 +35,7 @@ no-graal: {
 
 graal-core: {
   setup: ${common-setup} [
+    [rm, -rf, mx.jruby],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
     [mx, sclone, --kind, git, "https://github.com/graalvm/graal-core.git", graal-core],
@@ -95,6 +95,40 @@ gate-caps: {
   capabilities: [linux, amd64, gate, post-push]
 }
 
+bench-caps: {
+  capabilities: [x52, linux, amd64, bench, post-merge]
+}
+
+daily-bench-caps: {
+  capabilities: [x52, linux, amd64, daily]
+}
+
+post-process-and-upload-results: [
+  [tool/truffle/post-process-results-json.rb, bench-results.json, bench-results-processed.json],
+  [cat, bench-results-processed.json],
+  [bench-uploader.py, bench-results-processed.json]
+]
+
+metrics: {
+  run: [
+    [mx, benchmark, allocation]
+  ] ${post-process-and-upload-results} [
+    [mx, benchmark, minheap]
+  ] ${post-process-and-upload-results} [
+    [mx, benchmark, time]
+  ] ${post-process-and-upload-results}
+}
+
+compiler-metrics: {
+  run: [
+    [mx, benchmark, "allocation:compile-mandelbrot"]
+  ] ${post-process-and-upload-results} [
+    [mx, benchmark, "minheap:compile-mandelbrot"]
+  ] ${post-process-and-upload-results} [
+    [mx, benchmark, "time:compile-mandelbrot"]
+  ] ${post-process-and-upload-results}
+}
+
 builds: [
   {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
   {name: ruby-test-specs-command-line} ${common} ${gate-caps} {run: [${jt} [test, specs, ":command_line"]]},
@@ -105,6 +139,12 @@ builds: [
   {name: ruby-test-integration} ${common} ${gate-caps} {run: [${jt} [test, integration]]},
   {name: ruby-test-tck} ${common} ${gate-caps} {run: [${jt} [test, tck]]},
   {name: ruby-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
+  
   {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},
-  {name: ruby-test-compiler-graalvm} ${common} ${graalvm} ${gate-caps} {run: [${jt} [test, compiler]]}
+  {name: ruby-test-compiler-graalvm} ${common} ${graalvm} ${gate-caps} {run: [${jt} [test, compiler]]},
+  
+  {name: ruby-test-metrics-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy} ${metrics},
+  {name: ruby-test-metrics-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy} ${metrics},
+  {name: ruby-test-metrics-truffle} ${common} ${no-graal} ${bench-caps} ${jruby-truffle} ${metrics},
+  {name: ruby-test-metrics-compiler} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${compiler-metrics}
 ]

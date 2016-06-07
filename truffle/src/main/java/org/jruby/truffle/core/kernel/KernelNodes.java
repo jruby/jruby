@@ -54,11 +54,10 @@ import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
+import org.jruby.truffle.core.cast.DurationToMillisecondsNodeGen;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.cast.NameToSymbolOrStringNodeGen;
-import org.jruby.truffle.core.cast.NumericToFloatNode;
-import org.jruby.truffle.core.cast.NumericToFloatNodeGen;
 import org.jruby.truffle.core.cast.ToPathNodeGen;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingNodes;
@@ -1628,43 +1627,18 @@ public abstract class KernelNodes {
 
     }
 
+    @NodeChild(value = "duration", type = RubyNode.class)
     @CoreMethod(names = "sleep", isModuleFunction = true, optional = 1)
-    public abstract static class SleepNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class SleepNode extends CoreMethodNode {
 
-        @Child NumericToFloatNode floatCastNode;
-
-        @Specialization
-        public long sleep(NotProvided duration) {
-            return doSleepMillis(Long.MAX_VALUE);
-        }
-
-        @Specialization
-        public long sleep(int duration) {
-            return doSleepMillis(duration * 1000L);
+        @CreateCast("duration")
+        public RubyNode coerceDuration(RubyNode duration) {
+            return DurationToMillisecondsNodeGen.create(false, duration);
         }
 
         @Specialization
         public long sleep(long duration) {
-            return doSleepMillis(duration * 1000);
-        }
-
-        @Specialization
-        public long sleep(double duration) {
-            return doSleepMillis((long) (duration * 1000));
-        }
-
-        @Specialization(guards = "isRubiniusUndefined(duration)")
-        public long sleep(DynamicObject duration) {
-            return sleep(NotProvided.INSTANCE);
-        }
-
-        @Specialization(guards = "!isRubiniusUndefined(duration)")
-        public long sleep(VirtualFrame frame, DynamicObject duration) {
-            if (floatCastNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                floatCastNode = insert(NumericToFloatNodeGen.create(getContext(), getSourceSection(), "to_f", null));
-            }
-            return sleep(floatCastNode.executeDouble(frame, duration));
+            return doSleepMillis(duration);
         }
 
         @TruffleBoundary

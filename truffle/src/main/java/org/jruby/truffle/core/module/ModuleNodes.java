@@ -1133,7 +1133,7 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreter();
                 classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            classExecNode.executeClassExec(frame, module, new Object[]{}, block);
+            classExecNode.executeClassExec(frame, module, new Object[]{module}, block);
         }
 
         @Specialization

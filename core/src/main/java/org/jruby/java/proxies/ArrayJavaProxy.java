@@ -66,15 +66,12 @@ public final class ArrayJavaProxy extends JavaProxy {
         return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, array), array);
     }
 
-    public JavaArray getJavaArray() {
-        JavaArray javaArray = (JavaArray) dataGetStruct();
+    protected JavaArray asJavaObject(final Object array) {
+        return new JavaArray(getRuntime(), array);
+    }
 
-        if (javaArray == null) {
-            javaArray = new JavaArray(getRuntime(), getObject());
-            dataWrapStruct(javaArray);
-        }
-
-        return javaArray;
+    public final JavaArray getJavaArray() {
+        return (JavaArray) dataGetStruct();
     }
 
     @JRubyMethod(name = {"length", "size"})

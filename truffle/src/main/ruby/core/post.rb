@@ -86,9 +86,6 @@ class Module
 
       Truffle.privately do
         mod.append_features self
-      end
-
-      Truffle.privately do
         mod.included self
       end
     end

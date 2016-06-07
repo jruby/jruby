@@ -133,6 +133,10 @@ public abstract class RubyGuards {
         return Layouts.MODULE.isModule(value);
     }
 
+    public static boolean isRubyMutex(DynamicObject value) {
+        return Layouts.MUTEX.isMutex(value);
+    }
+
     public static boolean isRubyRegexp(Object value) {
         return Layouts.REGEXP.isRegexp(value);
     }

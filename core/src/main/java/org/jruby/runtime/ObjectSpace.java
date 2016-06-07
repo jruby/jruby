@@ -32,9 +32,12 @@ package org.jruby.runtime;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -52,15 +55,15 @@ import org.jruby.util.WeakIdentityHashMap;
  * for now, this may be acceptable.
  */
 public class ObjectSpace {
-    private final ReferenceQueue<Object> deadReferences = new ReferenceQueue<Object>();
-    private final ReferenceQueue<ObjectGroup> objectGroupReferenceQueue = new ReferenceQueue<ObjectGroup>();
+    private final ReferenceQueue<Object> deadReferences = new ReferenceQueue<>();
+    private final ReferenceQueue<ObjectGroup> objectGroupReferenceQueue = new ReferenceQueue<>();
     private WeakReferenceListNode top;
 
     private ReferenceQueue deadIdentityReferences = new ReferenceQueue();
-    private final Map identities = new HashMap();
-    private final Map identitiesByObject = new WeakIdentityHashMap();
+    private final Map<Long, IdReference> identities = new HashMap<>(64);
+    private final Map<IRubyObject, Long> identitiesByObject = new WeakIdentityHashMap(64);
     private static final AtomicLong maxId = new AtomicLong(1000);
-    private final ThreadLocal<Reference<ObjectGroup>> currentObjectGroup = new ThreadLocal<Reference<ObjectGroup>>();
+    private final ThreadLocal<Reference<ObjectGroup>> currentObjectGroup = new ThreadLocal<>();
     private Reference<GroupSweeper> groupSweeperReference;
 
     public void registerObjectId(long id, IRubyObject object) {
@@ -75,10 +78,10 @@ public class ObjectSpace {
         // Fixnums get all the odd IDs, so we use identityHashCode * 2
         return maxId.getAndIncrement() * 2;
     }
-    
+
     public long createAndRegisterObjectId(IRubyObject rubyObject) {
         synchronized (identities) {
-            Long longId = (Long) identitiesByObject.get(rubyObject);
+            Long longId = identitiesByObject.get(rubyObject);
             if (longId == null) {
                 longId = createId(rubyObject);
             }
@@ -95,36 +98,37 @@ public class ObjectSpace {
     public IRubyObject id2ref(long id) {
         synchronized (identities) {
             cleanIdentities();
-            IdReference reference = (IdReference) identities.get(Long.valueOf(id));
+            IdReference reference = identities.get(id);
             if (reference == null) {
                 return null;
             }
-            return (IRubyObject) reference.get();
+            return reference.get();
         }
     }
 
     private void cleanIdentities() {
         IdReference ref;
-        while ((ref = (IdReference) deadIdentityReferences.poll()) != null)
-            identities.remove(Long.valueOf(ref.id()));
+        while ((ref = (IdReference) deadIdentityReferences.poll()) != null) {
+            identities.remove(ref.id);
+        }
     }
 
     @Deprecated
     public long idOf(IRubyObject rubyObject) {
         return createAndRegisterObjectId(rubyObject);
     }
-    
+
     public void addFinalizer(IRubyObject object, IRubyObject proc) {
         object.addFinalizer(proc);
     }
-    
+
     public void removeFinalizers(long id) {
         IRubyObject object = id2ref(id);
         if (object != null) {
             object.removeFinalizers();
         }
     }
-    
+
     public void add(IRubyObject object) {
         if (true && object.getMetaClass() != null && !(object instanceof JavaProxy)) {
             // If the object is already frozen when we encounter it, it's pre-frozen.
@@ -170,7 +174,7 @@ public class ObjectSpace {
     }
 
     public synchronized Iterator iterator(RubyModule rubyClass) {
-        final List<Reference<Object>> objList = new ArrayList<Reference<Object>>();
+        final ArrayList<Reference<Object>> objList = new ArrayList<>(64);
         WeakReferenceListNode current = top;
         while (current != null) {
             Object obj = current.get();
@@ -192,7 +196,7 @@ public class ObjectSpace {
         }
 
         return new Iterator() {
-            private Iterator<Reference<Object>> iter = objList.iterator();
+            final Iterator<Reference<Object>> iter = objList.iterator();
 
             public boolean hasNext() {
                 throw new UnsupportedOperationException();
@@ -216,7 +220,7 @@ public class ObjectSpace {
 
     private void cleanup(ReferenceQueue<?> referenceQueue) {
         WeakReferenceListNode reference;
-        while ((reference = (WeakReferenceListNode)referenceQueue.poll()) != null) {
+        while ((reference = (WeakReferenceListNode) referenceQueue.poll()) != null) {
             reference.remove();
         }
     }
@@ -246,16 +250,12 @@ public class ObjectSpace {
         }
     }
 
-    private static class IdReference extends WeakReference {
-        private final long id;
+    private static class IdReference extends WeakReference<IRubyObject> {
+        final long id;
 
-        public IdReference(IRubyObject object, long id, ReferenceQueue queue) {
+        IdReference(IRubyObject object, long id, ReferenceQueue queue) {
             super(object, queue);
             this.id = id;
-        }
-
-        public long id() {
-            return id;
         }
     }
 
