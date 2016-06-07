@@ -105,14 +105,12 @@ public abstract class SingletonClassNode extends RubyNode {
                     "!isNil(cachedObject)",
                     "!isRubyBignum(cachedObject)",
                     "!isRubySymbol(cachedObject)",
-                    "!isRubyClass(cachedObject)",
-                    "object.getShape() == cachedShape"
+                    "!isRubyClass(cachedObject)"
             },
             limit = "getCacheLimit()")
     protected DynamicObject singletonClassInstanceCached(
             DynamicObject object,
             @Cached("object") DynamicObject cachedObject,
-            @Cached("object.getShape()") Shape cachedShape,
             @Cached("getSingletonClassForInstance(object)") DynamicObject cachedSingletonClass) {
         return cachedSingletonClass;
     }
