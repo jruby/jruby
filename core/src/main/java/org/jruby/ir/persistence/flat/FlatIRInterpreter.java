@@ -17,6 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -26,11 +27,30 @@ public class FlatIRInterpreter {
 
     public static void main(String[] args) {
         Ruby runtime = Ruby.newInstance();
-        byte[] src = args[0].getBytes();
+        byte[] src;
+        String outputFile;
+        if (args[0].equals("-e")) {
+            src = args[1].getBytes();
+            outputFile = "dash_e.ir";
+        } else {
+            outputFile = args[0].replaceAll(".rb$", ".ir");
+            try {
+                FileInputStream fis = new FileInputStream(args[0]);
+                src = new byte[(int)fis.getChannel().size()];
+                int remaining = src.length;
+                while (remaining > 0) {
+                    remaining -= fis.read(src, src.length - remaining, remaining);
+                }
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+        }
+
         ParseResult result = runtime.parseFromMain("blah.rb", new ByteArrayInputStream(src));
         InterpreterContext ic = IRBuilder.buildRoot(runtime.getIRManager(), (RootNode) result);
         IRScope scope = ic.getScope();
         FlatBufferBuilder builder = new FlatBufferBuilder();
+        builder.forceDefaults(true);
         int index = FlatIRWriter.createIRScopeFlat(builder, scope);
 
         builder.finish(index);
@@ -39,7 +59,7 @@ public class FlatIRInterpreter {
         int size = buffer.limit();
 
         try {
-            FileOutputStream out = new FileOutputStream("blah.ir");
+            FileOutputStream out = new FileOutputStream(outputFile);
             out.getChannel().write(buffer);
             out.close();
         } catch (Throwable t) {
