@@ -196,20 +196,30 @@ public abstract class ClassNodes {
         return rubyClass;
     }
 
-    @TruffleBoundary
     public static DynamicObject getSingletonClass(RubyContext context, DynamicObject rubyClass) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
         return ensureItHasSingletonClassCreated(context, getLazyCreatedSingletonClass(context, rubyClass));
     }
 
-    private static DynamicObject getLazyCreatedSingletonClass(RubyContext context, DynamicObject rubyClass) {
-        CompilerAsserts.neverPartOfCompilation();
+    public static DynamicObject getSingletonClassOrNull(RubyContext context, DynamicObject rubyClass) {
+        if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(rubyClass))) {
+            return ensureItHasSingletonClassCreated(context, Layouts.BASIC_OBJECT.getMetaClass(rubyClass));
+        } else {
+            return null;
+        }
+    }
 
+    private static DynamicObject getLazyCreatedSingletonClass(RubyContext context, DynamicObject rubyClass) {
         if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(rubyClass))) {
             return Layouts.BASIC_OBJECT.getMetaClass(rubyClass);
         }
 
+        return createSingletonClass(context, rubyClass);
+    }
+
+    @TruffleBoundary
+    private static DynamicObject createSingletonClass(RubyContext context, DynamicObject rubyClass) {
         final DynamicObject singletonSuperclass;
         if (getSuperClass(rubyClass) == null) {
             singletonSuperclass = Layouts.BASIC_OBJECT.getLogicalClass(rubyClass);
