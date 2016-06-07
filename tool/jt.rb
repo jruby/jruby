@@ -924,7 +924,7 @@ module Commands
     end
     times[' jvm'] = total - times['  main']
     times['total'] = total
-    times['unaccounted'] = total - accounted_for
+    times['unaccounted'] = total - accounted_for if times['    load-core']
     times
   end
 
