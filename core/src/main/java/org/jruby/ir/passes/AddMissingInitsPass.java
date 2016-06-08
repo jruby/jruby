@@ -28,14 +28,20 @@ public class AddMissingInitsPass extends CompilerPass {
 
         // Add inits to entry
         BasicBlock bb = scope.getCFG().getEntryBB();
-        Variable first = null;
         for (Variable v : undefinedVars) {
             // System.out.println("Adding missing init for " + v + " in " + scope);
-            if (first == null) {
+
+            // Add lvar inits to the end of the BB
+            //   (so that scopes are pushed before its vars are updated)
+            // and tmpvar inits to the beginning of the BB
+            //   (so that if a bad analysis causes an already initialized tmp
+            //    to be found uninitialized, this unnecessary init doesn't
+            //    clobber an already updated tmp. The entryBB will not have
+            //    any loads of lvars, so lvars aren't subject to this problem).
+            if (v instanceof LocalVariable) {
                 bb.getInstrs().add(new CopyInstr(v, new Nil()));
-                first = v;
             } else {
-                bb.getInstrs().add(new CopyInstr(v, first));
+                bb.getInstrs().add(0, new CopyInstr(v, new Nil()));
             }
         }
 
