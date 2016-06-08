@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Nil;
+import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
