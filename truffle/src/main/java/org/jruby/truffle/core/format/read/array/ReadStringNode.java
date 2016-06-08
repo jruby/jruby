@@ -72,7 +72,7 @@ public abstract class ReadStringNode extends FormatNode {
 
     private Object readAndConvert(VirtualFrame frame, Object value) {
         if (toStringNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             toStringNode = insert(ToStringNodeGen.create(getContext(),
                     convertNumbersToStrings,
                     conversionMethod,

@@ -73,7 +73,7 @@ public class EnsureNode extends RubyNode {
 
     private void setLastExceptionAndRunEnsure(VirtualFrame frame, RaiseException exception) {
         if (setExceptionVariableNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             setExceptionVariableNode = insert(new SetExceptionVariableNode(getContext()));
         }
 

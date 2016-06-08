@@ -58,7 +58,7 @@ public abstract class ToIntNode extends RubyNode {
             }
         }
 
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.transferToInterpreterAndInvalidate();
         if (RubyGuards.isRubyBignum(object)) {
             throw new RaiseException(coreExceptions().rangeError("bignum too big to convert into `long'", this));
         } else {
@@ -86,7 +86,7 @@ public abstract class ToIntNode extends RubyNode {
     @Specialization
     public Object coerceDouble(VirtualFrame frame, double value) {
         if (floatToIntNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             floatToIntNode = insert(FloatNodesFactory.ToINodeFactory.create(getContext(), getSourceSection(), null));
         }
         return floatToIntNode.executeToI(frame, value);
@@ -106,7 +106,7 @@ public abstract class ToIntNode extends RubyNode {
 
     private Object coerceObject(VirtualFrame frame, Object object, BranchProfile errorProfile) {
         if (toIntNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
 

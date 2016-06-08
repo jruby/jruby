@@ -217,7 +217,7 @@ public abstract class FiberNodes {
 
         protected Object singleValue(VirtualFrame frame, Object[] args) {
             if (singleValueCastNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 singleValueCastNode = insert(SingleValueCastNodeGen.create(getContext(), getSourceSection(), null));
             }
             return singleValueCastNode.executeSingleValue(frame, args);

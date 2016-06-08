@@ -78,7 +78,7 @@ public abstract class WriteFrameSlotNode extends Node {
 
     protected boolean checkObjectKind(Frame frame) {
         if (frameSlot.getKind() != FrameSlotKind.Object) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             frameSlot.setKind(FrameSlotKind.Object);
         }
 
@@ -95,7 +95,7 @@ public abstract class WriteFrameSlotNode extends Node {
 
     private boolean initialSetKind(FrameSlotKind kind) {
         if (frameSlot.getKind() == FrameSlotKind.Illegal) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             frameSlot.setKind(kind);
             return true;
         }

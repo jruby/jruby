@@ -56,7 +56,7 @@ public class ReadSuperArgumentsNode extends RubyNode {
 
     private Object[] unsplat(Object[] argumentsObjects) {
         if (unsplatNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             unsplatNode = insert(ArrayToObjectArrayNodeGen.create(null));
         }
         return unsplatNode.unsplat(argumentsObjects);

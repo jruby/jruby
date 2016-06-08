@@ -168,7 +168,7 @@ public abstract class SingletonClassNode extends RubyNode {
 
     protected boolean isFrozen(Object object) {
         if (isFrozenNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
         }
         return isFrozenNode.executeIsFrozen(object);

@@ -55,7 +55,7 @@ public abstract class ReadDoubleNode extends FormatNode {
     @Specialization
     public double read(VirtualFrame frame, Object[] source) {
         if (toDoubleNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             toDoubleNode = insert(ToDoubleNodeGen.create(getContext(), null));
         }
 

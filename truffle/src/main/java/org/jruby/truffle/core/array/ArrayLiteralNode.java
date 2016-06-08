@@ -237,7 +237,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
 
             final Object[] executedValues = new Object[values.length];
 

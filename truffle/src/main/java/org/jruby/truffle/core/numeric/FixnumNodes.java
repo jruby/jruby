@@ -68,7 +68,7 @@ public abstract class FixnumNodes {
         @Specialization
         public Object negWithOverflow(long value) {
             if (fixnumOrBignumNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 fixnumOrBignumNode = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
             }
 
@@ -878,7 +878,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = "b < 0")
         public Object leftShiftNeg(VirtualFrame frame, long a, int b) {
             if (rightShiftNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 rightShiftNode = insert(FixnumNodesFactory.RightShiftNodeFactory.create(null));
             }
             return rightShiftNode.executeRightShift(frame, a, -b);
@@ -887,7 +887,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = { "!isInteger(b)", "!isLong(b)" })
         public Object leftShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             return fallbackCallNode.call(frame, a, "left_shift_fallback", null, b);
@@ -938,7 +938,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = "b < 0")
         public Object rightShiftNeg(VirtualFrame frame, long a, int b) {
             if (leftShiftNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(null));
             }
             return leftShiftNode.executeLeftShift(frame, a, -b);
@@ -958,7 +958,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = { "isRubyBignum(b)", "!isPositive(b)" })
         public Object rightShiftNeg(VirtualFrame frame, long a, DynamicObject b) {
             if (leftShiftNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(null));
             }
             return leftShiftNode.executeLeftShift(frame, a, Layouts.BIGNUM.getValue(b).negate());
@@ -967,7 +967,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = { "!isInteger(b)", "!isLong(b)" })
         public Object rightShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             return fallbackCallNode.call(frame, a, "right_shift_fallback", null, b);

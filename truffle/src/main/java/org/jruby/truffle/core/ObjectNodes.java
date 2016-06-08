@@ -122,7 +122,7 @@ public abstract class ObjectNodes {
         @Specialization
         public Object objectInfect(Object host, Object source) {
             if (isTaintedNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), getSourceSection(), null));
             }
 
@@ -130,7 +130,7 @@ public abstract class ObjectNodes {
                 // This lazy node allocation effectively gives us a branch profile
 
                 if (taintNode == null) {
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     taintNode = insert(TaintNodeGen.create(getContext(), getSourceSection(), null));
                 }
 

@@ -255,7 +255,7 @@ public abstract class ModuleNodes {
 
         private Object isSubclass(DynamicObject self, DynamicObject other) {
             if (subclassNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 subclassNode = insert(ModuleNodesFactory.IsSubclassOfOrEqualToNodeFactory.create(null));
             }
             return subclassNode.executeIsSubclassOfOrEqualTo(self, other);
@@ -576,7 +576,7 @@ public abstract class ModuleNodes {
 
         protected DynamicObject toStr(VirtualFrame frame, Object object) {
             if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
             return toStrNode.executeToStr(frame, object);
@@ -885,7 +885,7 @@ public abstract class ModuleNodes {
         }
 
         private Object getConstantNoInherit(VirtualFrame frame, DynamicObject module, String name, Node currentNode) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
 
             RubyConstant constant = ModuleOperations.lookupConstantWithInherit(getContext(), module, name, false, currentNode);
             if (constant == null) {
@@ -920,7 +920,7 @@ public abstract class ModuleNodes {
 
         private void loadAutoloadedConstant(VirtualFrame frame, RubyConstant constant) {
             if (requireNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 requireNode = insert(RequireNode.create());
             }
 
@@ -1130,7 +1130,7 @@ public abstract class ModuleNodes {
 
         void classEval(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             if (classExecNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), null));
             }
             classExecNode.executeClassExec(frame, module, new Object[]{module}, block);

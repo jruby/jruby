@@ -155,7 +155,7 @@ public abstract class KernelNodes {
             // Command is lexically a string interoplation, so variables will already have been expanded
 
             if (toHashNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -231,7 +231,7 @@ public abstract class KernelNodes {
 
         private boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null));
             }
 
@@ -240,7 +240,7 @@ public abstract class KernelNodes {
 
         private boolean areEqual(VirtualFrame frame, Object left, Object right) {
             if (equalNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -507,7 +507,7 @@ public abstract class KernelNodes {
 
         protected DynamicObject getCallerBinding(VirtualFrame frame) {
             if (bindingNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(null));
             }
 
@@ -699,11 +699,11 @@ public abstract class KernelNodes {
         @Specialization
         public Object exec(VirtualFrame frame, Object command, Object[] args) {
             if (toHashNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
 
             final String[] commandLine = new String[1 + args.length];
             commandLine[0] = command.toString();
@@ -792,7 +792,7 @@ public abstract class KernelNodes {
         @Specialization
         public boolean isFrozen(Object self) {
             if (isFrozenNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
 
@@ -1078,7 +1078,7 @@ public abstract class KernelNodes {
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame);
 
             if (parentBlock == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().argumentError("tried to create Proc object without a block", this));
             }
             return lambda(parentBlock);
@@ -1449,7 +1449,7 @@ public abstract class KernelNodes {
                 final String sourcePath = result;
 
                 if (sourcePath == null) {
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new RaiseException(coreExceptions().loadError("cannot infer basepath", featureString, this));
                 }
 
@@ -1534,7 +1534,7 @@ public abstract class KernelNodes {
 
         private boolean respondToMissing(VirtualFrame frame, Object object, DynamicObject name, boolean includeProtectedAndPrivate) {
             if (respondToMissingNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 respondToMissingNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
             }
 
@@ -1740,7 +1740,7 @@ public abstract class KernelNodes {
             }
 
             if (makeLeafRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null));
             }
 
@@ -1752,7 +1752,7 @@ public abstract class KernelNodes {
 
             if (result.isTainted()) {
                 if (taintNode == null) {
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
                 }
 
@@ -1784,7 +1784,7 @@ public abstract class KernelNodes {
         @Specialization
         public Object taint(Object object) {
             if (taintNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
             return taintNode.executeTaint(object);
@@ -1800,7 +1800,7 @@ public abstract class KernelNodes {
         @Specialization
         public boolean isTainted(Object object) {
             if (isTaintedNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
             return isTaintedNode.executeIsTainted(object);
@@ -1887,7 +1887,7 @@ public abstract class KernelNodes {
 
         protected void checkFrozen(Object object) {
             if (isFrozenNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
             }
             isFrozenNode.raiseIfFrozen(object);

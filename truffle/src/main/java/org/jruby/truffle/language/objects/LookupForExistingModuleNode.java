@@ -79,7 +79,7 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
 
     public RequireNode getRequireNode() {
         if (requireNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             requireNode = insert(RequireNode.create());
         }
         return requireNode;

@@ -108,7 +108,7 @@ public class DefineClassNode extends RubyNode {
 
     private void callInherited(VirtualFrame frame, DynamicObject superClass, DynamicObject childClass) {
         if (inheritedNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
         }
         inheritedNode.call(frame, superClass, "inherited", null, childClass);
@@ -116,7 +116,7 @@ public class DefineClassNode extends RubyNode {
 
     private RubyConstant lookupForExistingModule(VirtualFrame frame, String name, DynamicObject lexicalParent) {
         if (lookupForExistingModuleNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             lookupForExistingModuleNode = insert(LookupForExistingModuleNodeGen.create(null, null));
         }
         return lookupForExistingModuleNode.executeLookupForExistingModule(frame, name, lexicalParent);

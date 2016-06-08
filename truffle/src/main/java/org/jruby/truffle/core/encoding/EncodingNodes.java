@@ -338,7 +338,7 @@ public abstract class EncodingNodes {
         @Specialization(guards = { "!isRubyEncoding(encoding)", "!isRubyString(encoding)", "!isNil(encoding)" })
         public DynamicObject defaultExternal(VirtualFrame frame, Object encoding) {
             if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
@@ -372,7 +372,7 @@ public abstract class EncodingNodes {
         @Specialization(guards = { "!isRubyEncoding(encoding)", "!isNil(encoding)" })
         public DynamicObject defaultInternal(VirtualFrame frame, Object encoding) {
             if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 

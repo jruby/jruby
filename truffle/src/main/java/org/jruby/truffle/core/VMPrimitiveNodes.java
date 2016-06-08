@@ -105,7 +105,7 @@ public abstract class VMPrimitiveNodes {
 
         private boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null));
             }
             return referenceEqualNode.executeReferenceEqual(frame, left, right);

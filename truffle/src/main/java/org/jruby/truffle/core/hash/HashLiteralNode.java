@@ -135,7 +135,7 @@ public abstract class HashLiteralNode extends RubyNode {
 
         protected boolean isFrozen(Object object) {
             if (isFrozenNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
             }
             return isFrozenNode.executeIsFrozen(object);
@@ -155,7 +155,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             if (setNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 setNode = insert(SetNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null, null, null));
             }
 

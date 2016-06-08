@@ -53,7 +53,7 @@ public class TaintResultNode extends RubyNode {
     public Object maybeTaint(DynamicObject source, DynamicObject result) {
         if (taintProfile.profile(isTaintedNode.executeIsTainted(source))) {
             if (taintNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 taintNode = insert(TaintNodeGen.create(null, null, null));
             }
 

@@ -37,7 +37,7 @@ public class WriteDeclarationVariableNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         if (writeFrameSlotNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             writeFrameSlotNode = insert(WriteFrameSlotNodeGen.create(frameSlot));
         }
 

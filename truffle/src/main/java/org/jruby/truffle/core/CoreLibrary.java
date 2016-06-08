@@ -1090,7 +1090,7 @@ public class CoreLibrary {
             return (double) value;
         }
 
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.transferToInterpreterAndInvalidate();
         throw new UnsupportedOperationException();
     }
 

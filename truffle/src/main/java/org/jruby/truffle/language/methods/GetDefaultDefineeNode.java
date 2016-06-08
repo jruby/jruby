@@ -30,7 +30,7 @@ public class GetDefaultDefineeNode extends RubyNode {
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.transferToInterpreterAndInvalidate();
 
         final DynamicObject capturedDefaultDefinee = RubyArguments.getMethod(frame).getCapturedDefaultDefinee();
 

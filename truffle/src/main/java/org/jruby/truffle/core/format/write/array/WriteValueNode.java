@@ -53,7 +53,7 @@ public abstract class WriteValueNode extends FormatNode {
             return output;
         }
 
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.transferToInterpreterAndInvalidate();
 
         final Object[] newOutput = new Object[ArrayUtils.capacity(getContext(), output.length, neededLength)];
         System.arraycopy(output, 0, newOutput, 0, outputPosition);

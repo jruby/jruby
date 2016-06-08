@@ -49,7 +49,7 @@ public abstract class ReadHashValueNode extends FormatNode {
         final DynamicObject hash = (DynamicObject) source[0];
 
         if (fetchNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             fetchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
         }
 

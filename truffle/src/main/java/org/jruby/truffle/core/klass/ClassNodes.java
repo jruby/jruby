@@ -313,7 +313,7 @@ public abstract class ClassNodes {
 
         void triggerInheritedHook(VirtualFrame frame, DynamicObject subClass, DynamicObject superClass) {
             if (inheritedNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             inheritedNode.call(frame, superClass, "inherited", null, subClass);
@@ -321,7 +321,7 @@ public abstract class ClassNodes {
 
         void moduleInitialize(VirtualFrame frame, DynamicObject rubyClass, DynamicObject block) {
             if (moduleInitializeNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(null));
             }
             moduleInitializeNode.executeInitialize(frame, rubyClass, block);

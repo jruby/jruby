@@ -638,7 +638,7 @@ public abstract class HashNodes {
         @Specialization
         public Object each(VirtualFrame frame, DynamicObject hash, NotProvided block) {
             if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
@@ -1154,7 +1154,7 @@ public abstract class HashNodes {
             }
 
             if (lookupEntryNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 lookupEntryNode = insert(new LookupEntryNode(getContext(), getSourceSection()));
             }
 
@@ -1185,7 +1185,7 @@ public abstract class HashNodes {
         @Specialization(guards = "!isRubyHash(other)")
         public Object merge(VirtualFrame frame, DynamicObject hash, Object other, Object maybeBlock) {
             if (fallbackCallNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             
@@ -1231,7 +1231,7 @@ public abstract class HashNodes {
         @Specialization(guards = {"isEmptyHash(hash)", "!hasDefaultValue(hash)", "hasDefaultBlock(hash)"})
         public Object shiftEmptyDefaultProc(VirtualFrame frame, DynamicObject hash) {
             if (yieldNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 yieldNode = insert(new YieldNode(getContext()));
             }
 

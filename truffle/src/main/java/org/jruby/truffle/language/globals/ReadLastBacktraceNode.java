@@ -48,7 +48,7 @@ public class ReadLastBacktraceNode extends RubyNode {
 
     private ReadThreadLocalGlobalVariableNode getGetLastExceptionNode() {
         if (getLastExceptionNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             getLastExceptionNode = insert(new ReadThreadLocalGlobalVariableNode(getContext(), getSourceSection(), "$!", true));
         }
 
@@ -57,7 +57,7 @@ public class ReadLastBacktraceNode extends RubyNode {
 
     private CallDispatchHeadNode getGetBacktraceNode() {
         if (getBacktraceNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             getBacktraceNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
 

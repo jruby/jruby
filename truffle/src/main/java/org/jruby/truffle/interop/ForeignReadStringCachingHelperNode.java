@@ -69,7 +69,7 @@ abstract class ForeignReadStringCachingHelperNode extends RubyNode {
 
     protected boolean isStringLike(Object value) {
         if (isStringLikeNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             isStringLikeNode = insert(IsStringLikeNode.create());
         }
 

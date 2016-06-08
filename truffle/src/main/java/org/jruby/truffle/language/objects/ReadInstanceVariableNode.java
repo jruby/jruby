@@ -61,7 +61,7 @@ public class ReadInstanceVariableNode extends RubyNode {
 
     private ReadObjectFieldNode getReadNode() {
         if (readNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             readNode = insert(ReadObjectFieldNodeGen.create(name, nil()));
         }
 
@@ -70,7 +70,7 @@ public class ReadInstanceVariableNode extends RubyNode {
 
     private ReadObjectFieldNode getReadOrNullNode() {
         if (readOrNullNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             readOrNullNode = insert(ReadObjectFieldNodeGen.create(name, null));
         }
 

@@ -87,7 +87,7 @@ public class RopeOperations {
             case CR_VALID: return new ValidLeafRope(bytes, encoding, characterLength);
             case CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
             default: {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RuntimeException(String.format("Unknown code range type: %d", codeRange));
             }
         }

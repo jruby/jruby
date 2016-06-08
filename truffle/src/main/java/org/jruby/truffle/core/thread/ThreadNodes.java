@@ -156,7 +156,7 @@ public abstract class ThreadNodes {
             } else if (symbol == getNeverSymbol()) {
                 return InterruptMode.NEVER;
             } else {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().argumentError("invalid timing symbol", this));
             }
         }

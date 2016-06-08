@@ -97,7 +97,7 @@ public abstract class ToStringNode extends FormatNode {
     @Specialization(guards = "isRubyArray(array)")
     public byte[] toString(VirtualFrame frame, DynamicObject array) {
         if (toSNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
                     MissingBehavior.RETURN_MISSING));
         }
@@ -118,7 +118,7 @@ public abstract class ToStringNode extends FormatNode {
     @Specialization(guards = {"!isRubyString(object)", "!isRubyArray(object)"})
     public byte[] toString(VirtualFrame frame, Object object) {
         if (toStrNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
                     MissingBehavior.RETURN_MISSING));
         }
@@ -135,7 +135,7 @@ public abstract class ToStringNode extends FormatNode {
 
         if (inspectOnConversionFailure) {
             if (inspectNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(),
                         getEncapsulatingSourceSection(), null));
             }

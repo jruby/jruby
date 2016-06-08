@@ -115,7 +115,7 @@ public abstract class StringOperations {
         final int existingCodeRange = StringOperations.getCodeRange(string).toInt();
 
         if (existingCodeRange != codeRange) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new RuntimeException(String.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
         }
     }
@@ -165,7 +165,7 @@ public abstract class StringOperations {
         final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
         if (encoding == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new RaiseException(context.getCoreExceptions().encodingCompatibilityErrorIncompatible(
                     rope(string).getEncoding().toString(),
                     rope(other).getEncoding().toString(),

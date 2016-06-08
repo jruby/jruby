@@ -280,7 +280,7 @@ public abstract class PointerPrimitiveNodes {
         @Specialization(guards = "type == TYPE_PTR")
         public DynamicObject getAtOffsetPointer(DynamicObject pointer, int offset, int type) {
             if (allocateObjectNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null));
             }
 

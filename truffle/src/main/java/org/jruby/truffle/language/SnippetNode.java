@@ -39,7 +39,7 @@ public class SnippetNode extends RubyBaseNode {
 
     public Object execute(VirtualFrame frame, String expression, Object... arguments) {
         if (directCallNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
 
             this.expression = expression;
             assert arguments.length % 2 == 0;
@@ -77,7 +77,7 @@ public class SnippetNode extends RubyBaseNode {
         }
 
         if (arguments.length != parameters.length * 2) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new UnsupportedOperationException(
                     "number of arguments doesn't match number of parameters");
         }
