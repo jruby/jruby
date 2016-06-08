@@ -120,6 +120,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 
 public class CoreLibrary {
 
@@ -906,13 +909,32 @@ public class CoreLibrary {
             Main.printTruffleTimeMetric("before-load-core");
             state = State.LOADING_RUBY_CORE;
 
+            final Future<RubyRootNode>[] coreFileFutures = new Future[coreFiles.length];
+
+            for (int n = 0; n < coreFiles.length; n++) {
+                final int finalN = n;
+
+                coreFileFutures[n] = ForkJoinPool.commonPool().submit(() ->
+                        context.getCodeLoader().parse(
+                                context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[finalN]),
+                                UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node)
+                );
+            }
+
             try {
-                for (String coreFile : coreFiles) {
-                    final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + coreFile), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
-                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
+                for (int n = 0; n < coreFiles.length; n++) {
+                    final RubyRootNode rootNode = coreFileFutures[n].get();
+
+                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
+                            ParserContext.TOP_LEVEL,
+                            DeclarationContext.TOP_LEVEL,
+                            rootNode,
+                            null,
+                            context.getCoreLibrary().getMainObject());
+
                     deferredCall.callWithoutCallNode();
                 }
-            } catch (IOException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
 
@@ -940,7 +962,7 @@ public class CoreLibrary {
 
             try {
                 Main.printTruffleTimeMetric("before-post-boot");
-                
+
                 try {
                     final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core/post-boot.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
                     final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
