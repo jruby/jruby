@@ -435,7 +435,6 @@ class String
   end
 
   def shorten!(size)
-    self.modify!
     return if bytesize == 0
     self.num_bytes -= size
   end

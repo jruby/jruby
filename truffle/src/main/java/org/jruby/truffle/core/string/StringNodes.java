@@ -1485,17 +1485,6 @@ public abstract class StringNodes {
     }
 
     @NonStandard
-    @CoreMethod(names = "modify!", raiseIfFrozenSelf = true)
-    public abstract static class ModifyBangNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject modifyBang(DynamicObject string) {
-            StringOperations.modify(string);
-            return string;
-        }
-    }
-
-    @NonStandard
     @CoreMethod(names = "num_bytes=", lowerFixnumParameters = 0, required = 1)
     public abstract static class SetNumBytesNode extends CoreMethodArrayArgumentsNode {
 

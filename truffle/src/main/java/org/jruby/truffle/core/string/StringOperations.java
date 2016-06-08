@@ -134,18 +134,7 @@ public abstract class StringOperations {
         }
     }
 
-    public static void modify(DynamicObject string) {
-        // No-op. Ropes are immutable so any modifications must've been handled elsewhere.
-        // TODO (nirvdrum 07-Jan-16) Remove this method once we've inspected each caller for correctness.
-    }
-
-    public static void modify(DynamicObject string, int length) {
-        // No-op. Ropes are immutable so any modifications must've been handled elsewhere.
-        // TODO (nirvdrum 07-Jan-16) Remove this method once we've inspected each caller for correctness.
-    }
-
     public static void modifyAndKeepCodeRange(DynamicObject string) {
-        modify(string);
         keepCodeRange(string);
     }
 
