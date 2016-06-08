@@ -124,6 +124,7 @@ import org.jruby.truffle.core.rope.RopeNodes.MakeRepeatingNode;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rope.SubstringRope;
+import org.jruby.truffle.core.string.StringNodesFactory.StringAreComparableNodeGen;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -2957,80 +2958,20 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_equal", needsSelf = true)
-    @ImportStatic(StringGuards.class)
-    public static abstract class StringEqualPrimitiveNode extends PrimitiveArrayArgumentsNode {
+    @NodeChildren({ @NodeChild("first"), @NodeChild("second") })
+    public static abstract class StringAreComparableNode extends RubyNode {
 
-        public abstract boolean executeStringEqual(DynamicObject string, DynamicObject other);
+        public abstract boolean executeAreComparable(DynamicObject first, DynamicObject second);
 
-        @Specialization(guards = "ropeReferenceEqual(string, other)")
-        public boolean stringEqualsRopeEquals(DynamicObject string, DynamicObject other) {
-            return true;
-        }
-
-        @Specialization(guards = {
-                "isRubyString(other)",
-                "!ropeReferenceEqual(string, other)",
-                "bytesReferenceEqual(string, other)"
-        })
-        public boolean stringEqualsBytesEquals(DynamicObject string, DynamicObject other) {
-            return true;
-        }
-
-        @Specialization(guards = {
-                "isRubyString(other)",
-                "!ropeReferenceEqual(string, other)",
-                "!bytesReferenceEqual(string, other)",
-                "!areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
-        })
-        public boolean stringEqualNotComparable(DynamicObject string, DynamicObject other,
-                                                @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
-                                                @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
-                                                @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
-                                                @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
-                                                @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
-                                                @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
-                                                @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible) {
-            return false;
-        }
-
-        @Specialization(guards = {
-                "isRubyString(other)",
-                "!ropeReferenceEqual(string, other)",
-                "!bytesReferenceEqual(string, other)",
-                "areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
-        })
-        public boolean equal(DynamicObject string, DynamicObject other,
-                             @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
-                             @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
-                             @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
-                             @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
-                             @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
-                             @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
-                             @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible,
-                             @Cached("createBinaryProfile()") ConditionProfile differentSizeProfile) {
-
-            final Rope a = Layouts.STRING.getRope(string);
-            final Rope b = Layouts.STRING.getRope(other);
-
-            if (differentSizeProfile.profile(a.byteLength() != b.byteLength())) {
-                return false;
-            }
-
-            return a.equals(b);
-        }
-
+        @Specialization
         protected boolean areComparable(DynamicObject first, DynamicObject second,
-                                        ConditionProfile sameEncodingProfile,
-                                        ConditionProfile firstStringEmptyProfile,
-                                        ConditionProfile secondStringEmptyProfile,
-                                        ConditionProfile firstStringCR7BitProfile,
-                                        ConditionProfile secondStringCR7BitProfile,
-                                        ConditionProfile firstStringAsciiCompatible,
-                                        ConditionProfile secondStringAsciiCompatible) {
-            assert RubyGuards.isRubyString(first);
-            assert RubyGuards.isRubyString(second);
-
+                @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
+                @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
+                @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
+                @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
+                @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
+                @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
+                @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible) {
             final Rope firstRope = Layouts.STRING.getRope(first);
             final Rope secondRope = Layouts.STRING.getRope(second);
 
@@ -3068,17 +3009,76 @@ public abstract class StringNodes {
             return false;
         }
 
-        protected static boolean ropeReferenceEqual(DynamicObject first, DynamicObject second) {
-            assert RubyGuards.isRubyString(first);
-            assert RubyGuards.isRubyString(second);
+    }
 
+    @Primitive(name = "string_equal", needsSelf = true)
+    @ImportStatic(StringGuards.class)
+    public static abstract class StringEqualPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Child StringAreComparableNode areComparableNode;
+
+        public abstract boolean executeStringEqual(DynamicObject string, DynamicObject other);
+
+        @Specialization(guards = {
+                "isRubyString(other)",
+                "ropeReferenceEqual(string, other)"
+        })
+        public boolean stringEqualsRopeEquals(DynamicObject string, DynamicObject other) {
+            return true;
+        }
+
+        @Specialization(guards = {
+                "isRubyString(other)",
+                "!ropeReferenceEqual(string, other)",
+                "bytesReferenceEqual(string, other)"
+        })
+        public boolean stringEqualsBytesEquals(DynamicObject string, DynamicObject other) {
+            return true;
+        }
+
+        @Specialization(guards = {
+                "isRubyString(other)",
+                "!ropeReferenceEqual(string, other)",
+                "!bytesReferenceEqual(string, other)",
+                "!areComparable(string, other)"
+        })
+        public boolean stringEqualNotComparable(DynamicObject string, DynamicObject other) {
+            return false;
+        }
+
+        @Specialization(guards = {
+                "isRubyString(other)",
+                "!ropeReferenceEqual(string, other)",
+                "!bytesReferenceEqual(string, other)",
+                "areComparable(string, other)"
+        })
+        public boolean equal(DynamicObject string, DynamicObject other,
+                             @Cached("createBinaryProfile()") ConditionProfile differentSizeProfile) {
+
+            final Rope a = Layouts.STRING.getRope(string);
+            final Rope b = Layouts.STRING.getRope(other);
+
+            if (differentSizeProfile.profile(a.byteLength() != b.byteLength())) {
+                return false;
+            }
+
+            return a.equals(b);
+        }
+
+        protected boolean areComparable(DynamicObject first, DynamicObject second) {
+            if (areComparableNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                areComparableNode = insert(StringAreComparableNodeGen.create(null, null));
+            }
+
+            return areComparableNode.executeAreComparable(first, second);
+        }
+
+        protected static boolean ropeReferenceEqual(DynamicObject first, DynamicObject second) {
             return rope(first) == rope(second);
         }
 
         protected static boolean bytesReferenceEqual(DynamicObject first, DynamicObject second) {
-            assert RubyGuards.isRubyString(first);
-            assert RubyGuards.isRubyString(second);
-
             final Rope firstRope = rope(first);
             final Rope secondRope = rope(second);
 
