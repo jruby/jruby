@@ -67,9 +67,7 @@ import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
-import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -1810,12 +1808,6 @@ public class BodyTranslator extends Translator {
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@default_proc")) {
                 ret = HashNodesFactory.SetDefaultProcNodeFactory.create(self, rhs);
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            }
-        } else if (path.equals(corePath + "string.rb")) {
-            if (name.equals("@hash")) {
-                ret = StringNodesFactory.ModifyBangNodeFactory.create(new RubyNode[]{});
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
