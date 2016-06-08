@@ -125,6 +125,7 @@ import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rope.SubstringRope;
 import org.jruby.truffle.core.string.StringNodesFactory.StringAreComparableNodeGen;
+import org.jruby.truffle.language.CheckLayoutNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -3015,6 +3016,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringEqualPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
+        @Child CheckLayoutNode checkLayoutNode;
         @Child StringAreComparableNode areComparableNode;
 
         public abstract boolean executeStringEqual(DynamicObject string, DynamicObject other);
@@ -3063,6 +3065,15 @@ public abstract class StringNodes {
             }
 
             return a.equals(b);
+        }
+
+        protected boolean isRubyString(DynamicObject object) {
+            if (checkLayoutNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                checkLayoutNode = insert(new CheckLayoutNode());
+            }
+
+            return checkLayoutNode.isString(object);
         }
 
         protected boolean areComparable(DynamicObject first, DynamicObject second) {
