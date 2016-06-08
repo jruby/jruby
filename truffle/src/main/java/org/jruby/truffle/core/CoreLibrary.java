@@ -904,12 +904,14 @@ public class CoreLibrary {
 
         try {
             Main.printTruffleTimeMetric("before-load-core");
-
             state = State.LOADING_RUBY_CORE;
+
             try {
-                final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
-                final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
-                deferredCall.callWithoutCallNode();
+                for (String coreFile : coreFiles) {
+                    final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + coreFile), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
+                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
+                    deferredCall.callWithoutCallNode();
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -938,6 +940,7 @@ public class CoreLibrary {
 
             try {
                 Main.printTruffleTimeMetric("before-post-boot");
+                
                 try {
                     final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core/post-boot.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
                     final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
@@ -1377,5 +1380,95 @@ public class CoreLibrary {
     public DynamicObjectFactory getHandleFactory() {
         return handleFactory;
     }
+
+    private static final String[] coreFiles = {
+            "/core/pre.rb",
+            "/core/tuple.rb",
+            "/core/lookuptable.rb",
+            "/core/basic_object.rb",
+            "/core/mirror.rb",
+            "/core/bignum.rb",
+            "/core/channel.rb",
+            "/core/character.rb",
+            "/core/configuration.rb",
+            "/core/false.rb",
+            "/core/gc.rb",
+            "/core/nil.rb",
+            "/core/rubinius.rb",
+            "/core/stat.rb",
+            "/core/string.rb",
+            "/core/thread.rb",
+            "/core/true.rb",
+            "/core/type.rb",
+            "/core/weakref.rb",
+            "/core/library.rb",
+            "/core/truffle/ffi/ffi.rb",
+            "/core/truffle/ffi/pointer.rb",
+            "/core/truffle/ffi/ffi_file.rb",
+            "/core/truffle/ffi/ffi_struct.rb",
+            "/core/io.rb",
+            "/core/immediate.rb",
+            "/core/string_mirror.rb",
+            "/core/module.rb",
+            "/core/proc.rb",
+            "/core/enumerable_helper.rb",
+            "/core/enumerable.rb",
+            "/core/enumerator.rb",
+            "/core/argf.rb",
+            "/core/exception.rb",
+            "/core/undefined.rb",
+            "/core/hash.rb",
+            "/core/array.rb",
+            "/core/kernel.rb",
+            "/core/identity_map.rb",
+            "/core/comparable.rb",
+            "/core/numeric_mirror.rb",
+            "/core/numeric.rb",
+            "/core/truffle/ctype.rb",
+            "/core/integer.rb",
+            "/core/fixnum.rb",
+            "/core/lru_cache.rb",
+            "/core/regexp.rb",
+            "/core/encoding.rb",
+            "/core/env.rb",
+            "/core/errno.rb",
+            "/core/file.rb",
+            "/core/dir.rb",
+            "/core/dir_glob.rb",
+            "/core/file_test.rb",
+            "/core/float.rb",
+            "/core/marshal.rb",
+            "/core/object_space.rb",
+            "/core/range_mirror.rb",
+            "/core/range.rb",
+            "/core/struct.rb",
+            "/core/tms.rb",
+            "/core/process.rb",
+            "/core/process_mirror.rb",
+            "/core/random.rb",
+            "/core/signal.rb",
+            "/core/splitter.rb",
+            "/core/symbol.rb",
+            "/core/mutex.rb",
+            "/core/throw_catch.rb",
+            "/core/time.rb",
+            "/core/rational.rb",
+            "/core/rationalizer.rb",
+            "/core/complex.rb",
+            "/core/complexifier.rb",
+            "/core/class.rb",
+            "/core/binding.rb",
+            "/core/math.rb",
+            "/core/method.rb",
+            "/core/unbound_method.rb",
+            "/core/shims.rb",
+            "/core/truffle/attachments.rb",
+            "/core/truffle/debug.rb",
+            "/core/truffle/cext.rb",
+            "/core/truffle/interop.rb",
+            "/core/rbconfig.rb",
+            "/core/main.rb",
+            "/core/post.rb"
+    };
 
 }
