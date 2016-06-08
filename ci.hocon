@@ -97,7 +97,7 @@ gate-caps: {
 }
 
 bench-caps: {
-  capabilities: [x52, linux, amd64, bench, post-merge]
+  capabilities: [x52, linux, amd64, bench, post-push]
 }
 
 daily-bench-caps: {
