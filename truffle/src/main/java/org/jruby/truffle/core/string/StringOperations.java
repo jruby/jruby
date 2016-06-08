@@ -134,10 +134,6 @@ public abstract class StringOperations {
         }
     }
 
-    public static void modifyAndKeepCodeRange(DynamicObject string) {
-        keepCodeRange(string);
-    }
-
     @TruffleBoundary(throwsControlFlowException = true)
     public static Encoding checkEncoding(DynamicObject string, CodeRangeable other) {
         final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, ((StringCodeRangeableWrapper) other).getString());

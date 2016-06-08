@@ -2484,7 +2484,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            StringOperations.modifyAndKeepCodeRange(string);
+            StringOperations.keepCodeRange(string);
 
             int s = 0;
             int end = s + rope.byteLength();
