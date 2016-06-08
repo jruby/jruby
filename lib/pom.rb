@@ -10,7 +10,7 @@ end
 
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.15' ),
+   ImportedGem.new( 'jruby-openssl', '0.9.16' ),
    ImportedGem.new( 'jruby-readline', '1.0', false ),
    ImportedGem.new( 'rake', '${rake.version}' ),
    ImportedGem.new( 'rdoc', '${rdoc.version}' ),
@@ -26,7 +26,7 @@ default_gems =
   ]
 
 project 'JRuby Lib Setup' do
-  
+
   version = ENV['JRUBY_VERSION'] ||
     File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
