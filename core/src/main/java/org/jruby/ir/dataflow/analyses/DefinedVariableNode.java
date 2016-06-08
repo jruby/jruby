@@ -18,9 +18,8 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
 
     @Override
     public void init() {
-        setSize = problem.getDFVarsCount();
-        out = new BitSet(setSize);
-        computed = false;
+        // 'null' acts as the TOP for this dataflow analysis
+        out = null;
     }
 
     private void addDFVar(Variable v) {
@@ -37,23 +36,31 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
 
     @Override
     public void applyPreMeetHandler() {
-        in = new BitSet(setSize);
-        // Init to all 1's so that when we 'and' with the
-        // first predecessor, we don't go to all 0's right away!
-        in.set(0, setSize);
+        // 'null' acts as the TOP for this dataflow analysis
+        setSize = problem.getDFVarsCount();
+        in = null;
     }
 
     @Override
     public void compute_MEET(Edge e, DefinedVariableNode pred) {
-        // Only vars defined at the exit of all predecessors are considered defined on entry
-        if (pred.computed) {
+        // If pred.out is TOP, in doesn't change.
+        if (pred.out != null) {
+            // if in is TOP, init in to a bitset with all 1's
+            // so the intersection computes the right value.
+            if (in == null) {
+                // Make sure 'in' and 'out' are the same size!
+                int n = pred.out.size();
+                in = new BitSet(n);
+                in.set(0, n);
+            }
+
             in.and(pred.out);
         }
     }
 
     @Override
     public void initSolution() {
-        tmp = (BitSet) in.clone();
+        tmp = in == null ? new BitSet(setSize) : (BitSet) in.clone();
     }
 
     @Override
@@ -78,6 +85,8 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
             parentScopeDepth = 0;
         }
 
+        // System.out.println("BB " + basicBlock + "; state\n" + toString());
+
         initSolution();
         for (Instr i: basicBlock.getInstrs()) {
             // Variables that belong to outer scopes should always
@@ -89,7 +98,7 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
                     }
 
                     if (!tmp.get(problem.getDFVar(v))) {
-                        // System.out.println("Variable " + v + " in instr " + i + " isn't defined!");
+                        // System.out.println("Variable " + v + " in instr " + i + " in " + basicBlock + " isn't defined!");
                         undefinedVars.add(v);
                     }
                 }
@@ -110,12 +119,45 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
     @Override
     public void finalizeSolution() {
         out = tmp;
-        computed = true;
     }
 
-    private boolean computed;
+    private String printSet(BitSet set) {
+        StringBuilder buf = new StringBuilder();
+        int count = 0;
+        for (int i = 0; i < set.size(); i++) {
+            if (set.get(i)) {
+                count++;
+                buf.append(' ').append(problem.getVariable(i));
+                if (count % 10 == 0) buf.append("\t\n");
+            }
+        }
+
+        if (count % 10 != 0) buf.append("\t\t");
+        return buf.append('\n').toString();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder();
+        buf.append("\tVars defined on Entry: ");
+        if (in == null) {
+            System.out.println("-- NO in!");
+        } else {
+            buf.append(printSet(in));
+        }
+
+        buf.append("\n\tVars defined on Exit: ");
+        if (out == null) {
+            System.out.println("-- NO out!");
+        } else {
+            buf.append(printSet(out));
+        }
+
+        return buf.append('\n').toString();
+    }
+
     private BitSet in;      // Variables defined at entry of this node
     private BitSet out;     // Variables defined at exit of node
-    private BitSet tmp;  // Temporary state while applying transfer function
+    private BitSet tmp;     // Temporary state while applying transfer function
     private int setSize;    // Size of the "this.in" and "this.out" bit sets
 }

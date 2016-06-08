@@ -49,10 +49,6 @@ class WeakRef < BasicObject
     return obj
   end
 
-  def weakref_alive?
-    !!__object__
-  end
-
   def method_missing(method, *args, &block)
     target = __getobj__
     if target.respond_to?(method)

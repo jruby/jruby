@@ -115,7 +115,7 @@ public abstract class StringOperations {
         final int existingCodeRange = StringOperations.getCodeRange(string).toInt();
 
         if (existingCodeRange != codeRange) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new RuntimeException(String.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
         }
     }
@@ -134,21 +134,6 @@ public abstract class StringOperations {
         }
     }
 
-    public static void modify(DynamicObject string) {
-        // No-op. Ropes are immutable so any modifications must've been handled elsewhere.
-        // TODO (nirvdrum 07-Jan-16) Remove this method once we've inspected each caller for correctness.
-    }
-
-    public static void modify(DynamicObject string, int length) {
-        // No-op. Ropes are immutable so any modifications must've been handled elsewhere.
-        // TODO (nirvdrum 07-Jan-16) Remove this method once we've inspected each caller for correctness.
-    }
-
-    public static void modifyAndKeepCodeRange(DynamicObject string) {
-        modify(string);
-        keepCodeRange(string);
-    }
-
     @TruffleBoundary(throwsControlFlowException = true)
     public static Encoding checkEncoding(DynamicObject string, CodeRangeable other) {
         final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, ((StringCodeRangeableWrapper) other).getString());
@@ -163,11 +148,6 @@ public abstract class StringOperations {
         }
 
         return encoding;
-    }
-
-    public static void forceEncodingVerySlow(DynamicObject string, Encoding encoding) {
-        final Rope oldRope = Layouts.STRING.getRope(string);
-        StringOperations.setRope(string, RopeOperations.withEncodingVerySlow(oldRope, encoding, CodeRange.CR_UNKNOWN));
     }
 
     public static int normalizeIndex(int length, int index) {
@@ -185,7 +165,7 @@ public abstract class StringOperations {
         final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
         if (encoding == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new RaiseException(context.getCoreExceptions().encodingCompatibilityErrorIncompatible(
                     rope(string).getEncoding().toString(),
                     rope(other).getEncoding().toString(),

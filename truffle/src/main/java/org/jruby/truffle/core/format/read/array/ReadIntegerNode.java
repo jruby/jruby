@@ -58,7 +58,7 @@ public abstract class ReadIntegerNode extends FormatNode {
     @Specialization
     public int read(VirtualFrame frame, Object[] source) {
         if (toIntegerNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             toIntegerNode = insert(ToIntegerNodeGen.create(getContext(), null));
         }
 

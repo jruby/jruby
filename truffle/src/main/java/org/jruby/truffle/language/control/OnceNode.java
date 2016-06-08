@@ -35,7 +35,7 @@ public class OnceNode extends RubyNode {
         Object value = valueMemo.get();
 
         if (value == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             value = child.execute(frame);
             valueMemo.set(value);
         }

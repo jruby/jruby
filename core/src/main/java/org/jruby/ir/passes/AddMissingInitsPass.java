@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Nil;
+import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -28,15 +29,20 @@ public class AddMissingInitsPass extends CompilerPass {
 
         // Add inits to entry
         BasicBlock bb = scope.getCFG().getEntryBB();
-        int i = 0;
-        Variable first = null;
         for (Variable v : undefinedVars) {
             // System.out.println("Adding missing init for " + v + " in " + scope);
-            if (first == null) {
-                bb.getInstrs().add(i++, new CopyInstr(v, new Nil()));
-                first = v;
+
+            // Add lvar inits to the end of the BB
+            //   (so that scopes are pushed before its vars are updated)
+            // and tmpvar inits to the beginning of the BB
+            //   (so that if a bad analysis causes an already initialized tmp
+            //    to be found uninitialized, this unnecessary init doesn't
+            //    clobber an already updated tmp. The entryBB will not have
+            //    any loads of lvars, so lvars aren't subject to this problem).
+            if (v instanceof LocalVariable) {
+                bb.getInstrs().add(new CopyInstr(v, new Nil()));
             } else {
-                bb.getInstrs().add(i++, new CopyInstr(v, first));
+                bb.getInstrs().add(0, new CopyInstr(v, new Nil()));
             }
         }
 

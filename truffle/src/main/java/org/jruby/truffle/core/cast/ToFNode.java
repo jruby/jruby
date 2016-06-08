@@ -39,7 +39,7 @@ public abstract class ToFNode extends RubyNode {
             return (double) doubleObject;
         }
 
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.transferToInterpreterAndInvalidate();
         throw new UnsupportedOperationException("executeDouble must return a double, instead it returned a " + doubleObject.getClass().getName());
     }
 
@@ -72,7 +72,7 @@ public abstract class ToFNode extends RubyNode {
 
     private double coerceObject(VirtualFrame frame, Object object) {
         if (toFNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             toFNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
         }
 
@@ -81,7 +81,7 @@ public abstract class ToFNode extends RubyNode {
             coerced = toFNode.call(frame, object, "to_f", null);
         } catch (RaiseException e) {
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().typeErrorNoImplicitConversion(object, "Float", this));
             } else {
                 throw e;
@@ -91,7 +91,7 @@ public abstract class ToFNode extends RubyNode {
         if (coreLibrary().getLogicalClass(coerced) == coreLibrary().getFloatClass()) {
             return (double) coerced;
         } else {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new RaiseException(coreExceptions().typeErrorBadCoercion(object, "Float", "to_f", coerced, this));
         }
     }

@@ -102,13 +102,6 @@ module Signal
     return old ? old : nil
   end
 
-  def self.run_handler(sig)
-    # Ignore nil handlers
-    if handler = @handlers[sig]
-      handler.call(sig)
-    end
-  end
-
   def self.list
     Names.dup
   end

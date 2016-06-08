@@ -70,7 +70,7 @@ public class YieldNode extends Node {
 
     private CallBlockNode getCallBlockNode() {
         if (callBlockNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             callBlockNode = insert(CallBlockNodeGen.create(context, null, declarationContext, null, null, null, null));
         }
 

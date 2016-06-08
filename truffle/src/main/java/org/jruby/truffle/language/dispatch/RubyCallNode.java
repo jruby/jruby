@@ -118,7 +118,7 @@ public class RubyCallNode extends RubyNode {
         // TODO(CS): what happens if isn't just one argument, or it isn't an Array?
 
         if (!RubyGuards.isRubyArray(argument)) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new UnsupportedOperationException(argument.getClass().toString());
         }
 
@@ -201,7 +201,7 @@ public class RubyCallNode extends RubyNode {
 
     private Object respondToMissing(VirtualFrame frame, Object receiverObject) {
         if (respondToMissing == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             respondToMissing = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
         }
         final DynamicObject method = getContext().getSymbolTable().getSymbol(methodName);
@@ -210,7 +210,7 @@ public class RubyCallNode extends RubyNode {
 
     private boolean castRespondToMissingToBoolean(VirtualFrame frame, final Object r) {
         if (respondToMissingCast == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             respondToMissingCast = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
         }
         return respondToMissingCast.executeBoolean(frame, r);

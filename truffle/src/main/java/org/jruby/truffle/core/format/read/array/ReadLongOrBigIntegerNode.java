@@ -59,7 +59,7 @@ public abstract class ReadLongOrBigIntegerNode extends FormatNode {
             return value;
         } else {
             if (toLongNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toLongNode = insert(ToLongNodeGen.create(getContext(), false, null));
             }
 

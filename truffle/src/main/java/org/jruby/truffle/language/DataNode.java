@@ -31,7 +31,7 @@ public class DataNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         if (snippetNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             snippetNode = insert(new SnippetNode());
         }
 

@@ -60,8 +60,6 @@
 
 class Thread
 
-  attr_reader :recursive_objects
-
   # Implementation note: ideally, the recursive_objects
   # lookup table would be different per method call.
   # Currently it doesn't cause problems, but if ever
@@ -327,16 +325,6 @@ class Thread
 
   def self.abort_on_exception=(value)
     @abort_on_exception = value
-  end
-
-  def self.handle_interrupt(config, &block)
-    unless config.is_a?(Hash) and config.size == 1
-      raise ArgumentError, "unknown mask signature"
-    end
-    exception, timing = config.first
-    Truffle.privately do
-      current.handle_interrupt(exception, timing, &block)
-    end
   end
 
   def freeze

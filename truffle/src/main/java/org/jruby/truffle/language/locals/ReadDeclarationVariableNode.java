@@ -64,7 +64,7 @@ public class ReadDeclarationVariableNode extends ReadLocalNode {
 
     private Object readFrameSlot(VirtualFrame frame) {
         if (readFrameSlotNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             readFrameSlotNode = insert(ReadFrameSlotNodeGen.create(frameSlot));
         }
 

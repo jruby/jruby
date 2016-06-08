@@ -34,7 +34,7 @@ public abstract class LazyDefaultValueNode extends RubyNode {
     @Specialization
     public Object doDefault(NotProvided value) {
         if (!hasDefault) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             defaultValue = defaultValueProducer.apply();
             hasDefault = true;
         }

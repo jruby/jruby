@@ -1090,7 +1090,7 @@ public class CoreLibrary {
             return (double) value;
         }
 
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.transferToInterpreterAndInvalidate();
         throw new UnsupportedOperationException();
     }
 
@@ -1176,6 +1176,10 @@ public class CoreLibrary {
 
     public DynamicObject getRangeClass() {
         return rangeClass;
+    }
+
+    public DynamicObject getRationalClass() {
+        return rationalClass;
     }
 
     public DynamicObject getRegexpClass() {

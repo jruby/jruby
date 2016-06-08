@@ -31,7 +31,7 @@ public class ConcatHashLiteralNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.transferToInterpreterAndInvalidate();
 
         final List<Map.Entry<Object, Object>> keyValues = new ArrayList<>();
 

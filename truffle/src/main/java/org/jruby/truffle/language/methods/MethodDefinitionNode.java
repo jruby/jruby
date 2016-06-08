@@ -46,7 +46,7 @@ public class MethodDefinitionNode extends RubyNode {
         final DynamicObject capturedDefaultDefinee;
         if (RubyArguments.getDeclarationContext(frame) == DeclarationContext.INSTANCE_EVAL) {
             if (getDefaultDefineeNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 getDefaultDefineeNode = insert(new GetDefaultDefineeNode(getContext(), getSourceSection()));
             }
             capturedDefaultDefinee = getDefaultDefineeNode.execute(frame);

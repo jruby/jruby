@@ -91,7 +91,7 @@ public abstract class AbstractMultNode extends BigDecimalOpNode {
                 }
                 break;
             default:
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new UnsupportedOperationException("unreachable code branch");
         }
 

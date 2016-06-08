@@ -90,7 +90,7 @@ public class UncachedDispatchNode extends DispatchNode {
             if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                 return false;
             } else {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().runtimeError(
                         receiverObject.toString() + " didn't have a #method_missing", this));
             }

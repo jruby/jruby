@@ -83,11 +83,6 @@ class Struct
     return klass
   end
 
-  # Don't specialize any thing created in the kernel. We hook up
-  # better form of this in delta.
-  def self._specialize(attrs)
-  end
-
   def self.make_struct(name, attrs)
     new name, *attrs
   end

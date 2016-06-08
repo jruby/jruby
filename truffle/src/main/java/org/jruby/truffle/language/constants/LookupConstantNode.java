@@ -20,7 +20,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.module.ModuleOperations;
-import org.jruby.truffle.language.CheckLayoutNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
@@ -42,8 +41,6 @@ public abstract class LookupConstantNode extends RubyNode implements LookupConst
     public static LookupConstantNode create(boolean ignoreVisibility, boolean lookInObject) {
         return LookupConstantNodeGen.create(ignoreVisibility, lookInObject, null, null);
     }
-
-    @Child CheckLayoutNode checkLayoutNode = new CheckLayoutNode();
 
     public LookupConstantNode(boolean ignoreVisibility, boolean lookInObject) {
         this.ignoreVisibility = ignoreVisibility;
@@ -85,7 +82,7 @@ public abstract class LookupConstantNode extends RubyNode implements LookupConst
     }
 
     @TruffleBoundary
-    @Specialization(guards = "isRubyModuleFast(module)")
+    @Specialization(guards = "isRubyModule(module)")
     protected RubyConstant lookupConstantUncached(DynamicObject module, String name) {
         RubyConstant constant = doLookup(module, name);
         boolean isVisible = isVisible(module, constant);
@@ -109,10 +106,6 @@ public abstract class LookupConstantNode extends RubyNode implements LookupConst
         } else {
             return name.equals(cachedName);
         }
-    }
-
-    protected boolean isRubyModuleFast(DynamicObject module) {
-        return checkLayoutNode.isModule(module);
     }
 
     protected RubyConstant doLookup(DynamicObject module, String name) {

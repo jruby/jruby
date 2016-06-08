@@ -602,7 +602,7 @@ public abstract class InteropNodes {
             try {
                 return getContext().getEnv().parse(sourceObject);
             } catch (IOException e) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RuntimeException(e);
             }
         }

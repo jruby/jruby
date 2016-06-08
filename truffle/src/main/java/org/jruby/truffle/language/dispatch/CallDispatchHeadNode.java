@@ -60,7 +60,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             DynamicObject blockObject,
             Object... argumentsObjects) {
         if (booleanCastNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             booleanCastNode = insert(BooleanCastNodeGen.create(context, getSourceSection(), null));
         }
         return booleanCastNode.executeBoolean(frame,
@@ -79,7 +79,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             return (double) value;
         }
 
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.transferToInterpreterAndInvalidate();
         if (value == DispatchNode.MISSING) {
             throw new RaiseException(context.getCoreExceptions().typeErrorCantConvertInto(receiverObject, "Float", this));
         } else {
@@ -103,7 +103,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             return (long) value;
         }
 
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.transferToInterpreterAndInvalidate();
         if (value == DispatchNode.MISSING) {
             throw new RaiseException(context.getCoreExceptions().typeErrorCantConvertInto(receiverObject, "Fixnum", this));
         } else {

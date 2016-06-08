@@ -33,7 +33,7 @@ public abstract class IsFrozenNode extends RubyNode {
 
     public void raiseIfFrozen(Object object) {
         if (executeIsFrozen(object)) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new RaiseException(coreExceptions().frozenError(object, this));
         }
     }

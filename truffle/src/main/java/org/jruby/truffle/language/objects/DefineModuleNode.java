@@ -69,7 +69,7 @@ public abstract class DefineModuleNode extends RubyNode {
 
     private RubyConstant lookupForExistingModule(VirtualFrame frame, String name, DynamicObject lexicalParent) {
         if (lookupForExistingModuleNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             lookupForExistingModuleNode = insert(LookupForExistingModuleNodeGen.create(null, null));
         }
         return lookupForExistingModuleNode.executeLookupForExistingModule(frame, name, lexicalParent);

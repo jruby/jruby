@@ -55,16 +55,16 @@ public class ExceptionTranslatingNode extends RubyNode {
             unsupportedProfile.enter();
             throw new RaiseException(translate(exception));
         } catch (TruffleFatalException exception) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw exception;
         } catch (org.jruby.exceptions.RaiseException e) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new RaiseException(getContext().getJRubyInterop().toTruffle(e.getException(), this));
         } catch (StackOverflowError error) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new RaiseException(translate(error));
         } catch (Throwable exception) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new RaiseException(translate(exception));
         }
     }

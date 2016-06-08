@@ -54,7 +54,7 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
     @Override
     public Object execute(VirtualFrame frame) {
         if (findContextNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
         }
 

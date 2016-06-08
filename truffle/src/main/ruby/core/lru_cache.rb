@@ -27,7 +27,6 @@
 module Rubinius
   class LRUCache
     class Entry
-      attr_reader :hits
       attr_reader :key
       attr_accessor :value
       attr_accessor :next_entry
@@ -69,10 +68,6 @@ module Rubinius
         @prev_entry = nil
       end
 
-      def become_first!
-        @prev_entry = nil
-      end
-
       def inc!
         @hits += 1
       end
@@ -89,35 +84,6 @@ module Rubinius
       @tail.insert_after(@head)
 
       @misses = 0
-    end
-
-    attr_reader :current
-    attr_reader :misses
-
-    def clear!
-      Rubinius.synchronize(self) do
-        @cache = {}
-        @current = 0
-
-        @head = Entry.new(nil, nil, -1)
-        @tail = Entry.new(nil, nil, -2)
-
-        @tail.insert_after(@head)
-      end
-    end
-
-    def explain
-      entry = @head.next_entry
-      while entry != @tail
-        str, layout = entry.key
-        puts "hits: #{entry.hits}"
-        puts "layout: #{layout.inspect}"
-        puts "<STRING>"
-        puts str
-        puts "</STRING>"
-
-        entry = entry.next_entry
-      end
     end
 
     def retrieve(key)

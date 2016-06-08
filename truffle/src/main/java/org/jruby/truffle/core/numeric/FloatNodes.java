@@ -166,7 +166,7 @@ public abstract class FloatNodes {
         public Object pow(VirtualFrame frame, double a, double b) {
             if (complexProfile.profile(a < 0 && b != Math.round(b))) {
                 if (complexConvertNode == null) {
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     complexConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
                     complexPowNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
                 }
@@ -222,7 +222,7 @@ public abstract class FloatNodes {
                 "!isRubyBignum(b)" })
         public Object div(VirtualFrame frame, double a, Object b) {
             if (redoCoercedNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 redoCoercedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
@@ -244,7 +244,7 @@ public abstract class FloatNodes {
         @Specialization
         public double mod(double a, double b) {
             if (b == 0) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 
@@ -415,7 +415,7 @@ public abstract class FloatNodes {
         @Specialization(guards = "!isRubyBignum(b)")
         public Object equal(VirtualFrame frame, double a, DynamicObject b) {
             if (fallbackCallNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 

@@ -32,6 +32,10 @@ public class CheckLayoutNode extends RubyBaseNode {
         return Layouts.MODULE.isModule(getObjectTypeNode.executeGetObjectType(object));
     }
 
+    public boolean isString(DynamicObject object) {
+        return Layouts.STRING.isString(getObjectTypeNode.executeGetObjectType(object));
+    }
+
     @NodeChild("object")
     @ImportStatic(ShapeCachingGuards.class)
     public static abstract class GetObjectTypeNode extends RubyNode {

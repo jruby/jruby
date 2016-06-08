@@ -27,21 +27,6 @@
 module Rubinius
   class Mirror
     module Process
-      def self.set_status_global(status)
-        ::Thread.current[:$?] = status
-      end
-
-      def self.fork
-        Truffle.primitive :vm_fork
-        raise PrimitiveFailure, "Rubinius::Mirror::Process.fork primitive failed"
-      end
-
-      def self.exec(*args)
-        exe = Execute.new(*args)
-        exe.spawn_setup
-        exe.exec exe.command, exe.argv
-      end
-
       def self.spawn(*args)
         exe = Execute.new(*args)
 
@@ -53,11 +38,6 @@ module Rubinius
         end
 
         pid
-      end
-
-      def self.backtick(str)
-        Truffle.primitive :vm_backtick
-        raise PrimitiveFailure, "Rubinius::Mirror::Process.backtick primitive failed"
       end
 
       class Execute
@@ -160,78 +140,6 @@ module Rubinius
           end
         end
 
-        def redirect(options, from, to)
-          case to
-          when ::Fixnum
-            map = (options[:redirect_fd] ||= [])
-            map << from << to
-          when ::Array
-            map = (options[:assign_fd] ||= [])
-            map << from
-            map.concat to
-          end
-        end
-
-        def convert_io_fd(obj)
-          case obj
-          when ::Fixnum
-            obj
-          when :in
-            0
-          when :out
-            1
-          when :err
-            2
-          when ::IO
-            obj.fileno
-          else
-            raise ArgementError, "wrong exec option: #{obj.inspect}"
-          end
-        end
-
-        def convert_to_fd(obj, target)
-          case obj
-          when ::Fixnum
-            obj
-          when :in
-            0
-          when :out
-            1
-          when :err
-            2
-          when :close
-            nil
-          when ::IO
-            obj.fileno
-          when ::String
-            [obj, default_mode(target), 0644]
-          when ::Array
-            case obj.size
-            when 1
-              [obj[0], File::RDONLY, 0644]
-            when 2
-              if obj[0] == :child
-                fd = convert_to_fd obj[1], target
-                fd.kind_of?(::Fixnum) ?  -(fd + 1) : fd
-              else
-                [obj[0], convert_file_mode(obj[1]), 0644]
-              end
-            when 3
-              [obj[0], convert_file_mode(obj[1]), obj[2]]
-            end
-          else
-            raise ArgumentError, "wrong exec redirect: #{obj.inspect}"
-          end
-        end
-
-        def default_mode(target)
-          if target == 1 or target == 2
-            OFLAGS["w"]
-          else
-            OFLAGS["r"]
-          end
-        end
-
         # Mapping of string open modes to integer oflag versions.
         OFLAGS = {
           "r"  => ::File::RDONLY,
@@ -242,48 +150,10 @@ module Rubinius
           "a+" => ::File::RDWR   | ::File::APPEND | ::File::CREAT
         }
 
-        def convert_file_mode(obj)
-          case obj
-          when ::Fixnum
-            obj
-          when ::String
-            OFLAGS[obj]
-          when nil
-            OFLAG["r"]
-          else
-            Rubinius::Type.coerce_to obj, Integer, :to_int
-          end
-        end
-
-        def convert_env_key(key)
-          key = Rubinius::Type.check_null_safe(StringValue(key))
-
-          if key.include?("=")
-            raise ArgumentError, "environment name contains a equal : #{key}"
-          end
-
-          key
-        end
-
-        def convert_env_value(value)
-          return if value.nil?
-          Rubinius::Type.check_null_safe(StringValue(value))
-        end
-
-        def spawn_setup
-          Truffle.invoke_primitive :vm_spawn_setup, @options
-        end
-
         def spawn(exe, command, args)
           Truffle.primitive :vm_spawn
           raise PrimitiveFailure,
             "Rubinius::Mirror::Process::Execute#spawn primitive failed"
-        end
-
-        def exec(command, args)
-          Truffle.primitive :vm_exec
-          raise PrimitiveFailure,
-            "Rubinius::Mirror::Process::Execute#exec primitive failed"
         end
       end
     end

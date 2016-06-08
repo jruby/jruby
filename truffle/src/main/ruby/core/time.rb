@@ -219,60 +219,6 @@ class Time
     (seconds + subsec).to_r
   end
 
-  def to_f
-    to_r.to_f
-  end
-
-  def +(other)
-    raise TypeError, 'time + time?' if other.kind_of?(Time)
-
-    case other = Rubinius::Type.coerce_to_exact_num(other)
-    when Integer
-      other_sec = other
-      other_nsec = 0
-    else
-      other_sec, nsec_frac = other.divmod(1)
-      other_nsec = (nsec_frac * 1_000_000_000).to_i
-    end
-
-    # Don't use self.class, MRI doesn't honor subclasses here
-    Time.specific(seconds + other_sec, nsec + other_nsec, gmt?, internal_offset)
-  end
-
-  def -(other)
-    if other.kind_of?(Time)
-      return (seconds - other.seconds) + ((nsec - other.nsec) * 0.000000001)
-    end
-
-    case other = Rubinius::Type.coerce_to_exact_num(other)
-    when Integer
-      other_sec = other
-      other_nsec = 0
-    else
-      other_sec, nsec_frac = other.divmod(1)
-      other_nsec = (nsec_frac * 1_000_000_000 + 0.5).to_i
-    end
-
-    # Don't use self.class, MRI doesn't honor subclasses here
-    Time.specific(seconds - other_sec, nsec - other_nsec, gmt?, internal_offset)
-  end
-
-  def localtime(offset=nil)
-    @is_gmt = false
-    @offset = nil
-    @decomposed = nil
-
-    if offset
-      @offset = Rubinius::Type.coerce_to_utc_offset(offset)
-      @zone = nil
-    else
-      @offset = gmt_offset
-      @zone = Truffle.invoke_primitive(:time_env_zone, self)
-    end
-
-    self
-  end
-
   def getlocal(offset=nil)
     dup.localtime(offset)
   end
@@ -291,24 +237,6 @@ class Time
       return  1 if r < 0
       0
     end
-  end
-
-  #
-  # Rounds sub seconds to a given precision in decimal digits
-  #
-  # Returns a new time object.
-  #
-  # places should be nonnegative, it is 0 by default.
-  #
-  def round(places = 0)
-    return dup if nsec == 0
-
-    roundable_time = (to_i + subsec.to_r).round(places)
-
-    sec = roundable_time.floor
-    nano = ((roundable_time - sec) * 1_000_000_000).floor
-
-    Time.specific(sec, nano, gmt?, internal_offset)
   end
 
   class << self
@@ -513,16 +441,6 @@ class Time
   def gmt_offset
     Truffle.primitive :time_utc_offset
     raise PrimitiveFailure, "Time#gmt_offset primitive failed"
-  end
-
-  def gmtime
-    unless gmt?
-      @is_gmt = true
-      @offset = nil
-      @decomposed = nil
-    end
-
-    self
   end
 
   def getgm

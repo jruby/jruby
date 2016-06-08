@@ -43,10 +43,6 @@ class Encoding
     attr_accessor :source
     attr_accessor :target
 
-    def inspect
-      "#<#{super} #{source} to #{target}"
-    end
-
     def self.create(source, target)
       ret = new
 
@@ -112,25 +108,11 @@ class Encoding
   class CompatibilityError < EncodingError
   end
 
-  class Transcoding
-    attr_accessor :source
-    attr_accessor :target
-
-    def inspect
-      "#<#{super} #{source} to #{target}"
-    end
-  end
-
   class Converter
     attr_accessor :source_encoding
     attr_accessor :destination_encoding
     attr_reader :replacement
     attr_reader :options
-
-    def self.allocate
-      Truffle.primitive :encoding_converter_allocate
-      raise PrimitiveFailure, "Encoding::Converter.allocate primitive failed"
-    end
 
     def self.asciicompat_encoding(string_or_encoding)
       encoding = Rubinius::Type.try_convert_to_encoding string_or_encoding
@@ -447,11 +429,6 @@ class Encoding
         @load_cache = false
       end
 
-      def self.cache_loaded
-        @cache_valid = true
-        @load_cache = false
-      end
-
       def self.load_cache?
         @load_cache
       end
@@ -462,10 +439,6 @@ class Encoding
 
       def self.cache_threshold?
         @paths.size > 5
-      end
-
-      def self.default_transcoders?
-        @transcoders_count == TranscodingMap.size
       end
 
       def self.cache_valid?
@@ -611,14 +584,6 @@ class Encoding
     raise ArgumentError, "unknown encoding name - #{name}"
   end
 
-  def self.list
-    EncodingList
-  end
-
-  def self.locale_charmap
-    LocaleCharmap
-  end
-
   def self.name_list
     EncodingMap.map do |n, r|
       index = r.last
@@ -638,14 +603,6 @@ class Encoding
       names << aname if aname and r.last == entry.last
     end
     names
-  end
-
-  def _dump(depth)
-    name
-  end
-
-  def self._load(name)
-    find name
   end
 end
 

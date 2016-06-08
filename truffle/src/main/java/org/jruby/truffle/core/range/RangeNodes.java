@@ -147,7 +147,7 @@ public abstract class RangeNodes {
 
         private Object eachInternal(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             if (eachInternalCall == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 eachInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -336,7 +336,7 @@ public abstract class RangeNodes {
 
         private Object stepInternal(VirtualFrame frame, DynamicObject range, Object step, DynamicObject block) {
             if (stepInternalCall == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 stepInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -442,7 +442,7 @@ public abstract class RangeNodes {
         @Specialization(guards = "isObjectRange(range)")
         public Object toA(VirtualFrame frame, DynamicObject range) {
             if (toAInternalCall == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toAInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -559,11 +559,11 @@ public abstract class RangeNodes {
                 Object end,
                 boolean excludeEnd) {
             if (cmpNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
             if (allocateNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
             }
 

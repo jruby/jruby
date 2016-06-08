@@ -122,7 +122,7 @@ public abstract class ProcNodes {
 
         private AllocateObjectNode getAllocateObjectNode() {
             if (allocateObjectNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
             }
 
@@ -131,7 +131,7 @@ public abstract class ProcNodes {
 
         private CallDispatchHeadNode getInitializeNode() {
             if (initializeNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 initializeNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
@@ -164,7 +164,7 @@ public abstract class ProcNodes {
 
         private AllocateObjectNode getAllocateObjectNode() {
             if (allocateObjectNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
             }
 

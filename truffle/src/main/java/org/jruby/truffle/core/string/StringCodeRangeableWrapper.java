@@ -66,7 +66,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public final void modifyAndKeepCodeRange() {
-        StringOperations.modifyAndKeepCodeRange(string);
+        StringOperations.keepCodeRange(string);
     }
 
     @Override

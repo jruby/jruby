@@ -150,14 +150,6 @@ class IO
     raise PrimitiveFailure, "IO#query primitive failed"
   end
 
-  def reopen(other)
-    reopen_io other
-  end
-
-  def tty?
-    query :tty?
-  end
-
   def ttyname
     query :ttyname
   end
@@ -261,10 +253,6 @@ class IO
   # buffer.
   class InternalBuffer
 
-    attr_reader :total
-    attr_reader :start
-    attr_reader :used
-
     def initialize
       # Truffle: other fields are initialized in Java.
       @start = 0
@@ -346,12 +334,6 @@ class IO
     # Returns +true+ if the buffer is filled to capacity.
     def full?
       @total == @used
-    end
-
-    def inspect # :nodoc:
-      content = (@start..@used).map { |i| @storage[i].chr }.join.inspect
-      format "#<IO::InternalBuffer:0x%x total=%p start=%p used=%p data=%p %s>",
-             object_id, @total, @start, @used, @storage, content
     end
 
     ##
@@ -1926,8 +1908,6 @@ class IO
     @pid
   end
 
-  attr_writer :pid
-
   def pipe=(v)
     @pipe = !!v
   end
@@ -1970,14 +1950,6 @@ class IO
 
     write $\.to_s
     nil
-  end
-
-  ##
-  # Formats and writes to ios, converting parameters under
-  # control of the format string. See Kernel#sprintf for details.
-  def printf(fmt, *args)
-    fmt = StringValue(fmt)
-    write ::Rubinius::Sprinter.get(fmt).call(*args)
   end
 
   ##

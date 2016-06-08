@@ -109,7 +109,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
 
     private CreateBigDecimalNode getCreateBigDecimal() {
         if (createBigDecimal == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             createBigDecimal = insert(CreateBigDecimalNodeFactory.create(null, null, null));
         }
 
@@ -118,7 +118,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
 
     private CallDispatchHeadNode getLimitCall() {
         if (limitCall == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             limitCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
 
@@ -127,7 +127,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
 
     private IntegerCastNode getLimitIntegerCast() {
         if (limitIntegerCast == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             limitIntegerCast = insert(IntegerCastNodeGen.create(getContext(), getSourceSection(), null));
         }
 
@@ -136,7 +136,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
 
     private CallDispatchHeadNode getRoundModeCall() {
         if (roundModeCall == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             roundModeCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
 
@@ -145,7 +145,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
 
     private IntegerCastNode getRoundModeIntegerCast() {
         if (roundModeIntegerCast == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             roundModeIntegerCast = insert(IntegerCastNodeGen.create(getContext(), getSourceSection(), null));
         }
 

@@ -208,7 +208,7 @@ public abstract class RopeNodes {
                 return new SubstringRope(base, offset, byteLength, characterLength, codeRange);
             } else {
                 if (makeLeafRopeNode == null) {
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null));
                 }
 
@@ -239,7 +239,7 @@ public abstract class RopeNodes {
             try {
                 ExactMath.addExact(left.byteLength(), right.byteLength());
             } catch (ArithmeticException e) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
             }
 
@@ -262,7 +262,7 @@ public abstract class RopeNodes {
             try {
                 ExactMath.addExact(left.byteLength(), right.byteLength());
             } catch (ArithmeticException e) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
             }
 
@@ -362,7 +362,7 @@ public abstract class RopeNodes {
                 int delta = StringSupport.encFastMBCLen(bytes, p, e, encoding);
 
                 if (delta < 0) {
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new UnsupportedOperationException("Code range is reported as valid, but is invalid for the given encoding: " + encoding.toString());
                 }
 

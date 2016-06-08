@@ -76,7 +76,7 @@ public abstract class AddMethodNode extends RubyNode {
 
     protected DynamicObject getSingletonClass(DynamicObject object) {
         if (singletonClassNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
         }
 

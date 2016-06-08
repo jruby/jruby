@@ -70,7 +70,7 @@ public abstract class DurationToMillisecondsNode extends RubyNode {
     @Specialization(guards = { "!isRubiniusUndefined(duration)", "!isNil(duration)" })
     public long duration(VirtualFrame frame, DynamicObject duration) {
         if (floatCastNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             floatCastNode = insert(NumericToFloatNodeGen.create(getContext(), getSourceSection(), "to_f", null));
         }
         return duration(floatCastNode.executeDouble(frame, duration));

@@ -36,7 +36,7 @@ public abstract class AbstractDivNode extends BigDecimalOpNode {
                 case -1:
                     return BigDecimalType.NEGATIVE_INFINITY;
                 default:
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + aBigDecimal.signum());
             }
         } else {
@@ -96,7 +96,7 @@ public abstract class AbstractDivNode extends BigDecimalOpNode {
                 }
                 break;
             default:
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(b));
         }
 
@@ -146,7 +146,7 @@ public abstract class AbstractDivNode extends BigDecimalOpNode {
                 }
                 break;
             default:
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(a));
         }
 
