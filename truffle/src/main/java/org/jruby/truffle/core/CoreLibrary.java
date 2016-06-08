@@ -911,17 +911,21 @@ public class CoreLibrary {
 
             final Future<RubyRootNode>[] coreFileFutures = new Future[coreFiles.length];
 
-            for (int n = 0; n < coreFiles.length; n++) {
-                final int finalN = n;
-
-                coreFileFutures[n] = ForkJoinPool.commonPool().submit(() ->
-                        context.getCodeLoader().parse(
-                                context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[finalN]),
-                                UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node)
-                );
-            }
-
             try {
+                for (int n = 0; n < coreFiles.length; n++) {
+                    final int finalN = n;
+
+                    coreFileFutures[n] = ForkJoinPool.commonPool().submit(() ->
+                            context.getCodeLoader().parse(
+                                    context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[finalN]),
+                                    UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node)
+                    );
+
+                    if (!context.getOptions().CORE_PARALLEL_LOAD) {
+                        coreFileFutures[n].get();
+                    }
+                }
+
                 for (int n = 0; n < coreFiles.length; n++) {
                     final RubyRootNode rootNode = coreFileFutures[n].get();
 
