@@ -7,6 +7,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.ir.instructions.*;
@@ -2182,7 +2183,7 @@ public class IRBuilder {
     }
 
     private Operand dynamicPiece(Node pieceNode) {
-        Operand piece = build(pieceNode);
+        Operand piece = pieceNode instanceof StrNode ? buildStrRaw((StrNode) pieceNode) : build(pieceNode);
 
         if (piece instanceof StringLiteral) {
             piece = ((StringLiteral)piece).frozenString;
@@ -3445,15 +3446,19 @@ public class IRBuilder {
     }
 
     public Operand buildStr(StrNode strNode) {
+        Operand literal = buildStrRaw(strNode);
+
+        return literal instanceof FrozenString ? literal : copyAndReturnValue(literal);
+    }
+
+    public Operand buildStrRaw(StrNode strNode) {
         if (strNode instanceof FileNode) return new Filename();
 
-        Operand literal = strNode.isFrozen() ?
-                new FrozenString(strNode.getValue(), strNode.getCodeRange(), strNode.getPosition().getFile(), strNode.getPosition().getLine()) :
-                new StringLiteral(strNode.getValue(), strNode.getCodeRange(), strNode.getPosition().getFile(), strNode.getPosition().getLine());
+        ISourcePosition pos = strNode.getPosition();
 
-        Operand result = copyAndReturnValue(literal);
+        if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), pos.getFile(), pos.getLine());
 
-        return result;
+        return new StringLiteral(strNode.getValue(), strNode.getCodeRange(), pos.getFile(), pos.getLine());
     }
 
     private Operand buildSuperInstr(Operand block, Operand[] args) {
