@@ -9,10 +9,8 @@
  */
 package org.jruby.truffle.builtins;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.ObjectNodesFactory;
 import org.jruby.truffle.core.VMPrimitiveNodesFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
@@ -37,23 +35,22 @@ import org.jruby.truffle.core.symbol.SymbolNodesFactory;
 import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodesFactory;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Manages the available Rubinius primitive calls.
  */
 public class PrimitiveManager {
 
-    private final ConcurrentMap<String, PrimitiveConstructor> primitives = new ConcurrentHashMap<String, PrimitiveConstructor>();
+    private final Map<String, PrimitiveNodeConstructor> primitives = new ConcurrentHashMap<>();
 
-    public PrimitiveConstructor getPrimitive(String name) {
-        final PrimitiveConstructor constructor = primitives.get(name);
+    public PrimitiveNodeConstructor getPrimitive(String name) {
+        final PrimitiveNodeConstructor constructor = primitives.get(name);
 
         if (constructor == null) {
             return primitives.get(UndefinedPrimitiveNodes.NAME);
@@ -99,11 +96,5 @@ public class PrimitiveManager {
                 primitives.putIfAbsent(annotation.name(), new PrimitiveNodeConstructor(annotation, nodeFactory));
             }
         }
-    }
-
-    @TruffleBoundary
-    public void installPrimitive(String name, DynamicObject method) {
-        assert RubyGuards.isRubyMethod(method);
-        primitives.put(name, new PrimitiveCallConstructor(method));
     }
 }

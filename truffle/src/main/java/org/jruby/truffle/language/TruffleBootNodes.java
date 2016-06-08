@@ -76,17 +76,6 @@ public abstract class TruffleBootNodes {
 
     }
 
-    @CoreMethod(names = "install_rubinius_primitive", isModuleFunction = true, required = 1)
-    public abstract static class InstallRubiniusPrimitiveNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization(guards = "isRubyMethod(rubyMethod)")
-        public Object installRubiniusPrimitive(DynamicObject rubyMethod) {
-            String name = Layouts.METHOD.getMethod(rubyMethod).getName();
-            getContext().getPrimitiveManager().installPrimitive(name, rubyMethod);
-            return nil();
-        }
-    }
-
     @CoreMethod(names = "context", onSingleton = true)
     public abstract static class ContextNode extends CoreMethodArrayArgumentsNode {
 
