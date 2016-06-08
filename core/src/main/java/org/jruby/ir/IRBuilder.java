@@ -828,7 +828,7 @@ public class IRBuilder {
         Operand[] elts = new Operand[nodes.length];
         boolean containsAssignments = node.containsVariableAssignment();
         for (int i = 0; i < nodes.length; i++) {
-            elts[i] = buildWithOrder(nodes[i], containsAssignments);
+            elts[i] = nodes[i] instanceof StrNode ? buildStrRaw((StrNode) nodes[i]) : buildWithOrder(nodes[i], containsAssignments);
         }
 
         Operand array = new Array(elts);
