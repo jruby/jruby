@@ -1178,6 +1178,10 @@ public class CoreLibrary {
         return rangeClass;
     }
 
+    public DynamicObject getRationalClass() {
+        return rationalClass;
+    }
+
     public DynamicObject getRegexpClass() {
         return regexpClass;
     }
