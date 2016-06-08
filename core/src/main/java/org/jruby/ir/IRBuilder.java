@@ -561,6 +561,10 @@ public class IRBuilder {
     }
 
     protected Operand buildWithOrder(Node node, boolean preserveOrder) {
+        // Even though String literals are mutable they cannot fail or depend on rest of program's semantics so
+        // they can ignore order.
+        if (node instanceof StrNode) return buildStrRaw((StrNode) node);
+
         Operand value = build(node);
 
         // We need to preserve order in cases (like in presence of assignments) except that immutable
@@ -828,7 +832,7 @@ public class IRBuilder {
         Operand[] elts = new Operand[nodes.length];
         boolean containsAssignments = node.containsVariableAssignment();
         for (int i = 0; i < nodes.length; i++) {
-            elts[i] = nodes[i] instanceof StrNode ? buildStrRaw((StrNode) nodes[i]) : buildWithOrder(nodes[i], containsAssignments);
+            elts[i] = buildWithOrder(nodes[i], containsAssignments);
         }
 
         Operand array = new Array(elts);
