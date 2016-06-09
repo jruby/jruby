@@ -1339,6 +1339,10 @@ public class CoreLibrary {
         return internalBufferClass;
     }
 
+    public boolean isInitializing() {
+        return state == State.INITIALIZING;
+    }
+
     public boolean isLoadingRubyCore() {
         return state == State.LOADING_RUBY_CORE;
     }
