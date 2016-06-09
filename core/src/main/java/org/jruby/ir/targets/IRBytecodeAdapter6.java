@@ -846,6 +846,12 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     public void array(int length) {
         if (length > MAX_ARGUMENTS) throw new NotCompilableException("literal array has more than " + MAX_ARGUMENTS + " elements");
 
+        // use utility method for supported sizes
+        if (length < 3) {
+            invokeIRHelper("newArray", sig(RubyArray.class, params(ThreadContext.class, IRubyObject.class, length)));
+            return;
+        }
+
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length));
 

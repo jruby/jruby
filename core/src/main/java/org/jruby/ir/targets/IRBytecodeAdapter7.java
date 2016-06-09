@@ -294,6 +294,12 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     public void array(int length) {
         if (length > MAX_ARGUMENTS) throw new NotCompilableException("literal array has more than " + MAX_ARGUMENTS + " elements");
 
+        // use utility method for supported sizes
+        if (length < 3) {
+            super.array(length);
+            return;
+        }
+
         adapter.invokedynamic("array", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length)), Bootstrap.array());
     }
 

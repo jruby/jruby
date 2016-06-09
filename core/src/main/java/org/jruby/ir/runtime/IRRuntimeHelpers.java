@@ -1901,4 +1901,19 @@ public class IRRuntimeHelpers {
 
         return method;
     }
+
+    @JIT
+    public static RubyArray newArray(ThreadContext context) {
+        return RubyArray.newEmptyArray(context.runtime);
+    }
+
+    @JIT
+    public static RubyArray newArray(ThreadContext context, IRubyObject obj) {
+        return RubyArray.newArray(context.runtime, obj);
+    }
+
+    @JIT
+    public static RubyArray newArray(ThreadContext context, IRubyObject obj0, IRubyObject obj1) {
+        return RubyArray.newArray(context.runtime, obj0, obj1);
+    }
 }
