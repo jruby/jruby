@@ -3029,16 +3029,6 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {
-                "!ropeReferenceEqual(string, other)",
-                "bytesReferenceEqual(string, other)"
-        })
-        public boolean stringEqualsBytesEquals(DynamicObject string, DynamicObject other) {
-            return true;
-        }
-
-        @Specialization(guards = {
-                "!ropeReferenceEqual(string, other)",
-                "!bytesReferenceEqual(string, other)",
                 "!areComparable(string, other)"
         })
         public boolean stringEqualNotComparable(DynamicObject string, DynamicObject other) {
@@ -3046,8 +3036,6 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {
-                "!ropeReferenceEqual(string, other)",
-                "!bytesReferenceEqual(string, other)",
                 "areComparable(string, other)",
                 "byteLength(string) != byteLength(other)"
         })
@@ -3056,9 +3044,17 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {
-                "!ropeReferenceEqual(string, other)",
-                "!bytesReferenceEqual(string, other)",
                 "areComparable(string, other)",
+                "!ropeReferenceEqual(string, other)",
+                "bytesReferenceEqual(string, other)"
+        })
+        public boolean stringEqualsBytesEquals(DynamicObject string, DynamicObject other) {
+            return true;
+        }
+
+        @Specialization(guards = {
+                "areComparable(string, other)",
+                "!ropeReferenceEqual(string, other)",
                 "byteLength(string) == 1",
                 "byteLength(other) == 1",
                 "hasRawBytes(string)",
@@ -3072,9 +3068,9 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {
+                "areComparable(string, other)",
                 "!ropeReferenceEqual(string, other)",
                 "!bytesReferenceEqual(string, other)",
-                "areComparable(string, other)",
                 "byteLength(string) == byteLength(other)"
         }, contains = "equalCharacters")
         public boolean fullEqual(DynamicObject string, DynamicObject other) {
@@ -3101,9 +3097,7 @@ public abstract class StringNodes {
             final Rope firstRope = rope(first);
             final Rope secondRope = rope(second);
 
-            return firstRope.getCodeRange() == CodeRange.CR_7BIT &&
-                    secondRope.getCodeRange() == CodeRange.CR_7BIT &&
-                    firstRope.getRawBytes() != null &&
+            return firstRope.getRawBytes() != null &&
                     firstRope.getRawBytes() == secondRope.getRawBytes();
         }
 
