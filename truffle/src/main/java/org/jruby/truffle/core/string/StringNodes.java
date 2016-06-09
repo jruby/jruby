@@ -300,6 +300,7 @@ public abstract class StringNodes {
         @Child private StringEqualPrimitiveNode stringEqualNode;
         @Child private KernelNodes.RespondToNode respondToNode;
         @Child private CallDispatchHeadNode objectEqualNode;
+        @Child private CheckLayoutNode checkLayoutNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -328,6 +329,15 @@ public abstract class StringNodes {
             }
 
             return false;
+        }
+
+        protected boolean isRubyString(DynamicObject object) {
+            if (checkLayoutNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                checkLayoutNode = insert(new CheckLayoutNode());
+            }
+
+            return checkLayoutNode.isString(object);
         }
     }
 
@@ -3012,13 +3022,11 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringEqualPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child CheckLayoutNode checkLayoutNode;
         @Child StringAreComparableNode areComparableNode;
 
         public abstract boolean executeStringEqual(DynamicObject string, DynamicObject other);
 
         @Specialization(guards = {
-                "isRubyString(other)",
                 "ropeReferenceEqual(string, other)"
         })
         public boolean stringEqualsRopeEquals(DynamicObject string, DynamicObject other) {
@@ -3026,7 +3034,6 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {
-                "isRubyString(other)",
                 "!ropeReferenceEqual(string, other)",
                 "bytesReferenceEqual(string, other)"
         })
@@ -3035,7 +3042,6 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {
-                "isRubyString(other)",
                 "!ropeReferenceEqual(string, other)",
                 "!bytesReferenceEqual(string, other)",
                 "!areComparable(string, other)"
@@ -3045,7 +3051,6 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {
-                "isRubyString(other)",
                 "!ropeReferenceEqual(string, other)",
                 "!bytesReferenceEqual(string, other)",
                 "areComparable(string, other)",
@@ -3056,7 +3061,6 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {
-                "isRubyString(other)",
                 "!ropeReferenceEqual(string, other)",
                 "!bytesReferenceEqual(string, other)",
                 "areComparable(string, other)",
@@ -3073,7 +3077,6 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {
-                "isRubyString(other)",
                 "!ropeReferenceEqual(string, other)",
                 "!bytesReferenceEqual(string, other)",
                 "areComparable(string, other)",
@@ -3084,15 +3087,6 @@ public abstract class StringNodes {
             final Rope b = rope(other);
 
             return a.equals(b);
-        }
-
-        protected boolean isRubyString(DynamicObject object) {
-            if (checkLayoutNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                checkLayoutNode = insert(new CheckLayoutNode());
-            }
-
-            return checkLayoutNode.isString(object);
         }
 
         protected boolean areComparable(DynamicObject first, DynamicObject second) {
