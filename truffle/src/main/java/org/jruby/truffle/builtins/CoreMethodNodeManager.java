@@ -49,6 +49,7 @@ import java.util.List;
 
 public class CoreMethodNodeManager {
 
+    private static final boolean CHECK_AMBIGUOUS_OPTIONAL_ARGS = System.getenv("TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS") != null;
     private final RubyContext context;
     private final SingletonClassNode singletonClassNode;
 
@@ -245,7 +246,7 @@ public class CoreMethodNodeManager {
             }
         }
 
-        if (System.getenv("TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS") != null) {
+        if (CHECK_AMBIGUOUS_OPTIONAL_ARGS) {
             AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
         }
 
@@ -324,8 +325,7 @@ public class CoreMethodNodeManager {
     }
 
     public void allMethodInstalled() {
-        if (System.getenv("TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS") != null &&
-            !AmbiguousOptionalArgumentChecker.SUCCESS) {
+        if (CHECK_AMBIGUOUS_OPTIONAL_ARGS && !AmbiguousOptionalArgumentChecker.SUCCESS) {
             System.exit(1);
         }
     }
