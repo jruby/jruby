@@ -5,19 +5,14 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyNumeric;
+import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.encoding.EncodingCapable;
-import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
-
-import java.lang.reflect.Array;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.arrayOf;
@@ -41,24 +36,25 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     public RubyArrayOneObject(RubyClass otherClass, IRubyObject value) {
         super(otherClass);
         this.value = value;
+        this.realLength = 1;
     }
 
     @Override
     public final IRubyObject eltInternal(int index) {
         if (!ok()) return super.eltInternal(index);
-        else if (index == 1) return value;
+        else if (index == 0) return value;
         throw new ArrayIndexOutOfBoundsException(index);
     }
 
     @Override
     public final IRubyObject eltInternalSet(int index, IRubyObject value) {
         if (!ok()) return super.eltInternalSet(index, value);
-        if (index == 1) return this.value = value;
+        if (index == 0) return this.value = value;
         throw new ArrayIndexOutOfBoundsException(index);
     }
 
     @Override
-    protected void fail() {
+    protected void unpack() {
         if (!ok()) return;
         setFlag(Constants.ARRAY_PACKING_FAILED_F, true);
         values = new IRubyObject[]{value};
@@ -117,7 +113,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
         if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
 
         if (len > 1) {
-            fail();
+            unpack();
             return super.fillCommon(context, beg, len, block);
         }
 
@@ -138,7 +134,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
         if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
 
         if (len > 1) {
-            fail();
+            unpack();
             return super.fillCommon(context, beg, len, item);
         }
 
@@ -248,7 +244,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
             return value;
         }
 
-        fail();
+        unpack();
         return super.store(index, value);
     }
 
@@ -270,7 +266,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     @Deprecated
     public void ensureCapacity(int minCapacity) {
         if (minCapacity == 1) return;
-        fail();
+        unpack();
         super.ensureCapacity(minCapacity);
     }
 }

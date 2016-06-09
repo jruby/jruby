@@ -44,10 +44,10 @@ public abstract class RubyArraySpecialized extends RubyArray {
 //    @Override
 //    protected abstract IRubyObject fillCommon(ThreadContext context, int beg, long len, Block block);
 
-    protected abstract void fail();
+    protected abstract void unpack();
 
     protected boolean ok() {
-        return getFlag(Constants.ARRAY_PACKING_FAILED_F);
+        return !getFlag(Constants.ARRAY_PACKING_FAILED_F);
     }
 
     @Override
