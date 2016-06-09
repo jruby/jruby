@@ -19,10 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class TwoOperandArgNoBlockCallInstr  extends CallInstr  {
     public TwoOperandArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver,
                                          Operand[] args, boolean isPotentiallyRefined) {
-        this(Operation.CALL_1O, callType, result, name, receiver, args, isPotentiallyRefined);
-        /*
         this(Operation.CALL_2O, callType, result, name, receiver, args, isPotentiallyRefined);
-        */
     }
 
     public TwoOperandArgNoBlockCallInstr(Operation op, CallType callType, Variable result, String name, Operand receiver,
