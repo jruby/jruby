@@ -57,7 +57,6 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
-import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
@@ -3275,7 +3274,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         final boolean stringBypass = !honorOverride || runtime.getString().isMethodBuiltin("<=>");
 
         try {
-            Qsort.sort(values, begin, begin + realLength, new Comparator() {
+            Arrays.sort(values, begin, begin + realLength, new Comparator() {
                 public int compare(Object o1, Object o2) {
                     if (fixnumBypass && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
                         return compareFixnums((RubyFixnum) o1, (RubyFixnum) o2);
@@ -3310,7 +3309,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int length = realLength;
 
         safeArrayCopy(values, begin, newValues, 0, length);
-        Qsort.sort(newValues, 0, length, new Comparator() {
+        Arrays.sort(newValues, 0, length, new Comparator() {
             public int compare(Object o1, Object o2) {
                 IRubyObject obj1 = (IRubyObject) o1;
                 IRubyObject obj2 = (IRubyObject) o2;
