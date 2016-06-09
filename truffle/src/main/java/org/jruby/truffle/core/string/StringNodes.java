@@ -66,6 +66,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -2965,55 +2966,49 @@ public abstract class StringNodes {
 
     }
 
+    @ImportStatic(StringGuards.class)
     @NodeChildren({ @NodeChild("first"), @NodeChild("second") })
     public static abstract class StringAreComparableNode extends RubyNode {
 
         public abstract boolean executeAreComparable(DynamicObject first, DynamicObject second);
 
-        @Specialization
-        protected boolean areComparable(DynamicObject first, DynamicObject second,
-                @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
-                @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
-                @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
-                @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
-                @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
-                @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
-                @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible) {
-            final Rope firstRope = Layouts.STRING.getRope(first);
-            final Rope secondRope = Layouts.STRING.getRope(second);
+        @Specialization(guards = "getEncoding(a) == getEncoding(b)")
+        protected boolean sameEncoding(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-            if (sameEncodingProfile.profile(firstRope.getEncoding() == secondRope.getEncoding())) {
-                return true;
-            }
+        @Specialization(guards = "isEmpty(a)")
+        protected boolean firstEmpty(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-            if (firstStringEmptyProfile.profile(firstRope.isEmpty())) {
-                return true;
-            }
+        @Specialization(guards = "isEmpty(b)")
+        protected boolean secondEmpty(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-            if (secondStringEmptyProfile.profile(secondRope.isEmpty())) {
-                return true;
-            }
+        @Specialization(guards = { "is7Bit(a)", "is7Bit(b)" })
+        protected boolean bothCR7bit(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-            final CodeRange firstCodeRange = firstRope.getCodeRange();
-            final CodeRange secondCodeRange = secondRope.getCodeRange();
+        @Specialization(guards = { "is7Bit(a)", "isAsciiCompatible(b)" })
+        protected boolean CR7bitASCII(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-            if (firstStringCR7BitProfile.profile(firstCodeRange == CodeRange.CR_7BIT)) {
-                if (secondStringCR7BitProfile.profile(secondCodeRange == CodeRange.CR_7BIT)) {
-                    return true;
-                }
+        @Specialization(guards = { "isAsciiCompatible(a)", "is7Bit(b)" })
+        protected boolean ASCIICR7bit(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-                if (secondStringAsciiCompatible.profile(secondRope.getEncoding().isAsciiCompatible())) {
-                    return true;
-                }
-            }
-
-            if (secondStringCR7BitProfile.profile(secondCodeRange == CodeRange.CR_7BIT)) {
-                if (firstStringAsciiCompatible.profile(firstRope.getEncoding().isAsciiCompatible())) {
-                    return true;
-                }
-            }
-
+        @Fallback
+        protected boolean notCompatible(Object a, Object b) {
             return false;
+        }
+
+        protected static Encoding getEncoding(DynamicObject string) {
+            return rope(string).getEncoding();
         }
 
     }
