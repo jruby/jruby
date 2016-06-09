@@ -1,0 +1,1 @@
+graalvm:Rational#denominator returns the denominator
