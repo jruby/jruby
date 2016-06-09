@@ -5,7 +5,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
@@ -23,69 +22,86 @@ import static org.jruby.runtime.Helpers.arrayOf;
 public class RubyArrayOneObject extends RubyArraySpecialized {
     private IRubyObject value;
 
-    public RubyArrayOneObject(Ruby runtime) {
-        // packed arrays are omitted from ObjectSpace
-        super(runtime, false);
-        this.value = runtime.getNil();
-        this.realLength = 1;
-    }
-
     public RubyArrayOneObject(Ruby runtime, IRubyObject value) {
         // packed arrays are omitted from ObjectSpace
         super(runtime, false);
         this.value = value;
         this.realLength = 1;
+        setFlag(Constants.PACKED_ARRAY_F, true);
     }
 
     public RubyArrayOneObject(RubyClass otherClass, IRubyObject value) {
         super(otherClass, false);
         this.value = value;
         this.realLength = 1;
+        setFlag(Constants.PACKED_ARRAY_F, true);
     }
 
     RubyArrayOneObject(RubyArrayOneObject other) {
         this(other.getMetaClass(), other.value);
     }
 
+    RubyArrayOneObject(RubyClass metaClass, RubyArrayOneObject other) {
+        this(metaClass, other.value);
+    }
+
     @Override
     public final IRubyObject eltInternal(int index) {
-        if (!ok()) return super.eltInternal(index);
+        if (!packed()) return super.eltInternal(index);
         else if (index == 0) return value;
         throw new ArrayIndexOutOfBoundsException(index);
     }
 
     @Override
     public final IRubyObject eltInternalSet(int index, IRubyObject value) {
-        if (!ok()) return super.eltInternalSet(index, value);
+        if (!packed()) return super.eltInternalSet(index, value);
         if (index == 0) return this.value = value;
         throw new ArrayIndexOutOfBoundsException(index);
     }
 
     @Override
     protected void unpack() {
-        if (!ok()) return;
-        setFlag(Constants.ARRAY_PACKING_FAILED_F, true);
-        values = new IRubyObject[]{value};
-        value = null;
-        begin = 0;
+        if (!packed()) return;
+        // CON: I believe most of the time we'll fail because we need to grow, so give a bit of extra room
+        IRubyObject nil = getRuntime().getNil();
+        values = new IRubyObject[]{nil, value, nil};
+        value = nil;
+        begin = 1;
         realLength = 1;
+        setFlag(Constants.PACKED_ARRAY_F, false);
     }
 
     @Override
     public RubyArray aryDup() {
-        return new RubyArrayOneObject(this);
+        if (!packed()) return super.aryDup();
+        return new RubyArrayOneObject(getRuntime().getArray(), this);
+    }
+
+    @Override
+    public IRubyObject rb_clear() {
+        if (!packed()) return super.rb_clear();
+
+        modifyCheck();
+
+        // fail packing, but defer [] creation in case it is never needed
+        value = null;
+        values = IRubyObject.NULL_ARRAY;
+        realLength = 0;
+        setFlag(Constants.PACKED_ARRAY_F, false);
+
+        return this;
     }
 
     @Override
     public IRubyObject collect(ThreadContext context, Block block) {
-        if (!ok()) return super.collect(context, block);
+        if (!packed()) return super.collect(context, block);
 
         return new RubyArrayOneObject(getRuntime(), block.yield(context, value));
     }
 
     @Override
     public void copyInto(IRubyObject[] target, int start) {
-        if (!ok()) {
+        if (!packed()) {
             super.copyInto(target, start);
             return;
         }
@@ -94,8 +110,12 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     @Override
     public void copyInto(IRubyObject[] target, int start, int len) {
-        if (len != 1) unpack();
-        if (!ok()) {
+        if (!packed()) {
+            super.copyInto(target, start);
+            return;
+        }
+        if (len != 1) {
+            unpack();
             super.copyInto(target, start);
             return;
         }
@@ -104,13 +124,13 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     @Override
     public IRubyObject dup() {
-        if (!ok()) return super.dup();
+        if (!packed()) return super.dup();
         return new RubyArrayOneObject(this);
     }
 
     @Override
     public IRubyObject each(ThreadContext context, Block block) {
-        if (!ok()) return super.each(context, block);
+        if (!packed()) return super.each(context, block);
 
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each", enumLengthFn());
 
@@ -121,7 +141,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     @Override
     protected IRubyObject fillCommon(ThreadContext context, int beg, long len, Block block) {
-        if (!ok()) return super.fillCommon(context, beg, len, block);
+        if (!packed()) return super.fillCommon(context, beg, len, block);
 
         modifyCheck();
 
@@ -142,7 +162,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     @Override
     protected IRubyObject fillCommon(ThreadContext context, int beg, long len, IRubyObject item) {
-        if (!ok()) return super.fillCommon(context, beg, len, item);
+        if (!packed()) return super.fillCommon(context, beg, len, item);
 
         modifyCheck();
 
@@ -163,7 +183,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     @Override
     public boolean includes(ThreadContext context, IRubyObject item) {
-        if (!ok()) return super.includes(context, item);
+        if (!packed()) return super.includes(context, item);
 
         if (equalInternal(context, value, item)) return true;
 
@@ -172,7 +192,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     @Override
     public int indexOf(Object element) {
-        if (!ok()) return super.indexOf(element);
+        if (!packed()) return super.indexOf(element);
 
         if (element != null) {
             IRubyObject convertedElement = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element);
@@ -184,6 +204,8 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     @Override
     protected IRubyObject inspectAry(ThreadContext context) {
+        if (!packed()) return super.inspectAry(context);
+
         final Ruby runtime = context.runtime;
         RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
         EncodingUtils.strBufCat(runtime, str, OPEN_BRACKET);
@@ -203,14 +225,14 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     @Override
     protected IRubyObject internalRotate(ThreadContext context, int cnt) {
-        if (!ok()) return super.internalRotate(context, cnt);
+        if (!packed()) return super.internalRotate(context, cnt);
 
         return aryDup();
     }
 
     @Override
     protected IRubyObject internalRotateBang(ThreadContext context, int cnt) {
-        if (!ok()) return super.internalRotateBang(context, cnt);
+        if (!packed()) return super.internalRotateBang(context, cnt);
 
         modifyCheck();
 
@@ -219,7 +241,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     @Override
     public IRubyObject op_plus(IRubyObject obj) {
-        if (!ok()) return super.op_plus(obj);
+        if (!packed()) return super.op_plus(obj);
         RubyArray y = obj.convertToArray();
         if (y.size() == 0) return new RubyArrayOneObject(this);
         return super.op_plus(y);
@@ -227,35 +249,35 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     @Override
     public IRubyObject reverse_bang() {
-        if (!ok()) return super.reverse_bang();
+        if (!packed()) return super.reverse_bang();
 
         return this;
     }
 
     @Override
     protected RubyArray safeReverse() {
-        if (!ok()) return super.safeReverse();
+        if (!packed()) return super.safeReverse();
 
         return new RubyArrayOneObject(this);
     }
 
     @Override
     protected IRubyObject sortInternal(ThreadContext context, Block block) {
-        if (!ok()) return super.sortInternal(context, block);
+        if (!packed()) return super.sortInternal(context, block);
 
         return this;
     }
 
     @Override
     protected IRubyObject sortInternal(final ThreadContext context, boolean honorOverride) {
-        if (!ok()) return super.sortInternal(context, honorOverride);
+        if (!packed()) return super.sortInternal(context, honorOverride);
 
         return this;
     }
 
     @Override
     public IRubyObject store(long index, IRubyObject value) {
-        if (!ok()) return super.store(index, value);
+        if (!packed()) return super.store(index, value);
 
         if (index == 1) {
             eltSetOk(index, value);
@@ -267,15 +289,25 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
+    public IRubyObject subseq(RubyClass metaClass, long beg, long len, boolean light) {
+        if (!packed()) return super.subseq(metaClass, beg, len, light);
+        if (beg != 0 || len != 1) {
+            unpack();
+            return super.subseq(metaClass, beg, len, light);
+        }
+        return new RubyArrayOneObject(metaClass, this);
+    }
+
+    @Override
     public IRubyObject[] toJavaArray() {
-        if (!ok()) return super.toJavaArray();
+        if (!packed()) return super.toJavaArray();
 
         return arrayOf(value);
     }
 
     @Override
     public IRubyObject uniq(ThreadContext context) {
-        if (!ok()) return super.uniq(context);
+        if (!packed()) return super.uniq(context);
 
         return new RubyArrayOneObject(this);
     }

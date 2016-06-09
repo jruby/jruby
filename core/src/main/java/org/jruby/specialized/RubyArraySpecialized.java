@@ -3,10 +3,7 @@ package org.jruby.specialized;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Created by headius on 5/28/16.
@@ -46,10 +43,7 @@ public abstract class RubyArraySpecialized extends RubyArray {
 
     protected abstract void unpack();
 
-    protected boolean ok() {
-        return !getFlag(Constants.ARRAY_PACKING_FAILED_F);
+    protected boolean packed() {
+        return getFlag(Constants.PACKED_ARRAY_F);
     }
-
-    @Override
-    public abstract RubyArray aryDup();
 }
