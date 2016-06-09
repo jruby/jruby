@@ -1,3 +1,11 @@
+# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -29,9 +37,19 @@ module GC
     run(false)
   end
 
-  def self.run(force)
-    Truffle.primitive :vm_gc_start
-    raise PrimitiveFailure, "GC.run primitive failed"
+  if Truffle::Graal.substrate?
+
+    def self.run(force)
+      Truffle::Interop.execute(Truffle::Interop.read_property(Truffle::Java::System, :gc))
+    end
+
+  else
+
+    def self.run(force)
+      Truffle.primitive :vm_gc_start
+      raise PrimitiveFailure, "GC.run primitive failed"
+    end
+
   end
 
   # Totally fake.

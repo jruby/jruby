@@ -330,7 +330,10 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
         checkFrozen(context, currentNode);
         methods.put(method.getName(), method);
-        newVersion();
+
+        if (!context.getCoreLibrary().isInitializing()) {
+            newVersion();
+        }
 
         if (context.getCoreLibrary().isLoaded() && !method.isUndefined()) {
             if (Layouts.CLASS.isClass(rubyModuleObject) && Layouts.CLASS.getIsSingleton(rubyModuleObject)) {
@@ -480,11 +483,11 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     public void newVersion() {
-        newVersion(new HashSet<DynamicObject>(), false);
+        newVersion(new HashSet<>(), false);
     }
 
     public void newLexicalVersion() {
-        newVersion(new HashSet<DynamicObject>(), true);
+        newVersion(new HashSet<>(), true);
     }
 
     public void newVersion(Set<DynamicObject> alreadyInvalidated, boolean considerLexicalDependents) {

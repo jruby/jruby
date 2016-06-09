@@ -24,6 +24,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_CLASS_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CONSTANT_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CORE_ALWAYS_CLONE;
 import static org.jruby.util.cli.Options.TRUFFLE_CORE_LOAD_PATH;
+import static org.jruby.util.cli.Options.TRUFFLE_CORE_PARALLEL_LOAD;
 import static org.jruby.util.cli.Options.TRUFFLE_COVERAGE_GLOBAL;
 import static org.jruby.util.cli.Options.TRUFFLE_DISPATCH_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE;
@@ -90,6 +91,7 @@ public class Options {
     // Resources
 
     public final String CORE_LOAD_PATH = TRUFFLE_CORE_LOAD_PATH.load();
+    public final boolean CORE_PARALLEL_LOAD = TRUFFLE_CORE_PARALLEL_LOAD.load();
 
     // Data structures
 

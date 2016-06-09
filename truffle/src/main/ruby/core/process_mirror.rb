@@ -1,3 +1,11 @@
+# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -150,10 +158,18 @@ module Rubinius
           "a+" => ::File::RDWR   | ::File::APPEND | ::File::CREAT
         }
 
-        def spawn(exe, command, args)
-          Truffle.primitive :vm_spawn
-          raise PrimitiveFailure,
-            "Rubinius::Mirror::Process::Execute#spawn primitive failed"
+        def spawn(options, command, arguments)
+          options ||= {}
+          env     = options[:unsetenv_others] ? {} : ENV.to_hash
+          env.merge! Hash[options[:env]] if options[:env]
+
+          env_array = env.map { |k, v| "#{k}=#{v}" }
+
+          if arguments.empty?
+            command, arguments = 'bash', ['bash', '-c', command]
+          end
+
+          Truffle::Process.spawn command, arguments, env_array
         end
       end
     end

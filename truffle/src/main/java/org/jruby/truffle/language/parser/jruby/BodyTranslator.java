@@ -29,7 +29,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.builtins.PrimitiveConstructor;
+import org.jruby.truffle.builtins.PrimitiveNodeConstructor;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.IsRubiniusUndefinedNode;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
@@ -581,7 +581,7 @@ public class BodyTranslator extends Translator {
 
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
 
-        final PrimitiveConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
+        final PrimitiveNodeConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
         final ReturnID returnID = environment.getReturnID();
         return primitive.createCallPrimitiveNode(context, sourceSection, returnID);
     }
@@ -607,7 +607,7 @@ public class BodyTranslator extends Translator {
 
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
 
-        final PrimitiveConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
+        final PrimitiveNodeConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
 
         final List<RubyNode> arguments = new ArrayList<>();
 
