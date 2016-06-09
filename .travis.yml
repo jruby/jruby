@@ -7,12 +7,19 @@ before_script:
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME
 
+before_install:
+  - mvn -Xmx32M -v | grep 1.6.0; if [ $? = 0 ]; then export JAVA_OPTS="-client"; else export JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"; fi
+  - mvn -Xmx32M -v | grep 1.[67].0; if [ $? = 0 ]; then export JAVA_OPTS="-XX:MaxPermSize=224M $JAVA_OPTS"; else export JAVA_OPTS="-XX:MaxMetaspaceSize=224M -XX:CompressedClassSpaceSize=192M $JAVA_OPTS"; fi
+  - export JAVA_OPTS="-Xmn32M -Xmx544M $JAVA_OPTS" && echo $JAVA_OPTS
+  - mvn -Xmx32M -v | grep 1.[67].0; if [ $? = 0 ]; then export ANT_OPTS="-XX:MaxPermSize=80M"; else export ANT_OPTS="-XX:MaxMetaspaceSize=80M -XX:CompressedClassSpaceSize=72M"; fi
+  - export ANT_OPTS="-Xmn48M -Xmx160M $ANT_OPTS" && echo $ANT_OPTS
+
 jdk: openjdk6
 
 env:
   # disable cext
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.cext.enabled=false"
+    - JAVA_OPTS="-Djruby.cext.enabled=false $JAVA_OPTS"
   matrix:
     - TARGET='test-extended'
     - TARGET='spec:ruby:fast'
@@ -30,7 +37,6 @@ matrix:
       env: TARGET='main'
     - jdk: oraclejdk7
       env: TARGET='j2ee'
-    # nice to have at least some feedback on jdk 7/8
     - jdk: openjdk7
       env: TARGET='test-extended'
     - jdk: openjdk7
@@ -39,6 +45,10 @@ matrix:
       env: TARGET='test-extended'
     - jdk: oraclejdk8
       env: TARGET='spec:ruby19:fast'
+    - jdk: oraclejdk8 # less process Kill-ing under 8 than 6/7
+      env: TARGET='jruby-jars-extended'
+    - jdk: oraclejdk8 # less process Kill-ing under 8 than 6/7
+      env: TARGET='main-extended'
   fast_finish: true
 
 branches:
