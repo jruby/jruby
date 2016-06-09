@@ -144,17 +144,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         constants.setConstant("CREAT", runtime.newFixnum(OpenFlags.O_CREAT.intValue()));
         /* error if CREAT and the file exists */
         constants.setConstant("EXCL", runtime.newFixnum(OpenFlags.O_EXCL.intValue()));
-        if (    // O_NDELAY not defined in OpenFlags
-                //OpenFlags.O_NDELAY.defined() ||
-                OpenFlags.O_NONBLOCK.defined()) {
-            if (!OpenFlags.O_NONBLOCK.defined()) {
-//                #   define O_NONBLOCK O_NDELAY
-            }
-            /* do not block on open or for data to become available */
-            constants.setConstant("NONBLOCK", runtime.newFixnum(OpenFlags.O_NONBLOCK.intValue()));
-        } else if (Platform.IS_WINDOWS) {
+        if (Platform.IS_WINDOWS) {
             // FIXME: Should NONBLOCK exist for Windows fcntl flags?
             constants.setConstant("NONBLOCK", runtime.newFixnum(1));
+        } else if (OpenFlags.O_NONBLOCK.defined()) {
+            /* do not block on open or for data to become available */
+            constants.setConstant("NONBLOCK", runtime.newFixnum(OpenFlags.O_NONBLOCK.intValue()));
         }
         /* truncate size to 0 */
         constants.setConstant("TRUNC", runtime.newFixnum(OpenFlags.O_TRUNC.intValue()));
