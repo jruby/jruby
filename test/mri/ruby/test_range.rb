@@ -117,7 +117,6 @@ class TestRange < Test::Unit::TestCase
     r = (0..1)
     assert_equal(r, r)
     assert_equal(r, (0..1))
-    assert_not_equal(r, (0..1.0))
     assert_not_equal(r, 0)
     assert_not_equal(r, (1..2))
     assert_not_equal(r, (0..2))
