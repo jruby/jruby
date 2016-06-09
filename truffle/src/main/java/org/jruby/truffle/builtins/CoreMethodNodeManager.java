@@ -59,25 +59,22 @@ public class CoreMethodNodeManager {
     }
 
     public void addCoreMethodNodes(List<? extends NodeFactory<? extends RubyNode>> nodeFactories) {
+        final Class<?> firstNodeClass = nodeFactories.get(0).getClass().getAnnotation(GeneratedBy.class).value();
+        final String moduleName = firstNodeClass.getEnclosingClass().getAnnotation(CoreClass.class).value();
+        final DynamicObject module = getModule(moduleName);
+
         for (NodeFactory<? extends RubyNode> nodeFactory : nodeFactories) {
-            final GeneratedBy generatedBy = nodeFactory.getClass().getAnnotation(GeneratedBy.class);
-            final Class<?> nodeClass = generatedBy.value();
-            final CoreClass classAnnotation = nodeClass.getEnclosingClass().getAnnotation(CoreClass.class);
+            final Class<?> nodeClass = nodeFactory.getClass().getAnnotation(GeneratedBy.class).value();
             final CoreMethod methodAnnotation = nodeClass.getAnnotation(CoreMethod.class);
 
             if (methodAnnotation != null) {
-                addCoreMethod(new MethodDetails(classAnnotation, methodAnnotation, nodeFactory));
+                addCoreMethod(module, new MethodDetails(moduleName, methodAnnotation, nodeFactory));
             }
         }
     }
 
-    private DynamicObject getSingletonClass(Object object) {
-        return singletonClassNode.executeSingletonClass(object);
-    }
-
-    private void addCoreMethod(MethodDetails methodDetails) {
+    private DynamicObject getModule(String fullName) {
         DynamicObject module;
-        String fullName = methodDetails.getClassAnnotation().value();
 
         if (fullName.equals("main")) {
             module = getSingletonClass(context.getCoreLibrary().getMainObject());
@@ -96,7 +93,14 @@ public class CoreMethodNodeManager {
         }
 
         assert RubyGuards.isRubyModule(module) : fullName;
+        return module;
+    }
 
+    private DynamicObject getSingletonClass(Object object) {
+        return singletonClassNode.executeSingletonClass(object);
+    }
+
+    private void addCoreMethod(DynamicObject module, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
         final String[] names = method.names();
@@ -153,7 +157,7 @@ public class CoreMethodNodeManager {
     private static SharedMethodInfo makeSharedMethodInfo(RubyContext context, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
         final String methodName = method.names()[0];
-        final SourceSection sourceSection = SourceSection.createUnavailable("core", String.format("%s#%s", methodDetails.getClassAnnotation().value(), methodName));
+        final SourceSection sourceSection = SourceSection.createUnavailable("core", methodDetails.getIndicativeName());
 
         final int required = method.required();
         final int optional = method.optional();
@@ -332,21 +336,14 @@ public class CoreMethodNodeManager {
 
     public static class MethodDetails {
 
-        private final CoreClass classAnnotation;
+        private final String moduleName;
         private final CoreMethod methodAnnotation;
         private final NodeFactory<? extends RubyNode> nodeFactory;
 
-        public MethodDetails(CoreClass classAnnotation, CoreMethod methodAnnotation, NodeFactory<? extends RubyNode> nodeFactory) {
-            assert classAnnotation != null;
-            assert methodAnnotation != null;
-            assert nodeFactory != null;
-            this.classAnnotation = classAnnotation;
+        public MethodDetails(String moduleName, CoreMethod methodAnnotation, NodeFactory<? extends RubyNode> nodeFactory) {
+            this.moduleName = moduleName;
             this.methodAnnotation = methodAnnotation;
             this.nodeFactory = nodeFactory;
-        }
-
-        public CoreClass getClassAnnotation() {
-            return classAnnotation;
         }
 
         public CoreMethod getMethodAnnotation() {
@@ -358,7 +355,7 @@ public class CoreMethodNodeManager {
         }
 
         public String getIndicativeName() {
-            return classAnnotation.value() + "#" + methodAnnotation.names()[0];
+            return moduleName + "#" + methodAnnotation.names()[0];
         }
     }
 
