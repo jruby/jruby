@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions.specialized;
 
-import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.Instr;
@@ -35,10 +34,5 @@ public class OneOperandArgNoBlockCallInstr extends CallInstr {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject arg1 = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
         return getCallSite().call(context, self, object, arg1);
-    }
-
-    @Override
-    public void visit(IRVisitor visitor) {
-        visitor.OneOperandArgNoBlockCallInstr(this);
     }
 }
