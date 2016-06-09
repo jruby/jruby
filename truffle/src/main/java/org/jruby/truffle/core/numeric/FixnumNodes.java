@@ -249,37 +249,10 @@ public abstract class FixnumNodes {
         private final BranchProfile bMinusOneANotMinimum = BranchProfile.create();
         private final BranchProfile finalCase = BranchProfile.create();
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
-        public int div(int a, int b) throws UnexpectedResultException {
-            if (b > 0) {
-                bGreaterZero.enter();
-                if (a >= 0) {
-                    bGreaterZeroAGreaterEqualZero.enter();
-                    return a / b;
-                } else {
-                    bGreaterZeroALessZero.enter();
-                    return (a + 1) / b - 1;
-                }
-            } else if (a > 0) {
-                aGreaterZero.enter();
-                return (a - 1) / b - 1;
-            } else if (b == -1) {
-                bMinusOne.enter();
-                if (a == Integer.MIN_VALUE) {
-                    bMinusOneAMinimum.enter();
-                    throw new UnexpectedResultException(BigInteger.valueOf(a).negate());
-                } else {
-                    bMinusOneANotMinimum.enter();
-                    return -a;
-                }
-            } else {
-                finalCase.enter();
-                return a / b;
-            }
-        }
+        // int
 
-        @Specialization
-        public Object divEdgeCase(int a, int b) {
+        @Specialization(rewriteOn = ArithmeticException.class)
+        public Object divInt(int a, int b) {
             if (b > 0) {
                 bGreaterZero.enter();
                 if (a >= 0) {
@@ -304,6 +277,16 @@ public abstract class FixnumNodes {
             } else {
                 finalCase.enter();
                 return a / b;
+            }
+        }
+
+        @Specialization
+        public Object divIntFallback(int a, int b,
+                @Cached("createBinaryProfile()") ConditionProfile zeroProfile) {
+            if (zeroProfile.profile(b == 0)) {
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
+            } else {
+                return divInt(a, b);
             }
         }
 
@@ -316,37 +299,10 @@ public abstract class FixnumNodes {
             return snippetNode.execute(frame, "redo_coerced :/, b", "b", b);
         }
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
-        public long div(long a, long b) throws UnexpectedResultException {
-            if (b > 0) {
-                bGreaterZero.enter();
-                if (a >= 0) {
-                    bGreaterZeroAGreaterEqualZero.enter();
-                    return a / b;
-                } else {
-                    bGreaterZeroALessZero.enter();
-                    return (a + 1) / b - 1;
-                }
-            } else if (a > 0) {
-                aGreaterZero.enter();
-                return (a - 1) / b - 1;
-            } else if (b == -1) {
-                bMinusOne.enter();
-                if (a == Long.MIN_VALUE) {
-                    bMinusOneAMinimum.enter();
-                    throw new UnexpectedResultException(BigInteger.valueOf(a).negate());
-                } else {
-                    bMinusOneANotMinimum.enter();
-                    return -a;
-                }
-            } else {
-                finalCase.enter();
-                return a / b;
-            }
-        }
+        // long
 
-        @Specialization
-        public Object divEdgeCase(long a, long b) {
+        @Specialization(rewriteOn = ArithmeticException.class)
+        public Object divLong(long a, long b) {
             if (b > 0) {
                 bGreaterZero.enter();
                 if (a >= 0) {
@@ -375,18 +331,28 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
+        public Object divLongFallback(long a, long b,
+                @Cached("createBinaryProfile()") ConditionProfile zeroProfile) {
+            if (zeroProfile.profile(b == 0)) {
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
+            } else {
+                return divLong(a, b);
+            }
+        }
+
+        @Specialization
         public double div(long a, double b) {
             return a / b;
         }
 
-        @Specialization(guards = {"!isLongMinValue(a)", "isRubyBignum(b)"})
-        public int div(long a, DynamicObject b) {
+        @Specialization(guards = { "isRubyBignum(b)", "!isLongMinValue(a)" })
+        public int divBignum(long a, DynamicObject b) {
             return 0;
         }
 
-        @Specialization(guards = {"isLongMinValue(a)", "isRubyBignum(b)"})
-        public int divEdgeCase(long a, DynamicObject b) {
-            return -(Layouts.BIGNUM.getValue(b).signum());
+        @Specialization(guards = { "isRubyBignum(b)", "isLongMinValue(a)" })
+        public int divBignumEdgeCase(long a, DynamicObject b) {
+            return -Layouts.BIGNUM.getValue(b).signum();
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
@@ -398,7 +364,7 @@ public abstract class FixnumNodes {
             return snippetNode.execute(frame, "redo_coerced :/, b", "b", b);
         }
 
-        public static boolean isLongMinValue(long a) {
+        protected static boolean isLongMinValue(long a) {
             return a == Long.MIN_VALUE;
         }
 
