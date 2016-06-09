@@ -12,12 +12,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Created by headius on 5/28/16.
  */
 public abstract class RubyArraySpecialized extends RubyArray {
-    public RubyArraySpecialized(Ruby runtime) {
-        super(runtime, runtime.getArray());
+    public RubyArraySpecialized(Ruby runtime, boolean light) {
+        super(runtime, runtime.getArray(), light);
     }
 
-    public RubyArraySpecialized(RubyClass otherClass) {
-        super(otherClass.getClassRuntime(), otherClass);
+    public RubyArraySpecialized(RubyClass otherClass, boolean light) {
+        super(otherClass.getClassRuntime(), otherClass, light);
     }
 
 //    @Override

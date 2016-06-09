@@ -23,20 +23,28 @@ import static org.jruby.runtime.Helpers.arrayOf;
 public class RubyArrayOneObject extends RubyArraySpecialized {
     private IRubyObject value;
 
-    RubyArrayOneObject(Ruby runtime, IRubyObject value) {
-        super(runtime);
+    public RubyArrayOneObject(Ruby runtime) {
+        // packed arrays are omitted from ObjectSpace
+        super(runtime, false);
+        this.value = runtime.getNil();
+        this.realLength = 1;
+    }
+
+    public RubyArrayOneObject(Ruby runtime, IRubyObject value) {
+        // packed arrays are omitted from ObjectSpace
+        super(runtime, false);
+        this.value = value;
+        this.realLength = 1;
+    }
+
+    public RubyArrayOneObject(RubyClass otherClass, IRubyObject value) {
+        super(otherClass, false);
         this.value = value;
         this.realLength = 1;
     }
 
     RubyArrayOneObject(RubyArrayOneObject other) {
         this(other.getMetaClass(), other.value);
-    }
-
-    public RubyArrayOneObject(RubyClass otherClass, IRubyObject value) {
-        super(otherClass);
-        this.value = value;
-        this.realLength = 1;
     }
 
     @Override
@@ -77,6 +85,16 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     @Override
     public void copyInto(IRubyObject[] target, int start) {
+        if (!ok()) {
+            super.copyInto(target, start);
+            return;
+        }
+        target[start] = value;
+    }
+
+    @Override
+    public void copyInto(IRubyObject[] target, int start, int len) {
+        if (len != 1) unpack();
         if (!ok()) {
             super.copyInto(target, start);
             return;
@@ -203,7 +221,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     public IRubyObject op_plus(IRubyObject obj) {
         if (!ok()) return super.op_plus(obj);
         RubyArray y = obj.convertToArray();
-        if (y.size() == 1) return new RubyArrayOneObject(this);
+        if (y.size() == 0) return new RubyArrayOneObject(this);
         return super.op_plus(y);
     }
 
