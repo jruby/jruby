@@ -3048,17 +3048,40 @@ public abstract class StringNodes {
                 "isRubyString(other)",
                 "!ropeReferenceEqual(string, other)",
                 "!bytesReferenceEqual(string, other)",
-                "areComparable(string, other)"
+                "areComparable(string, other)",
+                "byteLength(string) != byteLength(other)"
         })
-        public boolean equal(DynamicObject string, DynamicObject other,
-                             @Cached("createBinaryProfile()") ConditionProfile differentSizeProfile) {
+        public boolean stringEqualDifferentLength(DynamicObject string, DynamicObject other) {
+            return false;
+        }
 
-            final Rope a = Layouts.STRING.getRope(string);
-            final Rope b = Layouts.STRING.getRope(other);
+        @Specialization(guards = {
+                "isRubyString(other)",
+                "!ropeReferenceEqual(string, other)",
+                "!bytesReferenceEqual(string, other)",
+                "areComparable(string, other)",
+                "byteLength(string) == 1",
+                "byteLength(other) == 1",
+                "hasRawBytes(string)",
+                "hasRawBytes(other)"
+        })
+        public boolean equalCharacters(DynamicObject string, DynamicObject other) {
+            final Rope a = rope(string);
+            final Rope b = rope(other);
 
-            if (differentSizeProfile.profile(a.byteLength() != b.byteLength())) {
-                return false;
-            }
+            return a.getRawBytes()[0] == b.getRawBytes()[0];
+        }
+
+        @Specialization(guards = {
+                "isRubyString(other)",
+                "!ropeReferenceEqual(string, other)",
+                "!bytesReferenceEqual(string, other)",
+                "areComparable(string, other)",
+                "byteLength(string) == byteLength(other)"
+        }, contains = "equalCharacters")
+        public boolean fullEqual(DynamicObject string, DynamicObject other) {
+            final Rope a = rope(string);
+            final Rope b = rope(other);
 
             return a.equals(b);
         }
@@ -3094,6 +3117,15 @@ public abstract class StringNodes {
                     firstRope.getRawBytes() != null &&
                     firstRope.getRawBytes() == secondRope.getRawBytes();
         }
+
+        protected static int byteLength(DynamicObject string) {
+            return rope(string).byteLength();
+        }
+
+        protected static boolean hasRawBytes(DynamicObject string) {
+            return rope(string).getRawBytes() != null;
+        }
+
     }
 
     @Primitive(name = "string_find_character")
