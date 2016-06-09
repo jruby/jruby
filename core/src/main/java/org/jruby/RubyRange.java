@@ -314,7 +314,12 @@ public class RubyRange extends RubyObject {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyRange)) return getRuntime().getFalse();
         RubyRange otherRange = (RubyRange) other;
-
+        if (!numericType(begin, otherRange.begin)) {
+            return getRuntime().getFalse();
+        }
+        if (!numericType(end, otherRange.end)) {
+            return getRuntime().getFalse();
+        }
         if (equalInternal(context, begin, otherRange.begin) &&
             equalInternal(context, end, otherRange.end) &&
             isExclusive == otherRange.isExclusive) return getRuntime().getTrue();
@@ -749,6 +754,25 @@ public class RubyRange extends RubyObject {
     }
 
     public final boolean isExcludeEnd() { return isExclusive; }
+    
+    private static boolean numericType(final IRubyObject a, final IRubyObject b) {
+        if (a instanceof RubyFloat) {
+            if (!(b instanceof RubyFloat)) {
+                return false;
+            }
+        }
+        if (a instanceof RubyFixnum) {
+            if (!(b instanceof RubyFixnum)) {
+                return false;
+            }
+        }
+        if (a instanceof RubyBignum) {
+            if (!(b instanceof RubyBignum)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
         @Override
