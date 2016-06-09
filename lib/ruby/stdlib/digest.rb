@@ -97,10 +97,9 @@ end
 #   # => LoadError: library not found for class Digest::Foo -- digest/foo
 def Digest(name)
   const = name.to_sym
-  Digest::REQUIRE_MUTEX.synchronize {
-    # Ignore autoload's because it is void when we have #const_missing
-    Digest.const_missing(const)
-  }
+
+  # Ignore autoload's because it is void when we have #const_missing
+  Digest.const_missing(const)
 rescue LoadError
   # Constants do not necessarily rely on digest/*.
   if Digest.const_defined?(const)
