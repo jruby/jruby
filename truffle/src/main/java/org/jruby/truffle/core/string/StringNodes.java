@@ -476,16 +476,12 @@ public abstract class StringNodes {
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
         public Object getIndex(VirtualFrame frame, DynamicObject string, int index, Object length) {
-            final Rope rope = rope(string);
-            final int stringLength = rope.characterLength();
-            int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
-
-            if (normalizedIndex < 0 || normalizedIndex >= rope.characterLength()) {
+            // Check for the only difference from str[index, 1]
+            if (index == rope(string).characterLength()) {
                 outOfBounds.enter();
                 return nil();
-            } else {
-                return getSubstringNode().execute(frame, string, index, 1);
             }
+            return getSubstringNode().execute(frame, string, index, 1);
         }
 
         @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)", "wasNotProvided(length) || isRubiniusUndefined(length)" })
