@@ -99,8 +99,8 @@ public class CoreMethodNodeManager {
 
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
-        final List<String> names = Arrays.asList(method.names());
-        assert names.size() >= 1;
+        final String[] names = method.names();
+        assert names.length >= 1;
 
         final Visibility visibility = method.visibility();
 
@@ -135,7 +135,7 @@ public class CoreMethodNodeManager {
         }
     }
 
-    private static void addMethod(RubyContext context, DynamicObject module, SharedMethodInfo sharedMethodInfo, CallTarget callTarget, List<String> names, Visibility originalVisibility) {
+    private static void addMethod(RubyContext context, DynamicObject module, SharedMethodInfo sharedMethodInfo, CallTarget callTarget, String[] names, Visibility originalVisibility) {
         assert RubyGuards.isRubyModule(module);
 
         for (String name : names) {
