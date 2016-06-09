@@ -120,7 +120,17 @@ public class Array extends Operand implements Iterable<Operand> {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return context.runtime.newArray(retrieveArrayElts(context, self, currScope, currDynScope, temp));
+        switch (elts.length) {
+            case 0:
+                return context.runtime.newEmptyArray();
+            case 1:
+                return context.runtime.newArray((IRubyObject) elts[0].retrieve(context, self, currScope, currDynScope, temp));
+            case 2:
+                return context.runtime.newArray((IRubyObject) elts[0].retrieve(context, self, currScope, currDynScope, temp),
+                        (IRubyObject) elts[1].retrieve(context, self, currScope, currDynScope, temp));
+            default:
+                return context.runtime.newArray(retrieveArrayElts(context, self, currScope, currDynScope, temp));
+        }
     }
 
     @Override
