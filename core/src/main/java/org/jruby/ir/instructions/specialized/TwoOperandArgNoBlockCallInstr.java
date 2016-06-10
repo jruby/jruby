@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions.specialized;
 
-import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.Instr;
