@@ -39,7 +39,7 @@ public class BubbleBabble {
         char[] consonants = new char[]{'b', 'c', 'd', 'f', 'g', 'h', 'k', 'l', 'm',
                 'n', 'p', 'r', 's', 't', 'v', 'z', 'x'};
 
-        int seed = 1;
+        long seed = 1;
 
         ByteList retval = new ByteList();
 
@@ -49,26 +49,28 @@ public class BubbleBabble {
             int idx0, idx1, idx2, idx3, idx4;
 
             if ((i + 1 < rounds) || (length % 2 != 0)) {
-                idx0 = (((((int) (message[begin + 2 * i])) >> 6) & 3) + seed) % 6;
-                idx1 =   (((int) (message[begin + 2 * i])) >> 2) & 15;
-                idx2 =  ((((int) (message[begin + 2 * i]))  & 3) + (seed / 6)) % 6;
+                long b = message[begin + 2 * i] & 0xFF;
+                idx0 = (int) ((((b >> 6) & 3) + seed) % 6) & 0xFFFFFFFF;
+                idx1 = (int) (((b) >> 2) & 15) & 0xFFFFFFFF;
+                idx2 = (int) (((b & 3) + (seed / 6)) % 6) & 0xFFFFFFFF;
                 retval.append(vowels[idx0]);
                 retval.append(consonants[idx1]);
                 retval.append(vowels[idx2]);
                 if ((i + 1) < rounds) {
-                    idx3 = (((int) (message[begin + (2 * i) + 1])) >> 4) & 15;
-                    idx4 = (((int) (message[begin + (2 * i) + 1]))) & 15;
+                    long b2 = message[begin + (2 * i) + 1] & 0xFF;
+                    idx3 = (int) ((b2 >> 4) & 15) & 0xFFFFFFFF;
+                    idx4 = (int) ((b2) & 15) & 0xFFFFFFFF;
                     retval.append(consonants[idx3]);
                     retval.append('-');
                     retval.append(consonants[idx4]);
                     seed = ((seed * 5) +
-                            ((((int) (message[begin + 2 * i])) * 7) +
-                                    ((int) (message[begin + (2 * i) + 1])))) % 36;
+                            ((b * 7) +
+                                    b2)) % 36;
                 }
             } else {
-                idx0 = seed % 6;
+                idx0 = (int) (seed % 6) & 0xFFFFFFFF;
                 idx1 = 16;
-                idx2 = seed / 6;
+                idx2 = (int) (seed / 6) & 0xFFFFFFFF;
                 retval.append(vowels[idx0]);
                 retval.append(consonants[idx1]);
                 retval.append(vowels[idx2]);

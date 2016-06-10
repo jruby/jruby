@@ -386,6 +386,12 @@ public class RubyDigest {
             byte[] digest = recv.callMethod(context, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
             return RubyDigest.toHexString(runtime, digest);
         }
+
+        @JRubyMethod(name = "bubblebabble", required = 1, meta = true)
+        public static RubyString bubblebabble(IRubyObject recv, IRubyObject arg) {
+            byte[] digest = recv.callMethod(recv.getRuntime().getCurrentContext(), "digest", arg).convertToString().getBytes();
+            return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(digest, 0, digest.length));
+        }
     }
 
 
