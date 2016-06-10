@@ -361,6 +361,9 @@ public abstract class ArrayNodes {
         @Child protected ArrayReadSliceNormalizedNode readSliceNode;
         @Child private ToIntNode toIntNode;
 
+        private final BranchProfile negativeIndexProfile = BranchProfile.create();
+        private final BranchProfile negativeLengthProfile = BranchProfile.create();
+
         public abstract Object executeSet(VirtualFrame frame, DynamicObject array, Object index, Object length, Object value);
 
         // array[index] = object
@@ -508,14 +511,14 @@ public abstract class ArrayNodes {
 
         private void checkIndex(DynamicObject array, int index, int normalizedIndex) {
             if (normalizedIndex < 0) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                negativeIndexProfile.enter();
                 throw new RaiseException(coreExceptions().indexTooSmallError("array", index, getSize(array), this));
             }
         }
 
         public void checkLengthPositive(int length) {
             if (length < 0) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                negativeLengthProfile.enter();
                 throw new RaiseException(coreExceptions().negativeLengthError(length, this));
             }
         }
@@ -1317,6 +1320,8 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode compareNode;
 
+        private final BranchProfile errorProfile = BranchProfile.create();
+
         public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareNode = DispatchHeadNodeFactory.createMethodCall(context);
@@ -1339,7 +1344,7 @@ public abstract class ArrayNodes {
                         maximum.set(value);
                     }
                 } else {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    errorProfile.enter();
                     // Should be the actual type and object in this string - but this method should go away soon
                     throw new RaiseException(coreExceptions().argumentError("comparison of X with Y failed", this));
                 }
@@ -1437,6 +1442,8 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode compareNode;
 
+        private final BranchProfile errorProfile = BranchProfile.create();
+
         public MinBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareNode = DispatchHeadNodeFactory.createMethodCall(context);
@@ -1459,7 +1466,7 @@ public abstract class ArrayNodes {
                         minimum.set(value);
                     }
                 } else {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    errorProfile.enter();
                     // Should be the actual type and object in this string - but this method should go away soon
                     throw new RaiseException(coreExceptions().argumentError("comparison of X with Y failed", this));
                 }
@@ -2018,6 +2025,8 @@ public abstract class ArrayNodes {
         @Child private CallDispatchHeadNode compareDispatchNode;
         @Child private YieldNode yieldNode;
 
+        private final BranchProfile errorProfile = BranchProfile.create();
+
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
@@ -2103,8 +2112,7 @@ public abstract class ArrayNodes {
                 return (int) value;
             }
 
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-
+            errorProfile.enter();
             // TODO CS 14-Mar-15 - what's the error message here?
             throw new RaiseException(coreExceptions().argumentError("expecting a Fixnum to sort", this));
         }

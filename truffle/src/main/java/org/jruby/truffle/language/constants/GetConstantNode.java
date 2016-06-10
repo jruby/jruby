@@ -10,6 +10,7 @@
 package org.jruby.truffle.language.constants;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -80,8 +81,9 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     @Specialization(guards = "constant == null")
-    protected Object missingConstantUncached(VirtualFrame frame, DynamicObject module, String name, Object constant, LookupConstantInterface lookupConstantNode) {
-        final boolean isValidConstantName = isValidConstantName(name);
+    protected Object missingConstantUncached(VirtualFrame frame, DynamicObject module, String name, Object constant, LookupConstantInterface lookupConstantNode,
+            @Cached("createBinaryProfile()") ConditionProfile validNameProfile) {
+        final boolean isValidConstantName = validNameProfile.profile(isValidConstantName(name));
         return doMissingConstant(frame, module, name, isValidConstantName, getSymbol(name));
     }
 
@@ -92,7 +94,6 @@ public abstract class GetConstantNode extends RubyNode {
             boolean isValidConstantName,
             DynamicObject symbolName) {
         if (!isValidConstantName) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new RaiseException(coreExceptions().nameError(formatError(name), name, this));
         }
 
@@ -104,6 +105,7 @@ public abstract class GetConstantNode extends RubyNode {
         return constMissingNode.call(frame, module, "const_missing", null, symbolName);
     }
 
+    @TruffleBoundary
     private String formatError(String name) {
         return String.format("wrong constant name %s", name);
     }

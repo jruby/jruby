@@ -1354,8 +1354,7 @@ public abstract class StringNodes {
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().encodingCompatibilityError(
-                        String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
+                throw new RaiseException(coreExceptions().encodingCompatibilityErrorIncompatible(left.getEncoding(), right.getEncoding(), this));
             }
 
             if (prependMakeConcatNode == null) {
@@ -1395,8 +1394,7 @@ public abstract class StringNodes {
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().encodingCompatibilityError(
-                        String.format("incompatible encodings: %s and %s", source.getEncoding(), insert.getEncoding()), this));
+                throw new RaiseException(coreExceptions().encodingCompatibilityErrorIncompatible(source.getEncoding(), insert.getEncoding(), this));
             }
 
             final int stringLength = source.characterLength();
@@ -2663,16 +2661,16 @@ public abstract class StringNodes {
         public abstract DynamicObject executeStringAppend(DynamicObject string, DynamicObject other);
 
         @Specialization(guards = "isRubyString(other)")
-        public DynamicObject stringAppend(DynamicObject string, DynamicObject other) {
+        public DynamicObject stringAppend(DynamicObject string, DynamicObject other,
+                @Cached("create()") BranchProfile errorProfile) {
             final Rope left = rope(string);
             final Rope right = rope(other);
 
             final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
             if (compatibleEncoding == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().encodingCompatibilityError(
-                        String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
+                errorProfile.enter();
+                throw new RaiseException(coreExceptions().encodingCompatibilityErrorIncompatible(left.getEncoding(), right.getEncoding(), this));
             }
 
             StringOperations.setRope(string, makeConcatNode.executeMake(left, right, compatibleEncoding));

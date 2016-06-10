@@ -235,7 +235,8 @@ public abstract class FloatNodes {
     public abstract static class ModNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
-
+        private final BranchProfile zeroProfile = BranchProfile.create();
+        
         @Specialization
         public double mod(double a, long b) {
             return mod(a, (double) b);
@@ -244,7 +245,7 @@ public abstract class FloatNodes {
         @Specialization
         public double mod(double a, double b) {
             if (b == 0) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                zeroProfile.enter();
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 

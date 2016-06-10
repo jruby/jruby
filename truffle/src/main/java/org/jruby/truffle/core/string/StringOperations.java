@@ -161,15 +161,13 @@ public abstract class StringOperations {
         return ArrayOperations.clampExclusiveIndex(StringOperations.rope(string).byteLength(), index);
     }
 
+    @TruffleBoundary
     public static Encoding checkEncoding(RubyContext context, DynamicObject string, DynamicObject other, Node node) {
         final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
         if (encoding == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new RaiseException(context.getCoreExceptions().encodingCompatibilityErrorIncompatible(
-                    rope(string).getEncoding().toString(),
-                    rope(other).getEncoding().toString(),
-                    node));
+                    rope(string).getEncoding(), rope(other).getEncoding(), node));
         }
 
         return encoding;

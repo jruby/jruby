@@ -10,11 +10,13 @@
 package org.jruby.truffle.core.thread;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
@@ -36,9 +38,7 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.Memo;
-
 import java.util.concurrent.TimeUnit;
-
 import static org.jruby.RubyThread.RUBY_MAX_THREAD_PRIORITY;
 import static org.jruby.RubyThread.RUBY_MIN_THREAD_PRIORITY;
 import static org.jruby.RubyThread.javaPriorityToRubyPriority;
@@ -130,9 +130,11 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE, unsafe = UnsafeGroup.THREADS)
     public abstract static class HandleInterruptNode extends YieldingCoreMethodNode {
 
-        @CompilerDirectives.CompilationFinal private DynamicObject immediateSymbol;
-        @CompilerDirectives.CompilationFinal private DynamicObject onBlockingSymbol;
-        @CompilerDirectives.CompilationFinal private DynamicObject neverSymbol;
+        @CompilationFinal private DynamicObject immediateSymbol;
+        @CompilationFinal private DynamicObject onBlockingSymbol;
+        @CompilationFinal private DynamicObject neverSymbol;
+
+        private final BranchProfile errorProfile = BranchProfile.create();
 
         @Specialization(guards = { "isRubyClass(exceptionClass)", "isRubySymbol(timing)" })
         public Object handle_interrupt(VirtualFrame frame, DynamicObject self, DynamicObject exceptionClass, DynamicObject timing, DynamicObject block) {
@@ -156,7 +158,7 @@ public abstract class ThreadNodes {
             } else if (symbol == getNeverSymbol()) {
                 return InterruptMode.NEVER;
             } else {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().argumentError("invalid timing symbol", this));
             }
         }

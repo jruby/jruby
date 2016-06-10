@@ -53,6 +53,7 @@ public abstract class WriteValueNode extends FormatNode {
             return output;
         }
 
+        // If we ran out of output byte[], deoptimize and next time we'll allocate more
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         final Object[] newOutput = new Object[ArrayUtils.capacity(getContext(), output.length, neededLength)];

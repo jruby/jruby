@@ -703,13 +703,7 @@ public abstract class KernelNodes {
                 toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-
-            final String[] commandLine = new String[1 + args.length];
-            commandLine[0] = command.toString();
-            for (int n = 0; n < args.length; n++) {
-                commandLine[1 + n] = args[n].toString();
-            }
+            final String[] commandLine = buildCommandLine(command, args);
 
             final DynamicObject env = coreLibrary().getENV();
             final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash", null);
@@ -717,6 +711,16 @@ public abstract class KernelNodes {
             exec(getContext(), envAsHash, commandLine);
 
             return null;
+        }
+
+        @TruffleBoundary
+        private String[] buildCommandLine(Object command, Object[] args) {
+            final String[] commandLine = new String[1 + args.length];
+            commandLine[0] = command.toString();
+            for (int n = 0; n < args.length; n++) {
+                commandLine[1 + n] = args[n].toString();
+            }
+            return commandLine;
         }
 
         @TruffleBoundary
@@ -1078,9 +1082,9 @@ public abstract class KernelNodes {
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame);
 
             if (parentBlock == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().argumentError("tried to create Proc object without a block", this));
             }
+
             return lambda(parentBlock);
         }
 
@@ -1449,7 +1453,6 @@ public abstract class KernelNodes {
                 final String sourcePath = result;
 
                 if (sourcePath == null) {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new RaiseException(coreExceptions().loadError("cannot infer basepath", featureString, this));
                 }
 
