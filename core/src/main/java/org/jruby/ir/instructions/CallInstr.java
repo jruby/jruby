@@ -41,9 +41,9 @@ public class CallInstr extends CallBase implements ResultInstr {
                 if (isAllFloats(args)) return new OneFloatArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
 
                 return new OneOperandArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
-            } /* else if (args.length == 2 && !hasClosure) {
+            } else if (args.length == 2 && !hasClosure) {
                 return new TwoOperandArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
-            }*/
+            }
         }
 
         return new CallInstr(callType, result, name, receiver, args, closure, isPotentiallyRefined);
