@@ -31,10 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.digest;
 
-import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.util.HashMap;
 import java.util.Map;
@@ -240,6 +238,14 @@ public class RubyDigest {
         SHA384.setInternalVariable("metadata", new Metadata("SHA-384", 128));
         RubyClass SHA512 = Digest.defineClassUnder("SHA512", Base, Base.getAllocator());
         SHA512.setInternalVariable("metadata", new Metadata("SHA-512", 128));
+    }
+
+    public static void createDigestBubbleBabble(Ruby runtime) {
+        runtime.getLoadService().require("digest");
+        RubyModule Digest = runtime.getModule("Digest");
+        RubyClass Base = Digest.getClass("Base");
+        RubyClass MD5 = Digest.defineClassUnder("BubbleBabble", Base, Base.getAllocator());
+        MD5.setInternalVariable("metadata", new Metadata("BubbleBabble", 64));
     }
 
     @JRubyModule(name = "Digest::Instance")

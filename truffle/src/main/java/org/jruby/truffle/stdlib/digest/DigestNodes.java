@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.ext.digest.BubbleBabble;
+import org.jruby.ext.digest.BubbleBabbleX;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -172,7 +172,7 @@ public abstract class DigestNodes {
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject bubblebabble(DynamicObject message) {
             final Rope rope = StringOperations.rope(message);
-            return createString(BubbleBabble.bubblebabble(rope.getBytes(), 0, rope.byteLength()));
+            return createString(BubbleBabbleX.bubblebabble(rope.getBytes(), 0, rope.byteLength()));
         }
 
     }
