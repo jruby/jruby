@@ -85,7 +85,7 @@ public class TestRaiseException extends TestRubyBase {
 
             boolean found_each = false;
             for ( StackTraceElement element : trace ) {
-                if ( "each".equals( element.getMethodName() ) && element.getClassName().startsWith("org.jruby.RubyArray") ) {
+                if ( "each".equals( element.getMethodName() ) && element.getClassName().contains("RubyArray") ) {
                     if ( found_each ) {
                         fail("duplicate " + element + " in : \n" + fullTrace);
                     }
