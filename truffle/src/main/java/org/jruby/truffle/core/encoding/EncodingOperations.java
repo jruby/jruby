@@ -26,6 +26,7 @@ public abstract class EncodingOperations {
         Encoding encoding = Layouts.ENCODING.getEncoding(rubyEncoding);
 
         if (encoding == null) {
+            // Bounded by the number of encodings
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             final ByteList name = Layouts.ENCODING.getName(rubyEncoding);

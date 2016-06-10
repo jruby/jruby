@@ -11,10 +11,12 @@
 package org.jruby.truffle.core.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -28,6 +30,8 @@ public abstract class ToFNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toFNode;
 
+    private final BranchProfile errorProfile = BranchProfile.create();
+
     public ToFNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
@@ -39,7 +43,7 @@ public abstract class ToFNode extends RubyNode {
             return (double) doubleObject;
         }
 
-        CompilerDirectives.transferToInterpreterAndInvalidate();
+        errorProfile.enter();
         throw new UnsupportedOperationException("executeDouble must return a double, instead it returned a " + doubleObject.getClass().getName());
     }
 
@@ -61,16 +65,18 @@ public abstract class ToFNode extends RubyNode {
     }
 
     @Specialization
-    public double coerceBoolean(VirtualFrame frame, boolean value) {
-        return coerceObject(frame, value);
+    public double coerceBoolean(VirtualFrame frame, boolean value,
+            @Cached("create()") BranchProfile errorProfile) {
+        return coerceObject(frame, value, errorProfile);
     }
 
     @Specialization
-    public double coerceDynamicObject(VirtualFrame frame, DynamicObject object) {
-        return coerceObject(frame, object);
+    public double coerceDynamicObject(VirtualFrame frame, DynamicObject object,
+            @Cached("create()") BranchProfile errorProfile) {
+        return coerceObject(frame, object, errorProfile);
     }
 
-    private double coerceObject(VirtualFrame frame, Object object) {
+    private double coerceObject(VirtualFrame frame, Object object, BranchProfile errorProfile) {
         if (toFNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             toFNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
@@ -81,7 +87,7 @@ public abstract class ToFNode extends RubyNode {
             coerced = toFNode.call(frame, object, "to_f", null);
         } catch (RaiseException e) {
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorNoImplicitConversion(object, "Float", this));
             } else {
                 throw e;
@@ -91,7 +97,7 @@ public abstract class ToFNode extends RubyNode {
         if (coreLibrary().getLogicalClass(coerced) == coreLibrary().getFloatClass()) {
             return (double) coerced;
         } else {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
+            errorProfile.enter();
             throw new RaiseException(coreExceptions().typeErrorBadCoercion(object, "Float", "to_f", coerced, this));
         }
     }

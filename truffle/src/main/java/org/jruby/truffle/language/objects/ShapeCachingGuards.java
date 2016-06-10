@@ -19,7 +19,7 @@ import org.jruby.truffle.Layouts;
 public abstract class ShapeCachingGuards {
 
     public static boolean updateShape(DynamicObject object) {
-        CompilerDirectives.transferToInterpreterAndInvalidate();
+        CompilerDirectives.transferToInterpreter();
         return object.updateShape();
     }
 

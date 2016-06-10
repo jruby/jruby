@@ -8,6 +8,7 @@ import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.TwoOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -40,6 +41,8 @@ public class CallInstr extends CallBase implements ResultInstr {
                 if (isAllFloats(args)) return new OneFloatArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
 
                 return new OneOperandArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
+            } else if (args.length == 2 && !hasClosure) {
+                return new TwoOperandArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
             }
         }
 

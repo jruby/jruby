@@ -53,7 +53,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final Object methodName,
             DynamicObject blockObject,
             final Object[] argumentsObjects) {
-        CompilerDirectives.transferToInterpreterAndInvalidate();
+        CompilerDirectives.transferToInterpreter();
 
         // Make sure to have an up-to-date Shape.
         if (receiverObject instanceof DynamicObject) {

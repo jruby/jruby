@@ -37,6 +37,8 @@ public abstract class ToIntNode extends RubyNode {
     private final ConditionProfile wasLong = ConditionProfile.createBinaryProfile();
     private final ConditionProfile wasLongInRange = ConditionProfile.createBinaryProfile();
 
+    private final BranchProfile errorProfile = BranchProfile.create();
+
     public static ToIntNode create() {
         return ToIntNodeGen.create(null);
     }
@@ -58,7 +60,7 @@ public abstract class ToIntNode extends RubyNode {
             }
         }
 
-        CompilerDirectives.transferToInterpreterAndInvalidate();
+        errorProfile.enter();
         if (RubyGuards.isRubyBignum(object)) {
             throw new RaiseException(coreExceptions().rangeError("bignum too big to convert into `long'", this));
         } else {

@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.language.dispatch;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -38,6 +38,7 @@ public class UncachedDispatchNode extends DispatchNode {
     @Child private MetaClassNode metaClassNode;
 
     private final BranchProfile methodMissingProfile = BranchProfile.create();
+    private final BranchProfile methodMissingNotFoundProfile = BranchProfile.create();
 
     public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, MissingBehavior missingBehavior) {
         super(context, dispatchAction);
@@ -90,9 +91,8 @@ public class UncachedDispatchNode extends DispatchNode {
             if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                 return false;
             } else {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().runtimeError(
-                        receiverObject.toString() + " didn't have a #method_missing", this));
+                methodMissingNotFoundProfile.enter();
+                throw new RaiseException(methodMissingNotFound(receiverObject));
             }
         }
 
@@ -113,6 +113,11 @@ public class UncachedDispatchNode extends DispatchNode {
                 frame,
                 method.getCallTarget(),
                 RubyArguments.pack(null, null, method, DeclarationContext.METHOD, null, receiverObject, blockObject, argumentsObjects));
+    }
+
+    @TruffleBoundary
+    private DynamicObject methodMissingNotFound(Object receiverObject) {
+        return coreExceptions().runtimeError(receiverObject.toString() + " didn't have a #method_missing", this);
     }
 
 }

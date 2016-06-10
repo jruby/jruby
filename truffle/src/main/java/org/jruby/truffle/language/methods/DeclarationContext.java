@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.language.methods;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
@@ -70,16 +70,16 @@ public class DeclarationContext {
         return new DeclarationContext(visibility, defaultDefinee);
     }
 
-    public DynamicObject getModuleToDefineMethods(VirtualFrame frame, RubyContext context, SingletonClassNode singletonClassNode) {
+    public DynamicObject getModuleToDefineMethods(Object self, InternalMethod method, RubyContext context, SingletonClassNode singletonClassNode) {
         switch (defaultDefinee) {
         case LEXICAL_SCOPE:
-            return RubyArguments.getMethod(frame).getSharedMethodInfo().getLexicalScope().getLiveModule();
+            return method.getSharedMethodInfo().getLexicalScope().getLiveModule();
         case SINGLETON_CLASS:
-            final Object self = RubyArguments.getSelf(frame);
             return singletonClassNode.executeSingletonClass(self);
         case SELF:
-            return (DynamicObject) RubyArguments.getSelf(frame);
+            return (DynamicObject) self;
         default:
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new UnsupportedOperationException();
         }
     }

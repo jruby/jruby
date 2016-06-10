@@ -30,6 +30,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.FlagRegistry;
+import org.jruby.RubyBasicObject;
+import org.jruby.RubyHash;
+import org.jruby.RubyMatchData;
+import org.jruby.RubyModule;
+import org.jruby.RubyString;
+import org.jruby.ext.stringio.StringIO;
+
 public final class Constants {
     public static final String PLATFORM = "java";
 
@@ -71,6 +79,36 @@ public final class Constants {
      * The JIT threshold to the specified method invocation count.
      */
     public static final int JIT_THRESHOLD = 50;
+
+    private static final FlagRegistry registry = new FlagRegistry();
+
+    // These flags must be registered from top of hierarchy down to maintain order.
+    // TODO: Replace these during the build with their calculated values.
+    public static final int FALSE_F = registry.newFlag(RubyBasicObject.class);
+    public static final int NIL_F = registry.newFlag(RubyBasicObject.class);
+    public static final int FROZEN_F = registry.newFlag(RubyBasicObject.class);
+    public static final int TAINTED_F = registry.newFlag(RubyBasicObject.class);
+
+    public static final int CACHEPROXY_F = registry.newFlag(RubyModule.class);
+    public static final int NEEDSIMPL_F = registry.newFlag(RubyModule.class);
+    public static final int REFINED_MODULE_F = registry.newFlag(RubyModule.class);
+    public static final int IS_OVERLAID_F = registry.newFlag(RubyModule.class);
+
+    public static final int CR_7BIT_F    = registry.newFlag(RubyString.class);
+    public static final int CR_VALID_F   = registry.newFlag(RubyString.class);
+
+    public static final int STRIO_READABLE = registry.newFlag(StringIO.class);
+    public static final int STRIO_WRITABLE = registry.newFlag(StringIO.class);
+
+    public static final int MATCH_BUSY = registry.newFlag(RubyMatchData.class);
+
+    public static final int COMPARE_BY_IDENTITY_F = registry.newFlag(RubyHash.class);
+    public static final int PROCDEFAULT_HASH_F = registry.newFlag(RubyHash.class);
+
+    private static final boolean DEBUG = false;
+    static {
+        if (DEBUG) registry.printFlags();
+    }
     
     private static String jruby_revision = "@jruby.revision@";
 

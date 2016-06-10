@@ -12,6 +12,7 @@ package org.jruby.truffle.language.dispatch;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
@@ -20,6 +21,8 @@ import org.jruby.truffle.language.control.RaiseException;
 public class CallDispatchHeadNode extends DispatchHeadNode {
 
     @Child private BooleanCastNode booleanCastNode;
+
+    private final BranchProfile errorProfile = BranchProfile.create();
 
     public static CallDispatchHeadNode createMethodCall() {
         return new CallDispatchHeadNode(
@@ -79,7 +82,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             return (double) value;
         }
 
-        CompilerDirectives.transferToInterpreterAndInvalidate();
+        errorProfile.enter();
         if (value == DispatchNode.MISSING) {
             throw new RaiseException(context.getCoreExceptions().typeErrorCantConvertInto(receiverObject, "Float", this));
         } else {
@@ -103,7 +106,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             return (long) value;
         }
 
-        CompilerDirectives.transferToInterpreterAndInvalidate();
+        errorProfile.enter();
         if (value == DispatchNode.MISSING) {
             throw new RaiseException(context.getCoreExceptions().typeErrorCantConvertInto(receiverObject, "Fixnum", this));
         } else {

@@ -10,7 +10,7 @@ end
 
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.15' ),
+   ImportedGem.new( 'jruby-openssl', '0.9.17' ),
    ImportedGem.new( 'jruby-readline', '1.0', false ),
    ImportedGem.new( 'rake', '${rake.version}' ),
    ImportedGem.new( 'rdoc', '${rdoc.version}' ),
@@ -26,7 +26,7 @@ default_gems =
   ]
 
 project 'JRuby Lib Setup' do
-  
+
   version = ENV['JRUBY_VERSION'] ||
     File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
@@ -49,6 +49,12 @@ project 'JRuby Lib Setup' do
   extension 'org.torquebox.mojo:mavengem-wagon:0.2.0'
 
   repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
+
+  # for testing out jruby-ossl before final release :
+  #repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots',
+  #            :id => 'gem-snaphots' )
+  #repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
+  #            :id => 'gem-staging' )
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',

@@ -645,7 +645,6 @@ public abstract class BigDecimalNodes {
 
             if (normalNegProfile.profile(bType == BigDecimalType.NEGATIVE_ZERO
                     || (bType == BigDecimalType.NORMAL && isNormalZero(b)))) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 

@@ -9,12 +9,14 @@
  */
 package org.jruby.truffle.language.threadlocal;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jruby.truffle.RubyContext;
 
 public class ThreadLocalObject extends ThreadLocal<Object> {
 
     private final RubyContext context;
 
+    @TruffleBoundary
     public static ThreadLocalObject wrap(RubyContext context, Object value) {
         final ThreadLocalObject threadLocal = new ThreadLocalObject(context);
         threadLocal.set(value);

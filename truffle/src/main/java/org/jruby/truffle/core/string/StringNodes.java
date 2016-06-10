@@ -66,6 +66,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -300,6 +301,7 @@ public abstract class StringNodes {
         @Child private StringEqualPrimitiveNode stringEqualNode;
         @Child private KernelNodes.RespondToNode respondToNode;
         @Child private CallDispatchHeadNode objectEqualNode;
+        @Child private CheckLayoutNode checkLayoutNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -328,6 +330,15 @@ public abstract class StringNodes {
             }
 
             return false;
+        }
+
+        protected boolean isRubyString(DynamicObject object) {
+            if (checkLayoutNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                checkLayoutNode = insert(new CheckLayoutNode());
+            }
+
+            return checkLayoutNode.isString(object);
         }
     }
 
@@ -476,16 +487,12 @@ public abstract class StringNodes {
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
         public Object getIndex(VirtualFrame frame, DynamicObject string, int index, Object length) {
-            final Rope rope = rope(string);
-            final int stringLength = rope.characterLength();
-            int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
-
-            if (normalizedIndex < 0 || normalizedIndex >= rope.characterLength()) {
+            // Check for the only difference from str[index, 1]
+            if (index == rope(string).characterLength()) {
                 outOfBounds.enter();
                 return nil();
-            } else {
-                return getSubstringNode().execute(frame, string, index, 1);
             }
+            return getSubstringNode().execute(frame, string, index, 1);
         }
 
         @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)", "wasNotProvided(length) || isRubiniusUndefined(length)" })
@@ -1347,8 +1354,7 @@ public abstract class StringNodes {
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().encodingCompatibilityError(
-                        String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
+                throw new RaiseException(coreExceptions().encodingCompatibilityErrorIncompatible(left.getEncoding(), right.getEncoding(), this));
             }
 
             if (prependMakeConcatNode == null) {
@@ -1388,8 +1394,7 @@ public abstract class StringNodes {
 
             if (compatibleEncoding == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().encodingCompatibilityError(
-                        String.format("incompatible encodings: %s and %s", source.getEncoding(), insert.getEncoding()), this));
+                throw new RaiseException(coreExceptions().encodingCompatibilityErrorIncompatible(source.getEncoding(), insert.getEncoding(), this));
             }
 
             final int stringLength = source.characterLength();
@@ -2656,16 +2661,16 @@ public abstract class StringNodes {
         public abstract DynamicObject executeStringAppend(DynamicObject string, DynamicObject other);
 
         @Specialization(guards = "isRubyString(other)")
-        public DynamicObject stringAppend(DynamicObject string, DynamicObject other) {
+        public DynamicObject stringAppend(DynamicObject string, DynamicObject other,
+                @Cached("create()") BranchProfile errorProfile) {
             final Rope left = rope(string);
             final Rope right = rope(other);
 
             final Encoding compatibleEncoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
 
             if (compatibleEncoding == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().encodingCompatibilityError(
-                        String.format("incompatible encodings: %s and %s", left.getEncoding(), right.getEncoding()), this));
+                errorProfile.enter();
+                throw new RaiseException(coreExceptions().encodingCompatibilityErrorIncompatible(left.getEncoding(), right.getEncoding(), this));
             }
 
             StringOperations.setRope(string, makeConcatNode.executeMake(left, right, compatibleEncoding));
@@ -2959,55 +2964,49 @@ public abstract class StringNodes {
 
     }
 
+    @ImportStatic(StringGuards.class)
     @NodeChildren({ @NodeChild("first"), @NodeChild("second") })
     public static abstract class StringAreComparableNode extends RubyNode {
 
         public abstract boolean executeAreComparable(DynamicObject first, DynamicObject second);
 
-        @Specialization
-        protected boolean areComparable(DynamicObject first, DynamicObject second,
-                @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
-                @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
-                @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
-                @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
-                @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
-                @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
-                @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible) {
-            final Rope firstRope = Layouts.STRING.getRope(first);
-            final Rope secondRope = Layouts.STRING.getRope(second);
+        @Specialization(guards = "getEncoding(a) == getEncoding(b)")
+        protected boolean sameEncoding(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-            if (sameEncodingProfile.profile(firstRope.getEncoding() == secondRope.getEncoding())) {
-                return true;
-            }
+        @Specialization(guards = "isEmpty(a)")
+        protected boolean firstEmpty(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-            if (firstStringEmptyProfile.profile(firstRope.isEmpty())) {
-                return true;
-            }
+        @Specialization(guards = "isEmpty(b)")
+        protected boolean secondEmpty(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-            if (secondStringEmptyProfile.profile(secondRope.isEmpty())) {
-                return true;
-            }
+        @Specialization(guards = { "is7Bit(a)", "is7Bit(b)" })
+        protected boolean bothCR7bit(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-            final CodeRange firstCodeRange = firstRope.getCodeRange();
-            final CodeRange secondCodeRange = secondRope.getCodeRange();
+        @Specialization(guards = { "is7Bit(a)", "isAsciiCompatible(b)" })
+        protected boolean CR7bitASCII(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-            if (firstStringCR7BitProfile.profile(firstCodeRange == CodeRange.CR_7BIT)) {
-                if (secondStringCR7BitProfile.profile(secondCodeRange == CodeRange.CR_7BIT)) {
-                    return true;
-                }
+        @Specialization(guards = { "isAsciiCompatible(a)", "is7Bit(b)" })
+        protected boolean ASCIICR7bit(DynamicObject a, DynamicObject b) {
+            return true;
+        }
 
-                if (secondStringAsciiCompatible.profile(secondRope.getEncoding().isAsciiCompatible())) {
-                    return true;
-                }
-            }
-
-            if (secondStringCR7BitProfile.profile(secondCodeRange == CodeRange.CR_7BIT)) {
-                if (firstStringAsciiCompatible.profile(firstRope.getEncoding().isAsciiCompatible())) {
-                    return true;
-                }
-            }
-
+        @Fallback
+        protected boolean notCompatible(Object a, Object b) {
             return false;
+        }
+
+        protected static Encoding getEncoding(DynamicObject string) {
+            return rope(string).getEncoding();
         }
 
     }
@@ -3016,13 +3015,11 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringEqualPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child CheckLayoutNode checkLayoutNode;
         @Child StringAreComparableNode areComparableNode;
 
         public abstract boolean executeStringEqual(DynamicObject string, DynamicObject other);
 
         @Specialization(guards = {
-                "isRubyString(other)",
                 "ropeReferenceEqual(string, other)"
         })
         public boolean stringEqualsRopeEquals(DynamicObject string, DynamicObject other) {
@@ -3030,7 +3027,22 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {
-                "isRubyString(other)",
+                "!areComparable(string, other)"
+        })
+        public boolean stringEqualNotComparable(DynamicObject string, DynamicObject other) {
+            return false;
+        }
+
+        @Specialization(guards = {
+                "areComparable(string, other)",
+                "byteLength(string) != byteLength(other)"
+        })
+        public boolean stringEqualDifferentLength(DynamicObject string, DynamicObject other) {
+            return false;
+        }
+
+        @Specialization(guards = {
+                "areComparable(string, other)",
                 "!ropeReferenceEqual(string, other)",
                 "bytesReferenceEqual(string, other)"
         })
@@ -3039,41 +3051,31 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {
-                "isRubyString(other)",
+                "areComparable(string, other)",
                 "!ropeReferenceEqual(string, other)",
-                "!bytesReferenceEqual(string, other)",
-                "!areComparable(string, other)"
+                "byteLength(string) == 1",
+                "byteLength(other) == 1",
+                "hasRawBytes(string)",
+                "hasRawBytes(other)"
         })
-        public boolean stringEqualNotComparable(DynamicObject string, DynamicObject other) {
-            return false;
+        public boolean equalCharacters(DynamicObject string, DynamicObject other) {
+            final Rope a = rope(string);
+            final Rope b = rope(other);
+
+            return a.getRawBytes()[0] == b.getRawBytes()[0];
         }
 
         @Specialization(guards = {
-                "isRubyString(other)",
+                "areComparable(string, other)",
                 "!ropeReferenceEqual(string, other)",
                 "!bytesReferenceEqual(string, other)",
-                "areComparable(string, other)"
-        })
-        public boolean equal(DynamicObject string, DynamicObject other,
-                             @Cached("createBinaryProfile()") ConditionProfile differentSizeProfile) {
-
-            final Rope a = Layouts.STRING.getRope(string);
-            final Rope b = Layouts.STRING.getRope(other);
-
-            if (differentSizeProfile.profile(a.byteLength() != b.byteLength())) {
-                return false;
-            }
+                "byteLength(string) == byteLength(other)"
+        }, contains = "equalCharacters")
+        public boolean fullEqual(DynamicObject string, DynamicObject other) {
+            final Rope a = rope(string);
+            final Rope b = rope(other);
 
             return a.equals(b);
-        }
-
-        protected boolean isRubyString(DynamicObject object) {
-            if (checkLayoutNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                checkLayoutNode = insert(new CheckLayoutNode());
-            }
-
-            return checkLayoutNode.isString(object);
         }
 
         protected boolean areComparable(DynamicObject first, DynamicObject second) {
@@ -3093,11 +3095,18 @@ public abstract class StringNodes {
             final Rope firstRope = rope(first);
             final Rope secondRope = rope(second);
 
-            return firstRope.getCodeRange() == CodeRange.CR_7BIT &&
-                    secondRope.getCodeRange() == CodeRange.CR_7BIT &&
-                    firstRope.getRawBytes() != null &&
+            return firstRope.getRawBytes() != null &&
                     firstRope.getRawBytes() == secondRope.getRawBytes();
         }
+
+        protected static int byteLength(DynamicObject string) {
+            return rope(string).byteLength();
+        }
+
+        protected static boolean hasRawBytes(DynamicObject string) {
+            return rope(string).getRawBytes() != null;
+        }
+
     }
 
     @Primitive(name = "string_find_character")

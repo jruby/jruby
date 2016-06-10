@@ -29,6 +29,7 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -43,7 +44,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
@@ -68,13 +68,9 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.EncodingUtils;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -139,7 +135,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static final String ERR_INSECURE_SET_INST_VAR  = "Insecure: can't modify instance variable";
 
     public static final int ALL_F = -1;
-    public static final int FALSE_F = 1 << 0;
+    public static final int FALSE_F = Constants.FALSE_F;
     /**
      * This flag is a bit funny. It's used to denote that this value
      * is nil. It's a bit counterintuitive for a Java programmer to
@@ -150,27 +146,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * final. It turns out using a flag for this actually gives us
      * better performance than having a polymorphic {@link #isNil()} method.
      */
-    public static final int NIL_F = 1 << 1;
-    public static final int FROZEN_F = 1 << 2;
-    public static final int TAINTED_F = 1 << 3;
-
-    public static final int FL_USHIFT = 4;
-
-    public static final int USER0_F = (1<<(FL_USHIFT+0));
-    public static final int USER1_F = (1<<(FL_USHIFT+1));
-    public static final int USER2_F = (1<<(FL_USHIFT+2));
-    public static final int USER3_F = (1<<(FL_USHIFT+3));
-    public static final int USER4_F = (1<<(FL_USHIFT+4));
-    public static final int USER5_F = (1<<(FL_USHIFT+5));
-    public static final int USER6_F = (1<<(FL_USHIFT+6));
-    public static final int USER7_F = (1<<(FL_USHIFT+7));
-    public static final int USER8_F = (1<<(FL_USHIFT+8));
-    public static final int USER9_F = (1<<(FL_USHIFT+9));
-    public static final int USERA_F = (1<<(FL_USHIFT+10));
-    public static final int REFINED_MODULE_F = USER9_F;
-    public static final int IS_OVERLAID_F = USERA_F;
-
-    public static final int COMPARE_BY_IDENTITY_F = USER8_F;
+    public static final int NIL_F = Constants.NIL_F;
+    public static final int FROZEN_F = Constants.FROZEN_F;
+    public static final int TAINTED_F = Constants.TAINTED_F;
 
     /**
      *  A value that is used as a null sentinel in among other places
@@ -312,14 +290,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  <li>{@link #NIL_F}</li>
      *  <li>{@link #FROZEN_F}</li>
      *  <li>{@link #TAINTED_F}</li>
-     *  <li>{@link #USER0_F}</li>
-     *  <li>{@link #USER1_F}</li>
-     *  <li>{@link #USER2_F}</li>
-     *  <li>{@link #USER3_F}</li>
-     *  <li>{@link #USER4_F}</li>
-     *  <li>{@link #USER5_F}</li>
-     *  <li>{@link #USER6_F}</li>
-     *  <li>{@link #USER7_F}</li>
      * </ul>
      *
      * @param flag the actual flag to set or unset.
@@ -342,14 +312,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  <li>{@link #NIL_F}</li>
      *  <li>{@link #FROZEN_F}</li>
      *  <li>{@link #TAINTED_F}</li>
-     *  <li>{@link #USER0_F}</li>
-     *  <li>{@link #USER1_F}</li>
-     *  <li>{@link #USER2_F}</li>
-     *  <li>{@link #USER3_F}</li>
-     *  <li>{@link #USER4_F}</li>
-     *  <li>{@link #USER5_F}</li>
-     *  <li>{@link #USER6_F}</li>
-     *  <li>{@link #USER7_F}</li>
      * </ul>
      *
      * @param flag the flag to get
@@ -3086,4 +3048,35 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Deprecated
     public final void setNativeHandle(Object value) {
     }
+
+    @Deprecated
+    public static final int FL_USHIFT = 4;
+    @Deprecated
+    public static final int USER0_F = (1<<(FL_USHIFT+0));
+    @Deprecated
+    public static final int USER1_F = (1<<(FL_USHIFT+1));
+    @Deprecated
+    public static final int USER2_F = (1<<(FL_USHIFT+2));
+    @Deprecated
+    public static final int USER3_F = (1<<(FL_USHIFT+3));
+    @Deprecated
+    public static final int USER4_F = (1<<(FL_USHIFT+4));
+    @Deprecated
+    public static final int USER5_F = (1<<(FL_USHIFT+5));
+    @Deprecated
+    public static final int USER6_F = (1<<(FL_USHIFT+6));
+    @Deprecated
+    public static final int USER7_F = (1<<(FL_USHIFT+7));
+    @Deprecated
+    public static final int USER8_F = (1<<(FL_USHIFT+8));
+    @Deprecated
+    public static final int USER9_F = (1<<(FL_USHIFT+9));
+    @Deprecated
+    public static final int USERA_F = (1<<(FL_USHIFT+10));
+    @Deprecated
+    public static final int REFINED_MODULE_F = USER9_F;
+    @Deprecated
+    public static final int IS_OVERLAID_F = USERA_F;
+    @Deprecated
+    public static final int COMPARE_BY_IDENTITY_F = USER8_F;
 }

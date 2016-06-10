@@ -885,8 +885,6 @@ public abstract class ModuleNodes {
         }
 
         private Object getConstantNoInherit(VirtualFrame frame, DynamicObject module, String name, Node currentNode) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-
             RubyConstant constant = ModuleOperations.lookupConstantWithInherit(getContext(), module, name, false, currentNode);
             if (constant == null) {
                 // Call const_missing

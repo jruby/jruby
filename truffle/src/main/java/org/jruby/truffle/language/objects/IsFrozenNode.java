@@ -10,12 +10,12 @@
 
 package org.jruby.truffle.language.objects;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -25,6 +25,8 @@ import org.jruby.truffle.language.control.RaiseException;
 @NodeChild(value = "child")
 public abstract class IsFrozenNode extends RubyNode {
 
+    private final BranchProfile errorProfile = BranchProfile.create();
+
     public IsFrozenNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
@@ -33,7 +35,7 @@ public abstract class IsFrozenNode extends RubyNode {
 
     public void raiseIfFrozen(Object object) {
         if (executeIsFrozen(object)) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
+            errorProfile.enter();
             throw new RaiseException(coreExceptions().frozenError(object, this));
         }
     }
