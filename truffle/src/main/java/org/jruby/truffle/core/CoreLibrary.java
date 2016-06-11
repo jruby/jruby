@@ -34,6 +34,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
 import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.builtins.PrimitiveNodeConstructor;
 import org.jruby.truffle.core.array.ArrayNodes;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
@@ -720,50 +721,52 @@ public class CoreLibrary {
     }
 
     public void addPrimitives() {
-        final List<NodeFactory<? extends RubyNode>> nodeFactories = new ArrayList<>();
+        final PrimitiveManager primitiveManager = context.getPrimitiveManager();
 
-        nodeFactories.addAll(VMPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(ObjectNodesFactory.getFactories());
-        nodeFactories.addAll(TimeNodesFactory.getFactories());
-        nodeFactories.addAll(StringNodesFactory.getFactories());
-        nodeFactories.addAll(SymbolNodesFactory.getFactories());
-        nodeFactories.addAll(FixnumNodesFactory.getFactories());
-        nodeFactories.addAll(BignumNodesFactory.getFactories());
-        nodeFactories.addAll(FloatNodesFactory.getFactories());
-        nodeFactories.addAll(EncodingNodesFactory.getFactories());
-        nodeFactories.addAll(EncodingConverterNodesFactory.getFactories());
-        nodeFactories.addAll(RegexpPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(RandomizerPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(ArrayNodesFactory.getFactories());
-        nodeFactories.addAll(StatPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(PointerPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(NativeFunctionPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(DirNodesFactory.getFactories());
-        nodeFactories.addAll(IOPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(IOBufferPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(ExceptionNodesFactory.getFactories());
-        nodeFactories.addAll(ThreadNodesFactory.getFactories());
-        nodeFactories.addAll(WeakRefPrimitiveNodesFactory.getFactories());
+        ForkJoinPool.commonPool().invokeAll(Arrays.asList(() -> {
+            primitiveManager.addPrimitiveNodes(SymbolNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(FixnumNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(BignumNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(FloatNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(VMPrimitiveNodesFactory.getFactories());
+            return null;
+        }, () -> {
+            primitiveManager.addPrimitiveNodes(EncodingNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(EncodingConverterNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(RegexpPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(RandomizerPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(ObjectNodesFactory.getFactories());
+            return null;
+        }, () -> {
+            primitiveManager.addPrimitiveNodes(ArrayNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(StatPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(PointerPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(NativeFunctionPrimitiveNodesFactory.getFactories());
+            return null;
+        }, () -> {
+            primitiveManager.addPrimitiveNodes(DirNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(IOPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(IOBufferPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(ExceptionNodesFactory.getFactories());
+            return null;
+        }, () -> {
+            primitiveManager.addPrimitiveNodes(ThreadNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(WeakRefPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(TimeNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(StringNodesFactory.getFactories());
 
-        // This comes last as a catch-all
-        nodeFactories.addAll(UndefinedPrimitiveNodesFactory.getFactories());
+            // Catch all
+            primitiveManager.addPrimitiveNodes(UndefinedPrimitiveNodesFactory.getFactories());
 
-        for (NodeFactory<? extends RubyNode> nodeFactory : nodeFactories) {
-            final GeneratedBy generatedBy = nodeFactory.getClass().getAnnotation(GeneratedBy.class);
-            final Class<?> nodeClass = generatedBy.value();
-            final Primitive annotation = nodeClass.getAnnotation(Primitive.class);
-            if (annotation != null) {
-                context.getPrimitiveManager().addPrimitive(annotation.name(), new PrimitiveNodeConstructor(annotation, nodeFactory));
-            }
-        }
+            return null;
+        }));
     }
 
     public void addCoreMethods() {
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
 
-        // Bring in core method nodes
-        CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(context, node.getSingletonClassNode());
+        final CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(context, node.getSingletonClassNode());
 
         ForkJoinPool.commonPool().invokeAll(Arrays.asList(() -> {
             coreMethodNodeManager.addCoreMethodNodes(ArrayNodesFactory.getFactories());
