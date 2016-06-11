@@ -1143,7 +1143,7 @@ public class CoreLibrary {
     }
 
     public static boolean fitsIntoInteger(long value) {
-        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
+        return ((int) value) == value;
     }
 
     public RubyContext getContext() {
