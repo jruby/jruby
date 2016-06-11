@@ -106,8 +106,6 @@ public final class Constants {
     public static final int COMPARE_BY_IDENTITY_F = registry.newFlag(RubyHash.class);
     public static final int PROCDEFAULT_HASH_F = registry.newFlag(RubyHash.class);
 
-    public static final int PACKED_ARRAY_F = registry.newFlag(RubyArray.class);
-
     private static final boolean DEBUG = false;
     static {
         if (DEBUG) registry.printFlags();

@@ -57,6 +57,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.specialized.RubyArrayOneObject;
+import org.jruby.specialized.RubyArrayTwoObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.RecursiveComparator;
@@ -143,6 +144,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         switch (args.length) {
             case 1:
                 return new RubyArrayOneObject((RubyClass) klass, args[0]);
+            case 2:
+                return new RubyArrayTwoObject((RubyClass) klass, args[0], args[1]);
             default:
                 arr = (RubyArray) ((RubyClass) klass).allocate();
         }
@@ -213,7 +216,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      *
      */
     public static RubyArray newArray(Ruby runtime, IRubyObject car, IRubyObject cdr) {
-        return new RubyArray(runtime, new IRubyObject[] { car, cdr });
+        return new RubyArrayTwoObject(runtime, car, cdr);
     }
 
     public static RubyArray newEmptyArray(Ruby runtime) {
@@ -224,7 +227,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      *
      */
     public static RubyArray newArray(Ruby runtime, IRubyObject[] args) {
-        if (args.length == 1) return new RubyArrayOneObject(runtime, args[0]);
+        switch (args.length) {
+            case 0:
+                return newEmptyArray(runtime);
+            case 1:
+                return new RubyArrayOneObject(runtime, args[0]);
+            case 2:
+                return new RubyArrayTwoObject(runtime, args[0], args[1]);
+        }
         RubyArray arr = new RubyArray(runtime, new IRubyObject[args.length]);
         System.arraycopy(args, 0, arr.values, 0, args.length);
         arr.realLength = args.length;
@@ -254,8 +264,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     public static RubyArray newArray(Ruby runtime, Collection<? extends IRubyObject> collection) {
-        if (collection.size() == 1) return new RubyArrayOneObject(runtime, collection.iterator().next());
-        return new RubyArray(runtime, collection.toArray(new IRubyObject[collection.size()]));
+        // This may seem inefficient for packed arrays, but the cost of this versus is not really worse
+        // than the cost of constructing and walking an Iterator.
+        IRubyObject[] values = collection.toArray(new IRubyObject[collection.size()]);
+        switch (values.length) {
+            case 1: return new RubyArrayOneObject(runtime, values[0]);
+            case 2: return new RubyArrayTwoObject(runtime, values[0], values[1]);
+        }
+        return new RubyArray(runtime, values);
     }
 
     public static final int ARRAY_DEFAULT_SIZE = 16;
@@ -919,7 +935,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     private void spliceRealloc(int length, int valuesLength) {
-        unpack();
         int tryLength = valuesLength + (valuesLength >> 1);
         int len = length > tryLength ? length : tryLength;
         IRubyObject[] vals = new IRubyObject[len];
@@ -2090,7 +2105,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         modify();
 
         // See [ruby-core:17483]
-        if (len < 0) return this;
+        if (len <= 0) return this;
 
         if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
 
@@ -2116,7 +2131,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         modify();
 
         // See [ruby-core:17483]
-        if (len < 0) return this;
+        if (len <= 0) return this;
 
         if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
 
@@ -3323,13 +3338,13 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return this;
     }
 
-    private static int compareFixnums(RubyFixnum o1, RubyFixnum o2) {
+    protected static int compareFixnums(RubyFixnum o1, RubyFixnum o2) {
         long a = o1.getLongValue();
         long b = o2.getLongValue();
         return a > b ? 1 : a == b ? 0 : -1;
     }
 
-    private static int compareOthers(ThreadContext context, IRubyObject o1, IRubyObject o2) {
+    protected static int compareOthers(ThreadContext context, IRubyObject o1, IRubyObject o2) {
         IRubyObject ret = invokedynamic(context, o1, OP_CMP, o2);
         int n = RubyComparable.cmpint(context, ret, o1, o2);
         //TODO: ary_sort_check should be done here
@@ -4707,6 +4722,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @Deprecated
     public void ensureCapacity(int minCapacity) {
+        unpack();
         if ( isShared || (values.length - begin) < minCapacity ) {
             final int len = this.realLength;
             int newCapacity = minCapacity > len ? minCapacity : len;
