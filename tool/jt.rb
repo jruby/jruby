@@ -182,7 +182,7 @@ module Utilities
   end
 
   def self.igv_running?
-    `ps ax`.include?('IdealGraphVisualizer')
+    `ps ax`.include?('idealgraphvisualizer')
   end
 
   def self.ensure_igv_running
