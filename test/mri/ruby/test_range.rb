@@ -4,6 +4,45 @@ require 'delegate'
 require 'timeout'
 require 'bigdecimal'
 
+# Custom Range classes Xs and Ys
+class Custom 
+  include Comparable
+  attr :length
+  def initialize(n)
+    @length = n
+  end
+  def eql?(other)
+    inspect.eql? other.inspect
+  end
+  def inspect
+    'custom'
+  end
+  def <=>(other)
+    @length <=> other.length
+  end
+  def to_s
+    sprintf "%2d #{inspect}", @length
+  end
+end
+
+class Xs < Custom # represent a string of 'x's
+  def succ
+    Xs.new(@length + 1)
+  end
+  def inspect
+    'x' * @length
+  end
+end
+
+class Ys < Custom # represent a string of 'y's
+  def succ
+    Ys.new(@length + 1)
+  end
+  def inspect
+    'y' * @length
+  end
+end
+
 class TestRange < Test::Unit::TestCase
   def test_new
     assert_equal((0..2), Range.new(0, 2))
@@ -136,6 +175,15 @@ class TestRange < Test::Unit::TestCase
     assert_not_operator(r, :eql?, 0...1)
     subclass = Class.new(Range)
     assert_operator(r, :eql?, subclass.new(0,1))
+  end
+  
+  def test_custom_range_eql
+    r = (Xs.new(3)..Xs.new(5))
+    assert_operator(r, :eql?, r)
+    assert_operator(r, :eql?, (Xs.new(3)..Xs.new(5)))
+    assert_not_operator(r, :eql?, (Ys.new(3)..Ys.new(5)))
+    subclass = Class.new(Range)
+    assert_equal(r, subclass.new(Xs.new(3), Xs.new(5)))
   end
 
   def test_hash
