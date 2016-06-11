@@ -521,7 +521,7 @@ public abstract class RangeNodes {
 
         @CreateCast("excludeEnd")
         public RubyNode coerceToBoolean(RubyNode excludeEnd) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, false, excludeEnd);
+            return BooleanCastWithDefaultNodeGen.create(false, excludeEnd);
         }
 
         @Specialization(guards = "rubyClass == rangeClass")

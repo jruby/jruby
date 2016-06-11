@@ -1212,7 +1212,7 @@ public abstract class KernelNodes {
 
         @CreateCast("regular")
         public RubyNode coerceToBoolean(RubyNode regular) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, regular);
+            return BooleanCastWithDefaultNodeGen.create(true, regular);
         }
 
         @TruffleBoundary
@@ -1266,7 +1266,7 @@ public abstract class KernelNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(true, includeAncestors);
         }
 
         @TruffleBoundary
@@ -1313,7 +1313,7 @@ public abstract class KernelNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(true, includeAncestors);
         }
 
         @TruffleBoundary
@@ -1343,7 +1343,7 @@ public abstract class KernelNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(true, includeAncestors);
         }
 
         @TruffleBoundary
@@ -1494,7 +1494,7 @@ public abstract class KernelNodes {
 
         @CreateCast("includeProtectedAndPrivate")
         public RubyNode coerceToBoolean(RubyNode includeProtectedAndPrivate) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, false, includeProtectedAndPrivate);
+            return BooleanCastWithDefaultNodeGen.create(false, includeProtectedAndPrivate);
         }
 
         @Specialization(guards = "isRubyString(name)")
@@ -1611,7 +1611,7 @@ public abstract class KernelNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(true, includeAncestors);
         }
 
         @TruffleBoundary

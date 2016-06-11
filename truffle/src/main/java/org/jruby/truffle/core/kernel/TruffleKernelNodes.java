@@ -59,7 +59,7 @@ public abstract class TruffleKernelNodes {
 
         @CreateCast("wrap")
         public RubyNode coerceToBoolean(RubyNode inherit) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, false, inherit);
+            return BooleanCastWithDefaultNodeGen.create(false, inherit);
         }
 
         @Specialization(guards = "isRubyString(file)")

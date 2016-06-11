@@ -114,7 +114,7 @@ public abstract class SizedQueueNodes {
 
         @CreateCast("nonBlocking")
         public RubyNode coerceToBoolean(RubyNode nonBlocking) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, false, nonBlocking);
+            return BooleanCastWithDefaultNodeGen.create(false, nonBlocking);
         }
 
         @Specialization(guards = "!nonBlocking")
@@ -167,7 +167,7 @@ public abstract class SizedQueueNodes {
 
         @CreateCast("nonBlocking")
         public RubyNode coerceToBoolean(RubyNode nonBlocking) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, false, nonBlocking);
+            return BooleanCastWithDefaultNodeGen.create(false, nonBlocking);
         }
 
         @Specialization(guards = "!nonBlocking")
