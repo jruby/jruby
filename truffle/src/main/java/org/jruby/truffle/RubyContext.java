@@ -148,7 +148,7 @@ public class RubyContext extends ExecutionContext {
         // Load the nodes
 
         org.jruby.Main.printTruffleTimeMetric("before-load-primitives");
-        primitiveManager.addAnnotatedPrimitives();
+        coreLibrary.addPrimitives();
         org.jruby.Main.printTruffleTimeMetric("after-load-primitives");
 
         org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
