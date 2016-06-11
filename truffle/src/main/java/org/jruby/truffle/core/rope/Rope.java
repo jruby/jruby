@@ -84,11 +84,15 @@ public abstract class Rope {
 
     @Override
     public final int hashCode() {
-        if (hashCode == 0) {
+        if (! isHashCodeCalculated()) {
             hashCode = RopeOperations.hashForRange(this, 1, 0, byteLength);
         }
 
         return hashCode;
+    }
+
+    public final boolean isHashCodeCalculated() {
+        return hashCode != 0;
     }
 
     @Override
@@ -100,7 +104,7 @@ public abstract class Rope {
         if (o instanceof Rope) {
             final Rope other = (Rope) o;
 
-            if ((hashCode != 0) && (other.hashCode != 0) && (hashCode != other.hashCode)) {
+            if (isHashCodeCalculated() && other.isHashCodeCalculated() && (hashCode != other.hashCode)) {
                 return false;
             }
 

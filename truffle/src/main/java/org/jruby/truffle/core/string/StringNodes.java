@@ -3071,11 +3071,47 @@ public abstract class StringNodes {
                 "!bytesReferenceEqual(string, other)",
                 "byteLength(string) == byteLength(other)"
         }, contains = "equalCharacters")
-        public boolean fullEqual(DynamicObject string, DynamicObject other) {
+        public boolean fullEqual(DynamicObject string, DynamicObject other,
+                                 @Cached("createBinaryProfile()") ConditionProfile hashCodesCalculatedProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile differentHashCodesProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile aHasRawBytesProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile bHasRawBytesProfile) {
             final Rope a = rope(string);
             final Rope b = rope(other);
 
-            return a.equals(b);
+            if (hashCodesCalculatedProfile.profile(a.isHashCodeCalculated() && b.isHashCodeCalculated())) {
+                if (differentHashCodesProfile.profile(a.hashCode() != b.hashCode())) {
+                    return false;
+                }
+            }
+
+            final byte[] aBytes;
+            if (aHasRawBytesProfile.profile(a.getRawBytes() != null)) {
+                aBytes = a.getRawBytes();
+            } else {
+                aBytes = a.getBytes();
+            }
+
+            final byte[] bBytes;
+            if (bHasRawBytesProfile.profile(b.getRawBytes() != null)) {
+                bBytes = b.getRawBytes();
+            } else {
+                bBytes = b.getBytes();
+            }
+
+            return arraysEquals(aBytes, bBytes);
+        }
+
+        protected boolean arraysEquals(byte[] a, byte[] b) {
+            assert a.length == b.length;
+
+            for (int i = 0; i < a.length; i++) {
+                if (a[i] != b[i]) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         protected boolean areComparable(DynamicObject first, DynamicObject second) {
