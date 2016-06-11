@@ -3102,7 +3102,7 @@ public abstract class StringNodes {
             return arraysEquals(aBytes, bBytes);
         }
 
-        protected boolean arraysEquals(byte[] a, byte[] b) {
+        private boolean arraysEquals(byte[] a, byte[] b) {
             assert a.length == b.length;
 
             for (int i = 0; i < a.length; i++) {
