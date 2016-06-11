@@ -489,7 +489,7 @@ public abstract class RangeNodes {
 
         @CreateCast("excludeEnd")
         public RubyNode castToBoolean(RubyNode excludeEnd) {
-            return BooleanCastNodeGen.create(null, null, excludeEnd);
+            return BooleanCastNodeGen.create(excludeEnd);
         }
 
         @Specialization(guards = "isObjectRange(range)")

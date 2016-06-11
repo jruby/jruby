@@ -28,8 +28,8 @@ public class FlipFlopNode extends RubyNode {
                         FlipFlopStateNode stateNode, boolean exclusive) {
         super(context, sourceSection);
         this.exclusive = exclusive;
-        this.begin = BooleanCastNodeGen.create(context, sourceSection, begin);
-        this.end = BooleanCastNodeGen.create(context, sourceSection, end);
+        this.begin = BooleanCastNodeGen.create(begin);
+        this.end = BooleanCastNodeGen.create(end);
         this.stateNode = stateNode;
     }
 

@@ -309,7 +309,7 @@ public abstract class BignumNodes {
         public boolean equal(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
+                booleanCastNode = insert(BooleanCastNodeGen.create(null));
             }
 
             if (reverseCallNode == null) {

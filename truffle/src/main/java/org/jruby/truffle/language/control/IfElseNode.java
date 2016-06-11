@@ -28,7 +28,7 @@ public class IfElseNode extends RubyNode {
     public IfElseNode(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode thenBody, RubyNode elseBody) {
         super(context, sourceSection);
 
-        this.condition = BooleanCastNodeGen.create(context, sourceSection, condition);
+        this.condition = BooleanCastNodeGen.create(condition);
         this.thenBody = thenBody;
         this.elseBody = elseBody;
     }

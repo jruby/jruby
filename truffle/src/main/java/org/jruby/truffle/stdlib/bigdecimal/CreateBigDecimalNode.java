@@ -296,7 +296,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
     }
 
     protected BooleanCastNode createBooleanCastNode() {
-        return BooleanCastNodeGen.create(getContext(), getSourceSection(), null);
+        return BooleanCastNodeGen.create(null);
     }
 
     protected GetIntegerConstantNode createGetIntegerConstantNode() {

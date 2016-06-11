@@ -30,7 +30,7 @@ public class AndNode extends RubyNode {
         super(context, sourceSection);
         this.left = left;
         this.right = right;
-        leftCast = BooleanCastNodeGen.create(context, sourceSection, null);
+        leftCast = BooleanCastNodeGen.create(null);
     }
 
     @Override

@@ -35,7 +35,7 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
     private boolean booleanCast(VirtualFrame frame, Object value) {
         if (booleanCastNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
+            booleanCastNode = insert(BooleanCastNodeGen.create(null));
         }
         return booleanCastNode.executeBoolean(frame, value);
     }
