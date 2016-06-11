@@ -136,7 +136,7 @@ public class TestRubyArray extends TestRubyBase {
     }
 
     public void testSetsValuesToNullOnClearWhenNotShared() throws Exception {
-        final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = ['foo','bar']");
+        final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = []; $h << 'foo'; $h << 'bar'");
         assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
         assertNotSame("second element nil", runtime.getNil(), arr.eltInternal(1));
         arr.rb_clear();
