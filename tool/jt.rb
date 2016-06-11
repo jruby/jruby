@@ -140,7 +140,7 @@ module Utilities
   def self.find_repo(name)
     [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
       found = Dir.glob("#{dir}/#{name}*").first
-      return found if found
+      return File.expand_path(found) if found
     end
     raise "Can't find the #{name} repo - clone it into the repository directory or its parent"
   end
@@ -148,12 +148,12 @@ module Utilities
   def self.find_gem(name)
     ["#{JRUBY_DIR}/lib/ruby/gems/shared/gems"].each do |dir|
       found = Dir.glob("#{dir}/#{name}*").first
-      return found if found
+      return File.expand_path(found) if found
     end
     
     [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
       found = Dir.glob("#{dir}/#{name}").first
-      return found if found
+      return File.expand_path(found) if found
     end
     raise "Can't find the #{name} gem - gem install it in this repository, or put it in the repository directory or its parent"
   end
