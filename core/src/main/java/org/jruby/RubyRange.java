@@ -351,16 +351,13 @@ public class RubyRange extends RubyObject {
             return getRuntime().getFalse();
         }
         RubyRange otherRange = (RubyRange) other;
+        if (isExclusive != otherRange.isExclusive) {
+            return getRuntime().getFalse();
+        }
         if (!invokedynamic(context, this.begin, MethodNames.EQL, otherRange.begin).isTrue()) {
             return getRuntime().getFalse();
         }
-        if (!invokedynamic(context, this.end, MethodNames.EQL, otherRange.end).isTrue()) {
-            return getRuntime().getFalse();
-        }
-        
-        if (equalInternal(context, begin, otherRange.begin)
-                && equalInternal(context, end, otherRange.end)
-                && isExclusive == otherRange.isExclusive) {
+        if (invokedynamic(context, this.end, MethodNames.EQL, otherRange.end).isTrue()) {
             return getRuntime().getTrue();
         }
         return getRuntime().getFalse();
