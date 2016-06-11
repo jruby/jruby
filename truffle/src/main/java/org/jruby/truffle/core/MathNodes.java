@@ -37,7 +37,6 @@
  */
 package org.jruby.truffle.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -67,7 +66,7 @@ public abstract class MathNodes {
         @Override
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().mathDomainError("acos", this));
             }
 
@@ -84,7 +83,7 @@ public abstract class MathNodes {
             if (Double.isNaN(a)) {
                 return Double.NaN;
             } else if (a < 1) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().mathDomainError("acosh", this));
             } else if (a < 94906265.62) {
                 return Math.log(a + Math.sqrt(a * a - 1.0));
@@ -101,7 +100,7 @@ public abstract class MathNodes {
         @Override
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().mathDomainError("asin", this));
             }
 
@@ -160,7 +159,7 @@ public abstract class MathNodes {
         @Override
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().mathDomainError("atanh", this));
             }
 
@@ -350,7 +349,7 @@ public abstract class MathNodes {
         @Override
         protected double doFunction(double a) {
             if (a == -1) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().mathDomainError("gamma", this));
             }
 
@@ -362,7 +361,7 @@ public abstract class MathNodes {
                 if (a > 0) {
                     return Double.POSITIVE_INFINITY;
                 } else {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    exceptionProfile.enter();
                     throw new RaiseException(coreExceptions().mathDomainError("gamma", this));
                 }
             }
@@ -382,7 +381,7 @@ public abstract class MathNodes {
             }
 
             if (Double.isNaN(a)) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().mathDomainError("gamma", this));
             }
 
@@ -407,6 +406,8 @@ public abstract class MathNodes {
         @Child private IsANode isANode;
         @Child private CallDispatchHeadNode floatANode;
         @Child private CallDispatchHeadNode integerBNode;
+
+        private final BranchProfile exceptionProfile = BranchProfile.create();
 
         protected LdexpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -473,7 +474,7 @@ public abstract class MathNodes {
         @Specialization
         public double function(double a, double b) {
             if (Double.isNaN(b)) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().rangeError("float", Double.toString(b), "integer", this));
             }
 
@@ -482,14 +483,14 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            if (isANode.executeIsA(a, coreLibrary().getNumericClass())) {
-                return function(
-                        floatANode.callFloat(frame, a, "to_f", null),
-                        integerBNode.callLongFixnum(frame, b, "to_int", null));
-            } else {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+            if (!isANode.executeIsA(a, coreLibrary().getNumericClass())) {
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
+
+            return function(
+                    floatANode.callFloat(frame, a, "to_f", null),
+                    integerBNode.callLongFixnum(frame, b, "to_int", null));
         }
 
     }
@@ -501,6 +502,8 @@ public abstract class MathNodes {
 
         @Child private IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
+
+        private final BranchProfile exceptionProfile = BranchProfile.create();
 
         public LGammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -526,7 +529,7 @@ public abstract class MathNodes {
         @Specialization
         public DynamicObject lgamma(double a) {
             if (a < 0 && Double.isInfinite(a)) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().mathDomainError("log2", this));
             }
 
@@ -537,12 +540,12 @@ public abstract class MathNodes {
 
         @Fallback
         public DynamicObject lgamma(VirtualFrame frame, Object a) {
-            if (isANode.executeIsA(a, coreLibrary().getNumericClass())) {
-                return lgamma(floatNode.callFloat(frame, a, "to_f", null));
-            } else {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+            if (!isANode.executeIsA(a, coreLibrary().getNumericClass())) {
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
+
+            return lgamma(floatNode.callFloat(frame, a, "to_f", null));
         }
 
     }
@@ -572,17 +575,17 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(VirtualFrame frame, Object a, NotProvided b) {
-            if (isANode.executeIsA(a, coreLibrary().getNumericClass())) {
-                return doFunction(floatANode.callFloat(frame, a, "to_f", null));
-            } else {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+            if (!isANode.executeIsA(a, coreLibrary().getNumericClass())) {
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
+
+            return doFunction(floatANode.callFloat(frame, a, "to_f", null));
         }
 
         private double doFunction(double a) {
             if (a < 0) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().mathDomainError("log", this));
             }
 
@@ -592,7 +595,7 @@ public abstract class MathNodes {
         @Override
         protected double doFunction(double a, double b) {
             if (a < 0) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().mathDomainError("log", this));
             }
 
@@ -607,7 +610,7 @@ public abstract class MathNodes {
         @Override
         protected double doFunction(double a) {
             if (a < 0) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().mathDomainError("log10", this));
             }
 
@@ -624,7 +627,7 @@ public abstract class MathNodes {
         @Override
         protected double doFunction(double a) {
             if (a < 0) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().mathDomainError("log2", this));
             }
 
@@ -688,6 +691,8 @@ public abstract class MathNodes {
         @Child private IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
 
+        protected final BranchProfile exceptionProfile = BranchProfile.create();
+
         protected SimpleMonadicMathNode() {
             this(null, null);
         }
@@ -726,12 +731,12 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a) {
-            if (isANode.executeIsA(a, coreLibrary().getNumericClass())) {
-                return doFunction(floatNode.callFloat(frame, a, "to_f", null));
-            } else {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
+            if (!isANode.executeIsA(a, coreLibrary().getNumericClass())) {
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
+
+            return doFunction(floatNode.callFloat(frame, a, "to_f", null));
         }
 
     }
@@ -741,6 +746,8 @@ public abstract class MathNodes {
         @Child protected IsANode isANode;
         @Child protected CallDispatchHeadNode floatANode;
         @Child protected CallDispatchHeadNode floatBNode;
+
+        protected final BranchProfile exceptionProfile = BranchProfile.create();
 
         protected SimpleDyadicMathNode() {
             this(null, null);
@@ -841,16 +848,15 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            if (isANode.executeIsA(a, coreLibrary().getNumericClass()) &&
-                    isANode.executeIsA(b, coreLibrary().getNumericClass())) {
-                return doFunction(
-                        floatANode.callFloat(frame, a, "to_f", null),
-                        floatBNode.callFloat(frame, b, "to_f", null));
-            } else {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-
+            if (!(isANode.executeIsA(a, coreLibrary().getNumericClass()) &&
+                    isANode.executeIsA(b, coreLibrary().getNumericClass()))) {
+                exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
+
+            return doFunction(
+                    floatANode.callFloat(frame, a, "to_f", null),
+                    floatBNode.callFloat(frame, b, "to_f", null));
         }
 
     }
