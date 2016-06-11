@@ -146,44 +146,16 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     protected IRubyObject fillCommon(ThreadContext context, int beg, long len, Block block) {
         if (!packed()) return super.fillCommon(context, beg, len, block);
 
-        modifyCheck();
-
-        // See [ruby-core:17483]
-        if (len <= 0) return this;
-
-        if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
-
-        if (len > 2) {
-            unpack();
-            return super.fillCommon(context, beg, len, block);
-        }
-
-        car = block.yield(context, RubyFixnum.zero(context.runtime));
-        if (len > 1) cdr = block.yield(context, RubyFixnum.one(context.runtime));
-
-        return this;
+        unpack();
+        return super.fillCommon(context, beg, len, block);
     }
 
     @Override
     protected IRubyObject fillCommon(ThreadContext context, int beg, long len, IRubyObject item) {
         if (!packed()) return super.fillCommon(context, beg, len, item);
 
-        modifyCheck();
-
-        // See [ruby-core:17483]
-        if (len <= 0) return this;
-
-        if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
-
-        if (len > 2) {
-            unpack();
-            return super.fillCommon(context, beg, len, item);
-        }
-
-        car = item;
-        if (len > 1) cdr = item;
-
-        return this;
+        unpack();
+        return super.fillCommon(context, beg, len, item);
     }
 
     @Override
