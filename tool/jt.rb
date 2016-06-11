@@ -329,7 +329,7 @@ module ShellUtils
   end
   
   def maven_options(*options)
-    maven_options = %w[-DskipTests]
+    maven_options = []
     offline = options.delete('--offline')
     if offline
       maven_options.push "-Dmaven.repo.local=#{Utilities.find_repo('jruby-build-pack')}/maven"
@@ -431,7 +431,7 @@ module Commands
 
   def bootstrap(*options)
     maven_options, other_options = maven_options(*options)
-    mvn *maven_options, '-DskipTests', '-Pbootstrap-no-launcher'
+    mvn *maven_options, '-Pbootstrap-no-launcher'
   end
 
   def build(*options)
