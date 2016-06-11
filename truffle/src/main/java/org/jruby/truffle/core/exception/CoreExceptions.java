@@ -163,6 +163,46 @@ public class CoreExceptions {
     // Errno
 
     @TruffleBoundary
+    public DynamicObject mathDomainErrorAcos(Node currentNode) {
+        return mathDomainError("acos", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorAcosh(Node currentNode) {
+        return mathDomainError("acosh", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorAsin(Node currentNode) {
+        return mathDomainError("asin", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorAtanh(Node currentNode) {
+        return mathDomainError("atanh", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorGamma(Node currentNode) {
+        return mathDomainError("gamma", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorLog2(Node currentNode) {
+        return mathDomainError("log2", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorLog10(Node currentNode) {
+        return mathDomainError("log10", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorLog(Node currentNode) {
+        return mathDomainError("log", currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject mathDomainError(String method, Node currentNode) {
         return ExceptionOperations.createRubyException(
                 context.getCoreLibrary().getErrnoClass(Errno.EDOM),

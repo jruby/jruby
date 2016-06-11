@@ -67,7 +67,7 @@ public abstract class MathNodes {
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().mathDomainError("acos", this));
+                throw new RaiseException(coreExceptions().mathDomainErrorAcos(this));
             }
 
             return Math.acos(a);
@@ -84,7 +84,7 @@ public abstract class MathNodes {
                 return Double.NaN;
             } else if (a < 1) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().mathDomainError("acosh", this));
+                throw new RaiseException(coreExceptions().mathDomainErrorAcosh(this));
             } else if (a < 94906265.62) {
                 return Math.log(a + Math.sqrt(a * a - 1.0));
             } else{
@@ -101,7 +101,7 @@ public abstract class MathNodes {
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().mathDomainError("asin", this));
+                throw new RaiseException(coreExceptions().mathDomainErrorAsin(this));
             }
 
             return Math.asin(a);
@@ -160,7 +160,7 @@ public abstract class MathNodes {
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().mathDomainError("atanh", this));
+                throw new RaiseException(coreExceptions().mathDomainErrorAtanh(this));
             }
 
             final double y = Math.abs(a);
@@ -350,7 +350,7 @@ public abstract class MathNodes {
         protected double doFunction(double a) {
             if (a == -1) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().mathDomainError("gamma", this));
+                throw new RaiseException(coreExceptions().mathDomainErrorGamma(this));
             }
 
             if (Double.isNaN(a)) {
@@ -362,7 +362,7 @@ public abstract class MathNodes {
                     return Double.POSITIVE_INFINITY;
                 } else {
                     exceptionProfile.enter();
-                    throw new RaiseException(coreExceptions().mathDomainError("gamma", this));
+                    throw new RaiseException(coreExceptions().mathDomainErrorGamma(this));
                 }
             }
 
@@ -382,7 +382,7 @@ public abstract class MathNodes {
 
             if (Double.isNaN(a)) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().mathDomainError("gamma", this));
+                throw new RaiseException(coreExceptions().mathDomainErrorGamma(this));
             }
 
             return result;
@@ -530,7 +530,7 @@ public abstract class MathNodes {
         public DynamicObject lgamma(double a) {
             if (a < 0 && Double.isInfinite(a)) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().mathDomainError("log2", this));
+                throw new RaiseException(coreExceptions().mathDomainErrorLog2(this));
             }
 
             final RubyMath.NemesLogGamma l = new RubyMath.NemesLogGamma(a);
@@ -586,7 +586,7 @@ public abstract class MathNodes {
         private double doFunction(double a) {
             if (a < 0) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().mathDomainError("log", this));
+                throw new RaiseException(coreExceptions().mathDomainErrorLog(this));
             }
 
             return Math.log(a);
@@ -596,7 +596,7 @@ public abstract class MathNodes {
         protected double doFunction(double a, double b) {
             if (a < 0) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().mathDomainError("log", this));
+                throw new RaiseException(coreExceptions().mathDomainErrorLog(this));
             }
 
             return Math.log(a) / Math.log(b);
@@ -611,7 +611,7 @@ public abstract class MathNodes {
         protected double doFunction(double a) {
             if (a < 0) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().mathDomainError("log10", this));
+                throw new RaiseException(coreExceptions().mathDomainErrorLog10(this));
             }
 
             return Math.log10(a);
@@ -628,7 +628,7 @@ public abstract class MathNodes {
         protected double doFunction(double a) {
             if (a < 0) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().mathDomainError("log2", this));
+                throw new RaiseException(coreExceptions().mathDomainErrorLog2(this));
             }
 
             return Math.log(a) / LOG2;
