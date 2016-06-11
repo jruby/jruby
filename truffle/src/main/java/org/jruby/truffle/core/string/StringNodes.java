@@ -126,6 +126,7 @@ import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rope.SubstringRope;
 import org.jruby.truffle.core.string.StringNodesFactory.StringAreComparableNodeGen;
+import org.jruby.truffle.core.string.StringNodesFactory.StringEqualNodeGen;
 import org.jruby.truffle.language.CheckLayoutNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
@@ -298,14 +299,14 @@ public abstract class StringNodes {
     @CoreMethod(names = {"==", "===", "eql?"}, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private StringEqualPrimitiveNode stringEqualNode;
+        @Child private StringEqualNode stringEqualNode;
         @Child private KernelNodes.RespondToNode respondToNode;
         @Child private CallDispatchHeadNode objectEqualNode;
         @Child private CheckLayoutNode checkLayoutNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            stringEqualNode = StringNodesFactory.StringEqualPrimitiveNodeFactory.create(new RubyNode[]{});
+            stringEqualNode = StringEqualNodeGen.create(null, null);
         }
 
         @Specialization(guards = "isRubyString(b)")
@@ -3011,9 +3012,9 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_equal", needsSelf = true)
     @ImportStatic(StringGuards.class)
-    public static abstract class StringEqualPrimitiveNode extends PrimitiveArrayArgumentsNode {
+    @NodeChildren({ @NodeChild("first"), @NodeChild("second") })
+    public static abstract class StringEqualNode extends RubyNode {
 
         @Child StringAreComparableNode areComparableNode;
 
