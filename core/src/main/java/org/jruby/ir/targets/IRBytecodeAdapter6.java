@@ -385,8 +385,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         });
     }
 
-    public void invokeOther(String file, int line, String name, int arity, boolean hasClosure, boolean isPotentiallyRefined) {
-        invoke(file, line, name, arity, hasClosure, CallType.NORMAL, isPotentiallyRefined);
+    public void invokeOther(String name, int arity, boolean hasClosure, boolean isPotentiallyRefined) {
+        invoke(name, arity, hasClosure, CallType.NORMAL, isPotentiallyRefined);
     }
 
     public void invokeArrayDeref() {
@@ -413,7 +413,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invoke(String file, int lineNumber, String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
+    public void invoke(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
         SkinnyMethodAdapter adapter2;
@@ -467,8 +467,6 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 incomingSig,
                 null,
                 null);
-
-        adapter2.line(lineNumber);
 
         cacheCallSite(adapter2, getClassData().clsName, methodName, name, callType, isPotentiallyRefined);
 
@@ -532,10 +530,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
     }
 
-    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum) {
+    public void invokeOtherOneFixnum(String name, long fixnum) {
         if (!MethodIndex.hasFastFixnumOps(name)) {
             pushFixnum(fixnum);
-            invokeOther(file, line, name, 1, false, false);
+            invokeOther(name, 1, false, false);
         }
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
@@ -550,8 +548,6 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 incomingSig,
                 null,
                 null);
-
-        adapter2.line(line);
 
         // call site object field
         adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CallSite.class), null, null).visitEnd();
@@ -582,10 +578,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeOtherOneFloat(String file, int line, String name, double flote) {
+    public void invokeOtherOneFloat(String name, double flote) {
         if (!MethodIndex.hasFastFloatOps(name)) {
             pushFloat(flote);
-            invokeOther(file, line, name, 1, false, false);
+            invokeOther(name, 1, false, false);
         }
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
@@ -600,8 +596,6 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 incomingSig,
                 null,
                 null);
-
-        adapter2.line(line);
 
         // call site object field
         adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CallSite.class), null, null).visitEnd();
@@ -632,37 +626,37 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeSelf(String file, int line, String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
+    public void invokeSelf(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
-        invoke(file, line, name, arity, hasClosure, callType, isPotentiallyRefined);
+        invoke(name, arity, hasClosure, callType, isPotentiallyRefined);
     }
 
-    public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to instance super has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(file, line, name, arity, hasClosure, splatmap, "instanceSuper", "instanceSuperSplatArgs", false);
+        performSuper(name, arity, hasClosure, splatmap, "instanceSuper", "instanceSuperSplatArgs", false);
     }
 
-    public void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeClassSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to class super has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(file, line, name, arity, hasClosure, splatmap, "classSuper", "classSuperSplatArgs", false);
+        performSuper(name, arity, hasClosure, splatmap, "classSuper", "classSuperSplatArgs", false);
     }
 
-    public void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeUnresolvedSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to unresolved super has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(file, line, name, arity, hasClosure, splatmap, "unresolvedSuper", "unresolvedSuperSplatArgs", true);
+        performSuper(name, arity, hasClosure, splatmap, "unresolvedSuper", "unresolvedSuperSplatArgs", true);
     }
 
-    public void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeZSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to zsuper has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(file, line, name, arity, hasClosure, splatmap, "zSuper", "zSuperSplatArgs", true);
+        performSuper(name, arity, hasClosure, splatmap, "zSuper", "zSuperSplatArgs", true);
     }
 
-    private void performSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap, String superHelper, String splatHelper, boolean unresolved) {
+    private void performSuper(String name, int arity, boolean hasClosure, boolean[] splatmap, String superHelper, String splatHelper, boolean unresolved) {
         SkinnyMethodAdapter adapter2;
         String incomingSig;
         String outgoingSig;
@@ -697,8 +691,6 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 incomingSig,
                 null,
                 null);
-
-        adapter2.line(line);
 
         // CON FIXME: make these offsets programmatically determined
         adapter2.aload(0);
