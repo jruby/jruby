@@ -157,7 +157,7 @@ public class RubyContext extends ExecutionContext {
 
         // Load the reset of the core library
 
-        coreLibrary.initializeAfterBasicMethodsAdded();
+        coreLibrary.loadRubyCore();
 
         // Load other subsystems
 
