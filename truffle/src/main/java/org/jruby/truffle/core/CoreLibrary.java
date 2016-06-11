@@ -987,9 +987,11 @@ public class CoreLibrary {
                 Main.printTruffleTimeMetric("before-post-boot");
 
                 try {
-                    final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core/post-boot.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
-                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
-                    deferredCall.callWithoutCallNode();
+                    for (String path : new String[]{"/core/post-boot/gems.rb", "/core/post-boot/shims.rb"}) {
+                        final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + path), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
+                        final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
+                        deferredCall.callWithoutCallNode();
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
