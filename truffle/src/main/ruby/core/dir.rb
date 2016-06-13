@@ -255,6 +255,10 @@ class Dir
     self
   end
 
+  attr_reader :path
+
+  alias_method :to_path, :path
+
   SeekKind = 0
   RewindKind = 1
   TellKind = 2
