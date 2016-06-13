@@ -855,8 +855,8 @@ module Commands
     human_readable = "#{heap} MB"
     if use_json
       puts JSON.generate({
-        min: heap,
-        human: human_readable
+          min: heap,
+          human: human_readable
       })
     else
       puts human_readable
@@ -886,7 +886,10 @@ module Commands
     samples[0].each_key do |region|
       region_samples = samples.map { |s| s[region] }
       mean = region_samples.inject(:+) / samples.size
-      results[region] = mean
+      results[region] = {
+          samples: region_samples,
+          mean: mean
+      }
       if use_json
         file = STDERR
       else
@@ -897,7 +900,7 @@ module Commands
       results['human'] += human
     end
     if use_json
-      puts JSON.generate(Hash[results.map { |key, value| [key.strip, value] }])
+      puts JSON.generate(Hash[results.map { |key, values| [key.strip, values] }])
     end
   end
 
