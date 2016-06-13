@@ -88,7 +88,7 @@ public class BSwitchInstr extends MultiBranchInstr {
 
         int index = Arrays.binarySearch(jumps, value);
 
-        if (index == -1) {
+        if (index < 0) {
             return elseTarget.getTargetPC();
         }
 
