@@ -598,34 +598,27 @@ module Truffle
         @option_parsed        = false
 
         declare_options parse_options: false, help: ['-h', '--help', 'Show this message', -> (new, old, _) { puts option_parser; exit }, false]
-        if definition
-          do_definition(definition)
-        else
-          do_definition(gem_name, raise: false) || do_definition('default')
-        end
+
+        (definition && do_definition(definition)) ||
+            do_definition(gem_name) ||
+            do_definition('default') ||
+            raise("no ci definition with name: #{gem_name}")
       end
 
       def do_definition(name, raise: true)
         ci_file = Dir.glob(ROOT.join('gem_ci', "{#{name}}.rb")).first
-        if ci_file.nil?
-          if raise
-            raise "no ci definition with name: #{name}"
-          else
-            return false
-          end
-        else
-          puts "Using CI definition: #{ci_file}"
-          catch :cancel_ci! do
-            begin
-              instance_eval File.read(ci_file), ci_file, 1
-            rescue => e
-              puts format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
-              result false
-            end
-          end
+        return false if ci_file.nil?
 
-          return true
+        puts "Using CI definition: #{ci_file}"
+        catch :cancel_ci! do
+          begin
+            instance_eval File.read(ci_file), ci_file, 1
+          rescue => e
+            puts format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
+          end
         end
+
+        true
       end
 
       def declare_options(parse_options: true, **parser_options)
