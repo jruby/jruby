@@ -56,7 +56,7 @@ describe :range_eql, shared: true do
     (0.5..2.4).send(@method, 0.5...2.4).should == false
     (1482..1911).send(@method, 1482...1911).should == false
     (0xffff..0xfffff).send(@method, 0xffff...0xfffff).should == false
-    (Xs.new(3)..Xs.new(5)).send(@method, Range.new(Ys.new(3), Ys.new(5)).should == false
+    (Xs.new(3)..Xs.new(5)).send(@method, Range.new(Ys.new(3), Ys.new(5))).should == false
   end
 
   it "returns false if other is no Range" do
