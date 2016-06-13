@@ -290,7 +290,7 @@
 
   :without:
     - db
-    - jobs
+    - job
 :run:
   :require:
     - rubygems
