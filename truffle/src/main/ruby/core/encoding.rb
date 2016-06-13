@@ -43,6 +43,10 @@ class Encoding
     attr_accessor :source
     attr_accessor :target
 
+    def inspect
+      "#<#{super} #{source} to #{target}"
+    end
+
     def self.create(source, target)
       ret = new
 
@@ -603,6 +607,14 @@ class Encoding
       names << aname if aname and r.last == entry.last
     end
     names
+  end
+
+  def _dump(depth)
+    name
+  end
+
+  def self._load(name)
+    find name
   end
 end
 
