@@ -47,7 +47,7 @@ describe :range_eql, shared: true do
     (0.5..2.4).send(@method, Range.new(0.5, 2.4)).should == true
     (0xffff..0xfffff).send(@method, 0xffff..0xfffff).should == true
     (0xffff..0xfffff).send(@method, Range.new(0xffff,0xfffff)).should == true
-    (Xs.new(3)..Xs.new(5)).send(@method, Range.new(Xs.new(3), Xs.new(5)).should == true
+    (Xs.new(3)..Xs.new(5)).send(@method, Range.new(Xs.new(3), Xs.new(5))).should == true
 
     (0..1).send(@method, 0..1.0).should == false
     ('Q'..'X').send(@method, 'A'..'C').should == false
@@ -68,6 +68,6 @@ describe :range_eql, shared: true do
   it "returns true for subclasses to Range" do
     class MyRange < Range ; end
     Range.new(1, 2).send(@method, MyRange.new(1, 2)).should == true
-    Range.new(Xs.new(3), Xs.new(5)).send(@method, MyRange.new(Xs.new(3), Xs.new(5)).should == true
+    Range.new(Xs.new(3), Xs.new(5)).send(@method, MyRange.new(Xs.new(3), Xs.new(5))).should == true
   end
 end
