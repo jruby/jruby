@@ -1,3 +1,8 @@
+declare_options exclude: ['--[no-]exclude',
+                          'Exclude known failing tests',
+                          STORE_NEW_VALUE,
+                          true]
+
 subdir 'actionpack'
 repository_name 'rails'
 
@@ -8,5 +13,8 @@ use_only_https_git_paths!
 
 has_to_succeed setup
 
-result run(%w[--require-pattern test/**/*_test.rb -r excluded-tests -- -I test -e nil], raise: false)
+result run([%w[--require-pattern test/**/*_test.rb],
+            (option(:exclude) ? %w[-r excluded-tests] : []),
+            %w[-- -I test -e nil]].flatten(1),
+           raise: false)
 
