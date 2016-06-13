@@ -72,6 +72,7 @@ module Truffle
     LOCAL_CONFIG_FILE = '.jruby+truffle.yaml'
     ROOT              = Pathname(__FILE__).dirname.parent.parent.expand_path
     JRUBY_PATH        = ROOT.join('../../../..').expand_path
+    JRUBY_BIN         = JRUBY_PATH.join('bin', 'jruby')
 
     module OptionBlocks
       STORE_NEW_VALUE         = -> (new, old, _) { new }
@@ -128,7 +129,7 @@ module Truffle
           run:    {
               help:             ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
               interpreter_path: ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", STORE_NEW_VALUE,
-                                 JRUBY_PATH.join('bin', 'jruby')],
+                                 JRUBY_BIN],
               no_truffle:       ['-n', '--no-truffle', "Use conventional JRuby instead of #{BRANDING}", STORE_NEW_NEGATED_VALUE, false],
               graal:            ['-g', '--graal', 'Run on graal', STORE_NEW_VALUE, false],
               build:            ['-b', '--build', 'Run `jt build` using conventional JRuby', STORE_NEW_VALUE, false],
@@ -384,10 +385,12 @@ module Truffle
     def subcommand_setup(rest)
       bundle_options = @options[:global][:bundle_options].split(' ')
       bundle_path    = File.expand_path(@options[:global][:truffle_bundle_path])
-
-      @options[:setup][:before].each do |cmd|
-        execute_cmd cmd
+      execute_all    = lambda do |cmd|
+        execute_cmd([{ 'JRUBY_BIN' => JRUBY_BIN.to_s }, cmd])
       end
+
+      @options[:setup][:before].each(&execute_all)
+
 
       bundle_cli([*bundle_options,
                   'install',
@@ -418,9 +421,7 @@ module Truffle
         f.write %[$:.unshift "\#{path}/../#{@options[:global][:mock_load_path]}"]
       end
 
-      @options[:setup][:after].each do |cmd|
-        execute_cmd cmd
-      end
+      @options[:setup][:after].each(&execute_all)
 
       true
     rescue => e
