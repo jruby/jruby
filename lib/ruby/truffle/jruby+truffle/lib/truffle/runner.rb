@@ -539,7 +539,17 @@ module Truffle
       else
         gem_name = rest.first
         ci       = CIEnvironment.new @options[:global][:dir], gem_name, rest[1..-1], definition: options[:ci][:definition], verbose: verbose?
-        ci.success?
+
+        case ci.result
+        when nil # error, setup failed
+          1
+        when false # tests set result to false
+          2
+        when true # test passed
+          0
+        else
+          raise "unknown #{ci.result.inspect}"
+        end
       end
     end
 
@@ -570,7 +580,7 @@ module Truffle
 
       define_dsl_attr :repository_name, :subdir
       define_dsl_attr(:working_dir) { |v| Pathname(v) }
-      attr_reader :gem_name
+      attr_reader :gem_name, :result
 
       def initialize(working_dir, gem_name, rest, definition: nil, verbose: false)
         @options  = {}
@@ -680,12 +690,12 @@ module Truffle
         Dir.chdir(testing_dir) { Runner.new([('-v' if @verbose), 'setup'].compact).run }
       end
 
-      def cancel_ci!(result = false)
-        throw :cancel_ci!, result
+      def cancel_ci!
+        throw :cancel_ci!
       end
 
       def has_to_succeed(result)
-        result or cancel_ci! result
+        result or cancel_ci!
       end
 
       def run(options, raise: true)
@@ -702,12 +712,12 @@ module Truffle
         FileUtils.rmtree repository_dir
       end
 
-      def result(boolean)
+      def set_result(boolean)
         @result = boolean
       end
 
       def success?
-        @result
+        !@result.nil?
       end
 
       def use_only_https_git_paths!

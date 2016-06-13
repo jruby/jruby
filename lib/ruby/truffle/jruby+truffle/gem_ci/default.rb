@@ -9,5 +9,5 @@ use_only_https_git_paths!
 
 has_to_succeed setup
 
-result run(%w[-S rake], raise: false)
+set_result run(%w[-S rake], raise: false)
 
