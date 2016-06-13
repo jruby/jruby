@@ -3,7 +3,7 @@ module Truffle
   def self.exclude_rspec_examples(exclusions)
     exclusions.each do |mod_name, tests|
 
-      a_module = Object.const_get mod_name
+      a_module = Object.const_get mod_name.to_s
 
       Array(tests).each do |test|
         puts "Excluding: #{a_module}##{test}"
