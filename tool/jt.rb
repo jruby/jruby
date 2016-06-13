@@ -275,7 +275,7 @@ module ShellUtils
       continue_on_failure = true
     end
     if !args.last.is_a?(Hash) || !args.last.delete(:no_print_cmd)
-      puts "$ #{printable_cmd(args)}"
+      STDERR.puts "$ #{printable_cmd(args)}"
     end
     timeout = nil
     if args.last.is_a?(Hash)
