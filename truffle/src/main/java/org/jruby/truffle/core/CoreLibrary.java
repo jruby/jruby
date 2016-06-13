@@ -1478,7 +1478,6 @@ public class CoreLibrary {
             "/core/truffle/ctype.rb",
             "/core/integer.rb",
             "/core/fixnum.rb",
-            "/core/lru_cache.rb",
             "/core/regexp.rb",
             "/core/encoding.rb",
             "/core/env.rb",
