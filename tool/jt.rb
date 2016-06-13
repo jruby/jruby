@@ -144,6 +144,14 @@ module Utilities
     end
     raise "Can't find the #{name} repo - clone it into the repository directory or its parent"
   end
+  
+  def self.find_benchmark(benchmark)
+    if File.exist?(File.join(JRUBY_DIR, benchmark))
+      benchmark
+    else
+      File.join(find_repo('all-ruby-benchmarks'), benchmark)
+    end
+  end
 
   def self.find_gem(name)
     ["#{JRUBY_DIR}/lib/ruby/gems/shared/gems"].each do |dir|
@@ -942,10 +950,16 @@ module Commands
   end
 
   def benchmark(*args)
+    benchmark = args.pop
+    raise 'no benchmark given' unless benchmark
+    benchmark = Utilities.find_benchmark(benchmark)
+    raise 'benchmark not found' unless File.exist?(benchmark)
     run '--graal',
         '-I', "#{Utilities.find_gem('deep-bench')}/lib",
         '-I', "#{Utilities.find_gem('benchmark-ips')}/lib",
-        "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark", *args
+        "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark",
+        benchmark,
+        *args
   end
 
   def check_ambiguous_arguments
