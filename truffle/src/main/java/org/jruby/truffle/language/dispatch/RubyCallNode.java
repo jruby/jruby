@@ -211,7 +211,7 @@ public class RubyCallNode extends RubyNode {
     private boolean castRespondToMissingToBoolean(VirtualFrame frame, final Object r) {
         if (respondToMissingCast == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            respondToMissingCast = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
+            respondToMissingCast = insert(BooleanCastNodeGen.create(null));
         }
         return respondToMissingCast.executeBoolean(frame, r);
     }

@@ -51,6 +51,15 @@ module Rubinius
         iterations
       end
 
+      def step_iterations_size(first, last, step_size)
+        case first
+        when Float
+          step_float_iterations_size(first, last, step_size)
+        else
+          @object.size.nil? ? nil : (@object.size.fdiv(step_size)).ceil
+        end
+      end
+
       def validate_step_size(first, last, step_size)
         if step_size.kind_of? Float or first.kind_of? Float or last.kind_of? Float
           # if any are floats they all must be

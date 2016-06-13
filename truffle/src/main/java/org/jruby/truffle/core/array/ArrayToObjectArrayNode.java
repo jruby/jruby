@@ -32,7 +32,7 @@ public abstract class ArrayToObjectArrayNode extends RubyNode {
 
     @Specialization(guards = "isNullArray(array)")
     public Object[] toObjectArrayNull(DynamicObject array) {
-        return new Object[0];
+        return ArrayUtils.EMPTY_ARRAY;
     }
 
     @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")

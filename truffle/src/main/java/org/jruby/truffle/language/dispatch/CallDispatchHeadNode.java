@@ -64,7 +64,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             Object... argumentsObjects) {
         if (booleanCastNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            booleanCastNode = insert(BooleanCastNodeGen.create(context, getSourceSection(), null));
+            booleanCastNode = insert(BooleanCastNodeGen.create(null));
         }
         return booleanCastNode.executeBoolean(frame,
                 dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects));

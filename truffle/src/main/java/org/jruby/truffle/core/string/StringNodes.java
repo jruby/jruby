@@ -126,6 +126,7 @@ import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rope.SubstringRope;
 import org.jruby.truffle.core.string.StringNodesFactory.StringAreComparableNodeGen;
+import org.jruby.truffle.core.string.StringNodesFactory.StringEqualNodeGen;
 import org.jruby.truffle.language.CheckLayoutNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
@@ -298,14 +299,14 @@ public abstract class StringNodes {
     @CoreMethod(names = {"==", "===", "eql?"}, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private StringEqualPrimitiveNode stringEqualNode;
+        @Child private StringEqualNode stringEqualNode;
         @Child private KernelNodes.RespondToNode respondToNode;
         @Child private CallDispatchHeadNode objectEqualNode;
         @Child private CheckLayoutNode checkLayoutNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            stringEqualNode = StringNodesFactory.StringEqualPrimitiveNodeFactory.create(new RubyNode[]{});
+            stringEqualNode = StringEqualNodeGen.create(null, null);
         }
 
         @Specialization(guards = "isRubyString(b)")
@@ -3011,9 +3012,9 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_equal", needsSelf = true)
     @ImportStatic(StringGuards.class)
-    public static abstract class StringEqualPrimitiveNode extends PrimitiveArrayArgumentsNode {
+    @NodeChildren({ @NodeChild("first"), @NodeChild("second") })
+    public static abstract class StringEqualNode extends RubyNode {
 
         @Child StringAreComparableNode areComparableNode;
 
@@ -3071,11 +3072,47 @@ public abstract class StringNodes {
                 "!bytesReferenceEqual(string, other)",
                 "byteLength(string) == byteLength(other)"
         }, contains = "equalCharacters")
-        public boolean fullEqual(DynamicObject string, DynamicObject other) {
+        public boolean fullEqual(DynamicObject string, DynamicObject other,
+                                 @Cached("createBinaryProfile()") ConditionProfile hashCodesCalculatedProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile differentHashCodesProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile aHasRawBytesProfile,
+                                 @Cached("createBinaryProfile()") ConditionProfile bHasRawBytesProfile) {
             final Rope a = rope(string);
             final Rope b = rope(other);
 
-            return a.equals(b);
+            if (hashCodesCalculatedProfile.profile(a.isHashCodeCalculated() && b.isHashCodeCalculated())) {
+                if (differentHashCodesProfile.profile(a.hashCode() != b.hashCode())) {
+                    return false;
+                }
+            }
+
+            final byte[] aBytes;
+            if (aHasRawBytesProfile.profile(a.getRawBytes() != null)) {
+                aBytes = a.getRawBytes();
+            } else {
+                aBytes = a.getBytes();
+            }
+
+            final byte[] bBytes;
+            if (bHasRawBytesProfile.profile(b.getRawBytes() != null)) {
+                bBytes = b.getRawBytes();
+            } else {
+                bBytes = b.getBytes();
+            }
+
+            return arraysEquals(aBytes, bBytes);
+        }
+
+        private boolean arraysEquals(byte[] a, byte[] b) {
+            assert a.length == b.length;
+
+            for (int i = 0; i < a.length; i++) {
+                if (a[i] != b[i]) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         protected boolean areComparable(DynamicObject first, DynamicObject second) {

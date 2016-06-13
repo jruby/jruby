@@ -140,7 +140,7 @@ module Utilities
   def self.find_repo(name)
     [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
       found = Dir.glob("#{dir}/#{name}*").first
-      return found if found
+      return File.expand_path(found) if found
     end
     raise "Can't find the #{name} repo - clone it into the repository directory or its parent"
   end
@@ -148,12 +148,12 @@ module Utilities
   def self.find_gem(name)
     ["#{JRUBY_DIR}/lib/ruby/gems/shared/gems"].each do |dir|
       found = Dir.glob("#{dir}/#{name}*").first
-      return found if found
+      return File.expand_path(found) if found
     end
     
     [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
       found = Dir.glob("#{dir}/#{name}").first
-      return found if found
+      return File.expand_path(found) if found
     end
     raise "Can't find the #{name} gem - gem install it in this repository, or put it in the repository directory or its parent"
   end
@@ -182,7 +182,7 @@ module Utilities
   end
 
   def self.igv_running?
-    `ps ax`.include?('IdealGraphVisualizer')
+    `ps ax`.include?('idealgraphvisualizer')
   end
 
   def self.ensure_igv_running
@@ -329,7 +329,7 @@ module ShellUtils
   end
   
   def maven_options(*options)
-    maven_options = %w[-DskipTests]
+    maven_options = []
     offline = options.delete('--offline')
     if offline
       maven_options.push "-Dmaven.repo.local=#{Utilities.find_repo('jruby-build-pack')}/maven"
@@ -374,7 +374,7 @@ module Commands
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
     puts '        --full      show all phases, not just up to the Truffle partial escape'
-    puts '    --jdebug        run a JDWP debug server on #{JDEBUG_PORT}'
+    puts "    --jdebug        run a JDWP debug server on #{JDEBUG_PORT}"
     puts '    --jexception[s] print java exceptions'
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
@@ -431,7 +431,7 @@ module Commands
 
   def bootstrap(*options)
     maven_options, other_options = maven_options(*options)
-    mvn *maven_options, '-DskipTests', '-Pbootstrap-no-launcher'
+    mvn *maven_options, '-Pbootstrap-no-launcher'
   end
 
   def build(*options)
@@ -800,9 +800,10 @@ module Commands
     human_readable = "#{Utilities.human_size(median)} ± #{Utilities.human_size(error)}"
     if use_json
       puts JSON.generate({
-        median: median,
-        error: error,
-        human: human_readable
+          samples: samples,
+          median: median,
+          error: error,
+          human: human_readable
       })
     else
       puts human_readable
@@ -854,8 +855,8 @@ module Commands
     human_readable = "#{heap} MB"
     if use_json
       puts JSON.generate({
-        min: heap,
-        human: human_readable
+          min: heap,
+          human: human_readable
       })
     else
       puts human_readable
@@ -881,22 +882,24 @@ module Commands
     end
     Utilities.log "\n", nil
     results = {}
-    results['human'] = ''
     samples[0].each_key do |region|
       region_samples = samples.map { |s| s[region] }
       mean = region_samples.inject(:+) / samples.size
-      results[region] = mean
+      human = "#{region.strip} #{mean.round(2)} s"
+      results[region] = {
+          samples: region_samples,
+          mean: mean,
+          human: human
+      }
       if use_json
         file = STDERR
       else
         file = STDOUT
       end
-      human = "#{region} #{mean.round(2)} s\n"
-      file.print human
-      results['human'] += human
+      file.puts region[/\s*/] + human
     end
     if use_json
-      puts JSON.generate(Hash[results.map { |key, value| [key.strip, value] }])
+      puts JSON.generate(Hash[results.map { |key, values| [key.strip, values] }])
     end
   end
 

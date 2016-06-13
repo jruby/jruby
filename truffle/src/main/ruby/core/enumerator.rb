@@ -131,10 +131,8 @@ module Enumerable
           @generator = @object.to_generator(@iter)
         end
 
-        if !@generator and gen = FiberGenerator
-          @generator = gen.new(self)
-        else
-          @generator = ThreadGenerator.new(self, @object, @iter, @args)
+        if !@generator
+          @generator = FiberGenerator.new(self)
         end
       end
 
@@ -463,47 +461,43 @@ module Enumerable
       end
     end
 
-    if Rubinius::Fiber::ENABLED
-      class FiberGenerator
-        attr_reader :result
+    class FiberGenerator
+      attr_reader :result
 
-        def initialize(obj)
-          @object = obj
-          rewind
-        end
+      def initialize(obj)
+        @object = obj
+        rewind
+      end
 
-        def next?
-          !@done
-        end
+      def next?
+        !@done
+      end
 
-        def next
-          reset unless @fiber
+      def next
+        reset unless @fiber
 
-          val = @fiber.resume
+        val = @fiber.resume
 
-          raise StopIteration, "iteration has ended" if @done
+        raise StopIteration, "iteration has ended" if @done
 
-          return val
-        end
+        return val
+      end
 
-        def rewind
-          @fiber = nil
-          @done = false
-        end
+      def rewind
+        @fiber = nil
+        @done = false
+      end
 
-        def reset
-          @done = false
-          @fiber = Rubinius::Fiber.new(0) do
-            obj = @object
-            @result = obj.each do |*val|
-              Rubinius::Fiber.yield *val
-            end
-            @done = true
+      def reset
+        @done = false
+        @fiber = Rubinius::Fiber.new(0) do
+          obj = @object
+          @result = obj.each do |*val|
+            Rubinius::Fiber.yield *val
           end
+          @done = true
         end
       end
-    else
-      FiberGenerator = nil
     end
   end
 end

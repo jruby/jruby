@@ -52,6 +52,14 @@ module Rubinius
       im
     end
 
+    def initialize
+      capacity = MIN_CAPACITY
+      @table = Table.new capacity
+      @mask = capacity - 4
+      @max = capacity
+      @size = 0
+    end
+
     # Adds +item+ to the IdentityMap if it does not already exist. May cause
     # a row to be added or enlarged. Returns +self+.
     def insert(item, &block)
@@ -203,6 +211,65 @@ module Rubinius
       @max = capacity
     end
     private :resize
+
+    def redistribute
+      table = @table
+      resize @size
+
+      i = 0
+      total = table.size
+
+      while i < total
+        if num_entries = table[i]
+          if num_entries == 1
+            if item_hash = table[i+1]
+              add_item table[i+2], item_hash, table[i+3]
+            end
+          else
+            row = table[i+1]
+            k = row[0]
+            j = 1
+            while j < k
+              if item_hash = row[j]
+                add_item row[j+1], item_hash, row[j+2]
+              end
+              j += 3
+            end
+          end
+        end
+
+        i += 4
+      end
+    end
+    private :redistribute
+
+    def add_item(item, item_hash, ordinal)
+      index = item_hash & @mask
+      table = @table
+
+      if num_entries = table[index]
+        index += 1
+
+        if num_entries == 1
+          table[index-1] = 2
+          table[index] = promote_row table, index, item, item_hash, ordinal
+        else
+          row = table[index]
+          i = row[0]
+
+          if i == row.size
+            table[index] = enlarge_row row, item, item_hash, ordinal
+          else
+            set_item row, i, item, item_hash, ordinal
+            row[0] = i + 3
+          end
+        end
+      else
+        table[index] = 1
+        set_item table, index+1, item, item_hash, ordinal
+      end
+    end
+    private :add_item
 
     # Given an Array of Enumerable instances, computes a bounding set
     # to contain them and then adds each item to the IdentityMap.

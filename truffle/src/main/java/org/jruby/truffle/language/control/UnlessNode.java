@@ -27,7 +27,7 @@ public class UnlessNode extends RubyNode {
     public UnlessNode(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode thenBody) {
         super(context, sourceSection);
 
-        this.condition = BooleanCastNodeGen.create(context, sourceSection, condition);
+        this.condition = BooleanCastNodeGen.create(condition);
         this.thenBody = thenBody;
     }
 

@@ -36,15 +36,6 @@ unless Rubinius::Config['hash.hamt']
 class Hash
   include Enumerable
 
-  Entries = Rubinius::Tuple
-
-  # Initial size of Hash. MUST be a power of 2.
-  MIN_SIZE = 16
-
-  # Allocate more storage when this full. This value grows with
-  # the size of the Hash so that the max load factor is 0.75.
-  MAX_ENTRIES = 12
-
   def self.new_from_associate_array(associate_array)
     hash = new
     associate_array.each do |array|

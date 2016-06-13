@@ -356,30 +356,13 @@ class Dir
         return matches
       end
 
-      ec_key = nil
-
-      if gc = @glob_cache
-        ec_key = [pattern, flags]
-        if patterns = gc.retrieve(ec_key)
-          patterns.each do |node|
-            run node, matches
-          end
-
-          return matches
-        end
-      end
-
       if pattern.include? "{"
         patterns = compile(pattern, flags)
-
-        gc.set ec_key, patterns if ec_key
 
         patterns.each do |node|
           run node, matches
         end
       elsif node = single_compile(pattern, flags)
-        gc.set ec_key, [node] if ec_key
-
         run node, matches
       else
         matches

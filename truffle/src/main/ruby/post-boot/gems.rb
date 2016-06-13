@@ -7,4 +7,3 @@
 # GNU Lesser General Public License version 2.1
 
 require 'rubygems'
-Truffle::Boot.require_core 'core/post-boot/shims'

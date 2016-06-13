@@ -60,7 +60,7 @@ public final class WhileNode extends RubyNode {
 
         public WhileRepeatingBaseNode(RubyContext context, RubyNode condition, RubyNode body) {
             this.context = context;
-            this.condition = BooleanCastNodeGen.create(context, condition.getSourceSection(), condition);
+            this.condition = BooleanCastNodeGen.create(condition);
             this.body = body;
         }
 

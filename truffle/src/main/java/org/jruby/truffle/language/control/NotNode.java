@@ -22,7 +22,7 @@ public class NotNode extends RubyNode {
 
     public NotNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
-        this.child = BooleanCastNodeGen.create(context, sourceSection, child);
+        this.child = BooleanCastNodeGen.create(child);
     }
 
     @Override

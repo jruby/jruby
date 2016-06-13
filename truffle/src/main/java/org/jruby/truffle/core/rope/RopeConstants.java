@@ -27,24 +27,24 @@ public class RopeConstants {
     static {
         final byte[] emptyBytes = new byte[] {};
 
-        EMPTY_UTF8_ROPE = new AsciiOnlyLeafRope(emptyBytes, UTF8Encoding.INSTANCE);
-        EMPTY_US_ASCII_ROPE = new AsciiOnlyLeafRope(emptyBytes, USASCIIEncoding.INSTANCE);
-        EMPTY_ASCII_8BIT_ROPE = new AsciiOnlyLeafRope(emptyBytes, ASCIIEncoding.INSTANCE);
+        EMPTY_UTF8_ROPE = new AsciiOnlyLeafRope(emptyBytes, UTF8Encoding.INSTANCE).computeHashCode();
+        EMPTY_US_ASCII_ROPE = new AsciiOnlyLeafRope(emptyBytes, USASCIIEncoding.INSTANCE).computeHashCode();
+        EMPTY_ASCII_8BIT_ROPE = new AsciiOnlyLeafRope(emptyBytes, ASCIIEncoding.INSTANCE).computeHashCode();
 
         for (int i = 0; i < 128; i++) {
             final byte[] bytes = new byte[] { (byte) i };
 
-            UTF8_SINGLE_BYTE_ROPES[i] = new AsciiOnlyLeafRope(bytes, UTF8Encoding.INSTANCE);
-            US_ASCII_SINGLE_BYTE_ROPES[i] = new AsciiOnlyLeafRope(bytes, USASCIIEncoding.INSTANCE);
-            ASCII_8BIT_SINGLE_BYTE_ROPES[i] = new AsciiOnlyLeafRope(bytes, ASCIIEncoding.INSTANCE);
+            UTF8_SINGLE_BYTE_ROPES[i] = new AsciiOnlyLeafRope(bytes, UTF8Encoding.INSTANCE).computeHashCode();
+            US_ASCII_SINGLE_BYTE_ROPES[i] = new AsciiOnlyLeafRope(bytes, USASCIIEncoding.INSTANCE).computeHashCode();
+            ASCII_8BIT_SINGLE_BYTE_ROPES[i] = new AsciiOnlyLeafRope(bytes, ASCIIEncoding.INSTANCE).computeHashCode();
         }
 
         for (int i = 128; i < 256; i++) {
             final byte[] bytes = new byte[] { (byte) i };
 
-            UTF8_SINGLE_BYTE_ROPES[i] = new InvalidLeafRope(bytes, UTF8Encoding.INSTANCE);
-            US_ASCII_SINGLE_BYTE_ROPES[i] = new InvalidLeafRope(bytes, USASCIIEncoding.INSTANCE);
-            ASCII_8BIT_SINGLE_BYTE_ROPES[i] = new ValidLeafRope(bytes, ASCIIEncoding.INSTANCE, 1);
+            UTF8_SINGLE_BYTE_ROPES[i] = new InvalidLeafRope(bytes, UTF8Encoding.INSTANCE).computeHashCode();
+            US_ASCII_SINGLE_BYTE_ROPES[i] = new InvalidLeafRope(bytes, USASCIIEncoding.INSTANCE).computeHashCode();
+            ASCII_8BIT_SINGLE_BYTE_ROPES[i] = new ValidLeafRope(bytes, ASCIIEncoding.INSTANCE, 1).computeHashCode();
         }
     }
 

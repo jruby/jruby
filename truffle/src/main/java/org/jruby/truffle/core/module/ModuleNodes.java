@@ -775,7 +775,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("inherit")
         public RubyNode coerceToBoolean(RubyNode inherit) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, inherit);
+            return BooleanCastWithDefaultNodeGen.create(true, inherit);
         }
 
         @TruffleBoundary
@@ -817,7 +817,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("inherit")
         public RubyNode coerceToBoolean(RubyNode inherit) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, inherit);
+            return BooleanCastWithDefaultNodeGen.create(true, inherit);
         }
 
         @TruffleBoundary
@@ -848,7 +848,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("inherit")
         public RubyNode coerceToBoolean(RubyNode inherit) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, inherit);
+            return BooleanCastWithDefaultNodeGen.create(true, inherit);
         }
 
         // Symbol
@@ -1216,7 +1216,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("inherit")
         public RubyNode coerceToBoolean(RubyNode inherit) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, inherit);
+            return BooleanCastWithDefaultNodeGen.create(true, inherit);
         }
 
         @TruffleBoundary
@@ -1453,7 +1453,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(true, includeAncestors);
         }
 
         @Specialization
@@ -1554,7 +1554,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(true, includeAncestors);
         }
 
         @TruffleBoundary

@@ -327,6 +327,16 @@ class Thread
     @abort_on_exception = value
   end
 
+  def self.handle_interrupt(config, &block)
+    unless config.is_a?(Hash) and config.size == 1
+      raise ArgumentError, "unknown mask signature"
+    end
+    exception, timing = config.first
+    Truffle.privately do
+      current.handle_interrupt(exception, timing, &block)
+    end
+  end
+
   def freeze
     __thread_local_variables_lock { __thread_local_variables.freeze }
     super

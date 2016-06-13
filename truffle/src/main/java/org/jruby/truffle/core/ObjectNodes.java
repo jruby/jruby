@@ -161,7 +161,7 @@ public abstract class ObjectNodes {
     public abstract static class ObjectIVarSetPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
-        public Object ivarGet(DynamicObject object, DynamicObject name, Object value,
+        public Object ivarSet(DynamicObject object, DynamicObject name, Object value,
                 @Cached("createObjectIVarSetNode()") ObjectIVarSetNode iVarSetNode) {
             return iVarSetNode.executeIVarSet(object, Layouts.SYMBOL.getString(name), value);
         }

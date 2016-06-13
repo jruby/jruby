@@ -168,9 +168,7 @@ class AllocationBenchmarkSuite(MetricsBenchmarkSuite):
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         out = mx.OutputCapture()
-        
-        options = []
-        
+
         jt(['metrics', 'alloc', '--json'] + metrics_benchmarks[benchmark] + bmSuiteArgs, out=out)
         
         data = json.loads(out.data)
@@ -178,11 +176,12 @@ class AllocationBenchmarkSuite(MetricsBenchmarkSuite):
         return [{
             'benchmark': benchmark,
             'metric.name': 'memory',
-            'metric.value': data['median'],
+            'metric.value': sample,
             'metric.unit': 'B',
             'metric.better': 'lower',
-            'extra.metric.human': data['human']
-        }]
+            'metric.iteration': n,
+            'extra.metric.human': '%d/%d %s' % (n, len(data['samples']), data['human'])
+        } for n, sample in enumerate(data['samples'])]
 
 class MinHeapBenchmarkSuite(MetricsBenchmarkSuite):
     def name(self):
@@ -190,9 +189,7 @@ class MinHeapBenchmarkSuite(MetricsBenchmarkSuite):
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         out = mx.OutputCapture()
-        
-        options = []
-        
+
         jt(['metrics', 'minheap', '--json'] + metrics_benchmarks[benchmark] + bmSuiteArgs, out=out)
         
         data = json.loads(out.data)
@@ -212,22 +209,21 @@ class TimeBenchmarkSuite(MetricsBenchmarkSuite):
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         out = mx.OutputCapture()
-        
-        options = []
-        
+
         jt(['metrics', 'time', '--json'] + metrics_benchmarks[benchmark] + bmSuiteArgs, out=out)
         
         data = json.loads(out.data)
-        
+
         return [{
             'benchmark': benchmark,
-            'extra.metric.region': r,
+            'extra.metric.region': region,
             'metric.name': 'time',
-            'metric.value': t,
+            'metric.value': sample,
             'metric.unit': 's',
             'metric.better': 'lower',
-            'extra.metric.human': data['human']
-        } for r, t in data.items() if r != 'human']
+            'metric.iteration': n,
+            'extra.metric.human': '%d/%d %s' % (n, len(region_data['samples']), region_data['human'])
+        } for region, region_data in data.items() for n, sample in enumerate(region_data['samples'])]
 
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
 mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())

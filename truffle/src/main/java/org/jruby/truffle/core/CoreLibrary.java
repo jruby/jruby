@@ -13,6 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
+import com.oracle.truffle.api.dsl.GeneratedBy;
+import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.java.JavaInterop;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -31,6 +33,9 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveManager;
+import org.jruby.truffle.builtins.PrimitiveNodeConstructor;
 import org.jruby.truffle.core.array.ArrayNodes;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
 import org.jruby.truffle.core.array.TruffleArrayNodesFactory;
@@ -39,6 +44,7 @@ import org.jruby.truffle.core.binding.BindingNodesFactory;
 import org.jruby.truffle.core.binding.TruffleBindingNodesFactory;
 import org.jruby.truffle.core.bool.FalseClassNodesFactory;
 import org.jruby.truffle.core.bool.TrueClassNodesFactory;
+import org.jruby.truffle.core.dir.DirNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
@@ -70,7 +76,15 @@ import org.jruby.truffle.core.regexp.RegexpNodesFactory;
 import org.jruby.truffle.core.rope.TruffleRopesNodesFactory;
 import org.jruby.truffle.core.rubinius.AtomicReferenceNodesFactory;
 import org.jruby.truffle.core.rubinius.ByteArrayNodesFactory;
+import org.jruby.truffle.core.rubinius.IOBufferPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.IOPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.NativeFunctionPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.RandomizerPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.RubiniusTypeNodesFactory;
+import org.jruby.truffle.core.rubinius.StatPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodesFactory;
+import org.jruby.truffle.core.rubinius.WeakRefPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolNodesFactory;
@@ -83,6 +97,7 @@ import org.jruby.truffle.debug.TruffleDebugNodesFactory;
 import org.jruby.truffle.extra.AttachmentsInternalNodesFactory;
 import org.jruby.truffle.extra.TruffleGraalNodesFactory;
 import org.jruby.truffle.extra.TrufflePosixNodesFactory;
+import org.jruby.truffle.extra.ffi.PointerPrimitiveNodesFactory;
 import org.jruby.truffle.gem.bcrypt.BCryptNodesFactory;
 import org.jruby.truffle.interop.CExtNodesFactory;
 import org.jruby.truffle.interop.InteropNodesFactory;
@@ -118,8 +133,10 @@ import org.jruby.truffle.stdlib.psych.YAMLEncoding;
 import org.jruby.util.cli.OutputStrings;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -703,12 +720,53 @@ public class CoreLibrary {
         initializeSignalConstants();
     }
 
+    public void addPrimitives() {
+        final PrimitiveManager primitiveManager = context.getPrimitiveManager();
+
+        ForkJoinPool.commonPool().invokeAll(Arrays.asList(() -> {
+            primitiveManager.addPrimitiveNodes(SymbolNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(FixnumNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(BignumNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(FloatNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(VMPrimitiveNodesFactory.getFactories());
+            return null;
+        }, () -> {
+            primitiveManager.addPrimitiveNodes(EncodingNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(EncodingConverterNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(RegexpPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(RandomizerPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(ObjectNodesFactory.getFactories());
+            return null;
+        }, () -> {
+            primitiveManager.addPrimitiveNodes(ArrayNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(StatPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(PointerPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(NativeFunctionPrimitiveNodesFactory.getFactories());
+            return null;
+        }, () -> {
+            primitiveManager.addPrimitiveNodes(DirNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(IOPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(IOBufferPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(ExceptionNodesFactory.getFactories());
+            return null;
+        }, () -> {
+            primitiveManager.addPrimitiveNodes(ThreadNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(WeakRefPrimitiveNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(TimeNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(StringNodesFactory.getFactories());
+
+            // Catch all
+            primitiveManager.addPrimitiveNodes(UndefinedPrimitiveNodesFactory.getFactories());
+
+            return null;
+        }));
+    }
+
     public void addCoreMethods() {
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
 
-        // Bring in core method nodes
-        CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(context, node.getSingletonClassNode());
+        final CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(context, node.getSingletonClassNode());
 
         ForkJoinPool.commonPool().invokeAll(Arrays.asList(() -> {
             coreMethodNodeManager.addCoreMethodNodes(ArrayNodesFactory.getFactories());
@@ -828,7 +886,26 @@ public class CoreLibrary {
     }
 
     private void initializeConstants() {
-        // Set constants
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_CHAR", RubiniusTypes.TYPE_CHAR);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_UCHAR", RubiniusTypes.TYPE_UCHAR);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_BOOL", RubiniusTypes.TYPE_BOOL);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_SHORT", RubiniusTypes.TYPE_SHORT);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_USHORT", RubiniusTypes.TYPE_USHORT);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_INT", RubiniusTypes.TYPE_INT);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_UINT", RubiniusTypes.TYPE_UINT);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_LONG", RubiniusTypes.TYPE_LONG);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_ULONG", RubiniusTypes.TYPE_ULONG);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_LL", RubiniusTypes.TYPE_LL);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_ULL", RubiniusTypes.TYPE_ULL);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_FLOAT", RubiniusTypes.TYPE_FLOAT);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_DOUBLE", RubiniusTypes.TYPE_DOUBLE);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_PTR", RubiniusTypes.TYPE_PTR);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_VOID", RubiniusTypes.TYPE_VOID);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_STRING", RubiniusTypes.TYPE_STRING);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_STRPTR", RubiniusTypes.TYPE_STRPTR);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_CHARARR", RubiniusTypes.TYPE_CHARARR);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_ENUM", RubiniusTypes.TYPE_ENUM);
+        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
 
         Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_VERSION", StringOperations.createString(context, StringOperations.encodeRope(Constants.RUBY_VERSION, UTF8Encoding.INSTANCE)));
         Layouts.MODULE.getFields(objectClass).setConstant(context, node, "JRUBY_VERSION", StringOperations.createString(context, StringOperations.encodeRope(Constants.VERSION, UTF8Encoding.INSTANCE)));
@@ -918,9 +995,7 @@ public class CoreLibrary {
         return ModuleNodes.createModule(context, moduleClass, lexicalParent, name, node);
     }
 
-    public void initializeAfterBasicMethodsAdded() {
-        initializeRubiniusFFI();
-
+    public void loadRubyCore() {
         // Load Ruby core
 
         try {
@@ -987,9 +1062,11 @@ public class CoreLibrary {
                 Main.printTruffleTimeMetric("before-post-boot");
 
                 try {
-                    final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + "/core/post-boot.rb"), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
-                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
-                    deferredCall.callWithoutCallNode();
+                    for (String path : new String[]{"/post-boot/gems.rb", "/post-boot/shims.rb"}) {
+                        final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + path), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
+                        final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
+                        deferredCall.callWithoutCallNode();
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -1001,29 +1078,6 @@ public class CoreLibrary {
                 throw new TruffleFatalException("couldn't load the post-boot code", e);
             }
         }
-    }
-
-    private void initializeRubiniusFFI() {
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_CHAR", RubiniusTypes.TYPE_CHAR);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_UCHAR", RubiniusTypes.TYPE_UCHAR);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_BOOL", RubiniusTypes.TYPE_BOOL);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_SHORT", RubiniusTypes.TYPE_SHORT);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_USHORT", RubiniusTypes.TYPE_USHORT);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_INT", RubiniusTypes.TYPE_INT);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_UINT", RubiniusTypes.TYPE_UINT);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_LONG", RubiniusTypes.TYPE_LONG);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_ULONG", RubiniusTypes.TYPE_ULONG);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_LL", RubiniusTypes.TYPE_LL);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_ULL", RubiniusTypes.TYPE_ULL);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_FLOAT", RubiniusTypes.TYPE_FLOAT);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_DOUBLE", RubiniusTypes.TYPE_DOUBLE);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_PTR", RubiniusTypes.TYPE_PTR);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_VOID", RubiniusTypes.TYPE_VOID);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_STRING", RubiniusTypes.TYPE_STRING);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_STRPTR", RubiniusTypes.TYPE_STRPTR);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_CHARARR", RubiniusTypes.TYPE_CHARARR);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_ENUM", RubiniusTypes.TYPE_ENUM);
-        Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
     }
 
     public void initializeEncodingConstants() {
@@ -1143,7 +1197,7 @@ public class CoreLibrary {
     }
 
     public static boolean fitsIntoInteger(long value) {
-        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
+        return ((int) value) == value;
     }
 
     public RubyContext getContext() {
@@ -1476,7 +1530,6 @@ public class CoreLibrary {
             "/core/truffle/ctype.rb",
             "/core/integer.rb",
             "/core/fixnum.rb",
-            "/core/lru_cache.rb",
             "/core/regexp.rb",
             "/core/encoding.rb",
             "/core/env.rb",

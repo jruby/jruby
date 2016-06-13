@@ -85,7 +85,7 @@ public abstract class QueueNodes {
 
         @CreateCast("nonBlocking")
         public RubyNode coerceToBoolean(RubyNode nonBlocking) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, false, nonBlocking);
+            return BooleanCastWithDefaultNodeGen.create(false, nonBlocking);
         }
 
         @Specialization(guards = "!nonBlocking")
