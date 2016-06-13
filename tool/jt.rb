@@ -800,9 +800,10 @@ module Commands
     human_readable = "#{Utilities.human_size(median)} ± #{Utilities.human_size(error)}"
     if use_json
       puts JSON.generate({
-        median: median,
-        error: error,
-        human: human_readable
+          samples: samples,
+          median: median,
+          error: error,
+          human: human_readable
       })
     else
       puts human_readable
