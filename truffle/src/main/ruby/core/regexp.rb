@@ -286,63 +286,6 @@ class Regexp
     search_region(str, count, str.bytesize, true)
   end
 
-  class SourceParser
-    class Part
-      OPTIONS_MAP = {
-        'm' => Regexp::MULTILINE,
-        'i' => Regexp::IGNORECASE,
-        'x' => Regexp::EXTENDED
-      }
-    end
-
-    class OptionsGroupPart < Part
-    end
-
-    class LookAheadGroupPart < Part
-    end
-
-    def parts_string
-      if parts.size == 1 && parts.first.has_options?
-        parts.first.flatten
-      end
-      parts.map { |part| part.to_s }.join
-    end
-
-    def process_until_group_finished
-      if @source[@index].chr == ")"
-        @index += 1
-        return
-      else
-        push_current_character!
-        process_until_group_finished
-      end
-    end
-
-    PossibleOptions = [[MULTILINE, "m"], [IGNORECASE, "i"], [EXTENDED, "x"]]
-    def options_string
-      chosen_options = []
-      possible_options = PossibleOptions
-      possible_options.each do |flag, identifier|
-        chosen_options << identifier if @options & flag > 0
-      end
-
-      if parts.size == 1
-        chosen_options.concat parts.first.options
-      end
-
-      excluded_options = possible_options.map { |e| e.last }.select do |identifier|
-        !chosen_options.include?(identifier)
-      end
-
-      options_to_return = chosen_options
-      if !excluded_options.empty?
-        options_to_return << "-" << excluded_options
-      end
-      options_to_return.join
-    end
-
-  end
-
   def option_to_string(option)
     string = ""
     string << 'm' if (option & MULTILINE) > 0
