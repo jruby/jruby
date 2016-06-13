@@ -46,18 +46,21 @@ module Truffle
       def print_cmd(cmd, dir, print)
         return cmd unless print
 
-        formatted_cmd = if String === cmd
-                          cmd
+        cmd = Array(cmd) # wrap if it's just a string
+
+        formatted_env, command = if cmd[0].is_a?(Hash)
+                                   [cmd[0].map { |k, v| "#{k}=#{v}" }, cmd[1..-1]]
+                                 else
+                                   [[], cmd]
+                                 end
+
+        formatted_cmd = if command.size == 1
+                          command
                         else
-                          cmd.map do |v|
-                            if Hash === v
-                              v.map { |k, v| "#{k}=#{v}" }.join(' ')
-                            else
-                              Shellwords.escape v
-                            end
-                          end.join(' ')
+                          command.map { |v| Shellwords.escape v }
                         end
-        puts '$ ' + formatted_cmd + (dir ? " (in #{dir})" : '')
+
+        puts '$ ' + [*formatted_env, *formatted_cmd].compact.join(' ') + (dir ? " (in #{dir})" : '')
         return cmd
       end
 
