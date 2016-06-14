@@ -374,7 +374,7 @@ module Commands
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
     puts '        --full      show all phases, not just up to the Truffle partial escape'
-    puts '    --jdebug        run a JDWP debug server on #{JDEBUG_PORT}'
+    puts "    --jdebug        run a JDWP debug server on #{JDEBUG_PORT}"
     puts '    --jexception[s] print java exceptions'
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
@@ -800,9 +800,10 @@ module Commands
     human_readable = "#{Utilities.human_size(median)} ± #{Utilities.human_size(error)}"
     if use_json
       puts JSON.generate({
-        median: median,
-        error: error,
-        human: human_readable
+          samples: samples,
+          median: median,
+          error: error,
+          human: human_readable
       })
     else
       puts human_readable
@@ -854,8 +855,8 @@ module Commands
     human_readable = "#{heap} MB"
     if use_json
       puts JSON.generate({
-        min: heap,
-        human: human_readable
+          min: heap,
+          human: human_readable
       })
     else
       puts human_readable
@@ -881,22 +882,24 @@ module Commands
     end
     Utilities.log "\n", nil
     results = {}
-    results['human'] = ''
     samples[0].each_key do |region|
       region_samples = samples.map { |s| s[region] }
       mean = region_samples.inject(:+) / samples.size
-      results[region] = mean
+      human = "#{region.strip} #{mean.round(2)} s"
+      results[region] = {
+          samples: region_samples,
+          mean: mean,
+          human: human
+      }
       if use_json
         file = STDERR
       else
         file = STDOUT
       end
-      human = "#{region} #{mean.round(2)} s\n"
-      file.print human
-      results['human'] += human
+      file.puts region[/\s*/] + human
     end
     if use_json
-      puts JSON.generate(Hash[results.map { |key, value| [key.strip, value] }])
+      puts JSON.generate(Hash[results.map { |key, values| [key.strip, values] }])
     end
   end
 

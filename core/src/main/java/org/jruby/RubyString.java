@@ -1974,13 +1974,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      *
      */
     @Override
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
-        return inspect19();
+        return inspect(getRuntime());
     }
 
-    @JRubyMethod(name = "inspect")
+    final RubyString inspect(final Ruby runtime) {
+        return (RubyString) inspect(runtime, value).infectBy(this);
+    }
+
+    @Deprecated
     public IRubyObject inspect19() {
-        return inspect19(getRuntime(), value).infectBy(this);
+        return inspect();
     }
 
     // MRI: rb_str_escape
@@ -2048,7 +2053,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return result;
     }
 
-    public static IRubyObject inspect19(Ruby runtime, ByteList byteList) {
+    @Deprecated
+    public static IRubyObject inspect19(final Ruby runtime, ByteList byteList) {
+        return inspect(runtime, byteList);
+    }
+
+    public static RubyString inspect(final Ruby runtime, ByteList byteList) {
         Encoding enc = byteList.getEncoding();
         byte bytes[] = byteList.getUnsafeBytes();
         int p = byteList.getBegin();

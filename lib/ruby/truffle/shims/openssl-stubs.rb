@@ -91,6 +91,10 @@ module OpenSSL
       Digest::SHA1.hexdigest(data)
     end
   end
+
+  module SSL
+    SSLError = Class.new StandardError
+  end
 end
 
 # make it look as openssl is loaded

@@ -1152,15 +1152,14 @@ public class IRBuilder {
                     v2 = build(whenNode.getExpressionNodes());
                 }
             } else {
-                Operand expression = build(whenNode.getExpressionNodes());
+                Operand expression = buildWithOrder(whenNode.getExpressionNodes(), whenNode.containsVariableAssignment());
 
-                // use frozen string for direct literal strings in `when`
-                if (expression instanceof StringLiteral) {
-                    expression = ((StringLiteral) expression).frozenString;
+                if (value != UndefinedValue.UNDEFINED) {
+                    addInstr(new EQQInstr(eqqResult, expression, value));
+                    v1 = eqqResult;
+                } else {
+                    v1 = expression;
                 }
-
-                addInstr(new EQQInstr(eqqResult, expression, value));
-                v1 = eqqResult;
                 v2 = manager.getTrue();
             }
             addInstr(BEQInstr.create(v1, v2, bodyLabel));

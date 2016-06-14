@@ -3015,61 +3015,24 @@ public final class Ruby implements Constantizable {
     public void compileAndLoadFile(String filename, InputStream in, boolean wrap) {
         InputStream readStream = in;
 
-        Script script = null;
-
-        try {
-            // read full contents of file, hash it, and try to load that class first
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int num;
-            while ((num = in.read(buffer)) > -1) {
-                baos.write(buffer, 0, num);
-            }
-            buffer = baos.toByteArray();
-            String hash = JITCompiler.getHashForBytes(buffer);
-            final String className = JITCompiler.RUBY_JIT_PREFIX + ".FILE_" + hash;
-
-            // FIXME: duplicated from ClassCache
-            Class contents;
-            try {
-                contents = getJRubyClassLoader().loadClass(className);
-                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
-                    LOG.debug("found jitted code for " + filename + " at class: " + className);
-                }
-                script = (Script) contents.newInstance();
-                readStream = new ByteArrayInputStream(buffer);
-            } catch (ClassNotFoundException cnfe) {
-                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
-                    LOG.debug("no jitted code in classloader for file " + filename + " at class: " + className);
-                }
-            } catch (InstantiationException ex) {
-                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
-                    LOG.debug("jitted code could not be instantiated for file " + filename + " at class: " + className + ' ' + ex);
-                }
-            } catch (IllegalAccessException ex) {
-                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
-                    LOG.debug("jitted code could not be instantiated for file " + filename + " at class: " + className + ' ' + ex);
-                }
-            }
-        } catch (IOException ioe) {
-            // TODO: log something?
-        }
-
         // script was not found in cache above, so proceed to compile
         RootNode scriptNode = (RootNode) parseFile(readStream, filename, null);
-        if (script == null) {
-            ScriptAndCode scriptAndCode = tryCompile(scriptNode,
-                new ClassDefiningJRubyClassLoader(getJRubyClassLoader())
-            );
-            if (scriptAndCode != null) script = scriptAndCode.script();
-        }
 
-        if (script == null) {
-            failForcedCompile(scriptNode);
+        ThreadContext context = getCurrentContext();
 
-            runInterpreter(scriptNode);
-        } else {
-            runScript(script, wrap);
+        String oldFile = context.getFile();
+        int oldLine = context.getLine();
+        try {
+            context.setFileAndLine(scriptNode.getFile(), scriptNode.getLine());
+
+            if (config.isAssumePrinting() || config.isAssumeLoop()) {
+                runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
+                        config.isSplit());
+            } else {
+                runNormally(scriptNode);
+            }
+        } finally {
+            context.setFileAndLine(oldFile, oldLine);
         }
     }
 

@@ -604,8 +604,9 @@ public class RipperLexer extends LexingCommon {
         return term == '`' ? Tokens.tXSTRING_BEG : Tokens.tSTRING_BEG;
     }
     
-    private void arg_ambiguous() {
+    private boolean arg_ambiguous() {
         parser.dispatch("on_arg_ambiguous");
+        return true;
     }
 
     /*
@@ -1826,8 +1827,7 @@ public class RipperLexer extends LexingCommon {
             setState(EXPR_ENDFN);
             return Tokens.tLAMBDA;
         }
-        if (isBEG() || isSpaceArg(c, spaceSeen)) {
-            if (isARG()) arg_ambiguous();
+        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous())) {
             setState(EXPR_BEG);
             pushback(c);
             if (Character.isDigit(c)) {
@@ -1901,9 +1901,8 @@ public class RipperLexer extends LexingCommon {
 
             return Tokens.tOP_ASGN;
         }
-        
-        if (isBEG() || isSpaceArg(c, spaceSeen)) {
-            if (isARG()) arg_ambiguous();
+
+        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous())) {
             setState(EXPR_BEG);
             pushback(c);
             if (Character.isDigit(c)) {

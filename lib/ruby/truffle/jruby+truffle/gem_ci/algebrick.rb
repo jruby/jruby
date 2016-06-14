@@ -3,5 +3,5 @@ git_checkout git_tag '0.7.3'
 
 has_to_succeed setup
 
-result run(%w[test/algebrick_test.rb], raise: false)
+set_result run(%w[test/algebrick_test.rb], raise: false)
 
