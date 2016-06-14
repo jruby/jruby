@@ -1,5 +1,4 @@
-/**
- * *** BEGIN LICENSE BLOCK *****
+/***** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -33,8 +32,8 @@
  * deleting the provisions above and replace them with the notice and other
  * provisions required by the GPL or the LGPL. If you do not delete the
  * provisions above, a recipient may use your version of this file under the
- * terms of any one of the EPL, the GPL or the LGPL. **** END LICENSE BLOCK ****
- */
+ * terms of any one of the EPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 package org.jruby;
 
 import java.io.IOException;
@@ -255,10 +254,10 @@ public class RubyRange extends RubyObject {
             try {
                 IRubyObject result = invokedynamic(context, begin, MethodNames.OP_CMP, end);
                 if (result.isNil()) {
-                    throw getRuntime().newArgumentError("bad value for range");
+                    throw context.runtime.newArgumentError("bad value for range");
                 }
             } catch (RaiseException re) {
-                throw getRuntime().newArgumentError("bad value for range");
+                throw context.runtime.newArgumentError("bad value for range");
             }
         }
 
@@ -271,10 +270,10 @@ public class RubyRange extends RubyObject {
     @JRubyMethod(required = 2, optional = 1, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
         if (this.isInited) {
-            throw getRuntime().newNameError("`initialize' called twice", "initialize");
+            throw context.runtime.newNameError("`initialize' called twice", "initialize");
         }
         init(context, args[0], args[1], args.length > 2 && args[2].isTrue());
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(required = 1, visibility = PRIVATE)
@@ -285,7 +284,7 @@ public class RubyRange extends RubyObject {
 
         RubyRange other = (RubyRange) original;
         init(context, other.begin, other.end, other.isExclusive);
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "hash")
@@ -298,11 +297,11 @@ public class RubyRange extends RubyObject {
         v = invokedynamic(context, end, MethodNames.HASH).convertToInteger().getLongValue();
         hash ^= v << 9;
         hash ^= h << 24;
-        return getRuntime().newFixnum(hash);
+        return context.runtime.newFixnum(hash);
     }
 
     private IRubyObject inspectValue(final ThreadContext context, IRubyObject value) {
-        return getRuntime().execRecursiveOuter(new Ruby.RecursiveFunction() {
+        return context.runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
             public IRubyObject call(IRubyObject obj, boolean recur) {
                 if (recur) {
                     return RubyString.newString(context.runtime, isExclusive ? "(... ... ...)" : "(... .. ...)");
@@ -345,22 +344,22 @@ public class RubyRange extends RubyObject {
     @JRubyMethod(name = {"==", "eql?"}, required = 1)
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) {
-            return getRuntime().getTrue();
+            return context.runtime.getTrue();
         }
         if (!(other instanceof RubyRange)) {
-            return getRuntime().getFalse();
+            return context.runtime.getFalse();
         }
         RubyRange otherRange = (RubyRange) other;
         if (isExclusive != otherRange.isExclusive) {
-            return getRuntime().getFalse();
+            return context.runtime.getFalse();
         }
         if (!invokedynamic(context, this.begin, MethodNames.EQL, otherRange.begin).isTrue()) {
-            return getRuntime().getFalse();
+            return context.runtime.getFalse();
         }
         if (invokedynamic(context, this.end, MethodNames.EQL, otherRange.end).isTrue()) {
-            return getRuntime().getTrue();
+            return context.runtime.getTrue();
         }
-        return getRuntime().getFalse();
+        return context.runtime.getFalse();
     }
 
     private static abstract class RangeCallBack {
@@ -383,7 +382,7 @@ public class RubyRange extends RubyObject {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block originalBlock) {
             call(context, args[0]);
-            return context.runtime.getNil();
+            return context.nil;
         }
 
         @Override
@@ -405,7 +404,7 @@ public class RubyRange extends RubyObject {
         if (result.isNil()) {
             return null;
         }
-        return RubyComparable.cmpint(context, result, a, b) < 0 ? getRuntime().getTrue() : null;
+        return RubyComparable.cmpint(context, result, a, b) < 0 ? context.runtime.getTrue() : null;
     }
 
     private IRubyObject rangeLe(ThreadContext context, IRubyObject a, IRubyObject b) {
@@ -415,9 +414,9 @@ public class RubyRange extends RubyObject {
         }
         int c = RubyComparable.cmpint(context, result, a, b);
         if (c == 0) {
-            return RubyFixnum.zero(getRuntime());
+            return RubyFixnum.zero(context.runtime);
         }
-        return c < 0 ? getRuntime().getTrue() : null;
+        return c < 0 ? context.runtime.getTrue() : null;
     }
 
     private void rangeEach(ThreadContext context, RangeCallBack callback) {
@@ -431,7 +430,7 @@ public class RubyRange extends RubyObject {
             IRubyObject c;
             while ((c = rangeLe(context, v, end)) != null && c.isTrue()) {
                 callback.call(context, v);
-                if (c == RubyFixnum.zero(getRuntime())) {
+                if (c == RubyFixnum.zero(context.runtime)) {
                     break;
                 }
                 v = v.callMethod(context, "succ");
@@ -520,7 +519,7 @@ public class RubyRange extends RubyObject {
                 ((RubyString) tmp).uptoCommon19(context, end, isExclusive, block);
             } else {
                 if (!begin.respondsTo("succ")) {
-                    throw getRuntime().newTypeError("can't iterate from "
+                    throw runtime.newTypeError("can't iterate from "
                             + begin.getMetaClass().getName());
                 }
                 rangeEach(context, new RangeCallBack() {
