@@ -76,7 +76,7 @@
     - db
   :before:
     # temporary workaround, rake 10.4.2 will not install
-    - ruby -e 'File.write "../Gemfile.lock", File.read("../Gemfile.lock").gsub(/rake \(10\.4\.2\)/,"rake (11.1.2)")'
+    - $JRUBY_BIN -e 'File.write "../Gemfile.lock", File.read("../Gemfile.lock").gsub(/rake \(10\.4\.2\)/,"rake (11.1.2)")'
 :run:
   :require:
     - rubygems

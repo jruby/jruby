@@ -1,5 +1,6 @@
 module Kernel
   module_function
+  p :here
   def require_relative(relative_arg)
     relative_arg = relative_arg.to_path if relative_arg.respond_to? :to_path
     relative_arg = JRuby::Type.convert_to_str(relative_arg)

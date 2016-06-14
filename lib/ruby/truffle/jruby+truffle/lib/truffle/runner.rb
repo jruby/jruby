@@ -46,18 +46,21 @@ module Truffle
       def print_cmd(cmd, dir, print)
         return cmd unless print
 
-        formatted_cmd = if String === cmd
-                          cmd
+        cmd = Array(cmd) # wrap if it's just a string
+
+        formatted_env, command = if cmd[0].is_a?(Hash)
+                                   [cmd[0].map { |k, v| "#{k}=#{v}" }, cmd[1..-1]]
+                                 else
+                                   [[], cmd]
+                                 end
+
+        formatted_cmd = if command.size == 1
+                          command
                         else
-                          cmd.map do |v|
-                            if Hash === v
-                              v.map { |k, v| "#{k}=#{v}" }.join(' ')
-                            else
-                              Shellwords.escape v
-                            end
-                          end.join(' ')
+                          command.map { |v| Shellwords.escape v }
                         end
-        puts '$ ' + formatted_cmd + (dir ? " (in #{dir})" : '')
+
+        puts '$ ' + [*formatted_env, *formatted_cmd].compact.join(' ') + (dir ? " (in #{dir})" : '')
         return cmd
       end
 
@@ -72,6 +75,7 @@ module Truffle
     LOCAL_CONFIG_FILE = '.jruby+truffle.yaml'
     ROOT              = Pathname(__FILE__).dirname.parent.parent.expand_path
     JRUBY_PATH        = ROOT.join('../../../..').expand_path
+    JRUBY_BIN         = JRUBY_PATH.join('bin', 'jruby')
 
     module OptionBlocks
       STORE_NEW_VALUE         = -> (new, old, _) { new }
@@ -128,7 +132,7 @@ module Truffle
           run:    {
               help:             ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
               interpreter_path: ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", STORE_NEW_VALUE,
-                                 JRUBY_PATH.join('bin', 'jruby')],
+                                 JRUBY_BIN],
               no_truffle:       ['-n', '--no-truffle', "Use conventional JRuby instead of #{BRANDING}", STORE_NEW_NEGATED_VALUE, false],
               graal:            ['-g', '--graal', 'Run on graal', STORE_NEW_VALUE, false],
               build:            ['-b', '--build', 'Run `jt build` using conventional JRuby', STORE_NEW_VALUE, false],
@@ -384,10 +388,12 @@ module Truffle
     def subcommand_setup(rest)
       bundle_options = @options[:global][:bundle_options].split(' ')
       bundle_path    = File.expand_path(@options[:global][:truffle_bundle_path])
-
-      @options[:setup][:before].each do |cmd|
-        execute_cmd cmd
+      execute_all    = lambda do |cmd|
+        execute_cmd([{ 'JRUBY_BIN' => JRUBY_BIN.to_s }, cmd])
       end
+
+      @options[:setup][:before].each(&execute_all)
+
 
       bundle_cli([*bundle_options,
                   'install',
@@ -418,9 +424,7 @@ module Truffle
         f.write %[$:.unshift "\#{path}/../#{@options[:global][:mock_load_path]}"]
       end
 
-      @options[:setup][:after].each do |cmd|
-        execute_cmd cmd
-      end
+      @options[:setup][:after].each(&execute_all)
 
       true
     rescue => e
@@ -535,7 +539,17 @@ module Truffle
       else
         gem_name = rest.first
         ci       = CIEnvironment.new @options[:global][:dir], gem_name, rest[1..-1], definition: options[:ci][:definition], verbose: verbose?
-        ci.success?
+
+        case ci.result
+        when nil # error, setup failed
+          1
+        when false # tests set result to false
+          2
+        when true # test passed
+          0
+        else
+          raise "unknown #{ci.result.inspect}"
+        end
       end
     end
 
@@ -566,7 +580,7 @@ module Truffle
 
       define_dsl_attr :repository_name, :subdir
       define_dsl_attr(:working_dir) { |v| Pathname(v) }
-      attr_reader :gem_name
+      attr_reader :gem_name, :result
 
       def initialize(working_dir, gem_name, rest, definition: nil, verbose: false)
         @options  = {}
@@ -584,34 +598,27 @@ module Truffle
         @option_parsed        = false
 
         declare_options parse_options: false, help: ['-h', '--help', 'Show this message', -> (new, old, _) { puts option_parser; exit }, false]
-        if definition
-          do_definition(definition)
-        else
-          do_definition(gem_name, raise: false) || do_definition('default')
-        end
+
+        (definition && do_definition(definition)) ||
+            do_definition(gem_name) ||
+            do_definition('default') ||
+            raise("no ci definition with name: #{gem_name}")
       end
 
       def do_definition(name, raise: true)
         ci_file = Dir.glob(ROOT.join('gem_ci', "{#{name}}.rb")).first
-        if ci_file.nil?
-          if raise
-            raise "no ci definition with name: #{name}"
-          else
-            return false
-          end
-        else
-          puts "Using CI definition: #{ci_file}"
-          catch :cancel_ci! do
-            begin
-              instance_eval File.read(ci_file), ci_file, 1
-            rescue => e
-              puts format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
-              result false
-            end
-          end
+        return false if ci_file.nil?
 
-          return true
+        puts "Using CI definition: #{ci_file}"
+        catch :cancel_ci! do
+          begin
+            instance_eval File.read(ci_file), ci_file, 1
+          rescue => e
+            puts format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
+          end
         end
+
+        true
       end
 
       def declare_options(parse_options: true, **parser_options)
@@ -676,12 +683,12 @@ module Truffle
         Dir.chdir(testing_dir) { Runner.new([('-v' if @verbose), 'setup'].compact).run }
       end
 
-      def cancel_ci!(result = false)
-        throw :cancel_ci!, result
+      def cancel_ci!
+        throw :cancel_ci!
       end
 
       def has_to_succeed(result)
-        result or cancel_ci! result
+        result or cancel_ci!
       end
 
       def run(options, raise: true)
@@ -698,12 +705,12 @@ module Truffle
         FileUtils.rmtree repository_dir
       end
 
-      def result(boolean)
+      def set_result(boolean)
         @result = boolean
       end
 
       def success?
-        @result
+        !@result.nil?
       end
 
       def use_only_https_git_paths!

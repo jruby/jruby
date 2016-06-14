@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.compiler.Constantizable;
@@ -40,6 +41,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.OptoFactory;
+import org.jruby.util.ByteList;
 
 /**
  *
@@ -156,7 +158,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     public static RubyHash to_h(ThreadContext context, IRubyObject recv) {
         return RubyHash.newSmallHash(context.runtime);
     }
-    
+
     /** nil_inspect
      *
      */
@@ -165,8 +167,11 @@ public class RubyNil extends RubyObject implements Constantizable {
         return inspect(context.runtime);
     }
 
+    static final byte[] nilBytes = new byte[] { 'n','i','l' }; // RubyString.newUSASCIIString(runtime, "nil")
+    private static final ByteList nil = new ByteList(nilBytes, USASCIIEncoding.INSTANCE);
+
     static RubyString inspect(Ruby runtime) {
-        return RubyString.newUSASCIIString(runtime, "nil");
+        return RubyString.newStringShared(runtime, runtime.getString(), nil);
     }
 
     /** nil_and

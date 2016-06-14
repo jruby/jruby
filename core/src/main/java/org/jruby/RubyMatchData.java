@@ -406,9 +406,9 @@ public class RubyMatchData extends RubyObject {
             }
             IRubyObject v = RubyRegexp.nth_match(i, this);
             if (v.isNil()) {
-                result.cat("nil".getBytes());
+                result.cat(RubyNil.nilBytes); // "nil"
             } else {
-                result.append(((RubyString)v).inspect19());
+                result.append(((RubyString) v).inspect(runtime));
             }
         }
 

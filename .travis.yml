@@ -60,15 +60,6 @@ matrix:
     #  group: edge
     #  jdk: oraclejdk9
 
-branches:
-  only:
-    - master
-    - jruby-1_7
-    - truffle-head
-    - /^test-.*$/
-    - /^ha-feature/
-    - ruby-2.4
-
 install: tool/travis-install.sh
 script: tool/travis-script.sh
 

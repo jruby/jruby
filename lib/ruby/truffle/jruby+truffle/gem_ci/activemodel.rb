@@ -8,5 +8,5 @@ use_only_https_git_paths!
 
 has_to_succeed setup
 
-result run(%w[--require-pattern test/**/*_test.rb -- -I test -e nil], raise: false)
+set_result run(%w[--require-pattern test/**/*_test.rb -- -I test -e nil], raise: false)
 
