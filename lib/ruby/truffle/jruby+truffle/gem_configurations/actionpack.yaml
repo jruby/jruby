@@ -45,7 +45,7 @@
     rails-html-sanitizer.rb: "puts 'HTML sanitization stubbed'"
     nokogiri.rb: "puts 'nokogiri stubbed'"
     excluded-tests.rb:  |
-                        blocking = { :"ActionDispatch::Journey::GTG::TestGeneralizedTable" => [:test_to_svg] }
+                        blocking = { "ActionDispatch::Journey::GTG::TestGeneralizedTable" => ["test_to_svg"] }
 
                         failures = { "ActionPackAssertionsControllerTest"                                =>
                                          ["test_render_file_absolute_path",
