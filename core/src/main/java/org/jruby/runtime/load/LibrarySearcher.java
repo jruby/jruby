@@ -232,7 +232,12 @@ class LibrarySearcher {
             InputStream ris = null;
             try {
                 ris = resource.inputStream();
-                runtime.loadFile(scriptName, new LoadServiceResourceInputStream(ris), wrap);
+
+                if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
+                    runtime.compileAndLoadFile(scriptName, ris, wrap);
+                } else {
+                    runtime.loadFile(scriptName, new LoadServiceResourceInputStream(ris), wrap);
+                }
             } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             } finally {
