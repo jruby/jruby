@@ -75,7 +75,7 @@ import static org.jruby.util.StringSupport.codeRangeScan;
 /**
  * Represents a Ruby symbol (e.g. :bar)
  */
-@JRubyClass(name="Symbol")
+@JRubyClass(name = "Symbol", include = "Enumerable")
 public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable {
     public static final long symbolHashSeedK0 = 5238926673095087190l;
 
@@ -144,12 +144,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * @return a String representation of the symbol
      */
     @Override
-    public String asJavaString() {
+    public final String asJavaString() {
         return symbol;
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return symbol;
     }
 
@@ -250,44 +250,43 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 constant;
     }
 
-    @Deprecated
     @Override
     public IRubyObject inspect() {
-        return inspect19(getRuntime().getCurrentContext());
-    }
-
-    public IRubyObject inspect(ThreadContext context) {
-        return inspect19(context.runtime);
+        return inspect(getRuntime());
     }
 
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect19(ThreadContext context) {
-        return inspect19(context.runtime);
+    public IRubyObject inspect(ThreadContext context) {
+        return inspect(context.runtime);
     }
 
-    private final IRubyObject inspect19(Ruby runtime) {
+    final RubyString inspect(final Ruby runtime) {
         ByteList result = new ByteList(symbolBytes.getRealSize() + 1);
         result.setEncoding(symbolBytes.getEncoding());
         result.append((byte)':');
         result.append(symbolBytes);
 
-        RubyString str = RubyString.newString(runtime, result);
         // TODO: 1.9 rb_enc_symname_p
         Encoding resenc = runtime.getDefaultInternalEncoding();
-        if (resenc == null) {
-            resenc = runtime.getDefaultExternalEncoding();
-        }
+        if (resenc == null) resenc = runtime.getDefaultExternalEncoding();
+
+        RubyString str = RubyString.newString(runtime, result);
 
         if (isPrintable() && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol)) {
             return str;
         }
 
-        str = (RubyString)str.inspect19();
+        str = str.inspect(runtime);
         ByteList bytes = str.getByteList();
         bytes.set(0, ':');
         bytes.set(1, '"');
 
         return str;
+    }
+
+    @Deprecated
+    public IRubyObject inspect19(ThreadContext context) {
+        return inspect(context);
     }
 
     @Override
@@ -666,7 +665,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         // note all fields are final -- rehash creates new entries when necessary.
         // as documented in java.util.concurrent.ConcurrentHashMap.java, that will
         // statistically affect only a small percentage (< 20%) of entries for a given rehash.
-        static class SymbolEntry {
+        static final class SymbolEntry {
             final int hash;
             final String name;
             final ByteList bytes;
@@ -1018,12 +1017,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     public static String objectToSymbolString(IRubyObject object) {
         if (object instanceof RubySymbol) {
-            return ((RubySymbol)object).toString();
-        } else if (object instanceof RubyString) {
-            return ((RubyString)object).getByteList().toString();
-        } else {
-            return object.convertToString().getByteList().toString();
+            return ((RubySymbol) object).toString();
         }
+        if (object instanceof RubyString) {
+            return ((RubyString) object).getByteList().toString();
+        }
+        return object.convertToString().getByteList().toString();
     }
 
     private static class SymbolProcBody extends ContextAwareBlockBody {
