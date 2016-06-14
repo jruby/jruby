@@ -1131,8 +1131,12 @@ public class IRBuilder {
             } else {
                 Operand expression = buildWithOrder(whenNode.getExpressionNodes(), whenNode.containsVariableAssignment());
 
-                addInstr(new EQQInstr(eqqResult, expression, value));
-                v1 = eqqResult;
+                if (value != UndefinedValue.UNDEFINED) {
+                    addInstr(new EQQInstr(eqqResult, expression, value));
+                    v1 = eqqResult;
+                } else {
+                    v1 = expression;
+                }
                 v2 = manager.getTrue();
             }
             addInstr(BEQInstr.create(v1, v2, bodyLabel));
