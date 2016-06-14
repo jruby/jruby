@@ -992,7 +992,8 @@ public class JVMVisitor extends IRVisitor {
         if (callInstr instanceof OneFixnumArgNoBlockCallInstr && MethodIndex.getFastFixnumOpsMethod(callInstr.getName()) != null) {
             oneFixnumArgNoBlockCallInstr((OneFixnumArgNoBlockCallInstr) callInstr);
             return;
-        } else if (callInstr instanceof OneFloatArgNoBlockCallInstr) {
+        } else if (callInstr instanceof OneFloatArgNoBlockCallInstr &&
+                MethodIndex.getFastFloatOpsMethod(callInstr.getName()) != null) {
             oneFloatArgNoBlockCallInstr((OneFloatArgNoBlockCallInstr) callInstr);
             return;
         }
