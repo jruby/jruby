@@ -514,7 +514,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             }
         }
 
-        RubyString result = runtime.newString(new ByteList(buf.array(), 0, buf.position()));
+        RubyString result = runtime.newString(new ByteList(buf.array(), 0, buf.position(), false));
 
         if (tuple != null) {
             tuple.result = result;
@@ -546,7 +546,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
 
         recv.flip();
-        RubyString result = runtime.newString(new ByteList(recv.array(), recv.position(), recv.limit()));
+        RubyString result = runtime.newString(new ByteList(recv.array(), recv.position(), recv.limit(), false));
 
         if (tuple != null) {
             tuple.result = result;
