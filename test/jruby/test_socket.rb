@@ -540,6 +540,31 @@ class UNIXSocketTests < Test::Unit::TestCase
           sock1.recv(1)
         end
       end
+
+      def test_recv_nonblock
+        s1, s2 = UNIXSocket.pair(Socket::SOCK_DGRAM)
+        begin
+          s1.recv_nonblock(1)
+          assert false
+        rescue => e
+          assert(IO::EAGAINWaitReadable === e)
+          assert(IO::WaitReadable === e)
+        end
+        # TODO '' does not get through as expected :
+        #s2.send('', 0)
+        #assert_equal '', s1.recv_nonblock(10, nil)
+        begin
+          s1.recv_nonblock(10, nil)
+          assert false
+        rescue IO::EAGAINWaitReadable
+        end
+        s2.send('a', 0)
+        s1.recv_nonblock(5, nil, str = '')
+        assert_equal 'a', str
+        assert_raise(IO::EAGAINWaitReadable) { s1.recv_nonblock(5, nil, str) }
+        assert_equal :wait_readable, s1.recv_nonblock(5, exception: false)
+      end
+
     end
   end
 

@@ -200,7 +200,7 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod
     public IRubyObject recv_nonblock(ThreadContext context, IRubyObject length) {
-        return recv_nonblock(context, length, context.nil, /* str */ null, false);
+        return recv_nonblock(context, length, context.nil, /* str */ null, true);
     }
 
     @JRubyMethod(required = 1, optional = 3) // (length) required = 1 handled above
