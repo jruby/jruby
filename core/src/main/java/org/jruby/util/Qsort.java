@@ -30,6 +30,7 @@ package org.jruby.util;
 import java.util.ArrayList;
 import java.util.Comparator;
 
+@Deprecated
 public class Qsort {
 private static final int SIZE_THRESHOLD = 16;
 
@@ -287,4 +288,3 @@ private static final int SIZE_THRESHOLD = 16;
         a[j] = t;
     }
 }
-
