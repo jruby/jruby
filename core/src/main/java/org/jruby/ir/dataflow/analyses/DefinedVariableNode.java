@@ -43,18 +43,20 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
 
     @Override
     public void compute_MEET(Edge e, DefinedVariableNode pred) {
+        BitSet predState =  basicBlock.isRescueEntry() ? pred.in : pred.out;
+
         // If pred.out is TOP, in doesn't change.
-        if (pred.out != null) {
+        if (predState != null) {
             // if in is TOP, init in to a bitset with all 1's
             // so the intersection computes the right value.
             if (in == null) {
                 // Make sure 'in' and 'out' are the same size!
-                int n = pred.out.size();
+                int n = predState.size();
                 in = new BitSet(n);
                 in.set(0, n);
             }
 
-            in.and(pred.out);
+            in.and(predState);
         }
     }
 
