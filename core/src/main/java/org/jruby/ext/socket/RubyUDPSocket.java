@@ -202,7 +202,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     @JRubyMethod
     public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject length) {
-        return recv_nonblock(context, length, context.nil, context.nil, false);
+        return recv_nonblock(context, length, context.nil, /* str */ null, false);
     }
 
     @JRubyMethod(required = 1, optional = 3) // (length) required = 1 handled above
@@ -212,17 +212,13 @@ public class RubyUDPSocket extends RubyIPSocket {
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
         if (!opts.isNil()) argc--;
 
-        IRubyObject length = context.nil;
-        IRubyObject flags = length;
-        IRubyObject str = length;
+        IRubyObject length, flags, str;
+        length = flags = str = context.nil;
 
         switch (argc) {
-            case 3:
-                str = args[2];
-            case 2:
-                flags = args[1];
-            case 1:
-                length = args[0];
+            case 3: str = args[2];
+            case 2: flags = args[1];
+            case 1: length = args[0];
         }
 
         boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
@@ -230,13 +226,13 @@ public class RubyUDPSocket extends RubyIPSocket {
         return recvfrom_nonblock(context, length, flags, str, exception);
     }
 
-    public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject _length, IRubyObject _flags, IRubyObject str, boolean ex) {
+    private IRubyObject recvfrom_nonblock(ThreadContext context,
+        IRubyObject length, IRubyObject flags, IRubyObject str, boolean exception) {
         final Ruby runtime = context.runtime;
 
         try {
-            int length = RubyNumeric.fix2int(_length);
-
-            ReceiveTuple tuple = doReceiveNonblockTuple(runtime, length, ex);
+            final int len = RubyNumeric.fix2int(length);
+            ReceiveTuple tuple = doReceiveNonblockTuple(runtime, len, exception);
 
             // TODO: make this efficient
             if (!str.isNil()) {
@@ -483,12 +479,13 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    private static class ReceiveTuple {
+    private static final class ReceiveTuple {
         ReceiveTuple() {}
-        ReceiveTuple(RubyString result, InetSocketAddress sender) {
-            this.result = result;
-            this.sender = sender;
-        }
+
+        //ReceiveTuple(RubyString result, InetSocketAddress sender) {
+        //    this.result = result;
+        //    this.sender = sender;
+        //}
 
         RubyString result;
         InetSocketAddress sender;
@@ -499,11 +496,11 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     private IRubyObject doReceive(Ruby runtime, int length, boolean ex, ReceiveTuple tuple) throws IOException {
-        DatagramChannel channel = (DatagramChannel)getChannel();
+        DatagramChannel channel = (DatagramChannel) getChannel();
 
         ByteBuffer buf = ByteBuffer.allocate(length);
 
-        InetSocketAddress sender = (InetSocketAddress)channel.receive(buf);
+        InetSocketAddress sender = (InetSocketAddress) channel.receive(buf);
 
         if (sender == null) {
             // noblocking receive
@@ -527,8 +524,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     private IRubyObject doReceiveMulticast(Ruby runtime, int length, boolean ex, ReceiveTuple tuple) throws IOException {
-        byte[] buf2 = new byte[length];
-        ByteBuffer recv = ByteBuffer.wrap(buf2);
+        ByteBuffer recv = ByteBuffer.wrap(new byte[length]);
         SocketAddress address;
 
         DatagramChannel channel = this.multicastStateManager.getMulticastSocket().getChannel();
