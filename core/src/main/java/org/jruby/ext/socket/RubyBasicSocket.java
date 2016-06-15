@@ -781,7 +781,7 @@ public class RubyBasicSocket extends RubyIO {
         return set_do_not_reverse_lookup(recv.getRuntime().getCurrentContext(), recv, flag);
     }
 
-    private static final ByteList FORMAT_SMALL_I = new ByteList(ByteList.plain("i"));
+    private static final ByteList FORMAT_SMALL_I = new ByteList(new byte[] { 'i' }, false);
     protected MulticastStateManager multicastStateManager = null;
 
     // By default we always reverse lookup unless do_not_reverse_lookup set.

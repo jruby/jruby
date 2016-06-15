@@ -398,7 +398,7 @@ public final class EncodingService {
     public Encoding getEncodingFromString(String string) {
         if (string == null) return null;
 
-        ByteList name = new ByteList(ByteList.plain(string));
+        ByteList name = new ByteList(ByteList.plain(string), false);
         checkAsciiEncodingName(name);
 
         SpecialEncoding special = SpecialEncoding.valueOf(name);
