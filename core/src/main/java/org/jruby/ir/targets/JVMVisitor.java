@@ -989,11 +989,10 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void CallInstr(CallInstr callInstr) {
-        if (callInstr instanceof OneFixnumArgNoBlockCallInstr && MethodIndex.getFastFixnumOpsMethod(callInstr.getName()) != null) {
+        if (callInstr instanceof OneFixnumArgNoBlockCallInstr) {
             oneFixnumArgNoBlockCallInstr((OneFixnumArgNoBlockCallInstr) callInstr);
             return;
-        } else if (callInstr instanceof OneFloatArgNoBlockCallInstr &&
-                MethodIndex.getFastFloatOpsMethod(callInstr.getName()) != null) {
+        } else if (callInstr instanceof OneFloatArgNoBlockCallInstr) {
             oneFloatArgNoBlockCallInstr((OneFloatArgNoBlockCallInstr) callInstr);
             return;
         }
@@ -1527,7 +1526,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFixnum(file, lastLine, name, fixnum);
+        m.invokeOtherOneFixnum(file, lastLine, name, fixnum, oneFixnumArgNoBlockCallInstr.getCallType());
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -1538,10 +1537,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void oneFloatArgNoBlockCallInstr(OneFloatArgNoBlockCallInstr oneFloatArgNoBlockCallInstr) {
-        if (MethodIndex.getFastFloatOpsMethod(oneFloatArgNoBlockCallInstr.getName()) == null) {
-            CallInstr(oneFloatArgNoBlockCallInstr);
-            return;
-        }
         IRBytecodeAdapter m = jvmMethod();
         String name = oneFloatArgNoBlockCallInstr.getName();
         double flote = oneFloatArgNoBlockCallInstr.getFloatArg();
@@ -1556,7 +1551,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFloat(file, lastLine, name, flote);
+        m.invokeOtherOneFloat(file, lastLine, name, flote, oneFloatArgNoBlockCallInstr.getCallType());
 
         if (result != null) {
             jvmStoreLocal(result);
