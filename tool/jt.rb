@@ -146,7 +146,7 @@ module Utilities
   end
   
   def self.find_benchmark(benchmark)
-    if File.exist?(File.join(JRUBY_DIR, benchmark))
+    if File.exist?(benchmark)
       benchmark
     else
       File.join(find_repo('all-ruby-benchmarks'), benchmark)
