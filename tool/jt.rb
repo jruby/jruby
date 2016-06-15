@@ -411,7 +411,8 @@ module Commands
     puts 'jt metrics minheap ...                         what is the smallest heap you can use to run an application'
     puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
     puts 'jt tarball                                     build the and test the distribution tarball'
-    puts 'jt benchmark args...                           run benchmark-interface (implies --graal)'
+    puts 'jt benchmark [options] args...                 run benchmark-interface (implies --graal)'
+    puts '    --no-graal       don\'t imply --graal'
     puts '    note that to run most MRI benchmarks, you should translate them first with normal Ruby and cache the result, such as'
     puts '        benchmark bench/mri/bm_vm1_not.rb --cache'
     puts '        jt benchmark bench/mri/bm_vm1_not.rb --use-cache'
@@ -954,12 +955,14 @@ module Commands
     raise 'no benchmark given' unless benchmark
     benchmark = Utilities.find_benchmark(benchmark)
     raise 'benchmark not found' unless File.exist?(benchmark)
-    run '--graal',
-        '-I', "#{Utilities.find_gem('deep-bench')}/lib",
-        '-I', "#{Utilities.find_gem('benchmark-ips')}/lib",
-        "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark",
-        benchmark,
-        *args
+    run_args = []
+    run_args.push '--graal' unless args.delete('--no-graal')
+    run_args.push '-I', "#{Utilities.find_gem('deep-bench')}/lib" rescue nil
+    run_args.push '-I', "#{Utilities.find_gem('benchmark-ips')}/lib" rescue nil
+    run_args.push "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark"
+    run_args.push benchmark
+    run_args.push *args
+    run *run_args
   end
 
   def check_ambiguous_arguments
