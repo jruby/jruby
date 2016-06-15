@@ -57,7 +57,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -510,7 +509,7 @@ public class RubyBasicSocket extends RubyIO {
 
             if (read == 0) return null;
 
-            return new ByteList(buffer.array(), 0, buffer.position());
+            return new ByteList(buffer.array(), 0, buffer.position(), false);
         }
         catch (IOException e) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
@@ -526,7 +525,7 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
-    public ByteList doReceiveNonblock(ThreadContext context, final ByteBuffer buffer) {
+    protected final ByteList doReceiveNonblock(ThreadContext context, final ByteBuffer buffer) {
         Channel channel = getChannel();
 
         if ( ! (channel instanceof SelectableChannel) ) {
