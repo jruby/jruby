@@ -84,11 +84,20 @@ matrix:
       jdk: oraclejdk8
     - env: JT='test integration'
       jdk: oraclejdk8
-    - env: JT='test gems' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
+    - env:
+      - COMMAND=test/truffle/gems/install-gems.sh
+      - JT='test gems'
+      jdk: oraclejdk8
+    - env:
+      - JAVA_OPTS="$JAVA_OPTS -Xmx512m"
+      - HAS_REDIS=true
+      - JT='test ecosystem'
       jdk: oraclejdk8
     - env: JT='test tck'
       jdk: oraclejdk8
-    - env: JT=check_ambiguous_arguments SKIP_BUILD=true
+    - env:
+      - JT=check_ambiguous_arguments
+      - SKIP_BUILD=true
       jdk: oraclejdk8
     - env:
       - USE_BUILD_PACK=yes

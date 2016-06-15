@@ -397,7 +397,8 @@ module Commands
     puts '    --no-java-cmd   don\'t set JAVACMD - rely on bin/jruby or RUBY_BIN to have Graal already'
     puts 'jt test integration                            runs all integration tests'
     puts 'jt test integration TESTS                      runs the given integration tests'
-    puts 'jt test gems                                   tests installing and using gems'
+    puts 'jt test gems                                   tests using gems'
+    puts 'jt test ecosystem                              tests using the wider ecosystem such as bundler, Rails, etc'
     puts 'jt test cexts                                  run C extension tests (set SULONG_DIR)'
     puts 'jt test report :language                       build a report on language specs'
     puts '               :core                               (results go into test/target/mspec-html-report)'
@@ -562,7 +563,8 @@ module Commands
       test_specs('run')
       # test_mri # TODO (pitr-ch 29-Mar-2016): temporarily disabled since it uses refinements
       test_integration
-      test_gems('HAS_REDIS' => 'true')
+      test_gems
+      test_ecosystem 'HAS_REDIS' => 'true'
       test_compiler
       test_cexts if ENV['SULONG_DIR']
     when 'compiler' then test_compiler(*rest)
@@ -570,6 +572,7 @@ module Commands
     when 'report' then test_report(*rest)
     when 'integration' then test_integration({}, *rest)
     when 'gems' then test_gems({}, *rest)
+    when 'ecosystem' then test_ecosystem({}, *rest)
     when 'specs' then test_specs('run', *rest)
     when 'tck' then
       args = []
@@ -694,10 +697,30 @@ module Commands
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
     Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
+      next if test_script.end_with?('/install-gems.sh')
       sh env_vars, test_script
     end
   end
   private :test_gems
+
+  def test_ecosystem(env={}, *args)
+    env_vars   = env
+    jruby_opts = []
+
+    jruby_opts << '-Xtruffle.graal.warn_unless=false'
+
+    env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
+
+    env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
+    tests_path             = "#{JRUBY_DIR}/test/truffle/ecosystem"
+    single_test            = !args.empty?
+    test_names             = single_test ? '{' + args.join(',') + '}' : '*'
+
+    Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
+      sh env_vars, test_script
+    end
+  end
+  private :test_ecosystem
 
   def test_specs(command, *args)
     env_vars = {}
