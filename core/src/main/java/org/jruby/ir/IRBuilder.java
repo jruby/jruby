@@ -1,12 +1,10 @@
 package org.jruby.ir;
 
-import javafx.beans.binding.When;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.*;
-import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.lexer.yacc.ISourcePosition;
