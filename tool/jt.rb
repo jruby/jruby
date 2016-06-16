@@ -493,6 +493,7 @@ module Commands
 
     if args.delete('--graal')
       env_vars["JAVACMD"] = Utilities.find_graal
+      jruby_args.delete('-Xtruffle.graal.warn_unless=false')
     end
 
     if args.delete('--js')
