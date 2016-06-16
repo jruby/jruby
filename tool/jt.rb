@@ -493,7 +493,6 @@ module Commands
 
     if args.delete('--graal')
       env_vars["JAVACMD"] = Utilities.find_graal
-      jruby_args << '-J-Djvmci.Compiler=graal'
     end
 
     if args.delete('--js')
