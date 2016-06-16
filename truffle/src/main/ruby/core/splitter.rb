@@ -28,7 +28,7 @@ module Rubinius
   class Splitter
     def self.split_characters(string, pattern, limit, tail_empty)
       if limit
-        string.chars.take(limit - 1) << (string.chars.size > (limit - 1) ? string[(limit - 1)..-1] : "")
+        string.chars.take(limit - 1) << (string.size > (limit - 1) ? string[(limit - 1)..-1] : "")
       else
         ret = string.chars.to_a
         # Use #byteslice because it returns the right class and taints
