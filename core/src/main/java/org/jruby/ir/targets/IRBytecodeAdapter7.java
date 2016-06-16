@@ -21,6 +21,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -151,7 +152,17 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("aref", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, 1)), ArrayDerefInvokeSite.BOOTSTRAP);
     }
 
-    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum) {
+    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType) {
+        if (!MethodIndex.hasFastFixnumOps(name)) {
+            pushFixnum(fixnum);
+            if (callType == CallType.NORMAL) {
+                invokeOther(file, line, name, 1, false, false);
+            } else {
+                invokeSelf(file, line, name, 1, false, callType, false);
+            }
+            return;
+        }
+
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
         adapter.invokedynamic(
@@ -159,11 +170,22 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 signature,
                 Bootstrap.getFixnumOperatorHandle(),
                 fixnum,
+                callType.ordinal(),
                 "",
                 0);
     }
 
-    public void invokeOtherOneFloat(String file, int line, String name, double flote) {
+    public void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType) {
+        if (!MethodIndex.hasFastFloatOps(name)) {
+            pushFloat(flote);
+            if (callType == CallType.NORMAL) {
+                invokeOther(file, line, name, 1, false, false);
+            } else {
+                invokeSelf(file, line, name, 1, false, callType, false);
+            }
+            return;
+        }
+
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
         
         adapter.invokedynamic(
@@ -171,6 +193,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             signature,
             Bootstrap.getFloatOperatorHandle(),
             flote,
+                callType.ordinal(),
             "",
             0);
     }

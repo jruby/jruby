@@ -1134,5 +1134,13 @@ modes.each do |mode|
         x.should == :ok
       end
     end
+
+    it "compiles calls with one fixnum arg that do not have optimized paths" do
+      run('ary = []; ary.push(1)') {|x| expect(x).to eq([1]) }
+    end
+
+    it "compiles calls with one float arg that do not have optimized paths" do
+      run('ary = []; ary.push(1.0)') {|x| expect(x).to eq([1.0]) }
+    end
   end
 end

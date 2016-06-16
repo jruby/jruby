@@ -202,7 +202,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     @JRubyMethod
     public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject length) {
-        return recv_nonblock(context, length, context.nil, context.nil, false);
+        return recv_nonblock(context, length, context.nil, /* str */ null, true);
     }
 
     @JRubyMethod(required = 1, optional = 3) // (length) required = 1 handled above
@@ -212,17 +212,13 @@ public class RubyUDPSocket extends RubyIPSocket {
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
         if (!opts.isNil()) argc--;
 
-        IRubyObject length = context.nil;
-        IRubyObject flags = length;
-        IRubyObject str = length;
+        IRubyObject length, flags, str;
+        length = flags = str = context.nil;
 
         switch (argc) {
-            case 3:
-                str = args[2];
-            case 2:
-                flags = args[1];
-            case 1:
-                length = args[0];
+            case 3: str = args[2];
+            case 2: flags = args[1];
+            case 1: length = args[0];
         }
 
         boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
@@ -230,22 +226,30 @@ public class RubyUDPSocket extends RubyIPSocket {
         return recvfrom_nonblock(context, length, flags, str, exception);
     }
 
-    public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject _length, IRubyObject _flags, IRubyObject str, boolean ex) {
+    private IRubyObject recvfrom_nonblock(ThreadContext context,
+        IRubyObject length, IRubyObject flags, IRubyObject str, boolean exception) {
         final Ruby runtime = context.runtime;
 
         try {
-            int length = RubyNumeric.fix2int(_length);
+            ReceiveTuple tuple = doReceiveNonblockTuple(runtime, RubyNumeric.fix2int(length));
 
-            ReceiveTuple tuple = doReceiveNonblockTuple(runtime, length, ex);
+            if (tuple == null) {
+                if (!exception) return context.runtime.newSymbol("wait_readable");
+                throw context.runtime.newErrnoEAGAINReadableError("recvfrom(2)");
+            }
 
             // TODO: make this efficient
-            if (!str.isNil()) {
-                tuple.result = str.convertToString().replace19(tuple.result);
+            if (str != null && !str.isNil()) {
+                str = str.convertToString();
+                ((RubyString) str).setValue(tuple.result.getByteList());
+            }
+            else {
+                str = tuple.result;
             }
 
             IRubyObject addressArray = addrFor(context, tuple.sender, false);
 
-            return runtime.newArray(tuple.result, addressArray);
+            return runtime.newArray(str, addressArray);
         }
         catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "recvfrom: name or service not known");
@@ -390,13 +394,11 @@ public class RubyUDPSocket extends RubyIPSocket {
      * Overrides IPSocket#recvfrom
      */
     @Override
-    public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject length) {
         final Ruby runtime = context.runtime;
 
         try {
-            int length = RubyNumeric.fix2int(_length);
-
-            ReceiveTuple tuple = doReceiveTuple(runtime, length, true);
+            ReceiveTuple tuple = doReceiveTuple(runtime, false, RubyNumeric.fix2int(length));
 
             IRubyObject addressArray = addrFor(context, tuple.sender, false);
 
@@ -430,11 +432,11 @@ public class RubyUDPSocket extends RubyIPSocket {
      * Overrides BasicSocket#recv
      */
     @Override
-    public IRubyObject recv(ThreadContext context, IRubyObject _length) {
+    public IRubyObject recv(ThreadContext context, IRubyObject length) {
         final Ruby runtime = context.runtime;
 
         try {
-            return doReceive(runtime, RubyNumeric.fix2int(_length));
+            return doReceive(runtime, false, RubyNumeric.fix2int(length), null);
         }
         catch (IOException e) { // SocketException
             throw runtime.newIOErrorFromException(e);
@@ -454,20 +456,20 @@ public class RubyUDPSocket extends RubyIPSocket {
         return recv(context, _length);
     }
 
-    private ReceiveTuple doReceiveTuple(Ruby runtime, int length, boolean ex) throws IOException {
+    private ReceiveTuple doReceiveTuple(final Ruby runtime, final boolean non_block, int length) throws IOException {
         ReceiveTuple tuple = new ReceiveTuple();
 
+        final IRubyObject result;
         if (this.multicastStateManager == null) {
-            doReceive(runtime, length, ex, tuple);
+            result = doReceive(runtime, non_block, length, tuple);
         } else {
-            doReceiveMulticast(runtime, length, ex, tuple);
+            result = doReceiveMulticast(runtime, non_block, length, tuple);
         }
-
-        return tuple;
+        return result == null ? null : tuple; // need to return null for non_block (if op would block)
     }
 
-    private ReceiveTuple doReceiveNonblockTuple(Ruby runtime, int length, boolean ex) throws IOException {
-        DatagramChannel channel = (DatagramChannel)getChannel();
+    private ReceiveTuple doReceiveNonblockTuple(Ruby runtime, int length) throws IOException {
+        DatagramChannel channel = (DatagramChannel) getChannel();
 
         synchronized (channel.blockingLock()) {
             boolean oldBlocking = channel.isBlocking();
@@ -475,7 +477,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             channel.configureBlocking(false);
 
             try {
-                return doReceiveTuple(runtime, length, ex);
+                return doReceiveTuple(runtime, true, length);
             }
             finally {
                 channel.configureBlocking(oldBlocking);
@@ -483,40 +485,36 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    private static class ReceiveTuple {
+    private static final class ReceiveTuple {
         ReceiveTuple() {}
-        ReceiveTuple(RubyString result, InetSocketAddress sender) {
-            this.result = result;
-            this.sender = sender;
-        }
+
+        //ReceiveTuple(RubyString result, InetSocketAddress sender) {
+        //    this.result = result;
+        //    this.sender = sender;
+        //}
 
         RubyString result;
         InetSocketAddress sender;
     }
 
-    private IRubyObject doReceive(Ruby runtime, int length) throws IOException {
-        return doReceive(runtime, length, true, null);
-    }
-
-    private IRubyObject doReceive(Ruby runtime, int length, boolean ex, ReceiveTuple tuple) throws IOException {
-        DatagramChannel channel = (DatagramChannel)getChannel();
+    private IRubyObject doReceive(final Ruby runtime, final boolean non_block,
+        int length, ReceiveTuple tuple) throws IOException {
+        DatagramChannel channel = (DatagramChannel) getChannel();
 
         ByteBuffer buf = ByteBuffer.allocate(length);
 
-        InetSocketAddress sender = (InetSocketAddress)channel.receive(buf);
+        InetSocketAddress sender = (InetSocketAddress) channel.receive(buf);
 
         if (sender == null) {
-            // noblocking receive
-            if (!ex) return runtime.newSymbol("wait_readable");
-            throw runtime.newErrnoEAGAINReadableError("recvfrom(2) would block");
+            if ( non_block ) { // non-blocking receive
+                return null; // :wait_readable or "recvfrom(2) would block"
+            }
+            else { // see JRUBY-4678
+                throw runtime.newErrnoECONNRESETError();
+            }
         }
 
-        // see JRUBY-4678
-        if (sender == null) {
-            throw runtime.newErrnoECONNRESETError();
-        }
-
-        RubyString result = runtime.newString(new ByteList(buf.array(), 0, buf.position()));
+        RubyString result = runtime.newString(new ByteList(buf.array(), 0, buf.position(), false));
 
         if (tuple != null) {
             tuple.result = result;
@@ -526,9 +524,9 @@ public class RubyUDPSocket extends RubyIPSocket {
         return result;
     }
 
-    private IRubyObject doReceiveMulticast(Ruby runtime, int length, boolean ex, ReceiveTuple tuple) throws IOException {
-        byte[] buf2 = new byte[length];
-        ByteBuffer recv = ByteBuffer.wrap(buf2);
+    private IRubyObject doReceiveMulticast(final Ruby runtime, final boolean non_block,
+        int length, ReceiveTuple tuple) throws IOException {
+        ByteBuffer recv = ByteBuffer.wrap(new byte[length]);
         SocketAddress address;
 
         DatagramChannel channel = this.multicastStateManager.getMulticastSocket().getChannel();
@@ -536,7 +534,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         address = channel.receive(recv);
 
         if (address == null) {
-            if (!ex) return runtime.newSymbol("wait_readable");
+            if ( non_block ) return null; // :wait_readable or raise WaitReadable
             throw runtime.newErrnoEAGAINReadableError("multicast UDP does not support nonblocking");
         }
 
@@ -548,7 +546,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
 
         recv.flip();
-        RubyString result = runtime.newString(new ByteList(recv.array(), recv.position(), recv.limit()));
+        RubyString result = runtime.newString(new ByteList(recv.array(), recv.position(), recv.limit(), false));
 
         if (tuple != null) {
             tuple.result = result;

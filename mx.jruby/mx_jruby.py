@@ -225,6 +225,56 @@ class TimeBenchmarkSuite(MetricsBenchmarkSuite):
             'extra.metric.human': '%d/%d %s' % (n, len(region_data['samples']), region_data['human'])
         } for region, region_data in data.items() for n, sample in enumerate(region_data['samples'])]
 
+classic_benchmarks = [
+    'binary-trees',
+    'deltablue',
+    'fannkuch',
+    'mandelbrot',
+    'matrix-multiply',
+    'n-body',
+    'pidigits',
+    'red-black',
+    'richards',
+    'spectral-norm'
+]
+
+classic_benchmark_time = 120
+
+class ClassicBenchmarkSuite(RubyBenchmarkSuite):
+    def benchmarks(self):
+        return classic_benchmarks
+    
+    def name(self):
+        return 'classic'
+
+    def runBenchmark(self, benchmark, bmSuiteArgs):
+        arguments = ['benchmark']
+        if 'MX_BENCHMARK_OPTS' in os.environ:
+            arguments.extend(os.environ['MX_BENCHMARK_OPTS'].split(' '))
+        arguments.extend(['--simple'])
+        arguments.extend(['--time', str(classic_benchmark_time)])
+        arguments.extend(['classic/' + benchmark + '.rb'])
+        arguments.extend(bmSuiteArgs)
+        out = mx.OutputCapture()
+        jt(arguments, out=out)
+        
+        samples = [float(s) for s in out.data.split('\n')[1:-2]]
+        
+        warmed_up_samples = [sample for n, sample in enumerate(samples) if n / float(len(samples)) >= 0.5]
+        warmed_up_mean = sum(warmed_up_samples) / float(len(warmed_up_samples))
+        
+        return [{
+            'benchmark': benchmark,
+            'metric.name': 'throughput',
+            'metric.value': sample,
+            'metric.unit': 'op/s',
+            'metric.better': 'higher',
+            'metric.iteration': n,
+            'extra.metric.warmedup': 'true' if n / float(len(samples)) >= 0.5 else 'false',
+            'extra.metric.human': '%d/%d %fs' % (n, len(samples), warmed_up_mean)
+        } for n, sample in enumerate(samples)]
+
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
 mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())
 mx_benchmark.add_bm_suite(TimeBenchmarkSuite())
+mx_benchmark.add_bm_suite(ClassicBenchmarkSuite())

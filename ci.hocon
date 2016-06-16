@@ -23,7 +23,7 @@ common: {
   
   setup: ${common-setup}
 
-  timelimit: "30:00"
+  timelimit: "01:00:00"
 }
 
 no-graal: {
@@ -35,14 +35,15 @@ no-graal: {
 
 graal-core: {
   setup: ${common-setup} [
-    [rm, -rf, mx.jruby],
+    [mv, mx.jruby, temp_mx],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
     [mx, sclone, --kind, git, "https://github.com/graalvm/graal-core.git", graal-core],
     [cd, graal-core],
     [mx, sforceimports],
     [mx, --vm, server, build],
-    [cd, ../..]
+    [cd, ../..],
+    [mv, temp_mx, mx.jruby]
   ]
   
   environment: {
@@ -68,19 +69,39 @@ graalvm: {
   }
 }
 
-jruby-noindy: {
+jruby-noindy-metrics: {
   environment: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: noindy,
-    JRUBY_OPTS: "-X-T -Xcompile.invokedynamic=false"
+    JRUBY_OPTS: "-X-T -Xcompile.invokedynamic=false",
+    MX_BENCHMARK_OPTS: --no-graal
   }
 }
 
-jruby-indy: {
+jruby-noindy-benchmark: {
+  environment: {
+    GUEST_VM: jruby,
+    GUEST_VM_CONFIG: noindy,
+    JRUBY_OPTS: "-X-T -X+C -Xcompile.invokedynamic=false",
+    MX_BENCHMARK_OPTS: --no-graal
+  }
+}
+
+jruby-indy-metrics: {
   environment: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: indy,
-    JRUBY_OPTS: "-X-T -Xcompile.invokedynamic=true"
+    JRUBY_OPTS: "-X-T -Xcompile.invokedynamic=true",
+    MX_BENCHMARK_OPTS: --no-graal
+  }
+}
+
+jruby-indy-benchmark: {
+  environment: {
+    GUEST_VM: jruby,
+    GUEST_VM_CONFIG: indy,
+    JRUBY_OPTS: "-X-T -X+C -Xcompile.invokedynamic=true",
+    MX_BENCHMARK_OPTS: --no-graal
   }
 }
 
@@ -129,6 +150,17 @@ compiler-metrics: {
   ] ${post-process-and-upload-results}
 }
 
+setup-benchmarks: [
+  [mx, sclone, --kind, git, "https://github.com/jruby/benchmark-interface.git", benchmark-interface],
+  [mx, sclone, --kind, git, "https://github.com/jruby/all-ruby-benchmarks.git", all-ruby-benchmarks]
+]
+
+classic-benchmarks: {
+  run: ${setup-benchmarks} [
+    [mx, benchmark, classic]
+  ] ${post-process-and-upload-results}
+}
+
 builds: [
   {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
   {name: ruby-test-specs-command-line} ${common} ${gate-caps} {run: [${jt} [test, specs, ":command_line"]]},
@@ -137,14 +169,24 @@ builds: [
   {name: ruby-test-specs-library} ${common} ${gate-caps} {run: [${jt} [test, specs, ":library"]]},
   {name: ruby-test-specs-truffle} ${common} ${gate-caps} {run: [${jt} [test, specs, ":truffle"]]},
   {name: ruby-test-integration} ${common} ${gate-caps} {run: [${jt} [test, integration]]},
+  {name: ruby-test-gems} ${common} ${gate-caps} {
+    setup: ${common-setup} [[mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", jruby-truffle-gem-test-pack]]
+    environment: {GEM_HOME: jruby-truffle-gem-test-pack/gems}
+    run: [${jt} [test, gems]]
+  },
   {name: ruby-test-tck} ${common} ${gate-caps} {run: [${jt} [test, tck]]},
   {name: ruby-test-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
   
   {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},
   {name: ruby-test-compiler-graalvm} ${common} ${graalvm} ${gate-caps} {run: [${jt} [test, compiler]]},
   
-  {name: ruby-metrics-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy} ${metrics},
-  {name: ruby-metrics-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy} ${metrics},
+  {name: ruby-metrics-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-metrics} ${metrics},
+  {name: ruby-metrics-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-metrics} ${metrics},
   {name: ruby-metrics-truffle} ${common} ${no-graal} ${bench-caps} ${jruby-truffle} ${metrics},
-  {name: ruby-metrics-compiler} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${compiler-metrics}
+  {name: ruby-metrics-compiler-graalvm} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${compiler-metrics},
+  
+  {name: ruby-benchmarks-classic-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${classic-benchmarks},
+  {name: ruby-benchmarks-classic-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${classic-benchmarks},
+  {name: ruby-benchmarks-classic-graal-core} ${common} ${graal-core} ${bench-caps} ${jruby-truffle} ${classic-benchmarks},
+  {name: ruby-benchmarks-classic-graalvm} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${classic-benchmarks}
 ]

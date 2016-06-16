@@ -532,11 +532,17 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
     }
 
-    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum) {
+    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType) {
         if (!MethodIndex.hasFastFixnumOps(name)) {
             pushFixnum(fixnum);
-            invokeOther(file, line, name, 1, false, false);
+            if (callType == CallType.NORMAL) {
+                invokeOther(file, line, name, 1, false, false);
+            } else {
+                invokeSelf(file, line, name, 1, false, callType, false);
+            }
+            return;
         }
+
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, long.class));
@@ -582,11 +588,17 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeOtherOneFloat(String file, int line, String name, double flote) {
+    public void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType) {
         if (!MethodIndex.hasFastFloatOps(name)) {
             pushFloat(flote);
-            invokeOther(file, line, name, 1, false, false);
+            if (callType == CallType.NORMAL) {
+                invokeOther(file, line, name, 1, false, false);
+            } else {
+                invokeSelf(file, line, name, 1, false, callType, false);
+            }
+            return;
         }
+
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, double.class));

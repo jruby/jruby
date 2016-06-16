@@ -727,22 +727,10 @@ public final class Ruby implements Constantizable {
      *
      * @param scriptNode The root node of the script to be executed
      * bytecode before execution
+ *     @param wrap whether to wrap the execution in an anonymous module
      * @return The result of executing the script
      */
-    @Deprecated
-    public IRubyObject runNormally(Node scriptNode, boolean unused) {
-        return runNormally(scriptNode);
-    }
-
-    /**
-     * Run the specified script without any of the loop-processing wrapper
-     * code.
-     *
-     * @param scriptNode The root node of the script to be executed
-     * bytecode before execution
-     * @return The result of executing the script
-     */
-    public IRubyObject runNormally(Node scriptNode) {
+    public IRubyObject runNormally(Node scriptNode, boolean wrap) {
         ScriptAndCode scriptAndCode = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
@@ -757,13 +745,25 @@ public final class Ruby implements Constantizable {
                 return getNil();
             }
 
-            return runScript(scriptAndCode.script());
+            return runScript(scriptAndCode.script(), wrap);
         } else {
             // FIXME: temporarily allowing JIT to fail for $0 and fall back on interpreter
 //            failForcedCompile(scriptNode);
 
             return runInterpreter(scriptNode);
         }
+    }
+
+    /**
+     * Run the specified script without any of the loop-processing wrapper
+     * code.
+     *
+     * @param scriptNode The root node of the script to be executed
+     * bytecode before execution
+     * @return The result of executing the script
+     */
+    public IRubyObject runNormally(Node scriptNode) {
+        return runNormally(scriptNode, false);
     }
 
     private ScriptAndCode precompileCLI(RootNode scriptNode) {
@@ -3025,12 +3025,7 @@ public final class Ruby implements Constantizable {
         try {
             context.setFileAndLine(scriptNode.getFile(), scriptNode.getLine());
 
-            if (config.isAssumePrinting() || config.isAssumeLoop()) {
-                runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
-                        config.isSplit());
-            } else {
-                runNormally(scriptNode);
-            }
+            runNormally(scriptNode, wrap);
         } finally {
             context.setFileAndLine(oldFile, oldLine);
         }

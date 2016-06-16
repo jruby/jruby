@@ -384,7 +384,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param name name of the method to invoke
      */
-    public abstract void invokeOtherOneFixnum(String file, int line, String name, long fixnum);
+    public abstract void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType);
 
     /**
      * Invoke a float-receiving method on an object other than self.
@@ -393,7 +393,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param name name of the method to invoke
      */
-    public abstract void invokeOtherOneFloat(String file, int line, String name, double flote);
+    public abstract void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType);
 
 
     /**

@@ -109,20 +109,17 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod
     public IRubyObject addr(ThreadContext context) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
-        return runtime.newArray(
-                runtime.newString("AF_UNIX"),
-                RubyString.newEmptyString(runtime));
+        return runtime.newArray( runtime.newString("AF_UNIX"),  RubyString.newEmptyString(runtime) );
     }
 
     @JRubyMethod
     public IRubyObject peeraddr(ThreadContext context) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
-        return runtime.newArray(
-                runtime.newString("AF_UNIX"),
-                runtime.newString(openFile.getPath()));
+        final RubyString path = openFile.getPath() == null ? RubyString.newEmptyString(runtime) : runtime.newString(openFile.getPath());
+        return runtime.newArray( runtime.newString("AF_UNIX"), path );
     }
 
     @JRubyMethod(name = "recvfrom", required = 1, optional = 1)

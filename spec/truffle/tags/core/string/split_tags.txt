@@ -1,2 +1,0 @@
-fails:String#split with String splits between characters when its argument is an empty string
-fails:String#split with Regexp splits between characters when regexp matches a zero-length string
