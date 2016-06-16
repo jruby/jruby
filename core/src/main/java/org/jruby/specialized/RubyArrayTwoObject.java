@@ -313,19 +313,19 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     public IRubyObject subseq(RubyClass metaClass, long beg, long len, boolean light) {
         if (!packed()) return super.subseq(metaClass, beg, len, light);
 
-        if (len == 0) return newEmptyArray(metaClass.getClassRuntime());
+        Ruby runtime = getRuntime();
 
-        if (beg < 0 || beg > 1 || len < 1 || len > 2) {
-            unpack();
-            return super.subseq(metaClass, beg, len, light);
+        if (beg > 2 || beg < 0 || len < 0) return runtime.getNil();
+
+        if (len == 0 || beg == 2) return new RubyArray(runtime, metaClass, IRubyObject.NULL_ARRAY);
+
+        if (beg == 0) {
+            if (len == 1) return new RubyArrayOneObject(metaClass, car);
+            return new RubyArrayTwoObject(metaClass, this);
         }
 
-        if (len == 1) {
-            if (beg == 0) return new RubyArrayOneObject(metaClass, car);
-            if (beg == 1) return new RubyArrayOneObject(metaClass, cdr);
-        }
-
-        return new RubyArrayTwoObject(metaClass, this);
+        // beg == 1, len >= 1
+        return new RubyArrayOneObject(metaClass, cdr);
     }
 
     @Override
