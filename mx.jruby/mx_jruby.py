@@ -225,35 +225,26 @@ class TimeBenchmarkSuite(MetricsBenchmarkSuite):
             'extra.metric.human': '%d/%d %s' % (n, len(region_data['samples']), region_data['human'])
         } for region, region_data in data.items() for n, sample in enumerate(region_data['samples'])]
 
-classic_benchmarks = [
-    'binary-trees',
-    'deltablue',
-    'fannkuch',
-    'mandelbrot',
-    'matrix-multiply',
-    'n-body',
-    'pidigits',
-    'red-black',
-    'richards',
-    'spectral-norm'
-]
-
-classic_benchmark_time = 120
-
-class ClassicBenchmarkSuite(RubyBenchmarkSuite):
+class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
     def benchmarks(self):
-        return classic_benchmarks
+        raise NotImplementedError()
     
     def name(self):
-        return 'classic'
+        raise NotImplementedError()
+    
+    def time(self):
+        raise NotImplementedError()
+    
+    def directory(self):
+        raise NotImplementedError()
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         arguments = ['benchmark']
         if 'MX_BENCHMARK_OPTS' in os.environ:
             arguments.extend(os.environ['MX_BENCHMARK_OPTS'].split(' '))
         arguments.extend(['--simple'])
-        arguments.extend(['--time', str(classic_benchmark_time)])
-        arguments.extend(['classic/' + benchmark + '.rb'])
+        arguments.extend(['--time', str(self.time())])
+        arguments.extend([self.directory() + '/' + benchmark + '.rb'])
         arguments.extend(bmSuiteArgs)
         out = mx.OutputCapture()
         jt(arguments, out=out)
@@ -274,7 +265,67 @@ class ClassicBenchmarkSuite(RubyBenchmarkSuite):
             'extra.metric.human': '%d/%d %fs' % (n, len(samples), warmed_up_mean)
         } for n, sample in enumerate(samples)]
 
+classic_benchmarks = [
+    'binary-trees',
+    'deltablue',
+    'fannkuch',
+    'mandelbrot',
+    'matrix-multiply',
+    'n-body',
+    'pidigits',
+    'red-black',
+    'richards',
+    'spectral-norm'
+]
+
+classic_benchmark_time = 120
+
+class ClassicBenchmarkSuite(AllBenchmarksBenchmarkSuite):
+    def name(self):
+        return 'classic'
+    
+    def directory(self):
+        return 'classic'
+    
+    def benchmarks(self):
+        return classic_benchmarks
+    
+    def time(self):
+        return classic_benchmark_time
+
+chunky_benchmarks = [
+    'chunky-color-r',
+    'chunky-color-g',
+    'chunky-color-b',
+    'chunky-color-a',
+    'chunky-color-compose-quick',
+    'chunky-canvas-resampling-bilinear',
+    'chunky-canvas-resampling-nearest-neighbor',
+    'chunky-canvas-resampling-steps-residues',
+    'chunky-canvas-resampling-steps',
+    'chunky-decode-png-image-pass',
+    'chunky-encode-png-image-pass-to-stream',
+    'chunky-operations-compose',
+    'chunky-operations-replace'
+]
+
+chunky_benchmark_time = 120
+
+class ChunkyBenchmarkSuite(AllBenchmarksBenchmarkSuite):
+    def name(self):
+        return 'chunky'
+    
+    def directory(self):
+        return 'chunky_png'
+
+    def benchmarks(self):
+        return chunky_benchmarks
+    
+    def time(self):
+        return chunky_benchmark_time
+
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
 mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())
 mx_benchmark.add_bm_suite(TimeBenchmarkSuite())
 mx_benchmark.add_bm_suite(ClassicBenchmarkSuite())
+mx_benchmark.add_bm_suite(ChunkyBenchmarkSuite())

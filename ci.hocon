@@ -162,6 +162,12 @@ classic-benchmarks: {
   ] ${post-process-and-upload-results}
 }
 
+chunky-benchmarks: {
+  run: ${setup-benchmarks} [
+    [mx, benchmark, chunky]
+  ] ${post-process-and-upload-results}
+}
+
 builds: [
   {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
   {name: ruby-test-specs-command-line} ${common} ${gate-caps} {run: [${jt} [test, specs, ":command_line"]]},
@@ -189,5 +195,10 @@ builds: [
   {name: ruby-benchmarks-classic-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${classic-benchmarks},
   {name: ruby-benchmarks-classic-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${classic-benchmarks},
   {name: ruby-benchmarks-classic-graal-core} ${common} ${graal-core} ${bench-caps} ${jruby-truffle} ${classic-benchmarks},
-  {name: ruby-benchmarks-classic-graalvm} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${classic-benchmarks}
+  {name: ruby-benchmarks-classic-graalvm} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${classic-benchmarks},
+  
+  {name: ruby-benchmarks-chunky-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${chunky-benchmarks},
+  {name: ruby-benchmarks-chunky-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${chunky-benchmarks},
+  {name: ruby-benchmarks-chunky-graal-core} ${common} ${graal-core} ${bench-caps} ${jruby-truffle} ${chunky-benchmarks},
+  {name: ruby-benchmarks-chunky-graalvm} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${chunky-benchmarks}
 ]
