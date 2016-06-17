@@ -13,7 +13,7 @@ class MSpecScript
   set :target, File.expand_path("../../../bin/jruby#{windows? ? '.bat' : ''}", __FILE__)
 
   if ARGV[-2..-1] != %w[-t ruby] # No flags for MRI
-    set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G]
+    set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G -Xtruffle.graal.warn_unless=false]
   end
 
   set :capi, [

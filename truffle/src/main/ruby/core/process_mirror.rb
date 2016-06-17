@@ -230,6 +230,19 @@ module Rubinius
           end
         end
 
+        def convert_file_mode(obj)
+          case obj
+          when ::Fixnum
+            obj
+          when ::String
+            OFLAGS[obj]
+          when nil
+            OFLAGS["r"]
+          else
+            Rubinius::Type.coerce_to obj, Integer, :to_int
+          end
+        end
+
         # Mapping of string open modes to integer oflag versions.
         OFLAGS = {
           "r"  => ::File::RDONLY,
@@ -242,8 +255,10 @@ module Rubinius
 
         def spawn(options, command, arguments)
           options ||= {}
-          env     = options[:unsetenv_others] ? {} : ENV.to_hash
-          env.merge! Hash[options[:env]] if options[:env]
+          env = options.delete(:unsetenv_others) ? {} : ENV.to_hash
+          if add_to_env = options.delete(:env)
+            env.merge! Hash[add_to_env]
+          end
 
           env_array = env.map { |k, v| "#{k}=#{v}" }
 
@@ -251,7 +266,7 @@ module Rubinius
             command, arguments = 'bash', ['bash', '-c', command]
           end
 
-          Truffle::Process.spawn command, arguments, env_array
+          Truffle::Process.spawn command, arguments, env_array, options
         end
 
         def exec(command, args)
