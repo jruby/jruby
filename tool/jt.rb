@@ -17,7 +17,7 @@ require 'fileutils'
 require 'json'
 require 'timeout'
 
-GRAALVM_VERSION = "0.11"
+GRAALVM_VERSION = '0.12'
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 M2_REPO = File.expand_path('~/.m2/repository')
@@ -42,11 +42,11 @@ module Utilities
   end
 
   def self.graal_locations
-    from_branch = ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"]
-    yield File.expand_path(from_branch) if from_branch
-    
     from_env = ENV['GRAAL_BIN']
     yield File.expand_path(from_env) if from_env
+
+    from_branch = ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"]
+    yield File.expand_path(from_branch) if from_branch
 
     rel_java_bin = "bin/java" # "jre/bin/javao"
     ['', '../', '../../'].each do |prefix|
