@@ -89,7 +89,7 @@ public abstract class TruffleBootNodes {
     public abstract static class RunJRubyRootNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()")IndirectCallNode callNode) {
+        public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()") IndirectCallNode callNode) {
             coreLibrary().getGlobalVariables().put(
                     "$0",
                     StringOperations.createString(getContext(),
@@ -100,10 +100,6 @@ public abstract class TruffleBootNodes {
             final Source source;
 
             try {
-                if (!inputFile.equals("-e")) {
-                    inputFile = new File(inputFile).getCanonicalPath();
-                }
-
                 source = getContext().getSourceCache().getSource(inputFile);
             } catch (IOException e) {
                 throw new RuntimeException(e);

@@ -44,7 +44,6 @@ public class SourceLoader {
             if (!file.canRead()) {
                 throw new IOException("Can't read file " + canonicalPath);
             }
-            assert file.getCanonicalPath().equals(canonicalPath) : canonicalPath;
             return Source.fromFileName(canonicalPath);
         }
     }

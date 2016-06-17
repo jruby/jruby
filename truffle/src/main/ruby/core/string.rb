@@ -744,6 +744,7 @@ class String
   def sub(pattern, replacement=undefined)
     # Because of the behavior of $~, this is duplicated from sub! because
     # if we call sub! from sub, the last_match can't be updated properly.
+    dup = self.dup
 
     unless valid_encoding?
       raise ArgumentError, "invalid byte sequence in #{encoding}"
@@ -769,7 +770,7 @@ class String
     end
 
     pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
-    match = pattern.match_from(self, 0)
+    match = pattern.match_from(dup, 0)
 
     Regexp.last_match = match
 
@@ -799,7 +800,7 @@ class String
       ret.append(match.post_match)
       tainted ||= val.tainted?
     else
-      return self
+      return dup
     end
 
     ret.taint if tainted
