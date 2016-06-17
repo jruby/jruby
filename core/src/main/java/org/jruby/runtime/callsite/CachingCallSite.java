@@ -23,7 +23,7 @@ public abstract class CachingCallSite extends CallSite {
         //totalCallSites++;
     }
 
-    public CacheEntry getCache() {
+    public final CacheEntry getCache() {
         return cache;
     }
 
@@ -39,7 +39,7 @@ public abstract class CachingCallSite extends CallSite {
         return ClassIndex.NO_INDEX.ordinal();
     }
 
-    public String getMethodName() {
+    public final String getMethodName() {
         return methodName;
     }
 
