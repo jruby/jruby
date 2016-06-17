@@ -1091,7 +1091,7 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    public Ruby getClassRuntime() {
+    public final Ruby getClassRuntime() {
         return runtime;
     }
 

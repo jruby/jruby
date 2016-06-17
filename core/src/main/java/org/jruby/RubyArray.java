@@ -408,10 +408,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         }
     }
 
-    /** Getter for property list.
-     * @return Value of property list.
+    /**
+     * @deprecated RubyArray implements List, use it directly
+     * @return a read-only copy of this list
      */
-    public List getList() {
+    public final List<IRubyObject> getList() {
         return Arrays.asList(toJavaArray());
     }
 

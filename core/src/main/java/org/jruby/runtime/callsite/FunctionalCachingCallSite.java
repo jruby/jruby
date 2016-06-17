@@ -5,9 +5,9 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class FunctionalCachingCallSite extends CachingCallSite {
+
     public FunctionalCachingCallSite(String methodName) {
         super(methodName, CallType.FUNCTIONAL);
-        totalCallSites++;
     }
 
     protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {

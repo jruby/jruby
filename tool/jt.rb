@@ -492,7 +492,18 @@ module Commands
     end
 
     if args.delete('--graal')
-      env_vars["JAVACMD"] = Utilities.find_graal
+      if graal_home = ENV["GRAAL_HOME"]
+        graal_home = File.expand_path(graal_home)
+        command_line = `mx -v -p #{graal_home} vm -version 2>/dev/null`.lines.last
+        vm_args = command_line.split
+        vm_args.pop # Drop "-version"
+        graal_bin = vm_args.shift
+        jruby_args = vm_args.map { |arg| "-J#{arg}" } + jruby_args
+      else
+        graal_bin = Utilities.find_graal
+      end
+
+      env_vars["JAVACMD"] = graal_bin
       jruby_args.delete('-Xtruffle.graal.warn_unless=false')
     end
 

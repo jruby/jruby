@@ -42,7 +42,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.Constantizable;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
@@ -50,11 +49,11 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ContextAwareBlockBody;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -1025,12 +1024,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return object.convertToString().getByteList().toString();
     }
 
-    private static class SymbolProcBody extends ContextAwareBlockBody {
+    private static final class SymbolProcBody extends ContextAwareBlockBody {
         private final CallSite site;
 
         public SymbolProcBody(Ruby runtime, String symbol) {
             super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
-            this.site = new FunctionalCachingCallSite(symbol);
+            this.site = MethodIndex.getFunctionalCallSite(symbol);
         }
 
         private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
@@ -1038,8 +1037,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 throw context.runtime.newArgumentError("no receiver given");
             }
 
-            IRubyObject self = array.shift(context);
-
+            final IRubyObject self = array.shift(context);
             return site.call(context, self, self, array.toJavaArray(), blockArg);
         }
 

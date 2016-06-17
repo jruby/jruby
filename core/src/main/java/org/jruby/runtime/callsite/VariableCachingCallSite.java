@@ -7,7 +7,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class VariableCachingCallSite extends CachingCallSite {
     public VariableCachingCallSite(String methodName) {
         super(methodName, CallType.VARIABLE);
-        totalCallSites++;
     }
 
     protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {
