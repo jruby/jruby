@@ -1080,10 +1080,8 @@ public final class ThreadContext {
     }
 
     public int profileEnter(String name, DynamicMethod nextMethod) {
-        if (isProfiling()) {
-            // TODO This can be removed, because the profiled method will be added in the MethodEnhancer if necessary
-            getRuntime().getProfiledMethods().addProfiledMethod( name, nextMethod );
-        }
+        // profiled method is added in the MethodEnhancer (if necessary)
+        // @see BuiltinProfilingService.DefaultMethodEnhancer
         return profileEnter((int) nextMethod.getSerialNumber());
     }
 
