@@ -15,12 +15,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class CachingCallSite extends CallSite {
     protected CacheEntry cache = CacheEntry.NULL_CACHE;
-    public static volatile int totalCallSites;
-//    private AtomicBoolean isPolymorphic = new AtomicBoolean(false);
+    //public static volatile int totalCallSites;
+    //private AtomicBoolean isPolymorphic = new AtomicBoolean(false);
 
     public CachingCallSite(String methodName, CallType callType) {
         super(methodName, callType);
-        totalCallSites++;
+        //totalCallSites++;
     }
 
     public CacheEntry getCache() {
