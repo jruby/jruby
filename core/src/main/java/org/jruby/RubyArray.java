@@ -4058,10 +4058,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return internalRotate(context, RubyNumeric.fix2int(cnt));
     }
 
-
     // Enumerable direct implementations (non-"each" versions)
+    // NOTE: not a @JRubyMethod(name = "all?") as there's no Array#all? on MRI
     public IRubyObject all_p(ThreadContext context, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, block, Arity.OPTIONAL);
+        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, block);
         if (!block.isGiven()) return all_pBlockless(context);
 
         for (int i = 0; i < realLength; i++) {
@@ -4082,7 +4082,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "any?")
     public IRubyObject any_p(ThreadContext context, Block block) {
         if (isEmpty()) return context.runtime.getFalse();
-        if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, block, Arity.OPTIONAL);
+        if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, block);
         if (!block.isGiven()) return any_pBlockless(context);
 
         for (int i = 0; i < realLength; i++) {
