@@ -7,7 +7,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class NormalCachingCallSite extends CachingCallSite {
     public NormalCachingCallSite(String methodName) {
         super(methodName, CallType.NORMAL);
-        totalCallSites++;
     }
 
     protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {
