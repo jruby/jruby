@@ -143,7 +143,7 @@ public class SocketUtils {
         return Sockaddr.pack_sockaddr_in(context, portNum, hostStr);
     }
 
-    public static IRubyObject unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
+    public static RubyArray unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
         return Sockaddr.unpack_sockaddr_in(context, addr);
     }
 
@@ -392,27 +392,18 @@ public class SocketUtils {
             port = list.get(1).toString();
 
         } else if (arg0 instanceof RubyString) {
-            String arg = ((RubyString)arg0).toString();
+            String arg = ((RubyString) arg0).toString();
             Matcher m = STRING_IPV4_ADDRESS_PATTERN.matcher(arg);
 
             if (!m.matches()) {
-                IRubyObject obj = unpack_sockaddr_in(context, arg0);
+                RubyArray portAndHost = unpack_sockaddr_in(context, arg0);
 
-                if (obj instanceof RubyArray) {
-                    List list = ((RubyArray)obj).getList();
-                    int len = list.size();
-
-                    if (len != 2) {
-                        throw runtime.newArgumentError("invalid address representation");
-                    }
-
-                    host = list.get(1).toString();
-                    port = list.get(0).toString();
-
-                } else {
-                    throw runtime.newArgumentError("invalid address string");
-
+                if (portAndHost.size() != 2) {
+                    throw runtime.newArgumentError("invalid address representation");
                 }
+
+                host = portAndHost.eltInternal(1).toString();
+                port = portAndHost.eltInternal(0).toString();
 
             } else if ((host = m.group(IPV4_HOST_GROUP)) == null || host.length() == 0 ||
                     (port = m.group(IPV4_PORT_GROUP)) == null || port.length() == 0) {
