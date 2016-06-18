@@ -43,12 +43,13 @@ module Utilities
   
   def self.find_graal_javacmd_and_options
     graalvm_bin_var = ENV['GRAALVM_BIN'] || ENV["GRAALVM_BIN_#{mangle_for_env(git_branch)}"]
+    graal_home_var = ENV['GRAAL_HOME'] || ENV["GRAAL_HOME_#{mangle_for_env(git_branch)}"]
     
     if graalvm_bin_var
       javacmd = File.expand_path(graalvm_bin_var)
       options = []
-    elsif ENV['GRAAL_HOME']
-      graal_home = File.expand_path(ENV['GRAAL_HOME'])
+    elsif graal_home_var
+      graal_home = File.expand_path(graal_home_var)
       command_line = `mx -v -p #{graal_home} vm -version 2>/dev/null`.lines.last
       vm_args = command_line.split
       vm_args.pop # Drop "-version"
@@ -380,6 +381,7 @@ module Commands
     puts '  GRAALVM_BIN_...git_branch_name...            GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAALVM_BIN_TRUFFLE_HEAD'
     puts '  GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler'
+    puts '  GRAAL_HOME_...git_branch_name...'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
     puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
