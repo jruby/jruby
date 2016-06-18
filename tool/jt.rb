@@ -179,31 +179,7 @@ module Utilities
   end
 
   def self.ensure_igv_running
-    unless igv_running?
-      graal_home = ENV['GRAAL_HOME']
-      raise "You need to set $GRAAL_HOME" unless graal_home
-      
-      spawn 'mx -p #{graal_home} --vm server igv', pgroup: true
-
-      puts
-      puts
-      puts "-------------"
-      puts "Waiting for IGV start"
-      puts "The first time you run IGV it may take several minutes to download dependencies and compile"
-      puts "-------------"
-      puts
-      puts
-
-      sleep 6
-
-      until igv_running?
-        puts 'still waiting for IGV to appear in ps ax...'
-        sleep 6
-      end
-
-      puts 'just a few more seconds...'
-      sleep 6
-    end
+    abort "I can't see IGV running - go to your checkout of Graal and run 'mx igv' in a separate shell, then run this command again" unless igv_running?
   end
 
   def self.jruby_version
