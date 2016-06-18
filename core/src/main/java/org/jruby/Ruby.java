@@ -4782,15 +4782,13 @@ public final class Ruby implements Constantizable {
      *
      * @param name the name of the method
      * @param method
-     * @deprecated This should be an implementation detail of the ProfilingService and should remove from the Ruby class.
      */
-    @Deprecated
+    @SuppressWarnings("deprecation")
     void addProfiledMethod(final String name, final DynamicMethod method) {
         if (!config.isProfiling()) return;
         if (method.isUndefined()) return;
 
         getProfiledMethods().addProfiledMethod( name, method );
-
     }
 
     /**

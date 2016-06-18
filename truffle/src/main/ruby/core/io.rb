@@ -1914,6 +1914,8 @@ class IO
     @pid
   end
 
+  attr_writer :pid
+
   def pipe=(v)
     @pipe = !!v
   end

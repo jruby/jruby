@@ -40,33 +40,31 @@ module Utilities
       end
     end
   end
-
-  def self.graal_locations
-    from_env = ENV['GRAAL_BIN']
-    yield File.expand_path(from_env) if from_env
-
-    from_branch = ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"]
-    yield File.expand_path(from_branch) if from_branch
-
-    rel_java_bin = "bin/java" # "jre/bin/javao"
-    ['', '../', '../../'].each do |prefix|
-      %w[dk re].each do |kind|
-        path = "#{prefix}graalvm-#{GRAALVM_VERSION}-#{kind}/#{rel_java_bin}"
-        yield File.expand_path(path, JRUBY_DIR)
+  
+  def self.find_graal_javacmd_and_options
+    graalvm_bin_var = ENV['GRAALVM_BIN'] || ENV["GRAALVM_BIN_#{mangle_for_env(git_branch)}"]
+    graal_home_var = ENV['GRAAL_HOME'] || ENV["GRAAL_HOME_#{mangle_for_env(git_branch)}"]
+    
+    if graalvm_bin_var
+      javacmd = File.expand_path(graalvm_bin_var)
+      options = []
+    elsif graal_home_var
+      graal_home = File.expand_path(graal_home_var)
+      if ENV['JVMCI_JAVA_HOME']
+        mx_options = "--java-home #{ENV['JVMCI_JAVA_HOME']}"
+      else
+        mx_options = ''
       end
+      p "mx -v #{mx_options} -p #{graal_home} vm -version 2>/dev/null"
+      command_line = `mx -v #{mx_options} -p #{graal_home} vm -version 2>/dev/null`.lines.last
+      vm_args = command_line.split
+      vm_args.pop # Drop "-version"
+      javacmd = vm_args.shift
+      options = vm_args.map { |arg| "-J#{arg}" }
+    else
+      raise 'set one of GRAALVM_BIN or GRAAL_HOME in order to use Graal'
     end
-
-    ['', '../', '../../'].each do |prefix|
-      path = Dir["#{prefix}graal/jvmci/jdk1.8.*/product/#{rel_java_bin}"].sort.last
-      yield File.expand_path(path, JRUBY_DIR) if path
-    end
-  end
-
-  def self.find_graal
-    graal_locations do |location|
-      return location if File.executable?(location)
-    end
-    raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
+    [javacmd, options]
   end
 
   def self.find_sulong_graal(dir)
@@ -174,50 +172,12 @@ module Utilities
     name.upcase.tr('-', '_')
   end
 
-  def self.find_jvmci
-    jvmci_locations = [
-      ENV['JVMCI_DIR'],
-      ENV["JVMCI_DIR#{mangle_for_env(git_branch)}"]
-    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
-
-    not_found = -> {
-      raise "couldn't find JVMCI"
-    }
-
-    jvmci_locations.find(not_found) do |location|
-      Dir.exist?(location)
-    end
-  end
-
   def self.igv_running?
     `ps ax`.include?('idealgraphvisualizer')
   end
 
   def self.ensure_igv_running
-    unless igv_running?
-      Dir.chdir(find_jvmci) do
-        spawn 'mx --vm server igv', pgroup: true
-      end
-
-      puts
-      puts
-      puts "-------------"
-      puts "Waiting for IGV start"
-      puts "The first time you run IGV it may take several minutes to download dependencies and compile"
-      puts "-------------"
-      puts
-      puts
-
-      sleep 3
-
-      until igv_running?
-        puts 'still waiting for IGV to appear in ps ax...'
-        sleep 3
-      end
-
-      puts 'just a few more seconds...'
-      sleep 6
-    end
+    abort "I can't see IGV running - go to your checkout of Graal and run 'mx igv' in a separate shell, then run this command again" unless igv_running?
   end
 
   def self.jruby_version
@@ -375,7 +335,7 @@ module Commands
     puts 'jt irb                                         irb'
     puts 'jt rebuild                                     clean and build'
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
-    puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
+    puts '    --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME and maybe JVMCI_JAVA_HOME)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
     puts '    --sulong        add Sulong to the classpath (set SULONG_DIR, implies --graal but finds it from the SULONG_DIR)'
     puts '    --asm           show assembly (implies --graal)'
@@ -423,11 +383,13 @@ module Commands
     puts 'recognised environment variables:'
     puts
     puts '  RUBY_BIN                                     The JRuby+Truffle executable to use (normally just bin/jruby)'
-    puts '  GRAAL_BIN                                    GraalVM executable (java command) to use'
-    puts '  GRAAL_BIN_...git_branch_name...              GraalVM executable to use for a given branch'
-    puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
-    puts '  JVMCI_DIR                                    JMVCI repository checkout to use when running IGV (mx must already be on the $PATH)'
-    puts '  JVMCI_DIR_...git_branch_name...              JMVCI repository to use for a given branch'
+    puts '  GRAALVM_BIN                                  GraalVM executable (java command) to use'
+    puts '  GRAALVM_BIN_...git_branch_name...            GraalVM executable to use for a given branch'
+    puts '           branch names are mangled - eg truffle-head becomes GRAALVM_BIN_TRUFFLE_HEAD'
+    puts '  GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler (make sure mx is on your path and maybe set JVMCI_JAVA_HOME)'
+    puts '  GRAAL_HOME_...git_branch_name...'
+    puts '  JVMCI_JAVA                                   The Java with JVMCI to use with GRAAL_HOME'
+    puts '  JVMCI_JAVA_...git_branch_name...'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
     puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
@@ -492,18 +454,9 @@ module Commands
     end
 
     if args.delete('--graal')
-      if graal_home = ENV["GRAAL_HOME"]
-        graal_home = File.expand_path(graal_home)
-        command_line = `mx -v -p #{graal_home} vm -version 2>/dev/null`.lines.last
-        vm_args = command_line.split
-        vm_args.pop # Drop "-version"
-        graal_bin = vm_args.shift
-        jruby_args = vm_args.map { |arg| "-J#{arg}" } + jruby_args
-      else
-        graal_bin = Utilities.find_graal
-      end
-
-      env_vars["JAVACMD"] = graal_bin
+      javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
+      env_vars["JAVACMD"] = javacmd
+      jruby_args.push *javacmd_options
       jruby_args.delete('-Xtruffle.graal.warn_unless=false')
     end
 
@@ -628,8 +581,15 @@ module Commands
 
     jruby_opts << '-Xtruffle.exceptions.print_java=true'
 
+    no_java_cmd = args.delete('--no-java-cmd')
+    
+    unless no_java_cmd
+      javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
+      jruby_opts.push *javacmd_options
+    end
+
     env_vars = {}
-    env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
+    env_vars["JAVACMD"] = javacmd unless no_java_cmd
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
 
@@ -758,7 +718,9 @@ module Commands
     end
 
     if args.delete('--graal')
-      env_vars["JAVACMD"] = Utilities.find_graal
+      javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
+      env_vars["JAVACMD"] = javacmd
+      options.push *javacmd_options
       options << '-T-J-server'
     end
 
