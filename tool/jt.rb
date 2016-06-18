@@ -55,7 +55,6 @@ module Utilities
       else
         mx_options = ''
       end
-      p "mx -v #{mx_options} -p #{graal_home} vm -version 2>/dev/null"
       command_line = `mx -v #{mx_options} -p #{graal_home} vm -version 2>/dev/null`.lines.last
       vm_args = command_line.split
       vm_args.pop # Drop "-version"
