@@ -34,6 +34,14 @@ no-graal: {
 }
 
 graal-core: {
+  downloads: {
+    JVMCI_JAVA_HOME: {
+      name: labsjdk,
+      version: "8u92-jvmci-0.14",
+      platformspecific: true
+    }
+  }
+  
   setup: ${common-setup} [
     [mv, mx.jruby, temp_mx],
     [mkdir, graal-workspace],
@@ -47,7 +55,7 @@ graal-core: {
   ]
   
   environment: {
-    GRAALVM_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java, // temporarily looks like GraalVM - will use GRAAL_HOME later
+    GRAAL_HOME: graal-workspace/graal-core,
     HOST_VM: server,
     HOST_VM_CONFIG: graal-core
   }
