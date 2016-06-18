@@ -380,7 +380,7 @@ module Commands
     puts '  GRAALVM_BIN                                  GraalVM executable (java command) to use'
     puts '  GRAALVM_BIN_...git_branch_name...            GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAALVM_BIN_TRUFFLE_HEAD'
-    puts '  GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler'
+    puts '  GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler (make sure mx is on your path)'
     puts '  GRAAL_HOME_...git_branch_name...'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
