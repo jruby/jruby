@@ -45,7 +45,7 @@ module Utilities
     from_env = ENV['GRAALVM_BIN']
     yield File.expand_path(from_env) if from_env
 
-    from_branch = ENV["GRAALVM_BIN#{mangle_for_env(git_branch)}"]
+    from_branch = ENV["GRAALVM_BIN_#{mangle_for_env(git_branch)}"]
     yield File.expand_path(from_branch) if from_branch
 
     rel_java_bin = "bin/java" # "jre/bin/javao"
@@ -67,6 +67,22 @@ module Utilities
       return location if File.executable?(location)
     end
     raise "couldn't find GraalVM - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory, or set GRAALVM_BIN"
+  end
+  
+  def self.find_graal_javacmd_and_options
+    if graal_home = ENV["GRAAL_HOME"]
+      graal_home = File.expand_path(graal_home)
+      command_line = `mx -v -p #{graal_home} vm -version 2>/dev/null`.lines.last
+      vm_args = command_line.split
+      vm_args.pop # Drop "-version"
+      javacmd = vm_args.shift
+      options = vm_args.map { |arg| "-J#{arg}" } + jruby_args
+    else
+      javacmd = Utilities.find_graalvm
+      options = []
+    end
+
+    [javacmd, options]
   end
 
   def self.find_sulong_graal(dir)
@@ -453,18 +469,9 @@ module Commands
     end
 
     if args.delete('--graal')
-      if graal_home = ENV["GRAAL_HOME"]
-        graal_home = File.expand_path(graal_home)
-        command_line = `mx -v -p #{graal_home} vm -version 2>/dev/null`.lines.last
-        vm_args = command_line.split
-        vm_args.pop # Drop "-version"
-        graal_bin = vm_args.shift
-        jruby_args = vm_args.map { |arg| "-J#{arg}" } + jruby_args
-      else
-        graal_bin = Utilities.find_graalvm
-      end
-
-      env_vars["JAVACMD"] = graal_bin
+      javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
+      env_vars["JAVACMD"] = javacmd
+      jruby_args.push *javacmd_options
       jruby_args.delete('-Xtruffle.graal.warn_unless=false')
     end
 
@@ -589,8 +596,15 @@ module Commands
 
     jruby_opts << '-Xtruffle.exceptions.print_java=true'
 
+    no_java_cmd = args.delete('--no-java-cmd')
+    
+    unless no_java_cmd
+      javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
+      jruby_opts.push *javacmd_options
+    end
+
     env_vars = {}
-    env_vars["JAVACMD"] = Utilities.find_graalvm unless args.delete('--no-java-cmd')
+    env_vars["JAVACMD"] = javacmd unless no_java_cmd
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
 
@@ -719,7 +733,9 @@ module Commands
     end
 
     if args.delete('--graal')
-      env_vars["JAVACMD"] = Utilities.find_graalvm
+      javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
+      env_vars["JAVACMD"] = javacmd
+      options.push *javacmd_options
       options << '-T-J-server'
     end
 
