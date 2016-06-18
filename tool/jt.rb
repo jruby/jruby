@@ -54,7 +54,7 @@ module Utilities
       vm_args = command_line.split
       vm_args.pop # Drop "-version"
       javacmd = vm_args.shift
-      options = vm_args.map { |arg| "-J#{arg}" } + jruby_args
+      options = vm_args.map { |arg| "-J#{arg}" }
     else
       raise 'set one of GRAALVM_BIN or GRAAL_HOME in order to use Graal'
     end
