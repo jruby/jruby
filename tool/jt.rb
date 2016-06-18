@@ -50,7 +50,13 @@ module Utilities
       options = []
     elsif graal_home_var
       graal_home = File.expand_path(graal_home_var)
-      command_line = `mx -v -p #{graal_home} vm -version 2>/dev/null`.lines.last
+      if ENV['JVMCI_JAVA_HOME']
+        mx_options = "--java-home #{ENV['JVMCI_JAVA_HOME']}"
+      else
+        mx_options = ''
+      end
+      p "mx -v #{mx_options} -p #{graal_home} vm -version 2>/dev/null"
+      command_line = `mx -v #{mx_options} -p #{graal_home} vm -version 2>/dev/null`.lines.last
       vm_args = command_line.split
       vm_args.pop # Drop "-version"
       javacmd = vm_args.shift
@@ -329,7 +335,7 @@ module Commands
     puts 'jt irb                                         irb'
     puts 'jt rebuild                                     clean and build'
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
-    puts '    --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME)'
+    puts '    --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME and maybe JVMCI_JAVA_HOME)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
     puts '    --sulong        add Sulong to the classpath (set SULONG_DIR, implies --graal but finds it from the SULONG_DIR)'
     puts '    --asm           show assembly (implies --graal)'
@@ -380,8 +386,10 @@ module Commands
     puts '  GRAALVM_BIN                                  GraalVM executable (java command) to use'
     puts '  GRAALVM_BIN_...git_branch_name...            GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAALVM_BIN_TRUFFLE_HEAD'
-    puts '  GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler (make sure mx is on your path)'
+    puts '  GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler (make sure mx is on your path and maybe set JVMCI_JAVA_HOME)'
     puts '  GRAAL_HOME_...git_branch_name...'
+    puts '  JVMCI_JAVA                                   The Java with JVMCI to use with GRAAL_HOME'
+    puts '  JVMCI_JAVA_...git_branch_name...'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
     puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
