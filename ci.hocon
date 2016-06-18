@@ -48,7 +48,7 @@ graal-core: {
   ]
   
   environment: {
-    GRAAL_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java,
+    GRAALVM_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java, // temporarily looks like GraalVM - will use GRAAL_HOME later
     HOST_VM: server,
     HOST_VM_CONFIG: graal-core
   }
@@ -64,7 +64,7 @@ graalvm: {
   }
   
   environment: {
-    GRAAL_BIN: "$GRAALVM_DIR/bin/java"
+    GRAALVM_BIN: "$GRAALVM_DIR/bin/java"
     HOST_VM: server,
     HOST_VM_CONFIG: graal-enterprise
   }

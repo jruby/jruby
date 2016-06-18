@@ -41,11 +41,11 @@ module Utilities
     end
   end
 
-  def self.graal_locations
-    from_env = ENV['GRAAL_BIN']
+  def self.graalvm_locations
+    from_env = ENV['GRAALVM_BIN']
     yield File.expand_path(from_env) if from_env
 
-    from_branch = ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"]
+    from_branch = ENV["GRAALVM_BIN#{mangle_for_env(git_branch)}"]
     yield File.expand_path(from_branch) if from_branch
 
     rel_java_bin = "bin/java" # "jre/bin/javao"
@@ -62,11 +62,11 @@ module Utilities
     end
   end
 
-  def self.find_graal
-    graal_locations do |location|
+  def self.find_graalvm
+    graalvm_locations do |location|
       return location if File.executable?(location)
     end
-    raise "couldn't find graal - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory"
+    raise "couldn't find GraalVM - download it as described in https://github.com/jruby/jruby/wiki/Downloading-GraalVM and extract it into the JRuby repository or parent directory, or set GRAALVM_BIN"
   end
 
   def self.find_sulong_graal(dir)
@@ -337,7 +337,7 @@ module Commands
     puts 'jt irb                                         irb'
     puts 'jt rebuild                                     clean and build'
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
-    puts '    --graal         use Graal (set either GRAAL_BIN or GRAAL_HOME or it will try to automagically find some version of Graal somewhere)'
+    puts '    --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME or it will try to automagically find some version of Graal somewhere)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
     puts '    --sulong        add Sulong to the classpath (set SULONG_DIR, implies --graal but finds it from the SULONG_DIR)'
     puts '    --asm           show assembly (implies --graal)'
@@ -385,9 +385,9 @@ module Commands
     puts 'recognised environment variables:'
     puts
     puts '  RUBY_BIN                                     The JRuby+Truffle executable to use (normally just bin/jruby)'
-    puts '  GRAAL_BIN                                    GraalVM executable (java command) to use'
-    puts '  GRAAL_BIN_...git_branch_name...              GraalVM executable to use for a given branch'
-    puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
+    puts '  GRAALVM_BIN                                  GraalVM executable (java command) to use'
+    puts '  GRAALVM_BIN_...git_branch_name...            GraalVM executable to use for a given branch'
+    puts '           branch names are mangled - eg truffle-head becomes GRAALVM_BIN_TRUFFLE_HEAD'
     puts '  GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
@@ -461,7 +461,7 @@ module Commands
         graal_bin = vm_args.shift
         jruby_args = vm_args.map { |arg| "-J#{arg}" } + jruby_args
       else
-        graal_bin = Utilities.find_graal
+        graal_bin = Utilities.find_graalvm
       end
 
       env_vars["JAVACMD"] = graal_bin
@@ -590,7 +590,7 @@ module Commands
     jruby_opts << '-Xtruffle.exceptions.print_java=true'
 
     env_vars = {}
-    env_vars["JAVACMD"] = Utilities.find_graal unless args.delete('--no-java-cmd')
+    env_vars["JAVACMD"] = Utilities.find_graalvm unless args.delete('--no-java-cmd')
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
     env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
 
@@ -719,7 +719,7 @@ module Commands
     end
 
     if args.delete('--graal')
-      env_vars["JAVACMD"] = Utilities.find_graal
+      env_vars["JAVACMD"] = Utilities.find_graalvm
       options << '-T-J-server'
     end
 
