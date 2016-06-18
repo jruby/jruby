@@ -49,7 +49,7 @@ graal-core: {
     [mx, sclone, --kind, git, "https://github.com/graalvm/graal-core.git", graal-core],
     [cd, graal-core],
     [mx, sforceimports],
-    [mx, --java-home, "$JVMCI_JAVA_HOME", --vm, server, build],
+    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
   ]
