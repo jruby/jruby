@@ -14,6 +14,7 @@ require 'shellwords'
 require 'pathname'
 require 'rbconfig'
 require 'rubygems'
+require 'bundler'
 
 module Truffle
   class Runner
@@ -410,8 +411,6 @@ module Truffle
 
       b
     end
-
-    require 'Bundler'
 
     BUNDLER_EVAL_ENV = Object.new
 
