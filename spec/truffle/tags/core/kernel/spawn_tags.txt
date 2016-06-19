@@ -26,15 +26,6 @@ fails:Kernel#spawn raises a TypeError if given a symbol as :pgroup option
 fails:Kernel#spawn uses the current working directory as its working directory
 fails:Kernel#spawn uses the current umask by default
 fails:Kernel#spawn sets the umask if given the :umask option
-fails:Kernel#spawn redirects STDOUT to the given file descriptior if out: Fixnum
-fails:Kernel#spawn redirects STDOUT to the given file if out: IO
-fails:Kernel#spawn redirects STDOUT to the given file if out: String
-fails:Kernel#spawn redirects STDERR to the given file descriptior if err: Fixnum
-fails:Kernel#spawn redirects STDERR to the given file descriptor if err: IO
-fails:Kernel#spawn redirects STDERR to the given file if err: String
-fails:Kernel#spawn redirects both STDERR and STDOUT to the given file descriptior
-fails:Kernel#spawn redirects both STDERR and STDOUT to the given IO
-fails:Kernel#spawn does NOT redirect both STDERR and STDOUT at the time to the given name
 fails:Kernel#spawn raises an ArgumentError if passed no command arguments
 fails:Kernel#spawn raises an ArgumentError if passed env or options but no command arguments
 fails:Kernel#spawn raises an ArgumentError if passed env and options but no command arguments
@@ -92,15 +83,6 @@ fails:Kernel.spawn raises a TypeError if given a symbol as :pgroup option
 fails:Kernel.spawn uses the current working directory as its working directory
 fails:Kernel.spawn uses the current umask by default
 fails:Kernel.spawn sets the umask if given the :umask option
-fails:Kernel.spawn redirects STDOUT to the given file descriptior if out: Fixnum
-fails:Kernel.spawn redirects STDOUT to the given file if out: IO
-fails:Kernel.spawn redirects STDOUT to the given file if out: String
-fails:Kernel.spawn redirects STDERR to the given file descriptior if err: Fixnum
-fails:Kernel.spawn redirects STDERR to the given file descriptor if err: IO
-fails:Kernel.spawn redirects STDERR to the given file if err: String
-fails:Kernel.spawn redirects both STDERR and STDOUT to the given file descriptior
-fails:Kernel.spawn redirects both STDERR and STDOUT to the given IO
-fails:Kernel.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
 fails:Kernel.spawn raises an ArgumentError if passed no command arguments
 fails:Kernel.spawn raises an ArgumentError if passed env or options but no command arguments
 fails:Kernel.spawn raises an ArgumentError if passed env and options but no command arguments
@@ -165,7 +147,3 @@ fails:Kernel.spawn when passed close_others: true does not close STDERR
 fails:Kernel.spawn when passed close_others: false does not close STDIN
 fails:Kernel.spawn when passed close_others: false does not close STDOUT
 fails:Kernel.spawn when passed close_others: false does not close STDERR
-fails:Kernel#spawn redirects STDOUT to the given file if out: [String name, String mode]
-fails:Kernel.spawn redirects STDOUT to the given file if out: [String name, String mode]
-fails:Kernel#spawn redirects STDERR to child STDOUT if :err => [:child, :out]
-fails:Kernel.spawn redirects STDERR to child STDOUT if :err => [:child, :out]
