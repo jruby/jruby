@@ -23,7 +23,7 @@ common: {
   
   setup: ${common-setup}
 
-  timelimit: "01:00:00"
+  timelimit: "00:30:00"
 }
 
 no-graal: {
@@ -119,10 +119,12 @@ gate-caps: {
 
 bench-caps: {
   capabilities: [x52, linux, amd64, bench, post-push]
+  timelimit: "02:00:00"
 }
 
 daily-bench-caps: {
   capabilities: [x52, linux, amd64, daily]
+  timelimit: "02:00:00"
 }
 
 post-process-and-upload-results: [
@@ -168,6 +170,12 @@ chunky-benchmarks: {
   ] ${post-process-and-upload-results}
 }
 
+psd-benchmarks: {
+  run: ${setup-benchmarks} [
+    [mx, benchmark, psd]
+  ] ${post-process-and-upload-results}
+}
+
 builds: [
   {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
   {name: ruby-test-specs-command-line} ${common} ${gate-caps} {run: [${jt} [test, specs, ":command_line"]]},
@@ -200,5 +208,10 @@ builds: [
   {name: ruby-benchmarks-chunky-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${chunky-benchmarks},
   {name: ruby-benchmarks-chunky-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${chunky-benchmarks},
   {name: ruby-benchmarks-chunky-graal-core} ${common} ${graal-core} ${bench-caps} ${jruby-truffle} ${chunky-benchmarks},
-  {name: ruby-benchmarks-chunky-graalvm} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${chunky-benchmarks}
+  {name: ruby-benchmarks-chunky-graalvm} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${chunky-benchmarks},
+  
+  {name: ruby-benchmarks-psd-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${psd-benchmarks},
+  {name: ruby-benchmarks-psd-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${psd-benchmarks},
+  {name: ruby-benchmarks-psd-graal-core} ${common} ${graal-core} ${bench-caps} ${jruby-truffle} ${psd-benchmarks},
+  {name: ruby-benchmarks-psd-graalvm} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${psd-benchmarks}
 ]
