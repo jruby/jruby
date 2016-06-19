@@ -236,7 +236,7 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
         raise NotImplementedError()
     
     def directory(self):
-        raise NotImplementedError()
+        return self.name()
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         arguments = ['benchmark']
@@ -373,9 +373,26 @@ class PSDBenchmarkSuite(AllBenchmarksBenchmarkSuite):
     def time(self):
         return psd_benchmark_time
 
+synthetic_benchmarks = [
+    'acid'
+]
+
+synthetic_benchmark_time = 120
+
+class SyntheticBenchmarkSuite(AllBenchmarksBenchmarkSuite):
+    def name(self):
+        return 'synthetic'
+
+    def benchmarks(self):
+        return synthetic_benchmarks
+    
+    def time(self):
+        return synthetic_benchmark_time
+
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
 mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())
 mx_benchmark.add_bm_suite(TimeBenchmarkSuite())
 mx_benchmark.add_bm_suite(ClassicBenchmarkSuite())
 mx_benchmark.add_bm_suite(ChunkyBenchmarkSuite())
 mx_benchmark.add_bm_suite(PSDBenchmarkSuite())
+mx_benchmark.add_bm_suite(SyntheticBenchmarkSuite())
