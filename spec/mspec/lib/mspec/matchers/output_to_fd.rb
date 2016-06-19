@@ -21,39 +21,37 @@ class OutputToFDMatcher
     end
   end
 
+  def with_tmp
+    path = tmp("mspec_output_to_#{$$}_#{Time.now.to_i}")
+    File.open(path, 'w+') { |io|
+      yield(io)
+    }
+  ensure
+    File.delete path if path
+  end
+
   def matches?(block)
     old_to = @to.dup
-    out = File.open(tmp("mspec_output_to_#{$$}_#{Time.now.to_i}"), 'w+')
-
-    # Replacing with a file handle so that Readline etc. work
-    @to.reopen out
-
-    block.call
-
-  ensure
-    begin
-      @to.reopen old_to
+    with_tmp do |out|
+      # Replacing with a file handle so that Readline etc. work
+      @to.reopen out
+      begin
+        block.call
+      ensure
+        @to.reopen old_to
+        old_to.close
+      end
 
       out.rewind
       @actual = out.read
 
       case @expected
-        when Regexp
-          return !(@actual =~ @expected).nil?
-        else
-          return @actual == @expected
-      end
-
-    # Clean up
-    ensure
-      out.close unless out.closed?
-      File.delete out.path
-      if !old_to.closed? and old_to.fileno != @to.fileno # reopen might create a new fd
-        old_to.close
+      when Regexp
+        !(@actual =~ @expected).nil?
+      else
+        @actual == @expected
       end
     end
-
-    return true
   end
 
   def failure_message()

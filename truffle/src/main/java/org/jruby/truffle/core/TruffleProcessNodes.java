@@ -97,8 +97,24 @@ public abstract class TruffleProcessNodes {
                         for (int i = 0; i < size; i += 2) {
                             int from = (int) store[i];
                             int to = (int) store[i + 1];
+                            if (to < 0) { // :child fd
+                                to = -to - 1;
+                            }
                             actions.add(SpawnFileAction.dup(to, from));
-                            actions.add(SpawnFileAction.close(to));
+                        }
+                        continue;
+                    } else if (key == getSymbol("assign_fd")) {
+                        assert Layouts.ARRAY.isArray(value);
+                        final DynamicObject array = (DynamicObject) value;
+                        final int size = Layouts.ARRAY.getSize(array);
+                        assert size % 4 == 0;
+                        final Object[] store = ArrayOperations.toObjectArray(array);
+                        for (int i = 0; i < size; i += 4) {
+                            int fd = (int) store[i];
+                            String path = StringOperations.getString(getContext(), (DynamicObject) store[i + 1]);
+                            int flags = (int) store[i + 2];
+                            int perms = (int) store[i + 3];
+                            actions.add(SpawnFileAction.open(path, fd, flags, perms));
                         }
                         continue;
                     }

@@ -19,6 +19,7 @@ import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.convert.ToDoubleWithCoercionNodeGen;
 import org.jruby.truffle.core.format.convert.ToIntegerNodeGen;
 import org.jruby.truffle.core.format.convert.ToStringNodeGen;
+import org.jruby.truffle.core.format.format.FormatIntegerBinaryNodeGen;
 import org.jruby.truffle.core.format.format.FormatFloatHumanReadableNodeGen;
 import org.jruby.truffle.core.format.format.FormatFloatNodeGen;
 import org.jruby.truffle.core.format.format.FormatIntegerNodeGen;
@@ -94,8 +95,10 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
             } else if (flag.SPACE() != null) {
                 if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
                     spacePadding = PADDING_FROM_ARGUMENT;
-                } else {
+                } else if(width != DEFAULT) {
                     spacePadding = width;
+                } else {
+                    spacePadding = 1;
                 }
             } else if (flag.ZERO() != null) {
                 if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
@@ -155,6 +158,8 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                 }
 
                 break;
+            case 'b':
+            case 'B':
             case 'd':
             case 'i':
             case 'o':
@@ -187,6 +192,10 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                 final char format;
 
                 switch (type) {
+                    case 'b':
+                    case 'B':
+                        format = type;
+                        break;
                     case 'd':
                     case 'i':
                     case 'u':
@@ -203,11 +212,19 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                         throw new UnsupportedOperationException();
                 }
 
-                node = WriteBytesNodeGen.create(context,
+                if(type == 'b' || type == 'B'){
+                    node = WriteBytesNodeGen.create(context,
+                        FormatIntegerBinaryNodeGen.create(context, format,
+                            spacePaddingNode,
+                            zeroPaddingNode,
+                            ToIntegerNodeGen.create(context, valueNode)));
+                } else {
+                    node = WriteBytesNodeGen.create(context,
                         FormatIntegerNodeGen.create(context, format,
-                                spacePaddingNode,
-                                zeroPaddingNode,
-                                ToIntegerNodeGen.create(context, valueNode)));
+                            spacePaddingNode,
+                            zeroPaddingNode,
+                            ToIntegerNodeGen.create(context, valueNode)));
+                }
                 break;
             case 'f':
             case 'e':

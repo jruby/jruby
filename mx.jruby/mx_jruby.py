@@ -324,8 +324,57 @@ class ChunkyBenchmarkSuite(AllBenchmarksBenchmarkSuite):
     def time(self):
         return chunky_benchmark_time
 
+psd_benchmarks = [
+    'psd-color-cmyk-to-rgb',
+    'psd-compose-color-burn',
+    'psd-compose-color-dodge',
+    'psd-compose-darken',
+    'psd-compose-difference',
+    'psd-compose-exclusion',
+    'psd-compose-hard-light',
+    'psd-compose-hard-mix',
+    'psd-compose-lighten',
+    'psd-compose-linear-burn',
+    'psd-compose-linear-dodge',
+    'psd-compose-linear-light',
+    'psd-compose-multiply',
+    'psd-compose-normal',
+    'psd-compose-overlay',
+    'psd-compose-pin-light',
+    'psd-compose-screen',
+    'psd-compose-soft-light',
+    'psd-compose-vivid-light',
+    'psd-imageformat-layerraw-parse-raw',
+    'psd-imageformat-rle-decode-rle-channel',
+    'psd-imagemode-cmyk-combine-cmyk-channel',
+    'psd-imagemode-greyscale-combine-greyscale-channel',
+    'psd-imagemode-rgb-combine-rgb-channel',
+    'psd-renderer-blender-compose',
+    'psd-renderer-clippingmask-apply',
+    'psd-renderer-mask-apply',
+    'psd-util-clamp',
+    'psd-util-pad2',
+    'psd-util-pad4'
+]
+
+psd_benchmark_time = 120
+
+class PSDBenchmarkSuite(AllBenchmarksBenchmarkSuite):
+    def name(self):
+        return 'psd'
+    
+    def directory(self):
+        return 'psd.rb'
+
+    def benchmarks(self):
+        return psd_benchmarks
+    
+    def time(self):
+        return psd_benchmark_time
+
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
 mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())
 mx_benchmark.add_bm_suite(TimeBenchmarkSuite())
 mx_benchmark.add_bm_suite(ClassicBenchmarkSuite())
 mx_benchmark.add_bm_suite(ChunkyBenchmarkSuite())
+mx_benchmark.add_bm_suite(PSDBenchmarkSuite())

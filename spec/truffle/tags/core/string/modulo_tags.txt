@@ -1,4 +1,3 @@
-fails:String#% formats multiple expressions
 fails:String#% formats single % characters before a newline or NULL as literal %s
 fails:String#% raises an error if single % appears anywhere else
 fails:String#% raises an error if NULL or \n appear anywhere else in the format string
@@ -61,7 +60,6 @@ fails:String#% supports hex formats using %X for positive numbers
 fails:String#% supports hex formats using %X for negative numbers
 fails:String#% formats zero without prefix using %#x
 fails:String#% formats zero without prefix using %#X
-fails:String#% behaves as if calling Kernel#Integer for %b argument, if it does not respond to #to_ary
 fails:String#% tries to convert the passed argument to an Array using #to_ary
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument is hexadecimal string
