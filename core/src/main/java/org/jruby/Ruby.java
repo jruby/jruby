@@ -925,7 +925,7 @@ public final class Ruby implements Constantizable {
         try {
             clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.JRubyTruffleImpl");
         } catch (Exception e) {
-            throw new RuntimeException("Truffle backend not available", e);
+            throw new RuntimeException("JRuby's Truffle backend not available - either it was not compiled because JRuby was built with Java 7, or it has been removed", e);
         }
 
         final JRubyTruffleInterface truffleContext;
