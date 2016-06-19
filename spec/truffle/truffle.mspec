@@ -151,6 +151,7 @@ if i = ARGV.index('slow') and ARGV[i-1] == '--excl-tag' and is_child_process
   slow_methods = [
     [Object, [:ruby_exe, :ruby_cmd]],
     [ObjectSpace.singleton_class, [:each_object]],
+    [GC.singleton_class, [:start]],
     [Kernel, [:system]],
     [Kernel.singleton_class, [:system]],
     [Timeout.singleton_class, [:timeout]],
