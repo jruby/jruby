@@ -95,8 +95,10 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
             } else if (flag.SPACE() != null) {
                 if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
                     spacePadding = PADDING_FROM_ARGUMENT;
-                } else {
+                } else if(width != DEFAULT) {
                     spacePadding = width;
+                } else {
+                    spacePadding = 1;
                 }
             } else if (flag.ZERO() != null) {
                 if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {

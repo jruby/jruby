@@ -17,6 +17,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
+import org.jruby.truffle.core.format.printf.PrintfTreeBuilder;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -39,31 +40,53 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
     public byte[] format(int spacePadding,
                          int zeroPadding,
                          int value) {
-        return getFormattedString(Integer.toBinaryString(value), spacePadding, zeroPadding, value < 0);
+        final boolean isSpacePadded = spacePadding != PrintfTreeBuilder.DEFAULT;
+        final boolean isNegative = value < 0;
+        final boolean negativeAndSpacePadded = isNegative && isSpacePadded;
+        final String formatted = negativeAndSpacePadded ? Integer.toBinaryString(-value) : Integer.toBinaryString(value);
+        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded);
     }
 
     @TruffleBoundary
     @Specialization(guards = "isRubyBignum(value)")
     public byte[] format(int spacePadding, int zeroPadding, DynamicObject value) {
+        final boolean isSpacePadded = spacePadding != PrintfTreeBuilder.DEFAULT;
         final BigInteger bigInteger = Layouts.BIGNUM.getValue(value);
-        return getFormattedString(bigInteger.toString(2), spacePadding, zeroPadding, bigInteger.signum() == -1);
+        final boolean isNegative = bigInteger.signum() == -1;
+        final boolean negativeAndSpacePadded = isNegative && isSpacePadded;
+        final String formatted = negativeAndSpacePadded ? bigInteger.abs().toString(2) : bigInteger.toString(2);
+        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded);
     }
 
     @TruffleBoundary
-    private static byte[] getFormattedString(String formatted, int spacePadding, int zeroPadding, boolean negative) {
-        if (negative) {
-            if(formatted.contains("0")){
-                formatted = "..1" + formatted.substring(formatted.indexOf('0'), formatted.length());
+    private static byte[] getFormattedString(String formatted, int spacePadding, int zeroPadding, boolean isNegative, boolean isSpacePadded) {
+        if (isNegative && !isSpacePadded) {
+            if (formatted.contains("0")) {
+                formatted = formatted.substring(formatted.indexOf('0'), formatted.length());
+                if (formatted.length() + 3 < zeroPadding) {
+                    final int addOnes = zeroPadding - (formatted.length() + 3);
+                    for (int i = addOnes; i > 0; i--) {
+                        formatted = "1" + formatted;
+                    }
+                }
+                formatted = "..1" + formatted;
             } else {
                 formatted = "..1";
             }
+        } else {
+            while (formatted.length() < zeroPadding) {
+                formatted = "0" + formatted;
+            }
         }
-        while (formatted.length() < spacePadding) {
-            formatted = " " + formatted;
+
+        if (isSpacePadded) {
+            if (isNegative) {
+                formatted = "-" + formatted;
+            } else {
+                formatted = " " + formatted;
+            }
         }
-        while (formatted.length() < zeroPadding) {
-            formatted = "0" + formatted;
-        }
+
         return formatted.getBytes(StandardCharsets.US_ASCII);
     }
 
