@@ -146,12 +146,14 @@ if respond_to?(:ruby_exe)
   end
 
   class ::Object
-    alias old_ruby_exe ruby_exe
-    def ruby_exe(*args, &block)
-      if (MSpecScript.get(:xtags) || []).include? 'slow'
-        raise SlowSpecException, "Was tagged as slow as it uses ruby_exe(). Rerun specs."
+    %w[ruby_exe ruby_cmd].each do |meth|
+      alias_method "old_#{meth}", meth
+      define_method(meth) do |*args, &block|
+        if (MSpecScript.get(:xtags) || []).include? 'slow'
+          raise SlowSpecException, "Was tagged as slow as it uses #{meth}(). Rerun specs."
+        end
+        old_ruby_exe(*args, &block)
       end
-      old_ruby_exe(*args, &block)
     end
   end
 
