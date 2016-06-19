@@ -128,7 +128,8 @@ class MSpecScript
   set :files, get(:language) + get(:core) + get(:library) + get(:truffle)
 end
 
-if respond_to?(:ruby_exe)
+is_child_process = respond_to?(:ruby_exe)
+if i = ARGV.index('slow') and ARGV[i-1] == '--excl-tag' and is_child_process
   class SlowSpecsTagger
     def initialize
       MSpec.register :exception, self
@@ -145,14 +146,24 @@ if respond_to?(:ruby_exe)
   class SlowSpecException < Exception
   end
 
-  class ::Object
-    %w[ruby_exe ruby_cmd].each do |meth|
-      alias_method "old_#{meth}", meth
-      define_method(meth) do |*args, &block|
-        if (MSpecScript.get(:xtags) || []).include? 'slow'
+  require 'timeout'
+
+  slow_methods = [
+    [Object, [:ruby_exe, :ruby_cmd]],
+    [ObjectSpace.singleton_class, [:each_object]],
+    [Kernel, [:system]],
+    [Kernel.singleton_class, [:system]],
+    [Timeout.singleton_class, [:timeout]],
+  ]
+
+  slow_methods.each do |klass, meths|
+    klass.class_exec do
+      meths.each do |meth|
+        define_method(meth) do |*args, &block|
           raise SlowSpecException, "Was tagged as slow as it uses #{meth}(). Rerun specs."
         end
-        old_ruby_exe(*args, &block)
+        # Keep visibility of Kernel#system
+        private meth if klass == Kernel and meth == :system
       end
     end
   end
