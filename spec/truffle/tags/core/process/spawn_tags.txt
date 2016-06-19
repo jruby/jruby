@@ -72,3 +72,14 @@ fails:Process.spawn when passed close_others: true does not close STDERR
 fails:Process.spawn when passed close_others: false does not close STDIN
 fails:Process.spawn when passed close_others: false does not close STDOUT
 fails:Process.spawn when passed close_others: false does not close STDERR
+slow:Process.spawn redirects STDOUT to the given file descriptior if out: Fixnum
+slow:Process.spawn redirects STDOUT to the given file if out: IO
+slow:Process.spawn redirects STDOUT to the given file if out: String
+slow:Process.spawn redirects STDOUT to the given file if out: [String name, String mode]
+slow:Process.spawn redirects STDERR to the given file descriptior if err: Fixnum
+slow:Process.spawn redirects STDERR to the given file descriptor if err: IO
+slow:Process.spawn redirects STDERR to the given file if err: String
+slow:Process.spawn redirects STDERR to child STDOUT if :err => [:child, :out]
+slow:Process.spawn redirects both STDERR and STDOUT to the given file descriptior
+slow:Process.spawn redirects both STDERR and STDOUT to the given IO
+slow:Process.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
