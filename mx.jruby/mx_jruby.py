@@ -272,6 +272,7 @@ classic_benchmarks = [
     'mandelbrot',
     'matrix-multiply',
     'n-body',
+    'neural-net',
     'pidigits',
     'red-black',
     'richards',
