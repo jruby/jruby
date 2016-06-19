@@ -74,6 +74,7 @@
   # do not let bundler to install db gem group
   :without:
     - db
+    - job
   :before:
     # temporary workaround, rake 10.4.2 will not install
     - $JRUBY_BIN -e 'File.write "../Gemfile.lock", File.read("../Gemfile.lock").gsub(/rake \(10\.4\.2\)/,"rake (11.1.2)")'
