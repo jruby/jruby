@@ -64,6 +64,28 @@ module Truffle
         return cmd
       end
 
+      def dig_deep(data, selection)
+        return data if selection.nil?
+
+        selection = case selection
+                    when Hash
+                      selection
+                    when Array
+                      selection.reduce({}) { |h, k| h.update k => nil }
+                    else
+                      { selection => nil }
+                    end
+
+        case data
+        when Hash
+          selection.each_with_object({}) { |(key, sel), hash| hash[key] = dig_deep data[key], sel }
+        when Array
+          selection.map { |key, sel| dig_deep data[key], sel }
+        else
+          raise data.inspect + selection.inspect
+        end
+      end
+
     end
 
     include Utils
@@ -87,7 +109,7 @@ module Truffle
     include OptionBlocks
 
     begin
-      apply_pattern      = -> (pattern, old, options) do
+      apply_pattern = -> (pattern, old, options) do
         Dir.glob(pattern) do |file|
           if options[:exclude_pattern].any? { |p| /#{p}/ =~ file }
             puts "skipped: #{file}" if verbose?
@@ -98,13 +120,19 @@ module Truffle
         old << pattern
       end
 
+      shared_offline_options = {
+          offline:          ['--[no-]offline', 'Use local gems only', STORE_NEW_VALUE, false],
+          offline_gem_path: ['--offline-gem-path', 'Path to a local pre-installed gems', STORE_NEW_VALUE,
+                             JRUBY_PATH.join('..', 'jruby-truffle-gem-test-pack', 'gems')] }
+
+
       # Format:
       #   subcommand_name: {
       #     :'option_name (also used as a key in yaml)' => [option_parser_on_method_args,
-      #                                                     -> (new_value, old_value) { result_of_this_block_is_stored },
+      #                                                     -> (new_value, old_value, options) { result_of_this_block_is_stored },
       #                                                     default_value]
       #   }
-      OPTION_DEFINITIONS = {
+      OPTION_DEFINITIONS     = {
           global: {
               verbose:             ['-v', '--verbose', 'Run verbosely (prints options)', STORE_NEW_VALUE, false],
               help:                ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
@@ -122,13 +150,12 @@ module Truffle
               configuration:       ['--config GEM_NAME', 'Load configuration for specified gem', STORE_NEW_VALUE, nil],
               dir:                 ['--dir DIRECTORY', 'Set working directory', STORE_NEW_VALUE, nil],
           },
-          setup:  {
-              help:    ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
-              before:  ['--before SH_CMD', 'Commands to execute before setup', ADD_TO_ARRAY, []],
-              after:   ['--after SH_CMD', 'Commands to execute after setup', ADD_TO_ARRAY, []],
-              file:    ['--file NAME,CONTENT', Array, 'Create file in truffle_bundle_path', MERGE_TO_HASH, {}],
-              without: ['--without GROUP', 'Do not install listed gem group by bundler', ADD_TO_ARRAY, []]
-          },
+          setup:  { help:    ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
+                    before:  ['--before SH_CMD', 'Commands to execute before setup', ADD_TO_ARRAY, []],
+                    after:   ['--after SH_CMD', 'Commands to execute after setup', ADD_TO_ARRAY, []],
+                    file:    ['--file NAME,CONTENT', Array, 'Create file in truffle_bundle_path', MERGE_TO_HASH, {}],
+                    without: ['--without GROUP', 'Do not install listed gem group by bundler', ADD_TO_ARRAY, []]
+                  }.merge(shared_offline_options),
           run:    {
               help:             ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
               interpreter_path: ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", STORE_NEW_VALUE,
@@ -148,12 +175,11 @@ module Truffle
               xmx:              ['--xmx SIZE', 'Max memory size', STORE_NEW_VALUE, '2G'],
               no_asserts:       ['--no-asserts', 'Disable asserts -ea -esa', STORE_NEW_NEGATED_VALUE, false]
           },
-          ci:     {
-              batch:      ['--batch FILE', 'Run batch of ci tests supplied in a file. One ci command options per line. If FILE is in or stdin it reads from $stdin.',
-                           STORE_NEW_VALUE, nil],
-              definition: ['--definition NAME', 'Specify which definition file to use', STORE_NEW_VALUE, nil],
-              help:       ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false]
-          },
+          ci:     { batch:      ['--batch FILE', 'Run batch of ci tests supplied in a file. One ci command options per line. If FILE is in or stdin it reads from $stdin.',
+                                 STORE_NEW_VALUE, nil],
+                    definition: ['--definition NAME', 'Specify which definition file to use', STORE_NEW_VALUE, nil],
+                    help:       ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false]
+                  }.merge(shared_offline_options),
           clean:  {
               help: ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false]
           },
@@ -237,8 +263,8 @@ module Truffle
     end
 
 
-    def initialize(argv)
-      @options        = construct_default_options
+    def initialize(argv, options = {})
+      @options        = deep_merge construct_default_options, options
       @option_parsers = build_option_parsers
 
       @subcommand, *argv_after_global = @option_parsers[:global].order argv
@@ -385,6 +411,44 @@ module Truffle
       b
     end
 
+    require 'Bundler'
+
+    BUNDLER_EVAL_ENV = Object.new
+
+    def BUNDLER_EVAL_ENV.gem(name, options)
+      [name, options]
+    end
+
+    def BUNDLER_EVAL_ENV.process(line)
+      eval line
+    end
+
+    def gemfile_use_path!(gems_path)
+      gemfile = Bundler.default_gemfile.to_s
+
+      new_lines = File.read(gemfile).lines.map do |line|
+        if line =~ /^( +)gem.*git:/
+          space             = $1
+          gem_name, options = BUNDLER_EVAL_ENV.process(line)
+          repo_name         = options[:git].split('/').last
+          repo_match        = "#{gems_path}/bundler/gems/#{repo_name}-*"
+          repo_path         = Dir[repo_match].first
+
+          ["# Overridden by jtr\n",
+           '# ' + line,
+           repo_path ?
+               "gem '#{gem_name}', path: '#{repo_path}'\n" :
+               "raise \"no repository found on '#{repo_match}'\"\n"
+          ].map { |l| space + l }.join
+        else
+          line
+        end
+      end
+
+      File.write gemfile, new_lines.join
+    end
+
+
     def subcommand_setup(rest)
       bundle_options = @options[:global][:bundle_options].split(' ')
       bundle_path    = File.expand_path(@options[:global][:truffle_bundle_path])
@@ -392,27 +456,47 @@ module Truffle
         execute_cmd([{ 'JRUBY_BIN' => JRUBY_BIN.to_s }, cmd])
       end
 
+      real_path          = File.join(bundle_path, RUBY_ENGINE)
+      target_gem_path    = File.join(bundle_path, RUBY_ENGINE, '2.3.0')
+      jruby_truffle_path = File.join(bundle_path, 'jruby+truffle')
+      mock_path          = File.join(bundle_path, @options[:global][:mock_load_path])
+
+      FileUtils.mkpath real_path
+      FileUtils.mkpath mock_path
+
+      FileUtils.ln_s RUBY_ENGINE,
+                     jruby_truffle_path,
+                     verbose: verbose?,
+                     force:   true
+
+      if @options[:setup][:offline]
+        FileUtils.rmtree target_gem_path
+        FileUtils.ln_s @options[:setup][:offline_gem_path],
+                       target_gem_path,
+                       verbose: verbose?
+      else
+        File.delete target_gem_path if File.symlink?(target_gem_path)
+        FileUtils.mkpath target_gem_path
+      end
+
+      FileUtils.ln_s '2.3.0',
+                     File.join(bundle_path, RUBY_ENGINE, '2.2.0'),
+                     verbose: verbose?,
+                     force:   true
+
       @options[:setup][:before].each(&execute_all)
 
+      gemfile_use_path!(target_gem_path) if @options[:setup][:offline]
 
-      bundle_cli([*bundle_options,
-                  'install',
-                  '--standalone',
-                  '--path', bundle_path,
-                  *(['--without', @options[:setup][:without].join(' ')] unless @options[:setup][:without].empty?)])
-
-      jruby_truffle_path = File.join(bundle_path, 'jruby+truffle')
-      FileUtils.ln_s File.join(bundle_path, RUBY_ENGINE),
-                     jruby_truffle_path,
-                     verbose: verbose? unless File.exists? jruby_truffle_path
-
-      jruby_truffle_22_path = File.join(bundle_path, 'jruby+truffle', '2.2.0')
-      FileUtils.ln_s File.join(bundle_path, 'jruby+truffle', '2.3.0'),
-                     jruby_truffle_22_path,
-                     verbose: verbose? unless File.exists? jruby_truffle_22_path
-
-      mock_path = "#{bundle_path}/#{@options[:global][:mock_load_path]}"
-      FileUtils.mkpath mock_path
+      execute_cmd([JRUBY_BIN.to_s,
+                   "#{Gem.bindir}/bundle",
+                   *bundle_options,
+                   'install',
+                   *(%w(--local --no-prune) if @options[:setup][:offline]),
+                   '--standalone',
+                   '--path', bundle_path,
+                   *(['--without', @options[:setup][:without].join(' ')] unless @options[:setup][:without].empty?)].compact,
+                  print_always: true)
 
       @options[:setup][:file].each do |name, content|
         puts "creating file: #{mock_path}/#{name}" if verbose?
@@ -430,11 +514,6 @@ module Truffle
     rescue => e
       puts format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
       false
-    end
-
-    def bundle_cli(argv)
-      ruby = Pathname(RbConfig::CONFIG['bindir']).join('jruby')
-      execute_cmd [ruby.to_s, "#{Gem.bindir}/bundle", *argv]
     end
 
     def subcommand_run(rest)
@@ -532,13 +611,13 @@ module Truffle
           rest          = option_parser.order line.split
 
           gem_name = rest.first
-          CIEnvironment.new(@options[:global][:dir], gem_name, rest[1..-1], verbose: verbose?).success?
+          CIEnvironment.new(@options[:global][:dir], gem_name, @options, rest[1..-1]).success?
         end
 
         results.all?
       else
         gem_name = rest.first
-        ci       = CIEnvironment.new @options[:global][:dir], gem_name, rest[1..-1], definition: options[:ci][:definition], verbose: verbose?
+        ci       = CIEnvironment.new @options[:global][:dir], gem_name, @options, rest[1..-1], definition: options[:ci][:definition]
 
         case ci.result
         when nil # error, setup failed
@@ -582,11 +661,11 @@ module Truffle
       define_dsl_attr(:working_dir) { |v| Pathname(v) }
       attr_reader :gem_name, :result
 
-      def initialize(working_dir, gem_name, rest, definition: nil, verbose: false)
-        @options  = {}
-        @gem_name = gem_name
-        @rest     = rest
-        @verbose  = verbose
+      def initialize(working_dir, gem_name, runner_options, rest, definition: nil)
+        @runner_options = runner_options
+        @options        = {}
+        @gem_name       = gem_name
+        @rest           = rest
 
         @working_dir     = Pathname(working_dir)
         @repository_name = gem_name
@@ -678,9 +757,12 @@ module Truffle
         tags
       end
 
-      def setup
-        # noinspection RubyArgCount
-        Dir.chdir(testing_dir) { Runner.new([('-v' if @verbose), 'setup'].compact).run }
+      def setup(*options)
+        Dir.chdir(testing_dir) do
+          Runner.new(['setup', *options].compact,
+                     dig_deep(@runner_options, global: :verbose, ci: [:offline, :offline_gem_path]).
+                         tap { |h| h.update setup: h.delete(:ci) }).run
+        end
       end
 
       def cancel_ci!
@@ -693,8 +775,10 @@ module Truffle
 
       def run(options, raise: true)
         raise ArgumentError unless options.is_a? Array
-        # noinspection RubyArgCount
-        Dir.chdir(testing_dir) { Runner.new([('-v' if @verbose), 'run', *options].compact).run }
+        Dir.chdir(testing_dir) do
+          Runner.new(['run', *options].compact,
+                     dig_deep(@runner_options, global: :verbose)).run
+        end
       end
 
       def execute(cmd, dir: testing_dir, raise: true)
