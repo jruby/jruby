@@ -945,16 +945,21 @@ module Commands
   end
 
   def benchmark(*args)
-    benchmark = args.pop
-    raise 'no benchmark given' unless benchmark
-    benchmark = Utilities.find_benchmark(benchmark)
-    raise 'benchmark not found' unless File.exist?(benchmark)
+    args.map! do |a|
+      if a.include?('.rb')
+        benchmark = Utilities.find_benchmark(a)
+        raise 'benchmark not found' unless File.exist?(benchmark)
+        benchmark
+      else
+        a
+      end
+    end
+    
     run_args = []
     run_args.push '--graal' unless args.delete('--no-graal')
     run_args.push '-I', "#{Utilities.find_gem('deep-bench')}/lib" rescue nil
     run_args.push '-I', "#{Utilities.find_gem('benchmark-ips')}/lib" rescue nil
     run_args.push "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark"
-    run_args.push benchmark
     run_args.push *args
     run *run_args
   end
