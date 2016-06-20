@@ -376,6 +376,7 @@ module Commands
     puts '    note that to run most MRI benchmarks, you should translate them first with normal Ruby and cache the result, such as'
     puts '        benchmark bench/mri/bm_vm1_not.rb --cache'
     puts '        jt benchmark bench/mri/bm_vm1_not.rb --use-cache'
+    puts 'jt where repos ...                            find these repositories'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -962,6 +963,15 @@ module Commands
     run_args.push "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark"
     run_args.push *args
     run *run_args
+  end
+  
+  def where(*args)
+    case args.shift
+    when 'repos'
+      args.each do |a|
+        puts Utilities.find_repo(a)
+      end
+    end
   end
 
   def check_ambiguous_arguments
