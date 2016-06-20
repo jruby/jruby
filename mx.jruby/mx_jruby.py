@@ -198,7 +198,7 @@ class MinHeapBenchmarkSuite(MetricsBenchmarkSuite):
             'benchmark': benchmark,
             'metric.name': 'memory',
             'metric.value': data['min'],
-            'metric.unit': 'MB',
+            'metric.unit': 'MiB',
             'metric.better': 'lower',
             'extra.metric.human': data['human']
         }]
