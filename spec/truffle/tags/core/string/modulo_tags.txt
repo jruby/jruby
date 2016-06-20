@@ -53,7 +53,6 @@ fails:String#% supports string formats using %s
 fails:String#% taints result for %s when argument is tainted
 fails:String#% raises an ArgumentError for huge precisions for %s
 fails:String#% supports unsigned formats using %u
-fails:String#% formats negative values with a leading sign using %u
 fails:String#% supports hex formats using %x for positive numbers
 fails:String#% supports hex formats using %x for negative numbers
 fails:String#% supports hex formats using %X for positive numbers

@@ -30,10 +30,12 @@ import java.nio.charset.StandardCharsets;
 public abstract class FormatIntegerBinaryNode extends FormatNode {
 
     private final char format;
+    private final boolean hasPlusFlag;
 
-    public FormatIntegerBinaryNode(RubyContext context, char format) {
+    public FormatIntegerBinaryNode(RubyContext context, char format, boolean hasPlusFlag) {
         super(context);
         this.format = format;
+        this.hasPlusFlag = hasPlusFlag;
     }
 
     @Specialization
@@ -42,9 +44,9 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
                          int value) {
         final boolean isSpacePadded = spacePadding != PrintfTreeBuilder.DEFAULT;
         final boolean isNegative = value < 0;
-        final boolean negativeAndSpacePadded = isNegative && isSpacePadded;
-        final String formatted = negativeAndSpacePadded ? Integer.toBinaryString(-value) : Integer.toBinaryString(value);
-        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded);
+        final boolean negativeAndPadded = isNegative && (isSpacePadded || this.hasPlusFlag);
+        final String formatted = negativeAndPadded ? Integer.toBinaryString(-value) : Integer.toBinaryString(value);
+        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded, this.hasPlusFlag);
     }
 
     @TruffleBoundary
@@ -53,14 +55,15 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
         final boolean isSpacePadded = spacePadding != PrintfTreeBuilder.DEFAULT;
         final BigInteger bigInteger = Layouts.BIGNUM.getValue(value);
         final boolean isNegative = bigInteger.signum() == -1;
-        final boolean negativeAndSpacePadded = isNegative && isSpacePadded;
-        final String formatted = negativeAndSpacePadded ? bigInteger.abs().toString(2) : bigInteger.toString(2);
-        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded);
+        final boolean negativeAndPadded = isNegative && (isSpacePadded || this.hasPlusFlag);
+        final String formatted = negativeAndPadded ? bigInteger.abs().toString(2) : bigInteger.toString(2);
+        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded, this.hasPlusFlag);
     }
 
     @TruffleBoundary
-    private static byte[] getFormattedString(String formatted, int spacePadding, int zeroPadding, boolean isNegative, boolean isSpacePadded) {
-        if (isNegative && !isSpacePadded) {
+    private static byte[] getFormattedString(String formatted, int spacePadding, int zeroPadding, boolean isNegative,
+                                             boolean isSpacePadded, boolean hasPlusFlag) {
+        if (isNegative && !(isSpacePadded || hasPlusFlag)) {
             if (formatted.contains("0")) {
                 formatted = formatted.substring(formatted.indexOf('0'), formatted.length());
                 if (formatted.length() + 3 < zeroPadding) {
@@ -79,11 +82,16 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
             }
         }
 
-        if (isSpacePadded) {
+        if (isSpacePadded || hasPlusFlag) {
             if (isNegative) {
                 formatted = "-" + formatted;
             } else {
-                formatted = " " + formatted;
+                if (hasPlusFlag) {
+                    formatted = "+" + formatted;
+                } else {
+                    formatted = " " + formatted;
+                }
+
             }
         }
 

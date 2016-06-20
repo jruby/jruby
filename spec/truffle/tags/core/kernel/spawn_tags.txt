@@ -169,3 +169,9 @@ slow:Kernel.spawn redirects STDERR to the given file descriptor if err: IO
 slow:Kernel.spawn redirects STDERR to child STDOUT if :err => [:child, :out]
 slow:Kernel.spawn redirects both STDERR and STDOUT to the given file descriptior
 slow:Kernel.spawn redirects both STDERR and STDOUT to the given IO
+fails:Kernel#spawn redirects STDOUT to the given file if out: String ERROR
+fails:Kernel#spawn redirects STDOUT to the given file if out: [String name, String mode] ERROR
+fails:Kernel#spawn redirects STDERR to the given file if err: String ERROR
+fails:Kernel.spawn redirects STDOUT to the given file if out: String ERROR
+fails:Kernel.spawn redirects STDOUT to the given file if out: [String name, String mode] ERROR
+fails:Kernel.spawn redirects STDERR to the given file if err: String ERROR
