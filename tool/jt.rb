@@ -376,6 +376,7 @@ module Commands
     puts '    note that to run most MRI benchmarks, you should translate them first with normal Ruby and cache the result, such as'
     puts '        benchmark bench/mri/bm_vm1_not.rb --cache'
     puts '        jt benchmark bench/mri/bm_vm1_not.rb --use-cache'
+    puts 'jt where repos ...                            find these repositories'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -945,18 +946,32 @@ module Commands
   end
 
   def benchmark(*args)
-    benchmark = args.pop
-    raise 'no benchmark given' unless benchmark
-    benchmark = Utilities.find_benchmark(benchmark)
-    raise 'benchmark not found' unless File.exist?(benchmark)
+    args.map! do |a|
+      if a.include?('.rb')
+        benchmark = Utilities.find_benchmark(a)
+        raise 'benchmark not found' unless File.exist?(benchmark)
+        benchmark
+      else
+        a
+      end
+    end
+    
     run_args = []
-    run_args.push '--graal' unless args.delete('--no-graal')
+    run_args.push '--graal' unless args.delete('--no-graal') || args.include?('list')
     run_args.push '-I', "#{Utilities.find_gem('deep-bench')}/lib" rescue nil
     run_args.push '-I', "#{Utilities.find_gem('benchmark-ips')}/lib" rescue nil
     run_args.push "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark"
-    run_args.push benchmark
     run_args.push *args
     run *run_args
+  end
+  
+  def where(*args)
+    case args.shift
+    when 'repos'
+      args.each do |a|
+        puts Utilities.find_repo(a)
+      end
+    end
   end
 
   def check_ambiguous_arguments

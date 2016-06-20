@@ -198,7 +198,7 @@ class MinHeapBenchmarkSuite(MetricsBenchmarkSuite):
             'benchmark': benchmark,
             'metric.name': 'memory',
             'metric.value': data['min'],
-            'metric.unit': 'MB',
+            'metric.unit': 'MiB',
             'metric.better': 'lower',
             'extra.metric.human': data['human']
         }]
@@ -236,7 +236,7 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
         raise NotImplementedError()
     
     def directory(self):
-        raise NotImplementedError()
+        return self.name()
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         arguments = ['benchmark']
@@ -244,7 +244,17 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
             arguments.extend(os.environ['MX_BENCHMARK_OPTS'].split(' '))
         arguments.extend(['--simple'])
         arguments.extend(['--time', str(self.time())])
-        arguments.extend([self.directory() + '/' + benchmark + '.rb'])
+        if ':' in benchmark:
+            benchmark_file, benchmark_name = benchmark.split(':')
+            benchmark_names = [benchmark_name]
+        else:
+            benchmark_file = benchmark
+            benchmark_names = []
+        if '.rb' in benchmark_file:
+            arguments.extend([benchmark_file])
+        else:
+            arguments.extend([self.directory() + '/' + benchmark_file + '.rb'])
+        arguments.extend(benchmark_names)
         arguments.extend(bmSuiteArgs)
         out = mx.OutputCapture()
         jt(arguments, out=out)
@@ -272,6 +282,7 @@ classic_benchmarks = [
     'mandelbrot',
     'matrix-multiply',
     'n-body',
+    'neural-net',
     'pidigits',
     'red-black',
     'richards',
@@ -372,9 +383,50 @@ class PSDBenchmarkSuite(AllBenchmarksBenchmarkSuite):
     def time(self):
         return psd_benchmark_time
 
+synthetic_benchmarks = [
+    'acid'
+]
+
+synthetic_benchmark_time = 120
+
+class SyntheticBenchmarkSuite(AllBenchmarksBenchmarkSuite):
+    def name(self):
+        return 'synthetic'
+
+    def benchmarks(self):
+        return synthetic_benchmarks
+    
+    def time(self):
+        return synthetic_benchmark_time
+
+micro_benchmark_time = 30
+
+class MicroBenchmarkSuite(AllBenchmarksBenchmarkSuite):
+    def name(self):
+        return 'micro'
+
+    def benchmarks(self):
+        out = mx.OutputCapture()
+        jt(['where', 'repos', 'all-ruby-benchmarks'], out=out)
+        all_ruby_benchmarks = out.data.strip()
+        benchmarks = []
+        for root, dirs, files in os.walk(os.path.join(all_ruby_benchmarks, 'micro')):
+            for name in files:
+                if name.endswith('.rb'):
+                    benchmark_file = os.path.join(root, name)[len(all_ruby_benchmarks)+1:]
+                    out = mx.OutputCapture()
+                    jt(['benchmark', 'list', benchmark_file], out=out)
+                    benchmarks.extend([benchmark_file + ':' + b.strip() for b in out.data.split('\n') if len(b.strip()) > 0])
+        return benchmarks
+    
+    def time(self):
+        return micro_benchmark_time
+
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
 mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())
 mx_benchmark.add_bm_suite(TimeBenchmarkSuite())
 mx_benchmark.add_bm_suite(ClassicBenchmarkSuite())
 mx_benchmark.add_bm_suite(ChunkyBenchmarkSuite())
 mx_benchmark.add_bm_suite(PSDBenchmarkSuite())
+mx_benchmark.add_bm_suite(SyntheticBenchmarkSuite())
+mx_benchmark.add_bm_suite(MicroBenchmarkSuite())
