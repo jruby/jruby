@@ -112,7 +112,9 @@ import org.jruby.truffle.core.format.unpack.ArrayResult;
 import org.jruby.truffle.core.format.unpack.UnpackCompiler;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
+import org.jruby.truffle.core.numeric.FixnumLowerNode;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
+import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.ConcatRope;
 import org.jruby.truffle.core.rope.LeafRope;
@@ -144,7 +146,6 @@ import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
-import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.StringSupport;
 import java.io.UnsupportedEncodingException;
@@ -4090,34 +4091,14 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object stringToInum(DynamicObject string, int fixBase, boolean strict) {
-            try {
-                final org.jruby.RubyInteger result = ConvertBytes.byteListToInum19(getContext().getJRubyRuntime(),
-                        StringOperations.getByteListReadOnly(string),
-                        fixBase,
-                        strict);
-
-                return toTruffle(result);
-            } catch (org.jruby.exceptions.RaiseException e) {
-                throw new RaiseException(getContext().getJRubyInterop().toTruffle(e.getException(), this));
-            }
-        }
-
-        private Object toTruffle(IRubyObject object) {
-            if (object instanceof org.jruby.RubyFixnum) {
-                final long value = ((org.jruby.RubyFixnum) object).getLongValue();
-
-                if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
-                    return value;
-                }
-
-                return (int) value;
-            } else if (object instanceof org.jruby.RubyBignum) {
-                final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
-                return createBignum(value);
-            } else {
-                throw new UnsupportedOperationException();
-            }
+        public Object stringToInum(DynamicObject string, int fixBase, boolean strict,
+                                   @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
+            return ConvertBytes.byteListToInum19(getContext(),
+                    this,
+                    fixnumOrBignumNode,
+                    string,
+                    fixBase,
+                    strict);
         }
 
     }
