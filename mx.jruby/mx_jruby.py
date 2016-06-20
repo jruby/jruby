@@ -413,7 +413,7 @@ class MicroBenchmarkSuite(AllBenchmarksBenchmarkSuite):
         for root, dirs, files in os.walk(os.path.join(all_ruby_benchmarks, 'micro')):
             for name in files:
                 if name.endswith('.rb'):
-                    benchmark_file = os.path.join(root, name)
+                    benchmark_file = os.path.join(root, name)[len(all_ruby_benchmarks)+1:]
                     out = mx.OutputCapture()
                     jt(['benchmark', 'list', benchmark_file], out=out)
                     benchmarks.extend([benchmark_file + ':' + b.strip() for b in out.data.split('\n') if len(b.strip()) > 0])
