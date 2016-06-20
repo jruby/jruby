@@ -37,7 +37,7 @@ graal-core: {
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
-      version: "8u92-jvmci-0.14",
+      version: "8u92-jvmci-0.15",
       platformspecific: true
     }
   }
