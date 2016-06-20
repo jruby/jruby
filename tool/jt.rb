@@ -957,7 +957,7 @@ module Commands
     end
     
     run_args = []
-    run_args.push '--graal' unless args.delete('--no-graal')
+    run_args.push '--graal' unless args.delete('--no-graal') || args.include?('list')
     run_args.push '-I', "#{Utilities.find_gem('deep-bench')}/lib" rescue nil
     run_args.push '-I', "#{Utilities.find_gem('benchmark-ips')}/lib" rescue nil
     run_args.push "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark"
