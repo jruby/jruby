@@ -27,7 +27,6 @@ fails:String#% doesn't return subclass instances when called on a subclass
 fails:String#% always taints the result when the format string is tainted
 fails:String#% supports binary formats using %b for positive numbers
 fails:String#% supports binary formats using %b for negative numbers
-fails:String#% supports binary formats using %B with same behaviour as %b except for using 0B instead of 0b for #
 fails:String#% supports character formats using %c
 fails:String#% supports single character strings as argument for %c
 fails:String#% raises an exception for multiple character strings as argument for %c

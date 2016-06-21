@@ -27,6 +27,6 @@ flag : SPACE
      | MINUS
      | STAR
      | HASH
-     | NUMBER DOLLAR ;
+     | argumentIndex=NUMBER DOLLAR ;
 
 literal : LITERAL ;

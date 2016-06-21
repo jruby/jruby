@@ -87,6 +87,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
         int zeroPadding = DEFAULT;
         boolean hasPlusFlag = false;
         boolean useAlternativeFormat = false;
+        int absoluteArgumentIndex = DEFAULT;
 
         for (int n = 0; n < ctx.flag().size(); n++) {
             final PrintfParser.FlagContext flag = ctx.flag(n);
@@ -113,6 +114,8 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                 hasPlusFlag = true;
             } else if (flag.HASH() != null) {
                 useAlternativeFormat = true;
+            } else if (flag.argumentIndex != null) {
+                absoluteArgumentIndex = Integer.parseInt(flag.argumentIndex.getText());
             } else {
                 throw new UnsupportedOperationException();
             }
