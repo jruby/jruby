@@ -99,7 +99,7 @@ public abstract class EncodingNodes {
     @TruffleBoundary
     public static DynamicObject newEncoding(RubyContext context, DynamicObject encodingClass, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
         // TODO (nirvdrum 21-Jun-16): We probably don't need to create a ByteList and two Ropes. Without any guarantees on the code range of the encoding name, however, we must be conservative.
-        final Rope rope = StringOperations.ropeFromByteList(new ByteList(name, p, end));
+        final Rope rope = StringOperations.ropeFromByteList(new ByteList(name, p, end, USASCIIEncoding.INSTANCE, false));
         final Rope cachedRope = context.getRopeTable().getRope(rope.getBytes(), rope.getEncoding(), rope.getCodeRange());
         final DynamicObject string = context.getFrozenStrings().getFrozenString(cachedRope);
 
