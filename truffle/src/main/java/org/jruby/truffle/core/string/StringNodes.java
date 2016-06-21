@@ -2815,26 +2815,6 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_check_null_safe", needsSelf = false)
-    public static abstract class StringCheckNullSafePrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject stringCheckNullSafe(DynamicObject string,
-                @Cached("create()") BranchProfile errorProfile) {
-            final byte[] bytes = rope(string).getBytes();
-
-            for (int i = 0; i < bytes.length; i++) {
-                if (bytes[i] == 0) {
-                    errorProfile.enter();
-                    throw new RaiseException(coreExceptions().argumentError("string contains NULL byte", this));
-                }
-            }
-
-            return string;
-        }
-
-    }
-
     @Primitive(name = "string_chr_at", lowerFixnumParameters = 0)
     @ImportStatic(StringGuards.class)
     public static abstract class StringChrAtPrimitiveNode extends PrimitiveArrayArgumentsNode {
