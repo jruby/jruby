@@ -616,11 +616,26 @@ public abstract class InteropNodes {
     @CoreMethod(names = "to_java_string", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class InteropToJavaStringNode extends CoreMethodArrayArgumentsNode {
 
-        @Child NameToJavaStringNode toJavaStringNode = NameToJavaStringNode.create();
+        @Specialization
+        public Object toJavaString(
+                VirtualFrame frame, Object value,
+                @Cached("create()") NameToJavaStringNode toJavaStringNode) {
+            return toJavaStringNode.executeToJavaString(frame, value);
+        }
+
+    }
+
+    @CoreMethod(names = "from_java_string", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class InteropFromJavaStringNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public Object toJavaString(VirtualFrame frame, Object value) {
-            return toJavaStringNode.executeToJavaString(frame, value);
+        public Object fromJavaString(VirtualFrame frame, Object value,
+                                     @Cached("createForeignToRubyNode()") ForeignToRubyNode foreignToRubyNode) {
+            return foreignToRubyNode.executeConvert(frame, value);
+        }
+
+        protected ForeignToRubyNode createForeignToRubyNode() {
+            return ForeignToRubyNodeGen.create(null);
         }
 
     }

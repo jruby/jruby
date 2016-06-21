@@ -180,3 +180,5 @@ module Truffle
     end
   end
 end
+
+Truffle::Interop.export(:ruby_cext, Truffle::CExt)
