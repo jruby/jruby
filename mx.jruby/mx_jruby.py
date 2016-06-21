@@ -98,15 +98,15 @@ class MavenBuildTask(mx.BuildTask):
 
         # Build jruby-truffle
 
-        mx.run_maven(['--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir)
+        mx.run_maven(['-q', '--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir)
 
         mx.log('Building without tests')
 
-        mx.run_maven(['-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir)
+        mx.run_maven(['-q', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir)
 
         mx.log('Building complete version')
 
-        mx.run_maven(['-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir)
+        mx.run_maven(['-q', '-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir)
         mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
         mx.log('...finished build of {}'.format(self.subject))
@@ -115,7 +115,7 @@ class MavenBuildTask(mx.BuildTask):
         if forBuild:
             return
         rubyDir = _suite.dir
-        mx.run_maven(['clean'], nonZeroIsFatal=False, cwd=rubyDir)
+        mx.run_maven(['-q', 'clean'], nonZeroIsFatal=False, cwd=rubyDir)
 
 class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
     def group(self):
