@@ -26,6 +26,7 @@ flag : SPACE
      | PLUS
      | MINUS
      | STAR
+     | HASH
      | NUMBER DOLLAR ;
 
 literal : LITERAL ;

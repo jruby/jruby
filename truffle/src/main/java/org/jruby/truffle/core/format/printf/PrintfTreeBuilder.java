@@ -86,6 +86,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
         int spacePadding = DEFAULT;
         int zeroPadding = DEFAULT;
         boolean hasPlusFlag = false;
+        boolean useAlternativeFormat = false;
 
         for (int n = 0; n < ctx.flag().size(); n++) {
             final PrintfParser.FlagContext flag = ctx.flag(n);
@@ -110,6 +111,8 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                 // Handled in space and zero, above
             } else if (flag.PLUS() != null) {
                 hasPlusFlag = true;
+            } else if (flag.HASH() != null) {
+                useAlternativeFormat = true;
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -216,7 +219,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
                 if(type == 'b' || type == 'B'){
                     node = WriteBytesNodeGen.create(context,
-                        FormatIntegerBinaryNodeGen.create(context, format, hasPlusFlag,
+                        FormatIntegerBinaryNodeGen.create(context, format, hasPlusFlag, useAlternativeFormat,
                             spacePaddingNode,
                             zeroPaddingNode,
                             ToIntegerNodeGen.create(context, valueNode)));

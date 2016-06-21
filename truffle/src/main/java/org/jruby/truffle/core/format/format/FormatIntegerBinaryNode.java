@@ -31,11 +31,13 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
 
     private final char format;
     private final boolean hasPlusFlag;
+    private final boolean useAlternativeFormat;
 
-    public FormatIntegerBinaryNode(RubyContext context, char format, boolean hasPlusFlag) {
+    public FormatIntegerBinaryNode(RubyContext context, char format, boolean hasPlusFlag, boolean useAlternativeFormat) {
         super(context);
         this.format = format;
         this.hasPlusFlag = hasPlusFlag;
+        this.useAlternativeFormat = useAlternativeFormat;
     }
 
     @Specialization
@@ -46,7 +48,8 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
         final boolean isNegative = value < 0;
         final boolean negativeAndPadded = isNegative && (isSpacePadded || this.hasPlusFlag);
         final String formatted = negativeAndPadded ? Integer.toBinaryString(-value) : Integer.toBinaryString(value);
-        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded, this.hasPlusFlag);
+        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded, this.hasPlusFlag,
+            this.useAlternativeFormat, this.format);
     }
 
     @TruffleBoundary
@@ -57,12 +60,14 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
         final boolean isNegative = bigInteger.signum() == -1;
         final boolean negativeAndPadded = isNegative && (isSpacePadded || this.hasPlusFlag);
         final String formatted = negativeAndPadded ? bigInteger.abs().toString(2) : bigInteger.toString(2);
-        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded, this.hasPlusFlag);
+        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded, this.hasPlusFlag,
+            this.useAlternativeFormat, this.format);
     }
 
     @TruffleBoundary
     private static byte[] getFormattedString(String formatted, int spacePadding, int zeroPadding, boolean isNegative,
-                                             boolean isSpacePadded, boolean hasPlusFlag) {
+                                             boolean isSpacePadded, boolean hasPlusFlag, boolean useAlternativeFormat,
+                                             char format) {
         if (isNegative && !(isSpacePadded || hasPlusFlag)) {
             if (formatted.contains("0")) {
                 formatted = formatted.substring(formatted.indexOf('0'), formatted.length());
@@ -79,6 +84,14 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
         } else {
             while (formatted.length() < zeroPadding) {
                 formatted = "0" + formatted;
+            }
+        }
+
+        if (useAlternativeFormat) {
+            if(format == 'B'){
+                formatted = "0B" + formatted;
+            } else {
+                formatted = "0b" + formatted;
             }
         }
 

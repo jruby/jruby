@@ -3,8 +3,6 @@ fails:Kernel#sprintf passes some tests for negative %x
 fails:Kernel#sprintf passes some tests for negative %u
 fails:Kernel#sprintf passes some tests for positive %u
 fails:Kernel#sprintf passes some tests for positive %d
-fails:Kernel#sprintf passes some tests for positive %f
-fails:Kernel#sprintf passes some tests for negative %f
 fails:Kernel#sprintf passes kstephens's tests
 fails:Kernel#sprintf returns a String in the same encoding as the format String if compatible
 fails:Kernel#sprintf returns a String in the argument encoding if format encoding is more restrictive
