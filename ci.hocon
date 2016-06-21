@@ -121,16 +121,19 @@ jruby-truffle: {
 }
 
 gate-caps: {
-  capabilities: [linux, amd64, gate, post-push]
+  capabilities: [linux, amd64]
+  target: [gate, post-push]
 }
 
 bench-caps: {
-  capabilities: [x52, linux, amd64, bench, post-push]
+  capabilities: [x52, linux, amd64]
+  target: [bench, post-push]
   timelimit: "02:00:00"
 }
 
 daily-bench-caps: {
-  capabilities: [x52, linux, amd64, daily]
+  capabilities: [x52, linux]
+  target: [daily]
   timelimit: "02:00:00"
 }
 

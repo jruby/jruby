@@ -89,7 +89,6 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
-import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.PrimitiveNode;
@@ -245,8 +244,6 @@ public abstract class StringNodes {
     public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
-        @Child private RopeNodes.MakeConcatNode makeConcatNode;
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private ToIntNode toIntNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -284,12 +281,6 @@ public abstract class StringNodes {
             }
 
             return executeInt(frame, string, toIntNode.doInt(frame, times));
-        }
-
-        protected static boolean isSingleByteString(DynamicObject string) {
-            assert RubyGuards.isRubyString(string);
-
-            return rope(string).byteLength() == 1;
         }
 
     }
@@ -1487,38 +1478,6 @@ public abstract class StringNodes {
             }
 
             return nil();
-        }
-    }
-
-    @NonStandard
-    @CoreMethod(names = "num_bytes=", lowerFixnumParameters = 0, required = 1)
-    public abstract static class SetNumBytesNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public SetNumBytesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
-
-        @Specialization
-        public DynamicObject setNumBytes(DynamicObject string, int count,
-                @Cached("create()") BranchProfile errorProfile) {
-            final Rope rope = rope(string);
-
-            if (count > rope.byteLength()) {
-                errorProfile.enter();
-                throw new RaiseException(coreExceptions().argumentError(formatError(count, rope), this));
-            }
-
-            StringOperations.setRope(string, makeSubstringNode.executeMake(rope, 0, count));
-
-            return string;
-        }
-
-        @TruffleBoundary
-        private String formatError(int count, final Rope rope) {
-            return String.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength());
         }
     }
 
@@ -2844,26 +2803,6 @@ public abstract class StringNodes {
         @Specialization(guards = "isRubyRange(range)")
         public Object stringByteSubstring(DynamicObject string, DynamicObject range, NotProvided length) {
             return null;
-        }
-
-    }
-
-    @Primitive(name = "string_check_null_safe", needsSelf = false)
-    public static abstract class StringCheckNullSafePrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject stringCheckNullSafe(DynamicObject string,
-                @Cached("create()") BranchProfile errorProfile) {
-            final byte[] bytes = rope(string).getBytes();
-
-            for (int i = 0; i < bytes.length; i++) {
-                if (bytes[i] == 0) {
-                    errorProfile.enter();
-                    throw new RaiseException(coreExceptions().argumentError("string contains NULL byte", this));
-                }
-            }
-
-            return string;
         }
 
     }

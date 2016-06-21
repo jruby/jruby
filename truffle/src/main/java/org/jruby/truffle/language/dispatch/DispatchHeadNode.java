@@ -62,9 +62,4 @@ public class DispatchHeadNode extends Node {
         return dispatchAction;
     }
 
-    public void forceUncached() {
-        adoptChildren();
-        first.replace(new UncachedDispatchNode(context, ignoreVisibility, dispatchAction, missingBehavior));
-    }
-
 }

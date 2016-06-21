@@ -67,6 +67,7 @@ public class RubyCallNode extends RubyNode {
         this.methodName = methodName;
         this.receiver = receiver;
         this.arguments = arguments;
+
         if (block == null) {
             this.block = null;
         } else {
@@ -76,8 +77,6 @@ public class RubyCallNode extends RubyNode {
         this.isSplatted = isSplatted;
         this.isVCall = isVCall;
         this.ignoreVisibility = ignoreVisibility;
-
-        this.dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility);
     }
 
     @Override
@@ -85,6 +84,11 @@ public class RubyCallNode extends RubyNode {
         final Object receiverObject = receiver.execute(frame);
         final Object[] argumentsObjects = executeArguments(frame);
         final DynamicObject blockObject = executeBlock(frame);
+
+        if (dispatchHead == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            dispatchHead = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), ignoreVisibility));
+        }
 
         return dispatchHead.call(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
