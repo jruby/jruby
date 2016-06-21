@@ -30,14 +30,21 @@ public class TruffleStringNodes {
     @CoreMethod(names = "truncate", onSingleton = true, required = 2, lowerFixnumParameters = 1)
     public abstract static class TruncateNode extends CoreMethodArrayArgumentsNode {
 
-        @Specialization(guards = { "isRubyString(string)", "isNewLengthTooLarge(string, newByteLength)" })
+        @Specialization(guards = { "newByteLength < 0" })
         @TruffleBoundary
-        public DynamicObject truncateError(DynamicObject string, int newByteLength) {
+        public DynamicObject truncateLengthNegative(DynamicObject string, int newByteLength) {
             throw new RaiseException(
-                    getContext().getCoreExceptions().argumentError(formatError(newByteLength, rope(string)), this));
+                    getContext().getCoreExceptions().argumentError(formatNegativeError(newByteLength), this));
         }
 
-        @Specialization(guards = { "isRubyString(string)" })
+        @Specialization(guards = { "newByteLength > 0", "isRubyString(string)", "isNewLengthTooLarge(string, newByteLength)" })
+        @TruffleBoundary
+        public DynamicObject truncateLengthTooLong(DynamicObject string, int newByteLength) {
+            throw new RaiseException(
+                    getContext().getCoreExceptions().argumentError(formatTooLongError(newByteLength, rope(string)), this));
+        }
+
+        @Specialization(guards = { "newByteLength > 0", "isRubyString(string)", "!isNewLengthTooLarge(string, newByteLength)" })
         public DynamicObject stealStorage(DynamicObject string, int newByteLength,
                                           @Cached("createX()") RopeNodes.MakeSubstringNode makeSubstringNode) {
 
@@ -53,7 +60,12 @@ public class TruffleStringNodes {
         }
 
         @TruffleBoundary
-        private String formatError(int count, final Rope rope) {
+        private String formatNegativeError(int count) {
+            return String.format("Invalid byte count: %d is negative", count);
+        }
+
+        @TruffleBoundary
+        private String formatTooLongError(int count, final Rope rope) {
             return String.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength());
         }
 
