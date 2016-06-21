@@ -21,6 +21,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
@@ -435,11 +436,11 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "locale_charmap", onSingleton = true)
     public abstract static class LocaleCharacterMapNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject localeCharacterMap() {
-            final ByteList name = new ByteList(getContext().getJRubyRuntime().getEncodingService().getLocaleEncoding().getName());
-            return createString(name);
+            final DynamicObject rubyEncoding = EncodingNodes.getEncoding(getContext().getJRubyRuntime().getEncodingService().getLocaleEncoding());
+
+            return Layouts.ENCODING.getName(rubyEncoding);
         }
     }
 
