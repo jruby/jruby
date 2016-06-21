@@ -117,7 +117,7 @@ class Symbol
       end
 
       str = to_s
-      match_data = index.search_region(str, 0, str.num_bytes, true)
+      match_data = index.search_region(str, 0, str.bytesize, true)
       Regexp.last_match = match_data
       if match_data
         result = match_data.to_s

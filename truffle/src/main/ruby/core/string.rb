@@ -112,10 +112,6 @@ class String
     raise PrimitiveFailure, "String#find_character primitive failed"
   end
 
-  def num_bytes
-    bytesize
-  end
-
   def byte_append(str)
     Truffle.primitive :string_byte_append
     raise TypeError, "String#byte_append primitive only accepts Strings"
@@ -436,7 +432,7 @@ class String
 
   def shorten!(size)
     return if bytesize == 0
-    self.num_bytes -= size
+    Truffle::String.truncate(self, bytesize - size)
   end
 
   def each_codepoint
@@ -937,7 +933,7 @@ class String
       end
     end
 
-    self.num_bytes = bytes
+    Truffle::String.truncate(self, bytes)
 
     self
   end
@@ -1003,7 +999,7 @@ class String
       bytes = bytesize - size
     end
 
-    self.num_bytes = bytes
+    Truffle::String.truncate(self, bytes)
 
     self
   end

@@ -89,7 +89,6 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
-import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.PrimitiveNode;
@@ -1487,38 +1486,6 @@ public abstract class StringNodes {
             }
 
             return nil();
-        }
-    }
-
-    @NonStandard
-    @CoreMethod(names = "num_bytes=", lowerFixnumParameters = 0, required = 1)
-    public abstract static class SetNumBytesNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public SetNumBytesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
-
-        @Specialization
-        public DynamicObject setNumBytes(DynamicObject string, int count,
-                @Cached("create()") BranchProfile errorProfile) {
-            final Rope rope = rope(string);
-
-            if (count > rope.byteLength()) {
-                errorProfile.enter();
-                throw new RaiseException(coreExceptions().argumentError(formatError(count, rope), this));
-            }
-
-            StringOperations.setRope(string, makeSubstringNode.executeMake(rope, 0, count));
-
-            return string;
-        }
-
-        @TruffleBoundary
-        private String formatError(int count, final Rope rope) {
-            return String.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength());
         }
     }
 

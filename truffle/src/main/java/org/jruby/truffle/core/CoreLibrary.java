@@ -87,6 +87,7 @@ import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.WeakRefPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.TruffleStringNodesFactory;
 import org.jruby.truffle.core.symbol.SymbolNodesFactory;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationNodesFactory;
@@ -615,6 +616,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Ropes");
         defineModule(truffleModule, "GC");
         defineModule(truffleModule, "Array");
+        defineModule(truffleModule, "String");
         final DynamicObject attachments = defineModule(truffleModule, "Attachments");
         defineModule(attachments, "Internal");
         defineModule(truffleModule, "Boot");
@@ -846,6 +848,7 @@ public class CoreLibrary {
             coreMethodNodeManager.addCoreMethodNodes(TruffleDebugNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(TruffleBindingNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(TruffleArrayNodesFactory.getFactories());
+            coreMethodNodeManager.addCoreMethodNodes(TruffleStringNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(BCryptNodesFactory.getFactories());
             return null;
         }));
