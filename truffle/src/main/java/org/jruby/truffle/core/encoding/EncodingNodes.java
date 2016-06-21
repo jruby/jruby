@@ -37,6 +37,7 @@ import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
@@ -94,8 +95,14 @@ public abstract class EncodingNodes {
         LOOKUP.put(aliasName.toLowerCase(Locale.ENGLISH), encoding);
     }
 
-    public static DynamicObject newEncoding(DynamicObject encodingClass, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
-        return createRubyEncoding(encodingClass, encoding, new ByteList(name, p, end), dummy);
+    @TruffleBoundary
+    public static DynamicObject newEncoding(RubyContext context, DynamicObject encodingClass, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
+        // TODO (nirvdrum 21-Jun-16): We probably don't need to create a ByteList and two Ropes. Without any guarantees on the code range of the encoding name, however, we must be conservative.
+        final Rope rope = StringOperations.ropeFromByteList(new ByteList(name, p, end));
+        final Rope cachedRope = context.getRopeTable().getRope(rope.getBytes(), rope.getEncoding(), rope.getCodeRange());
+        final DynamicObject string = context.getFrozenStrings().getFrozenString(cachedRope);
+
+        return createRubyEncoding(encodingClass, encoding, string, dummy);
     }
 
     public static Object[] cloneEncodingList() {
@@ -106,7 +113,7 @@ public abstract class EncodingNodes {
         return clone;
     }
 
-    public static DynamicObject createRubyEncoding(DynamicObject encodingClass, Encoding encoding, ByteList name, boolean dummy) {
+    public static DynamicObject createRubyEncoding(DynamicObject encodingClass, Encoding encoding, DynamicObject name, boolean dummy) {
         return Layouts.ENCODING.createEncoding(Layouts.CLASS.getInstanceFactory(encodingClass), encoding, name, dummy);
     }
 
@@ -487,7 +494,7 @@ public abstract class EncodingNodes {
 
             final DynamicObject[] encodings = ENCODING_LIST;
             for (int i = 0; i < encodings.length; i++) {
-                final Object upcased = upcaseNode.call(frame, createString(Layouts.ENCODING.getName(encodings[i])), "upcase", null);
+                final Object upcased = upcaseNode.call(frame, Layouts.ENCODING.getName(encodings[i]), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
                 final Object value = newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", null, nil(), i);
 
@@ -544,10 +551,11 @@ public abstract class EncodingNodes {
                 return nil();
             }
 
-            final ByteList encodingName = new ByteList(encoding.getName());
+            final Rope encodingNameRope = RopeOperations.create(encoding.getName(), ASCIIEncoding.INSTANCE, CodeRange.CR_UNKNOWN);
 
             for (int i = 0; i < encodings.length; i++) {
-                if (Layouts.ENCODING.getName(encodings[i]).equals(encodingName)) {
+                final Rope nameRope = StringOperations.rope(Layouts.ENCODING.getName(encodings[i]));
+                if (nameRope.equals(encodingNameRope)) {
                     return i;
                 }
             }
@@ -559,13 +567,11 @@ public abstract class EncodingNodes {
     @CoreMethod(names = { "name", "to_s" })
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject encoding) {
-            final ByteList name = Layouts.ENCODING.getName(encoding).dup();
-            name.setEncoding(ASCIIEncoding.INSTANCE);
-            return createString(name);
+            return Layouts.ENCODING.getName(encoding);
         }
+
     }
 
     @CoreMethod(names = "allocate", constructor = true)

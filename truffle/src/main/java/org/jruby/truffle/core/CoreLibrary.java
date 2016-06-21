@@ -1081,7 +1081,7 @@ public class CoreLibrary {
         getContext().getJRubyRuntime().getEncodingService().defineEncodings(new EncodingService.EncodingDefinitionVisitor() {
             @Override
             public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
-                DynamicObject re = EncodingNodes.newEncoding(encodingClass, null, name, p, end, encodingEntry.isDummy());
+                DynamicObject re = EncodingNodes.newEncoding(getContext(), encodingClass, null, name, p, end, encodingEntry.isDummy());
                 EncodingNodes.storeEncoding(encodingEntry.getIndex(), re);
             }
 
