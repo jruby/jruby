@@ -165,18 +165,22 @@ public class RubyInstanceConfig {
 
     public void tryProcessArgumentsWithRubyopts() {
         try {
-            // environment defaults to System.getenv normally
-            Object rubyoptObj = environment.get("RUBYOPT");
-            String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
-
-            if (rubyopt == null || rubyopt.length() == 0) return;
-
-            String[] rubyoptArgs = rubyopt.split("\\s+");
-            if (rubyoptArgs.length != 0) {
-                new ArgumentProcessor(rubyoptArgs, false, true, true, this).processArguments();
-            }
+            processArgumentsWithRubyopts();
         } catch (SecurityException se) {
             // ignore and do nothing
+        }
+    }
+
+    public void processArgumentsWithRubyopts() {
+        // environment defaults to System.getenv normally
+        Object rubyoptObj = environment.get("RUBYOPT");
+        String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
+
+        if (rubyopt == null || rubyopt.length() == 0) return;
+
+        String[] rubyoptArgs = rubyopt.split("\\s+");
+        if (rubyoptArgs.length != 0) {
+            new ArgumentProcessor(rubyoptArgs, false, true, true, this).processArguments();
         }
     }
 
