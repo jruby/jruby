@@ -113,12 +113,10 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "ascii_compatible?")
     public abstract static class AsciiCompatibleNode extends CoreMethodArrayArgumentsNode {
 
-        @Specialization(guards = {
-                "encoding == cachedEncoding",
-        }, limit = "getCacheLimit()")
+        @Specialization(guards = "encoding == cachedEncoding", limit = "getCacheLimit()")
         public boolean isCompatibleCached(DynamicObject encoding,
                                           @Cached("encoding") DynamicObject cachedEncoding,
-                                          @Cached("isAsciiCompatible(encoding)") boolean isAsciiCompatible) {
+                                          @Cached("isAsciiCompatible(cachedEncoding)") boolean isAsciiCompatible) {
             return isAsciiCompatible;
         }
 
