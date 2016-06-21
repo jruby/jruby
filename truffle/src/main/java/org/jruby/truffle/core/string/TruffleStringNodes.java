@@ -37,14 +37,14 @@ public class TruffleStringNodes {
                     getContext().getCoreExceptions().argumentError(formatNegativeError(newByteLength), this));
         }
 
-        @Specialization(guards = { "newByteLength > 0", "isRubyString(string)", "isNewLengthTooLarge(string, newByteLength)" })
+        @Specialization(guards = { "newByteLength >= 0", "isRubyString(string)", "isNewLengthTooLarge(string, newByteLength)" })
         @TruffleBoundary
         public DynamicObject truncateLengthTooLong(DynamicObject string, int newByteLength) {
             throw new RaiseException(
                     getContext().getCoreExceptions().argumentError(formatTooLongError(newByteLength, rope(string)), this));
         }
 
-        @Specialization(guards = { "newByteLength > 0", "isRubyString(string)", "!isNewLengthTooLarge(string, newByteLength)" })
+        @Specialization(guards = { "newByteLength >= 0", "isRubyString(string)", "!isNewLengthTooLarge(string, newByteLength)" })
         public DynamicObject stealStorage(DynamicObject string, int newByteLength,
                                           @Cached("createX()") RopeNodes.MakeSubstringNode makeSubstringNode) {
 
