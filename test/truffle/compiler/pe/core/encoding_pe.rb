@@ -8,3 +8,6 @@
 
 example "Encoding::US_ASCII.ascii_compatible?", true
 example "Encoding::UTF_16BE.ascii_compatible?", false
+
+example "Encoding::ISO_2022_JP.dummy?", true
+example "Encoding::UTF_8.dummy?", false

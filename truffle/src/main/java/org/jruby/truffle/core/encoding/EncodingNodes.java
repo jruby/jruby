@@ -439,8 +439,25 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "dummy?")
     public abstract static class DummyNode extends CoreMethodArrayArgumentsNode {
 
-        @Specialization
-        public boolean isDummy(DynamicObject encoding) {
+        @Specialization(guards = "encoding == cachedEncoding", limit = "getCacheLimit()")
+        public boolean isDummyCached(DynamicObject encoding,
+                                     @Cached("encoding") DynamicObject cachedEncoding,
+                                     @Cached("isDummy(cachedEncoding)") boolean isDummy) {
+            return isDummy;
+        }
+
+        @Specialization(contains = "isDummyCached")
+        public boolean isDummyUncached(DynamicObject encoding) {
+            return isDummy(encoding);
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().ENCODING_LOADED_CLASSES_CACHE;
+        }
+
+        protected static boolean isDummy(DynamicObject encoding) {
+            assert RubyGuards.isRubyEncoding(encoding);
+
             return Layouts.ENCODING.getDummy(encoding);
         }
     }
