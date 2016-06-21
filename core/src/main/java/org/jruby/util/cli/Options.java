@@ -266,6 +266,7 @@ public class Options {
     public static final Option<Integer> TRUFFLE_EVAL_CACHE = integer(TRUFFLE, "truffle.eval.cache", TRUFFLE_DEFAULT_CACHE.load(), "eval cache size.");
     public static final Option<Integer> TRUFFLE_CLASS_CACHE = integer(TRUFFLE, "truffle.class.cache", TRUFFLE_DEFAULT_CACHE.load(), ".class and .metaclass cache size.");
     public static final Option<Integer> TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE = integer(TRUFFLE, "truffle.encoding_compatible_query.cache", TRUFFLE_DEFAULT_CACHE.load(), "Encoding.compatible? cache size.");
+    public static final Option<Integer> TRUFFLE_ENCODING_LOADED_CLASSES_CACHE = integer(TRUFFLE, "truffle.encoding_loaded_classes.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size of encoding operations based on anticipated number of total active encodings.");
     public static final Option<Integer> TRUFFLE_THREAD_CACHE = integer(TRUFFLE, "truffle.thread.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size of operations that depend on a particular thread.");
     public static final Option<Integer> TRUFFLE_ROPE_CLASS_CACHE = integer(TRUFFLE, "truffle.rope_class.cache", 6, "Cache size for rope operations that depend on a concrete rope implementation to avoid virtual calls.");
     public static final Option<Integer> TRUFFLE_INTEROP_CONVERT_CACHE = integer(TRUFFLE, "truffle.interop.convert.cache", TRUFFLE_DEFAULT_CACHE.load(), "Cache size for converting values for interop.");

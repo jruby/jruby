@@ -113,8 +113,27 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "ascii_compatible?")
     public abstract static class AsciiCompatibleNode extends CoreMethodArrayArgumentsNode {
 
-        @Specialization
-        public Object isCompatible(DynamicObject encoding) {
+        @Specialization(guards = {
+                "encoding == cachedEncoding",
+        }, limit = "getCacheLimit()")
+        public boolean isCompatibleCached(DynamicObject encoding,
+                                          @Cached("encoding") DynamicObject cachedEncoding,
+                                          @Cached("isAsciiCompatible(encoding)") boolean isAsciiCompatible) {
+            return isAsciiCompatible;
+        }
+
+        @Specialization(contains = "isCompatibleCached")
+        public boolean isCompatibleUncached(DynamicObject encoding) {
+            return isAsciiCompatible(encoding);
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().ENCODING_LOADED_CLASSES_CACHE;
+        }
+
+        protected static boolean isAsciiCompatible(DynamicObject encoding) {
+            assert RubyGuards.isRubyEncoding(encoding);
+
             return EncodingOperations.getEncoding(encoding).isAsciiCompatible();
         }
     }
