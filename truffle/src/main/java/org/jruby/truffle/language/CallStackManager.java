@@ -39,22 +39,37 @@ public class CallStackManager {
         this.context = context;
     }
 
+    private static final Object STOP_ITERATING = new Object();
+
     @TruffleBoundary
     public FrameInstance getCallerFrameIgnoringSend() {
-        final Memo<Boolean> firstFrame = new Memo<>(true);
+        FrameInstance callerFrame = Truffle.getRuntime().getCallerFrame();
+        if (callerFrame == null) {
+            return null;
+        }
+        InternalMethod method = getMethod(callerFrame);
 
-        final FrameInstance fi = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
+        if (method == null) { // Not a Ruby frame
+            return null;
+        } else if (!context.getCoreLibrary().isSend(method)) {
+            return callerFrame;
+        }
+
+        // Need to iterate further
+        final Object frame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
+            int depth = 0;
+
             @Override
-            public FrameInstance visitFrame(FrameInstance frameInstance) {
-                if (firstFrame.get()) {
-                    firstFrame.set(false);
+            public Object visitFrame(FrameInstance frameInstance) {
+                depth++;
+                if (depth < 2) {
                     return null;
                 }
 
-                final InternalMethod method = getMethod(frameInstance);
-                assert method != null;
-
-                if (!context.getCoreLibrary().isSend(method)) {
+                InternalMethod method = getMethod(frameInstance);
+                if (method == null) {
+                    return STOP_ITERATING;
+                } else if (!context.getCoreLibrary().isSend(method)) {
                     return frameInstance;
                 } else {
                     return null;
@@ -62,7 +77,11 @@ public class CallStackManager {
             }
         });
 
-        return fi;
+        if (frame instanceof FrameInstance) {
+            return (FrameInstance) frame;
+        } else {
+            return null;
+        }
     }
 
     @TruffleBoundary
@@ -96,7 +115,7 @@ public class CallStackManager {
     }
 
     private InternalMethod getMethod(FrameInstance frame) {
-        return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true));
+        return RubyArguments.tryGetMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true));
     }
 
     public Backtrace getBacktrace(Node currentNode, Throwable javaThrowable) {

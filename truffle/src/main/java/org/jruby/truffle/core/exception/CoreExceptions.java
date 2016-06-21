@@ -111,6 +111,12 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject argumentErrorInvalidValue(Object object, String expectedType, Node currentNode) {
+        String badClassName = Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(object)).getName();
+        return argumentError(String.format("invalid value for %s(): %s", badClassName, expectedType), currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject argumentError(String message, Node currentNode, Throwable javaThrowable) {
         return argumentError(StringOperations.encodeRope(message, UTF8Encoding.INSTANCE), currentNode, javaThrowable);
     }
