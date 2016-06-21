@@ -244,8 +244,6 @@ public abstract class StringNodes {
     public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
-        @Child private RopeNodes.MakeConcatNode makeConcatNode;
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private ToIntNode toIntNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -283,12 +281,6 @@ public abstract class StringNodes {
             }
 
             return executeInt(frame, string, toIntNode.doInt(frame, times));
-        }
-
-        protected static boolean isSingleByteString(DynamicObject string) {
-            assert RubyGuards.isRubyString(string);
-
-            return rope(string).byteLength() == 1;
         }
 
     }
