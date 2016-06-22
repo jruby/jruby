@@ -45,12 +45,4 @@ public class RubyObjectType extends ObjectType {
         return RubyMessageResolutionAccessor.ACCESS;
     }
 
-    public static boolean isInstance(TruffleObject object) {
-        return RubyGuards.isRubyBasicObject(object);
-    }
-
-    private RubyContext getContext() {
-        return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(this)).getContext();
-    }
-
 }
