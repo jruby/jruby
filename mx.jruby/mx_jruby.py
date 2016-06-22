@@ -105,16 +105,18 @@ class MavenBuildTask(mx.BuildTask):
         open(os.path.join(rubyDir, 'VERSION'), 'w').write('graal-vm\n')
 
         # Build jruby-truffle
+        
+        env = {'JRUBY_BUILD_MORE_QUIET': 'true'}
 
-        mx.run_maven(['--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir)
+        mx.run_maven(['--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir, env=env)
 
         mx.log('Building without tests')
 
-        mx.run_maven(['-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir)
+        mx.run_maven(['-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
 
         mx.log('Building complete version')
 
-        mx.run_maven(['-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir)
+        mx.run_maven(['-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
         mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
         mx.log('...finished build of {}'.format(self.subject))

@@ -292,7 +292,13 @@ module ShellUtils
   end
 
   def mvn(*args)
-    sh './mvnw', *(['-q'] + args)
+    if args.first.is_a? Hash
+      options = [args.shift]
+    else
+      options = []
+    end
+      
+    sh *options, './mvnw', *(['-q'] + args)
   end
   
   def maven_options(*options)
@@ -408,11 +414,12 @@ module Commands
   def build(*options)
     maven_options, other_options = maven_options(*options)
     project = other_options.first
+    env = {'JRUBY_BUILD_MORE_QUIET' => 'true'}
     case project
     when 'truffle'
-      mvn *maven_options, '-pl', 'truffle', 'package'
+      mvn env, *maven_options, '-pl', 'truffle', 'package'
     when nil
-      mvn *maven_options, 'package'
+      mvn env, *maven_options, 'package'
     else
       raise ArgumentError, project
     end
