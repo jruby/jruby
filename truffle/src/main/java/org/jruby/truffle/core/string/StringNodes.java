@@ -1138,7 +1138,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject encoding(DynamicObject string) {
-            return EncodingNodes.getEncoding(StringOperations.encoding(string));
+            return getContext().getEncodingManager().getRubyEncoding(StringOperations.encoding(string));
         }
 
     }
@@ -1159,7 +1159,7 @@ public abstract class StringNodes {
         public DynamicObject forceEncodingString(DynamicObject string, DynamicObject encodingName,
                                                  @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile,
                                                  @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
-            final DynamicObject encoding = EncodingNodes.getEncoding(encodingName.toString());
+            final DynamicObject encoding = getContext().getEncodingManager().getRubyEncoding(encodingName.toString());
             return forceEncodingEncoding(string, encoding, differentEncodingProfile, mutableRopeProfile);
         }
 

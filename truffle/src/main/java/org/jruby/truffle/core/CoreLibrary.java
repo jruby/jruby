@@ -42,7 +42,6 @@ import org.jruby.truffle.core.bool.FalseClassNodesFactory;
 import org.jruby.truffle.core.bool.TrueClassNodesFactory;
 import org.jruby.truffle.core.dir.DirNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
-import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
 import org.jruby.truffle.core.exception.ExceptionNodesFactory;
 import org.jruby.truffle.core.fiber.FiberNodesFactory;
@@ -1081,26 +1080,24 @@ public class CoreLibrary {
         getContext().getJRubyRuntime().getEncodingService().defineEncodings(new EncodingService.EncodingDefinitionVisitor() {
             @Override
             public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
-                DynamicObject re = EncodingNodes.newEncoding(getContext(), encodingClass, null, name, p, end, encodingEntry.isDummy());
-                EncodingNodes.storeEncoding(encodingEntry.getIndex(), re);
+                context.getEncodingManager().defineEncoding(encodingClass, encodingEntry, name, p, end);
             }
 
             @Override
             public void defineConstant(int encodingListIndex, String constName) {
-                Layouts.MODULE.getFields(encodingClass).setConstant(context, node, constName, EncodingNodes.getEncoding(encodingListIndex));
+                Layouts.MODULE.getFields(encodingClass).setConstant(context, node, constName, context.getEncodingManager().getRubyEncoding(encodingListIndex));
             }
         });
 
         getContext().getJRubyRuntime().getEncodingService().defineAliases(new EncodingService.EncodingAliasVisitor() {
             @Override
             public void defineAlias(int encodingListIndex, String constName) {
-                DynamicObject re = EncodingNodes.getEncoding(encodingListIndex);
-                EncodingNodes.storeAlias(constName, re);
+                context.getEncodingManager().defineAlias(encodingListIndex, constName);
             }
 
             @Override
             public void defineConstant(int encodingListIndex, String constName) {
-                Layouts.MODULE.getFields(encodingClass).setConstant(context, node, constName, EncodingNodes.getEncoding(encodingListIndex));
+                Layouts.MODULE.getFields(encodingClass).setConstant(context, node, constName, context.getEncodingManager().getRubyEncoding(encodingListIndex));
             }
         });
     }

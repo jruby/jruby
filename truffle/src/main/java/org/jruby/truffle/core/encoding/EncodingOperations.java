@@ -20,7 +20,6 @@ import org.jcodings.EncodingDB;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.util.ByteList;
 
 public abstract class EncodingOperations {
 
