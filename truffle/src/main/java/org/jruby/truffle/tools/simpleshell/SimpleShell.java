@@ -103,7 +103,7 @@ public class SimpleShell {
                 default: {
                     try {
                         final RubyRootNode rootNode = context.getCodeLoader().parse(
-                                Source.fromText(shellLine, "shell"),
+                                context.getSourceLoader().loadFragment(shellLine, "(shell)"),
                                 UTF8Encoding.INSTANCE,
                                 ParserContext.EVAL,
                                 currentFrame,

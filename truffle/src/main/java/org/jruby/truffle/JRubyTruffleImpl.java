@@ -37,8 +37,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         }
 
         try {
-            context = (RubyContext) engine.eval(Source.fromText("Truffle::Boot.context", "context")
-                    .withMimeType(RubyLanguage.MIME_TYPE)).get();
+            context = (RubyContext) engine.eval(loadSource("Truffle::Boot.context", "context")).get();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -55,8 +54,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         context.getJRubyInterop().setOriginalInputFile(rootNode.getPosition().getFile());
 
         try {
-            return engine.eval(Source.fromText("Truffle::Boot.run_jruby_root", "run_jruby_root")
-                    .withMimeType(RubyLanguage.MIME_TYPE)).get();
+            return engine.eval(loadSource("Truffle::Boot.run_jruby_root", "run_jruby_root")).get();
         } catch (IOException e) {
             if (e.getCause() instanceof ExitException) {
                 final ExitException exit = (ExitException) e.getCause();
@@ -70,6 +68,10 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
     @Override
     public void dispose() {
         engine.dispose();
+    }
+
+    private Source loadSource(String source, String name) {
+        return Source.fromText(source, name).withMimeType(RubyLanguage.MIME_TYPE);
     }
     
 }
