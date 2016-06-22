@@ -70,9 +70,9 @@ public abstract class StringOperations {
     }
 
     // Since ByteList.toString does not decode properly
-    @CompilerDirectives.TruffleBoundary
-    public static String getString(RubyContext context, DynamicObject string) {
-        return RopeOperations.decodeRope(context.getJRubyRuntime(), StringOperations.rope(string));
+    @TruffleBoundary
+    public static String getString(DynamicObject string) {
+        return RopeOperations.decodeRope(StringOperations.rope(string));
     }
 
     public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string) {

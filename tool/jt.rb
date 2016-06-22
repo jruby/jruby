@@ -292,7 +292,13 @@ module ShellUtils
   end
 
   def mvn(*args)
-    sh './mvnw', *(['-q'] + args)
+    if args.first.is_a? Hash
+      options = [args.shift]
+    else
+      options = []
+    end
+      
+    sh *options, './mvnw', *(['-q'] + args)
   end
   
   def maven_options(*options)
@@ -367,7 +373,7 @@ module Commands
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt metrics alloc [--json] ...                  how much memory is allocated running a program (use -X-T to test normal JRuby on this metric and others)'
+    puts 'jt metrics alloc [--json] ...                  how much memory is allocated running a program (use -Xclassic to test normal JRuby on this metric and others)'
     puts 'jt metrics minheap ...                         what is the smallest heap you can use to run an application'
     puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
     puts 'jt tarball                                     build the and test the distribution tarball'
@@ -408,11 +414,12 @@ module Commands
   def build(*options)
     maven_options, other_options = maven_options(*options)
     project = other_options.first
+    env = {'JRUBY_BUILD_MORE_QUIET' => 'true'}
     case project
     when 'truffle'
-      mvn *maven_options, '-pl', 'truffle', 'package'
+      mvn env, *maven_options, '-pl', 'truffle', 'package'
     when nil
-      mvn *maven_options, 'package'
+      mvn env, *maven_options, 'package'
     else
       raise ArgumentError, project
     end
@@ -441,7 +448,7 @@ module Commands
       '-Xtruffle.graal.warn_unless=false'
     ]
     
-    if ENV['JRUBY_OPTS'] && ENV['JRUBY_OPTS'].include?('-X-T')
+    if ENV['JRUBY_OPTS'] && ENV['JRUBY_OPTS'].include?('-Xclassic')
       jruby_args.delete '-X+T'
     end
 

@@ -88,6 +88,7 @@ public class OutputStrings {
                 .append("  -X+CIR        force compilation and use IR runtime\n")
                 .append("  -X+JIR        JIT compilation and use IR runtime\n")
                 .append("  -X+T          use Truffle\n")
+                .append("  -Xclassic     don't use Truffle, reversing the -X+T option\n")
                 .append("  -Xsubstring?  list options that contain substring in their name\n")
                 .append("  -Xprefix...   list options that are prefixed wtih prefix\n");
 

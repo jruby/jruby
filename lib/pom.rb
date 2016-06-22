@@ -1,3 +1,19 @@
+MORE_QUIET = ENV['JRUBY_BUILD_MORE_QUIET']
+
+if MORE_QUIET
+  class Gem::Installer
+    def say(message)
+      if message != spec.post_install_message || !MORE_QUIET
+        super
+      end 
+    end
+  end
+end
+
+def log(message=nil)
+  puts message unless MORE_QUIET
+end
+
 class ImportedGem
   attr_reader :name, :version, :default_spec
 
@@ -83,7 +99,7 @@ project 'JRuby Lib Setup' do
   execute :install_gems, :'initialize' do |ctx|
     require 'fileutils'
 
-    puts "using jruby #{JRUBY_VERSION}"
+    log "using jruby #{JRUBY_VERSION}"
 
     target = ctx.project.build.directory.to_pathname
     gem_home = File.join( target, 'rubygems' )
@@ -117,14 +133,14 @@ project 'JRuby Lib Setup' do
     require 'rubygems/installer'
     require 'rubygems/package'
 
-    puts 'install gems unless already installed'
+    log 'install gems unless already installed'
     ENV_JAVA['jars.skip'] = 'true'
     ctx.project.artifacts.select do |a|
       a.group_id == 'rubygems' || a.group_id == 'org.jruby.gems'
     end.each do |a|
       ghome = default_gemnames.member?( a.artifact_id ) ? gem_home : jruby_gems
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
-        puts a.file.to_pathname
+        log a.file.to_pathname
         installer = Gem::Installer.new( a.file.to_pathname,
                                         :wrappers => true,
                                         :ignore_dependencies => true,
@@ -141,19 +157,19 @@ project 'JRuby Lib Setup' do
       # install the gem unless already installed
       if Dir[ File.join( default_specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
 
-        puts
-        puts "--- gem #{g.name}-#{version} ---"
+        log
+        log "--- gem #{g.name}-#{version} ---"
 
         # copy the gem content to stdlib
 
-        puts "copy gem content to #{stdlib_dir}"
+        log "copy gem content to #{stdlib_dir}"
         # assume default require_path
         require_base = File.join( gems, "#{g.name}-#{version}*", 'lib' )
         require_files = File.join( require_base, '*' )
 
         # copy in new ones and mark writable for future updates (e.g. minitest)
         stdlib_locs = Dir[ require_files ].map do |f|
-          puts " copying: #{f} to #{stdlib_dir}" if $VERBOSE
+          log " copying: #{f} to #{stdlib_dir}" if $VERBOSE
           FileUtils.cp_r( f, stdlib_dir )
 
           stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
@@ -164,7 +180,7 @@ project 'JRuby Lib Setup' do
         # fix permissions on copied files
         stdlib_locs.each do |f|
           next if File.writable? f
-          puts " fixing permissions: #{f}" if $VERBOSE
+          log " fixing permissions: #{f}" if $VERBOSE
           # TODO: better way to just set it writable without changing all modes?
           FileUtils.chmod_R(0644, f)
         end
@@ -173,7 +189,7 @@ project 'JRuby Lib Setup' do
         bin = File.join( gems, "#{g.name}-#{version}", 'bin' )
         if File.exists? bin
           Dir[ File.join( bin, '*' ) ].each do |f|
-            puts "copy to bin: #{File.basename( f )}"
+            log "copy to bin: #{File.basename( f )}"
             target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
             FileUtils.mkdir_p( File.dirname( target ) )
             FileUtils.cp_r( f, target )
@@ -189,7 +205,7 @@ project 'JRuby Lib Setup' do
           end
 
           specname = File.basename( specfile )
-          puts "copy to specifications/default: #{specname}"
+          log "copy to specifications/default: #{specname}"
 
           spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
           File.open( File.join( default_specs, specname ), 'w' ) do |f|
@@ -217,7 +233,7 @@ project 'JRuby Lib Setup' do
   execute( 'fix shebang on gem bin files and add *.bat files',
            'generate-resources' ) do |ctx|
 
-    puts 'fix the gem stub files'
+    log 'fix the gem stub files'
     jruby_home = ctx.project.basedir.to_pathname + '/../'
     bindir = File.join( jruby_home, 'lib', 'ruby', 'gems', 'shared', 'bin' )
     Dir[ File.join( bindir, '*' ) ].each do |f|
@@ -227,7 +243,7 @@ project 'JRuby Lib Setup' do
       File.open( f, "w" ) { |file| file.print( new_content ) }
     end
 
-    puts 'generating missing .bat files'
+    log 'generating missing .bat files'
     Dir[File.join( jruby_home, 'bin', '*' )].each do |fn|
       next unless File.file?(fn)
       next if fn =~ /.bat$/
@@ -236,7 +252,7 @@ project 'JRuby Lib Setup' do
         line = io.readline rescue ""
         line =~ /^#!.*ruby/
       end
-      puts " generating #{File.basename(fn)}.bat" if $VERBOSE
+      log " generating #{File.basename(fn)}.bat" if $VERBOSE
       File.open("#{fn}.bat", "wb") do |f|
         f.print "@ECHO OFF\r\n"
         f.print "@\"%~dp0jruby.exe\" -S #{File.basename(fn)} %*\r\n"

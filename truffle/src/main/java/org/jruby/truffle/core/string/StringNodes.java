@@ -831,7 +831,6 @@ public abstract class StringNodes {
             final Rope value = rope(string);
             final Rope other = rope(salt);
 
-            final Encoding ascii8bit = getContext().getJRubyRuntime().getEncodingService().getAscii8bitEncoding();
             if (other.byteLength() < 2) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().argumentError("salt too short (need >= 2 bytes)", this));
@@ -860,7 +859,7 @@ public abstract class StringNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final DynamicObject ret = createString(StringOperations.ropeFromByteList(new ByteList(cryptedString, 0, cryptedString.length - 1, ascii8bit, false)));
+            final DynamicObject ret = createString(StringOperations.ropeFromByteList(new ByteList(cryptedString, 0, cryptedString.length - 1, ASCIIEncoding.INSTANCE, false)));
 
             taintResultNode.maybeTaint(string, ret);
             taintResultNode.maybeTaint(salt, ret);
@@ -1138,7 +1137,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject encoding(DynamicObject string) {
-            return EncodingNodes.getEncoding(StringOperations.encoding(string));
+            return getContext().getEncodingManager().getRubyEncoding(StringOperations.encoding(string));
         }
 
     }
@@ -1159,7 +1158,7 @@ public abstract class StringNodes {
         public DynamicObject forceEncodingString(DynamicObject string, DynamicObject encodingName,
                                                  @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile,
                                                  @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
-            final DynamicObject encoding = EncodingNodes.getEncoding(encodingName.toString());
+            final DynamicObject encoding = getContext().getEncodingManager().getRubyEncoding(encodingName.toString());
             return forceEncodingEncoding(string, encoding, differentEncodingProfile, mutableRopeProfile);
         }
 

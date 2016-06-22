@@ -60,7 +60,6 @@ import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.cast.NameToSymbolOrStringNodeGen;
 import org.jruby.truffle.core.cast.ToPathNodeGen;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
-import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.format.BytesResult;
 import org.jruby.truffle.core.format.FormatExceptionTranslator;
@@ -201,7 +200,7 @@ public abstract class KernelNodes {
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return createString(StringOperations.encodeRope(resultBuilder.toString(), EncodingOperations.getEncoding(EncodingNodes.getEncoding("UTF-8"))));
+            return createString(StringOperations.encodeRope(resultBuilder.toString(), EncodingOperations.getEncoding(getContext().getEncodingManager().getRubyEncoding("UTF-8"))));
         }
 
     }
@@ -653,7 +652,7 @@ public abstract class KernelNodes {
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
             final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
             // TODO CS 14-Apr-15 concat space + code as a rope, otherwise the string will be copied after the rope is converted
-            final Source source = Source.fromText(space + RopeOperations.decodeRope(getContext().getJRubyRuntime(), code), filename);
+            final Source source = Source.fromText(space + RopeOperations.decodeRope(code), filename);
 
             final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
             final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame);
@@ -1394,7 +1393,7 @@ public abstract class KernelNodes {
         public boolean require(VirtualFrame frame, DynamicObject featureString,
                 @Cached("create()") RequireNode requireNode) {
 
-            String feature = StringOperations.getString(getContext(), featureString);
+            String feature = StringOperations.getString(featureString);
 
             // Pysch loads either the jar or the so - we need to intercept
             if (feature.equals("psych.so") && callerIs("stdlib/psych.rb")) {
@@ -1430,7 +1429,7 @@ public abstract class KernelNodes {
         @Specialization(guards = "isRubyString(feature)")
         public boolean requireRelative(VirtualFrame frame, DynamicObject feature,
                 @Cached("create()") RequireNode requireNode) {
-            final String featureString = StringOperations.getString(getContext(), feature);
+            final String featureString = StringOperations.getString(feature);
             final String featurePath = getFullPath(featureString);
 
             return requireNode.executeRequire(frame, featurePath);

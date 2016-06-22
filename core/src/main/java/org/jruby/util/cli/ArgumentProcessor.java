@@ -388,10 +388,8 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
                     } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
-                    } else if (extendedOption.equals("-T")) {
-                        config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
-                        Options.COMPILE_MODE.unforce();
-                        config.setDisableGems(false);
+                    } else if (extendedOption.equals("classic")) {
+                        throw new MainExitException(0, "jruby: the -Xclassic option should have been handled in the launcher");
                     } else if (extendedOption.equals("+T")) {
                         Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);

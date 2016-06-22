@@ -1353,7 +1353,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitEncodingNode(org.jruby.ast.EncodingNode node) {
         SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode ret = new ObjectLiteralNode(context, sourceSection, EncodingNodes.getEncoding(node.getEncoding()));
+        final RubyNode ret = new ObjectLiteralNode(context, sourceSection, context.getEncodingManager().getRubyEncoding(node.getEncoding()));
         return addNewlineIfNeeded(node, ret);
     }
 

@@ -190,7 +190,7 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(path)")
         public int open(DynamicObject path, int mode, int permission) {
-            return ensureSuccessful(posix().open(StringOperations.getString(getContext(), path), mode, permission));
+            return ensureSuccessful(posix().open(StringOperations.getString(path), mode, permission));
         }
 
     }
@@ -201,7 +201,7 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(path)")
         public int truncate(DynamicObject path, long length) {
-            return ensureSuccessful(posix().truncate(StringOperations.getString(getContext(), path), length));
+            return ensureSuccessful(posix().truncate(StringOperations.getString(path), length));
         }
 
     }
@@ -342,7 +342,7 @@ public abstract class IOPrimitiveNodes {
         public void performReopenPath(DynamicObject self, DynamicObject path, int mode) {
             final int fdSelf = Layouts.IO.getDescriptor(self);
             final int newFdSelf;
-            final String targetPathString = StringOperations.getString(getContext(), path);
+            final String targetPathString = StringOperations.getString(path);
 
             int fdTarget = ensureSuccessful(posix().open(targetPathString, mode, 0_666));
 

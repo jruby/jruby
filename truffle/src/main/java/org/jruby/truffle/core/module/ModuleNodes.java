@@ -922,7 +922,7 @@ public abstract class ModuleNodes {
                 requireNode = insert(RequireNode.create());
             }
 
-            final String feature = StringOperations.getString(getContext(), (DynamicObject) constant.getValue());
+            final String feature = StringOperations.getString((DynamicObject) constant.getValue());
             requireNode.executeRequire(frame, feature);
         }
 

@@ -53,6 +53,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.adapaters.OutputStreamAdapter;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -143,7 +144,7 @@ public abstract class PsychEmitterNodes {
             }
 
             final Encoding encoding = YAMLEncoding.values()[encodingOrdinal].getEncoding();
-            final Charset charset = getContext().getJRubyRuntime().getEncodingService().charsetForEncoding(encoding);
+            final Charset charset = EncodingManager.charsetForEncoding(encoding);
 
             Layouts.PSYCH_EMITTER.setEmitter(emitter,
                     new Emitter(

@@ -19,6 +19,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.Ruby;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
@@ -80,6 +81,7 @@ public class RubyContext extends ExecutionContext {
     private final CoreStrings coreStrings = new CoreStrings(this);
     private final FrozenStrings frozenStrings = new FrozenStrings(this);
     private final CoreExceptions coreExceptions = new CoreExceptions(this);
+    private final EncodingManager encodingManager = new EncodingManager(this);
 
     private final CompilerOptions compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
@@ -349,6 +351,10 @@ public class RubyContext extends ExecutionContext {
 
     public CoreExceptions getCoreExceptions() {
         return coreExceptions;
+    }
+
+    public EncodingManager getEncodingManager() {
+        return encodingManager;
     }
 
 }

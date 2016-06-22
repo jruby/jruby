@@ -7,7 +7,6 @@ fails:String#% replaces trailing absolute argument specifier without type with p
 fails:String#% raises an ArgumentError when given invalid argument specifiers
 fails:String#% raises an ArgumentError when multiple positional argument tokens are given for one format specifier
 fails:String#% respects positional arguments and precision tokens given for one format specifier
-fails:String#% allows more than one digit of position
 fails:String#% raises an ArgumentError when multiple width star tokens are given for one format specifier
 fails:String#% raises an ArgumentError when a width star token is seen after a width token
 fails:String#% raises an ArgumentError when multiple precision tokens are given
@@ -25,9 +24,7 @@ fails:String#% raises a TypeError if #to_ary does not return an Array
 fails:String#% tries to convert the argument to Array by calling #to_ary
 fails:String#% doesn't return subclass instances when called on a subclass
 fails:String#% always taints the result when the format string is tainted
-fails:String#% supports binary formats using %b for positive numbers
 fails:String#% supports binary formats using %b for negative numbers
-fails:String#% supports binary formats using %B with same behaviour as %b except for using 0B instead of 0b for #
 fails:String#% supports character formats using %c
 fails:String#% supports single character strings as argument for %c
 fails:String#% raises an exception for multiple character strings as argument for %c
@@ -57,8 +54,6 @@ fails:String#% supports hex formats using %x for positive numbers
 fails:String#% supports hex formats using %x for negative numbers
 fails:String#% supports hex formats using %X for positive numbers
 fails:String#% supports hex formats using %X for negative numbers
-fails:String#% formats zero without prefix using %#x
-fails:String#% formats zero without prefix using %#X
 fails:String#% tries to convert the passed argument to an Array using #to_ary
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument is hexadecimal string

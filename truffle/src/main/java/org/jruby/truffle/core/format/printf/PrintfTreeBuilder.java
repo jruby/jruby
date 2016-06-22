@@ -24,6 +24,7 @@ import org.jruby.truffle.core.format.format.FormatFloatHumanReadableNodeGen;
 import org.jruby.truffle.core.format.format.FormatFloatNodeGen;
 import org.jruby.truffle.core.format.format.FormatIntegerNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
+import org.jruby.truffle.core.format.read.array.ReadArgumentIndexValueNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadHashValueNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadIntegerNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadStringNodeGen;
@@ -86,6 +87,9 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
         int spacePadding = DEFAULT;
         int zeroPadding = DEFAULT;
         boolean hasPlusFlag = false;
+        boolean hasSpaceFlag = false;
+        boolean useAlternativeFormat = false;
+        int absoluteArgumentIndex = DEFAULT;
 
         for (int n = 0; n < ctx.flag().size(); n++) {
             final PrintfParser.FlagContext flag = ctx.flag(n);
@@ -93,12 +97,11 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
             if (flag.MINUS() != null) {
                 leftJustified = true;
             } else if (flag.SPACE() != null) {
+                hasSpaceFlag = true;
                 if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
                     spacePadding = PADDING_FROM_ARGUMENT;
                 } else if(width != DEFAULT) {
                     spacePadding = width;
-                } else {
-                    spacePadding = 1;
                 }
             } else if (flag.ZERO() != null) {
                 if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
@@ -107,9 +110,13 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                     zeroPadding = width;
                 }
             } else if (flag.STAR() != null) {
-                // Handled in space and zero, above
+                spacePadding = PADDING_FROM_ARGUMENT;
             } else if (flag.PLUS() != null) {
                 hasPlusFlag = true;
+            } else if (flag.HASH() != null) {
+                useAlternativeFormat = true;
+            } else if (flag.argumentIndex != null) {
+                absoluteArgumentIndex = Integer.parseInt(flag.argumentIndex.getText());
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -123,12 +130,14 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
         final FormatNode valueNode;
 
-        if (ctx.ANGLE_KEY() == null) {
-            valueNode = ReadValueNodeGen.create(context, new SourceNode());
-        } else {
+        if (ctx.ANGLE_KEY() != null) {
             final byte[] keyBytes = tokenAsBytes(ctx.ANGLE_KEY().getSymbol(), 1);
             final DynamicObject key = context.getSymbolTable().getSymbol(context.getRopeTable().getRope(keyBytes, USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
             valueNode = ReadHashValueNodeGen.create(context, key, new SourceNode());
+        } else if (absoluteArgumentIndex != DEFAULT){
+            valueNode = ReadArgumentIndexValueNodeGen.create(context, absoluteArgumentIndex, new SourceNode());
+        } else {
+            valueNode = ReadValueNodeGen.create(context, new SourceNode());
         }
 
         final int precision;
@@ -216,7 +225,9 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
                 if(type == 'b' || type == 'B'){
                     node = WriteBytesNodeGen.create(context,
-                        FormatIntegerBinaryNodeGen.create(context, format, hasPlusFlag,
+                        FormatIntegerBinaryNodeGen.create(context, format, hasPlusFlag, useAlternativeFormat,
+                            leftJustified,
+                            hasSpaceFlag,
                             spacePaddingNode,
                             zeroPaddingNode,
                             ToIntegerNodeGen.create(context, valueNode)));

@@ -86,6 +86,7 @@ else
   require_relative 'core/block_given_pe.rb'
   require_relative 'core/string_pe.rb'
   require_relative 'core/class_pe'
+  require_relative 'core/encoding_pe'
   require_relative 'interop/interop_pe'
   require_relative 'macro/pushing_pixels_pe.rb'
   
