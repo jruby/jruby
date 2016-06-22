@@ -409,11 +409,6 @@ else
 
     exit $JRUBY_STATUS
   else
-    echo exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
-      "-Djruby.home=$JRUBY_HOME" \
-      "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
-      "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class $mode "$@"
     exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
