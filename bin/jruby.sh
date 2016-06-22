@@ -197,8 +197,8 @@ do
      -X*\.\.\.|-X*\?)
         ruby_args="${ruby_args} $1" ;;
      -X+T)
-      JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
-      ruby_args="${ruby_args} -X+T"
+      echo "error: -X+T isn't supported in the shell launcher"
+      exit 1
       ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
