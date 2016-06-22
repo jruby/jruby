@@ -28,7 +28,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -124,7 +123,7 @@ public class RopeOperations {
     }
 
     @TruffleBoundary
-    public static String decodeRope(Ruby runtime, Rope value) {
+    public static String decodeRope(RubyContext context, Rope value) {
         // TODO CS 9-May-16 having recursive problems with this, so flatten up front for now
 
         value = flatten(value);
@@ -142,7 +141,7 @@ public class RopeOperations {
             Charset charset = encodingToCharsetMap.get(encoding);
 
             if (charset == null) {
-                charset = runtime.getEncodingService().charsetForEncoding(encoding);
+                charset = context.getEncodingManager().charsetForEncoding(encoding);
                 encodingToCharsetMap.put(encoding, charset);
             }
 
@@ -594,7 +593,7 @@ public class RopeOperations {
                         || encoding == ASCIIEncoding.INSTANCE) {
                     valueRope = stringRope;
                 } else {
-                    valueRope = StringOperations.encodeRope(decodeRope(context.getJRubyRuntime(), stringRope), UTF8Encoding.INSTANCE);
+                    valueRope = StringOperations.encodeRope(decodeRope(context, stringRope), UTF8Encoding.INSTANCE);
                 }
             } else if (value instanceof Integer) {
                 valueRope = new LazyIntRope((int) value);

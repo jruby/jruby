@@ -21,6 +21,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.ByteList;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
@@ -89,6 +90,16 @@ public class EncodingManager {
         final DynamicObject rubyEncoding = getRubyEncoding(encodingListIndex);
 
         LOOKUP.put(name.toLowerCase(Locale.ENGLISH), rubyEncoding);
+    }
+
+    @TruffleBoundary
+    public Charset charsetForEncoding(Encoding encoding) {
+        return context.getJRubyRuntime().getEncodingService().charsetForEncoding(encoding);
+    }
+
+    @TruffleBoundary
+    public Encoding getLocaleEncoding() {
+        return context.getJRubyRuntime().getEncodingService().getLocaleEncoding();
     }
 
 }

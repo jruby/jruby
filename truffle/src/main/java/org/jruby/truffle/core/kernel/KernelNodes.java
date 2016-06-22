@@ -653,7 +653,7 @@ public abstract class KernelNodes {
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
             final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
             // TODO CS 14-Apr-15 concat space + code as a rope, otherwise the string will be copied after the rope is converted
-            final Source source = Source.fromText(space + RopeOperations.decodeRope(getContext().getJRubyRuntime(), code), filename);
+            final Source source = Source.fromText(space + RopeOperations.decodeRope(getContext(), code), filename);
 
             final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
             final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame);

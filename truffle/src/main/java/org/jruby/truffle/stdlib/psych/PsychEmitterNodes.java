@@ -143,7 +143,7 @@ public abstract class PsychEmitterNodes {
             }
 
             final Encoding encoding = YAMLEncoding.values()[encodingOrdinal].getEncoding();
-            final Charset charset = getContext().getJRubyRuntime().getEncodingService().charsetForEncoding(encoding);
+            final Charset charset = getContext().getEncodingManager().charsetForEncoding(encoding);
 
             Layouts.PSYCH_EMITTER.setEmitter(emitter,
                     new Emitter(

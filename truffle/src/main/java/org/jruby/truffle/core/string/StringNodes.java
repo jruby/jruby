@@ -831,7 +831,6 @@ public abstract class StringNodes {
             final Rope value = rope(string);
             final Rope other = rope(salt);
 
-            final Encoding ascii8bit = getContext().getJRubyRuntime().getEncodingService().getAscii8bitEncoding();
             if (other.byteLength() < 2) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().argumentError("salt too short (need >= 2 bytes)", this));
@@ -860,7 +859,7 @@ public abstract class StringNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final DynamicObject ret = createString(StringOperations.ropeFromByteList(new ByteList(cryptedString, 0, cryptedString.length - 1, ascii8bit, false)));
+            final DynamicObject ret = createString(StringOperations.ropeFromByteList(new ByteList(cryptedString, 0, cryptedString.length - 1, ASCIIEncoding.INSTANCE, false)));
 
             taintResultNode.maybeTaint(string, ret);
             taintResultNode.maybeTaint(salt, ret);

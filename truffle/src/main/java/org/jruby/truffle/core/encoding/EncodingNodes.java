@@ -371,7 +371,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public DynamicObject localeCharacterMap() {
-            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(getContext().getJRubyRuntime().getEncodingService().getLocaleEncoding());
+            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(getContext().getEncodingManager().getLocaleEncoding());
 
             return Layouts.ENCODING.getName(rubyEncoding);
         }
@@ -458,11 +458,11 @@ public abstract class EncodingNodes {
             final Object externalTuple = makeTuple(frame, newTupleNode, create7BitString("external", UTF8Encoding.INSTANCE), indexLookup(encodings, defaultExternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
 
-            final Encoding localeEncoding = getLocaleEncoding();
+            final Encoding localeEncoding = getContext().getEncodingManager().getLocaleEncoding();
             final Object localeTuple = makeTuple(frame, newTupleNode, create7BitString("locale", UTF8Encoding.INSTANCE), indexLookup(encodings, localeEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
 
-            final Encoding filesystemEncoding = getLocaleEncoding();
+            final Encoding filesystemEncoding = getContext().getEncodingManager().getLocaleEncoding();
             final Object filesystemTuple = makeTuple(frame, newTupleNode, create7BitString("filesystem", UTF8Encoding.INSTANCE), indexLookup(encodings, filesystemEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
 
@@ -471,11 +471,6 @@ public abstract class EncodingNodes {
 
         private Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
             return newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", null, values);
-        }
-
-        @TruffleBoundary
-        private Encoding getLocaleEncoding() {
-            return getContext().getJRubyRuntime().getEncodingService().getLocaleEncoding();
         }
 
         @TruffleBoundary
