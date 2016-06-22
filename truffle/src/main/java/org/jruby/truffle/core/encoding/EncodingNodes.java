@@ -58,20 +58,9 @@ public abstract class EncodingNodes {
     private static final DynamicObject[] ENCODING_LIST = new DynamicObject[EncodingDB.getEncodings().size()];
     private static final Map<String, DynamicObject> LOOKUP = new HashMap<>();
 
-    private static final DynamicObject[] ENCODING_LIST_BY_ENCODING_INDEX = new DynamicObject[EncodingDB.getEncodings().size()];
-
-    public static DynamicObject getEncoding(Encoding encoding) {
-        DynamicObject rubyEncoding = ENCODING_LIST_BY_ENCODING_INDEX[encoding.getIndex()];
-
-        if (rubyEncoding == null) {
-            // Bounded by the number of encodings
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-
-            rubyEncoding = LOOKUP.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase(Locale.ENGLISH));
-            ENCODING_LIST_BY_ENCODING_INDEX[encoding.getIndex()] = rubyEncoding;
-        }
-
-        return rubyEncoding;
+    @TruffleBoundary
+    public static synchronized DynamicObject getEncoding(Encoding encoding) {
+        return LOOKUP.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase(Locale.ENGLISH));
     }
 
     @TruffleBoundary
