@@ -16,6 +16,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
@@ -76,7 +77,8 @@ public class RubyContext extends ExecutionContext {
     private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager = new ObjectSpaceManager(this);
     private final AtExitManager atExitManager = new AtExitManager(this);
-    private final SourceCache sourceCache = new SourceCache(new SourceLoader(this));
+    private final SourceLoader sourceLoader = new SourceLoader(this);
+    private final SourceCache sourceCache = new SourceCache(sourceLoader);
     private final CallStackManager callStack = new CallStackManager(this);
     private final CoreStrings coreStrings = new CoreStrings(this);
     private final FrozenStrings frozenStrings = new FrozenStrings(this);
@@ -303,6 +305,10 @@ public class RubyContext extends ExecutionContext {
 
     public AttachmentsManager getAttachmentsManager() {
         return attachmentsManager;
+    }
+
+    public SourceLoader getSourceLoader() {
+        return sourceLoader;
     }
 
     public SourceCache getSourceCache() {

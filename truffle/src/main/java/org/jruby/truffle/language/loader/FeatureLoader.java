@@ -130,7 +130,7 @@ public class FeatureLoader {
     private CallTarget getCExtLibRuby() {
         final String path = context.getJRubyRuntime().getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
         try {
-            return parseSource(Source.fromFileName(path));
+            return parseSource(context.getSourceLoader().load(path));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

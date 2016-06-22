@@ -55,9 +55,7 @@ public class SnippetNode extends RubyBaseNode {
                 parameterFrameSlots[n] = frameDescriptor.findOrAddFrameSlot(parameters[n]);
             }
 
-            final Source source = Source.fromText(
-                    StringOperations.createByteList(this.expression),
-                    "(snippet)");
+            final Source source = getContext().getSourceLoader().loadFragment(this.expression, "(snippet)");
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(
                     source,
