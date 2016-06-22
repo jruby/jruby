@@ -243,9 +243,10 @@ do
      # Pass -X... and -X? search options through
      -X*\.\.\.|-X*\?)
         ruby_args=("${ruby_args[@]}" "$1") ;;
+     -Xclassic)
+        unset USING_TRUFFLE
+        ;;
      -X+T)
-        JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
-        ruby_args=("${ruby_args[@]}" "-X+T")
         USING_TRUFFLE="true"
         ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
@@ -314,6 +315,11 @@ do
     esac
     shift
 done
+
+if [[ "$USING_TRUFFLE" != "" ]]; then
+   JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
+   ruby_args=("${ruby_args[@]}" "-X+T")
+fi
 
 # Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
 if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
@@ -403,6 +409,11 @@ else
 
     exit $JRUBY_STATUS
   else
+    echo exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+      "-Djruby.home=$JRUBY_HOME" \
+      "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
+      "-Djruby.shell=$JRUBY_SHELL" \
+      $java_class $mode "$@"
     exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
