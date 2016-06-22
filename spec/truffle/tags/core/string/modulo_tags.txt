@@ -7,7 +7,6 @@ fails:String#% replaces trailing absolute argument specifier without type with p
 fails:String#% raises an ArgumentError when given invalid argument specifiers
 fails:String#% raises an ArgumentError when multiple positional argument tokens are given for one format specifier
 fails:String#% respects positional arguments and precision tokens given for one format specifier
-fails:String#% allows more than one digit of position
 fails:String#% raises an ArgumentError when multiple width star tokens are given for one format specifier
 fails:String#% raises an ArgumentError when a width star token is seen after a width token
 fails:String#% raises an ArgumentError when multiple precision tokens are given

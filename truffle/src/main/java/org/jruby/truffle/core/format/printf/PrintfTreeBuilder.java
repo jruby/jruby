@@ -24,6 +24,7 @@ import org.jruby.truffle.core.format.format.FormatFloatHumanReadableNodeGen;
 import org.jruby.truffle.core.format.format.FormatFloatNodeGen;
 import org.jruby.truffle.core.format.format.FormatIntegerNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
+import org.jruby.truffle.core.format.read.array.ReadArgumentIndexValueNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadHashValueNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadIntegerNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadStringNodeGen;
@@ -129,12 +130,14 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
         final FormatNode valueNode;
 
-        if (ctx.ANGLE_KEY() == null) {
-            valueNode = ReadValueNodeGen.create(context, new SourceNode());
-        } else {
+        if (ctx.ANGLE_KEY() != null) {
             final byte[] keyBytes = tokenAsBytes(ctx.ANGLE_KEY().getSymbol(), 1);
             final DynamicObject key = context.getSymbolTable().getSymbol(context.getRopeTable().getRope(keyBytes, USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
             valueNode = ReadHashValueNodeGen.create(context, key, new SourceNode());
+        } else if (absoluteArgumentIndex != DEFAULT){
+            valueNode = ReadArgumentIndexValueNodeGen.create(context, absoluteArgumentIndex, new SourceNode());
+        } else {
+            valueNode = ReadValueNodeGen.create(context, new SourceNode());
         }
 
         final int precision;
