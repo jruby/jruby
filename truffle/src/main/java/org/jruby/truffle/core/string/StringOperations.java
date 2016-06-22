@@ -49,7 +49,6 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeable;
 
 import java.nio.charset.Charset;
 
@@ -132,22 +131,6 @@ public abstract class StringOperations {
         if (StringOperations.getCodeRange(string) == CodeRange.CR_BROKEN) {
             clearCodeRange(string);
         }
-    }
-
-    @TruffleBoundary(throwsControlFlowException = true)
-    public static Encoding checkEncoding(DynamicObject string, CodeRangeable other) {
-        final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, ((StringCodeRangeableWrapper) other).getString());
-
-        // TODO (nirvdrum 23-Mar-15) We need to raise a proper Truffle+JRuby exception here, rather than a non-Truffle JRuby exception.
-        if (encoding == null) {
-            final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext();
-            throw context.getJRubyRuntime().newEncodingCompatibilityError(
-                    String.format("incompatible character encodings: %s and %s",
-                            Layouts.STRING.getRope(string).getEncoding().toString(),
-                            other.getByteList().getEncoding().toString()));
-        }
-
-        return encoding;
     }
 
     public static int normalizeIndex(int length, int index) {

@@ -9,8 +9,12 @@
  */
 package org.jruby.truffle.core.string;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
@@ -70,8 +74,20 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
     }
 
     @Override
+    @TruffleBoundary(throwsControlFlowException = true)
     public Encoding checkEncoding(CodeRangeable other) {
-        return StringOperations.checkEncoding(string, other);
+        final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, ((StringCodeRangeableWrapper) other).getString());
+
+        // TODO (nirvdrum 23-Mar-15) We need to raise a proper Truffle+JRuby exception here, rather than a non-Truffle JRuby exception.
+        if (encoding == null) {
+            final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext();
+            throw context.getJRubyRuntime().newEncodingCompatibilityError(
+                    String.format("incompatible character encodings: %s and %s",
+                            Layouts.STRING.getRope(string).getEncoding().toString(),
+                            other.getByteList().getEncoding().toString()));
+        }
+
+        return encoding;
     }
 
     @Override
