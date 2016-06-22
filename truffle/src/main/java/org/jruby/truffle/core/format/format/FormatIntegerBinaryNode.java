@@ -32,17 +32,12 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
     private final char format;
     private final boolean hasPlusFlag;
     private final boolean useAlternativeFormat;
-    private final boolean isLeftJustified;
-    private final boolean hasSpaceFlag;
 
-    public FormatIntegerBinaryNode(RubyContext context, char format, boolean hasPlusFlag, boolean useAlternativeFormat,
-                                   boolean isLeftJustified, boolean hasSpaceFlag) {
+    public FormatIntegerBinaryNode(RubyContext context, char format, boolean hasPlusFlag, boolean useAlternativeFormat) {
         super(context);
         this.format = format;
         this.hasPlusFlag = hasPlusFlag;
         this.useAlternativeFormat = useAlternativeFormat;
-        this.isLeftJustified = isLeftJustified;
-        this.hasSpaceFlag = hasSpaceFlag;
     }
 
     @Specialization
@@ -54,7 +49,7 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
         final boolean negativeAndPadded = isNegative && (isSpacePadded || this.hasPlusFlag);
         final String formatted = negativeAndPadded ? Integer.toBinaryString(-value) : Integer.toBinaryString(value);
         return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded, this.hasPlusFlag,
-            this.useAlternativeFormat, this.format, this.isLeftJustified, this.hasSpaceFlag);
+            this.useAlternativeFormat, this.format);
     }
 
     @TruffleBoundary
@@ -66,17 +61,13 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
         final boolean negativeAndPadded = isNegative && (isSpacePadded || this.hasPlusFlag);
         final String formatted = negativeAndPadded ? bigInteger.abs().toString(2) : bigInteger.toString(2);
         return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded, this.hasPlusFlag,
-            this.useAlternativeFormat, this.format, this.isLeftJustified, this.hasSpaceFlag);
+            this.useAlternativeFormat, this.format);
     }
 
     @TruffleBoundary
     private static byte[] getFormattedString(String formatted, int spacePadding, int zeroPadding, boolean isNegative,
                                              boolean isSpacePadded, boolean hasPlusFlag, boolean useAlternativeFormat,
-                                             char format, boolean leftJustified, boolean hasSpaceFlag) {
-        final boolean isLeftJustified = leftJustified || spacePadding < 0;
-        if(spacePadding < 0){
-            spacePadding = -spacePadding;
-        }
+                                             char format) {
         if (isNegative && !(isSpacePadded || hasPlusFlag)) {
             if (formatted.contains("0")) {
                 formatted = formatted.substring(formatted.indexOf('0'), formatted.length());
@@ -104,7 +95,7 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
             }
         }
 
-        if (hasSpaceFlag || hasPlusFlag) {
+        if (isSpacePadded || hasPlusFlag) {
             if (isNegative) {
                 formatted = "-" + formatted;
             } else {
@@ -113,14 +104,7 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
                 } else {
                     formatted = " " + formatted;
                 }
-            }
-        }
 
-        while (formatted.length() < spacePadding) {
-            if(isLeftJustified){
-                formatted = formatted + " ";
-            } else {
-                formatted = " " + formatted;
             }
         }
 
