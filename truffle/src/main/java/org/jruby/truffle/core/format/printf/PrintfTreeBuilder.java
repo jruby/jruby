@@ -87,7 +87,6 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
         int spacePadding = DEFAULT;
         int zeroPadding = DEFAULT;
         boolean hasPlusFlag = false;
-        boolean hasSpaceFlag = false;
         boolean useAlternativeFormat = false;
         int absoluteArgumentIndex = DEFAULT;
 
@@ -97,11 +96,12 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
             if (flag.MINUS() != null) {
                 leftJustified = true;
             } else if (flag.SPACE() != null) {
-                hasSpaceFlag = true;
                 if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
                     spacePadding = PADDING_FROM_ARGUMENT;
                 } else if(width != DEFAULT) {
                     spacePadding = width;
+                } else {
+                    spacePadding = 1;
                 }
             } else if (flag.ZERO() != null) {
                 if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
@@ -110,7 +110,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                     zeroPadding = width;
                 }
             } else if (flag.STAR() != null) {
-                spacePadding = PADDING_FROM_ARGUMENT;
+                // Handled in space and zero, above
             } else if (flag.PLUS() != null) {
                 hasPlusFlag = true;
             } else if (flag.HASH() != null) {
@@ -226,8 +226,6 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                 if(type == 'b' || type == 'B'){
                     node = WriteBytesNodeGen.create(context,
                         FormatIntegerBinaryNodeGen.create(context, format, hasPlusFlag, useAlternativeFormat,
-                            leftJustified,
-                            hasSpaceFlag,
                             spacePaddingNode,
                             zeroPaddingNode,
                             ToIntegerNodeGen.create(context, valueNode)));

@@ -24,6 +24,7 @@ fails:String#% raises a TypeError if #to_ary does not return an Array
 fails:String#% tries to convert the argument to Array by calling #to_ary
 fails:String#% doesn't return subclass instances when called on a subclass
 fails:String#% always taints the result when the format string is tainted
+fails:String#% supports binary formats using %b for positive numbers
 fails:String#% supports binary formats using %b for negative numbers
 fails:String#% supports character formats using %c
 fails:String#% supports single character strings as argument for %c
