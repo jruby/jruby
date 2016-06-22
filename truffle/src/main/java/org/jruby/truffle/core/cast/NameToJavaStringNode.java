@@ -49,7 +49,7 @@ public abstract class NameToJavaStringNode extends RubyNode {
 
     @Specialization(guards = "isRubyString(value)", contains = "stringCached")
     public String stringUncached(DynamicObject value) {
-        return StringOperations.getString(getContext(), value);
+        return StringOperations.getString(value);
     }
 
     @Specialization(guards = { "symbol == cachedSymbol", "isRubySymbol(cachedSymbol)" }, limit = "getLimit()")
@@ -92,7 +92,7 @@ public abstract class NameToJavaStringNode extends RubyNode {
         }
 
         if (RubyGuards.isRubyString(coerced)) {
-            return StringOperations.getString(getContext(), (DynamicObject) coerced);
+            return StringOperations.getString((DynamicObject) coerced);
         } else {
             errorProfile.enter();
             throw new RaiseException(coreExceptions().typeErrorBadCoercion(object, "String", "to_str", coerced, this));

@@ -47,7 +47,7 @@ public abstract class TruffleProcessNodes {
             Collection<SpawnFileAction> fileActions = parseOptions(options);
 
             final long longPid = call(
-                    StringOperations.getString(getContext(), command),
+                    StringOperations.getString(command),
                     toStringArray(arguments),
                     toStringArray(environmentVariables),
                     fileActions);
@@ -70,7 +70,7 @@ public abstract class TruffleProcessNodes {
 
             for (int i = 0; i < size; i++) {
                 assert Layouts.STRING.isString(unconvertedStrings[i]);
-                strings[i] = StringOperations.getString(getContext(), (DynamicObject) unconvertedStrings[i]);
+                strings[i] = StringOperations.getString((DynamicObject) unconvertedStrings[i]);
             }
 
             return strings;
@@ -111,7 +111,7 @@ public abstract class TruffleProcessNodes {
                         final Object[] store = ArrayOperations.toObjectArray(array);
                         for (int i = 0; i < size; i += 4) {
                             int fd = (int) store[i];
-                            String path = StringOperations.getString(getContext(), (DynamicObject) store[i + 1]);
+                            String path = StringOperations.getString((DynamicObject) store[i + 1]);
                             int flags = (int) store[i + 2];
                             int perms = (int) store[i + 3];
                             actions.add(SpawnFileAction.open(path, fd, flags, perms));

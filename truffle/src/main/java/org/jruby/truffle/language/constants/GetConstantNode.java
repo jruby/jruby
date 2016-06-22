@@ -55,7 +55,7 @@ public abstract class GetConstantNode extends RubyNode {
         // We remove it first to allow lookup to ignore it and add it back if there was a failure.
         Layouts.MODULE.getFields(constant.getDeclaringModule()).removeConstant(getContext(), this, name);
         try {
-            requireNode.executeRequire(frame, StringOperations.getString(getContext(), path));
+            requireNode.executeRequire(frame, StringOperations.getString(path));
             final RubyConstant resolvedConstant = lookupConstantNode.lookupConstant(frame, module, name);
             return executeGetConstant(frame, module, name, resolvedConstant, lookupConstantNode);
         } catch (RaiseException e) {
