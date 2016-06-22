@@ -318,7 +318,7 @@ done
 
 if [[ "$USING_TRUFFLE" != "" ]]; then
    JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
-   ruby_args=("${ruby_args[@]}" "-X+T")
+   ruby_args=("-X+T" "${ruby_args[@]}")
 fi
 
 # Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
