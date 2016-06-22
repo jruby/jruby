@@ -1131,7 +1131,7 @@ public class BodyTranslator extends Translator {
         final String path = source.getPath();
 
         if (path == null) {
-            return source.getShortName();
+            throw new UnsupportedOperationException();
         }
 
         return path;
