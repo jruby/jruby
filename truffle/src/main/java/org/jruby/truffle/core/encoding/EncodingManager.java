@@ -102,9 +102,9 @@ public class EncodingManager {
 
     @TruffleBoundary
     public static Charset charsetForEncoding(Encoding encoding) {
-        Charset charset = encoding.getCharset();
+        final String encodingName = encoding.toString();
 
-        if (encoding.toString().equals("ASCII-8BIT")) {
+        if (encodingName.equals("ASCII-8BIT")) {
             return Charset.forName("ISO-8859-1");
         }
 
@@ -113,7 +113,7 @@ public class EncodingManager {
         }
 
         try {
-            return Charset.forName(encoding.toString());
+            return Charset.forName(encodingName);
         } catch (UnsupportedCharsetException uce) {
             throw new UnsupportedOperationException("no java.nio.charset.Charset found for encoding `" + encoding.toString() + "'", uce);
         }
