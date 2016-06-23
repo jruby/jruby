@@ -76,8 +76,18 @@ module Truffle
                           command.map { |v| Shellwords.escape v }
                         end
 
-        puts '$ ' + [*formatted_env, *formatted_cmd].compact.join(' ') + (dir ? " (in #{dir})" : '')
+        log '$ ' + [*formatted_env, *formatted_cmd].compact.join(' ') + (dir ? " (in #{dir})" : '')
         return cmd
+      end
+
+      def dig(data, *keys)
+        return data if keys.empty?
+
+        if data.respond_to?(:[])
+          dig data[keys[0]], keys[1..-1]
+        else
+          raise ArgumentError, "#{data.inspect} does not have :[] method to apply key: #{keys[0]}"
+        end
       end
 
       def dig_deep(data, selection)
@@ -102,6 +112,59 @@ module Truffle
         end
       end
 
+      def deep_merge!(a, b, *rest)
+        [a, b, *rest].reduce { |a, b| deep_merge2! a, b }
+      end
+
+      def deep_merge(a, b, *rest)
+        [a, b, *rest].reduce { |a, b| deep_merge2 a, b }
+      end
+
+      def deep_merge2!(a, b)
+        if Hash === a
+          if Hash === b
+            return a.merge!(b) { |k, ov, nv| deep_merge2! ov, nv }
+          else
+            return a
+          end
+        end
+
+        if Array === a
+          if Array === b
+            return a.concat b
+          else
+            return a
+          end
+        end
+
+        b
+      end
+
+      def deep_merge2(a, b)
+        if Hash === a
+          if Hash === b
+            return a.merge(b) { |k, ov, nv| deep_merge2 ov, nv }
+          else
+            return a
+          end
+        end
+
+        if Array === a
+          if Array === b
+            return a + b
+          else
+            return a
+          end
+        end
+
+        b
+      end
+
+      def log(message)
+        puts 'jtr: ' + message
+      end
+
+      extend self
     end
 
     include Utils
@@ -128,7 +191,7 @@ module Truffle
       apply_pattern = -> (pattern, old, options) do
         Dir.glob(pattern) do |file|
           if options[:exclude_pattern].any? { |p| /#{p}/ =~ file }
-            puts "skipped: #{file}" if verbose?
+            log "skipped: #{file}" if verbose?
             next
           end
           options[:require] << File.expand_path(file)
@@ -164,6 +227,8 @@ module Truffle
                                     STORE_NEW_VALUE, true],
               bundle_options:      ['--bundle-options OPTIONS', 'bundle options separated by space', STORE_NEW_VALUE, ''],
               configuration:       ['--config GEM_NAME', 'Load configuration for specified gem', STORE_NEW_VALUE, nil],
+              configuration_file:  ['--config-file PATH', 'Path to a file defining configuration of gems',
+                                    STORE_NEW_VALUE, ROOT.join('lib', 'truffle', 'config.rb')],
               dir:                 ['--dir DIRECTORY', 'Set working directory', STORE_NEW_VALUE, nil],
           },
           setup:  { help:    ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
@@ -286,9 +351,24 @@ module Truffle
       @subcommand, *argv_after_global = @option_parsers[:global].order argv
       @called_from_dir                = Dir.pwd
       @options[:global][:dir]         = File.expand_path(@options[:global][:dir] || @called_from_dir)
+      @config                         = Config.new
 
       Dir.chdir @options[:global][:dir] do
-        puts "pwd: #{Dir.pwd}" if verbose?
+        log "pwd is #{Dir.pwd}" if verbose?
+
+        @config.load @options[:global][:configuration_file].to_s
+
+        @gem_name = if @options[:global][:configuration]
+                      @options[:global][:configuration].to_sym
+                    else
+                      candidates = Dir['*.gemspec']
+                      if candidates.size == 1
+                        gem_name, _ = candidates.first.split('.')
+                        gem_name.to_sym
+                      end
+                    end
+
+        log "detected gem/app: #{@gem_name}" if @gem_name
 
         load_gem_configuration
         load_local_configuration
@@ -311,14 +391,14 @@ module Truffle
 
     def run
       Dir.chdir @options[:global][:dir] do
+        log "executing #{@subcommand}"
         send "subcommand_#{@subcommand}", @argv_after_subcommand
       end
     end
 
     def print_options
       if verbose?
-        puts 'Options:'
-        pp @options
+        log "Options are\n" + @options.pretty_inspect
       end
     end
 
@@ -354,14 +434,13 @@ module Truffle
     end
 
     def load_gem_configuration
-      candidates = @options[:global][:configuration] ? [@options[:global][:configuration]] : Dir['*.gemspec']
-
-      if candidates.size == 1
-        gem_name, _ = candidates.first.split('.')
-        yaml_path   = ROOT.join 'gem_configurations', "#{gem_name}.yaml"
+      if @gem_name
+        if (c = @config.for(@gem_name))
+          apply_hash_to_configuration c
+          log "loading configuration for #{@gem_name}"
+          log "configuration is:\n#{c.pretty_inspect}" if verbose?
+        end
       end
-
-      apply_yaml_to_configuration(yaml_path)
     end
 
     def load_local_configuration
@@ -372,9 +451,14 @@ module Truffle
     def apply_yaml_to_configuration(yaml_path)
       if yaml_path && File.exist?(yaml_path)
         yaml_data = YAML.load_file(yaml_path)
-        @options  = deep_merge @options, yaml_data
-        puts "loading #{yaml_path}"
+        apply_hash_to_configuration(yaml_data)
+        log "loading YAML configuration #{yaml_path}"
       end
+    end
+
+    def apply_hash_to_configuration(yaml_data)
+      # pp '--------', @options, yaml_data, deep_merge(@options, yaml_data)
+      @options = deep_merge! @options, yaml_data
     end
 
     def construct_default_options
@@ -407,34 +491,14 @@ module Truffle
       exit
     end
 
-    def deep_merge(a, b)
-      if Hash === a
-        if Hash === b
-          return a.merge!(b) { |k, ov, nv| deep_merge ov, nv }
-        else
-          return a
-        end
-      end
-
-      if Array === a
-        if Array === b
-          return a.concat b
-        else
-          return a
-        end
-      end
-
-      b
-    end
-
     BUNDLER_EVAL_ENV = Object.new
 
     def BUNDLER_EVAL_ENV.gem(name, options)
       [name, options]
     end
 
-    def BUNDLER_EVAL_ENV.process(line)
-      eval line
+    def parse_gemfile_line(line)
+      BUNDLER_EVAL_ENV.send :eval, line
     end
 
     def gemfile_use_path!(gems_path)
@@ -443,7 +507,7 @@ module Truffle
       new_lines = File.read(gemfile).lines.map do |line|
         if line =~ /^( +)gem.*git:/
           space             = $1
-          gem_name, options = BUNDLER_EVAL_ENV.process(line)
+          gem_name, options = parse_gemfile_line(line)
           repo_name         = options[:git].split('/').last
           repo_match        = "#{gems_path}/bundler/gems/#{repo_name}-*"
           repo_path         = Dir[repo_match].first
@@ -467,36 +531,36 @@ module Truffle
       bundle_options = @options[:global][:bundle_options].split(' ')
       bundle_path    = File.expand_path(@options[:global][:truffle_bundle_path])
       execute_all    = lambda do |cmd|
-        execute_cmd([{ 'JRUBY_BIN' => JRUBY_BIN.to_s }, cmd])
+        case cmd
+        when Proc
+          cmd.call
+        when Array, String
+          execute_cmd([{ 'JRUBY_BIN' => JRUBY_BIN.to_s }, cmd])
+        else
+          raise
+        end
       end
 
       real_path          = File.join(bundle_path, RUBY_ENGINE)
       target_gem_path    = File.join(bundle_path, RUBY_ENGINE, '2.3.0')
+      target_gem_path_22 = File.join(bundle_path, RUBY_ENGINE, '2.2.0')
       jruby_truffle_path = File.join(bundle_path, 'jruby+truffle')
       mock_path          = File.join(bundle_path, @options[:global][:mock_load_path])
 
       FileUtils.mkpath real_path
       FileUtils.mkpath mock_path
 
-      FileUtils.ln_s RUBY_ENGINE,
-                     jruby_truffle_path,
-                     verbose: verbose?,
-                     force:   true
+      File.symlink RUBY_ENGINE, jruby_truffle_path unless File.exist? jruby_truffle_path
 
       if @options[:setup][:offline]
         FileUtils.rmtree target_gem_path
-        FileUtils.ln_s @options[:setup][:offline_gem_path],
-                       target_gem_path,
-                       verbose: verbose?
+        File.symlink @options[:setup][:offline_gem_path], target_gem_path
       else
         File.delete target_gem_path if File.symlink?(target_gem_path)
         FileUtils.mkpath target_gem_path
       end
 
-      FileUtils.ln_s '2.3.0',
-                     File.join(bundle_path, RUBY_ENGINE, '2.2.0'),
-                     verbose: verbose?,
-                     force:   true
+      File.symlink '2.3.0', target_gem_path_22 unless File.exist? target_gem_path_22
 
       @options[:setup][:before].each(&execute_all)
 
@@ -513,7 +577,7 @@ module Truffle
                   print_always: true)
 
       @options[:setup][:file].each do |name, content|
-        puts "creating file: #{mock_path}/#{name}" if verbose?
+        log "creating file: #{mock_path}/#{name}" if verbose?
         FileUtils.mkpath File.dirname("#{mock_path}/#{name}")
         File.write "#{mock_path}/#{name}", content
       end
@@ -526,7 +590,7 @@ module Truffle
 
       true
     rescue => e
-      puts format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
+      log format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
       false
     end
 
@@ -559,7 +623,7 @@ module Truffle
       core_load_path = jruby_path.join 'truffle/src/main/ruby'
 
       missing_core_load_path = !File.exists?(core_load_path)
-      puts "Core load path: #{core_load_path} does not exist, fallbacking to --no-use-fs-core" if missing_core_load_path
+      log "Core load path: #{core_load_path} does not exist, fallbacking to --no-use-fs-core" if missing_core_load_path
 
       truffle_options = [
           '-X+T',
@@ -650,6 +714,38 @@ module Truffle
       super cmd, dir: dir, raise: raise, print: verbose? || print_always
     end
 
+    class Config
+      def initialize
+        @configurations = {}
+      end
+
+      def load(path)
+        content = File.read path
+        eval content, binding, path, 1
+      end
+
+      def dedent(string)
+        indent = string.lines[0] =~ /[^ ]/
+        string.lines.map { |l| l[indent..-1] }.join
+      end
+
+      def config(gem_name, configuration)
+        @configurations[gem_name] = configuration
+      end
+
+      def deep_merge(a, b, *rest)
+        Utils.deep_merge a, b, *rest
+      end
+
+      def deep_merge!(a, b, *rest)
+        Utils.deep_merge! a, b, *rest
+      end
+
+      def for(gem_name)
+        @configurations[gem_name]
+      end
+    end
+
     class CIEnvironment
       include Utils
       include OptionBlocks
@@ -702,12 +798,12 @@ module Truffle
         ci_file = Dir.glob(ROOT.join('gem_ci', "{#{name}}.rb")).first
         return false if ci_file.nil?
 
-        puts "Using CI definition: #{ci_file}"
+        log "Using CI definition: #{ci_file}"
         catch :cancel_ci! do
           begin
             instance_eval File.read(ci_file), ci_file, 1
           rescue => e
-            puts format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
+            log format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
           end
         end
 
