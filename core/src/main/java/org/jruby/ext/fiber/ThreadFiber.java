@@ -16,12 +16,17 @@ import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.ir.operands.IRException;
 
 public class ThreadFiber extends RubyObject implements ExecutionContext {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ThreadFiber.class);
+
     public ThreadFiber(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
     }
@@ -104,8 +109,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         while (true) {
             try {
                 IRubyObject result = currentFiberData.queue.pop(context);
-                if (result == NEVER) result = context.nil;
-                return result;
+                return result == NEVER ? context.nil : result;
             } catch (RaiseException re) {
                 handleExceptionDuringExchange(context, currentFiberData, targetFiberData, re);
             }
@@ -148,7 +152,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         // Otherwise, we want to forward the exception to the target fiber
         // since it has the ball
-        targetFiberData.fiber.get().thread.raise(re.getException());
+        final ThreadFiber fiber = targetFiberData.fiber.get();
+        if ( fiber != null ) fiber.thread.raise(re.getException());
+        else LOG.warn("no fiber thread to raise: {}", re.getException().inspect(context));
     }
 
     @JRubyMethod(rest = true)
