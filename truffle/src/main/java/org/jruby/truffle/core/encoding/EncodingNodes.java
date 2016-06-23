@@ -21,6 +21,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
@@ -33,6 +34,8 @@ import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.core.cast.ToEncodingNode;
+import org.jruby.truffle.core.cast.ToEncodingNodeGen;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
@@ -77,23 +80,22 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "compatible?", needsSelf = false, onSingleton = true, required = 2)
     public abstract static class CompatibleQueryNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private ToEncodingNode toEncodingNode;
+
         @Specialization(guards = {
-                "isRubyString(first)",
-                "isRubyString(second)",
+                "bothAreStrings(first, second)",
                 "firstEncoding == secondEncoding",
                 "extractEncoding(first) == firstEncoding",
                 "extractEncoding(second) == secondEncoding"
         }, limit = "getCacheLimit()")
         public DynamicObject isCompatibleStringStringCached(DynamicObject first, DynamicObject second,
-                                                     @Cached("extractEncoding(first)") Encoding firstEncoding,
-                                                     @Cached("extractEncoding(second)") Encoding secondEncoding,
+                                                     @Cached("getEncoding(first)") Encoding firstEncoding,
+                                                     @Cached("getEncoding(second)") Encoding secondEncoding,
                                                      @Cached("isCompatibleStringStringUncached(first, second)") DynamicObject rubyEncoding) {
             return rubyEncoding;
         }
 
-        @Specialization(guards = {
-                "isRubyString(first)", "isRubyString(second)"
-        }, contains =  "isCompatibleStringStringCached")
+        @Specialization(guards = "bothAreStrings(first, second)", contains =  "isCompatibleStringStringCached")
         public DynamicObject isCompatibleStringStringUncached(DynamicObject first, DynamicObject second) {
             final Encoding compatibleEncoding = compatibleEncodingForStrings(first, second);
 
@@ -104,114 +106,26 @@ public abstract class EncodingNodes {
             }
         }
 
-        @TruffleBoundary
-        @Specialization(guards = {"isRubyEncoding(first)", "isRubyEncoding(second)"})
-        public Object isCompatibleEncodingEncoding(DynamicObject first, DynamicObject second) {
-            final Encoding firstEncoding = EncodingOperations.getEncoding(first);
-            final Encoding secondEncoding = EncodingOperations.getEncoding(second);
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(firstEncoding, secondEncoding);
+        // TODO (nirvdrum 22-Jun-16): Reorder these guards so the cheap check is first after the new Truffle DSL generator is live -- the current one has a bug that's mitigated by reordering the guards.
+        @Specialization(guards = {
+                "getEncoding(first) == firstEncoding",
+                "getEncoding(second) == secondEncoding",
+                "!bothAreStrings(first, second)"
+        }, limit = "getCacheLimit()")
+        public DynamicObject isCompatibleEncodingCached(DynamicObject first, DynamicObject second,
+                                                 @Cached("getEncoding(first)") Encoding firstEncoding,
+                                                 @Cached("getEncoding(second)") Encoding secondEncoding,
+                                                 @Cached("getCompatibleEncoding(getContext(), firstEncoding, secondEncoding)") DynamicObject result) {
 
-            if (compatibleEncoding != null) {
-                return getContext().getEncodingManager().getRubyEncoding(compatibleEncoding);
-            } else {
-                return nil();
-            }
+            return result;
         }
 
-        @TruffleBoundary
-        @Specialization(guards = {"isRubyString(first)", "isRubyRegexp(second)"})
-        public Object isCompatibleStringRegexp(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.STRING.getRope(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
+        @Specialization(guards = "!bothAreStrings(first, second)", contains = "isCompatibleEncodingCached")
+        public DynamicObject isCompatibleEncodingUncached(DynamicObject first, DynamicObject second) {
+            final Encoding firstEncoding = getEncoding(first);
+            final Encoding secondEncoding = getEncoding(second);
 
-            if (compatibleEncoding != null) {
-                return getContext().getEncodingManager().getRubyEncoding(compatibleEncoding);
-            } else {
-                return nil();
-            }
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = {"isRubyRegexp(first)", "isRubyString(second)"})
-        public Object isCompatibleRegexpString(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), Layouts.STRING.getRope(second).getEncoding());
-
-            if (compatibleEncoding != null) {
-                return getContext().getEncodingManager().getRubyEncoding(compatibleEncoding);
-            } else {
-                return nil();
-            }
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = {"isRubyRegexp(first)", "isRubyRegexp(second)"})
-        public Object isCompatibleRegexpRegexp(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
-
-            if (compatibleEncoding != null) {
-                return getContext().getEncodingManager().getRubyEncoding(compatibleEncoding);
-            } else {
-                return nil();
-            }
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = {"isRubyRegexp(first)", "isRubySymbol(second)"})
-        public Object isCompatibleRegexpSymbol(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), Layouts.SYMBOL.getRope(second).getEncoding());
-
-            if (compatibleEncoding != null) {
-                return getContext().getEncodingManager().getRubyEncoding(compatibleEncoding);
-            } else {
-                return nil();
-            }
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = {"isRubySymbol(first)", "isRubyRegexp(second)"})
-        public Object isCompatibleSymbolRegexp(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.SYMBOL.getRope(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
-
-            if (compatibleEncoding != null) {
-                return getContext().getEncodingManager().getRubyEncoding(compatibleEncoding);
-            } else {
-                return nil();
-            }
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = {"isRubyString(first)", "isRubySymbol(second)"})
-        public Object isCompatibleStringSymbol(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = compatibleEncodingForRopes(StringOperations.rope(first), Layouts.SYMBOL.getRope(second));
-
-            if (compatibleEncoding != null) {
-                return getContext().getEncodingManager().getRubyEncoding(compatibleEncoding);
-            } else {
-                return nil();
-            }
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = {"isRubySymbol(first)", "isRubySymbol(second)"})
-        public Object isCompatibleSymbolSymbol(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = compatibleEncodingForRopes(Layouts.SYMBOL.getRope(first), Layouts.SYMBOL.getRope(second));
-
-            if (compatibleEncoding != null) {
-                return getContext().getEncodingManager().getRubyEncoding(compatibleEncoding);
-            } else {
-                return nil();
-            }
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = {"isRubyString(first)", "isRubyEncoding(second)"})
-        public Object isCompatibleStringEncoding(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.STRING.getRope(first).getEncoding(), EncodingOperations.getEncoding(second));
-
-            if (compatibleEncoding != null) {
-                return getContext().getEncodingManager().getRubyEncoding(compatibleEncoding);
-            } else {
-                return nil();
-            }
+            return getCompatibleEncoding(getContext(), firstEncoding, secondEncoding);
         }
 
         public static Encoding compatibleEncodingForStrings(DynamicObject first, DynamicObject second) {
@@ -254,6 +168,29 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
+        public static Encoding areCompatible(Encoding enc1, Encoding enc2) {
+            if (enc1 == null || enc2 == null) return null;
+            if (enc1 == enc2) return enc1;
+
+            if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+
+            if (enc2 instanceof USASCIIEncoding) return enc1;
+            if (enc1 instanceof USASCIIEncoding) return enc2;
+
+            return null;
+        }
+
+        public static DynamicObject getCompatibleEncoding(RubyContext context, Encoding first, Encoding second) {
+            final Encoding compatibleEncoding = areCompatible(first, second);
+
+            if (compatibleEncoding != null) {
+                return context.getEncodingManager().getRubyEncoding(compatibleEncoding);
+            } else {
+                return context.getCoreLibrary().getNilObject();
+            }
+        }
+
+        @TruffleBoundary
         private static boolean isAsciiOnly(Rope rope) {
             return rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CodeRange.CR_7BIT;
         }
@@ -264,6 +201,19 @@ public abstract class EncodingNodes {
             }
 
             return null;
+        }
+
+        protected static boolean bothAreStrings(DynamicObject first, DynamicObject second) {
+            return RubyGuards.isRubyString(first) && RubyGuards.isRubyString(second);
+        }
+
+        protected Encoding getEncoding(DynamicObject value) {
+            if (toEncodingNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                toEncodingNode = insert(ToEncodingNode.create());
+            }
+
+            return toEncodingNode.executeToEncoding(value);
         }
 
         protected int getCacheLimit() {
