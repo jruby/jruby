@@ -153,7 +153,6 @@ public abstract class EncodingNodes {
             final Encoding firstEncoding = firstRope.getEncoding();
             final Encoding secondEncoding = secondRope.getEncoding();
 
-            if (firstEncoding == null || secondEncoding == null) return null;
             if (firstEncoding == secondEncoding) return firstEncoding;
 
             if (secondRope.isEmpty()) return firstEncoding;
