@@ -80,16 +80,14 @@ public class ClassExtensionLibrary implements Library {
         for (int i = all.length - 1; i >= leftmostIdentifier; i--) {
             buildClassName(classNameBuilder, classFileBuilder, all, i, serviceName);
 
-            String classFileName = classFileBuilder.toString();
-
             // bail out once if see a dash in the name
-            if (classFileName.contains("-")) return null;
+            if (classFileBuilder.indexOf("-", 0) >= 0) return null;
 
             // look for the filename in classloader resources
             URL resource = runtime.getJRubyClassLoader().getResource(classFileBuilder.toString());
             if (resource == null) continue;
 
-            String className = classNameBuilder.toString();
+            final String className = classNameBuilder.toString();
 
             try {
                 Class theClass = runtime.getJavaSupport().loadJavaClass(className);
@@ -99,7 +97,7 @@ public class ClassExtensionLibrary implements Library {
                 continue;
             } catch (UnsupportedClassVersionError ucve) {
                 if (runtime.isDebug()) ucve.printStackTrace();
-                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + className + "': " + ucve, className.toString());
+                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + className + "': " + ucve, className);
             }
         }
 
