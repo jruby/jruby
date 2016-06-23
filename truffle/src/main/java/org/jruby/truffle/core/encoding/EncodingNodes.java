@@ -35,7 +35,6 @@ import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.ToEncodingNode;
-import org.jruby.truffle.core.cast.ToEncodingNodeGen;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
@@ -84,18 +83,25 @@ public abstract class EncodingNodes {
 
         @Specialization(guards = {
                 "bothAreStrings(first, second)",
-                "firstEncoding == secondEncoding",
-                "extractEncoding(first) == firstEncoding",
-                "extractEncoding(second) == secondEncoding"
+                "isEmpty(first) == isFirstEmpty",
+                "isEmpty(second) == isSecondEmpty",
+                "getCodeRange(first) == firstCodeRange",
+                "getCodeRange(second) == secondCodeRange",
+                "getEncoding(first) == firstEncoding",
+                "getEncoding(second) == secondEncoding"
         }, limit = "getCacheLimit()")
         public DynamicObject isCompatibleStringStringCached(DynamicObject first, DynamicObject second,
                                                      @Cached("getEncoding(first)") Encoding firstEncoding,
                                                      @Cached("getEncoding(second)") Encoding secondEncoding,
+                                                     @Cached("isEmpty(first)") boolean isFirstEmpty,
+                                                     @Cached("isEmpty(second)") boolean isSecondEmpty,
+                                                     @Cached("getCodeRange(first)") CodeRange firstCodeRange,
+                                                     @Cached("getCodeRange(second)") CodeRange secondCodeRange,
                                                      @Cached("isCompatibleStringStringUncached(first, second)") DynamicObject rubyEncoding) {
             return rubyEncoding;
         }
 
-        @Specialization(guards = "bothAreStrings(first, second)", contains =  "isCompatibleStringStringCached")
+        @Specialization(guards = "bothAreStrings(first, second)", contains = "isCompatibleStringStringCached")
         public DynamicObject isCompatibleStringStringUncached(DynamicObject first, DynamicObject second) {
             final Encoding compatibleEncoding = compatibleEncodingForStrings(first, second);
 
@@ -195,12 +201,26 @@ public abstract class EncodingNodes {
             }
         }
 
-        protected Encoding extractEncoding(DynamicObject string) {
+        protected boolean isEmpty(Object string) {
+            // The Truffle DSL generator will calculate @Cached values used in guards above all guards. In practice,
+            // this guard is only used on Ruby strings, but the method must handle any object type because of the form
+            // of the generated code. If the object is not a Ruby string, the resulting value is never used.
             if (RubyGuards.isRubyString(string)) {
-                return Layouts.STRING.getRope(string).getEncoding();
+                return StringOperations.rope((DynamicObject) string).isEmpty();
             }
 
-            return null;
+            return false;
+        }
+
+        protected CodeRange getCodeRange(Object string) {
+            // The Truffle DSL generator will calculate @Cached values used in guards above all guards. In practice,
+            // this guard is only used on Ruby strings, but the method must handle any object type because of the form
+            // of the generated code. If the object is not a Ruby string, the resulting value is never used.
+            if (RubyGuards.isRubyString(string)) {
+                return StringOperations.rope((DynamicObject) string).getCodeRange();
+            }
+
+            return CodeRange.CR_UNKNOWN;
         }
 
         protected static boolean bothAreStrings(DynamicObject first, DynamicObject second) {
