@@ -126,6 +126,42 @@ with_feature :encoding do
         Encoding.compatible?(@str, @str).should == Encoding::UTF_8
       end
     end
+
+    describe "when the first String is empty and the second is not" do
+      describe "and the first's Encoding is ASCII compatible" do
+        before :each do
+          @str = "".force_encoding("utf-8")
+        end
+
+        it "returns the first's encoding when the second String is ASCII only" do
+          Encoding.compatible?(@str, "def".encode("us-ascii")).should == Encoding::UTF_8
+        end
+
+        it "returns the second's encoding when the second String is not ASCII only" do
+          Encoding.compatible?(@str, "def".encode("utf-32le")).should == Encoding::UTF_32LE
+        end
+      end
+
+      describe "when the first's Encoding is not ASCII compatible" do
+        before :each do
+          @str = "".force_encoding Encoding::UTF_7
+        end
+
+        it "returns the second string's encoding" do
+          Encoding.compatible?(@str, "def".encode("us-ascii")).should == Encoding::US_ASCII
+        end
+      end
+    end
+
+    describe "when the second String is empty" do
+      before :each do
+        @str = "abc".force_encoding("utf-7")
+      end
+
+      it "returns the first Encoding" do
+        Encoding.compatible?(@str, "").should == Encoding::UTF_7
+      end
+    end
   end
 
   describe "Encoding.compatible? String, Regexp" do
