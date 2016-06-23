@@ -28,7 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
@@ -36,7 +35,9 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.FileResource;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.StringSupport;
 import org.jruby.util.func.Function2;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -604,7 +605,7 @@ public class ArgumentProcessor {
         }
     }
 
-    private String[] valueListFor(String argument, String key) {
+    private static String[] valueListFor(String argument, String key) {
         int length = key.length() + 3; // 3 is from -- and = (e.g. --disable=)
         String[] values = argument.substring(length).split(",");
 
@@ -619,7 +620,7 @@ public class ArgumentProcessor {
         }
     }
 
-    private void errorMissingEquals(String label) {
+    private static void errorMissingEquals(String label) {
         MainExitException mee;
         mee = new MainExitException(1, "missing argument for --" + label + "\n");
         mee.setUsageError(true);
@@ -627,15 +628,15 @@ public class ArgumentProcessor {
     }
 
     private void processEncodingOption(String value) {
-        String[] encodings = value.split(":", 3);
-        switch (encodings.length) {
+        List<String> encodings = StringSupport.split(value, ':', 3);
+        switch (encodings.size()) {
             case 3:
-                throw new MainExitException(1, "extra argument for -E: " + encodings[2]);
+                throw new MainExitException(1, "extra argument for -E: " + encodings.get(2));
             case 2:
-                config.setInternalEncoding(encodings[1]);
+                config.setInternalEncoding(encodings.get(1));
             case 1:
-                config.setExternalEncoding(encodings[0]);
-                // Zero is impossible
+                config.setExternalEncoding(encodings.get(0));
+            // Zero is impossible
         }
     }
 
