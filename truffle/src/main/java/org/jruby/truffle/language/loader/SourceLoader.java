@@ -51,7 +51,7 @@ public class SourceLoader {
 
     public Source loadFragment(String fragment, String name) {
         return Source.fromText(
-                StringOperations.createByteList(fragment),
+                fragment,
                 name);
     }
 
