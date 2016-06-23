@@ -53,7 +53,6 @@ import java.util.logging.Logger;
 public class AnnotationBinder extends AbstractProcessor {
 
     public static final String POPULATOR_SUFFIX = "$POPULATOR";
-    private static final Logger LOG = Logger.getLogger("AnnotationBinder");
     public static final String SRC_GEN_DIR = "target/generated-sources/org/jruby/gen/";
     private final List<CharSequence> classNames = new ArrayList<CharSequence>();
     private PrintStream out;
@@ -72,7 +71,9 @@ public class AnnotationBinder extends AbstractProcessor {
                 fw.write('\n');
             }
             fw.close();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
+            if (e instanceof RuntimeException) throw (RuntimeException) e;
             throw new RuntimeException(e);
         }
 
@@ -268,8 +269,9 @@ public class AnnotationBinder extends AbstractProcessor {
             FileOutputStream fos = new FileOutputStream(SRC_GEN_DIR + qualifiedName + POPULATOR_SUFFIX + ".java");
             fos.write(bytes.toByteArray());
             fos.close();
-        } catch (IOException ioe) {
-            LOG.severe("FAILED TO GENERATE: " + ioe);
+        }
+        catch (IOException ex) {
+            ex.printStackTrace(System.err);
             System.exit(1);
         }
     }

@@ -76,7 +76,6 @@ import static org.objectweb.asm.Opcodes.*;
 public class IndyBinder extends AbstractProcessor {
 
     public static final String POPULATOR_SUFFIX = "$POPULATOR";
-    private static final Logger LOG = Logger.getLogger("IndyBinder");
     public static final String SRC_GEN_DIR = "target/classes/org/jruby/gen/";
     public static final int CLASS = 1;
     public static final int BASEMETHOD = 3;
@@ -311,8 +310,9 @@ public class IndyBinder extends AbstractProcessor {
             FileOutputStream fos = new FileOutputStream(SRC_GEN_DIR + qualifiedName + POPULATOR_SUFFIX + ".class");
             fos.write(cw.toByteArray());
             fos.close();
-        } catch (IOException ioe) {
-            LOG.severe("FAILED TO GENERATE: " + ioe);
+        }
+        catch (IOException ex) {
+            ex.printStackTrace(System.err);
             System.exit(1);
         }
     }
