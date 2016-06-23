@@ -73,7 +73,7 @@ graalvm: {
   environment: {
     GRAALVM_BIN: "$GRAALVM_DIR/bin/java"
     HOST_VM: server,
-    HOST_VM_CONFIG: graal-enterprise
+    HOST_VM_CONFIG: graal-vm
   }
 }
 
