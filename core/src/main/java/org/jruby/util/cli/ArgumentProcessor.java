@@ -271,10 +271,7 @@ public class ArgumentProcessor {
                         grabValue(getArgumentError(" -J-cp must be followed by a path expression"));
                     }
                     break FOR;
-                case 'K':
-                    // FIXME: No argument seems to work for -K in MRI plus this should not
-                    // siphon off additional args 'jruby -K ~/scripts/foo'.  Also better error
-                    // processing.
+                case 'K': // @Deprecated TODO no longer relevant in Ruby 2.x
                     String eArg = grabValue(getArgumentError("provide a value for -K"));
 
                     config.setKCode(KCode.create(null, eArg));
