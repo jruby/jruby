@@ -82,6 +82,7 @@ public class RubyEnumerable {
                 Signature.OPTIONAL, callback, context));
     }
 
+    @Deprecated
     public static IRubyObject callEach19(Ruby runtime, ThreadContext context, IRubyObject self,
             BlockCallback callback) {
         return Helpers.invoke(context, self, "each", CallBlock19.newCallClosure(self, runtime.getEnumerable(),
@@ -446,7 +447,7 @@ public class RubyEnumerable {
     public static IRubyObject to_a19(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
         RubyArray result = runtime.newArray();
-        callEach(runtime, context, self, Signature.OPTIONAL, new AppendBlockCallback(runtime, result));
+        callEach(runtime, context, self, Signature.OPTIONAL, new AppendBlockCallback(result));
         result.infectBy(self);
         return result;
     }
@@ -455,7 +456,7 @@ public class RubyEnumerable {
         final Ruby runtime = context.runtime;
         final RubyArray result = runtime.newArray();
         Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(),
-                Signature.OPTIONAL, new AppendBlockCallback(runtime, result), context));
+                Signature.OPTIONAL, new AppendBlockCallback(result), context));
         result.infectBy(self);
         return result;
     }
@@ -465,7 +466,7 @@ public class RubyEnumerable {
         final Ruby runtime = context.runtime;
         final RubyHash result = RubyHash.newHash(runtime);
         Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(),
-                Signature.OPTIONAL, new PutKeyValueCallback(runtime, result), context));
+                Signature.OPTIONAL, new PutKeyValueCallback(result), context));
         result.infectBy(self);
         return result;
     }
@@ -475,7 +476,7 @@ public class RubyEnumerable {
         final Ruby runtime = context.runtime;
         final RubyArray result = runtime.newArray();
 
-        callEach(runtime, context, self, Signature.OPTIONAL, new AppendBlockCallback(runtime, result));
+        callEach(runtime, context, self, Signature.OPTIONAL, new AppendBlockCallback(result));
         result.sort_bang(context, block);
 
         return result;
@@ -1611,26 +1612,29 @@ public class RubyEnumerable {
         return runtime.getFalse();
     }
 
-    public static IRubyObject zip(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
-        return zip19(context, self, args, block);
-    }
-
     @JRubyMethod(name = "zip", rest = true)
-    public static IRubyObject zip19(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
-        return zipCommon19(context, self, args, block);
+    public static IRubyObject zip(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
+        return zipCommon(context, self, args, block);
     }
 
+    @Deprecated
+    public static IRubyObject zip19(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
+        return zip(context, self, args, block);
+    }
+
+    @Deprecated
     public static IRubyObject[] zipCommonConvert(Ruby runtime, IRubyObject[] args) {
         return zipCommonConvert(runtime, args, "to_a");
     }
 
+    @Deprecated
     public static IRubyObject[] zipCommonConvert(Ruby runtime, IRubyObject[] args, String method) {
-        RubyClass array = runtime.getArray();
+        final RubyClass Array = runtime.getArray();
         ThreadContext context = runtime.getCurrentContext();
 
         // 1.9 tries to convert, and failing that tries to "each" elements into a new array
         for (int i = 0; i < args.length; i++) {
-            IRubyObject result = TypeConverter.convertToTypeWithCheck19(args[i], array, method);
+            IRubyObject result = TypeConverter.convertToTypeWithCheck19(args[i], Array, method);
             if (result.isNil()) {
                 result = takeItems(context, args[i]);
             }
@@ -1640,42 +1644,37 @@ public class RubyEnumerable {
         return args;
     }
 
-    public static IRubyObject zipCommon(ThreadContext context, IRubyObject self,
-            IRubyObject[] aArgs, final Block block) {
-        final Ruby runtime = context.runtime;
-        final IRubyObject[] args = zipCommonConvert(runtime, aArgs);
-
-        return zipCommonAry(context, self, args, block);
+    @Deprecated
+    public static IRubyObject zipCommon19(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
+        return zipCommon(context, self, args, block);
     }
 
-    public static IRubyObject zipCommon19(ThreadContext context, IRubyObject self,
-            IRubyObject[] args, final Block block) {
+    public static IRubyObject zipCommon(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         final Ruby runtime = context.runtime;
-        RubyClass array = runtime.getArray();
+        final RubyClass Array = runtime.getArray();
 
         final IRubyObject[] newArgs = new IRubyObject[args.length];
 
         boolean hasUncoercible = false;
         for (int i = 0; i < args.length; i++) {
-            newArgs[i] = TypeConverter.convertToType(args[i], array, "to_ary", false);
+            newArgs[i] = TypeConverter.convertToType(args[i], Array, "to_ary", false);
             if (newArgs[i].isNil()) {
                 hasUncoercible = true;
+                break; // since we will overwrite newArgs[]
             }
         }
 
         // Handle uncoercibles by trying to_enum conversion
         if (hasUncoercible) {
-            RubySymbol each = runtime.newSymbol("each");
+            final RubySymbol each = runtime.newSymbol("each");
             for (int i = 0; i < args.length; i++) {
                 newArgs[i] = args[i].callMethod(context, "to_enum", each);
             }
+
+            return zipCommonEnum(context, self, newArgs, block);
         }
 
-        if (hasUncoercible) {
-            return zipCommonEnum(context, self, newArgs, block);
-        } else {
-            return zipCommonAry(context, self, newArgs, block);
-        }
+        return zipCommonAry(context, self, newArgs, block);
     }
 
     // TODO: Eliminate duplication here and zipCommonEnum
@@ -1687,7 +1686,7 @@ public class RubyEnumerable {
 
         if (block.isGiven()) {
             callEach(runtime, context, self, block.getSignature(), new BlockCallback() {
-                AtomicInteger ix = new AtomicInteger(0);
+                final AtomicInteger ix = new AtomicInteger(0);
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = packEnumValues(ctx, largs);
@@ -1698,14 +1697,14 @@ public class RubyEnumerable {
                         array.append(((RubyArray) args[i]).entry(myIx));
                     }
                     block.yield(ctx, array);
-                    return runtime.getNil();
+                    return ctx.nil;
                 }
             });
-            return runtime.getNil();
+            return context.nil;
         } else {
             final RubyArray zip = runtime.newArray();
             callEach(runtime, context, self, Signature.ONE_REQUIRED, new BlockCallback() {
-                AtomicInteger ix = new AtomicInteger(0);
+                final AtomicInteger ix = new AtomicInteger(0);
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = packEnumValues(ctx, largs);
@@ -1715,10 +1714,8 @@ public class RubyEnumerable {
                     for (int i = 0, j = args.length; i < j; i++) {
                         array.append(((RubyArray) args[i]).entry(myIx));
                     }
-                    synchronized (zip) {
-                        zip.append(array);
-                    }
-                    return runtime.getNil();
+                    synchronized (zip) { zip.append(array); }
+                    return ctx.nil;
                 }
             });
             return zip;
@@ -1734,38 +1731,36 @@ public class RubyEnumerable {
 
         if (block.isGiven()) {
             callEach(runtime, context, self, block.getSignature(), new BlockCallback() {
-                AtomicInteger ix = new AtomicInteger(0);
+                //final AtomicInteger ix = new AtomicInteger(0);
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = packEnumValues(ctx, largs);
                     RubyArray array = runtime.newArray(len);
-                    int myIx = ix.getAndIncrement();
+                    //int myIx = ix.getAndIncrement();
                     array.append(larg);
                     for (int i = 0, j = args.length; i < j; i++) {
                         array.append(zipEnumNext(ctx, args[i]));
                     }
                     block.yield(ctx, array);
-                    return runtime.getNil();
+                    return ctx.nil;
                 }
             });
-            return runtime.getNil();
+            return context.nil;
         } else {
             final RubyArray zip = runtime.newArray();
             callEach(runtime, context, self, Signature.ONE_REQUIRED, new BlockCallback() {
-                AtomicInteger ix = new AtomicInteger(0);
+                //final AtomicInteger ix = new AtomicInteger(0);
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = packEnumValues(ctx, largs);
                     RubyArray array = runtime.newArray(len);
                     array.append(larg);
-                    int myIx = ix.getAndIncrement();
+                    //int myIx = ix.getAndIncrement();
                     for (int i = 0, j = args.length; i < j; i++) {
                         array.append(zipEnumNext(ctx, args[i]));
                     }
-                    synchronized (zip) {
-                        zip.append(array);
-                    }
-                    return runtime.getNil();
+                    synchronized (zip) { zip.append(array); }
+                    return ctx.nil;
                 }
             });
             return zip;
@@ -1797,22 +1792,18 @@ public class RubyEnumerable {
     }
 
     public static IRubyObject zipEnumNext(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
+        if (arg.isNil()) return context.nil;
 
-        if (arg.isNil()) {
-            return context.nil;
-        } else {
-            IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
-            try {
-                return arg.callMethod(context, "next");
-            } catch (RaiseException re) {
-                if (re.getException().getMetaClass() == runtime.getStopIteration()) {
-                    runtime.getGlobalVariables().set("$!", oldExc);
-                    return context.nil;
-                } else {
-                    throw re;
-                }
+        final Ruby runtime = context.runtime;
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+        try {
+            return arg.callMethod(context, "next");
+        } catch (RaiseException re) {
+            if (re.getException().getMetaClass() == runtime.getStopIteration()) {
+                runtime.getGlobalVariables().set("$!", oldExc);
+                return context.nil;
             }
+            throw re;
         }
     }
 
@@ -1837,7 +1828,7 @@ public class RubyEnumerable {
                     }
                     curr.append(larg);
                 }
-                return runtime.getNil();
+                return ctx.nil;
             }
         });
 
@@ -1880,9 +1871,9 @@ public class RubyEnumerable {
         };
     }
 
-    private static class ChunkArg {
+    private static final class ChunkArg {
 
-        private ChunkArg(final ThreadContext context) {
+        ChunkArg(final ThreadContext context) {
             this.prev_elts = this.prev_value = context.nil;
         }
 
@@ -1971,7 +1962,7 @@ public class RubyEnumerable {
 
         private final RubyArray result;
 
-        // @Deprecated
+        @Deprecated
         public AppendBlockCallback(Ruby runtime, RubyArray result) {
             this.result = result;
         }
@@ -1988,15 +1979,21 @@ public class RubyEnumerable {
     }
 
     public static final class PutKeyValueCallback implements BlockCallback {
-        private Ruby runtime;
-        private RubyHash result;
 
+        private final RubyHash result;
+
+        @Deprecated
         public PutKeyValueCallback(Ruby runtime, RubyHash result) {
-            this.runtime = runtime;
+            this.result = result;
+        }
+
+        PutKeyValueCallback(RubyHash result) {
             this.result = result;
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+            final Ruby runtime = context.runtime;
+
             IRubyObject value;
 
             switch (largs.length) {
