@@ -42,7 +42,7 @@ public class SymbolTable {
         this.context = context;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public DynamicObject getSymbol(String string) {
         lock.readLock().lock();
         Rope rope = null;
@@ -69,7 +69,7 @@ public class SymbolTable {
         return getSymbol(rope);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public DynamicObject getSymbol(Rope rope) {
         lock.readLock().lock();
 
@@ -119,7 +119,7 @@ public class SymbolTable {
         return ropeReference != null ? ropeReference.get() : null;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public Collection<DynamicObject> allSymbols() {
         final Collection<WeakReference<DynamicObject>> symbolReferences;
 
