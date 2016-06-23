@@ -71,7 +71,7 @@ module Truffle
     end
 
     def rb_str_new_cstr(java_string)
-      String.new(java_string)
+      ::String.new(java_string)
     end
 
     def rb_intern_str(string)
