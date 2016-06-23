@@ -157,7 +157,7 @@ public abstract class EncodingNodes {
 
             if (secondRope.isEmpty()) return firstEncoding;
             if (firstRope.isEmpty()) {
-                return firstEncoding.isAsciiCompatible() && isAsciiOnly(secondRope) ? firstEncoding : secondEncoding;
+                return firstEncoding.isAsciiCompatible() && (secondRope.getCodeRange() == CodeRange.CR_7BIT) ? firstEncoding : secondEncoding;
             }
 
             if (!firstEncoding.isAsciiCompatible() || !secondEncoding.isAsciiCompatible()) return null;
@@ -193,11 +193,6 @@ public abstract class EncodingNodes {
             } else {
                 return context.getCoreLibrary().getNilObject();
             }
-        }
-
-        @TruffleBoundary
-        private static boolean isAsciiOnly(Rope rope) {
-            return rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CodeRange.CR_7BIT;
         }
 
         protected Encoding extractEncoding(DynamicObject string) {
