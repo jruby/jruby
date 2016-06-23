@@ -1261,7 +1261,7 @@ public abstract class StringNodes {
             return self;
         }
 
-        @Specialization(guards = { "!isRubyString(from)", "wasProvided(from)" })
+        @Specialization(guards = { "!isRubyString(from)", "!isString(from)", "wasProvided(from)" })
         public DynamicObject initialize(VirtualFrame frame, DynamicObject self, Object from) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
