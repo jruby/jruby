@@ -16,6 +16,21 @@ require 'rbconfig'
 require 'rubygems'
 require 'bundler'
 
+class String
+  def pretty_print(q)
+    lines = self.lines
+    if lines.size > 1
+      q.group(0, '', '') do
+        q.seplist(lines, lambda { q.text ' +'; q.breakable }) do |v|
+          q.pp v
+        end
+      end
+    else
+      q.text inspect
+    end
+  end
+end
+
 module Truffle
   class Runner
     module Utils
