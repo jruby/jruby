@@ -82,6 +82,18 @@ public abstract class EncodingNodes {
         @Child private ToEncodingNode toEncodingNode;
 
         @Specialization(guards = {
+                "firstEncoding == secondEncoding",
+                "getEncoding(first) == firstEncoding",
+                "getEncoding(second) == secondEncoding"
+        }, limit = "getCacheLimit()")
+        public DynamicObject isCompatibleCached(Object first, Object second,
+                                                @Cached("getEncoding(first)") Encoding firstEncoding,
+                                                @Cached("getEncoding(second)") Encoding secondEncoding,
+                                                @Cached("getRubyEncoding(firstEncoding)") DynamicObject result) {
+            return result;
+        }
+
+        @Specialization(guards = {
                 "bothAreStrings(first, second)",
                 "isEmpty(first) == isFirstEmpty",
                 "isEmpty(second) == isSecondEmpty",
@@ -227,13 +239,21 @@ public abstract class EncodingNodes {
             return RubyGuards.isRubyString(first) && RubyGuards.isRubyString(second);
         }
 
-        protected Encoding getEncoding(DynamicObject value) {
+        protected Encoding getEncoding(Object value) {
             if (toEncodingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toEncodingNode = insert(ToEncodingNode.create());
             }
 
             return toEncodingNode.executeToEncoding(value);
+        }
+
+        protected DynamicObject getRubyEncoding(Encoding value) {
+            if (value == null) {
+                return nil();
+            }
+
+            return getContext().getEncodingManager().getRubyEncoding(value);
         }
 
         protected int getCacheLimit() {
