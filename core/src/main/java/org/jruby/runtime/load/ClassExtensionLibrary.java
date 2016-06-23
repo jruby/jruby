@@ -137,7 +137,7 @@ public class ClassExtensionLibrary implements Library {
 
     private static CharSequence buildServiceName(final String jarName) {
         String[] last = jarName.split("_");
-        StringBuilder serviceName = new StringBuilder();
+        StringBuilder serviceName = new StringBuilder(jarName.length() + 7);
         for (int i = 0, j = last.length; i < j; i++) {
             final String l = last[i];
             if (l.length() == 0) break;
