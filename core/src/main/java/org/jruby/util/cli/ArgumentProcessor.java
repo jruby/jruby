@@ -77,11 +77,11 @@ public class ArgumentProcessor {
         }
     }
 
-    private List<Argument> arguments;
+    private final List<Argument> arguments;
     private int argumentIndex = 0;
     private boolean processArgv;
     private final boolean rubyOpts;
-    RubyInstanceConfig config;
+    final RubyInstanceConfig config;
     private boolean endOfArguments = false;
     private int characterIndex = 0;
 
@@ -93,11 +93,14 @@ public class ArgumentProcessor {
 
     public ArgumentProcessor(String[] arguments, boolean processArgv, boolean dashed, boolean rubyOpts, RubyInstanceConfig config) {
         this.config = config;
-        this.arguments = new ArrayList<Argument>();
         if (arguments != null && arguments.length > 0) {
+            this.arguments = new ArrayList<>(arguments.length);
             for (String argument : arguments) {
                 this.arguments.add(new Argument(argument, dashed));
             }
+        }
+        else {
+            this.arguments = new ArrayList<>(0);
         }
         this.processArgv = processArgv;
         this.rubyOpts = rubyOpts;
@@ -437,7 +440,7 @@ public class ArgumentProcessor {
                     } else if (argument.startsWith("--debug=")) {
                         for (String debug : valueListFor(argument, "debug")) {
                             boolean all = debug.equals("all");
-                            if (debug.equals("frozen-string-literal") || all) {
+                            if (all || debug.equals("frozen-string-literal")) {
                                 config.setDebuggingFrozenStringLiteral(true);
                                 continue;
                             }
@@ -513,8 +516,9 @@ public class ArgumentProcessor {
                         config.setDebuggingFrozenStringLiteral(true);
                         break FOR;
                     } else if (argument.startsWith("--disable")) {
-                        if (argument.equals("--disable")) {
-                            characterIndex = argument.length();
+                        final int len = argument.length();
+                        if (len == "--disable".length()) {
+                            characterIndex = len;
                             String feature = grabValue(getArgumentError("missing argument for --disable"), false);
                             argument = "--disable=" + feature;
                         }
@@ -523,8 +527,9 @@ public class ArgumentProcessor {
                         }
                         break FOR;
                     } else if (argument.startsWith("--enable")) {
-                        if (argument.equals("--enable")) {
-                            characterIndex = argument.length();
+                        final int len = argument.length();
+                        if (len == "--enable".length()) {
+                            characterIndex = len;
                             String feature = grabValue(getArgumentError("missing argument for --enable"), false);
                             argument = "--enable=" + feature;
                         }
@@ -707,12 +712,12 @@ public class ArgumentProcessor {
         return null;
     }
 
+    @Deprecated
     public String resolveScriptUsingClassLoader(String scriptName) {
-        if(RubyInstanceConfig.defaultClassLoader().getResourceAsStream("bin/" + scriptName) != null){
+        if (RubyInstanceConfig.defaultClassLoader().getResourceAsStream("bin/" + scriptName) != null){
             return "classpath:/bin/" + scriptName;
-        } else {
-            return null;
         }
+        return null;
     }
 
     private String grabValue(String errorMessage) {
@@ -740,18 +745,6 @@ public class ArgumentProcessor {
             return argValue.substring(characterIndex);
         }
         return null;
-    }
-
-    private void logScriptResolutionSuccess(String path) {
-        if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-            config.getError().println("Found: " + path);
-        }
-    }
-
-    private void logScriptResolutionFailure(String path) {
-        if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-            config.getError().println("Searched: " + path);
-        }
     }
 
     private static final Set<String> KNOWN_PROPERTIES = new HashSet<>();
@@ -804,7 +797,8 @@ public class ArgumentProcessor {
     private static final Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> FEATURES;
 
     static {
-        Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> features = new HashMap<>();
+        Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> features = new HashMap<>(12, 1);
+        Function2<Boolean, ArgumentProcessor, Boolean> function2;
 
         features.put("all", new Function2<Boolean, ArgumentProcessor, Boolean>() {
             public Boolean apply(ArgumentProcessor processor, Boolean enable) {
@@ -822,36 +816,26 @@ public class ArgumentProcessor {
                 return true;
             }
         });
-        features.put("did-you-mean", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+        features.put("did-you-mean", function2 = new Function2<Boolean, ArgumentProcessor, Boolean>() {
             public Boolean apply(ArgumentProcessor processor, Boolean enable) {
                 processor.config.setDisableDidYouMean(!enable);
                 return true;
             }
         });
-        features.put("did_you_mean", new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
-                processor.config.setDisableDidYouMean(!enable);
-                return true;
-            }
-        });
+        features.put("did_you_mean", function2); // alias
         features.put("rubyopt", new Function2<Boolean, ArgumentProcessor, Boolean>() {
             public Boolean apply(ArgumentProcessor processor, Boolean enable) {
                 processor.config.setDisableRUBYOPT(!enable);
                 return true;
             }
         });
-        features.put("frozen-string-literal", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+        features.put("frozen-string-literal", function2 = new Function2<Boolean, ArgumentProcessor, Boolean>() {
             public Boolean apply(ArgumentProcessor processor, Boolean enable) {
                 processor.config.setFrozenStringLiteral(enable);
                 return true;
             }
         });
-        features.put("frozen_string_literal", new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
-                processor.config.setFrozenStringLiteral(enable);
-                return true;
-            }
-        });
+        features.put("frozen_string_literal", function2); // alias
 
         FEATURES = features;
     }
