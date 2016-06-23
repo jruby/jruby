@@ -108,6 +108,8 @@ public abstract class EncodingNodes {
 
         // TODO (nirvdrum 22-Jun-16): Reorder these guards so the cheap check is first after the new Truffle DSL generator is live -- the current one has a bug that's mitigated by reordering the guards.
         @Specialization(guards = {
+                "firstEncoding != null",
+                "secondEncoding != null",
                 "getEncoding(first) == firstEncoding",
                 "getEncoding(second) == secondEncoding",
                 "!bothAreStrings(first, second)"
@@ -124,6 +126,10 @@ public abstract class EncodingNodes {
         public DynamicObject isCompatibleEncodingUncached(DynamicObject first, DynamicObject second) {
             final Encoding firstEncoding = getEncoding(first);
             final Encoding secondEncoding = getEncoding(second);
+
+            if (firstEncoding == null || secondEncoding == null) {
+                return nil();
+            }
 
             return getCompatibleEncoding(getContext(), firstEncoding, secondEncoding);
         }
