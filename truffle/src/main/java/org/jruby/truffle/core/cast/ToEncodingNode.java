@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 
@@ -47,7 +48,10 @@ public abstract class ToEncodingNode extends RubyNode {
 
     @Specialization(guards = "isRubyEncoding(value)")
     public Encoding rubyEncodingToEncoding(DynamicObject value) {
-        return Layouts.ENCODING.getEncoding(value);
+        // While we have a Ruby encoding object, the jcodings encoding it represents might not have been loaded yet.
+        // So, we can't simply use one of the layout helpers. We need to potentially load the encoding from the
+        // jcodings database.
+        return EncodingOperations.getEncoding(value);
     }
 
     @Fallback

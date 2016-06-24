@@ -14,9 +14,12 @@ package org.jruby.truffle.core.encoding;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -42,6 +45,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -85,6 +89,8 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
             toEncodingNode = ToEncodingNode.create();
         }
+
+        public abstract DynamicObject executeCompatibleQuery(Object string, Object other);
 
         @Specialization(guards = {
                 "getEncoding(first) == getEncoding(second)",
@@ -575,6 +581,36 @@ public abstract class EncodingNodes {
         public DynamicObject encodingGetObjectEncodingNil(DynamicObject object) {
             // TODO(CS, 26 Jan 15) something to do with __encoding__ here?
             return nil();
+        }
+
+    }
+
+    @NodeChildren({ @NodeChild("first"), @NodeChild("second") })
+    public static abstract class CheckEncodingNode extends RubyNode {
+
+        @Child private EncodingNodes.CompatibleQueryNode compatibleQueryNode;
+        @Child private ToEncodingNode toEncodingNode;
+
+        public CheckEncodingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            compatibleQueryNode = EncodingNodesFactory.CompatibleQueryNodeFactory.create(context, sourceSection, new RubyNode[] {});
+            toEncodingNode = ToEncodingNode.create();
+        }
+
+        public abstract Encoding executeCheckEncoding(Object first, Object second);
+
+        @Specialization
+        public Encoding checkEncoding(Object first, Object second,
+                                      @Cached("create()") BranchProfile errorProfile) {
+            final DynamicObject rubyEncoding = compatibleQueryNode.executeCompatibleQuery(first, second);
+
+            if (rubyEncoding == nil()) {
+                errorProfile.enter();
+                throw new RaiseException(getContext().getCoreExceptions().encodingCompatibilityErrorIncompatible(
+                        toEncodingNode.executeToEncoding(first), toEncodingNode.executeToEncoding(second), this));
+            }
+
+            return toEncodingNode.executeToEncoding(rubyEncoding);
         }
 
     }

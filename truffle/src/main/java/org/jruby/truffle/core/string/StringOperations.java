@@ -35,19 +35,16 @@ package org.jruby.truffle.core.string;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.Charset;
@@ -142,18 +139,6 @@ public abstract class StringOperations {
 
         // TODO (nirvdrum 21-Jan-16): Verify this is supposed to be the byteLength and not the characterLength.
         return ArrayOperations.clampExclusiveIndex(StringOperations.rope(string).byteLength(), index);
-    }
-
-    @TruffleBoundary
-    public static Encoding checkEncoding(RubyContext context, DynamicObject string, DynamicObject other, Node node) {
-        final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
-
-        if (encoding == null) {
-            throw new RaiseException(context.getCoreExceptions().encodingCompatibilityErrorIncompatible(
-                    rope(string).getEncoding(), rope(other).getEncoding(), node));
-        }
-
-        return encoding;
     }
 
     @TruffleBoundary
