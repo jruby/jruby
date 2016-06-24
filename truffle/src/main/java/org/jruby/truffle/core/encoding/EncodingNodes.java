@@ -220,7 +220,7 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        public static Encoding compatibleEncodingForRopes(Rope firstRope, Rope secondRope) {
+        private static Encoding compatibleEncodingForRopes(Rope firstRope, Rope secondRope) {
             // Taken from org.jruby.RubyEncoding#areCompatible.
 
             final Encoding firstEncoding = firstRope.getEncoding();
@@ -246,7 +246,7 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        public static Encoding areCompatible(Encoding enc1, Encoding enc2) {
+        private static Encoding areCompatible(Encoding enc1, Encoding enc2) {
             if (enc1 == null || enc2 == null) return null;
             if (enc1 == enc2) return enc1;
 
@@ -258,7 +258,7 @@ public abstract class EncodingNodes {
             return null;
         }
 
-        public static DynamicObject getCompatibleEncoding(RubyContext context, Encoding first, Encoding second) {
+        protected static DynamicObject getCompatibleEncoding(RubyContext context, Encoding first, Encoding second) {
             final Encoding compatibleEncoding = areCompatible(first, second);
 
             if (compatibleEncoding != null) {
