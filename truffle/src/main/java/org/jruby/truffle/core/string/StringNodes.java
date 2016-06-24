@@ -930,7 +930,7 @@ public abstract class StringNodes {
                 tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStrings[i]), getContext().getJRubyRuntime(), squeeze, tables, false, enc);
             }
 
-            final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(string);
+            final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(string, checkEncodingNode);
             if (StringSupport.delete_bangCommon19(buffer, getContext().getJRubyRuntime(), squeeze, tables, enc) == null) {
                 return nil();
             }
@@ -2143,6 +2143,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class TrBangNode extends CoreMethodNode {
 
+        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
         @Child private DeleteBangNode deleteBangNode;
 
         @CreateCast("fromStr") public RubyNode coerceFromStrToString(RubyNode fromStr) {
@@ -2169,7 +2170,12 @@ public abstract class StringNodes {
                 return deleteBangNode.executeDeleteBang(frame, self, new DynamicObject[] { fromStr });
             }
 
-            return StringNodesHelper.trTransHelper(getContext(), self, fromStr, toStr, false);
+            if (checkEncodingNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), getSourceSection(), null, null));
+            }
+
+            return StringNodesHelper.trTransHelper(getContext(), checkEncodingNode, self, fromStr, toStr, false);
         }
     }
 
@@ -2182,6 +2188,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class TrSBangNode extends CoreMethodNode {
 
+        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
         @Child private DeleteBangNode deleteBangNode;
 
         @CreateCast("fromStr") public RubyNode coerceFromStrToString(RubyNode fromStr) {
@@ -2208,7 +2215,12 @@ public abstract class StringNodes {
                 return deleteBangNode.executeDeleteBang(frame, self, new DynamicObject[] { fromStr });
             }
 
-            return StringNodesHelper.trTransHelper(getContext(), self, fromStr, toStr, true);
+            if (checkEncodingNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), getSourceSection(), null, null));
+            }
+
+            return StringNodesHelper.trTransHelper(getContext(), checkEncodingNode, self, fromStr, toStr, true);
         }
     }
 
@@ -2551,13 +2563,19 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        private static Object trTransHelper(RubyContext context, DynamicObject self, DynamicObject fromStr, DynamicObject toStr, boolean sFlag) {
+        private static Object trTransHelper(RubyContext context, EncodingNodes.CheckEncodingNode checkEncodingNode,
+                                            DynamicObject self, DynamicObject fromStr,
+                                            DynamicObject toStr, boolean sFlag) {
             assert RubyGuards.isRubyString(self);
             assert RubyGuards.isRubyString(fromStr);
             assert RubyGuards.isRubyString(toStr);
 
-            final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(self);
-            final CodeRangeable ret = StringSupport.trTransHelper(context.getJRubyRuntime(), buffer, StringOperations.getCodeRangeableReadOnly(fromStr), StringOperations.getCodeRangeableReadOnly(toStr), sFlag);
+            final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(self, checkEncodingNode);
+            final CodeRangeable ret = StringSupport.trTransHelper(context.getJRubyRuntime(),
+                    buffer,
+                    StringOperations.getCodeRangeableReadOnly(fromStr, checkEncodingNode),
+                    StringOperations.getCodeRangeableReadOnly(toStr, checkEncodingNode),
+                    sFlag);
 
             if (ret == null) {
                 return context.getCoreLibrary().getNilObject();

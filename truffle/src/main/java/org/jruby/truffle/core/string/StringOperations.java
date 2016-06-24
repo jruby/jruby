@@ -41,6 +41,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
@@ -71,8 +72,9 @@ public abstract class StringOperations {
         return RopeOperations.decodeRope(StringOperations.rope(string));
     }
 
-    public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string) {
-        return new StringCodeRangeableWrapper(string) {
+    public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string,
+                                                                       final EncodingNodes.CheckEncodingNode checkEncodingNode) {
+        return new StringCodeRangeableWrapper(string, checkEncodingNode) {
             private final ByteList byteList = RopeOperations.toByteListCopy(StringOperations.rope(string));
             int codeRange = StringOperations.getCodeRange(string).toInt();
 
@@ -93,8 +95,9 @@ public abstract class StringOperations {
         };
     }
 
-    public static StringCodeRangeableWrapper getCodeRangeableReadOnly(final DynamicObject string) {
-        return new StringCodeRangeableWrapper(string) {
+    public static StringCodeRangeableWrapper getCodeRangeableReadOnly(final DynamicObject string,
+                                                                      final EncodingNodes.CheckEncodingNode checkEncodingNode) {
+        return new StringCodeRangeableWrapper(string, checkEncodingNode) {
             @Override
             public ByteList getByteList() {
                 return StringOperations.getByteListReadOnly(string);

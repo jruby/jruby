@@ -210,7 +210,7 @@ public abstract class EncodingNodes {
             return getCompatibleEncoding(getContext(), firstEncoding, secondEncoding);
         }
 
-        public static Encoding compatibleEncodingForStrings(DynamicObject first, DynamicObject second) {
+        private static Encoding compatibleEncodingForStrings(DynamicObject first, DynamicObject second) {
             // Taken from org.jruby.RubyEncoding#areCompatible.
 
             assert RubyGuards.isRubyString(first);
