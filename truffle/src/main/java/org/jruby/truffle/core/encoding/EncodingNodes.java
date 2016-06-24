@@ -229,8 +229,6 @@ public abstract class EncodingNodes {
             final Encoding firstEncoding = firstRope.getEncoding();
             final Encoding secondEncoding = secondRope.getEncoding();
 
-            if (firstEncoding == secondEncoding) return firstEncoding;
-
             if (secondRope.isEmpty()) return firstEncoding;
             if (firstRope.isEmpty()) {
                 return firstEncoding.isAsciiCompatible() && (secondRope.getCodeRange() == CodeRange.CR_7BIT) ? firstEncoding : secondEncoding;
