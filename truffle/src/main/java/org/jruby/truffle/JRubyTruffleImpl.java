@@ -71,7 +71,8 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
     }
 
     private Source loadSource(String source, String name) {
-        return Source.newBuilder(source).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
+        return Source.fromText(source, name).withMimeType(RubyLanguage.MIME_TYPE);
+        //return Source.newBuilder(source).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
     
 }
