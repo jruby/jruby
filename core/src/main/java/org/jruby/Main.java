@@ -103,7 +103,7 @@ public class Main {
     }
 
     private static List<String> getDotfileDirectories() {
-        ArrayList<String> searchList = new ArrayList<String>();
+        final ArrayList<String> searchList = new ArrayList<>(4);
         for (String homeProp : new String[] {"user.dir", "user.home"}) {
             String home = SafePropertyAccessor.getProperty(homeProp);
             if (home != null) searchList.add(home);
@@ -124,8 +124,11 @@ public class Main {
     }
 
     public static void processDotfile() {
+        final StringBuilder path = new StringBuilder();
         for (String home : getDotfileDirectories()) {
-            File dotfile = new File(home + "/.jrubyrc");
+            path.setLength(0);
+            path.append(home).append("/.jrubyrc");
+            final File dotfile = new File(path.toString());
             if (dotfile.exists()) loadJRubyProperties(dotfile);
         }
     }
@@ -144,14 +147,11 @@ public class Main {
                 sysProps.put("jruby." + entry.getKey(), entry.getValue());
             }
         }
-        catch (IOException ioe) {
-            if (LOG.isDebugEnabled()) LOG.debug("exception loading " + dotfile, ioe);
-        }
-        catch (SecurityException se) {
-            if (LOG.isDebugEnabled()) LOG.debug("exception loading " + dotfile, se);
+        catch (IOException|SecurityException ex) {
+            if (LOG.isDebugEnabled()) LOG.debug("exception loading properties from: " + dotfile, ex);
         }
         finally {
-            if (fis != null) try {fis.close();} catch (Exception e) {}
+            if (fis != null) try { fis.close(); } catch (Exception e) {}
         }
     }
 
