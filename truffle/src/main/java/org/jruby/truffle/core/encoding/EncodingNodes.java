@@ -147,9 +147,25 @@ public abstract class EncodingNodes {
         @Specialization(guards = {
                 "getEncoding(first) != getEncoding(second)",
                 "isRubyString(first)",
+                "!isRubyString(second)",
+                "getCodeRange(first) == codeRange",
+                "getEncoding(first) == firstEncoding",
+                "getEncoding(second) == secondEncoding"
+        }, limit = "getCacheLimit()")
+        public DynamicObject isCompatibleStringObjectCached(DynamicObject first, Object second,
+                                                            @Cached("getEncoding(first)") Encoding firstEncoding,
+                                                            @Cached("getEncoding(second)") Encoding secondEncoding,
+                                                            @Cached("getCodeRange(first)") CodeRange codeRange,
+                                                            @Cached("isCompatibleStringObjectUncached(first, second)") DynamicObject result) {
+            return result;
+        }
+
+        @Specialization(guards = {
+                "getEncoding(first) != getEncoding(second)",
+                "isRubyString(first)",
                 "!isRubyString(second)"
-        })
-        public DynamicObject isCompatibleStringObject(DynamicObject first, Object second) {
+        }, contains = "isCompatibleStringObjectCached")
+        public DynamicObject isCompatibleStringObjectUncached(DynamicObject first, Object second) {
             final Encoding firstEncoding = getEncoding(first);
             final Encoding secondEncoding = getEncoding(second);
 
@@ -178,7 +194,7 @@ public abstract class EncodingNodes {
                 "isRubyString(second)"
         })
         public DynamicObject isCompatibleObjectString(Object first, DynamicObject second) {
-            return isCompatibleStringObject(second, first);
+            return isCompatibleStringObjectUncached(second, first);
         }
 
         @Specialization(guards = {
