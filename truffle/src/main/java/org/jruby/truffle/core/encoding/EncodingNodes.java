@@ -253,7 +253,6 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         private static Encoding areCompatible(Encoding enc1, Encoding enc2) {
             if (enc1 == null || enc2 == null) return null;
-            if (enc1 == enc2) return enc1;
 
             if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
 
