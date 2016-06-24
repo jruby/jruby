@@ -493,6 +493,7 @@ public class Main {
     private void doPrintUsage(boolean force) {
         if (config.getShouldPrintUsage() || force) {
             config.getOutput().print(OutputStrings.getBasicUsageHelp());
+            config.getOutput().print(OutputStrings.getFeaturesHelp());
         }
     }
 
