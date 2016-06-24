@@ -65,15 +65,25 @@ public class ArgumentProcessor {
     public static final String SEPARATOR = "(?<!jar:file|jar|file|classpath|uri:classloader|uri|http|https):";
 
     private static final class Argument {
-        public final String originalValue;
-        public final String dashedValue;
-        public Argument(String value, boolean dashed) {
+        final String originalValue;
+        private String dashedValue;
+        Argument(String value, boolean dashed) {
             this.originalValue = value;
-            this.dashedValue = dashed && !value.startsWith("-") ? "-" + value : value;
+            this.dashedValue = dashed ? null : value;
+        }
+
+        final String getDashedValue() {
+            String dashedValue = this.dashedValue;
+            if ( dashedValue == null ) {
+                final String value = originalValue;
+                dashedValue = ! value.startsWith("-") ? ('-' + value) : value;
+                this.dashedValue = dashedValue;
+            }
+            return dashedValue;
         }
 
         public String toString() {
-            return dashedValue;
+            return getDashedValue();
         }
     }
 
@@ -163,7 +173,7 @@ public class ArgumentProcessor {
     }
 
     private void processArgument() {
-        String argument = arguments.get(argumentIndex).dashedValue;
+        String argument = arguments.get(argumentIndex).getDashedValue();
 
         if (argument.length() == 1) {
             // sole "-" means read from stdin and pass remaining args as ARGV
@@ -616,7 +626,7 @@ public class ArgumentProcessor {
         return values;
     }
 
-    private void disallowedInRubyOpts(String option) {
+    private void disallowedInRubyOpts(CharSequence option) {
         if (rubyOpts) {
             throw new MainExitException(1, "jruby: invalid switch in RUBYOPT: " + option + " (RuntimeError)");
         }
@@ -744,10 +754,10 @@ public class ArgumentProcessor {
         return null;
     }
 
-    private static final Set<String> KNOWN_PROPERTIES = new HashSet<>();
+    private static final Set<String> KNOWN_PROPERTIES = new HashSet<>(Options.PROPERTIES.size() + 16, 1);
 
     static {
-        KNOWN_PROPERTIES.addAll(Options.getPropertyNames());
+        Options.addPropertyNames(KNOWN_PROPERTIES);
         KNOWN_PROPERTIES.add("jruby.home");
         KNOWN_PROPERTIES.add("jruby.script");
         KNOWN_PROPERTIES.add("jruby.shell");
@@ -761,13 +771,13 @@ public class ArgumentProcessor {
         KNOWN_PROPERTIES.add("jruby.stack.max");
     }
 
-    private static final List<String> KNOWN_PROPERTY_PREFIXES = new ArrayList<>();
+    private static final List<String> KNOWN_PROPERTY_PREFIXES = new ArrayList<>(4);
 
     static {
         KNOWN_PROPERTY_PREFIXES.add("jruby.openssl.");
     }
 
-    private void checkProperties() {
+    private static void checkProperties() {
         for (String propertyName : System.getProperties().stringPropertyNames()) {
             if (propertyName.startsWith("jruby.")) {
                 if (!isPropertySupported(propertyName)) {
@@ -777,7 +787,7 @@ public class ArgumentProcessor {
         }
     }
 
-    private boolean isPropertySupported(String propertyName) {
+    private static boolean isPropertySupported(String propertyName) {
         if (KNOWN_PROPERTIES.contains(propertyName)) {
             return true;
         }

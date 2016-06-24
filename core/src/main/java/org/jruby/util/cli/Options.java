@@ -51,7 +51,7 @@ import static org.jruby.RubyInstanceConfig.CompileMode;
  * of the built-in structure.
  */
 public class Options {
-    private static final List<Option> _loadedOptions = new ArrayList<Option>();
+    private static final List<Option> _loadedOptions = new ArrayList<>(240);
     private static final boolean INVOKEDYNAMIC_DEFAULT = calculateInvokedynamicDefault();
 
     // This section holds all Options for JRuby. They will be listed in the
@@ -361,10 +361,7 @@ public class Options {
         return false;
     }
 
-    private static enum SearchMode {
-        PREFIX,
-        CONTAINS
-    }
+    private enum SearchMode { PREFIX,  CONTAINS }
 
     public static void listPrefix(String prefix) {
         list(SearchMode.PREFIX, prefix);
@@ -394,13 +391,15 @@ public class Options {
     }
 
     public static Set<String> getPropertyNames() {
-        final Set<String> propertyNames = new HashSet<String>();
+        final Set<String> propertyNames = new HashSet<>(PROPERTIES.size() + 1, 1);
+        addPropertyNames(propertyNames);
+        return Collections.unmodifiableSet(propertyNames);
+    }
 
+    static void addPropertyNames(final Set<String> propertyNames) {
         for (Option option : PROPERTIES) {
             propertyNames.add(option.propertyName());
         }
-
-        return Collections.unmodifiableSet(propertyNames);
     }
 
     @Deprecated
