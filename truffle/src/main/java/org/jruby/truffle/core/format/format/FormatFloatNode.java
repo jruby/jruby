@@ -62,8 +62,12 @@ public abstract class FormatFloatNode extends FormatNode {
             }
         } else if (hasZeroFlag) {
             finiteFormatBuilder.append("0");
-            finiteFormatBuilder.append(width);
-        } else if (!hasSpaceFlag && !hasSpaceFlag) {
+            if(width > 0){
+                finiteFormatBuilder.append(width);
+            } else {
+                finiteFormatBuilder.append(1);
+            }
+        } else if (!hasSpaceFlag && !hasSpaceFlag && width > 0) {
             finiteFormatBuilder.append(width);
         }
 
