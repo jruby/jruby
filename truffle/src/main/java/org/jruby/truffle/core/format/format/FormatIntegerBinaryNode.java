@@ -9,22 +9,22 @@
  */
 package org.jruby.truffle.core.format.format;
 
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.format.FormatNode;
+
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.printf.PrintfTreeBuilder;
 
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-
 @NodeChildren({
-    @NodeChild(value = "spacePadding", type = FormatNode.class),
-    @NodeChild(value = "zeroPadding", type = FormatNode.class),
+    @NodeChild(value = "width", type = FormatNode.class),
     @NodeChild(value = "value", type = FormatNode.class),
 })
 public abstract class FormatIntegerBinaryNode extends FormatNode {
@@ -32,47 +32,71 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
     private final char format;
     private final boolean hasPlusFlag;
     private final boolean useAlternativeFormat;
+    private final boolean isLeftJustified;
+    private final boolean hasSpaceFlag;
+    private final boolean hasZeroFlag;
+    private final int precision;
 
-    public FormatIntegerBinaryNode(RubyContext context, char format, boolean hasPlusFlag, boolean useAlternativeFormat) {
+    public FormatIntegerBinaryNode(RubyContext context, char format, int precision, boolean hasPlusFlag, boolean useAlternativeFormat,
+                                   boolean isLeftJustified, boolean hasSpaceFlag, boolean hasZeroFlag) {
         super(context);
         this.format = format;
         this.hasPlusFlag = hasPlusFlag;
         this.useAlternativeFormat = useAlternativeFormat;
+        this.isLeftJustified = isLeftJustified;
+        this.hasSpaceFlag = hasSpaceFlag;
+        this.precision = precision;
+        this.hasZeroFlag = hasZeroFlag;
     }
 
     @Specialization
-    public byte[] format(int spacePadding,
-                         int zeroPadding,
-                         int value) {
-        final boolean isSpacePadded = spacePadding != PrintfTreeBuilder.DEFAULT;
+    public byte[] format(int width, int value) {
         final boolean isNegative = value < 0;
-        final boolean negativeAndPadded = isNegative && (isSpacePadded || this.hasPlusFlag);
+        final boolean negativeAndPadded = isNegative && (this.hasSpaceFlag || this.hasPlusFlag);
         final String formatted = negativeAndPadded ? Integer.toBinaryString(-value) : Integer.toBinaryString(value);
-        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded, this.hasPlusFlag,
-            this.useAlternativeFormat, this.format);
+        return getFormattedString(formatted, width, this.precision, isNegative, this.hasSpaceFlag, this.hasPlusFlag,
+            this.hasZeroFlag, this.useAlternativeFormat, this.isLeftJustified, this.format);
     }
 
     @TruffleBoundary
     @Specialization(guards = "isRubyBignum(value)")
-    public byte[] format(int spacePadding, int zeroPadding, DynamicObject value) {
-        final boolean isSpacePadded = spacePadding != PrintfTreeBuilder.DEFAULT;
+    public byte[] format(int width, DynamicObject value) {
         final BigInteger bigInteger = Layouts.BIGNUM.getValue(value);
         final boolean isNegative = bigInteger.signum() == -1;
-        final boolean negativeAndPadded = isNegative && (isSpacePadded || this.hasPlusFlag);
-        final String formatted = negativeAndPadded ? bigInteger.abs().toString(2) : bigInteger.toString(2);
-        return getFormattedString(formatted, spacePadding, zeroPadding, isNegative, isSpacePadded, this.hasPlusFlag,
-            this.useAlternativeFormat, this.format);
+        final boolean negativeAndPadded = isNegative && (this.hasSpaceFlag || this.hasPlusFlag);
+
+        final String formatted;
+        if(negativeAndPadded) {
+            formatted = bigInteger.abs().toString(2);
+        } else if (!isNegative) {
+            formatted = bigInteger.toString(2);
+        } else {
+            StringBuilder builder = new StringBuilder();
+            final byte[] bytes = bigInteger.toByteArray();
+            for(byte b: bytes){
+                builder.append(Integer.toBinaryString(b & 0xFF));
+            }
+            formatted = builder.toString();
+        }
+        return getFormattedString(formatted, width, this.precision, isNegative, this.hasSpaceFlag, this.hasPlusFlag,
+            this.hasZeroFlag, this.useAlternativeFormat, this.isLeftJustified, this.format);
     }
 
     @TruffleBoundary
-    private static byte[] getFormattedString(String formatted, int spacePadding, int zeroPadding, boolean isNegative,
-                                             boolean isSpacePadded, boolean hasPlusFlag, boolean useAlternativeFormat,
+    private static byte[] getFormattedString(String formatted, int width, int precision, boolean isNegative,
+                                             boolean isSpacePadded, boolean hasPlusFlag, boolean hasZeroFlag,
+                                             boolean useAlternativeFormat, boolean isLeftJustified,
                                              char format) {
+        if(width < 0 && width != PrintfTreeBuilder.DEFAULT){
+            width = -width;
+            isLeftJustified = true;
+        }
+
         if (isNegative && !(isSpacePadded || hasPlusFlag)) {
             if (formatted.contains("0")) {
                 formatted = formatted.substring(formatted.indexOf('0'), formatted.length());
-                if (formatted.length() + 3 < zeroPadding) {
-                    final int addOnes = zeroPadding - (formatted.length() + 3);
+                if (formatted.length() + 3 < precision) {
+                    final int addOnes = precision - (formatted.length() + 3);
                     for (int i = addOnes; i > 0; i--) {
                         formatted = "1" + formatted;
                     }
@@ -82,10 +106,26 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
                 formatted = "..1";
             }
         } else {
-            while (formatted.length() < zeroPadding) {
-                formatted = "0" + formatted;
+            if(hasZeroFlag || precision != PrintfTreeBuilder.DEFAULT) {
+                if(!isLeftJustified){
+                    final int padZeros = precision != PrintfTreeBuilder.DEFAULT ? precision : width;
+                    while (formatted.length() < padZeros) {
+                        formatted = "0" + formatted;
+                    }
+                }
             }
         }
+
+        while (formatted.length() < width) {
+            if(!isLeftJustified){
+                formatted = " " + formatted;
+            } else {
+                formatted = formatted + " ";
+            }
+
+        }
+
+
 
         if (useAlternativeFormat) {
             if(format == 'B'){

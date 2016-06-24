@@ -25,47 +25,48 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 @NodeChildren({
-        @NodeChild(value = "spacePadding", type = FormatNode.class),
-        @NodeChild(value = "zeroPadding", type = FormatNode.class),
+        @NodeChild(value = "width", type = FormatNode.class),
         @NodeChild(value = "value", type = FormatNode.class),
 })
 public abstract class FormatIntegerNode extends FormatNode {
 
     private final char format;
+    private final boolean hasSpaceFlag;
+    private final boolean hasZeroFlag;
+    private final int precision;
 
-    public FormatIntegerNode(RubyContext context, char format) {
+    public FormatIntegerNode(RubyContext context, char format, boolean hasSpaceFlag, boolean hasZeroFlag, int precision) {
         super(context);
         this.format = format;
+        this.hasSpaceFlag = hasSpaceFlag;
+        this.hasZeroFlag = hasZeroFlag;
+        this.precision = precision;
     }
 
     @Specialization(
             guards = {
                     "!isRubyBignum(value)",
-                    "spacePadding == cachedSpacePadding",
-                    "zeroPadding == cachedZeroPadding"
+                    "width == cachedWidth"
             },
             limit = "getLimit()"
     )
-    public byte[] formatCached(int spacePadding,
-                               int zeroPadding,
+    public byte[] formatCached(int width,
                                Object value,
-                               @Cached("spacePadding") int cachedSpacePadding,
-                               @Cached("zeroPadding") int cachedZeroPadding,
-                               @Cached("makeFormatString(spacePadding, zeroPadding)") String cachedFormatString) {
+                               @Cached("width") int cachedWidth,
+                               @Cached("makeFormatString(width)") String cachedFormatString) {
         return doFormat(value, cachedFormatString);
     }
 
     @TruffleBoundary
     @Specialization(guards = "!isRubyBignum(value)", contains = "formatCached")
-    public byte[] formatUncached(int spacePadding,
-                                 int zeroPadding,
+    public byte[] formatUncached(int width,
                                  Object value) {
-        return doFormat(value, makeFormatString(spacePadding, zeroPadding));
+        return doFormat(value, makeFormatString(width));
     }
 
     @TruffleBoundary
     @Specialization(guards = "isRubyBignum(value)")
-    public byte[] format(int spacePadding, int zeroPadding, DynamicObject value) {
+    public byte[] format(int width, DynamicObject value) {
         final BigInteger bigInteger = Layouts.BIGNUM.getValue(value);
 
         String formatted;
@@ -93,12 +94,12 @@ public abstract class FormatIntegerNode extends FormatNode {
                 throw new UnsupportedOperationException();
         }
 
-        while (formatted.length() < spacePadding) {
-            formatted = " " + formatted;
+        while (formatted.length() < this.precision) {
+            formatted = "0" + formatted;
         }
 
-        while (formatted.length() < zeroPadding) {
-            formatted = "0" + formatted;
+        while (formatted.length() < width) {
+            formatted = " " + formatted;
         }
 
         return formatted.getBytes(StandardCharsets.US_ASCII);
@@ -109,22 +110,24 @@ public abstract class FormatIntegerNode extends FormatNode {
         return String.format(formatString, value).getBytes(StandardCharsets.US_ASCII);
     }
 
-    protected String makeFormatString(int spacePadding, int zeroPadding) {
+    protected String makeFormatString(int width) {
         final StringBuilder builder = new StringBuilder();
 
         builder.append("%");
 
-        if (spacePadding != PrintfTreeBuilder.DEFAULT) {
-            builder.append(" ");
-            builder.append(spacePadding);
+        final int padZeros = precision != PrintfTreeBuilder.DEFAULT ? precision : width;
 
-            if (zeroPadding != PrintfTreeBuilder.DEFAULT) {
+        if (this.hasSpaceFlag) {
+            builder.append(" ");
+            builder.append(width);
+
+            if (this.hasZeroFlag || precision != PrintfTreeBuilder.DEFAULT) {
                 builder.append(".");
-                builder.append(zeroPadding);
+                builder.append(padZeros);
             }
-        } else if (zeroPadding != PrintfTreeBuilder.DEFAULT) {
+        } else if (this.hasZeroFlag || precision != PrintfTreeBuilder.DEFAULT) {
             builder.append("0");
-            builder.append(zeroPadding);
+            builder.append(padZeros);
         }
 
         builder.append(format);

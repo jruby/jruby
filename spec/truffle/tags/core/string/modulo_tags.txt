@@ -6,7 +6,6 @@ fails:String#% always allows unused arguments when positional argument style is 
 fails:String#% replaces trailing absolute argument specifier without type with percent sign
 fails:String#% raises an ArgumentError when given invalid argument specifiers
 fails:String#% raises an ArgumentError when multiple positional argument tokens are given for one format specifier
-fails:String#% respects positional arguments and precision tokens given for one format specifier
 fails:String#% raises an ArgumentError when multiple width star tokens are given for one format specifier
 fails:String#% raises an ArgumentError when a width star token is seen after a width token
 fails:String#% raises an ArgumentError when multiple precision tokens are given
@@ -24,8 +23,6 @@ fails:String#% raises a TypeError if #to_ary does not return an Array
 fails:String#% tries to convert the argument to Array by calling #to_ary
 fails:String#% doesn't return subclass instances when called on a subclass
 fails:String#% always taints the result when the format string is tainted
-fails:String#% supports binary formats using %b for positive numbers
-fails:String#% supports binary formats using %b for negative numbers
 fails:String#% supports character formats using %c
 fails:String#% supports single character strings as argument for %c
 fails:String#% raises an exception for multiple character strings as argument for %c
