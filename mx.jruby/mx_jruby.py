@@ -6,6 +6,7 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+import sys
 import os
 import subprocess
 import shutil
@@ -19,7 +20,7 @@ _suite = mx.suite('jruby')
 def jt(args, suite=None, nonZeroIsFatal=True, out=None, err=None, timeout=None, env=None, cwd=None):
     rubyDir = _suite.dir
     jt = os.path.join(rubyDir, 'tool', 'jt.rb')
-    mx.run(['ruby', jt] + args, nonZeroIsFatal=nonZeroIsFatal, out=out, err=err, timeout=timeout, env=env, cwd=cwd)
+    return mx.run(['ruby', jt] + args, nonZeroIsFatal=nonZeroIsFatal, out=out, err=err, timeout=timeout, env=env, cwd=cwd)
 
 class MavenProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
@@ -267,23 +268,29 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
         arguments.extend(benchmark_names)
         arguments.extend(bmSuiteArgs)
         out = mx.OutputCapture()
-        jt(arguments, out=out)
         
-        samples = [float(s) for s in out.data.split('\n')[1:-2]]
-        
-        warmed_up_samples = [sample for n, sample in enumerate(samples) if n / float(len(samples)) >= 0.5]
-        warmed_up_mean = sum(warmed_up_samples) / float(len(warmed_up_samples))
-        
-        return [{
-            'benchmark': benchmark,
-            'metric.name': 'throughput',
-            'metric.value': sample,
-            'metric.unit': 'op/s',
-            'metric.better': 'higher',
-            'metric.iteration': n,
-            'extra.metric.warmedup': 'true' if n / float(len(samples)) >= 0.5 else 'false',
-            'extra.metric.human': '%d/%d %fs' % (n, len(samples), warmed_up_mean)
-        } for n, sample in enumerate(samples)]
+        if jt(arguments, out=out, nonZeroIsFatal=False) == 0:
+            samples = [float(s) for s in out.data.split('\n')[1:-2]]
+            
+            warmed_up_samples = [sample for n, sample in enumerate(samples) if n / float(len(samples)) >= 0.5]
+            warmed_up_mean = sum(warmed_up_samples) / float(len(warmed_up_samples))
+            
+            return [{
+                'benchmark': benchmark,
+                'metric.name': 'throughput',
+                'metric.value': sample,
+                'metric.unit': 'op/s',
+                'metric.better': 'higher',
+                'metric.iteration': n,
+                'extra.metric.warmedup': 'true' if n / float(len(samples)) >= 0.5 else 'false',
+                'extra.metric.human': '%d/%d %fs' % (n, len(samples), warmed_up_mean)
+            } for n, sample in enumerate(samples)]
+        else:
+            sys.stderr.write(out.data)
+            
+            # TODO CS 24-Jun-16, return an error point?
+            # TODO CS 24-Jun-16, how can we fail the wider suite?
+            return []
 
 classic_benchmarks = [
     'binary-trees',
@@ -425,8 +432,14 @@ class MicroBenchmarkSuite(AllBenchmarksBenchmarkSuite):
                 if name.endswith('.rb'):
                     benchmark_file = os.path.join(root, name)[len(all_ruby_benchmarks)+1:]
                     out = mx.OutputCapture()
-                    jt(['benchmark', 'list', benchmark_file], out=out)
-                    benchmarks.extend([benchmark_file + ':' + b.strip() for b in out.data.split('\n') if len(b.strip()) > 0])
+                    if jt(['benchmark', 'list', benchmark_file], out=out):
+                        benchmarks.extend([benchmark_file + ':' + b.strip() for b in out.data.split('\n') if len(b.strip()) > 0])
+                    else:
+                        sys.stderr.write(out.data)
+                        
+                        # TODO CS 24-Jun-16, return an error point?
+                        # TODO CS 24-Jun-16, how can we fail the wider suite?
+                        return []
         return benchmarks
     
     def time(self):
