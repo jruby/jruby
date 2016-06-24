@@ -577,7 +577,6 @@ module Commands
 
   def test_compiler(*args)
     jruby_opts = []
-    jruby_opts << '-J-Djvmci.Compiler=graal'
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
 
     if ENV['GRAAL_JS_JAR']
