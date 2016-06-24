@@ -81,6 +81,11 @@ public abstract class EncodingNodes {
 
         @Child private ToEncodingNode toEncodingNode;
 
+        public CompatibleQueryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            toEncodingNode = ToEncodingNode.create();
+        }
+
         @Specialization(guards = {
                 "getEncoding(first) == getEncoding(second)",
                 "getEncoding(first) == cachedEncoding",
@@ -291,11 +296,6 @@ public abstract class EncodingNodes {
         }
 
         protected Encoding getEncoding(Object value) {
-            if (toEncodingNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toEncodingNode = insert(ToEncodingNode.create());
-            }
-
             return toEncodingNode.executeToEncoding(value);
         }
 
