@@ -210,6 +210,37 @@ with_feature :encoding do
     end
   end
 
+  describe "Encoding.compatible? String, Encoding" do
+    it "returns nil if the String's encoding is not ASCII compatible" do
+      Encoding.compatible?("abc".encode("utf-32le"), Encoding::US_ASCII).should be_nil
+    end
+
+    it "returns nil if the Encoding is not ASCII compatible" do
+      Encoding.compatible?("abc".encode("us-ascii"), Encoding::UTF_32LE).should be_nil
+    end
+
+    it "returns the String's encoding if the Encoding is US-ASCII" do
+      [ [Encoding, "\xff",                                  Encoding::ASCII_8BIT],
+        [Encoding, "\u3042".encode("utf-8"),                Encoding::UTF_8],
+        [Encoding, "\xa4\xa2".force_encoding("euc-jp"),     Encoding::EUC_JP],
+        [Encoding, "\x82\xa0".force_encoding("shift_jis"),  Encoding::Shift_JIS],
+      ].should be_computed_by(:compatible?, Encoding::US_ASCII)
+    end
+
+    it "returns the Encoding if the String's encoding is ASCII compatible and the String is ASCII only" do
+      str = "abc".encode("utf-8")
+
+      Encoding.compatible?(str, Encoding::ASCII_8BIT).should == Encoding::ASCII_8BIT
+      Encoding.compatible?(str, Encoding::UTF_8).should == Encoding::UTF_8
+      Encoding.compatible?(str, Encoding::EUC_JP).should == Encoding::EUC_JP
+      Encoding.compatible?(str, Encoding::Shift_JIS).should == Encoding::Shift_JIS
+    end
+
+    it "returns nil if the String's encoding is ASCII compatible but the string is not ASCII only" do
+      Encoding.compatible?("\u3042".encode("utf-8"), Encoding::ASCII_8BIT).should be_nil
+    end
+  end
+
   describe "Encoding.compatible? Regexp, String" do
     it "returns US-ASCII if both are US-ASCII" do
       str = "abc".force_encoding("us-ascii")
