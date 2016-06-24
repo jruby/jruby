@@ -84,9 +84,10 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
         }
 
         boolean leftJustified = false;
-        int spacePadding = DEFAULT;
-        int zeroPadding = DEFAULT;
         boolean hasPlusFlag = false;
+        boolean hasSpaceFlag = false;
+        boolean hasStarFlag = false;
+        boolean hasZeroFlag = false;
         boolean useAlternativeFormat = false;
         int absoluteArgumentIndex = DEFAULT;
 
@@ -96,21 +97,11 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
             if (flag.MINUS() != null) {
                 leftJustified = true;
             } else if (flag.SPACE() != null) {
-                if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
-                    spacePadding = PADDING_FROM_ARGUMENT;
-                } else if(width != DEFAULT) {
-                    spacePadding = width;
-                } else {
-                    spacePadding = 1;
-                }
+                hasSpaceFlag = true;
             } else if (flag.ZERO() != null) {
-                if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
-                    zeroPadding = PADDING_FROM_ARGUMENT;
-                } else {
-                    zeroPadding = width;
-                }
+                hasZeroFlag = true;
             } else if (flag.STAR() != null) {
-                // Handled in space and zero, above
+                hasStarFlag = true;
             } else if (flag.PLUS() != null) {
                 hasPlusFlag = true;
             } else if (flag.HASH() != null) {
@@ -120,10 +111,6 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
             } else {
                 throw new UnsupportedOperationException();
             }
-        }
-
-        if (spacePadding == DEFAULT && zeroPadding == DEFAULT) {
-            spacePadding = width;
         }
 
         final char type = ctx.TYPE().getSymbol().getText().charAt(0);
@@ -162,10 +149,10 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                     conversionNode = ToStringNodeGen.create(context, true, conversionMethodName, false, EMPTY_BYTES, valueNode);
                 }
 
-                if (spacePadding == DEFAULT) {
+                if (width == DEFAULT) {
                     node = WriteBytesNodeGen.create(context, conversionNode);
                 } else {
-                    node = WritePaddedBytesNodeGen.create(context, spacePadding, leftJustified, conversionNode);
+                    node = WritePaddedBytesNodeGen.create(context, width, leftJustified, conversionNode);
                 }
 
                 break;
@@ -177,27 +164,11 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
             case 'u':
             case 'x':
             case 'X':
-                final FormatNode spacePaddingNode;
-                if (spacePadding == PADDING_FROM_ARGUMENT) {
-                    spacePaddingNode = ReadIntegerNodeGen.create(context, new SourceNode());
+                final FormatNode widthNode;
+                if (hasStarFlag) {
+                    widthNode = ReadIntegerNodeGen.create(context, new SourceNode());
                 } else {
-                    spacePaddingNode = new LiteralFormatNode(context, spacePadding);
-                }
-
-                final FormatNode zeroPaddingNode;
-
-                /*
-                 * Precision and zero padding both set zero padding -
-                 * but precision has priority and explicit zero padding
-                 * is actually ignored if it's set.
-                 */
-
-                if (zeroPadding == PADDING_FROM_ARGUMENT) {
-                    zeroPaddingNode = ReadIntegerNodeGen.create(context, new SourceNode());
-                } else if (ctx.precision != null) {
-                    zeroPaddingNode = new LiteralFormatNode(context, Integer.parseInt(ctx.precision.getText()));
-                } else {
-                    zeroPaddingNode = new LiteralFormatNode(context, zeroPadding);
+                    widthNode = new LiteralFormatNode(context, width);
                 }
 
                 final char format;
@@ -225,15 +196,16 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
 
                 if(type == 'b' || type == 'B'){
                     node = WriteBytesNodeGen.create(context,
-                        FormatIntegerBinaryNodeGen.create(context, format, hasPlusFlag, useAlternativeFormat,
-                            spacePaddingNode,
-                            zeroPaddingNode,
+                        FormatIntegerBinaryNodeGen.create(context, format, precision, hasPlusFlag, useAlternativeFormat,
+                            leftJustified,
+                            hasSpaceFlag,
+                            hasZeroFlag,
+                            widthNode,
                             ToIntegerNodeGen.create(context, valueNode)));
                 } else {
                     node = WriteBytesNodeGen.create(context,
-                        FormatIntegerNodeGen.create(context, format,
-                            spacePaddingNode,
-                            zeroPaddingNode,
+                        FormatIntegerNodeGen.create(context, format, hasSpaceFlag, hasZeroFlag, precision,
+                            widthNode,
                             ToIntegerNodeGen.create(context, valueNode)));
                 }
                 break;
@@ -241,9 +213,8 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
             case 'e':
             case 'E':
                 node = WriteBytesNodeGen.create(context,
-                        FormatFloatNodeGen.create(context, spacePadding,
-                                zeroPadding, precision,
-                                type,
+                        FormatFloatNodeGen.create(context, width, precision,
+                                type, hasSpaceFlag, hasZeroFlag,
                                 ToDoubleWithCoercionNodeGen.create(context,
                                         valueNode)));
                 break;
