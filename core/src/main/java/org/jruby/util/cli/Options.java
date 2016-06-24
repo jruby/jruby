@@ -248,6 +248,9 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_ROPE_LAZY_SUBSTRINGS = bool(TRUFFLE, "truffle.rope.lazy_substrings", true, "Indicates whether a substring operation on a rope should be performed lazily.");
     public static final Option<Boolean> TRUFFLE_ROPE_PRINT_INTERN_STATS = bool(TRUFFLE, "truffle.rope.print_intern_stats", false, "Print interned rope stats at application exit.");
 
+    public static final Option<Integer> TRUFFLE_GLOBAL_VARIABLE_MAX_INVALIDATIONS = integer(TRUFFLE, "truffle.global_variable.max_invalidations", 10,
+            "Maximum number of times a global variable can be changed to be considered constant.");
+
     public static final Option<Integer> TRUFFLE_DEFAULT_CACHE = integer(TRUFFLE, "truffle.default_cache", 8, "Default size for caches.");
 
     public static final Option<Integer> TRUFFLE_METHOD_LOOKUP_CACHE = integer(TRUFFLE, "truffle.method_lookup.cache", TRUFFLE_DEFAULT_CACHE.load(), "Method lookup cache size.");

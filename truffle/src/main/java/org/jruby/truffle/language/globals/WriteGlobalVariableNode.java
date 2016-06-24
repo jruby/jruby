@@ -24,7 +24,8 @@ public abstract class WriteGlobalVariableNode extends RubyNode {
 
     @Specialization
     public Object write(Object value, @Cached("getStorage()") GlobalVariableStorage storage) {
-        return storage.value = value;
+        storage.setValue(value);
+        return value;
     }
 
     protected GlobalVariableStorage getStorage() {
