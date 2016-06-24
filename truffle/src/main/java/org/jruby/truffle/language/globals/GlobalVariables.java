@@ -30,8 +30,8 @@ public class GlobalVariables {
     }
 
     public Object getOrDefault(String key, Object defaultValue) {
-        final Object v;
-        return ((v = get(key)) != null) ? v : defaultValue;
+        final Object value = get(key);
+        return (value != null) ? value : defaultValue;
     }
 
     public Object get(String key) {
@@ -43,8 +43,8 @@ public class GlobalVariables {
         final GlobalVariableStorage currentStorage = variables.get(key);
         if (currentStorage == null) {
             final GlobalVariableStorage newStorage = new GlobalVariableStorage(defaultValue);
-            final GlobalVariableStorage racyNewStorage = variables.putIfAbsent(key, newStorage);
-            return (racyNewStorage == null) ? newStorage : racyNewStorage;
+            final GlobalVariableStorage prevStorage = variables.putIfAbsent(key, newStorage);
+            return (prevStorage == null) ? newStorage : prevStorage;
         } else {
             return currentStorage;
         }
