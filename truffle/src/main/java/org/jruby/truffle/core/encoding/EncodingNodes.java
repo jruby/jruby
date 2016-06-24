@@ -151,10 +151,6 @@ public abstract class EncodingNodes {
                 return nil();
             }
 
-            if (firstEncoding == secondEncoding) {
-                return getContext().getEncodingManager().getRubyEncoding(firstEncoding);
-            }
-
             if (! firstEncoding.isAsciiCompatible() || ! secondEncoding.isAsciiCompatible()) {
                 return nil();
             }
