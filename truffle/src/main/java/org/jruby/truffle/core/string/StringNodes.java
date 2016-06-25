@@ -1757,6 +1757,8 @@ public abstract class StringNodes {
             return FixnumLowerNodeGen.create(null, null, ToIntNodeGen.create(value));
         }
 
+        public abstract int executeSetByte(DynamicObject string, int index, Object value);
+
         @Specialization(guards = "!isRopeBuffer(string)")
         public int setByte(DynamicObject string, int index, int value) {
             final int normalizedIndex = StringNodesHelper.checkIndexForRef(string, index, this);

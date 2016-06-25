@@ -53,7 +53,6 @@ fails:C-API String function rb_str_subseq returns a byte-indexed substring
 fails:C-API String function rb_str_substr returns a substring
 fails:C-API String function rb_str_to_str calls #to_str to coerce the value to a String
 fails:C-API String function rb_str_to_str raises a TypeError if coercion fails
-fails:C-API String function RSTRING_PTR allows changing the characters in the string
 fails:C-API String function RSTRING_LEN returns the size of the string
 fails:C-API String function RSTRING_LENINT returns the size of a string
 fails:C-API String function StringValue does not call #to_str on a String

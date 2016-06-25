@@ -26,6 +26,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
+import org.jruby.truffle.interop.cext.CExtString;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -144,6 +145,31 @@ public class CExtNodes {
         @Specialization
         public int long2fix(int num) {
             return num;
+        }
+
+    }
+
+    @CoreMethod(names = "CExtString", isModuleFunction = true, required = 1)
+    public abstract static class CExtStringNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization(guards = "isRubyString(string)")
+        public CExtString cExtString(DynamicObject string) {
+            return new CExtString(string);
+        }
+
+    }
+
+    @CoreMethod(names = "to_ruby_string", isModuleFunction = true, required = 1)
+    public abstract static class ToRubyStringNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject toRubyString(CExtString cExtString) {
+            return cExtString.getString();
+        }
+
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject toRubyString(DynamicObject string) {
+            return string;
         }
 
     }

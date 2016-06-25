@@ -134,7 +134,7 @@ VALUE rb_float_new(double value) {
 // String
 
 char *RSTRING_PTR(VALUE string) {
-  return string;
+  return truffle_invoke(RUBY_CEXT, "CExtString", string);
 }
 
 int RSTRING_LEN(VALUE string) {
@@ -143,7 +143,7 @@ int RSTRING_LEN(VALUE string) {
 
 VALUE rb_str_new_cstr(const char *string) {
   if (truffle_is_truffle_object((VALUE) string)) {
-    return (VALUE) string;
+    return truffle_invoke(RUBY_CEXT, "to_ruby_string", string);
   } else {
     return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_cstr", truffle_read_string(string));
   }
