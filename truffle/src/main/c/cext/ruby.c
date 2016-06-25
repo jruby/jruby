@@ -294,6 +294,7 @@ void rb_define_global_const(const char *name, VALUE value) {
 
 void rb_raise(VALUE exception, const char *format, ...) {
   truffle_invoke(RUBY_CEXT, "rb_raise", format /*, where to get args? */);
+  exit(1); // To make the compiler happy
 }
 
 // Defining classes, modules and methods
