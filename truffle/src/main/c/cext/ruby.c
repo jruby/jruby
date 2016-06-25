@@ -126,8 +126,7 @@ VALUE rb_float_new(double value) {
 // String
 
 char *RSTRING_PTR(VALUE string) {
-  // Needs to return a fake char* which actually calls back into Ruby when read or written
-  return (char*) truffle_invoke(RUBY_CEXT, "RSTRING_PTR", string);
+  return string;
 }
 
 int RSTRING_LEN(VALUE string) {
@@ -135,7 +134,11 @@ int RSTRING_LEN(VALUE string) {
 }
 
 VALUE rb_str_new_cstr(const char *string) {
-  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_cstr", truffle_read_string(string));
+  if (truffle_is_truffle_object((VALUE) string)) {
+    return (VALUE) string;
+  } else {
+    return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_cstr", truffle_read_string(string));
+  }
 }
 
 VALUE rb_intern_str(VALUE string) {
