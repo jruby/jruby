@@ -121,6 +121,10 @@ int FIXNUM_P(VALUE value) {
   return truffle_invoke_b(RUBY_CEXT, "FIXNUM_P", value);
 }
 
+int RTEST(VALUE value) {
+  return truffle_invoke_b(RUBY_CEXT, "RTEST", value);
+}
+
 // Float
 
 VALUE rb_float_new(double value) {

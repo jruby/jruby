@@ -57,6 +57,10 @@ module Truffle::CExt
     value.is_a?(Fixnum)
   end
 
+  def RTEST(value)
+    !nil.equal?(value) && !false.equal?(value)
+  end
+
   def rb_float_new(value)
     value.to_f
   end

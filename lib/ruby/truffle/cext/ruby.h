@@ -17,6 +17,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
 
@@ -87,6 +88,7 @@ VALUE ID2SYM(ID value);
 
 int NIL_P(VALUE value);
 int FIXNUM_P(VALUE value);
+int RTEST(VALUE value);
 
 // Float
 
