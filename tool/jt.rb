@@ -1007,6 +1007,8 @@ module Commands
     if ENV["SULONG_CLASSPATH"]
       args << "#{arg_prefix}-J-cp" << "#{arg_prefix}#{ENV["SULONG_CLASSPATH"]}"
     else
+      truffle_jar = File.expand_path("../truffle/mxbuild/dists/truffle-api.jar", dir)
+      args << "#{arg_prefix}-J-Xbootclasspath/p:#{truffle_jar}"
       nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
       args << "#{arg_prefix}-J-cp"
       args << "#{arg_prefix}#{dir}/lib/*:#{dir}/build/sulong.jar:#{nfi_classes}"
