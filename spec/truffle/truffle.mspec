@@ -92,6 +92,13 @@ class MSpecScript
     "^spec/ruby/library/openssl/x509/name/parse_spec.rb"
   ]
 
+  set :capi, [
+    "spec/ruby/optional/capi/array_spec.rb",
+    "spec/ruby/optional/capi/class_spec.rb",
+    "spec/ruby/optional/capi/module_spec.rb",
+    "spec/ruby/optional/capi/proc_spec.rb",
+  ]
+
   set :truffle, [
     "spec/truffle/specs"
   ]
