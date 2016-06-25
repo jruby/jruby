@@ -467,7 +467,7 @@ module Commands
     end
 
     if args.delete('--js')
-      jruby_args << '-J-classpath'
+      jruby_args << '-J-cp'
       jruby_args << Utilities.find_graal_js
     end
 
@@ -580,7 +580,7 @@ module Commands
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
 
     if ENV['GRAAL_JS_JAR']
-      jruby_opts << '-J-classpath'
+      jruby_opts << '-J-cp'
       jruby_opts << Utilities.find_graal_js
     end
 
@@ -632,12 +632,12 @@ module Commands
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
 
     if ENV['GRAAL_JS_JAR']
-      jruby_opts << '-J-classpath'
+      jruby_opts << '-J-cp'
       jruby_opts << Utilities.find_graal_js
     end
 
     if ENV['SL_JAR']
-      jruby_opts << '-J-classpath'
+      jruby_opts << '-J-cp'
       jruby_opts << Utilities.find_sl
     end
 
@@ -661,7 +661,7 @@ module Commands
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
 
     if ENV['GRAAL_JS_JAR']
-      jruby_opts << '-J-classpath'
+      jruby_opts << '-J-cp'
       jruby_opts << Utilities.find_graal_js
     end
 
@@ -1005,12 +1005,11 @@ module Commands
     env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
 
     if ENV["SULONG_CLASSPATH"]
-      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{ENV["SULONG_CLASSPATH"]}"
+      args << "#{arg_prefix}-J-cp" << "#{arg_prefix}#{ENV["SULONG_CLASSPATH"]}"
     else
-      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{dir}/lib/*"
-      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{dir}/build/sulong.jar"
       nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
-      args << "#{arg_prefix}-J-classpath" << "#{arg_prefix}#{nfi_classes}"
+      args << "#{arg_prefix}-J-cp"
+      args << "#{arg_prefix}#{dir}/lib/*:#{dir}/build/sulong.jar:#{nfi_classes}"
     end
 
     args << "#{arg_prefix}-J-XX:-UseJVMCIClassLoader"
