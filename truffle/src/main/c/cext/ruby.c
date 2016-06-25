@@ -55,6 +55,10 @@ VALUE get_rb_eRuntimeError() {
 
 // Conversions
 
+VALUE CHR2FIX(char ch) {
+  return INT2FIX((unsigned char) ch);
+}
+
 int NUM2INT(VALUE value) {
   return truffle_invoke_i(RUBY_CEXT, "NUM2INT", value);
 }
@@ -130,7 +134,7 @@ char *RSTRING_PTR(VALUE string) {
 }
 
 int RSTRING_LEN(VALUE string) {
-  return truffle_get_size(string);
+  return truffle_invoke_i(string, "bytesize");
 }
 
 VALUE rb_str_new_cstr(const char *string) {
@@ -147,6 +151,10 @@ VALUE rb_intern_str(VALUE string) {
 
 void rb_str_cat(VALUE string, const char *to_concat, long length) {
   truffle_invoke(RUBY_CEXT, "rb_str_cat", string, rb_str_new_cstr(to_concat), length);
+}
+
+VALUE rb_str_buf_new(long capacity) {
+  return rb_str_new_cstr("");
 }
 
 // Symbol
@@ -246,6 +254,12 @@ VALUE rb_proc_new(void *function, VALUE value) {
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
   return truffle_invoke_i(RUBY_CEXT, "rb_scan_args", argc, argv, format /*, where to get args? */);
+}
+
+// Calls
+
+VALUE rb_yield(VALUE value) {
+  return truffle_invoke(RUBY_CEXT, "rb_yield", value);
 }
 
 // Instance variables

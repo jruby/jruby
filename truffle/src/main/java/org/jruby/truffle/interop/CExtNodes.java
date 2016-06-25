@@ -9,11 +9,17 @@
  */
 package org.jruby.truffle.interop;
 
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -22,6 +28,7 @@ import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.GetConstantNode;
 import org.jruby.truffle.language.constants.LookupConstantNode;
 
@@ -137,6 +144,23 @@ public class CExtNodes {
         @Specialization
         public int long2fix(int num) {
             return num;
+        }
+
+    }
+
+    @CoreMethod(names = "get_block", isModuleFunction = true)
+    public abstract static class GetBlockNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject getBlock() {
+            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<DynamicObject>() {
+                @Override
+                public DynamicObject visitFrame(FrameInstance frameInstance) {
+                    Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
+                    return RubyArguments.tryGetBlock(frame);
+                }
+            });
         }
 
     }

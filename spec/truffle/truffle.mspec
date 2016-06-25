@@ -97,6 +97,7 @@ class MSpecScript
     "spec/ruby/optional/capi/class_spec.rb",
     "spec/ruby/optional/capi/module_spec.rb",
     "spec/ruby/optional/capi/proc_spec.rb",
+    "spec/ruby/optional/capi/string_spec.rb",
   ]
 
   set :truffle, [

@@ -63,6 +63,8 @@ VALUE get_rb_eRuntimeError(void);
 
 // Conversions
 
+VALUE CHR2FIX(char ch);
+
 int NUM2INT(VALUE value);
 unsigned int NUM2UINT(VALUE value);
 long NUM2LONG(VALUE value);
@@ -98,6 +100,8 @@ VALUE rb_intern_str(VALUE string);
 VALUE rb_str_new_cstr(const char *string);
 #define rb_str_new2 rb_str_new_cstr
 void rb_str_cat(VALUE string, const char *to_concat, long length);
+
+VALUE rb_str_buf_new(long capacity);
 
 // Symbol
 
@@ -144,6 +148,8 @@ int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 // Calls
 
 #define rb_funcall(object, name, argc, ...) truffle_invoke(object, "__send__", name, ##__VA_ARGS__)
+
+VALUE rb_yield(VALUE value);
 
 // Instance variables
 

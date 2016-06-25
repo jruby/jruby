@@ -111,6 +111,11 @@ module Truffle::CExt
     raise 'not implemented'
   end
 
+  def rb_yield(value)
+    block = get_block
+    block.call(value)
+  end
+
   def rb_raise(object, name)
     raise 'not implemented'
   end
