@@ -35,7 +35,7 @@ public class GlobalVariables {
     }
 
     public Object get(String key) {
-        return getStorage(key).value;
+        return getStorage(key).getValue();
     }
 
     @TruffleBoundary
@@ -52,7 +52,7 @@ public class GlobalVariables {
 
     public GlobalVariableStorage put(String key, Object value) {
         GlobalVariableStorage storage = getStorage(key);
-        storage.value = value;
+        storage.setValue(value);
         return storage;
     }
 
@@ -64,7 +64,7 @@ public class GlobalVariables {
         final Collection<GlobalVariableStorage> storages = variables.values();
         final ArrayList<DynamicObject> values = new ArrayList<>(storages.size());
         for (GlobalVariableStorage storage : storages) {
-            final Object value = storage.value;
+            final Object value = storage.getValue();
             if (value instanceof DynamicObject) {
                 values.add((DynamicObject) value);
             }

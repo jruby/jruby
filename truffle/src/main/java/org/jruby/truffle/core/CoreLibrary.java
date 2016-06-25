@@ -1315,11 +1315,11 @@ public class CoreLibrary {
     }
 
     public DynamicObject getLoadPath() {
-        return (DynamicObject) loadPathStorage.value;
+        return (DynamicObject) loadPathStorage.getValue();
     }
 
     public DynamicObject getLoadedFeatures() {
-        return (DynamicObject) loadedFeaturesStorage.value;
+        return (DynamicObject) loadedFeaturesStorage.getValue();
     }
 
     public DynamicObject getMainObject() {
