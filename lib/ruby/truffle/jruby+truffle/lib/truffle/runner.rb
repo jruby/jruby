@@ -682,7 +682,8 @@ module Truffle
                 end
 
         results = batch.each_line.map do |line|
-          next if line =~ /^#/ || line.strip.empty?
+          # commented lines result in true
+          next true if line =~ /^#/ || line.strip.empty?
 
           options       = {}
           option_parser = build_option_parser OPTION_DEFINITIONS[:ci], options
