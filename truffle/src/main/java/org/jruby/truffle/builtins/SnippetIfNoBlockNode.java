@@ -18,41 +18,34 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 
-public class SnippetIfNoBlockNode extends RubyNode
-{
+public class SnippetIfNoBlockNode extends RubyNode {
 
-	@Child
-	private RubyNode method;
-	@Child
-	private SnippetNode snippetNode;
-	private final ConditionProfile noBlockProfile = ConditionProfile.createBinaryProfile();
-	private final String snippet;
+    @Child
+    private RubyNode method;
+    @Child
+    private SnippetNode snippetNode;
+    private final ConditionProfile noBlockProfile = ConditionProfile.createBinaryProfile();
+    private final String snippet;
 
-	public SnippetIfNoBlockNode(String snippet, RubyNode method)
-	{
-		super(method.getContext(), method.getEncapsulatingSourceSection());
-		this.method = method;
-		this.snippet = snippet;
-	}
+    public SnippetIfNoBlockNode(String snippet, RubyNode method) {
+        super(method.getContext(), method.getEncapsulatingSourceSection());
+        this.method = method;
+        this.snippet = snippet;
+    }
 
-	@Override
-	public Object execute(VirtualFrame frame)
-	{
-		final DynamicObject block = RubyArguments.getBlock(frame);
+    @Override
+    public Object execute(VirtualFrame frame) {
+        final DynamicObject block = RubyArguments.getBlock(frame);
 
-		if (noBlockProfile.profile(block == null))
-		{
-			if (snippetNode == null)
-			{
-				CompilerDirectives.transferToInterpreterAndInvalidate();
-				snippetNode = insert(new SnippetNode());
-			}
-			return snippetNode.execute(frame, this.snippet);
-		}
-		else
-		{
-			return method.execute(frame);
-		}
-	}
+        if (noBlockProfile.profile(block == null)) {
+            if (snippetNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                snippetNode = insert(new SnippetNode());
+            }
+            return snippetNode.execute(frame, this.snippet);
+        } else {
+            return method.execute(frame);
+        }
+    }
 
 }

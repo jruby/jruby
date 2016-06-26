@@ -36,22 +36,21 @@
  */
 package org.jruby.truffle.core.rubinius;
 
-public abstract class RubiniusSnippets
-{
-	public static final String ARRAY_DELETE_IF_TO_ENUM = "to_enum(:delete_if) { size }";
-	public static final String ARRAY_EACH_TO_ENUM = "to_enum(:each) { size }";
-	public static final String ARRAY_EACH_WITH_INDEX_TO_ENUM = "to_enum(:each_with_index) { size }";
-	public static final String ARRAY_MAP_TO_ENUM = "to_enum(:map) { size }";
-	public static final String ARRAY_MAP_BANG_TO_ENUM = "to_enum(:map!) { size }";
-	public static final String ARRAY_REJECT_TO_ENUM = "to_enum(:reject) { size }";
-	public static final String ARRAY_REJECT_BANG_TO_ENUM = "to_enum(:reject!) { size }";
-	public static final String ARRAY_SELECT_TO_ENUM = "to_enum(:select) { size }";
+public abstract class RubiniusSnippets {
+    public static final String ARRAY_DELETE_IF_TO_ENUM = "to_enum(:delete_if) { size }";
+    public static final String ARRAY_EACH_TO_ENUM = "to_enum(:each) { size }";
+    public static final String ARRAY_EACH_WITH_INDEX_TO_ENUM = "to_enum(:each_with_index) { size }";
+    public static final String ARRAY_MAP_TO_ENUM = "to_enum(:map) { size }";
+    public static final String ARRAY_MAP_BANG_TO_ENUM = "to_enum(:map!) { size }";
+    public static final String ARRAY_REJECT_TO_ENUM = "to_enum(:reject) { size }";
+    public static final String ARRAY_REJECT_BANG_TO_ENUM = "to_enum(:reject!) { size }";
+    public static final String ARRAY_SELECT_TO_ENUM = "to_enum(:select) { size }";
 
-	public static final String HASH_EACH_TO_ENUM = "to_enum(:each) { size }";
+    public static final String HASH_EACH_TO_ENUM = "to_enum(:each) { size }";
 
-	public static final String RANGE_EACH_TO_ENUM = "to_enum { size }";
+    public static final String RANGE_EACH_TO_ENUM = "to_enum { size }";
 
-	public static final String STRING_EACH_BYTE_TO_ENUM = "to_enum(:each_byte) { bytesize }";
-	public static final String STRING_EACH_CHAR_TO_ENUM = "to_enum(:each_char) { size }";
+    public static final String STRING_EACH_BYTE_TO_ENUM = "to_enum(:each_byte) { bytesize }";
+    public static final String STRING_EACH_CHAR_TO_ENUM = "to_enum(:each_char) { size }";
 
 }
