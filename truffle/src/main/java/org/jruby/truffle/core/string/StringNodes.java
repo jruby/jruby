@@ -151,8 +151,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.STRING_EACH_BYTE_TO_ENUM;
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.STRING_EACH_CHAR_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.STRING_EACH_BYTE_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.STRING_EACH_CHAR_TO_ENUM;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
 

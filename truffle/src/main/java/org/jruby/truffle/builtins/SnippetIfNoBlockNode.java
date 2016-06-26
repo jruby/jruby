@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -20,10 +20,8 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 
 public class SnippetIfNoBlockNode extends RubyNode {
 
-    @Child
-    private RubyNode method;
-    @Child
-    private SnippetNode snippetNode;
+    @Child private RubyNode method;
+    @Child private SnippetNode snippetNode;
     private final ConditionProfile noBlockProfile = ConditionProfile.createBinaryProfile();
     private final String snippet;
 

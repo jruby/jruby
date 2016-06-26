@@ -95,14 +95,14 @@ import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
 import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_DELETE_IF_TO_ENUM;
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_EACH_TO_ENUM;
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_EACH_WITH_INDEX_TO_ENUM;
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_MAP_BANG_TO_ENUM;
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_MAP_TO_ENUM;
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_REJECT_BANG_TO_ENUM;
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_REJECT_TO_ENUM;
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_SELECT_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.ARRAY_DELETE_IF_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.ARRAY_EACH_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.ARRAY_EACH_WITH_INDEX_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.ARRAY_MAP_BANG_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.ARRAY_MAP_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.ARRAY_REJECT_BANG_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.ARRAY_REJECT_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.ARRAY_SELECT_TO_ENUM;
 
 @CoreClass("Array")
 public abstract class ArrayNodes {

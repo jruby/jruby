@@ -51,7 +51,7 @@ import org.jruby.truffle.language.yield.YieldNode;
 import java.util.Arrays;
 import java.util.Map;
 
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.HASH_EACH_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.HASH_EACH_TO_ENUM;
 
 @CoreClass("Hash")
 public abstract class HashNodes {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -36,7 +36,7 @@
  */
 package org.jruby.truffle.core.rubinius;
 
-public abstract class RubiniusSnippets {
+public abstract class ToEnumSnippets {
     public static final String ARRAY_DELETE_IF_TO_ENUM = "to_enum(:delete_if) { size }";
     public static final String ARRAY_EACH_TO_ENUM = "to_enum(:each) { size }";
     public static final String ARRAY_EACH_WITH_INDEX_TO_ENUM = "to_enum(:each_with_index) { size }";

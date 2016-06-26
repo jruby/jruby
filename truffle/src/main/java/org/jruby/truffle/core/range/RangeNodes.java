@@ -41,7 +41,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
-import static org.jruby.truffle.core.rubinius.RubiniusSnippets.RANGE_EACH_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.ToEnumSnippets.RANGE_EACH_TO_ENUM;
 
 @CoreClass("Range")
 public abstract class RangeNodes {
