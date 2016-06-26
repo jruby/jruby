@@ -95,6 +95,14 @@ import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
 import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
+import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_DELETE_IF_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_EACH_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_EACH_WITH_INDEX_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_MAP_BANG_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_MAP_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_REJECT_BANG_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_REJECT_TO_ENUM;
+import static org.jruby.truffle.core.rubinius.RubiniusSnippets.ARRAY_SELECT_TO_ENUM;
 
 @CoreClass("Array")
 public abstract class ArrayNodes {
@@ -791,7 +799,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each", needsBlock = true, snippetIfNoBlock = ARRAY_EACH_TO_ENUM)
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
@@ -827,7 +835,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "each_with_index", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each_with_index", needsBlock = true, snippetIfNoBlock = ARRAY_EACH_WITH_INDEX_TO_ENUM)
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
@@ -1196,7 +1204,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = { "map", "collect" }, needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = { "map", "collect" }, needsBlock = true, snippetIfNoBlock = ARRAY_MAP_TO_ENUM)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
@@ -1230,7 +1238,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = { "map!", "collect!" }, needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "map!", "collect!" }, needsBlock = true, snippetIfNoBlock = ARRAY_MAP_BANG_TO_ENUM, raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
@@ -1742,7 +1750,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "reject", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "reject", needsBlock = true, snippetIfNoBlock = ARRAY_REJECT_TO_ENUM)
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
@@ -1781,7 +1789,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "delete_if" , needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete_if" , needsBlock = true, snippetIfNoBlock = ARRAY_DELETE_IF_TO_ENUM, raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteIfNode extends YieldingCoreMethodNode {
 
@@ -1799,7 +1807,7 @@ public abstract class ArrayNodes {
     }
 
 
-    @CoreMethod(names = "reject!", needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "reject!", needsBlock = true, snippetIfNoBlock = ARRAY_REJECT_BANG_TO_ENUM, raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
@@ -1881,7 +1889,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "select", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "select", needsBlock = true, snippetIfNoBlock = ARRAY_SELECT_TO_ENUM)
     @ImportStatic(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 

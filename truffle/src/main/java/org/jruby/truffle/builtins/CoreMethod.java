@@ -73,4 +73,6 @@ public @interface CoreMethod {
 
     UnsafeGroup[] unsafe() default {};
 
+    String snippetIfNoBlock() default "";
+
 }

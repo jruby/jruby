@@ -263,7 +263,9 @@ public class CoreMethodNodeManager {
         } else {
             sequence = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
 
-            if (method.returnsEnumeratorIfNoBlock()) {
+            if(!method.snippetIfNoBlock().isEmpty()) {
+                sequence = new SnippetIfNoBlockNode(method.snippetIfNoBlock(), sequence);
+            } else if (method.returnsEnumeratorIfNoBlock()) {
                 // TODO BF 3-18-2015 Handle multiple method names correctly
                 sequence = new ReturnEnumeratorIfNoBlockNode(method.names()[0], sequence);
             }
