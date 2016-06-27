@@ -1,0 +1,1 @@
+fails:Fiber#resume executes the ensure clause
