@@ -196,6 +196,49 @@ class Array
     nil
   end
 
+  def bsearch_index
+    return to_enum :bsearch_index unless block_given?
+
+    m = Rubinius::Mirror::Array.reflect self
+
+    tuple = m.tuple
+
+    min = start = m.start
+    max = total = start + m.total
+
+    last_true = nil
+    i = start + m.total / 2
+
+    while max >= min and i >= start and i < total
+      x = yield tuple.at(i)
+
+      return i if x == 0
+
+      case x
+        when Numeric
+          if x > 0
+            min = i + 1
+          else
+            max = i - 1
+          end
+        when true
+          last_true = i
+          max = i - 1
+        when false, nil
+          min = i + 1
+        else
+          raise TypeError, "wrong argument type (must be numeric, true, false or nil)"
+      end
+
+      i = min + (max - min) / 2
+    end
+
+    return i if max > min
+    return last_true if last_true
+
+    nil
+  end
+
   def combination(num)
     num = Rubinius::Type.coerce_to_collection_index num
 
