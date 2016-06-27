@@ -110,8 +110,6 @@ def report(status, code, message = nil)
   puts message ? format(format_str + "\n         %s", status, code, message) : format('%14s: %s', status, code)
 end
 
-Truffle::Globals.permanently_invalidate :$value
-
 EXAMPLES.each do |example|
   next if example.tagged
 

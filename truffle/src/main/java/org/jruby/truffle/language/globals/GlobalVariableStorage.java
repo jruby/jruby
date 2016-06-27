@@ -66,9 +66,4 @@ public class GlobalVariableStorage {
         }
     }
 
-    public void permanentlyInvalidate() {
-        changes = Integer.MAX_VALUE;
-        unchangedAssumption.invalidate();
-    }
-
 }
