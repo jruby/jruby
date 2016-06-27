@@ -14,11 +14,13 @@ with_feature :fiber do
     it "returns its arguments to the caller" do
       fiber = Fiber.new { true; Fiber.yield :glark; true }
       fiber.resume.should == :glark
+      fiber.resume
     end
 
     it "returns nil to the caller if given no arguments" do
       fiber = Fiber.new { true; Fiber.yield; true }
       fiber.resume.should be_nil
+      fiber.resume
     end
 
     it "returns to the Fiber the value of the #resume call that invoked it" do

@@ -169,7 +169,7 @@ describe "C-API Class function" do
     it "raises a NameError if the class variable is not defined" do
       lambda {
         @s.rb_cv_get(CApiClassSpecs::CVars, "@@no_cvar")
-      }.should raise_error(NameError)
+      }.should raise_error(NameError, /class variable @@no_cvar/)
     end
   end
 
@@ -331,7 +331,7 @@ describe "C-API Class function" do
     it "raises a NameError if the class variable is not defined" do
       lambda {
         @s.rb_cvar_get(CApiClassSpecs::CVars, "@@no_cvar")
-      }.should raise_error(NameError)
+      }.should raise_error(NameError, /class variable @@no_cvar/)
     end
   end
 

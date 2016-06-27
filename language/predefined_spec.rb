@@ -906,6 +906,13 @@ describe "Global variable $0" do
     $0 = @orig_program_name
   end
 
+  it "is the path given as the main script and the same as __FILE__" do
+    script = "fixtures/dollar_zero.rb"
+    Dir.chdir(File.dirname(__FILE__)) do
+      ruby_exe(script).should == "#{script}\n#{script}\nOK"
+    end
+  end
+
   it "returns the program name" do
     $0 = "rbx"
     $0.should == "rbx"
