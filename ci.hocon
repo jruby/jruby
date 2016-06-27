@@ -69,7 +69,6 @@ graal-enterprise: {
     [mx, sclone, --kind, git, "https://github.com/graalvm/graal-enterprise.git", graal-enterprise],
     [hg, clone, "http://hg.openjdk.java.net/graal/graal-jvmci-8", jvmci] // temporarily until next GraalVM release
     [cd, graal-enterprise],
-    [git, checkout, graal-vm-0.12],
     [mx, sforceimports, "||", "true"],
     [mx, sforceimports],
     [mx, --vm, server, build],
