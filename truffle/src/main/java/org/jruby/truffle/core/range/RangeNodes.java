@@ -41,7 +41,6 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
-import static org.jruby.truffle.core.rubinius.ToEnumSnippets.RANGE_EACH_TO_ENUM;
 
 @CoreClass("Range")
 public abstract class RangeNodes {
@@ -84,7 +83,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true, snippetIfNoBlock = RANGE_EACH_TO_ENUM)
+    @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true, enumeratorSize = "size")
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode eachInternalCall;

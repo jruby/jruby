@@ -151,8 +151,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-import static org.jruby.truffle.core.rubinius.ToEnumSnippets.STRING_EACH_BYTE_TO_ENUM;
-import static org.jruby.truffle.core.rubinius.ToEnumSnippets.STRING_EACH_CHAR_TO_ENUM;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
@@ -1022,7 +1020,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "each_byte", needsBlock = true, snippetIfNoBlock = STRING_EACH_BYTE_TO_ENUM)
+    @CoreMethod(names = "each_byte", needsBlock = true, enumeratorSize = "bytesize")
     public abstract static class EachByteNode extends YieldingCoreMethodNode {
 
         @Specialization
@@ -1046,7 +1044,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "each_char", needsBlock = true, snippetIfNoBlock = STRING_EACH_CHAR_TO_ENUM)
+    @CoreMethod(names = "each_char", needsBlock = true, enumeratorSize = "size")
     @ImportStatic(StringGuards.class)
     public abstract static class EachCharNode extends YieldingCoreMethodNode {
 

@@ -18,17 +18,17 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 
-public class SnippetIfNoBlockNode extends RubyNode {
+public class EnumeratorSizeNode extends RubyNode {
 
     @Child private RubyNode method;
     @Child private SnippetNode snippetNode;
     private final ConditionProfile noBlockProfile = ConditionProfile.createBinaryProfile();
     private final String snippet;
 
-    public SnippetIfNoBlockNode(String snippet, RubyNode method) {
+    public EnumeratorSizeNode(String enumeratorSize, String methodName, RubyNode method) {
         super(method.getContext(), method.getEncapsulatingSourceSection());
         this.method = method;
-        this.snippet = snippet;
+        this.snippet = "to_enum(:" + methodName + ") { " + enumeratorSize + " }";
     }
 
     @Override
@@ -40,7 +40,7 @@ public class SnippetIfNoBlockNode extends RubyNode {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 snippetNode = insert(new SnippetNode());
             }
-            return snippetNode.execute(frame, this.snippet);
+            return snippetNode.execute(frame, snippet);
         } else {
             return method.execute(frame);
         }

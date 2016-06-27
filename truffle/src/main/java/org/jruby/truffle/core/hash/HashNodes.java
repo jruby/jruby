@@ -51,7 +51,6 @@ import org.jruby.truffle.language.yield.YieldNode;
 import java.util.Arrays;
 import java.util.Map;
 
-import static org.jruby.truffle.core.rubinius.ToEnumSnippets.HASH_EACH_TO_ENUM;
 
 @CoreClass("Hash")
 public abstract class HashNodes {
@@ -583,7 +582,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = { "each", "each_pair" }, needsBlock = true, snippetIfNoBlock = HASH_EACH_TO_ENUM)
+    @CoreMethod(names = { "each", "each_pair" }, needsBlock = true, enumeratorSize = "size")
     @ImportStatic(HashGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
