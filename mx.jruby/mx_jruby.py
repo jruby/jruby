@@ -288,9 +288,16 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
         else:
             sys.stderr.write(out.data)
             
-            # TODO CS 24-Jun-16, return an error point?
             # TODO CS 24-Jun-16, how can we fail the wider suite?
-            return []
+            return [{
+                'benchmark': benchmark,
+                'metric.name': 'throughput',
+                'metric.value': 0,
+                'metric.unit': 'op/s',
+                'metric.better': 'higher',
+                'extra.metric.warmedup': 'true',
+                'extra.error': 'failed'
+            }]
 
 classic_benchmarks = [
     'binary-trees',
@@ -436,10 +443,6 @@ class MicroBenchmarkSuite(AllBenchmarksBenchmarkSuite):
                         benchmarks.extend([benchmark_file + ':' + b.strip() for b in out.data.split('\n') if len(b.strip()) > 0])
                     else:
                         sys.stderr.write(out.data)
-                        
-                        # TODO CS 24-Jun-16, return an error point?
-                        # TODO CS 24-Jun-16, how can we fail the wider suite?
-                        return []
         return benchmarks
     
     def time(self):

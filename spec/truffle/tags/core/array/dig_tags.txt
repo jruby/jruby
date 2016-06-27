@@ -1,9 +1,2 @@
-fails:Array#dig returns #at with one arg
-fails:Array#dig recurses array elements
-fails:Array#dig raises without any args
-fails:Array#dig calls #dig on the result of #at with the remaining arguments
-fails:Array#dig raises a TypeError for a non-numeric index
 fails:Array#dig returns the nested value specified if the sequence includes a key
 fails:Array#dig raises a TypeError if any intermediate step does not respond to #dig
-fails:Array#dig raises an ArgumentError if no arguments provided
-fails:Array#dig returns nil if any intermediate step is nil
