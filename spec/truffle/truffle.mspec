@@ -10,10 +10,21 @@ class MSpecScript
     RbConfig::CONFIG['host_os'] == 'linux'
   end
 
-  set :target, File.expand_path("../../../bin/jruby#{windows? ? '.bat' : ''}", __FILE__)
+  JRUBY_DIR = File.expand_path('../../..', __FILE__)
+
+  set :target, "#{JRUBY_DIR}/bin/jruby#{windows? ? '.bat' : ''}"
 
   if ARGV[-2..-1] != %w[-t ruby] # No flags for MRI
-    set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G -Xtruffle.graal.warn_unless=false]
+    flags = %w[
+      -X+T
+      -J-ea
+      -J-esa
+      -J-Xmx2G
+      -Xtruffle.graal.warn_unless=false
+    ]
+    core_path = "#{JRUBY_DIR}/truffle/src/main/ruby"
+    flags << "-Xtruffle.core.load_path=#{core_path}" if File.directory?(core_path)
+    set :flags, flags
   end
 
   set :capi, [
