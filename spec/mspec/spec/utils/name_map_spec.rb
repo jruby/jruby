@@ -149,11 +149,11 @@ describe NameMap, "#namespace" do
   end
 
   it "prepends the module to the constant name" do
-    @map.namespace("SubModule", Fixnum).should == "SubModule::Fixnum"
+    @map.namespace("SubModule", Integer).should == "SubModule::Integer"
   end
 
   it "does not prepend Object, Class, or Module to the constant name" do
-    @map.namespace("Object", Fixnum).should == "Fixnum"
+    @map.namespace("Object", String).should == "String"
     @map.namespace("Module", Integer).should == "Integer"
     @map.namespace("Class", Float).should == "Float"
   end

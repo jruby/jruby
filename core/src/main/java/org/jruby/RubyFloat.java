@@ -535,14 +535,13 @@ public class RubyFloat extends RubyNumeric {
                 IRubyObject infinite = other.callMethod(context, "infinite?");
                 if (infinite.isNil()) {
                     return value > 0.0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
-                } else {
-                    int sign = RubyFixnum.fix2int(infinite);
+                }
+                long sign = RubyFixnum.fix2long(infinite);
 
-                    if (sign > 0) {
-                        return value > 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.minus_one(runtime);
-                    } else {
-                        return value < 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.one(runtime);
-                    }
+                if (sign > 0) {
+                    return value > 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.minus_one(runtime);
+                } else {
+                    return value < 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.one(runtime);
                 }
             }
             return coerceCmp(context, "<=>", other);

@@ -3275,7 +3275,7 @@ public final class Ruby implements Constantizable {
         // clear out threadlocals so they don't leak
         recursive = new ThreadLocal<Map<String, RubyHash>>();
 
-        ThreadContext context = getCurrentContext();
+        final ThreadContext context = getCurrentContext();
 
         // FIXME: 73df3d230b9d92c7237d581c6366df1b92ad9b2b exposed no toplevel scope existing anymore (I think the
         // bogus scope I removed was playing surrogate toplevel scope and wallpapering this bug).  For now, add a
@@ -3289,15 +3289,14 @@ public final class Ruby implements Constantizable {
             RubyProc proc = atExitBlocks.pop();
             // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
             try {
-                proc.call(getCurrentContext(), IRubyObject.NULL_ARRAY);
+                proc.call(context, IRubyObject.NULL_ARRAY);
             } catch (RaiseException rj) {
                 RubyException raisedException = rj.getException();
                 if (!getSystemExit().isInstance(raisedException)) {
                     status = 1;
                     printError(raisedException);
                 } else {
-                    IRubyObject statusObj = raisedException.callMethod(
-                            getCurrentContext(), "status");
+                    IRubyObject statusObj = raisedException.callMethod(context, "status");
                     if (statusObj != null && !statusObj.isNil()) {
                         status = RubyNumeric.fix2int(statusObj);
                     }
@@ -3313,7 +3312,7 @@ public final class Ruby implements Constantizable {
             IRubyObject[] trapResultEntries = ((RubyArray) trapResult).toJavaArray();
             IRubyObject exitHandlerProc = trapResultEntries[0];
             if (exitHandlerProc instanceof RubyProc) {
-                ((RubyProc) exitHandlerProc).call(this.getCurrentContext(), this.getSingleNilArray());
+                ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
             }
         }
 

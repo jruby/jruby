@@ -1208,7 +1208,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             // calls to undefine_finalizer, which takes an object ID, can
             // locate the object properly. See JRUBY-4839.
             long id = getObjectId();
-            RubyFixnum fixnumId = (RubyFixnum)id();
+            IRubyObject fixnumId = id();
 
             getRuntime().getObjectSpace().registerObjectId(id, this);
 
@@ -1841,12 +1841,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * operation.
      */
     public static class Finalizer implements Finalizable {
-        private final RubyFixnum id;
+        private final IRubyObject id;
         private final AtomicBoolean finalized;
         private IRubyObject firstFinalizer;
         private List<IRubyObject> finalizers;
 
         public Finalizer(RubyFixnum id) {
+            this((IRubyObject) id);
+        }
+
+        Finalizer(IRubyObject id) {
             this.id = id;
             this.finalized = new AtomicBoolean(false);
         }

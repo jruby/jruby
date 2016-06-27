@@ -15,6 +15,14 @@ with_feature :fiber_library do
       fiber2.resume.should == :fiber1
     end
 
+    it "returns to the root Fiber when finished" do
+      f1 = Fiber.new { :fiber_1 }
+      f2 = Fiber.new { f1.transfer; :fiber_2 }
+
+      f2.transfer.should == :fiber_1
+      f2.transfer.should == :fiber_2
+    end
+
     it "can be invoked from the same Fiber it transfers control to" do
       states = []
       fiber = Fiber.new { states << :start; fiber.transfer; states << :end }
