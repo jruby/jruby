@@ -315,6 +315,15 @@ class Array
     nil
   end
 
+  def dig(idx, *more)
+     result = self.at(idx)
+     if result.nil? || more.empty?
+       result
+     else
+       result.dig(*more)
+     end
+  end
+
   def each_index
     return to_enum(:each_index) { size } unless block_given?
 
