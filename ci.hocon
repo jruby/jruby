@@ -37,7 +37,7 @@ graal-core: {
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
-      version: "8u92-jvmci-0.15",
+      version: "8u92-jvmci-0.16",
       platformspecific: true
     }
   }
@@ -62,16 +62,22 @@ graal-core: {
 }
 
 graal-enterprise: {
+  downloads: {
+    JVMCI_JAVA_HOME: {
+      name: labsjdk,
+      version: "8u92-jvmci-0.16",
+      platformspecific: true
+    }
+  }
+  
   setup: ${common-setup} [
     [mv, mx.jruby, temp_mx],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
     [mx, sclone, --kind, git, "https://github.com/graalvm/graal-enterprise.git", graal-enterprise],
-    [hg, clone, "http://hg.openjdk.java.net/graal/graal-jvmci-8", jvmci] // temporarily until next GraalVM release
     [cd, graal-enterprise],
-    [mx, sforceimports, "||", "true"],
     [mx, sforceimports],
-    [mx, --vm, server, build],
+    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
   ]
