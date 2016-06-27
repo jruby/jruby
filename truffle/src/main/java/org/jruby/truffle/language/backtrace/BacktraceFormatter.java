@@ -133,16 +133,12 @@ public class BacktraceFormatter {
             final SourceSection reportedSourceSection;
             String reportedName;
 
-            if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
+            if (isJavaCore(sourceSection) ||
+                    (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES))) {
                 final SourceSection nextUserSourceSection = nextUserSourceSection(activations, n);
                 // if there is no next source section use a core one to avoid ???
                 reportedSourceSection = nextUserSourceSection != null ? nextUserSourceSection : sourceSection;
-
-                try {
-                    reportedName = activation.getMethod().getName();
-                } catch (Exception e) {
-                    reportedName = "???";
-                }
+                reportedName = getMethodNameFromActivation(activation);
             } else {
                 reportedSourceSection = sourceSection;
                 reportedName = sourceSection.getIdentifier();
@@ -188,6 +184,14 @@ public class BacktraceFormatter {
         return builder.toString();
     }
 
+    private String getMethodNameFromActivation(Activation activation) {
+        try {
+            return activation.getMethod().getName();
+        } catch (Exception e) {
+            return "???";
+        }
+    }
+
     private SourceSection nextUserSourceSection(List<Activation> activations, int n) {
         while (n < activations.size()) {
             final Node callNode = activations.get(n).getCallNode();
@@ -205,25 +209,26 @@ public class BacktraceFormatter {
         return null;
     }
 
+    public static boolean isJavaCore(SourceSection sourceSection) {
+        return sourceSection != null && sourceSection.getSource() == null;
+    }
+
     public static boolean isCore(SourceSection sourceSection) {
         if (sourceSection == null) {
             return true;
         }
 
         final Source source = sourceSection.getSource();
-
         if (source == null) {
             return true;
         }
 
         final String path = source.getPath();
-
         if (path != null) {
             return path.startsWith(SourceLoader.TRUFFLE_SCHEME);
         }
 
         final String name = source.getName();
-
         if (name != null) {
             return name.startsWith(SourceLoader.TRUFFLE_SCHEME);
         }
