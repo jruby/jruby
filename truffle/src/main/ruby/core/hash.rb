@@ -149,6 +149,15 @@ class Hash
     @default_proc = prc
   end
 
+  def dig(key, *more)
+    result = self[key]
+    if result.nil? || more.empty?
+      result
+    else
+      result.dig(*more)
+    end
+  end
+
   def fetch(key, default=undefined)
     if item = find_item(key)
       return item.value

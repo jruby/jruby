@@ -1,2 +1,1 @@
-fails:Array#dig returns the nested value specified if the sequence includes a key
 fails:Array#dig raises a TypeError if any intermediate step does not respond to #dig
