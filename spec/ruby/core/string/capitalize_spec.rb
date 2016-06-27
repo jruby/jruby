@@ -17,10 +17,12 @@ describe "String#capitalize" do
     "hello".taint.capitalize.tainted?.should == true
   end
 
-  it "is locale insensitive (only upcases a-z and only downcases A-Z)" do
-    "ÄÖÜ".capitalize.should == "ÄÖÜ"
-    "ärger".capitalize.should == "ärger"
-    "BÄR".capitalize.should == "BÄr"
+  ruby_version_is ''...'2.4' do
+    it "is locale insensitive (only upcases a-z and only downcases A-Z)" do
+      "ÄÖÜ".capitalize.should == "ÄÖÜ"
+      "ärger".capitalize.should == "ärger"
+      "BÄR".capitalize.should == "BÄr"
+    end
   end
 
   it "returns subclass instances when called on a subclass" do

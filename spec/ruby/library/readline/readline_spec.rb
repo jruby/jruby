@@ -19,7 +19,9 @@ process_is_foreground do
       after :each do
         rm_r @file
         STDIN.reopen(@stdin_back)
+        @stdin_back.close
         STDOUT.reopen(@stdout_back)
+        @stdout_back.close
       end
 
       it "returns the input string" do

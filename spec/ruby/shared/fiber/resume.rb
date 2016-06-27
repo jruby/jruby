@@ -4,6 +4,16 @@ describe :fiber_resume, shared: true do
    fiber.send(@method).should == :fiber
   end
 
+  it "raises a FiberError if invoked from a different Thread" do
+    fiber = Fiber.new { }
+    lambda do
+      Thread.new do
+        fiber.resume
+      end.join
+    end.should raise_error(FiberError)
+    fiber.resume
+  end
+
   it "passes control to the beginning of the block on first invocation" do
     invoked = false
     fiber = Fiber.new { invoked = true }

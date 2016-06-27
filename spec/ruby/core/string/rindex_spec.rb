@@ -306,9 +306,11 @@ describe "String#rindex with Regexp" do
     "blablablax".rindex(/.x/, 7).should == nil
     "blablablax".rindex(/..x/, 6).should == nil
 
-    "blablabla".rindex(/\Z/, 5).should == nil
-    "blablabla".rindex(/\z/, 5).should == nil
-    "blablabla\n".rindex(/\z/, 9).should == nil
+    not_supported_on :opal do
+      "blablabla".rindex(/\Z/, 5).should == nil
+      "blablabla".rindex(/\z/, 5).should == nil
+      "blablabla\n".rindex(/\z/, 9).should == nil
+    end
   end
 
   not_supported_on :opal do
