@@ -1511,9 +1511,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         genericKill(getRuntime(), null);
     }
 
-    private static void debug(RubyThread thread, String message) {
-        if (LOG.isDebugEnabled()) LOG.debug( "{} ({}): {}", Thread.currentThread(), thread.status, message );
-    }
+    //private static void debug(RubyThread thread, String message) {
+    //    if (LOG.isDebugEnabled()) LOG.debug( "{} ({}): {}", Thread.currentThread(), thread.status, message );
+    //}
 
     @JRubyMethod
     public IRubyObject safe_level() {
@@ -1879,12 +1879,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public void afterBlockingCall() {
         exitSleep();
         pollThreadEvents();
-    }
-
-    private void receivedAnException(ThreadContext context, IRubyObject exception) {
-        RubyModule kernelModule = getRuntime().getKernel();
-        debug(this, "before propagating exception");
-        kernelModule.callMethod(context, "raise", exception);
     }
 
     public boolean wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {
