@@ -19,6 +19,7 @@ import java.io.IOException;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.language.control.JavaException;
 
 public class FeatureLoader {
 
@@ -132,7 +133,7 @@ public class FeatureLoader {
         try {
             return parseSource(context.getSourceLoader().load(path));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new JavaException(e);
         }
     }
 
@@ -141,7 +142,7 @@ public class FeatureLoader {
         try {
             return context.getEnv().parse(source);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new JavaException(e);
         }
     }
 

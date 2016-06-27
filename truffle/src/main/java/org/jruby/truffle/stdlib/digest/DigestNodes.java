@@ -24,6 +24,7 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.control.JavaException;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -36,7 +37,7 @@ public abstract class DigestNodes {
         try {
             return MessageDigest.getInstance(name);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            throw new JavaException(e);
         }
     }
 
@@ -147,7 +148,7 @@ public abstract class DigestNodes {
             try {
                 clonedDigest = (MessageDigest) digest.clone();
             } catch (CloneNotSupportedException e) {
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
 
             return clonedDigest.digest();

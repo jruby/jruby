@@ -17,6 +17,7 @@ import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
 import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.control.ExitException;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
 
@@ -39,7 +40,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         try {
             context = (RubyContext) engine.eval(loadSource("Truffle::Boot.context", "context")).get();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new JavaException(e);
         }
     }
 
@@ -61,7 +62,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
                 throw new org.jruby.exceptions.MainExitException(exit.getCode());
             }
 
-            throw new RuntimeException(e);
+            throw new JavaException(e);
         }
     }
 

@@ -28,6 +28,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.JavaException;
 
 @NodeChildren({
         @NodeChild("receiver"),
@@ -155,7 +156,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendRead(node, frame, receiver, args[0]);
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -177,7 +178,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendWrite(node, frame, receiver, args[0], args[1]);
             } catch (UnknownIdentifierException | UnsupportedMessageException | UnsupportedTypeException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -202,7 +203,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendRead(node, frame, receiver, name);
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -227,7 +228,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendWrite(node, frame, receiver, name, args[0]);
             } catch (UnknownIdentifierException | UnsupportedMessageException | UnsupportedTypeException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -252,7 +253,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendExecute(node, frame, receiver, args);
             } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -296,7 +297,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendInvoke(node, frame, receiver, name, args);
             } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException | UnknownIdentifierException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 

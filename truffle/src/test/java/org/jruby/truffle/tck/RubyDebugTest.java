@@ -22,6 +22,7 @@ import com.oracle.truffle.api.vm.PolyglotEngine;
 import com.oracle.truffle.api.vm.PolyglotEngine.Value;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.language.control.JavaException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -101,7 +102,7 @@ public class RubyDebugTest {
                     debugger.setLineBreakpoint(0, returnOne, false);
                     executionEvent.prepareContinue();
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new JavaException(e);
                 }
             }
 

@@ -103,6 +103,7 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.TruffleBootNodesFactory;
 import org.jruby.truffle.language.TruffleSafeNodesFactory;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
 import org.jruby.truffle.language.globals.GlobalVariableStorage;
@@ -282,7 +283,7 @@ public class CoreLibrary {
         try {
             return new File(path).getCanonicalPath();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new JavaException(e);
         }
     }
 
@@ -1033,7 +1034,7 @@ public class CoreLibrary {
                     deferredCall.callWithoutCallNode();
                 }
             } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
 
             Main.printTruffleTimeMetric("after-load-core");
@@ -1068,7 +1069,7 @@ public class CoreLibrary {
                         deferredCall.callWithoutCallNode();
                     }
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new JavaException(e);
                 }
 
                 Main.printTruffleTimeMetric("after-post-boot");
