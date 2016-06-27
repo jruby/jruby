@@ -13,3 +13,4 @@ fails:Fiber#transfer transfers control from one Fiber to another when called fro
 fails:Fiber#transfer can be invoked from the same Fiber it transfers control to
 fails:Fiber#transfer can transfer control to a Fiber that has transfered to another Fiber
 fails:Fiber#transfer raises a FiberError when transferring to a Fiber which resumes itself
+fails:Fiber#transfer returns to the root Fiber when finished
