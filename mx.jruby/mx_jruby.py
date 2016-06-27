@@ -253,7 +253,7 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
         arguments = ['benchmark']
         if 'MX_BENCHMARK_OPTS' in os.environ:
             arguments.extend(os.environ['MX_BENCHMARK_OPTS'].split(' '))
-        arguments.extend(['--simple'])
+        arguments.extend(['--simple', '--elapsed'])
         arguments.extend(['--time', str(self.time())])
         if ':' in benchmark:
             benchmark_file, benchmark_name = benchmark.split(':')
@@ -270,7 +270,9 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
         out = mx.OutputCapture()
         
         if jt(arguments, out=out, nonZeroIsFatal=False) == 0:
-            samples = [float(s) for s in out.data.split('\n')[1:-2]]
+            data = [float(s) for s in out.data.split('\n')[1:-1]]
+            elapsed = [d for n, d in enumerate(data) if n % 2 == 0]
+            samples = [d for n, d in enumerate(data) if n % 2 == 1]
             
             warmed_up_samples = [sample for n, sample in enumerate(samples) if n / float(len(samples)) >= 0.5]
             warmed_up_mean = sum(warmed_up_samples) / float(len(warmed_up_samples))
@@ -283,8 +285,9 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
                 'metric.better': 'higher',
                 'metric.iteration': n,
                 'extra.metric.warmedup': 'true' if n / float(len(samples)) >= 0.5 else 'false',
+                'extra.metric.elapsed-num': e,
                 'extra.metric.human': '%d/%d %fs' % (n, len(samples), warmed_up_mean)
-            } for n, sample in enumerate(samples)]
+            } for n, (e, sample) in enumerate(zip(elapsed, samples))]
         else:
             sys.stderr.write(out.data)
             

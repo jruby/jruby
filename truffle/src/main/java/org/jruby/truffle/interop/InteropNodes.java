@@ -38,6 +38,7 @@ import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.util.ByteList;
 import java.io.IOException;
 
@@ -82,7 +83,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendExecute(executeNode, frame, receiver, args);
             } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -98,7 +99,7 @@ public abstract class InteropNodes {
             try {
                 return ForeignAccess.sendExecute(executeNode, frame, receiver, args);
             } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -143,7 +144,7 @@ public abstract class InteropNodes {
                     | UnsupportedMessageException
                     | UnknownIdentifierException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -166,7 +167,7 @@ public abstract class InteropNodes {
                     | ArityException
                     | UnsupportedMessageException
                     | UnknownIdentifierException e) {
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -215,7 +216,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendGetSize(getSizeNode, frame, receiver);
             } catch (UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -309,7 +310,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendUnbox(unboxNode, frame, receiver);
             } catch (UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -361,7 +362,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendRead(readNode, frame, receiver, identifier);
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -378,7 +379,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendRead(readNode, frame, receiver, identifierString);
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -401,7 +402,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendRead(readNode, frame, receiver, identifierString);
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -419,7 +420,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendRead(readNode, frame, receiver, objectToString(identifier));
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -454,7 +455,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendWrite(writeNode, frame, receiver, identifier, value);
             } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -472,7 +473,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendWrite(writeNode, frame, receiver, identifierString, value);
             } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -496,7 +497,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendWrite(writeNode, frame, receiver, identifierString, value);
             } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -515,7 +516,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendWrite(writeNode, frame, receiver, objectToString(identifier), value);
             } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -603,7 +604,7 @@ public abstract class InteropNodes {
                 return getContext().getEnv().parse(sourceObject);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 

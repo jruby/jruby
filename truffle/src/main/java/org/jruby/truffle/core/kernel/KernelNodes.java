@@ -91,6 +91,7 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.Backtrace;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -179,7 +180,7 @@ public abstract class KernelNodes {
                 // We need to run via bash to get the variable and other expansion we expect
                 process = Runtime.getRuntime().exec(new String[]{ "bash", "-c", command.toString() }, envp.toArray(new String[envp.size()]));
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
 
             final InputStream stdout = process.getInputStream();
@@ -196,7 +197,7 @@ public abstract class KernelNodes {
                     resultBuilder.append((char) c);
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
@@ -737,7 +738,7 @@ public abstract class KernelNodes {
                 process = builder.start();
             } catch (IOException e) {
                 // TODO(cs): proper Ruby exception
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
 
             int exitCode = context.getThreadManager().runUntilResult(this, new BlockingAction<Integer>() {
@@ -844,7 +845,7 @@ public abstract class KernelNodes {
             try {
                 return reader.readLine() + "\n";
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
