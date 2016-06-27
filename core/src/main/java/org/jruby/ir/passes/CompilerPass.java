@@ -1,10 +1,13 @@
 package org.jruby.ir.passes;
 
 import org.jruby.ir.IRScope;
+import org.jruby.util.StringSupport;
+import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -21,7 +24,10 @@ import java.util.List;
  * guarantee (re)execution, then you should call invalidate().
  */
 public abstract class CompilerPass {
-    public static List<Class<? extends CompilerPass>> NO_DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>();
+
+    static final Logger LOG = LoggerFactory.getLogger(CompilerPass.class);
+
+    protected static final List<Class<? extends CompilerPass>> NO_DEPENDENCIES = Collections.emptyList();
 
     private List<CompilerPassListener> listeners = new ArrayList<CompilerPassListener>();
 
@@ -135,48 +141,46 @@ public abstract class CompilerPass {
 
     public static CompilerPass createPassInstance(Class<? extends CompilerPass> passClass) {
         try {
-            return (CompilerPass) passClass.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException ex) {
-            LoggerFactory.getLogger(CompilerPass.class).error(ex);
-        } catch (IllegalAccessException ex) {
-            LoggerFactory.getLogger(CompilerPass.class).error(ex);
-        } catch (IllegalArgumentException ex) {
-            LoggerFactory.getLogger(CompilerPass.class).error(ex);
-        } catch (InvocationTargetException ex) {
-            LoggerFactory.getLogger(CompilerPass.class).error(ex);
-        } catch (NoSuchMethodException ex) {
-            LoggerFactory.getLogger(CompilerPass.class).error(ex);
-        } catch (SecurityException ex) {
-            LoggerFactory.getLogger(CompilerPass.class).error(ex);
+            return passClass.getDeclaredConstructor().newInstance();
         }
-
+        catch (NoSuchMethodException|IllegalAccessException|IllegalArgumentException ex) {
+            LOG.error("failed to create compiler pass: '" + passClass.getName() + "'", ex);
+        }
+        catch (InstantiationException|InvocationTargetException|SecurityException ex) {
+            LOG.error("failed to create compiler pass: '" + passClass.getName() + "'", ex);
+        }
         return null;
     }
 
     public static CompilerPass createPassInstance(String passClassName) {
+        final String className = "org.jruby.ir.passes." + passClassName;
         try {
-            String clazzName = "org.jruby.ir.passes." + passClassName;
-            Class<? extends CompilerPass> clazz =
-                    (Class<? extends CompilerPass>) Class.forName(clazzName);
+            Class<? extends CompilerPass> clazz = (Class<? extends CompilerPass>) Class.forName(className);
             return createPassInstance(clazz);
-        } catch (ClassNotFoundException ex) {
-            // FIXME: Do this in a nice way even if only for test code
-            System.out.println("No such pass: " + ex);
-            System.exit(-1);
         }
-
+        catch (ClassNotFoundException ex) {
+            LOG.warn("skipping unknown compiler pass name: '" + className + "'");
+        }
         return null;
     }
 
     public static List<CompilerPass> getPassesFromString(String passList, String defaultPassList) {
         if (passList == null) passList = defaultPassList;
 
-        List<CompilerPass> passes = new ArrayList<CompilerPass>();
+        final List<CompilerPass> passes;
 
-        if (!passList.equals("")) {
-            for (String passClassName : passList.split(",")) {
-                passes.add(createPassInstance(passClassName));
+        if ( ! passList.isEmpty() ) {
+            List<String> split = StringSupport.split(passList, ',');
+            passes = new ArrayList<>(split.size());
+            for ( String passClassName : split ) {
+                if ( ! passClassName.isEmpty() ) {
+                    CompilerPass pass = createPassInstance(passClassName);
+                    if ( pass != null ) passes.add(pass);
+                }
             }
+        }
+        else {
+            passes = new ArrayList<>(2);
         }
 
         return passes;

@@ -36,57 +36,47 @@ public class SymbolTable {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final WeakHashMap<Rope, WeakReference<DynamicObject>> symbolsTable = new WeakHashMap<>();
-    private final WeakHashMap<String, WeakReference<DynamicObject>> symbolsTableByString = new WeakHashMap<>();
+    private final WeakHashMap<String, WeakReference<Rope>> ropesTableByString = new WeakHashMap<>();
 
     public SymbolTable(RubyContext context) {
         this.context = context;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public DynamicObject getSymbol(String string) {
         lock.readLock().lock();
-
+        Rope rope = null;
         try {
-            final WeakReference<DynamicObject> symbolReference = symbolsTableByString.get(string);
-
-            if (symbolReference != null) {
-                final DynamicObject symbol = symbolReference.get();
-
-                if (symbol != null) {
-                    return symbol;
-                }
-            }
+            rope = readRope(string);
         } finally {
             lock.readLock().unlock();
         }
 
-        final Rope rope = StringOperations.createRope(string, USASCIIEncoding.INSTANCE);
-        final DynamicObject symbol = getSymbol(rope);
+        if (rope == null) {
+            rope = StringOperations.createRope(string, USASCIIEncoding.INSTANCE);
 
-        lock.writeLock().lock();
+            // we do not need to ensure that the map does not have the string key,
+            // it may write different objects but logically it writes equal key, value
 
-        try {
-            symbolsTableByString.put(string, new WeakReference<>(symbol));
-
-            return symbol;
-        } finally {
-        lock.writeLock().unlock();
+            lock.writeLock().lock();
+            try {
+                ropesTableByString.put(string, new WeakReference<>(rope));
+            } finally {
+                lock.writeLock().unlock();
+            }
         }
+
+        return getSymbol(rope);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public DynamicObject getSymbol(Rope rope) {
         lock.readLock().lock();
 
         try {
-            final WeakReference<DynamicObject> symbolReference = symbolsTable.get(rope);
-
-            if (symbolReference != null) {
-                final DynamicObject symbol = symbolReference.get();
-
-                if (symbol != null) {
-                    return symbol;
-                }
+            final DynamicObject symbol = readSymbol(rope);
+            if (symbol != null) {
+                return symbol;
             }
         } finally {
             lock.readLock().unlock();
@@ -97,12 +87,9 @@ public class SymbolTable {
         try {
             final WeakReference<DynamicObject> symbolReference = symbolsTable.get(rope);
 
-            if (symbolReference != null) {
-                final DynamicObject symbol = symbolReference.get();
-
-                if (symbol != null) {
-                    return symbol;
-                }
+            final DynamicObject symbol = readSymbol(rope);
+            if (symbol != null) {
+                return symbol;
             }
 
             final DynamicObject symbolClass = context.getCoreLibrary().getSymbolClass();
@@ -122,7 +109,17 @@ public class SymbolTable {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    private Rope readRope(String string) {
+        final WeakReference<Rope> ropeReference = ropesTableByString.get(string);
+        return ropeReference != null ? ropeReference.get() : null;
+    }
+
+    private DynamicObject readSymbol(Rope rope) {
+        final WeakReference<DynamicObject> ropeReference = symbolsTable.get(rope);
+        return ropeReference != null ? ropeReference.get() : null;
+    }
+
+    @TruffleBoundary
     public Collection<DynamicObject> allSymbols() {
         final Collection<WeakReference<DynamicObject>> symbolReferences;
 

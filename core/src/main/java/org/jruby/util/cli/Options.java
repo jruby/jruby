@@ -51,7 +51,7 @@ import static org.jruby.RubyInstanceConfig.CompileMode;
  * of the built-in structure.
  */
 public class Options {
-    private static final List<Option> _loadedOptions = new ArrayList<Option>();
+    private static final List<Option> _loadedOptions = new ArrayList<>(240);
     private static final boolean INVOKEDYNAMIC_DEFAULT = calculateInvokedynamicDefault();
 
     // This section holds all Options for JRuby. They will be listed in the
@@ -248,6 +248,9 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_ROPE_LAZY_SUBSTRINGS = bool(TRUFFLE, "truffle.rope.lazy_substrings", true, "Indicates whether a substring operation on a rope should be performed lazily.");
     public static final Option<Boolean> TRUFFLE_ROPE_PRINT_INTERN_STATS = bool(TRUFFLE, "truffle.rope.print_intern_stats", false, "Print interned rope stats at application exit.");
 
+    public static final Option<Integer> TRUFFLE_GLOBAL_VARIABLE_MAX_INVALIDATIONS = integer(TRUFFLE, "truffle.global_variable.max_invalidations", 10,
+            "Maximum number of times a global variable can be changed to be considered constant.");
+
     public static final Option<Integer> TRUFFLE_DEFAULT_CACHE = integer(TRUFFLE, "truffle.default_cache", 8, "Default size for caches.");
 
     public static final Option<Integer> TRUFFLE_METHOD_LOOKUP_CACHE = integer(TRUFFLE, "truffle.method_lookup.cache", TRUFFLE_DEFAULT_CACHE.load(), "Method lookup cache size.");
@@ -361,10 +364,7 @@ public class Options {
         return false;
     }
 
-    private static enum SearchMode {
-        PREFIX,
-        CONTAINS
-    }
+    private enum SearchMode { PREFIX,  CONTAINS }
 
     public static void listPrefix(String prefix) {
         list(SearchMode.PREFIX, prefix);
@@ -394,13 +394,15 @@ public class Options {
     }
 
     public static Set<String> getPropertyNames() {
-        final Set<String> propertyNames = new HashSet<String>();
+        final Set<String> propertyNames = new HashSet<>(PROPERTIES.size() + 1, 1);
+        addPropertyNames(propertyNames);
+        return Collections.unmodifiableSet(propertyNames);
+    }
 
+    static void addPropertyNames(final Set<String> propertyNames) {
         for (Option option : PROPERTIES) {
             propertyNames.add(option.propertyName());
         }
-
-        return Collections.unmodifiableSet(propertyNames);
     }
 
     @Deprecated

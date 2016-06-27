@@ -14,7 +14,7 @@ use_only_https_git_paths!
 has_to_succeed setup
 
 set_result run([%w[--require-pattern test/**/*_test.rb],
-            (option(:exclude) ? %w[-r excluded-tests] : []),
-            %w[-- -I test -e nil]].flatten(1),
-           raise: false)
+                (option(:exclude) ? %w[-r excluded-tests] : []),
+                %w[-- -I test -e nil]].flatten(1),
+               raise: false)
 

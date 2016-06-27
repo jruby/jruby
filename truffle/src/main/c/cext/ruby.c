@@ -55,6 +55,10 @@ VALUE get_rb_eRuntimeError() {
 
 // Conversions
 
+VALUE CHR2FIX(char ch) {
+  return INT2FIX((unsigned char) ch);
+}
+
 int NUM2INT(VALUE value) {
   return truffle_invoke_i(RUBY_CEXT, "NUM2INT", value);
 }
@@ -117,6 +121,10 @@ int FIXNUM_P(VALUE value) {
   return truffle_invoke_b(RUBY_CEXT, "FIXNUM_P", value);
 }
 
+int RTEST(VALUE value) {
+  return truffle_invoke_b(RUBY_CEXT, "RTEST", value);
+}
+
 // Float
 
 VALUE rb_float_new(double value) {
@@ -126,16 +134,19 @@ VALUE rb_float_new(double value) {
 // String
 
 char *RSTRING_PTR(VALUE string) {
-  // Needs to return a fake char* which actually calls back into Ruby when read or written
-  return (char*) truffle_invoke(RUBY_CEXT, "RSTRING_PTR", string);
+  return truffle_invoke(RUBY_CEXT, "CExtString", string);
 }
 
 int RSTRING_LEN(VALUE string) {
-  return truffle_get_size(string);
+  return truffle_invoke_i(string, "bytesize");
 }
 
 VALUE rb_str_new_cstr(const char *string) {
-  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_cstr", truffle_read_string(string));
+  if (truffle_is_truffle_object((VALUE) string)) {
+    return truffle_invoke(RUBY_CEXT, "to_ruby_string", string);
+  } else {
+    return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_cstr", truffle_read_string(string));
+  }
 }
 
 VALUE rb_intern_str(VALUE string) {
@@ -144,6 +155,10 @@ VALUE rb_intern_str(VALUE string) {
 
 void rb_str_cat(VALUE string, const char *to_concat, long length) {
   truffle_invoke(RUBY_CEXT, "rb_str_cat", string, rb_str_new_cstr(to_concat), length);
+}
+
+VALUE rb_str_buf_new(long capacity) {
+  return rb_str_new_cstr("");
 }
 
 // Symbol
@@ -245,6 +260,12 @@ int rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
   return truffle_invoke_i(RUBY_CEXT, "rb_scan_args", argc, argv, format /*, where to get args? */);
 }
 
+// Calls
+
+VALUE rb_yield(VALUE value) {
+  return truffle_invoke(RUBY_CEXT, "rb_yield", value);
+}
+
 // Instance variables
 
 VALUE rb_iv_get(VALUE object, const char *name) {
@@ -294,6 +315,7 @@ void rb_define_global_const(const char *name, VALUE value) {
 
 void rb_raise(VALUE exception, const char *format, ...) {
   truffle_invoke(RUBY_CEXT, "rb_raise", format /*, where to get args? */);
+  exit(1); // To make the compiler happy
 }
 
 // Defining classes, modules and methods

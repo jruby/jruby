@@ -48,6 +48,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class EncodingUtils {
     public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? EConvFlags.UNIVERSAL_NEWLINE_DECORATOR : 0;
@@ -384,20 +385,14 @@ public class EncodingUtils {
 
     // mri: parse_mode_enc
     public static void parseModeEncoding(ThreadContext context, IOEncodable ioEncodable, String option, int[] fmode_p) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
-        Encoding idx2;
         Encoding intEnc, extEnc;
         if (fmode_p == null) fmode_p = new int[]{0};
-        String estr;
 
-        String[] encs = option.split(":", 2);
+        List<String> encs = StringSupport.split(option, ':', 2);
 
-        if (encs.length == 2) {
-            estr = encs[0];
-        } else {
-            estr = option;
-        }
+        String estr = encs.size() == 2 ? encs.get(0) : option;
 
         if (estr.toLowerCase().startsWith("bom|")) {
             estr = estr.substring(4);
@@ -410,7 +405,7 @@ public class EncodingUtils {
             }
         }
 
-        Encoding idx = service.findEncodingNoError(new ByteList(estr.getBytes()));
+        Encoding idx = service.findEncodingNoError(new ByteList(estr.getBytes(), false));
 
         if (idx == null) {
             runtime.getWarnings().warn("Unsupported encoding " + estr + " ignored");
@@ -420,16 +415,17 @@ public class EncodingUtils {
         }
 
         intEnc = null;
-        if (encs.length == 2) {
-            if (encs[1].equals("-")) {
+        if (encs.size() == 2) {
+            String istr = encs.get(1);
+            if (istr.equals("-")) {
                 intEnc = null;
             } else {
-                idx2 = service.getEncodingFromString(encs[1]);
-                if (idx2 == null) {
-                    context.runtime.getWarnings().warn("ignoring internal encoding " + idx2 + ": it is identical to external encoding " + idx);
+                idx = service.getEncodingFromString(istr);
+                if (idx == null) {
+                    runtime.getWarnings().warn("ignoring internal encoding " + idx + ": it is identical to external encoding " + idx);
                     intEnc = null;
                 } else {
-                    intEnc = idx2;
+                    intEnc = idx;
                 }
             }
         }

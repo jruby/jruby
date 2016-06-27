@@ -19,6 +19,7 @@ import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.convert.ToDoubleWithCoercionNodeGen;
 import org.jruby.truffle.core.format.convert.ToIntegerNodeGen;
 import org.jruby.truffle.core.format.convert.ToStringNodeGen;
+import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.format.FormatIntegerBinaryNodeGen;
 import org.jruby.truffle.core.format.format.FormatFloatHumanReadableNodeGen;
 import org.jruby.truffle.core.format.format.FormatFloatNodeGen;
@@ -77,6 +78,14 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
     public void exitFormat(PrintfParser.FormatContext ctx) {
         final int width;
 
+        if(ctx.invalidType != null){
+            throw new InvalidFormatException("malformed format string - %" + ctx.invalidType.getText());
+        } else if (ctx.type == null && ctx.width != null){
+            throw new InvalidFormatException("malformed format string - %*[0-9]");
+        } else if (ctx.type == null) {
+            throw new InvalidFormatException("invalid format character - %");
+        }
+
         if (ctx.width != null) {
             width = Integer.parseInt(ctx.width.getText());
         } else {
@@ -101,6 +110,9 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
             } else if (flag.ZERO() != null) {
                 hasZeroFlag = true;
             } else if (flag.STAR() != null) {
+                if (hasStarFlag || ctx.width != null) {
+                    throw new InvalidFormatException("width given twice");
+                }
                 hasStarFlag = true;
             } else if (flag.PLUS() != null) {
                 hasPlusFlag = true;

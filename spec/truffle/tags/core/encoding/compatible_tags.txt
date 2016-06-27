@@ -1,6 +1,0 @@
-fails:Encoding.compatible? Object, Object returns nil for Object, String
-fails:Encoding.compatible? Object, Object returns nil for Object, Regexp
-fails:Encoding.compatible? Object, Object returns nil for Object, Symbol
-fails:Encoding.compatible? Object, Object returns nil for String, Object
-fails:Encoding.compatible? Object, Object returns nil for Regexp, Object
-fails:Encoding.compatible? Object, Object returns nil for Symbol, Object

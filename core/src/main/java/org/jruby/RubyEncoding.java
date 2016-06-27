@@ -166,38 +166,6 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return null;
     }
 
-    public static Encoding areCompatible(CodeRangeable obj1, CodeRangeable obj2) {
-        Encoding enc1 = obj1.getByteList().getEncoding();
-        Encoding enc2 = obj2.getByteList().getEncoding();
-
-        if (enc1 == null || enc2 == null) return null;
-        if (enc1 == enc2) return enc1;
-
-        if (obj2.getByteList().getRealSize() == 0) return enc1;
-        if (obj1.getByteList().getRealSize() == 0) {
-            return enc1.isAsciiCompatible() && StringSupport.isAsciiOnly(obj2) ? enc1 : enc2;
-        }
-
-        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
-
-        int cr1 = obj1.scanForCodeRange();
-        int cr2 = obj2.scanForCodeRange();
-
-        return areCompatible(enc1, cr1, enc2, cr2);
-    }
-
-    public static Encoding areCompatible(Encoding enc1, Encoding enc2) {
-        if (enc1 == null || enc2 == null) return null;
-        if (enc1 == enc2) return enc1;
-
-        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
-
-        if (enc2 instanceof USASCIIEncoding) return enc1;
-        if (enc1 instanceof USASCIIEncoding) return enc2;
-
-        return null;
-    }
-
     // last block in rb_enc_compatible
     public static Encoding areCompatible(Encoding enc1, int cr1, Encoding enc2, int cr2) {
         if (cr1 != cr2) {

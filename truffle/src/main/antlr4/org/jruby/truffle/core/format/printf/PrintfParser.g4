@@ -19,7 +19,7 @@ directive : CURLY_KEY                  # string
             flag*
             width=NUMBER?
             (DOT precision=(ZERO|NUMBER))?
-            TYPE                       # format ;
+            (type=TYPE | invalidType=NOT_TYPE) # format ;
 
 flag : SPACE
      | ZERO
