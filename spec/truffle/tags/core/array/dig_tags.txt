@@ -1,1 +1,0 @@
-fails:Array#dig raises a TypeError if any intermediate step does not respond to #dig

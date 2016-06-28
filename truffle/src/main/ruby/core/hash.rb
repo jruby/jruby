@@ -154,6 +154,7 @@ class Hash
     if result.nil? || more.empty?
       result
     else
+      raise TypeError, "#{result.class} does not have #dig method" unless result.respond_to?(:dig)
       result.dig(*more)
     end
   end

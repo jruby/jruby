@@ -1,1 +1,0 @@
-fails:Hash#dig raises TypeError if an intermediate element does not respond to #dig
