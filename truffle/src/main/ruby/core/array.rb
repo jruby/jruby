@@ -212,8 +212,8 @@ class Array
     elsif num == size
       yield self.dup
     elsif num >= 0 && num < size
-      stack = Rubinius::Tuple.pattern num + 1, 0
-      chosen = Rubinius::Tuple.new num
+      stack = Array.new(num + 1, 0)
+      chosen = Array.new(num)
       lev = 0
       done = false
       stack[0] = -1
@@ -223,7 +223,7 @@ class Array
           lev += 1
           chosen[lev] = self.at(stack[lev+1] = stack[lev] + 1)
         end
-        yield chosen.to_a
+        yield chosen.dup
         lev += 1
         begin
           done = lev == 0
