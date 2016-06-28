@@ -208,6 +208,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return new RubyArrayOneObject(runtime, obj);
     }
 
+    public static RubyArray newArrayLight(Ruby runtime, IRubyObject car, IRubyObject cdr) {
+        return new RubyArrayTwoObject(runtime, car, cdr);
+    }
+
     public static RubyArray newArrayLight(Ruby runtime, IRubyObject... objs) {
         return new RubyArray(runtime, objs, false);
     }
