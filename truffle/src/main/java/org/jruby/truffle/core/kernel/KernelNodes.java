@@ -52,6 +52,7 @@ import org.jruby.truffle.core.ObjectNodesFactory;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
+import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.cast.DurationToMillisecondsNodeGen;
@@ -213,7 +214,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "===", required = 1)
     public abstract static class SameOrEqualNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
         @Child private CallDispatchHeadNode equalNode;
 
         private final ConditionProfile sameProfile = ConditionProfile.createBinaryProfile();
@@ -221,21 +221,13 @@ public abstract class KernelNodes {
         public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
 
         @Specialization
-        public boolean sameOrEqual(VirtualFrame frame, Object a, Object b) {
-            if (sameProfile.profile(areSame(frame, a, b))) {
+        public boolean sameOrEqual(VirtualFrame frame, Object a, Object b,
+                @Cached("create()") ReferenceEqualNode referenceEqualNode) {
+            if (sameProfile.profile(referenceEqualNode.executeReferenceEqual(a, b))) {
                 return true;
             } else {
                 return areEqual(frame, a, b);
             }
-        }
-
-        private boolean areSame(VirtualFrame frame, Object left, Object right) {
-            if (referenceEqualNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null));
-            }
-
-            return referenceEqualNode.executeReferenceEqual(frame, left, right);
         }
 
         private boolean areEqual(VirtualFrame frame, Object left, Object right) {
