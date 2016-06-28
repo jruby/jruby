@@ -32,7 +32,7 @@ class MavenProject(mx.Project):
     def source_dirs(self):
         return []
 
-    def output_dir(self):
+    def output_dir(self, relative=False):
         dir = os.path.join(_suite.dir, self.prefix)
         return dir.rstrip('/')
 
@@ -101,7 +101,7 @@ class MavenBuildTask(mx.BuildTask):
         maven_version_arg = '-Dtruffle.version=' + truffle_commit
         maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
 
-        mx.run_mx(['maven-install', '--repo', mavenDir], suite=truffle)
+        mx.run_mx(['maven-install', '--repo', mavenDir, '--only', 'TRUFFLE_API,TRUFFLE_DEBUG'], suite=truffle)
 
         open(os.path.join(rubyDir, 'VERSION'), 'w').write('graal-vm\n')
 

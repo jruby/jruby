@@ -7,7 +7,7 @@
 # GNU Lesser General Public License version 2.1
 
 suite = {
-    "mxversion": "5.6.6",
+    "mxversion": "5.31.4",
     "name": "jrubytruffle",
     "defaultLicense": "EPL",
 
