@@ -208,3 +208,62 @@ config :openweather,
 
 config :psd,
        replacements.fetch(:nokogiri)
+
+ci :actionpack do
+  declare_options exclude: ['--[no-]exclude',
+                            'Exclude known failing tests',
+                            STORE_NEW_VALUE,
+                            true]
+
+  subdir 'actionpack'
+  repository_name 'rails'
+
+  git_clone 'https://github.com/rails/rails.git' unless File.exists? repository_dir
+  git_checkout git_tag('4.2.6')
+
+  use_only_https_git_paths!
+
+  has_to_succeed setup
+
+  set_result run([%w[--require-pattern test/**/*_test.rb],
+                  (option(:exclude) ? %w[-r excluded-tests] : []),
+                  %w[-- -I test -e nil]].flatten(1),
+                 raise: false)
+end
+
+ci :activemodel do
+  subdir 'activemodel'
+  repository_name 'rails'
+
+  git_clone 'https://github.com/rails/rails.git' unless File.exists? repository_dir
+  git_checkout git_tag('4.2.6')
+
+  use_only_https_git_paths!
+
+  has_to_succeed setup
+
+  set_result run(%w[--require-pattern test/**/*_test.rb -- -I test -e nil], raise: false)
+end
+
+ci :activesupport do
+  subdir 'activesupport'
+  repository_name 'rails'
+
+  git_clone 'https://github.com/rails/rails.git' unless File.exists? repository_dir
+  git_checkout git_tag('4.2.6')
+
+  use_only_https_git_paths!
+
+  has_to_succeed setup
+
+  set_result run(%w[--require-pattern test/**/*_test.rb -- -I test -e nil], raise: false)
+end
+
+ci :algebrick do
+  git_clone 'https://github.com/pitr-ch/algebrick.git' unless File.exists? repository_dir
+  git_checkout git_tag '0.7.3'
+
+  has_to_succeed setup
+
+  set_result run(%w[test/algebrick_test.rb], raise: false)
+end

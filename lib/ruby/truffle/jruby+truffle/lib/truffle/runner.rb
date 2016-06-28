@@ -343,6 +343,7 @@ module Truffle
       HELP = { global: global_help, setup: setup_help, run: run_help, clean: clean_help, ci: ci_help }
     end
 
+    attr_reader :options, :config
 
     def initialize(argv, options = {})
       @options        = deep_merge construct_default_options, options
@@ -435,7 +436,7 @@ module Truffle
 
     def load_gem_configuration
       if @gem_name
-        if (c = @config.for(@gem_name))
+        if (c = @config.config_for(@gem_name))
           apply_hash_to_configuration c
           log "loading configuration for #{@gem_name}"
           log "configuration is:\n#{c.pretty_inspect}" if verbose?
@@ -690,13 +691,13 @@ module Truffle
           rest          = option_parser.order line.split
 
           gem_name = rest.first
-          CIEnvironment.new(@options[:global][:dir], gem_name, @options, rest[1..-1]).success?
+          CIEnvironment.new(@options[:global][:dir], gem_name, self, rest[1..-1]).success?
         end
 
         results.all?
       else
         gem_name = rest.first
-        ci       = CIEnvironment.new @options[:global][:dir], gem_name, @options, rest[1..-1], definition: options[:ci][:definition]
+        ci       = CIEnvironment.new @options[:global][:dir], gem_name, self, rest[1..-1], definition: options[:ci][:definition]
 
         case ci.result
         when nil # error, setup failed
@@ -716,8 +717,11 @@ module Truffle
     end
 
     class Config
+      include OptionBlocks
+
       def initialize
         @configurations = {}
+        @cis            = {}
       end
 
       def load(path)
@@ -734,6 +738,10 @@ module Truffle
         @configurations[gem_name] = configuration
       end
 
+      def ci(gem_name, &ci_definition)
+        @cis[gem_name] = ci_definition
+      end
+
       def deep_merge(a, b, *rest)
         Utils.deep_merge a, b, *rest
       end
@@ -742,8 +750,12 @@ module Truffle
         Utils.deep_merge! a, b, *rest
       end
 
-      def for(gem_name)
+      def config_for(gem_name)
         @configurations[gem_name]
+      end
+
+      def ci_for(gem_name)
+        @cis[gem_name]
       end
     end
 
@@ -772,11 +784,11 @@ module Truffle
       define_dsl_attr(:working_dir) { |v| Pathname(v) }
       attr_reader :gem_name, :result
 
-      def initialize(working_dir, gem_name, runner_options, rest, definition: nil)
-        @runner_options = runner_options
-        @options        = {}
-        @gem_name       = gem_name
-        @rest           = rest
+      def initialize(working_dir, gem_name, runner, rest, definition: nil)
+        @runner   = runner
+        @options  = {}
+        @gem_name = gem_name
+        @rest     = rest
 
         @working_dir     = Pathname(working_dir)
         @repository_name = gem_name
@@ -791,18 +803,17 @@ module Truffle
 
         (definition && do_definition(definition)) ||
             do_definition(gem_name) ||
-            do_definition('default') ||
             raise("no ci definition with name: #{gem_name}")
       end
 
-      def do_definition(name, raise: true)
-        ci_file = Dir.glob(ROOT.join('gem_ci', "{#{name}}.rb")).first
-        return false if ci_file.nil?
+      def do_definition(name)
+        definition = @runner.config.ci_for name.to_sym
+        return false unless definition
 
-        log "Using CI definition: #{ci_file}"
+        log "Using CI definition: #{name}"
         catch :cancel_ci! do
           begin
-            instance_eval File.read(ci_file), ci_file, 1
+            instance_eval &definition
           rescue => e
             log format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
           end
@@ -871,7 +882,7 @@ module Truffle
       def setup(*options)
         Dir.chdir(testing_dir) do
           Runner.new(['setup', *options].compact,
-                     dig_deep(@runner_options, global: :verbose, ci: [:offline, :offline_gem_path]).
+                     dig_deep(@runner.options, global: :verbose, ci: [:offline, :offline_gem_path]).
                          tap { |h| h.update setup: h.delete(:ci) }).run
         end
       end
@@ -888,7 +899,7 @@ module Truffle
         raise ArgumentError unless options.is_a? Array
         Dir.chdir(testing_dir) do
           Runner.new(['run', *options].compact,
-                     dig_deep(@runner_options, global: :verbose)).run
+                     dig_deep(@runner.options, global: :verbose)).run
         end
       end
 
