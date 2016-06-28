@@ -1189,7 +1189,7 @@ class Array
 
   private :recursively_flatten
 
-  # Non-recursive sort using a temporary tuple for scratch storage.
+  # Non-recursive sort using a temporary array for scratch storage.
   # This is a hybrid mergesort; it's hybrid because for short runs under
   # 8 elements long we use insertion sort and then merge those sorted
   # runs back together.
@@ -1534,13 +1534,7 @@ class Array
     end
     return if im.size == size
 
-    m = Rubinius::Mirror::Array.reflect im.to_array
-    @tuple = m.tuple
-    raise 'start not zero' unless m.start.zero?
-    @total = m.total
-
-    copy_from(m.tuple, 0, m.total, 0)
-    delete_range(m.total, self.size - m.total)
+    Truffle::Array.steal_storage(self, im.to_array)
     self
   end
 
