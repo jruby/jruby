@@ -397,27 +397,19 @@ class Array
       right = size
     end
 
-    total = right
-
-    if right > size
-      reallocate total
-      @total = right
+    if right.is_a?(Bignum)
+      raise RangeError, "bignum too big to convert into `long'"
     end
 
-    # Must be after the potential call to reallocate, since
-    # reallocate might change @tuple
-    tuple = self
-
     i = left
-
     if block_given?
-      while i < total
-        tuple.put i, yield(i)
+      while i < right
+        self[i] = yield(i)
         i += 1
       end
     else
-      while i < total
-        tuple.put i, obj
+      while i < right
+        self[i] = obj
         i += 1
       end
     end
@@ -1153,24 +1145,6 @@ class Array
 
     out
   end
-
-  # Reallocates the internal Tuple to accommodate at least given size
-  def reallocate(at_least)
-    return if at_least < size
-
-    new_total = size * 2
-
-    if new_total < at_least
-      new_total = at_least
-    end
-
-    new_tuple = Rubinius::Tuple.new new_total
-    new_tuple.copy_from self, 0, size, 0
-
-    @tuple = new_tuple
-  end
-
-  private :reallocate
 
   # Helper to recurse through flattening since the method
   # is not allowed to recurse itself. Detects recursive structures.
