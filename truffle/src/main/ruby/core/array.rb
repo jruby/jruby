@@ -1478,36 +1478,16 @@ class Array
     out
   end
 
-  # Rubinius expects to modify the backing store via updates to `@tuple` and we don't support that.  As such, we must
-  # provide our own modifying implementation here.
   def delete_range(index, del_length)
-    # optimize for fast removal..
     reg_start = index + del_length
     reg_length = size - reg_start
     if reg_start <= size
-      # If we're removing from the front, also reset @start to better
-      # use the Tuple
-      if index == 0
-        # Use a shift start optimization if we're only removing one
-        # element and the shift started isn't already huge.
-        if del_length == 1
-          # @start += 1 seems to work with this disabled?! FIXME
-        else
-          copy_from self, reg_start, reg_length, 0
-        end
-      else
-        copy_from self, reg_start, reg_length, index
-      end
+      # copy tail
+      copy_from self, reg_start, reg_length, index
 
-      # TODO we leave the old references in the Tuple, we should
-      # probably clear them out though.
-      del_length.times do
-        self.pop
-      end
-
+      self.pop(del_length)
     end
   end
-
   private :delete_range
 
   # Rubinius expects to modify the backing store via updates to `@tuple` and we don't support that.  As such, we must
