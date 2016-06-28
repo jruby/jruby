@@ -802,15 +802,11 @@ class Array
   def reverse_each
     return to_enum(:reverse_each) { size } unless block_given?
 
-    stop = -1
-    i = stop + size
-    tuple = self
-
-    while i > stop
-      yield tuple.at(i)
+    i = size - 1
+    while i >= 0
+      yield at(i)
       i -= 1
     end
-
     self
   end
 
@@ -828,12 +824,9 @@ class Array
         i -= 1
       end
     else
-      stop = -1
-      i = stop + size
-      tuple = self
-
-      while i > stop
-        return i if tuple.at(i) == obj
+      i = size - 1
+      while i >= 0
+        return i if at(i) == obj
         i -= 1
       end
     end
