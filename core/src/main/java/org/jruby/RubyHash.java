@@ -641,18 +641,31 @@ public class RubyHash extends RubyObject implements Map {
          return newTable;
     }
 
-    public static abstract class Visitor {
+    public static abstract class VisitorWithState<T> {
+        public abstract void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, T state);
+    }
+
+    public static abstract class Visitor extends VisitorWithState {
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Object state) {
+            visit(key, value);
+        }
         public abstract void visit(IRubyObject key, IRubyObject value);
     }
 
     public void visitAll(Visitor visitor) {
         // use -1 to disable concurrency checks
-        visitLimited(visitor, -1);
+        visitLimited(getRuntime().getCurrentContext(), visitor, -1, null);
     }
 
-    private void visitLimited(Visitor visitor, long size) {
+    public <T> void visitAll(ThreadContext context, VisitorWithState visitor, T state) {
+        // use -1 to disable concurrency checks
+        visitLimited(context, visitor, -1, state);
+    }
+
+    private <T> void visitLimited(ThreadContext context, VisitorWithState visitor, long size, T state) {
         int startGeneration = generation;
         long count = size;
+        int index = 0;
         // visit not more than size entries
         for (RubyHashEntry entry = head.nextAdded; entry != head && count != 0; entry = entry.nextAdded) {
             if (startGeneration != generation) {
@@ -661,7 +674,7 @@ public class RubyHash extends RubyObject implements Map {
                 if (entry == head) break;
             }
             if (entry != null && entry.isLive()) {
-                visitor.visit(entry.key, entry.value);
+                visitor.visit(context, this, entry.key, entry.value, index++, state);
                 count--;
             }
         }
