@@ -73,4 +73,6 @@ public @interface CoreMethod {
 
     UnsafeGroup[] unsafe() default {};
 
+    String enumeratorSize() default "";
+
 }
