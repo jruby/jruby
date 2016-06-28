@@ -965,10 +965,11 @@ class Array
         end
       end
 
-      result = Array.new self
-      tuple = Rubinius::Mirror::Array.reflect(result).tuple
+      result = Array.new(self)
 
-      count.times { |i| tuple.swap i, rng.rand(size) }
+      count.times { |i|
+        result.swap i, rng.rand(size)
+      }
 
       return count == size ? result : result[0, count]
     end
