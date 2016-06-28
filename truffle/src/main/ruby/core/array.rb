@@ -32,10 +32,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Rubinius uses the instance variable @total to store the size. We replace this
-# in the translator with a call to size. We also replace the instance variable
-# @tuple to be self, and @start to be 0.
-
 class Array
   include Enumerable
 
@@ -1385,10 +1381,6 @@ class Array
     self.class.new(0 , nil)
   end
 
-  # We must override the definition of `reverse!` because our Array isn't backed by a Tuple.  Rubinius expects
-  # modifications to the Tuple to update the backing store and to do that, we treat the Array itself as its own Tuple.
-  # However, Rubinius::Tuple#reverse! has a different, conflicting signature from Array#reverse!.  This override avoids
-  # all of those complications.
   def reverse!
     Truffle.check_frozen
     return self unless size > 1
@@ -1404,9 +1396,6 @@ class Array
     return self
   end
 
-  # Rubinius expects to be able to resize the array and adjust pointers by modifying `@total` and `@start`, respectively.
-  # We might be able to handle such changes by special handling in the body translator, however simply resizing could
-  # delete elements from either side and we're not able to tell which without additional context.
   def slice!(start, length=undefined)
     Truffle.check_frozen
 
@@ -1490,8 +1479,6 @@ class Array
   end
   private :delete_range
 
-  # Rubinius expects to modify the backing store via updates to `@tuple` and we don't support that.  As such, we must
-  # provide our own modifying implementation here.
   def uniq!(&block)
     Truffle.check_frozen
 
@@ -1549,39 +1536,4 @@ class Array
     Truffle::Array.steal_storage(self, sort(&block))
   end
   public :sort!
-end
-
-module Rubinius
-  class Mirror
-    class Array
-
-      def self.reflect(object)
-        if Rubinius::Type.object_kind_of? object, ::Array
-          Array.new(object)
-        elsif ary = Rubinius::Type.try_convert(object, ::Array, :to_ary)
-          Array.new(ary)
-        else
-          message = "expected Array, given #{Rubinius::Type.object_class(object)}"
-          raise TypeError, message
-        end
-      end
-
-      def initialize(array)
-        @array = array
-      end
-
-      def total
-        @array.size
-      end
-
-      def tuple
-        @array
-      end
-
-      def start
-        0
-      end
-
-    end
-  end
 end
