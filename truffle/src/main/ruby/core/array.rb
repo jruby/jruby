@@ -1153,14 +1153,13 @@ class Array
 
     max_levels -= 1
     recursion = Thread.detect_recursion(array) do
-      m = Rubinius::Mirror::Array.reflect array
+      array = Rubinius::Type.coerce_to(array, Array, :to_ary)
 
-      i = m.start
-      total = i + m.total
-      tuple = m.tuple
+      i = 0
+      size = array.size
 
-      while i < total
-        o = tuple.at i
+      while i < size
+        o = array.at i
 
         if Rubinius::Type.object_kind_of? o, Array
           modified = true
