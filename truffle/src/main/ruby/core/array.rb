@@ -123,20 +123,12 @@ class Array
     return false unless size == other.size
 
     Thread.detect_recursion self, other do
-      m = Rubinius::Mirror::Array.reflect other
-
-      md = self
-      od = m.tuple
-
       i = 0
-      j = m.start
-
-      total = i + size
+      total = size
 
       while i < total
-        return false unless md[i] == od[j]
+        return false unless self[i] == other[i]
         i += 1
-        j += 1
       end
     end
 
