@@ -148,28 +148,24 @@ class Array
   def bsearch(&block)
     return to_enum :bsearch unless block_given?
 
-    idx = self.bsearch_index(&block)
-
-    return nil if idx.nil?
-
-    self.at(idx)
+    if idx = bsearch_index(&block)
+      self[idx]
+    else
+      nil
+    end
   end
 
   def bsearch_index
     return to_enum :bsearch_index unless block_given?
 
-    m = Rubinius::Mirror::Array.reflect self
-
-    tuple = m.tuple
-
-    min = start = m.start
-    max = total = start + m.total
+    min = 0
+    max = total = size
 
     last_true = nil
-    i = start + m.total / 2
+    i = size / 2
 
-    while max >= min and i >= start and i < total
-      x = yield tuple.at(i)
+    while max >= min and i >= 0 and i < total
+      x = yield at(i)
 
       return i if x == 0
 
