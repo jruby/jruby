@@ -169,6 +169,12 @@ class Hash
     raise KeyError, "key #{key} not found"
   end
 
+  def fetch_values(*keys, &block)
+    keys.map do |key|
+      self.fetch(key, &block)
+    end
+  end
+
   def flatten(level=1)
     to_a.flatten(level)
   end
