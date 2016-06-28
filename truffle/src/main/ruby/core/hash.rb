@@ -431,6 +431,13 @@ class Hash
     self
   end
 
+  def to_proc
+    Proc.new do |key=undefined|
+      raise ArgumentError, "wrong number of arguments (given 0, expected 1)" if undefined.equal?(key)
+      self[key]
+    end
+  end
+
   # Implementation of a fundamental Rubinius method that allows their Hash
   # implementation to work. We probably want to remove uses of this in the long
   # term, as it creates objects which already exist for them and we have to
