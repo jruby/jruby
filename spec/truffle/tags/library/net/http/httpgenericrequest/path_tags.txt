@@ -1,1 +1,0 @@
-fails:Net::HTTPGenericRequest#path returns self's request path

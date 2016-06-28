@@ -165,79 +165,11 @@ module Process
   end
 
   def self.fork
-    pid = Rubinius::Mirror::Process.fork
-
-    if block_given? and pid.nil?
-      begin
-        yield nil
-        status = 0
-      rescue SystemExit => e
-        status = e.status
-      rescue Exception => e
-        e.render "An exception occurred in a forked block"
-        status = 1
-      end
-
-      until Rubinius::AtExit.empty?
-        begin
-          Rubinius::AtExit.shift.call
-        rescue SystemExit => e
-          status = e.status
-        end
-      end
-
-      ObjectSpace.run_finalizers
-
-      # Do not use Kernel.exit. This raises a SystemExit exception, which
-      # will run ensure blocks. This is not what MRI does and causes bugs
-      # in programs. See issue http://github.com/rubinius/rubinius/issues#issue/289 for
-      # an example
-
-      Kernel.exit! status
-    end
-    pid
+    raise 'unsupported'
   end
 
   def self.times
     Struct::Tms.new(*cpu_times)
-  end
-
-  def self.kill(signal, *pids)
-    raise ArgumentError, "PID argument required" if pids.length == 0
-
-    use_process_group = false
-    signal = signal.to_s if signal.kind_of?(Symbol)
-
-    if signal.kind_of?(String)
-      if signal[0] == ?-
-        signal = signal[1..-1]
-        use_process_group = true
-      end
-
-      if signal[0..2] == "SIG"
-        signal = signal[3..-1]
-      end
-
-      signal = Signal::Names[signal]
-    end
-
-    raise ArgumentError unless signal.kind_of? Fixnum
-
-    if signal < 0
-      signal = -signal
-      use_process_group = true
-    end
-
-    pids.each do |pid|
-      pid = Rubinius::Type.coerce_to_pid pid
-
-      pid = -pid if use_process_group
-      result = Truffle::POSIX.kill(pid, signal)
-
-      Errno.handle if result == -1
-    end
-
-    return pids.length
   end
 
   def self.abort(msg=nil)
@@ -278,12 +210,6 @@ module Process
   end
   def self.getpgrp
     ret = Truffle::POSIX.getpgrp
-    Errno.handle if ret == -1
-    ret
-  end
-
-  def self.pid
-    ret = Truffle::POSIX.getpid
     Errno.handle if ret == -1
     ret
   end

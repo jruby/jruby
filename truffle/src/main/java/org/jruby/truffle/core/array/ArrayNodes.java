@@ -87,8 +87,10 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
+
 import java.util.Arrays;
 import java.util.Comparator;
+
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
@@ -243,7 +245,7 @@ public abstract class ArrayNodes {
                 return snippetNode.execute(frame, "join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     toIntNode = insert(ToIntNode.create());
                 }
                 final int count = toIntNode.doInt(frame, object);
@@ -253,7 +255,7 @@ public abstract class ArrayNodes {
 
         public boolean respondToToStr(VirtualFrame frame, Object object) {
             if (respondToToStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
             return respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false);
@@ -278,7 +280,7 @@ public abstract class ArrayNodes {
         @Specialization
         public Object index(DynamicObject array, int index, NotProvided length) {
             if (readNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
             }
             return readNode.executeRead(array, index);
@@ -291,7 +293,7 @@ public abstract class ArrayNodes {
             }
 
             if (readSliceNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
@@ -318,7 +320,7 @@ public abstract class ArrayNodes {
                 final int length = exclusiveEnd - normalizedIndex;
 
                 if (readNormalizedSliceNode == null) {
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
 
@@ -340,7 +342,7 @@ public abstract class ArrayNodes {
 
         public Object fallback(VirtualFrame frame, DynamicObject array, DynamicObject args) {
             if (fallbackNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -358,6 +360,9 @@ public abstract class ArrayNodes {
         @Child private ArrayWriteNormalizedNode writeNode;
         @Child protected ArrayReadSliceNormalizedNode readSliceNode;
         @Child private ToIntNode toIntNode;
+
+        private final BranchProfile negativeIndexProfile = BranchProfile.create();
+        private final BranchProfile negativeLengthProfile = BranchProfile.create();
 
         public abstract Object executeSet(VirtualFrame frame, DynamicObject array, Object index, Object length, Object value);
 
@@ -506,14 +511,14 @@ public abstract class ArrayNodes {
 
         private void checkIndex(DynamicObject array, int index, int normalizedIndex) {
             if (normalizedIndex < 0) {
-                CompilerDirectives.transferToInterpreter();
+                negativeIndexProfile.enter();
                 throw new RaiseException(coreExceptions().indexTooSmallError("array", index, getSize(array), this));
             }
         }
 
         public void checkLengthPositive(int length) {
             if (length < 0) {
-                CompilerDirectives.transferToInterpreter();
+                negativeLengthProfile.enter();
                 throw new RaiseException(coreExceptions().negativeLengthError(length, this));
             }
         }
@@ -524,7 +529,7 @@ public abstract class ArrayNodes {
 
         private Object read(DynamicObject array, int index) {
             if (readNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 readNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
             }
             return readNode.executeRead(array, index);
@@ -532,7 +537,7 @@ public abstract class ArrayNodes {
 
         private Object write(DynamicObject array, int index, Object value) {
             if (writeNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
             return writeNode.executeWrite(array, index, value);
@@ -540,7 +545,7 @@ public abstract class ArrayNodes {
 
         private DynamicObject readSlice(DynamicObject array, int start, int length) {
             if (readSliceNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
             return readSliceNode.executeReadSlice(array, start, length);
@@ -548,7 +553,7 @@ public abstract class ArrayNodes {
 
         private int toInt(VirtualFrame frame, Object indexObject) {
             if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toIntNode = insert(ToIntNode.create());
             }
             return toIntNode.doInt(frame, indexObject);
@@ -572,7 +577,7 @@ public abstract class ArrayNodes {
         @Specialization
         public Object at(DynamicObject array, int index) {
             if (readNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
             }
             return readNode.executeRead(array, index);
@@ -739,7 +744,7 @@ public abstract class ArrayNodes {
 
         public void checkFrozen(Object object) {
             if (isFrozenNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
             }
             isFrozenNode.raiseIfFrozen(object);
@@ -786,7 +791,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each", needsBlock = true, enumeratorSize = "size")
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
@@ -822,7 +827,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "each_with_index", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each_with_index", needsBlock = true, enumeratorSize = "size")
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
@@ -1038,7 +1043,7 @@ public abstract class ArrayNodes {
 
         public boolean respondToToAry(VirtualFrame frame, Object object) {
             if (respondToToAryNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
             return respondToToAryNode.doesRespondToString(frame, object, create7BitString("to_ary", UTF8Encoding.INSTANCE), true);
@@ -1046,7 +1051,7 @@ public abstract class ArrayNodes {
 
         protected Object callToAry(VirtualFrame frame, Object object) {
             if (toAryNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
             }
             return toAryNode.call(frame, object, "to_ary", null);
@@ -1054,7 +1059,7 @@ public abstract class ArrayNodes {
 
         protected int toInt(VirtualFrame frame, Object value) {
             if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toIntNode = insert(ToIntNode.create());
             }
             return toIntNode.doInt(frame, value);
@@ -1191,7 +1196,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = { "map", "collect" }, needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = { "map", "collect" }, needsBlock = true, enumeratorSize = "size")
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
@@ -1225,7 +1230,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = { "map!", "collect!" }, needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "map!", "collect!" }, needsBlock = true, enumeratorSize = "size", raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
@@ -1315,6 +1320,8 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode compareNode;
 
+        private final BranchProfile errorProfile = BranchProfile.create();
+
         public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareNode = DispatchHeadNodeFactory.createMethodCall(context);
@@ -1337,7 +1344,7 @@ public abstract class ArrayNodes {
                         maximum.set(value);
                     }
                 } else {
-                    CompilerDirectives.transferToInterpreter();
+                    errorProfile.enter();
                     // Should be the actual type and object in this string - but this method should go away soon
                     throw new RaiseException(coreExceptions().argumentError("comparison of X with Y failed", this));
                 }
@@ -1435,6 +1442,8 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode compareNode;
 
+        private final BranchProfile errorProfile = BranchProfile.create();
+
         public MinBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareNode = DispatchHeadNodeFactory.createMethodCall(context);
@@ -1457,7 +1466,7 @@ public abstract class ArrayNodes {
                         minimum.set(value);
                     }
                 } else {
-                    CompilerDirectives.transferToInterpreter();
+                    errorProfile.enter();
                     // Should be the actual type and object in this string - but this method should go away soon
                     throw new RaiseException(coreExceptions().argumentError("comparison of X with Y failed", this));
                 }
@@ -1568,7 +1577,7 @@ public abstract class ArrayNodes {
             }
 
             if (makeLeafRopeNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null));
             }
 
@@ -1580,7 +1589,7 @@ public abstract class ArrayNodes {
 
             if (result.isTainted()) {
                 if (taintNode == null) {
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
                 }
 
@@ -1627,7 +1636,7 @@ public abstract class ArrayNodes {
         @Specialization
         public Object pop(DynamicObject array, NotProvided n) {
             if (popOneNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 popOneNode = insert(ArrayPopOneNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
 
@@ -1675,7 +1684,7 @@ public abstract class ArrayNodes {
 
         private int toInt(VirtualFrame frame, Object indexObject) {
             if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toIntNode = insert(ToIntNode.create());
             }
             return toIntNode.doInt(frame, indexObject);
@@ -1733,7 +1742,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "reject", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "reject", needsBlock = true, enumeratorSize = "size")
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
@@ -1772,7 +1781,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "delete_if" , needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete_if" , needsBlock = true, enumeratorSize = "size", raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteIfNode extends YieldingCoreMethodNode {
 
@@ -1790,7 +1799,7 @@ public abstract class ArrayNodes {
     }
 
 
-    @CoreMethod(names = "reject!", needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "reject!", needsBlock = true, enumeratorSize = "size", raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
@@ -1872,7 +1881,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "select", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "select", needsBlock = true, enumeratorSize = "size")
     @ImportStatic(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
@@ -1992,7 +2001,7 @@ public abstract class ArrayNodes {
 
         private int toInt(VirtualFrame frame, Object indexObject) {
             if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toIntNode = insert(ToIntNode.create());
             }
             return toIntNode.doInt(frame, indexObject);
@@ -2015,6 +2024,8 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode compareDispatchNode;
         @Child private YieldNode yieldNode;
+
+        private final BranchProfile errorProfile = BranchProfile.create();
 
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2067,8 +2078,7 @@ public abstract class ArrayNodes {
         public Object sortLargeArray(VirtualFrame frame, DynamicObject array, NotProvided block,
                 @Cached("new()") SnippetNode snippetNode) {
             return snippetNode.execute(frame,
-                    "sorted = dup; Truffle.privately { sorted.isort!(0, right) }; sorted",
-                    "right", getSize(array));
+                    "sorted = dup; Truffle.privately { sorted.mergesort! }; sorted");
         }
 
         @Specialization(guards = { "isObjectArray(array)" })
@@ -2093,8 +2103,7 @@ public abstract class ArrayNodes {
         public Object sortWithBlock(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("new()") SnippetNode snippet) {
             return snippet.execute(frame,
-                    "sorted = dup; Truffle.privately { sorted.isort_block!(0, right, block) }; sorted",
-                    "right", getSize(array),
+                    "sorted = dup; Truffle.privately { sorted.mergesort_block!(block) }; sorted",
                     "block", block);
         }
 
@@ -2103,8 +2112,7 @@ public abstract class ArrayNodes {
                 return (int) value;
             }
 
-            CompilerDirectives.transferToInterpreter();
-
+            errorProfile.enter();
             // TODO CS 14-Mar-15 - what's the error message here?
             throw new RaiseException(coreExceptions().argumentError("expecting a Fixnum to sort", this));
         }
@@ -2166,7 +2174,7 @@ public abstract class ArrayNodes {
 
         private Object zipRuby(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             if (zipInternalCall == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 zipInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 

@@ -299,9 +299,10 @@ describe :process_spawn, shared: true do
     end
 
     it "joins the specified process group if pgroup: pgid" do
+      pgid = Process.getpgid(Process.pid)
       lambda do
-        Process.wait @object.spawn(ruby_cmd("print Process.getpgid(Process.pid)"), pgroup: 123)
-      end.should_not output_to_fd("123")
+        Process.wait @object.spawn(ruby_cmd("print Process.getpgid(Process.pid)"), pgroup: pgid)
+      end.should output_to_fd(pgid.to_s)
     end
 
     it "raises an ArgumentError if given a negative :pgroup option" do

@@ -53,7 +53,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final Object methodName,
             DynamicObject blockObject,
             final Object[] argumentsObjects) {
-        CompilerDirectives.transferToInterpreterAndInvalidate();
+        CompilerDirectives.transferToInterpreter();
 
         // Make sure to have an up-to-date Shape.
         if (receiverObject instanceof DynamicObject) {
@@ -152,8 +152,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         if (ignoreVisibility) {
             callerClass = null;
         } else if (getDispatchAction() == DispatchAction.RESPOND_TO_METHOD) {
-            final Frame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
-            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame));
+            final FrameInstance instance = getContext().getCallStack().getCallerFrameIgnoringSend();
+
+            if (instance == null) {
+                callerClass = coreLibrary().getMetaClass(coreLibrary().getMainObject());
+            } else {
+                final Frame callerFrame = instance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+                callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame));
+            }
         } else {
             callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame));
         }

@@ -21,6 +21,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -124,10 +125,10 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
     }
 
-    public void invokeOther(String name, int arity, boolean hasClosure, boolean isPotentiallyRefined) {
+    public void invokeOther(String file, int line, String name, int arity, boolean hasClosure, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (isPotentiallyRefined) {
-            super.invokeOther(name, arity, hasClosure, isPotentiallyRefined);
+            super.invokeOther(file, line, name, arity, hasClosure, isPotentiallyRefined);
             return;
         }
 
@@ -151,7 +152,17 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("aref", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, 1)), ArrayDerefInvokeSite.BOOTSTRAP);
     }
 
-    public void invokeOtherOneFixnum(String name, long fixnum) {
+    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType) {
+        if (!MethodIndex.hasFastFixnumOps(name)) {
+            pushFixnum(fixnum);
+            if (callType == CallType.NORMAL) {
+                invokeOther(file, line, name, 1, false, false);
+            } else {
+                invokeSelf(file, line, name, 1, false, callType, false);
+            }
+            return;
+        }
+
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
         adapter.invokedynamic(
@@ -159,11 +170,22 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 signature,
                 Bootstrap.getFixnumOperatorHandle(),
                 fixnum,
+                callType.ordinal(),
                 "",
                 0);
     }
 
-    public void invokeOtherOneFloat(String name, double flote) {
+    public void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType) {
+        if (!MethodIndex.hasFastFloatOps(name)) {
+            pushFloat(flote);
+            if (callType == CallType.NORMAL) {
+                invokeOther(file, line, name, 1, false, false);
+            } else {
+                invokeSelf(file, line, name, 1, false, callType, false);
+            }
+            return;
+        }
+
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
         
         adapter.invokedynamic(
@@ -171,14 +193,15 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             signature,
             Bootstrap.getFloatOperatorHandle(),
             flote,
+                callType.ordinal(),
             "",
             0);
     }
 
-    public void invokeSelf(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
+    public void invokeSelf(String file, int line, String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (isPotentiallyRefined) {
-            super.invokeSelf(name, arity, hasClosure, callType, isPotentiallyRefined);
+            super.invokeSelf(file, line, name, arity, hasClosure, callType, isPotentiallyRefined);
             return;
         }
 
@@ -198,7 +221,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
-    public void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to instance super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
@@ -209,7 +232,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
-    public void invokeClassSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to class super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
@@ -220,7 +243,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
-    public void invokeUnresolvedSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to unresolved super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
@@ -231,7 +254,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
-    public void invokeZSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to zsuper has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);

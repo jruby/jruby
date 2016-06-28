@@ -11,6 +11,7 @@ package org.jruby.truffle.platform.openjdk;
 
 import org.jruby.truffle.core.queue.DelegatingBlockingQueue;
 import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
+import org.jruby.truffle.language.control.JavaException;
 
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -38,7 +39,7 @@ public class OpenJDKLinkedBlockingQueueLocksConditions<T>
             lock = (ReentrantLock) TAKE_LOCK_FIELD_GETTER.invokeExact(queue);
             notEmptyCondition = (Condition) NOT_EMPTY_CONDITION_FIELD_GETTER.invokeExact(queue);
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            throw new JavaException(throwable);
         }
     }
 

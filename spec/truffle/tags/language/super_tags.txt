@@ -1,2 +1,3 @@
 fails:The super keyword when using keyword arguments passes any given keyword arguments to the parent
 fails:The super keyword when using keyword arguments passes any given keyword arguments including optional and required ones to the parent
+fails:The super keyword when using keyword arguments when using splat arguments passes splat arguments and keyword arguments to the parent

@@ -1,2 +1,0 @@
-fails:Net::FTPTempError is an Exception
-fails:Net::FTPTempError is a subclass of Net::FTPError

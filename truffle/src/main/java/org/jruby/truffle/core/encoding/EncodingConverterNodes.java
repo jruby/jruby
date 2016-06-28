@@ -11,7 +11,6 @@
  */
 package org.jruby.truffle.core.encoding;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -130,7 +129,8 @@ public abstract class EncodingConverterNodes {
             if (RubyGuards.isRubyString(object)) {
                 return getContext().getJRubyRuntime().newString(RopeOperations.toByteListCopy(StringOperations.rope((DynamicObject) object)));
             } else if (RubyGuards.isRubyEncoding(object)) {
-                return getContext().getJRubyRuntime().getEncodingService().rubyEncodingFromObject(getContext().getJRubyRuntime().newString(Layouts.ENCODING.getName((DynamicObject) object)));
+                final Rope rope = StringOperations.rope(Layouts.ENCODING.getName((DynamicObject) object));
+                return getContext().getJRubyRuntime().getEncodingService().rubyEncodingFromObject(getContext().getJRubyRuntime().newString(RopeOperations.toByteListCopy(rope)));
             } else {
                 throw new UnsupportedOperationException();
             }

@@ -33,4 +33,9 @@ public class Activation {
         return method;
     }
 
+    @Override
+    public String toString() {
+        return "Activation @ " + callNode + " " + method;
+    }
+
 }

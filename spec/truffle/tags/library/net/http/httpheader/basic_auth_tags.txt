@@ -1,1 +1,0 @@
-fails:Net::HTTPHeader#basic_auth when passed account, password sets the 'Authorization' Header entry for basic authorization

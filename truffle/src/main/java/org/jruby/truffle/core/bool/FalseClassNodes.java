@@ -34,7 +34,7 @@ public abstract class FalseClassNodes {
 
         @CreateCast("operand")
         public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeGen.create(null, null, operand);
+            return BooleanCastNodeGen.create(operand);
         }
 
         @Specialization

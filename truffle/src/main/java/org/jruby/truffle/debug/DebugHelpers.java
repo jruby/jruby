@@ -24,7 +24,6 @@ import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.parser.ParserContext;
 
-@SuppressWarnings("deprecation")
 @Deprecated
 public abstract class DebugHelpers {
 

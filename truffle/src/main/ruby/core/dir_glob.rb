@@ -325,25 +325,6 @@ class Dir
       env.matches
     end
 
-    total = Rubinius::Config['glob.cache']
-
-    case total
-    when Fixnum
-      if total == 0
-        @glob_cache = nil
-      else
-        @glob_cache = Rubinius::LRUCache.new(total)
-      end
-    when false
-      @glob_cache = nil
-    else
-      @glob_cache = Rubinius::LRUCache.new(50)
-    end
-
-    def self.glob_cache
-      @glob_cache
-    end
-
     def self.glob(pattern, flags, matches=[])
       # Rubygems uses Dir[] as a glorified File.exist?  to check for multiple
       # extensions. So we went ahead and sped up that specific case.
@@ -375,30 +356,13 @@ class Dir
         return matches
       end
 
-      ec_key = nil
-
-      if gc = @glob_cache
-        ec_key = [pattern, flags]
-        if patterns = gc.retrieve(ec_key)
-          patterns.each do |node|
-            run node, matches
-          end
-
-          return matches
-        end
-      end
-
       if pattern.include? "{"
         patterns = compile(pattern, flags)
-
-        gc.set ec_key, patterns if ec_key
 
         patterns.each do |node|
           run node, matches
         end
       elsif node = single_compile(pattern, flags)
-        gc.set ec_key, [node] if ec_key
-
         run node, matches
       else
         matches

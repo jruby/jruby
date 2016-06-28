@@ -98,6 +98,8 @@ public class RubyNameError extends RubyException {
                 return context.nil;
             } else {
                 String description = null;
+                String separator;
+                String className = null;
                 boolean singleton = false;
 
                 if (object.isNil()) {
@@ -121,11 +123,19 @@ public class RubyNameError extends RubyException {
                 }
 
                 if (!singleton) {
-                    description = description + ':' + object.getMetaClass().getRealClass().getName();
+                    separator = ":";
+                    className = object.getMetaClass().getRealClass().getName();
+                } else {
+                    className = separator = "";
                 }
-                //IRubyObject[] args = new IRubyObject[] { name, runtime.newString(description) };
 
-                RubyArray arr = runtime.newArray(name, runtime.newString(description));
+                RubyArray arr =
+                        runtime.newArray(
+                                name,
+                                runtime.newString(description),
+                                runtime.newString(separator),
+                                runtime.newString(className));
+
                 ByteList msgBytes = new ByteList(this.message.length() + description.length() + name.toString().length());
                 Sprintf.sprintf(msgBytes, this.message, arr);
 

@@ -75,12 +75,12 @@ public class JavaObject extends RubyObject {
     }
 
     @Override
-    public Object dataGetStruct() {
+    public final Object dataGetStruct() {
         return objectAccessor.get(this);
     }
 
     @Override
-    public void dataWrapStruct(Object object) {
+    public final void dataWrapStruct(Object object) {
         objectAccessor.set(this, object);
     }
 
@@ -155,8 +155,7 @@ public class JavaObject extends RubyObject {
     @Override
     public int hashCode() {
         final Object value = dataGetStruct();
-        if ( value == null ) return 0;
-        return value.hashCode();
+        return value == null ? 0 : value.hashCode();
     }
 
     @JRubyMethod

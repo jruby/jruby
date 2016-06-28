@@ -1,3 +1,0 @@
-fails:Net::FTP#close closes the socket
-fails:Net::FTP#close does not try to close the socket if it has already been closed
-fails:Net::FTP#close does not try to close the socket if it is nil

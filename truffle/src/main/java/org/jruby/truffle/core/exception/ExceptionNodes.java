@@ -79,9 +79,8 @@ public abstract class ExceptionNodes {
 
         private ReadObjectFieldNode getReadCustomBacktraceNode() {
             if (readCustomBacktraceNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create(
-                        "@custom_backtrace", null));
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create("@custom_backtrace", null));
             }
 
             return readCustomBacktraceNode;

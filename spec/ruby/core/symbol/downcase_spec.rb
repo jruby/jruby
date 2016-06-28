@@ -11,11 +11,13 @@ describe "Symbol#downcase" do
   end
 
   it "leaves lowercase Unicode characters as they were" do
-    "\u{C0}Bc".to_sym.downcase.should == :"Àbc"
+    "\u{E0}Bc".to_sym.downcase.should == :"àbc"
   end
 
-  it "leaves uppercase Unicode characters as they were" do
-    "\u{DE}Bc".to_sym.downcase.should == :"Þbc"
+  ruby_version_is ''...'2.4' do
+    it "leaves uppercase Unicode characters as they were" do
+      "\u{DE}Bc".to_sym.downcase.should == :"Þbc"
+    end
   end
 
   it "leaves non-alphabetic ASCII characters as they were" do

@@ -19,10 +19,13 @@ import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.convert.ToDoubleWithCoercionNodeGen;
 import org.jruby.truffle.core.format.convert.ToIntegerNodeGen;
 import org.jruby.truffle.core.format.convert.ToStringNodeGen;
+import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
+import org.jruby.truffle.core.format.format.FormatIntegerBinaryNodeGen;
 import org.jruby.truffle.core.format.format.FormatFloatHumanReadableNodeGen;
 import org.jruby.truffle.core.format.format.FormatFloatNodeGen;
 import org.jruby.truffle.core.format.format.FormatIntegerNodeGen;
 import org.jruby.truffle.core.format.read.SourceNode;
+import org.jruby.truffle.core.format.read.array.ReadArgumentIndexValueNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadHashValueNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadIntegerNodeGen;
 import org.jruby.truffle.core.format.read.array.ReadStringNodeGen;
@@ -75,6 +78,14 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
     public void exitFormat(PrintfParser.FormatContext ctx) {
         final int width;
 
+        if(ctx.invalidType != null){
+            throw new InvalidFormatException("malformed format string - %" + ctx.invalidType.getText());
+        } else if (ctx.type == null && ctx.width != null){
+            throw new InvalidFormatException("malformed format string - %*[0-9]");
+        } else if (ctx.type == null) {
+            throw new InvalidFormatException("invalid format character - %");
+        }
+
         if (ctx.width != null) {
             width = Integer.parseInt(ctx.width.getText());
         } else {
@@ -82,9 +93,12 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
         }
 
         boolean leftJustified = false;
-        int spacePadding = DEFAULT;
-        int zeroPadding = DEFAULT;
-
+        boolean hasPlusFlag = false;
+        boolean hasSpaceFlag = false;
+        boolean hasStarFlag = false;
+        boolean hasZeroFlag = false;
+        boolean useAlternativeFormat = false;
+        int absoluteArgumentIndex = DEFAULT;
 
         for (int n = 0; n < ctx.flag().size(); n++) {
             final PrintfParser.FlagContext flag = ctx.flag(n);
@@ -92,38 +106,37 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
             if (flag.MINUS() != null) {
                 leftJustified = true;
             } else if (flag.SPACE() != null) {
-                if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
-                    spacePadding = PADDING_FROM_ARGUMENT;
-                } else {
-                    spacePadding = width;
-                }
+                hasSpaceFlag = true;
             } else if (flag.ZERO() != null) {
-                if (n + 1 < ctx.flag().size() && ctx.flag(n + 1).STAR() != null) {
-                    zeroPadding = PADDING_FROM_ARGUMENT;
-                } else {
-                    zeroPadding = width;
-                }
+                hasZeroFlag = true;
             } else if (flag.STAR() != null) {
-                // Handled in space and zero, above
+                if (hasStarFlag || ctx.width != null) {
+                    throw new InvalidFormatException("width given twice");
+                }
+                hasStarFlag = true;
+            } else if (flag.PLUS() != null) {
+                hasPlusFlag = true;
+            } else if (flag.HASH() != null) {
+                useAlternativeFormat = true;
+            } else if (flag.argumentIndex != null) {
+                absoluteArgumentIndex = Integer.parseInt(flag.argumentIndex.getText());
             } else {
                 throw new UnsupportedOperationException();
             }
-        }
-
-        if (spacePadding == DEFAULT && zeroPadding == DEFAULT) {
-            spacePadding = width;
         }
 
         final char type = ctx.TYPE().getSymbol().getText().charAt(0);
 
         final FormatNode valueNode;
 
-        if (ctx.ANGLE_KEY() == null) {
-            valueNode = ReadValueNodeGen.create(context, new SourceNode());
-        } else {
+        if (ctx.ANGLE_KEY() != null) {
             final byte[] keyBytes = tokenAsBytes(ctx.ANGLE_KEY().getSymbol(), 1);
             final DynamicObject key = context.getSymbolTable().getSymbol(context.getRopeTable().getRope(keyBytes, USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
             valueNode = ReadHashValueNodeGen.create(context, key, new SourceNode());
+        } else if (absoluteArgumentIndex != DEFAULT){
+            valueNode = ReadArgumentIndexValueNodeGen.create(context, absoluteArgumentIndex, new SourceNode());
+        } else {
+            valueNode = ReadValueNodeGen.create(context, new SourceNode());
         }
 
         final int precision;
@@ -148,45 +161,35 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                     conversionNode = ToStringNodeGen.create(context, true, conversionMethodName, false, EMPTY_BYTES, valueNode);
                 }
 
-                if (spacePadding == DEFAULT) {
+                if (width == DEFAULT) {
                     node = WriteBytesNodeGen.create(context, conversionNode);
                 } else {
-                    node = WritePaddedBytesNodeGen.create(context, spacePadding, leftJustified, conversionNode);
+                    node = WritePaddedBytesNodeGen.create(context, width, leftJustified, conversionNode);
                 }
 
                 break;
+            case 'b':
+            case 'B':
             case 'd':
             case 'i':
             case 'o':
             case 'u':
             case 'x':
             case 'X':
-                final FormatNode spacePaddingNode;
-                if (spacePadding == PADDING_FROM_ARGUMENT) {
-                    spacePaddingNode = ReadIntegerNodeGen.create(context, new SourceNode());
+                final FormatNode widthNode;
+                if (hasStarFlag) {
+                    widthNode = ReadIntegerNodeGen.create(context, new SourceNode());
                 } else {
-                    spacePaddingNode = new LiteralFormatNode(context, spacePadding);
-                }
-
-                final FormatNode zeroPaddingNode;
-
-                /*
-                 * Precision and zero padding both set zero padding -
-                 * but precision has priority and explicit zero padding
-                 * is actually ignored if it's set.
-                 */
-
-                if (zeroPadding == PADDING_FROM_ARGUMENT) {
-                    zeroPaddingNode = ReadIntegerNodeGen.create(context, new SourceNode());
-                } else if (ctx.precision != null) {
-                    zeroPaddingNode = new LiteralFormatNode(context, Integer.parseInt(ctx.precision.getText()));
-                } else {
-                    zeroPaddingNode = new LiteralFormatNode(context, zeroPadding);
+                    widthNode = new LiteralFormatNode(context, width);
                 }
 
                 final char format;
 
                 switch (type) {
+                    case 'b':
+                    case 'B':
+                        format = type;
+                        break;
                     case 'd':
                     case 'i':
                     case 'u':
@@ -203,19 +206,27 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                         throw new UnsupportedOperationException();
                 }
 
-                node = WriteBytesNodeGen.create(context,
-                        FormatIntegerNodeGen.create(context, format,
-                                spacePaddingNode,
-                                zeroPaddingNode,
-                                ToIntegerNodeGen.create(context, valueNode)));
+                if(type == 'b' || type == 'B'){
+                    node = WriteBytesNodeGen.create(context,
+                        FormatIntegerBinaryNodeGen.create(context, format, precision, hasPlusFlag, useAlternativeFormat,
+                            leftJustified,
+                            hasSpaceFlag,
+                            hasZeroFlag,
+                            widthNode,
+                            ToIntegerNodeGen.create(context, valueNode)));
+                } else {
+                    node = WriteBytesNodeGen.create(context,
+                        FormatIntegerNodeGen.create(context, format, hasSpaceFlag, hasZeroFlag, precision,
+                            widthNode,
+                            ToIntegerNodeGen.create(context, valueNode)));
+                }
                 break;
             case 'f':
             case 'e':
             case 'E':
                 node = WriteBytesNodeGen.create(context,
-                        FormatFloatNodeGen.create(context, spacePadding,
-                                zeroPadding, precision,
-                                type,
+                        FormatFloatNodeGen.create(context, width, precision,
+                                type, hasSpaceFlag, hasZeroFlag,
                                 ToDoubleWithCoercionNodeGen.create(context,
                                         valueNode)));
                 break;

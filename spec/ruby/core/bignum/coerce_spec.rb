@@ -29,16 +29,19 @@ describe "Bignum#coerce" do
     lambda { a.coerce(:test)       }.should raise_error(TypeError)
   end
 
-  not_compliant_on :rubinius do
-    it "raises a TypeError when passed a Float or String" do
+  ruby_version_is ""..."2.4" do
+    it "raises a TypeError when passed a String" do
       a = bignum_value
-
-      lambda { a.coerce(12.3)  }.should raise_error(TypeError)
       lambda { a.coerce("123") }.should raise_error(TypeError)
+    end
+
+    it "raises a TypeError when passed a Float" do
+      a = bignum_value
+      lambda { a.coerce(12.3) }.should raise_error(TypeError)
     end
   end
 
-  deviates_on :rubinius do
+  ruby_version_is "2.4" do
     it "coerces both values to Floats and returns [other, self] when passed a Float" do
       a = bignum_value
       a.coerce(1.2).should == [1.2, a.to_f]

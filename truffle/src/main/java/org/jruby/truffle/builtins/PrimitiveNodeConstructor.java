@@ -23,7 +23,7 @@ import org.jruby.truffle.language.objects.SelfNode;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PrimitiveNodeConstructor implements PrimitiveConstructor {
+public class PrimitiveNodeConstructor {
 
     private final Primitive annotation;
     private final NodeFactory<? extends RubyNode> factory;
@@ -33,12 +33,10 @@ public class PrimitiveNodeConstructor implements PrimitiveConstructor {
         this.factory = factory;
     }
 
-    @Override
     public int getPrimitiveArity() {
         return factory.getExecutionSignature().size();
     }
 
-    @Override
     public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID) {
         int argumentsCount = getPrimitiveArity();
         final List<RubyNode> arguments = new ArrayList<>(argumentsCount);

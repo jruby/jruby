@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.language.methods;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -30,14 +29,15 @@ public class GetDefaultDefineeNode extends RubyNode {
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
-        final DynamicObject capturedDefaultDefinee = RubyArguments.getMethod(frame).getCapturedDefaultDefinee();
+        final InternalMethod method = RubyArguments.getMethod(frame);
+        final DynamicObject capturedDefaultDefinee = method.getCapturedDefaultDefinee();
 
         if (capturedDefaultDefinee != null) {
             return capturedDefaultDefinee;
         }
 
-        return RubyArguments.getDeclarationContext(frame).getModuleToDefineMethods(frame, getContext(), singletonClassNode);
+        final Object self = RubyArguments.getSelf(frame);
+        final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame);
+        return declarationContext.getModuleToDefineMethods(self, method, getContext(), singletonClassNode);
     }
 }

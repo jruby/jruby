@@ -51,6 +51,7 @@ import org.jruby.truffle.language.yield.YieldNode;
 import java.util.Arrays;
 import java.util.Map;
 
+
 @CoreClass("Hash")
 public abstract class HashNodes {
 
@@ -222,7 +223,7 @@ public abstract class HashNodes {
                 "isCompareByIdentity(hash)",
                 "cachedIndex >= 0",
                 "cachedIndex < getSize(hash)",
-                "equal(frame, key, getKeyAt(hash, cachedIndex))"
+                "equal(key, getKeyAt(hash, cachedIndex))"
         }, limit = "1")
         public Object getConstantIndexPackedArrayByIdentity(VirtualFrame frame, DynamicObject hash, Object key,
                 @Cached("index(frame, hash, key)") int cachedIndex) {
@@ -259,7 +260,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < size; n++) {
                 if (HashGuards.isCompareByIdentity(hash)) {
-                    if (equal(frame, key, PackedArrayStrategy.getKey(store, n))) {
+                    if (equal(key, PackedArrayStrategy.getKey(store, n))) {
                         return n;
                     }
                 } else {
@@ -280,8 +281,8 @@ public abstract class HashNodes {
             return eqlNode.callBoolean(frame, key1, "eql?", null, key2);
         }
 
-        protected boolean equal(VirtualFrame frame, Object key1, Object key2) {
-            return equalNode.executeReferenceEqual(frame, key1, key2);
+        protected boolean equal(Object key1, Object key2) {
+            return equalNode.executeReferenceEqual(key1, key2);
         }
 
         @ExplodeLoop
@@ -325,7 +326,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < getContext().getOptions().HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
-                    if (equal(frame, key, PackedArrayStrategy.getKey(store, n))) {
+                    if (equal(key, PackedArrayStrategy.getKey(store, n))) {
                         return PackedArrayStrategy.getValue(store, n);
                     }
                 }
@@ -581,7 +582,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = { "each", "each_pair" }, needsBlock = true)
+    @CoreMethod(names = { "each", "each_pair" }, needsBlock = true, enumeratorSize = "size")
     @ImportStatic(HashGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
@@ -638,7 +639,7 @@ public abstract class HashNodes {
         @Specialization
         public Object each(VirtualFrame frame, DynamicObject hash, NotProvided block) {
             if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
@@ -1154,7 +1155,7 @@ public abstract class HashNodes {
             }
 
             if (lookupEntryNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 lookupEntryNode = insert(new LookupEntryNode(getContext(), getSourceSection()));
             }
 
@@ -1185,7 +1186,7 @@ public abstract class HashNodes {
         @Specialization(guards = "!isRubyHash(other)")
         public Object merge(VirtualFrame frame, DynamicObject hash, Object other, Object maybeBlock) {
             if (fallbackCallNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             
@@ -1231,7 +1232,7 @@ public abstract class HashNodes {
         @Specialization(guards = {"isEmptyHash(hash)", "!hasDefaultValue(hash)", "hasDefaultBlock(hash)"})
         public Object shiftEmptyDefaultProc(VirtualFrame frame, DynamicObject hash) {
             if (yieldNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 yieldNode = insert(new YieldNode(getContext()));
             }
 
@@ -1399,6 +1400,24 @@ public abstract class HashNodes {
             assert HashOperations.verifyStore(getContext(), hash);
             
             return hash;
+        }
+
+    }
+
+    @NonStandard
+    @CoreMethod(names = "internal_default_value")
+    public abstract static class InternalDefaultValueNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private DefaultValueNode defaultValueNode;
+
+        public InternalDefaultValueNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            defaultValueNode = HashNodesFactory.DefaultValueNodeFactory.create(null);
+        }
+
+        @Specialization
+        public Object internalDefaultValue(DynamicObject hash) {
+            return defaultValueNode.defaultValue(hash);
         }
 
     }

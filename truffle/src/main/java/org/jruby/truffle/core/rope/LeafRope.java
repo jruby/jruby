@@ -28,4 +28,9 @@ public abstract class LeafRope extends Rope {
         return RopeOperations.decodeUTF8(this);
     }
 
+    public LeafRope computeHashCode() {
+        hashCode();
+        return this;
+    }
+
 }

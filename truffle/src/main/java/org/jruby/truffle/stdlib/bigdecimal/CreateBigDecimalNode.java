@@ -57,7 +57,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
 
     public final DynamicObject executeCreate(VirtualFrame frame, Object value) {
         if (allocateNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             allocateNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
         }
 
@@ -296,7 +296,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
     }
 
     protected BooleanCastNode createBooleanCastNode() {
-        return BooleanCastNodeGen.create(getContext(), getSourceSection(), null);
+        return BooleanCastNodeGen.create(null);
     }
 
     protected GetIntegerConstantNode createGetIntegerConstantNode() {

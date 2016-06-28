@@ -28,10 +28,10 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.util.ByteList;
@@ -87,7 +87,7 @@ public class RopeOperations {
             case CR_VALID: return new ValidLeafRope(bytes, encoding, characterLength);
             case CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
             default: {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RuntimeException(String.format("Unknown code range type: %d", codeRange));
             }
         }
@@ -115,11 +115,16 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static String decodeUTF8(Rope rope) {
-        return RubyEncoding.decodeUTF8(rope.getBytes(), 0, rope.byteLength());
+        return decodeUTF8(rope.getBytes(), 0, rope.byteLength());
     }
 
     @TruffleBoundary
-    public static String decodeRope(Ruby runtime, Rope value) {
+    public static String decodeUTF8(byte[] bytes, int offset, int byteLength) {
+        return RubyEncoding.decodeUTF8(bytes, offset, byteLength);
+    }
+
+    @TruffleBoundary
+    public static String decodeRope(Rope value) {
         // TODO CS 9-May-16 having recursive problems with this, so flatten up front for now
 
         value = flatten(value);
@@ -137,7 +142,7 @@ public class RopeOperations {
             Charset charset = encodingToCharsetMap.get(encoding);
 
             if (charset == null) {
-                charset = runtime.getEncodingService().charsetForEncoding(encoding);
+                charset = EncodingManager.charsetForEncoding(encoding);
                 encodingToCharsetMap.put(encoding, charset);
             }
 
@@ -589,7 +594,7 @@ public class RopeOperations {
                         || encoding == ASCIIEncoding.INSTANCE) {
                     valueRope = stringRope;
                 } else {
-                    valueRope = StringOperations.encodeRope(decodeRope(context.getJRubyRuntime(), stringRope), UTF8Encoding.INSTANCE);
+                    valueRope = StringOperations.encodeRope(decodeRope(stringRope), UTF8Encoding.INSTANCE);
                 }
             } else if (value instanceof Integer) {
                 valueRope = new LazyIntRope((int) value);

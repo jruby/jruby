@@ -58,7 +58,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
 
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {" + ipc + "} ", instr + "; <#RPCs=" + (rescuePCs == null ? 0 : rescuePCs.size()) + ">");
+                Interpreter.LOG.info("I: {" + ipc + "} " + instr + "; <#RPCs=" + (rescuePCs == null ? 0 : rescuePCs.size()) + ">");
                 Interpreter.interpInstrsCount++;
             } else if (profile) {
                 Profiler.instrTick(operation);

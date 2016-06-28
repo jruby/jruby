@@ -84,7 +84,7 @@ public class TryNode extends RubyNode {
 
     private Object setLastExceptionAndRunRescue(VirtualFrame frame, RaiseException exception, RubyNode rescue) {
         if (setExceptionVariableNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             setExceptionVariableNode = insert(new SetExceptionVariableNode(getContext()));
         }
 

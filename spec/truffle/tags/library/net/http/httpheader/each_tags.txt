@@ -1,2 +1,0 @@
-fails:Net::HTTPHeader#each when passed a block yields each header entry to the passed block (keys in lower case, values joined)
-fails:Net::HTTPHeader#each when passed no block returns an Enumerator

@@ -18,31 +18,39 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.UnsafeGroup;
-
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Map.Entry;
 
 @CoreClass("Truffle::Process")
 public abstract class TruffleProcessNodes {
 
-    @CoreMethod(names = "spawn", onSingleton = true, required = 3, unsafe = UnsafeGroup.PROCESSES)
+    @CoreMethod(names = "spawn", onSingleton = true, required = 4, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SpawnNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = {
                 "isRubyString(command)",
                 "isRubyArray(arguments)",
-                "isRubyArray(environmentVariables)" })
+                "isRubyArray(environmentVariables)",
+                "isRubyHash(options)" })
         public int spawn(DynamicObject command,
                          DynamicObject arguments,
-                         DynamicObject environmentVariables) {
+                         DynamicObject environmentVariables,
+                         DynamicObject options) {
+
+            Collection<SpawnFileAction> fileActions = parseOptions(options);
 
             final long longPid = call(
-                    StringOperations.getString(getContext(), command),
+                    StringOperations.getString(command),
                     toStringArray(arguments),
-                    toStringArray(environmentVariables));
+                    toStringArray(environmentVariables),
+                    fileActions);
             assert longPid <= Integer.MAX_VALUE;
             // VMWaitPidPrimitiveNode accepts only int
             final int pid = (int) longPid;
@@ -62,18 +70,67 @@ public abstract class TruffleProcessNodes {
 
             for (int i = 0; i < size; i++) {
                 assert Layouts.STRING.isString(unconvertedStrings[i]);
-                strings[i] = StringOperations.getString(getContext(), (DynamicObject) unconvertedStrings[i]);
+                strings[i] = StringOperations.getString((DynamicObject) unconvertedStrings[i]);
             }
 
             return strings;
         }
 
         @TruffleBoundary
-        private long call(String command, String[] arguments, String[] environmentVariables) {
+        private Collection<SpawnFileAction> parseOptions(DynamicObject options) {
+            if (Layouts.HASH.getSize(options) == 0) {
+                return Collections.emptyList();
+            }
+
+            Collection<SpawnFileAction> actions = new ArrayList<>();
+            for (Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(options)) {
+                final Object key = keyValue.getKey();
+                final Object value = keyValue.getValue();
+
+                if (Layouts.SYMBOL.isSymbol(key)) {
+                    if (key == getSymbol("redirect_fd")) {
+                        assert Layouts.ARRAY.isArray(value);
+                        final DynamicObject array = (DynamicObject) value;
+                        final int size = Layouts.ARRAY.getSize(array);
+                        assert size % 2 == 0;
+                        final Object[] store = ArrayOperations.toObjectArray(array);
+                        for (int i = 0; i < size; i += 2) {
+                            int from = (int) store[i];
+                            int to = (int) store[i + 1];
+                            if (to < 0) { // :child fd
+                                to = -to - 1;
+                            }
+                            actions.add(SpawnFileAction.dup(to, from));
+                        }
+                        continue;
+                    } else if (key == getSymbol("assign_fd")) {
+                        assert Layouts.ARRAY.isArray(value);
+                        final DynamicObject array = (DynamicObject) value;
+                        final int size = Layouts.ARRAY.getSize(array);
+                        assert size % 4 == 0;
+                        final Object[] store = ArrayOperations.toObjectArray(array);
+                        for (int i = 0; i < size; i += 4) {
+                            int fd = (int) store[i];
+                            String path = StringOperations.getString((DynamicObject) store[i + 1]);
+                            int flags = (int) store[i + 2];
+                            int perms = (int) store[i + 3];
+                            actions.add(SpawnFileAction.open(path, fd, flags, perms));
+                        }
+                        continue;
+                    }
+                }
+                throw new UnsupportedOperationException("Unsupported spawn option: " + key + " => " + value);
+            }
+
+            return actions;
+        }
+
+        @TruffleBoundary
+        private long call(String command, String[] arguments, String[] environmentVariables, Collection<SpawnFileAction> fileActions) {
             // TODO (pitr 04-Sep-2015): only simple implementation, does not support file actions or other options
             return getContext().getNativePlatform().getPosix().posix_spawnp(
                     command,
-                    Collections.<SpawnFileAction>emptyList(),
+                    fileActions,
                     Arrays.asList(arguments),
                     Arrays.asList(environmentVariables));
 

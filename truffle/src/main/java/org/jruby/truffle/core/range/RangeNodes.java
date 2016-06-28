@@ -41,6 +41,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
+
 @CoreClass("Range")
 public abstract class RangeNodes {
 
@@ -82,7 +83,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true, enumeratorSize = "size")
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode eachInternalCall;
@@ -147,7 +148,7 @@ public abstract class RangeNodes {
 
         private Object eachInternal(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             if (eachInternalCall == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 eachInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -336,7 +337,7 @@ public abstract class RangeNodes {
 
         private Object stepInternal(VirtualFrame frame, DynamicObject range, Object step, DynamicObject block) {
             if (stepInternalCall == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 stepInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -442,7 +443,7 @@ public abstract class RangeNodes {
         @Specialization(guards = "isObjectRange(range)")
         public Object toA(VirtualFrame frame, DynamicObject range) {
             if (toAInternalCall == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toAInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -489,7 +490,7 @@ public abstract class RangeNodes {
 
         @CreateCast("excludeEnd")
         public RubyNode castToBoolean(RubyNode excludeEnd) {
-            return BooleanCastNodeGen.create(null, null, excludeEnd);
+            return BooleanCastNodeGen.create(excludeEnd);
         }
 
         @Specialization(guards = "isObjectRange(range)")
@@ -521,7 +522,7 @@ public abstract class RangeNodes {
 
         @CreateCast("excludeEnd")
         public RubyNode coerceToBoolean(RubyNode excludeEnd) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, false, excludeEnd);
+            return BooleanCastWithDefaultNodeGen.create(false, excludeEnd);
         }
 
         @Specialization(guards = "rubyClass == rangeClass")
@@ -559,11 +560,11 @@ public abstract class RangeNodes {
                 Object end,
                 boolean excludeEnd) {
             if (cmpNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
             if (allocateNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
             }
 

@@ -105,7 +105,7 @@ public abstract class CmpIntNode extends RubyNode {
             "!isNil(value)" })
     public int cmpObject(VirtualFrame frame, Object value, Object receiver, Object other) {
         if (gtNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             gtNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
 
@@ -114,7 +114,7 @@ public abstract class CmpIntNode extends RubyNode {
         }
 
         if (ltNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             ltNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
 

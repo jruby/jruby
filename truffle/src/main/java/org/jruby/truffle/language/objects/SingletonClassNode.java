@@ -78,14 +78,16 @@ public abstract class SingletonClassNode extends RubyNode {
     @Specialization(
             guards = {
                     "isRubyClass(rubyClass)",
-                    "rubyClass.getShape() == cachedShape"
+                    "rubyClass.getShape() == cachedShape",
+                    "cachedSingletonClass != null"
             },
             limit = "getCacheLimit()"
     )
     protected DynamicObject singletonClassClassCached(
             DynamicObject rubyClass,
             @Cached("rubyClass.getShape()") Shape cachedShape,
-            @Cached("getSingletonClassForClass(rubyClass)") DynamicObject cachedSingletonClass) {
+            @Cached("getSingletonClassOrNull(rubyClass)") DynamicObject cachedSingletonClass) {
+
         return cachedSingletonClass;
     }
 
@@ -94,7 +96,7 @@ public abstract class SingletonClassNode extends RubyNode {
             contains = "singletonClassClassCached"
     )
     protected DynamicObject singletonClassClassUncached(DynamicObject rubyClass) {
-        return getSingletonClassForClass(rubyClass);
+        return ClassNodes.getSingletonClass(getContext(), rubyClass);
     }
 
     @Specialization(
@@ -103,14 +105,12 @@ public abstract class SingletonClassNode extends RubyNode {
                     "!isNil(cachedObject)",
                     "!isRubyBignum(cachedObject)",
                     "!isRubySymbol(cachedObject)",
-                    "!isRubyClass(cachedObject)",
-                    "object.getShape() == cachedShape"
+                    "!isRubyClass(cachedObject)"
             },
             limit = "getCacheLimit()")
     protected DynamicObject singletonClassInstanceCached(
             DynamicObject object,
             @Cached("object") DynamicObject cachedObject,
-            @Cached("object.getShape()") Shape cachedShape,
             @Cached("getSingletonClassForInstance(object)") DynamicObject cachedSingletonClass) {
         return cachedSingletonClass;
     }
@@ -132,9 +132,8 @@ public abstract class SingletonClassNode extends RubyNode {
         throw new RaiseException(coreExceptions().typeErrorCantDefineSingleton(this));
     }
 
-    @TruffleBoundary
-    protected DynamicObject getSingletonClassForClass(DynamicObject rubyClass) {
-        return ClassNodes.getSingletonClass(getContext(), rubyClass);
+    protected DynamicObject getSingletonClassOrNull(DynamicObject object) {
+        return ClassNodes.getSingletonClassOrNull(getContext(), object);
     }
 
     @TruffleBoundary
@@ -169,7 +168,7 @@ public abstract class SingletonClassNode extends RubyNode {
 
     protected boolean isFrozen(Object object) {
         if (isFrozenNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
         }
         return isFrozenNode.executeIsFrozen(object);

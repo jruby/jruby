@@ -63,11 +63,6 @@ module Kernel
   # Truffle: no extra indirection for Kernel#send.
   alias_method :send, :__send__ # from BasicObject
 
-  def extend(mod)
-    Rubinius::Type.object_singleton_class(self).include(mod)
-    self
-  end
-
 end
 
 class Symbol

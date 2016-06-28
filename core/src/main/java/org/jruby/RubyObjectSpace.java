@@ -32,7 +32,6 @@
 package org.jruby;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
 import java.util.Iterator;
@@ -67,7 +66,7 @@ public class RubyObjectSpace {
     @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
-        IRubyObject finalizer = null;
+        IRubyObject finalizer;
         if (args.length == 2) {
             finalizer = args[1];
             if (!finalizer.respondsTo("call")) {
@@ -83,14 +82,14 @@ public class RubyObjectSpace {
     }
 
     @JRubyMethod(required = 1, module = true, visibility = PRIVATE)
-    public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject arg1, Block block) {
-        recv.getRuntime().getObjectSpace().removeFinalizers(RubyNumeric.fix2long(arg1.id()));
+    public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject obj, Block block) {
+        recv.getRuntime().getObjectSpace().removeFinalizers(RubyNumeric.fix2long(obj.id()));
         return recv;
     }
 
     @JRubyMethod(name = "_id2ref", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
-        Ruby runtime = id.getRuntime();
+        final Ruby runtime = id.getRuntime();
         if (!(id instanceof RubyFixnum)) {
             throw recv.getRuntime().newTypeError(id, recv.getRuntime().getFixnum());
         }
@@ -120,26 +119,23 @@ public class RubyObjectSpace {
     }
 
     public static IRubyObject each_objectInternal(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        RubyModule tmpClass;
+        final Ruby runtime = context.runtime;
+        final RubyModule rubyClass;
         if (args.length == 0) {
-            tmpClass = recv.getRuntime().getObject();
+            rubyClass = runtime.getObject();
         } else {
-            if (!(args[0] instanceof RubyModule)) throw recv.getRuntime().newTypeError("class or module required");
-            tmpClass = (RubyModule) args[0];
+            if (!(args[0] instanceof RubyModule)) throw runtime.newTypeError("class or module required");
+            rubyClass = (RubyModule) args[0];
         }
-        final RubyModule rubyClass = tmpClass;
-        Ruby runtime = recv.getRuntime();
-        final int[] count = {0};
-        if (rubyClass == runtime.getClassClass() ||
-                rubyClass == runtime.getModule()) {
-            final Collection<IRubyObject> modules = new ArrayList<IRubyObject>();
+        if (rubyClass == runtime.getClassClass() || rubyClass == runtime.getModule()) {
+
+            final ArrayList<IRubyObject> modules = new ArrayList<>(96);
             runtime.eachModule(new Function1<Object, IRubyObject>() {
                 public Object apply(IRubyObject arg1) {
                     if (rubyClass.isInstance(arg1)) {
                         if (arg1 instanceof IncludedModule) {
                             // do nothing for included wrappers or singleton classes
                         } else {
-                            count[0]++;
                             modules.add(arg1); // store the module to avoid concurrent modification exceptions
                         }
                     }
@@ -147,36 +143,37 @@ public class RubyObjectSpace {
                 }
             });
 
-            for (IRubyObject arg : modules) {
-                block.yield(context, arg);
+            final int count = modules.size();
+            for (int i = 0; i<count; i++) {
+                block.yield(context, modules.get(i));
             }
-        } else if (args[0].getClass() == MetaClass.class) {
+            return runtime.newFixnum(count);
+        }
+        if (args[0].getClass() == MetaClass.class) {
             // each_object(Cls.singleton_class) is basically a walk of Cls and all descendants of Cls.
             // In other words, this is walking all instances of Cls's singleton class and its subclasses.
-            IRubyObject attached = ((MetaClass)args[0]).getAttached();
-            block.yield(context, attached);
+            IRubyObject attached = ((MetaClass) args[0]).getAttached();
+            block.yield(context, attached); int count = 1;
             if (attached instanceof RubyClass) {
-                for (RubyClass child : ((RubyClass)attached).subclasses(true)) {
+                for (RubyClass child : ((RubyClass) attached).subclasses(true)) {
                     if (child instanceof IncludedModule) {
                         // do nothing for included wrappers or singleton classes
                     } else {
-                        block.yield(context, child);
+                        count++; block.yield(context, child);
                     }
                 }
             }
-        } else {
-            if (!runtime.isObjectSpaceEnabled()) {
-                throw runtime.newRuntimeError("ObjectSpace is disabled; each_object will only work with Class, pass -X+O to enable");
-            }
-            Iterator iter = recv.getRuntime().getObjectSpace().iterator(rubyClass);
-
-            IRubyObject obj = null;
-            while ((obj = (IRubyObject)iter.next()) != null) {
-                count[0]++;
-                block.yield(context, obj);
-            }
+            return runtime.newFixnum(count);
         }
-        return recv.getRuntime().newFixnum(count[0]);
+        if ( ! runtime.isObjectSpaceEnabled() ) {
+            throw runtime.newRuntimeError("ObjectSpace is disabled; each_object will only work with Class, pass -X+O to enable");
+        }
+        final Iterator iter = runtime.getObjectSpace().iterator(rubyClass);
+        IRubyObject obj; int count = 0;
+        while ((obj = (IRubyObject) iter.next()) != null) {
+            count++; block.yield(context, obj);
+        }
+        return runtime.newFixnum(count);
     }
 
     @JRubyMethod(name = "each_object", optional = 1, module = true, visibility = PRIVATE)

@@ -87,7 +87,7 @@ VALUE symbol_spec_rb_sym2str(VALUE self, VALUE sym) {
 }
 #endif
 
-void Init_symbol_spec() {
+void Init_symbol_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiSymbolSpecs", rb_cObject);
 

@@ -1,2 +1,1 @@
 fails:Encoding::Converter#primitive_convert calls #to_int to convert the destination byte size
-fails:Encoding::Converter#primitive_convert reuses read-again bytes after the first error

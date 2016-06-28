@@ -25,6 +25,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 module Rubinius
+  # TODO (pitr-ch 11-Jun-2016): move under Truffle
   class AtomicReference
     def initialize(val=nil)
       set(val) unless val.nil?
@@ -38,30 +39,8 @@ module Rubinius
       set(val)
     end
 
-    def get
-      Truffle.primitive :atomic_get
-      raise PrimitiveFailure, "Rubinius::AtomicReference#get primitive failed"
-    end
-
     alias_method :value, :get
 
-    def set(val)
-      Truffle.primitive :atomic_set
-      raise PrimitiveFailure, "Rubinius::AtomicReference#set primitive failed"
-    end
-
     alias_method :value=, :set
-
-    def compare_and_set(old, new)
-      Truffle.primitive :atomic_compare_and_set
-      raise PrimitiveFailure, "Rubinius::AtomicReference#compare_and_set primitive failed"
-    end
-
-    def get_and_set(new)
-      while true
-        val = get
-        return val if compare_and_set(val, new)
-      end
-    end
   end
 end

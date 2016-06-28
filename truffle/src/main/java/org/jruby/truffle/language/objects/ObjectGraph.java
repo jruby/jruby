@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.language.objects;
 
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
@@ -23,6 +23,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.arguments.RubyArguments;
+
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
@@ -43,7 +44,10 @@ public abstract class ObjectGraph {
                 synchronized (visited) {
                     final Deque<DynamicObject> stack = new ArrayDeque<>();
 
+                    // Thread.current
                     stack.add(thread);
+                    // Fiber.current
+                    stack.add(Layouts.THREAD.getFiberManager(thread).getCurrentFiber());
 
                     if (Thread.currentThread() == stoppingThread) {
                         visitContextRoots(context, stack);

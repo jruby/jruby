@@ -26,15 +26,18 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.kernel.KernelNodes;
+import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.module.ModuleFields;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.objects.SingletonClassNode;
+import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 
 @CoreClass("Class")
 public abstract class ClassNodes {
@@ -113,13 +116,13 @@ public abstract class ClassNodes {
         // Allocator is null here, we cannot create instances of singleton classes.
         assert RubyGuards.isRubyClass(superclass);
         assert attached != null;
-        return ensureSingletonConsistency(context, createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), null, superclass, name, true, attached, true));
+        return ensureItHasSingletonClassCreated(context, createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), null, superclass, name, true, attached, true));
     }
 
     @TruffleBoundary
     public static DynamicObject createInitializedRubyClass(RubyContext context, DynamicObject lexicalParent, DynamicObject superclass, String name) {
         final DynamicObject rubyClass = createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), lexicalParent, superclass, name, false, null, true);
-        ensureSingletonConsistency(context, rubyClass);
+        ensureItHasSingletonClassCreated(context, rubyClass);
         return rubyClass;
     }
 
@@ -178,7 +181,7 @@ public abstract class ClassNodes {
         Layouts.MODULE.getFields(superclass).addDependent(rubyClass);
 
         Layouts.MODULE.getFields(rubyClass).newVersion();
-        ensureSingletonConsistency(context, rubyClass);
+        ensureItHasSingletonClassCreated(context, rubyClass);
 
         DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(superclass);
         factory = Layouts.BASIC_OBJECT.setLogicalClass(factory, rubyClass);
@@ -188,30 +191,40 @@ public abstract class ClassNodes {
         Layouts.CLASS.setSuperclass(rubyClass, superclass);
     }
 
-    public static DynamicObject ensureSingletonConsistency(RubyContext context, DynamicObject rubyClass) {
-        createOneSingletonClass(context, rubyClass);
+    private static DynamicObject ensureItHasSingletonClassCreated(RubyContext context, DynamicObject rubyClass) {
+        getLazyCreatedSingletonClass(context, rubyClass);
         return rubyClass;
     }
 
-    @TruffleBoundary
     public static DynamicObject getSingletonClass(RubyContext context, DynamicObject rubyClass) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
-        return ensureSingletonConsistency(context, createOneSingletonClass(context, rubyClass));
+        return ensureItHasSingletonClassCreated(context, getLazyCreatedSingletonClass(context, rubyClass));
     }
 
-    public static DynamicObject createOneSingletonClass(RubyContext context, DynamicObject rubyClass) {
-        CompilerAsserts.neverPartOfCompilation();
+    public static DynamicObject getSingletonClassOrNull(RubyContext context, DynamicObject rubyClass) {
+        if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(rubyClass))) {
+            return ensureItHasSingletonClassCreated(context, Layouts.BASIC_OBJECT.getMetaClass(rubyClass));
+        } else {
+            return null;
+        }
+    }
 
+    private static DynamicObject getLazyCreatedSingletonClass(RubyContext context, DynamicObject rubyClass) {
         if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(rubyClass))) {
             return Layouts.BASIC_OBJECT.getMetaClass(rubyClass);
         }
 
+        return createSingletonClass(context, rubyClass);
+    }
+
+    @TruffleBoundary
+    private static DynamicObject createSingletonClass(RubyContext context, DynamicObject rubyClass) {
         final DynamicObject singletonSuperclass;
         if (getSuperClass(rubyClass) == null) {
             singletonSuperclass = Layouts.BASIC_OBJECT.getLogicalClass(rubyClass);
         } else {
-            singletonSuperclass = createOneSingletonClass(context, getSuperClass(rubyClass));
+            singletonSuperclass = getLazyCreatedSingletonClass(context, getSuperClass(rubyClass));
         }
 
         String name = String.format("#<Class:%s>", Layouts.MODULE.getFields(rubyClass).getName());
@@ -261,6 +274,37 @@ public abstract class ClassNodes {
         }
     }
 
+    @CoreMethod(names = "dup", taintFromSelf = true)
+    public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private KernelNodes.CopyNode copyNode;
+        @Child private CallDispatchHeadNode initializeDupNode;
+        @Child private SingletonClassNode singletonClassNode;
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            copyNode = KernelNodesFactory.CopyNodeFactory.create(context, sourceSection, null);
+            initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
+            singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+        }
+
+        @Specialization
+        public DynamicObject dup(VirtualFrame frame, DynamicObject self) {
+            final DynamicObject newObject = copyNode.executeCopy(frame, self);
+            final DynamicObject newObjectMetaClass = singletonClassNode.executeSingletonClass(newObject);
+            final DynamicObject selfMetaClass = Layouts.BASIC_OBJECT.getMetaClass(self);
+
+            assert Layouts.CLASS.getIsSingleton(selfMetaClass);
+            assert Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(newObject));
+
+            Layouts.MODULE.getFields(newObjectMetaClass).initCopy(selfMetaClass); // copies class methods
+            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
+
+            return newObject;
+        }
+
+    }
+
     @CoreMethod(names = "initialize", optional = 1, needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
@@ -269,7 +313,7 @@ public abstract class ClassNodes {
 
         void triggerInheritedHook(VirtualFrame frame, DynamicObject subClass, DynamicObject superClass) {
             if (inheritedNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             inheritedNode.call(frame, superClass, "inherited", null, subClass);
@@ -277,7 +321,7 @@ public abstract class ClassNodes {
 
         void moduleInitialize(VirtualFrame frame, DynamicObject rubyClass, DynamicObject block) {
             if (moduleInitializeNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(null));
             }
             moduleInitializeNode.executeInitialize(frame, rubyClass, block);

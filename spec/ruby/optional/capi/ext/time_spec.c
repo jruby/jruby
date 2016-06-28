@@ -72,7 +72,7 @@ static VALUE time_spec_TIMET2NUM(VALUE self) {
 }
 #endif
 
-void Init_time_spec() {
+void Init_time_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiTimeSpecs", rb_cObject);
 

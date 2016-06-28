@@ -120,7 +120,7 @@ public class RubyKernel {
 
         module.defineAnnotatedMethods(RubyKernel.class);
 
-        module.setFlag(RubyObject.USER7_F, false); //Kernel is the only normal Module that doesn't need an implementor
+        module.setFlag(RubyModule.NEEDSIMPL_F, false); //Kernel is the only normal Module that doesn't need an implementor
 
         runtime.setPrivateMethodMissing(new MethodMissingMethod(module, PRIVATE, CallType.NORMAL));
         runtime.setProtectedMethodMissing(new MethodMissingMethod(module, PROTECTED, CallType.NORMAL));
@@ -243,19 +243,17 @@ public class RubyKernel {
 
     private static String getMethodMissingFormat(Visibility visibility, CallType callType) {
 
-        String format = null;
+        String format = "undefined method `%s' for %s%s%s";
 
         if (visibility == PRIVATE) {
-            format = "private method `%s' called for %s";
+            format = "private method `%s' called for %s%s%s";
         } else if (visibility == PROTECTED) {
-            format = "protected method `%s' called for %s";
+            format = "protected method `%s' called for %s%s%s";
         } else if (callType == CallType.VARIABLE) {
-            format = "undefined local variable or method `%s' for %s";
+            format = "undefined local variable or method `%s' for %s%s%s";
         } else if (callType == CallType.SUPER) {
-            format = "super: no superclass method `%s'";
+            format = "super: no superclass method `%s' for %s%s%s";
         }
-
-        if (format == null) format = "undefined method `%s' for %s";
 
         return format;
     }

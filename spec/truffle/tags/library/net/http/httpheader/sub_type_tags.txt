@@ -1,3 +1,0 @@
-fails:Net::HTTPHeader#sub_type returns the 'sub-content-type', as per 'Content-Type' header entry
-fails:Net::HTTPHeader#sub_type returns nil if no 'sub-content-type' is set
-fails:Net::HTTPHeader#sub_type returns nil if the 'Content-Type' header entry does not exist

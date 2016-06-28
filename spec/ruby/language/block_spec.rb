@@ -201,6 +201,14 @@ describe "A block" do
     var.should == 1
   end
 
+  it "does not capture a local when the block argument has the same name" do
+    var = 1
+    proc { |&var|
+      var.call(2)
+    }.call { |x| x }.should == 2
+    var.should == 1
+  end
+
   describe "taking zero arguments" do
     it "does not raise an exception when no values are yielded" do
       @y.z { 1 }.should == 1
@@ -720,6 +728,16 @@ describe "Block-local variables" do
     [1].each do |;glark|
       glark.should be_nil
     end
+  end
+
+  it "are visible in deeper scopes before initialization" do
+    [1].each {|;glark|
+      [1].each {
+        defined?(glark).should_not be_nil
+        glark = 1
+      }
+      glark.should == 1
+    }
   end
 end
 

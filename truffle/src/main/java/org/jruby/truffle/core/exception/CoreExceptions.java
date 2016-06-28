@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import jnr.constants.platform.Errno;
+import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
@@ -110,6 +111,12 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject argumentErrorInvalidValue(Object object, String expectedType, Node currentNode) {
+        String badClassName = Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(object)).getName();
+        return argumentError(String.format("invalid value for %s(): %s", badClassName, expectedType), currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject argumentError(String message, Node currentNode, Throwable javaThrowable) {
         return argumentError(StringOperations.encodeRope(message, UTF8Encoding.INSTANCE), currentNode, javaThrowable);
     }
@@ -160,6 +167,46 @@ public class CoreExceptions {
     }
 
     // Errno
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorAcos(Node currentNode) {
+        return mathDomainError("acos", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorAcosh(Node currentNode) {
+        return mathDomainError("acosh", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorAsin(Node currentNode) {
+        return mathDomainError("asin", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorAtanh(Node currentNode) {
+        return mathDomainError("atanh", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorGamma(Node currentNode) {
+        return mathDomainError("gamma", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorLog2(Node currentNode) {
+        return mathDomainError("log2", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorLog10(Node currentNode) {
+        return mathDomainError("log10", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject mathDomainErrorLog(Node currentNode) {
+        return mathDomainError("log", currentNode);
+    }
 
     @TruffleBoundary
     public DynamicObject mathDomainError(String method, Node currentNode) {
@@ -215,11 +262,6 @@ public class CoreExceptions {
     @TruffleBoundary
     public DynamicObject negativeLengthError(int length, Node currentNode) {
         return indexError(String.format("negative length (%d)", length), currentNode);
-    }
-
-    @TruffleBoundary
-    public DynamicObject indexErrorInvalidIndex(Node currentNode) {
-        return indexError("invalid index", currentNode);
     }
 
     // LocalJumpError
@@ -465,9 +507,9 @@ public class CoreExceptions {
         final DynamicObject logicalClass = context.getCoreLibrary().getLogicalClass(receiver);
         final String moduleName = Layouts.MODULE.getFields(logicalClass).getName();
 
-        // e.g. BasicObject does not have to_s
-        final boolean hasToS = ModuleOperations.lookupMethod(logicalClass, "to_s", Visibility.PUBLIC) != null;
-        final Object stringRepresentation = hasToS ? context.send(receiver, "to_s", null) : context.getCoreLibrary().getNilObject();
+        // e.g. BasicObject does not have inspect
+        final boolean hasInspect = ModuleOperations.lookupMethod(logicalClass, "inspect", Visibility.PUBLIC) != null;
+        final Object stringRepresentation = hasInspect ? context.send(receiver, "inspect", null) : context.getCoreLibrary().getNilObject();
 
         return noMethodError(String.format("undefined method `%s' for %s:%s", name, stringRepresentation, moduleName), name, currentNode);
     }
@@ -637,7 +679,7 @@ public class CoreExceptions {
     // EncodingCompatibilityError
 
     @TruffleBoundary
-    public DynamicObject encodingCompatibilityErrorIncompatible(String a, String b, Node currentNode) {
+    public DynamicObject encodingCompatibilityErrorIncompatible(Encoding a, Encoding b, Node currentNode) {
         return encodingCompatibilityError(String.format("incompatible character encodings: %s and %s", a, b), currentNode);
     }
 

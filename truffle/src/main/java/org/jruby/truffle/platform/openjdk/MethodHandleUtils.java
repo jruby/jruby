@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.platform.openjdk;
 
+import org.jruby.truffle.language.control.JavaException;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
@@ -20,7 +22,7 @@ public abstract class MethodHandleUtils {
         try {
             return MethodHandles.lookup().unreflectGetter(field);
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new JavaException(e);
         }
     }
 
@@ -30,7 +32,7 @@ public abstract class MethodHandleUtils {
             field.setAccessible(true);
             return field;
         } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
+            throw new JavaException(e);
         }
     }
 

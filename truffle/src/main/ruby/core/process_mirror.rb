@@ -1,3 +1,11 @@
+# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -31,11 +39,6 @@ module Rubinius
         ::Thread.current[:$?] = status
       end
 
-      def self.fork
-        Truffle.primitive :vm_fork
-        raise PrimitiveFailure, "Rubinius::Mirror::Process.fork primitive failed"
-      end
-
       def self.exec(*args)
         exe = Execute.new(*args)
         exe.spawn_setup
@@ -53,11 +56,6 @@ module Rubinius
         end
 
         pid
-      end
-
-      def self.backtick(str)
-        Truffle.primitive :vm_backtick
-        raise PrimitiveFailure, "Rubinius::Mirror::Process.backtick primitive failed"
       end
 
       class Execute
@@ -232,6 +230,19 @@ module Rubinius
           end
         end
 
+        def convert_file_mode(obj)
+          case obj
+          when ::Fixnum
+            obj
+          when ::String
+            OFLAGS[obj]
+          when nil
+            OFLAGS["r"]
+          else
+            Rubinius::Type.coerce_to obj, Integer, :to_int
+          end
+        end
+
         # Mapping of string open modes to integer oflag versions.
         OFLAGS = {
           "r"  => ::File::RDONLY,
@@ -242,42 +253,20 @@ module Rubinius
           "a+" => ::File::RDWR   | ::File::APPEND | ::File::CREAT
         }
 
-        def convert_file_mode(obj)
-          case obj
-          when ::Fixnum
-            obj
-          when ::String
-            OFLAGS[obj]
-          when nil
-            OFLAG["r"]
-          else
-            Rubinius::Type.coerce_to obj, Integer, :to_int
-          end
-        end
-
-        def convert_env_key(key)
-          key = Rubinius::Type.check_null_safe(StringValue(key))
-
-          if key.include?("=")
-            raise ArgumentError, "environment name contains a equal : #{key}"
+        def spawn(options, command, arguments)
+          options ||= {}
+          env = options.delete(:unsetenv_others) ? {} : ENV.to_hash
+          if add_to_env = options.delete(:env)
+            env.merge! Hash[add_to_env]
           end
 
-          key
-        end
+          env_array = env.map { |k, v| "#{k}=#{v}" }
 
-        def convert_env_value(value)
-          return if value.nil?
-          Rubinius::Type.check_null_safe(StringValue(value))
-        end
+          if arguments.empty?
+            command, arguments = 'bash', ['bash', '-c', command]
+          end
 
-        def spawn_setup
-          Truffle.invoke_primitive :vm_spawn_setup, @options
-        end
-
-        def spawn(exe, command, args)
-          Truffle.primitive :vm_spawn
-          raise PrimitiveFailure,
-            "Rubinius::Mirror::Process::Execute#spawn primitive failed"
+          Truffle::Process.spawn command, arguments, env_array, options
         end
 
         def exec(command, args)

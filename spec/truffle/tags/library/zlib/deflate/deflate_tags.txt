@@ -3,3 +3,5 @@ fails(OOM):Zlib::Deflate#deflate with break deflates only first chunk
 fails(OOM):Zlib::Deflate#deflate with break deflates chunked data with final chunk
 fails(OOM):Zlib::Deflate#deflate with break deflates chunked data without errors
 fails:Zlib::Deflate.deflate deflates chunked data
+slow:Zlib::Deflate#deflate deflates lots of data
+slow:Zlib::Deflate.deflate deflates lots of data

@@ -55,9 +55,9 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
-import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
@@ -408,10 +408,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         }
     }
 
-    /** Getter for property list.
-     * @return Value of property list.
+    /**
+     * @deprecated RubyArray implements List, use it directly
+     * @return a read-only copy of this list
      */
-    public List getList() {
+    public final List<IRubyObject> getList() {
         return Arrays.asList(toJavaArray());
     }
 
@@ -3275,7 +3276,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         final boolean stringBypass = !honorOverride || runtime.getString().isMethodBuiltin("<=>");
 
         try {
-            Qsort.sort(values, begin, begin + realLength, new Comparator() {
+            Arrays.sort(values, begin, begin + realLength, new Comparator() {
                 public int compare(Object o1, Object o2) {
                     if (fixnumBypass && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
                         return compareFixnums((RubyFixnum) o1, (RubyFixnum) o2);
@@ -3310,7 +3311,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int length = realLength;
 
         safeArrayCopy(values, begin, newValues, 0, length);
-        Qsort.sort(newValues, 0, length, new Comparator() {
+        Arrays.sort(newValues, 0, length, new Comparator() {
             public int compare(Object o1, Object o2) {
                 IRubyObject obj1 = (IRubyObject) o1;
                 IRubyObject obj2 = (IRubyObject) o2;
@@ -4057,10 +4058,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return internalRotate(context, RubyNumeric.fix2int(cnt));
     }
 
-
     // Enumerable direct implementations (non-"each" versions)
+    // NOTE: not a @JRubyMethod(name = "all?") as there's no Array#all? on MRI
     public IRubyObject all_p(ThreadContext context, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, block, Arity.OPTIONAL);
+        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, block);
         if (!block.isGiven()) return all_pBlockless(context);
 
         for (int i = 0; i < realLength; i++) {
@@ -4081,7 +4082,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "any?")
     public IRubyObject any_p(ThreadContext context, Block block) {
         if (isEmpty()) return context.runtime.getFalse();
-        if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, block, Arity.OPTIONAL);
+        if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, block);
         if (!block.isGiven()) return any_pBlockless(context);
 
         for (int i = 0; i < realLength; i++) {
@@ -4193,31 +4194,37 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
     }
 
-    @JRubyMethod(name = "max")
-    public IRubyObject max(ThreadContext context, Block block) {
-        // TODO: check for overwritten <=> on Fixnum and String
-//        struct cmp_opt_data cmp_opt = { 0, 0 };
-        IRubyObject result = UNDEF, v;
-        int i;
+    private IRubyObject maxWithBlock(ThreadContext context, Block block) {
+        IRubyObject result = UNDEF;
+        Ruby runtime = context.runtime;
+        for (int i = 0; i < realLength; i++) {
+            IRubyObject v = eltOk(i);
 
-        if (block.isGiven()) {
-            Ruby runtime = context.runtime;
-            for (i = 0; i < realLength; i++) {
-                v = eltOk(i);
-                if (result == UNDEF || RubyComparable.cmpint(context, block.yieldArray(context, runtime.newArray(v, result), null), v, result) > 0) {
-                    result = v;
-                }
-            }
-        } else {
-            for (i = 0; i < realLength; i++) {
-                v = eltOk(i);
-                if (result == UNDEF || optimizedCmp(context, v, result/*, cmp_opt*/) > 0) {
-                    result = v;
-                }
+            if (result == UNDEF || RubyComparable.cmpint(context, block.yieldArray(context, runtime.newArray(v, result), null), v, result) > 0) {
+                result = v;
             }
         }
-        if (result == UNDEF) return context.nil;
-        return result;
+        
+        return result == UNDEF ? context.nil : result;
+    }
+
+    @JRubyMethod(name = "max")
+    public IRubyObject max(ThreadContext context, Block block) {
+        if (block.isGiven()) return maxWithBlock(context, block);
+
+        IRubyObject result = UNDEF;
+        Invalidator invalidator = getTypeIdForCMP();
+        Object typeId = invalidator != null ? invalidator.getData() : null;
+
+        for (int i = 0; i < realLength; i++) {
+            IRubyObject v = eltOk(i);
+
+            if (result == UNDEF || optimizedCmp(context, v, result, typeId, invalidator) > 0) {
+                result = v;
+            }
+        }
+
+        return result == UNDEF ? context.nil : result;
     }
 
     @JRubyMethod(name = "max")
@@ -4229,32 +4236,46 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return max(context, block);
     }
 
+    private IRubyObject minWithBlock(ThreadContext context, Block block) {
+        IRubyObject result = UNDEF;
+
+        Ruby runtime = context.runtime;
+        for (int i = 0; i < realLength; i++) {
+            IRubyObject v = eltOk(i);
+
+            if (result == UNDEF || RubyComparable.cmpint(context, block.yieldArray(context, runtime.newArray(v, result), null), v, result) < 0) {
+                result = v;
+            }
+        }
+
+        return result == UNDEF ? context.nil : result;
+    }
+
     @JRubyMethod(name = "min")
     public IRubyObject min(ThreadContext context, Block block) {
-        // TODO: check for overwritten <=> on Fixnum and String
-//        struct cmp_opt_data cmp_opt = { 0, 0 };
-        IRubyObject result = UNDEF, v;
-        int i;
+        if (block.isGiven()) return minWithBlock(context, block);
 
-        if (block.isGiven()) {
-            Ruby runtime = context.runtime;
-            for (i = 0; i < realLength; i++) {
-                v = eltOk(i);
-                if (result == UNDEF || RubyComparable.cmpint(context, block.yieldArray(context, runtime.newArray(v, result), null), v, result) < 0) {
-                    result = v;
-                }
+        IRubyObject result = UNDEF;
+        Invalidator invalidator = getTypeIdForCMP();
+        Object typeId = invalidator != null ? invalidator.getData() : null;
+
+        for (int i = 0; i < realLength; i++) {
+            IRubyObject v = eltOk(i);
+
+            if (result == UNDEF || optimizedCmp(context, v, result, typeId, invalidator) < 0) {
+                result = v;
             }
         }
-        else {
-            for (i = 0; i < realLength; i++) {
-                v = eltOk(i);
-                if (result == UNDEF || optimizedCmp(context, v, result/*, cmp_opt*/) < 0) {
-                    result = v;
-                }
-            }
-        }
-        if (result == UNDEF) return context.nil;
-        return result;
+
+        return result == UNDEF ? context.nil : result;
+    }
+
+    private Invalidator getTypeIdForCMP() {
+        if (realLength <= 0) return null;
+
+        RubyModule meta = eltOk(0).getMetaClass();
+
+        return meta.isBuiltin(OP_CMP.realName()) ? meta.getInvalidator() : null;
     }
 
     @JRubyMethod(name = "min")
@@ -4266,13 +4287,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return min(context, block);
     }
 
-    private static final int optimizedCmp(ThreadContext context, IRubyObject a, IRubyObject b/*, IRubyObject data*/) {
-        // TODO: check for overwritten <=> on Fixnum and String
-        if (a instanceof RubyFixnum && b instanceof RubyFixnum /*&& CMP_OPTIMIZABLE(data, Fixnum)*/) {
+    private static final int optimizedCmp(ThreadContext context, IRubyObject a, IRubyObject b, Object typeId, Invalidator invalidator) {
+        if (a instanceof RubyFixnum && b instanceof RubyFixnum && typeId == invalidator.getData()) {
             long aLong = ((RubyFixnum)a).getLongValue();
             long bLong = ((RubyFixnum)b).getLongValue();
             return aLong > bLong ? 1 : aLong < bLong ? -1 : 0;
-        } else if (a instanceof RubyString && b instanceof RubyString /*&& CMP_OPTIMIZABLE(data, String)*/) {
+        } else if (a instanceof RubyString && b instanceof RubyString && typeId == invalidator.getData()) {
             return ((RubyString)a).op_cmp((RubyString)b);
         }
 

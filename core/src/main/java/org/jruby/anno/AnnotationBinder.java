@@ -53,7 +53,6 @@ import java.util.logging.Logger;
 public class AnnotationBinder extends AbstractProcessor {
 
     public static final String POPULATOR_SUFFIX = "$POPULATOR";
-    private static final Logger LOG = Logger.getLogger("AnnotationBinder");
     public static final String SRC_GEN_DIR = "target/generated-sources/org/jruby/gen/";
     private final List<CharSequence> classNames = new ArrayList<CharSequence>();
     private PrintStream out;
@@ -72,7 +71,9 @@ public class AnnotationBinder extends AbstractProcessor {
                 fw.write('\n');
             }
             fw.close();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
+            if (e instanceof RuntimeException) throw (RuntimeException) e;
             throw new RuntimeException(e);
         }
 
@@ -239,24 +240,10 @@ public class AnnotationBinder extends AbstractProcessor {
             // write out a static initializer for frame names, so it only fires once
             out.println("    static {");
             if (!frameAwareMethods.isEmpty()) {
-                StringBuffer frameMethodsString = new StringBuffer();
-                boolean first = true;
-                for (CharSequence name : frameAwareMethods) {
-                    if (!first) frameMethodsString.append(',');
-                    first = false;
-                    frameMethodsString.append('"').append(name).append('"');
-                }
-                out.println("        MethodIndex.addFrameAwareMethods(" + frameMethodsString + ");");
+                out.println("        MethodIndex.addFrameAwareMethods(" + join(frameAwareMethods) + ");");
             }
             if (!scopeAwareMethods.isEmpty()) {
-                StringBuffer scopeMethodsString = new StringBuffer();
-                boolean first = true;
-                for (CharSequence name : scopeAwareMethods) {
-                    if (!first) scopeMethodsString.append(',');
-                    first = false;
-                    scopeMethodsString.append('"').append(name).append('"');
-                }
-                out.println("        MethodIndex.addScopeAwareMethods(" + scopeMethodsString + ");");
+                out.println("        MethodIndex.addScopeAwareMethods(" + join(scopeAwareMethods) + ");");
             }
             out.println("    }");
 
@@ -268,10 +255,22 @@ public class AnnotationBinder extends AbstractProcessor {
             FileOutputStream fos = new FileOutputStream(SRC_GEN_DIR + qualifiedName + POPULATOR_SUFFIX + ".java");
             fos.write(bytes.toByteArray());
             fos.close();
-        } catch (IOException ioe) {
-            LOG.severe("FAILED TO GENERATE: " + ioe);
+        }
+        catch (IOException ex) {
+            ex.printStackTrace(System.err);
             System.exit(1);
         }
+    }
+
+    private static StringBuilder join(final Iterable<String> names) {
+        final StringBuilder str = new StringBuilder();
+        boolean first = true;
+        for (String name : names) {
+            if (!first) str.append(',');
+            first = false;
+            str.append('"').append(name).append('"');
+        }
+        return str;
     }
 
     public void processMethodDeclarations(Map<CharSequence, List<ExecutableElement>> declarations) {

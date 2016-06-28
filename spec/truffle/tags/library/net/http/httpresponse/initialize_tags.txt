@@ -1,1 +1,0 @@
-fails:Net::HTTPResponse#initialize when passed http_version, response_code, response_message sets self http_version, response_code and response_message to the passed values

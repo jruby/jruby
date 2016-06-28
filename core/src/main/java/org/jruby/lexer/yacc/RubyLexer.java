@@ -654,10 +654,11 @@ public class RubyLexer extends LexingCommon {
         return Tokens.tSTRING_BEG;
     }
     
-    private void arg_ambiguous() {
+    private boolean arg_ambiguous() {
         if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load() && !ParserSupport.skipTruffleRubiniusWarnings(this)) {
             warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
         }
+        return true;
     }
 
     /*
@@ -1689,8 +1690,7 @@ public class RubyLexer extends LexingCommon {
             yaccValue = "->";
             return Tokens.tLAMBDA;
         }
-        if (isBEG() || isSpaceArg(c, spaceSeen)) {
-            if (isARG()) arg_ambiguous();
+        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous())) {
             setState(EXPR_BEG);
             pushback(c);
             yaccValue = "-";
@@ -1773,8 +1773,7 @@ public class RubyLexer extends LexingCommon {
             return Tokens.tOP_ASGN;
         }
         
-        if (isBEG() || isSpaceArg(c, spaceSeen)) {
-            if (isARG()) arg_ambiguous();
+        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous())) {
             setState(EXPR_BEG);
             pushback(c);
             if (Character.isDigit(c)) {

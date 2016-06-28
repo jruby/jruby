@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
@@ -23,8 +24,8 @@ public abstract class LazyDefaultValueNode extends RubyNode {
 
     private final Function0<Object> defaultValueProducer;
 
-    @CompilerDirectives.CompilationFinal private boolean hasDefault;
-    @CompilerDirectives.CompilationFinal private Object defaultValue;
+    @CompilationFinal private boolean hasDefault;
+    @CompilationFinal private Object defaultValue;
 
     public LazyDefaultValueNode(RubyContext context, SourceSection sourceSection, Function0<Object> defaultValueProducer) {
         super(context, sourceSection);
@@ -34,7 +35,7 @@ public abstract class LazyDefaultValueNode extends RubyNode {
     @Specialization
     public Object doDefault(NotProvided value) {
         if (!hasDefault) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             defaultValue = defaultValueProducer.apply();
             hasDefault = true;
         }

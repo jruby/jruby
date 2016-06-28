@@ -9,13 +9,14 @@
  */
 package org.jruby.truffle.core.hash;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,21 +32,34 @@ public class ConcatHashLiteralNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        return buildHash(executeChildren(frame));
+    }
 
+    @TruffleBoundary
+    private Object buildHash(DynamicObject[] parts) {
         final List<Map.Entry<Object, Object>> keyValues = new ArrayList<>();
 
-        for (RubyNode child : children) {
-            try {
-                for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(child.executeDynamicObject(frame))) {
-                    keyValues.add(keyValue);
-                }
-            } catch (UnexpectedResultException e) {
-                throw new UnsupportedOperationException(child.getClass() + " " + e.getResult().getClass());
+        for (int i = 0; i < parts.length; i++) {
+            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(parts[i])) {
+                keyValues.add(keyValue);
             }
         }
 
         return BucketsStrategy.create(getContext(), keyValues, false);
+    }
+
+    @ExplodeLoop
+    protected DynamicObject[] executeChildren(VirtualFrame frame) {
+        DynamicObject[] values = new DynamicObject[children.length];
+        for (int i = 0; i < children.length; i++) {
+            try {
+                DynamicObject hash = children[i].executeDynamicObject(frame);
+                values[i] = hash;
+            } catch (UnexpectedResultException e) {
+                throw new UnsupportedOperationException(children[i].getClass() + " " + e.getResult().getClass());
+            }
+        }
+        return values;
     }
 
 }

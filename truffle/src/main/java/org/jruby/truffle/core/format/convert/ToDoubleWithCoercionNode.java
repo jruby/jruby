@@ -33,7 +33,7 @@ public abstract class ToDoubleWithCoercionNode extends FormatNode {
     @Specialization
     public Object toDouble(VirtualFrame frame, Object value) {
         if (toFNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             toFNode = insert(ToFNodeGen.create(getContext(), getSourceSection(), null));
         }
 

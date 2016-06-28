@@ -20,10 +20,12 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
-public class ReadConstantWithLexicalScopeNode extends RubyNode implements RestartableReadConstantNode {
+/** Read a constant using the current lexical scope: CONST */
+public class ReadConstantWithLexicalScopeNode extends RubyNode {
 
     private final LexicalScope lexicalScope;
     private final String name;
+
     @Child protected LookupConstantWithLexicalScopeNode lookupConstantNode;
     @Child private GetConstantNode getConstantNode;
 
@@ -31,8 +33,8 @@ public class ReadConstantWithLexicalScopeNode extends RubyNode implements Restar
         super(context, sourceSection);
         this.lexicalScope = lexicalScope;
         this.name = name;
-        this.lookupConstantNode = LookupConstantWithLexicalScopeNodeGen.create(context, sourceSection, lexicalScope, name);
-        this.getConstantNode = GetConstantNodeGen.create(context, sourceSection, this, null, null, null);
+        this.lookupConstantNode = LookupConstantWithLexicalScopeNodeGen.create(lexicalScope, name);
+        this.getConstantNode = GetConstantNode.create();
     }
 
     @Override
@@ -40,10 +42,9 @@ public class ReadConstantWithLexicalScopeNode extends RubyNode implements Restar
         final RubyConstant constant = lookupConstantNode.executeLookupConstant(frame);
         final DynamicObject module = lexicalScope.getLiveModule();
 
-        return getConstantNode.executeGetConstant(frame, module, name, constant);
+        return getConstantNode.executeGetConstant(frame, module, name, constant, lookupConstantNode);
     }
 
-    @Override
     public Object readConstant(VirtualFrame frame, Object module, String name) {
         return execute(frame);
     }

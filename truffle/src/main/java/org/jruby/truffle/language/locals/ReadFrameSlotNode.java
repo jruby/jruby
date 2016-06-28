@@ -50,7 +50,7 @@ public abstract class ReadFrameSlotNode extends Node {
         return frame.getObject(frameSlot);
     }
 
-    @Specialization
+    @Specialization(contains = { "readBoolean", "readInt", "readLong", "readDouble", "readObject" })
     public Object readAny(Frame frame) {
         return frame.getValue(frameSlot);
     }

@@ -18,7 +18,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.language.RubyBaseNode;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
@@ -48,7 +47,7 @@ public class LookupEntryNode extends RubyBaseNode {
 
         while (entry != null) {
             if (byIdentityProfile.profile(Layouts.HASH.getCompareByIdentity(hash))) {
-                if (equalNode.executeReferenceEqual(frame, key, entry.getKey())) {
+                if (equalNode.executeReferenceEqual(key, entry.getKey())) {
                     return new HashLookupResult(hashed, index, previousEntry, entry);
                 }
             } else {

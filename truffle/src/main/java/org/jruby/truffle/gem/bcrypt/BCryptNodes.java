@@ -28,8 +28,8 @@ public abstract class BCryptNodes {
         @Specialization(guards = { "isRubyString(secret)", "isRubyString(salt)" })
         public Object hashpw(DynamicObject secret, DynamicObject salt) {
             final String result = BCrypt.hashpw(
-                    StringOperations.getString(getContext(), secret),
-                    StringOperations.getString(getContext(), salt));
+                    StringOperations.getString(secret),
+                    StringOperations.getString(salt));
             return StringOperations.createString(
                     getContext(),
                     StringOperations.createRope(result, USASCIIEncoding.INSTANCE));

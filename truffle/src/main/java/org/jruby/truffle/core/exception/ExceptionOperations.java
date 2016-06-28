@@ -17,15 +17,15 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
-
+import org.jruby.truffle.language.backtrace.BacktraceFormatter.FormattingFlags;
 import java.util.EnumSet;
 import java.util.List;
 
 public abstract class ExceptionOperations {
 
     private static final EnumSet<BacktraceFormatter.FormattingFlags> FORMAT_FLAGS = EnumSet.of(
-            BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX,
-            BacktraceFormatter.FormattingFlags.OMIT_EXCEPTION);
+            FormattingFlags.OMIT_FROM_PREFIX,
+            FormattingFlags.OMIT_EXCEPTION);
 
     @TruffleBoundary
     public static DynamicObject backtraceAsRubyStringArray(RubyContext context, DynamicObject exception, Backtrace backtrace) {

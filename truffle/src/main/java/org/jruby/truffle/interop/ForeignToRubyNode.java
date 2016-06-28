@@ -24,10 +24,6 @@ import org.jruby.truffle.language.RubyNode;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class ForeignToRubyNode extends RubyNode {
 
-    public ForeignToRubyNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
-
     public abstract Object executeConvert(VirtualFrame frame, Object value);
 
     @Specialization(guards = "stringsEquals(cachedValue, value)", limit = "getLimit()")

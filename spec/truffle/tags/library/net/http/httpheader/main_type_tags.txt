@@ -1,2 +1,0 @@
-fails:Net::HTTPHeader#main_type returns the 'main-content-type', as per 'Content-Type' header entry
-fails:Net::HTTPHeader#main_type returns nil if the 'Content-Type' header entry does not exist

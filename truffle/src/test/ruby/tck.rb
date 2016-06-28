@@ -149,3 +149,9 @@ def values_object
 end
 
 Truffle::Interop.export_method(:values_object)
+
+def add_array(array, index, value)
+  array[index] += value
+end
+
+Truffle::Interop.export_method(:add_array)

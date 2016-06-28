@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.basicobject;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
@@ -30,6 +29,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayHelpers;
+import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.rope.Rope;
@@ -51,7 +51,6 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -64,7 +63,7 @@ public abstract class BasicObjectNodes {
 
         @CreateCast("operand")
         public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeGen.create(null, null, operand);
+            return BooleanCastNodeGen.create(operand);
         }
 
         @Specialization
@@ -94,7 +93,11 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = { "equal?", "==" }, required = 1)
     public abstract static class ReferenceEqualNode extends CoreMethodArrayArgumentsNode {
 
-        public abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
+        public static ReferenceEqualNode create() {
+            return ReferenceEqualNodeFactory.create(null);
+        }
+
+        public abstract boolean executeReferenceEqual(Object a, Object b);
 
         @Specialization
         public boolean equal(boolean a, boolean b) {
@@ -172,7 +175,7 @@ public abstract class BasicObjectNodes {
 
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
             final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
-            final Source source = Source.fromText(space + code.toString(), StringOperations.rope(fileName).toString());
+            final Source source = getContext().getSourceLoader().loadFragment(space + code.toString(), StringOperations.rope(fileName).toString());
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
             final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);

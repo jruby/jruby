@@ -422,7 +422,7 @@ public abstract class RegexpNodes {
         @Specialization(guards = "isRubySymbol(symbol)")
         public Object match(VirtualFrame frame, DynamicObject regexp, DynamicObject symbol) {
             if (toSNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -437,7 +437,7 @@ public abstract class RegexpNodes {
         @Specialization(guards = { "!isRubyString(other)", "!isRubySymbol(other)", "!isNil(other)" })
         public Object matchGeneric(VirtualFrame frame, DynamicObject regexp, DynamicObject other) {
             if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
@@ -554,12 +554,12 @@ public abstract class RegexpNodes {
             }
 
             if (newLookupTableNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 newLookupTableNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
             if (lookupTableWriteNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 lookupTableWriteNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 

@@ -1,3 +1,0 @@
-fails:Net::HTTPHeader#[]= when passed key, value sets the header entry with the passed key to the passed value
-fails:Net::HTTPHeader#[]= when passed key, value is case-insensitive
-fails:Net::HTTPHeader#[]= when passed key, value removes the header entry with the passed key when the value is false or nil

@@ -1004,10 +1004,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         shareLevel = SHARE_LEVEL_NONE;
     }
 
-    private void view(byte[]bytes) {
+    private void view(byte[] bytes, boolean copy) {
         modifyCheck();
 
-        value = new ByteList(bytes);
+        value = new ByteList(bytes, copy);
         shareLevel = SHARE_LEVEL_NONE;
 
         value.invalidate();
@@ -1974,13 +1974,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      *
      */
     @Override
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
-        return inspect19();
+        return inspect(getRuntime());
     }
 
-    @JRubyMethod(name = "inspect")
+    final RubyString inspect(final Ruby runtime) {
+        return (RubyString) inspect(runtime, value).infectBy(this);
+    }
+
+    @Deprecated
     public IRubyObject inspect19() {
-        return inspect19(getRuntime(), value).infectBy(this);
+        return inspect();
     }
 
     // MRI: rb_str_escape
@@ -2048,7 +2053,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return result;
     }
 
-    public static IRubyObject inspect19(Ruby runtime, ByteList byteList) {
+    @Deprecated
+    public static IRubyObject inspect19(final Ruby runtime, ByteList byteList) {
+        return inspect(runtime, byteList);
+    }
+
+    public static RubyString inspect(final Ruby runtime, ByteList byteList) {
         Encoding enc = byteList.getEncoding();
         byte bytes[] = byteList.getUnsafeBytes();
         int p = byteList.getBegin();
@@ -3929,7 +3939,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return false;
     }
 
-    private static final ByteList SPACE_BYTELIST = new ByteList(ByteList.plain(" "));
+    private static final ByteList SPACE_BYTELIST = new ByteList(new byte[] { ' ' }, false);
 
     private IRubyObject justify19(ThreadContext context, IRubyObject arg0, int jflag) {
         Ruby runtime = context.runtime;
@@ -5434,7 +5444,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      * @deprecated
      */
     public void setValue(CharSequence value) {
-        view(ByteList.plain(value));
+        view(ByteList.plain(value), false);
     }
 
     public void setValue(ByteList value) {

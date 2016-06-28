@@ -25,6 +25,8 @@ public abstract class Rope {
     protected byte[] bytes;
 
     protected Rope(Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth, byte[] bytes) {
+        assert encoding != null;
+
         this.encoding = encoding;
         this.codeRange = codeRange;
         this.singleByteOptimizable = singleByteOptimizable;
@@ -84,11 +86,15 @@ public abstract class Rope {
 
     @Override
     public final int hashCode() {
-        if (hashCode == 0) {
+        if (! isHashCodeCalculated()) {
             hashCode = RopeOperations.hashForRange(this, 1, 0, byteLength);
         }
 
         return hashCode;
+    }
+
+    public final boolean isHashCodeCalculated() {
+        return hashCode != 0;
     }
 
     @Override
@@ -100,11 +106,11 @@ public abstract class Rope {
         if (o instanceof Rope) {
             final Rope other = (Rope) o;
 
-            if ((hashCode != 0) && (other.hashCode != 0) && (hashCode != other.hashCode)) {
+            if (isHashCodeCalculated() && other.isHashCodeCalculated() && (hashCode != other.hashCode)) {
                 return false;
             }
 
-            // TODO (nirvdrum 21-Jan-16): We really should be taking the encoding into account here. We're currenly not because it breaks the symbol table.
+            // TODO (nirvdrum 21-Jan-16): We really should be taking the encoding into account here. We're currently not because it breaks the symbol table.
             return byteLength() == other.byteLength() && Arrays.equals(getBytes(), other.getBytes());
         }
 

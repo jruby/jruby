@@ -1,1 +1,0 @@
-fails:Net::HTTP#use_ssl? returns false

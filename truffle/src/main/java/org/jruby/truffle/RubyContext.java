@@ -16,9 +16,11 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
@@ -47,7 +49,6 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
-import org.jruby.truffle.stdlib.readline.ConsoleHolder;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
@@ -76,11 +77,13 @@ public class RubyContext extends ExecutionContext {
     private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager = new ObjectSpaceManager(this);
     private final AtExitManager atExitManager = new AtExitManager(this);
-    private final SourceCache sourceCache = new SourceCache(new SourceLoader(this));
+    private final SourceLoader sourceLoader = new SourceLoader(this);
+    private final SourceCache sourceCache = new SourceCache(sourceLoader);
     private final CallStackManager callStack = new CallStackManager(this);
     private final CoreStrings coreStrings = new CoreStrings(this);
     private final FrozenStrings frozenStrings = new FrozenStrings(this);
     private final CoreExceptions coreExceptions = new CoreExceptions(this);
+    private final EncodingManager encodingManager = new EncodingManager(this);
 
     private final CompilerOptions compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
@@ -92,7 +95,6 @@ public class RubyContext extends ExecutionContext {
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
     private final CoverageManager coverageManager;
-    private final ConsoleHolder consoleHolder;
 
     private final Object classVariableDefinitionLock = new Object();
 
@@ -149,14 +151,17 @@ public class RubyContext extends ExecutionContext {
 
         // Load the nodes
 
+        org.jruby.Main.printTruffleTimeMetric("before-load-primitives");
+        coreLibrary.addPrimitives();
+        org.jruby.Main.printTruffleTimeMetric("after-load-primitives");
+
         org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
         coreLibrary.addCoreMethods();
-        primitiveManager.addAnnotatedPrimitives();
         org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
 
         // Load the reset of the core library
 
-        coreLibrary.initializeAfterBasicMethodsAdded();
+        coreLibrary.loadRubyCore();
 
         // Load other subsystems
 
@@ -176,8 +181,6 @@ public class RubyContext extends ExecutionContext {
         coverageManager = new CoverageManager(this, instrumenter);
 
         coreLibrary.initializePostBoot();
-
-        consoleHolder = new ConsoleHolder();
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -304,6 +307,10 @@ public class RubyContext extends ExecutionContext {
         return attachmentsManager;
     }
 
+    public SourceLoader getSourceLoader() {
+        return sourceLoader;
+    }
+
     public SourceCache getSourceCache() {
         return sourceCache;
     }
@@ -352,8 +359,8 @@ public class RubyContext extends ExecutionContext {
         return coreExceptions;
     }
 
-    public ConsoleHolder getConsoleHolder() {
-        return consoleHolder;
+    public EncodingManager getEncodingManager() {
+        return encodingManager;
     }
 
 }

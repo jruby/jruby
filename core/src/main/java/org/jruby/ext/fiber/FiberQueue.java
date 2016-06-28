@@ -79,7 +79,7 @@ public class FiberQueue {
 
     public IRubyObject shutdown(ThreadContext context) {
         queue = null;
-        return context.runtime.getNil();
+        return context.nil;
     }
     
     public synchronized void shutdown() {

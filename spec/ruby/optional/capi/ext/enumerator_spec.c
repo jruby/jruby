@@ -13,7 +13,7 @@ VALUE enumerator_spec_rb_enumeratorize(int argc, VALUE *argv, VALUE self) {
 }
 #endif
 
-void Init_enumerator_spec() {
+void Init_enumerator_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiEnumeratorSpecs", rb_cObject);
 

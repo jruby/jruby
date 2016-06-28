@@ -10,7 +10,6 @@
 package org.jruby.truffle.core.symbol;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
@@ -24,8 +23,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.builtins.Primitive;
-import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.proc.ProcOperations;
@@ -76,7 +73,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public DynamicObject encoding(DynamicObject symbol) {
-            return EncodingNodes.getEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
+            return getContext().getEncodingManager().getRubyEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
         }
 
     }
@@ -154,18 +151,6 @@ public abstract class SymbolNodes {
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             throw new RaiseException(coreExceptions().typeErrorAllocatorUndefinedFor(rubyClass, this));
-        }
-
-    }
-
-    @Primitive(name = "symbol_is_constant")
-    public static abstract class SymbolIsConstantPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(symbol)")
-        public boolean symbolIsConstant(DynamicObject symbol) {
-            final String string = symbol.toString();
-            return string.length() > 0 && Character.isUpperCase(string.charAt(0));
         }
 
     }

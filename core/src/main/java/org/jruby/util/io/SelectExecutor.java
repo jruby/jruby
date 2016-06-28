@@ -50,17 +50,12 @@ public class SelectExecutor {
     }
 
     IRubyObject selectEnd(ThreadContext context) throws IOException {
-        fdTerm(readKeyList);
-        fdTerm(writeKeyList);
-        fdTerm(errorKeyList);
-
         if (selectors != null) {
             for (int i = 0; i < selectors.size(); i++) {
                 Selector selector = selectors.get(i);
                 // if it is a JDK selector, cache it
                 if (selector.provider() == SelectorProvider.provider()) {
-                    // clear cancelled keys (with selectNow) and return to pool
-                    selector.selectNow();
+                    // return to pool
                     context.runtime.getSelectorPool().put(selector);
                 } else {
                     selector.close();
@@ -275,20 +270,6 @@ public class SelectExecutor {
             if (key.isValid() && (key.readyOps() & operations) != 0 && ((List<ChannelFD>)key.attachment()).contains(fd)) return true;
         }
         return false;
-    }
-
-    private void fdTerm(List<SelectionKey> keys) {
-        if (keys == null) return;
-        for (int i = 0; i < keys.size(); i++) {
-            SelectionKey key = keys.get(i);
-            killKey(key);
-        }
-    }
-
-    private void killKey(SelectionKey key) {
-        try {
-            if (key.isValid()) key.cancel();
-        } catch (Exception e) {}
     }
 
     private SelectionKey trySelectRead(ThreadContext context, ChannelFD fd) throws IOException {

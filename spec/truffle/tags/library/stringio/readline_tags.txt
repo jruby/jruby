@@ -1,2 +1,0 @@
-fails:StringIO#readline when passed [separator] sets $_ to the read content
-fails:StringIO#readline when passed no argument sets $_ to the read content

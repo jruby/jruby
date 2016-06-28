@@ -130,7 +130,8 @@ describe "ObjectSpace.each_object" do
   end
 
   it "finds an object stored in a thread local" do
-    Thread.current.thread_variable_set(:object_space_thread_local, ObjectSpaceFixtures::ObjectToBeFound.new(:thread_local))
+    thread = Thread.new {}
+    thread.thread_variable_set(:object_space_thread_local, ObjectSpaceFixtures::ObjectToBeFound.new(:thread_local))
     ObjectSpaceFixtures.to_be_found_symbols.should include(:thread_local)
   end
 

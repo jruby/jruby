@@ -32,30 +32,33 @@ import org.jruby.truffle.core.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.platform.UnsafeGroup;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @CoreClass("Fiber")
 public abstract class FiberNodes {
 
-    public static DynamicObject createFiber(DynamicObject thread, DynamicObjectFactory factory, String name) {
-        return createFiber(thread, factory, name, false);
+    public static DynamicObject createFiber(RubyContext context, DynamicObject thread, DynamicObjectFactory factory, String name) {
+        return createFiber(context, thread, factory, name, false);
     }
 
     public static DynamicObject createRootFiber(RubyContext context, DynamicObject thread) {
-        return createFiber(thread, context.getCoreLibrary().getFiberFactory(), "root Fiber for Thread", true);
+        return createFiber(context, thread, context.getCoreLibrary().getFiberFactory(), "root Fiber for Thread", true);
     }
 
-    private static DynamicObject createFiber(DynamicObject thread, DynamicObjectFactory factory, String name, boolean isRootFiber) {
+    private static DynamicObject createFiber(RubyContext context, DynamicObject thread, DynamicObjectFactory factory, String name, boolean isRootFiber) {
         assert RubyGuards.isRubyThread(thread);
+        final DynamicObjectFactory instanceFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getObjectClass());
+        final DynamicObject fiberLocals = Layouts.BASIC_OBJECT.createBasicObject(instanceFactory);
         return Layouts.FIBER.createFiber(
                 factory,
+                fiberLocals,
                 isRootFiber,
                 new CountDownLatch(1),
                 new LinkedBlockingQueue<FiberMessage>(2),
@@ -214,7 +217,7 @@ public abstract class FiberNodes {
 
         protected Object singleValue(VirtualFrame frame, Object[] args) {
             if (singleValueCastNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 singleValueCastNode = insert(SingleValueCastNodeGen.create(getContext(), getSourceSection(), null));
             }
             return singleValueCastNode.executeSingleValue(frame, args);
@@ -376,7 +379,7 @@ public abstract class FiberNodes {
         public DynamicObject allocate(DynamicObject rubyClass) {
             DynamicObject parent = getContext().getThreadManager().getCurrentThread();
             DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(rubyClass);
-            return createFiber(parent, factory, null);
+            return createFiber(getContext(), parent, factory, null);
         }
 
     }

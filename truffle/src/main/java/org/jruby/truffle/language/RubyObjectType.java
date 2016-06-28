@@ -27,7 +27,7 @@ public class RubyObjectType extends ObjectType {
         CompilerAsserts.neverPartOfCompilation();
 
         if (RubyGuards.isRubyString(object)) {
-            return RopeOperations.decodeRope(getContext().getJRubyRuntime(), StringOperations.rope(object));
+            return RopeOperations.decodeRope(StringOperations.rope(object));
         } else if (RubyGuards.isRubySymbol(object)) {
             return Layouts.SYMBOL.getString(object);
         } else if (RubyGuards.isRubyException(object)) {
@@ -43,14 +43,6 @@ public class RubyObjectType extends ObjectType {
     @Override
     public ForeignAccess getForeignAccessFactory(DynamicObject object) {
         return RubyMessageResolutionAccessor.ACCESS;
-    }
-
-    public static boolean isInstance(TruffleObject object) {
-        return RubyGuards.isRubyBasicObject(object);
-    }
-
-    private RubyContext getContext() {
-        return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(this)).getContext();
     }
 
 }

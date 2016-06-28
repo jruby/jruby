@@ -18,7 +18,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayToObjectArrayNode;
 import org.jruby.truffle.core.array.ArrayToObjectArrayNodeGen;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
@@ -72,7 +71,7 @@ public class YieldExpressionNode extends RubyNode {
 
     private Object[] unsplat(Object[] argumentsObjects) {
         if (unsplatNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             unsplatNode = insert(ArrayToObjectArrayNodeGen.create(null));
         }
         return unsplatNode.unsplat(argumentsObjects);
@@ -89,7 +88,7 @@ public class YieldExpressionNode extends RubyNode {
 
     private YieldNode getYieldNode() {
         if (yieldNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             yieldNode = insert(new YieldNode(getContext()));
         }
 

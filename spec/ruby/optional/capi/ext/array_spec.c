@@ -266,7 +266,7 @@ static VALUE array_spec_rb_ary_subseq(VALUE self, VALUE ary, VALUE begin, VALUE 
 }
 #endif
 
-void Init_array_spec() {
+void Init_array_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiArraySpecs", rb_cObject);
 

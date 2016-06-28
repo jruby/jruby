@@ -243,9 +243,10 @@ do
      # Pass -X... and -X? search options through
      -X*\.\.\.|-X*\?)
         ruby_args=("${ruby_args[@]}" "$1") ;;
+     -Xclassic)
+        unset USING_TRUFFLE
+        ;;
      -X+T)
-        JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
-        ruby_args=("${ruby_args[@]}" "-X+T")
         USING_TRUFFLE="true"
         ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
@@ -314,6 +315,11 @@ do
     esac
     shift
 done
+
+if [[ "$USING_TRUFFLE" != "" ]]; then
+   JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
+   ruby_args=("-X+T" "${ruby_args[@]}")
+fi
 
 # Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
 if [[ $darwin && -z "$JAVA_ENCODING" ]]; then

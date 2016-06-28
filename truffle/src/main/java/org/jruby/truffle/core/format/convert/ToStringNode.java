@@ -24,7 +24,6 @@ import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
@@ -98,7 +97,7 @@ public abstract class ToStringNode extends FormatNode {
     @Specialization(guards = "isRubyArray(array)")
     public byte[] toString(VirtualFrame frame, DynamicObject array) {
         if (toSNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
                     MissingBehavior.RETURN_MISSING));
         }
@@ -119,7 +118,7 @@ public abstract class ToStringNode extends FormatNode {
     @Specialization(guards = {"!isRubyString(object)", "!isRubyArray(object)"})
     public byte[] toString(VirtualFrame frame, Object object) {
         if (toStrNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
                     MissingBehavior.RETURN_MISSING));
         }
@@ -136,7 +135,7 @@ public abstract class ToStringNode extends FormatNode {
 
         if (inspectOnConversionFailure) {
             if (inspectNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(),
                         getEncapsulatingSourceSection(), null));
             }

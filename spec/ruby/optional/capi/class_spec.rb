@@ -169,7 +169,7 @@ describe "C-API Class function" do
     it "raises a NameError if the class variable is not defined" do
       lambda {
         @s.rb_cv_get(CApiClassSpecs::CVars, "@@no_cvar")
-      }.should raise_error(NameError)
+      }.should raise_error(NameError, /class variable @@no_cvar/)
     end
   end
 
@@ -181,6 +181,47 @@ describe "C-API Class function" do
       o.new_cvar.should == 1
     end
 
+  end
+
+  describe "rb_define_class" do
+    before :each do
+      @cls = @s.rb_define_class("ClassSpecDefineClass", CApiClassSpecs::Super)
+    end
+
+    it "creates a subclass of the superclass" do
+      @cls.should be_kind_of(Class)
+      ClassSpecDefineClass.should equal(@cls)
+      @cls.superclass.should == CApiClassSpecs::Super
+    end
+
+    it "sets the class name" do
+      @cls.name.should == "ClassSpecDefineClass"
+    end
+
+    it "calls #inherited on the superclass" do
+      CApiClassSpecs::Super.should_receive(:inherited)
+      @s.rb_define_class("ClassSpecDefineClass2", CApiClassSpecs::Super)
+    end
+
+    it "raises a TypeError when given a non class object to superclass" do
+      lambda {
+        @s.rb_define_class("ClassSpecDefineClass3", Module.new)
+      }.should raise_error(TypeError)
+    end
+
+    it "raises a TypeError when given a mismatched class to superclass" do
+      lambda {
+        @s.rb_define_class("ClassSpecDefineClass", Object)
+      }.should raise_error(TypeError)
+    end
+
+    ruby_version_is "2.4" do
+      it "raises a ArgumentError when given NULL as superclass" do
+        lambda {
+          @s.rb_define_class("ClassSpecDefineClass4", nil)
+        }.should raise_error(ArgumentError)
+      end
+    end
   end
 
   describe "rb_define_class_under" do
@@ -290,7 +331,7 @@ describe "C-API Class function" do
     it "raises a NameError if the class variable is not defined" do
       lambda {
         @s.rb_cvar_get(CApiClassSpecs::CVars, "@@no_cvar")
-      }.should raise_error(NameError)
+      }.should raise_error(NameError, /class variable @@no_cvar/)
     end
   end
 

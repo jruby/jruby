@@ -10,7 +10,6 @@
 package org.jruby.truffle.core.method;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
@@ -30,7 +29,6 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
-import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.core.proc.ProcOperations;
@@ -53,19 +51,11 @@ public abstract class MethodNodes {
     @CoreMethod(names = { "==", "eql?" }, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
-        @Child protected ReferenceEqualNode referenceEqualNode;
-
-        protected boolean areSame(VirtualFrame frame, Object left, Object right) {
-            if (referenceEqualNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null));
-            }
-            return referenceEqualNode.executeReferenceEqual(frame, left, right);
-        }
-
         @Specialization(guards = "isRubyMethod(b)")
-        public boolean equal(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            return areSame(frame, Layouts.METHOD.getReceiver(a), Layouts.METHOD.getReceiver(b)) && Layouts.METHOD.getMethod(a) == Layouts.METHOD.getMethod(b);
+        public boolean equal(VirtualFrame frame, DynamicObject a, DynamicObject b,
+                @Cached("create()") ReferenceEqualNode referenceEqualNode) {
+            return referenceEqualNode.executeReferenceEqual(Layouts.METHOD.getReceiver(a), Layouts.METHOD.getReceiver(b)) &&
+                    Layouts.METHOD.getMethod(a) == Layouts.METHOD.getMethod(b);
         }
 
         @Specialization(guards = "!isRubyMethod(b)")

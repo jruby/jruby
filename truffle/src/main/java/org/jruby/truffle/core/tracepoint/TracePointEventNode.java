@@ -77,7 +77,7 @@ class TracePointEventNode extends ExecutionEventNode {
 
     protected YieldNode getYieldNode() {
         if (yieldNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             yieldNode = insert(new YieldNode(context));
         }
 

@@ -111,7 +111,7 @@ public abstract class SetNode extends RubyNode {
             if (n < size) {
                 final boolean equal;
                 if (profiledByIdentity) {
-                    equal = equalNode.executeReferenceEqual(frame, key, PackedArrayStrategy.getKey(store, n));
+                    equal = equalNode.executeReferenceEqual(key, PackedArrayStrategy.getKey(store, n));
                 } else {
                     equal = hashed == PackedArrayStrategy.getHashed(store, n) &&
                             eqlNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, n));
@@ -206,7 +206,7 @@ public abstract class SetNode extends RubyNode {
 
     private HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
         if (lookupEntryNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             lookupEntryNode = insert(new LookupEntryNode(getContext(), getEncapsulatingSourceSection()));
         }
         return lookupEntryNode.lookup(frame, hash, key);
@@ -232,7 +232,7 @@ public abstract class SetNode extends RubyNode {
 
     private boolean isFrozen(Object value) {
         if (isFrozenNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
         }
         return isFrozenNode.executeIsFrozen(value);
@@ -240,7 +240,7 @@ public abstract class SetNode extends RubyNode {
 
     private Object dup(VirtualFrame frame, Object value) {
         if (dupNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
         return dupNode.call(frame, value, "dup", null);
@@ -248,7 +248,7 @@ public abstract class SetNode extends RubyNode {
 
     private Object freeze(VirtualFrame frame, Object value) {
         if (freezeNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             freezeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
         return freezeNode.call(frame, value, "freeze", null);

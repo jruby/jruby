@@ -52,7 +52,7 @@ VALUE mutex_spec_rb_mutex_synchronize(VALUE self, VALUE mutex, VALUE value) {
 }
 #endif
 
-void Init_mutex_spec() {
+void Init_mutex_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiMutexSpecs", rb_cObject);
 

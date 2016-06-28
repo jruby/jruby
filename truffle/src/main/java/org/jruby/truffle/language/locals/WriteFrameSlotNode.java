@@ -53,7 +53,8 @@ public abstract class WriteFrameSlotNode extends Node {
         return value;
     }
 
-    @Specialization(guards = "checkObjectKind(frame)")
+    @Specialization(guards = "checkObjectKind(frame)",
+            contains = { "writeBoolean", "writeInteger", "writeLong", "writeDouble" })
     public Object writeObject(Frame frame, Object value) {
         assert RubyGuards.wasProvided(value); // Useful debug aid to catch a running-away NotProvided
         frame.setObject(frameSlot, value);
@@ -78,7 +79,7 @@ public abstract class WriteFrameSlotNode extends Node {
 
     protected boolean checkObjectKind(Frame frame) {
         if (frameSlot.getKind() != FrameSlotKind.Object) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             frameSlot.setKind(FrameSlotKind.Object);
         }
 
@@ -95,7 +96,7 @@ public abstract class WriteFrameSlotNode extends Node {
 
     private boolean initialSetKind(FrameSlotKind kind) {
         if (frameSlot.getKind() == FrameSlotKind.Illegal) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             frameSlot.setKind(kind);
             return true;
         }

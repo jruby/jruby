@@ -1,1 +1,0 @@
-fails:Set#superset? returns true if passed a Set that equals self or self is a proper superset of

@@ -11,6 +11,7 @@ package org.jruby.truffle.platform.openjdk;
 
 import org.jruby.truffle.core.queue.ArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.core.queue.DelegatingBlockingQueue;
+import org.jruby.truffle.language.control.JavaException;
 
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -43,7 +44,7 @@ public class OpenJDKArrayBlockingQueueLocksConditions<T>
             notEmptyCondition = (Condition) NOT_EMPTY_CONDITION_FIELD_GETTER.invokeExact(queue);
             notFullCondition = (Condition) NOT_FULL_CONDITION_FIELD_GETTER.invokeExact(queue);
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            throw new JavaException(throwable);
         }
     }
 

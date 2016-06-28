@@ -1,1 +1,0 @@
-fails:Open3.pipeline_r needs to be reviewed for spec completeness

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.exceptions;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
@@ -18,13 +19,11 @@ public class DisablingBacktracesNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    private static ThreadLocal<Boolean> areBacktracesDisabledThreadLocal = new ThreadLocal<Boolean>() {
-
+    private static final ThreadLocal<Boolean> BACTRACES_DISABLED = new ThreadLocal<Boolean>() {
         @Override
         protected Boolean initialValue() {
             return false;
         }
-
     };
 
     public DisablingBacktracesNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
@@ -34,18 +33,27 @@ public class DisablingBacktracesNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final boolean backtracesPreviouslyDisabled = areBacktracesDisabledThreadLocal.get();
-
+        final boolean backtracesPreviouslyDisabled = getBacktracesDisabled();
         try {
-            areBacktracesDisabledThreadLocal.set(true);
+            setBacktracesDisabled(true);
             return child.execute(frame);
         } finally {
-            areBacktracesDisabledThreadLocal.set(backtracesPreviouslyDisabled);
+            setBacktracesDisabled(backtracesPreviouslyDisabled);
         }
     }
 
+    @TruffleBoundary
+    private static Boolean getBacktracesDisabled() {
+        return BACTRACES_DISABLED.get();
+    }
+
+    @TruffleBoundary
+    private void setBacktracesDisabled(boolean value) {
+        BACTRACES_DISABLED.set(value);
+    }
+
     public static boolean areBacktracesDisabled() {
-        return areBacktracesDisabledThreadLocal.get();
+        return getBacktracesDisabled();
     }
 
 }

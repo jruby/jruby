@@ -119,24 +119,26 @@ describe "IO#puts" do
 
   with_feature :encoding do
     it "writes crlf when IO is opened with newline: :crlf" do
-      File.open(@name, 'w', newline: :crlf) do |file|
+      File.open(@name, 'wt', newline: :crlf) do |file|
         file.puts
       end
-      File.read(@name).should == "\r\n"
+      File.binread(@name).should == "\r\n"
     end
 
     it "writes cr when IO is opened with newline: :cr" do
-      File.open(@name, 'w', newline: :cr) do |file|
+      File.open(@name, 'wt', newline: :cr) do |file|
         file.puts
       end
-      File.read(@name).should == "\r"
+      File.binread(@name).should == "\r"
     end
 
-    it "writes lf when IO is opened with newline: :lf" do
-      File.open(@name, 'w', newline: :lf) do |file|
-        file.puts
+    platform_is_not :windows do # https://bugs.ruby-lang.org/issues/12436
+      it "writes lf when IO is opened with newline: :lf" do
+        File.open(@name, 'wt', newline: :lf) do |file|
+          file.puts
+        end
+        File.binread(@name).should == "\n"
       end
-      File.read(@name).should == "\n"
     end
   end
 end

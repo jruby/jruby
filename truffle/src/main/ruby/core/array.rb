@@ -32,10 +32,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Rubinius uses the instance variable @total to store the size. We replace this
-# in the translator with a call to size. We also replace the instance variable
-# @tuple to be self, and @start to be 0.
-
 class Array
   include Enumerable
 
@@ -59,224 +55,6 @@ class Array
     Rubinius::Type.try_convert obj, Array, :to_ary
   end
 
-  def initialize(size_or_array=undefined, obj=undefined)
-    Truffle.check_frozen
-
-    if undefined.equal?(size_or_array)
-      unless @total == 0
-        @total = @start = 0
-        @tuple = Rubinius::Tuple.new 8
-      end
-
-      return self
-    end
-
-    if undefined.equal?(obj)
-      obj = nil
-      ary = nil
-      if size_or_array.kind_of? Integer
-        # Do nothing, fall through to later case.
-      elsif size_or_array.kind_of? Array
-        ary = size_or_array
-      elsif Rubinius::Type.object_respond_to_ary?(size_or_array)
-        ary = Rubinius::Type.coerce_to size_or_array, Array, :to_ary
-      end
-
-      if ary
-        m = Rubinius::Mirror::Array.reflect ary
-        @tuple = m.tuple.dup
-        @start = m.start
-        @total = m.total
-
-        return self
-      end
-    end
-
-    size = Rubinius::Type.coerce_to_collection_length size_or_array
-    raise ArgumentError, "size must be positive" if size < 0
-    raise ArgumentError, "size must be <= #{Fixnum::MAX}" if size > Fixnum::MAX
-
-    if block_given?
-      @tuple = Rubinius::Tuple.new size
-      @total = i = 0
-      while i < size
-        @tuple.put i, yield(i)
-        @total = i += 1
-      end
-    else
-      @total = size
-      @tuple = Rubinius::Tuple.pattern size, obj
-    end
-
-    self
-  end
-
-  private :initialize
-
-  # Replaces contents of self with contents of other,
-  # adjusting size as needed.
-  def replace(other)
-    Truffle.check_frozen
-
-    other = Rubinius::Type.coerce_to other, Array, :to_ary
-
-    m = Rubinius::Mirror::Array.reflect other
-    @tuple = m.tuple.dup
-    @total = m.total
-    @start = m.start
-
-    Rubinius::Type.infect(self, other)
-    self
-  end
-
-  alias_method :initialize_copy, :replace
-  private :initialize_copy
-
-  def [](arg1, arg2=nil)
-    case arg1
-
-    # This is split out from the generic case and put first because
-    # it is by far the most common case and we want to deal with it
-    # immediately, even at the expensive of duplicate code with the
-    # generic case below. In other words, don't refactor this unless
-    # you preserve the same or better performance.
-    when Fixnum
-      start_idx = arg1
-
-      # Convert negative indices
-      start_idx += @total if start_idx < 0
-
-      if arg2
-        count = Rubinius::Type.coerce_to_collection_index arg2
-      else
-        return nil if start_idx >= @total
-
-        begin
-          return @tuple.at(@start + start_idx)
-
-        # Tuple#at raises this if the index is negative or
-        # past the end. This is faster than checking explicitly
-        # since this is an exceptional case anyway.
-        rescue Rubinius::ObjectBoundsExceededError
-          return nil
-        end
-      end
-    when Range
-      start_idx = Rubinius::Type.coerce_to_collection_index arg1.begin
-      # Convert negative indices
-      start_idx += @total if start_idx < 0
-
-      # Check here because we must detect this boundary
-      # before we check the right index boundary cases
-      return nil if start_idx < 0 or start_idx > @total
-
-      right_idx = Rubinius::Type.coerce_to_collection_index arg1.end
-      right_idx += @total if right_idx < 0
-      right_idx -= 1 if arg1.exclude_end?
-
-      return new_range(0, 0) if right_idx < start_idx
-
-      count = right_idx - start_idx + 1
-
-    # Slower, less common generic coercion case.
-    else
-      start_idx = Rubinius::Type.coerce_to_collection_index arg1
-
-      # Convert negative indices
-      start_idx += @total if start_idx < 0
-
-      if arg2
-        count = Rubinius::Type.coerce_to_collection_index arg2
-      else
-        return nil if start_idx >= @total
-
-        begin
-          return @tuple.at(@start + start_idx)
-
-        # Tuple#at raises this if the index is negative or
-        # past the end. This is faster than checking explicitly
-        # since this is an exceptional case anyway.
-        rescue Rubinius::ObjectBoundsExceededError
-          return nil
-        end
-      end
-    end
-
-    # No need to go further
-    return nil if count < 0
-
-    # Check start boundaries
-    if start_idx >= @total
-      # Odd MRI boundary case
-      return new_range(0, 0) if start_idx == @total
-      return nil
-    end
-
-    return nil if start_idx < 0
-
-    # Check count boundaries
-    if start_idx + count > @total
-      count = @total - start_idx
-    end
-
-    # Construct the subrange
-    return new_range(@start + start_idx, count)
-  end
-
-  alias_method :slice, :[]
-
-  def <<(obj)
-    set_index(@total, obj)
-    self
-  end
-
-  alias_method :__append__, :<<
-
-  def *(multiplier)
-    if multiplier.respond_to? :to_str
-      return join(multiplier)
-
-    else
-      multiplier = Rubinius::Type.coerce_to_collection_index multiplier
-
-      raise ArgumentError, "Count cannot be negative" if multiplier < 0
-
-      case @total
-      when 0
-        # Edge case
-        out = self.class.allocate
-        Rubinius::Type.infect(out, self)
-        return out
-      when 1
-        # Easy case
-        tuple = Rubinius::Tuple.pattern multiplier, at(0)
-        out = self.class.allocate
-        m = Rubinius::Mirror::Array.reflect out
-        m.tuple = tuple
-        m.total = multiplier
-        Rubinius::Type.infect(out, self)
-        return out
-      end
-
-      new_total = multiplier * @total
-      new_tuple = Rubinius::Tuple.new(new_total)
-
-      out = self.class.allocate
-      m = Rubinius::Mirror::Array.reflect out
-      m.tuple = new_tuple
-      m.total = new_total
-      Rubinius::Type.infect(out, self)
-
-      offset = 0
-      while offset < new_total
-        new_tuple.copy_from @tuple, @start, @total, offset
-        offset += @total
-      end
-
-      out
-    end
-  end
-
   def &(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
@@ -295,11 +73,6 @@ class Array
     im.to_array
   end
 
-  def +(other)
-    other = Rubinius::Type.coerce_to other, Array, :to_ary
-    Array.new(self).concat(other)
-  end
-
   def -(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
@@ -316,11 +89,11 @@ class Array
     return 0 if equal? other
     return nil if other.nil?
 
-    total = Rubinius::Mirror::Array.reflect(other).total
+    total = other.size
 
     Thread.detect_recursion self, other do
       i = 0
-      count = total < @total ? total : @total
+      count = total < size ? total : size
 
       while i < count
         order = self[i] <=> other[i]
@@ -333,7 +106,7 @@ class Array
     # subtle: if we are recursing on that pair, then let's
     # no go any further down into that pair;
     # any difference will be found elsewhere if need be
-    @total <=> total
+    size <=> total
   end
 
   def ==(other)
@@ -346,20 +119,12 @@ class Array
     return false unless size == other.size
 
     Thread.detect_recursion self, other do
-      m = Rubinius::Mirror::Array.reflect other
-
-      md = @tuple
-      od = m.tuple
-
-      i = @start
-      j = m.start
-
-      total = i + @total
+      i = 0
+      total = size
 
       while i < total
-        return false unless md[i] == od[j]
+        return false unless self[i] == other[i]
         i += 1
-        j += 1
       end
     end
 
@@ -376,56 +141,53 @@ class Array
     nil
   end
 
-  def bsearch
+  def bsearch(&block)
     return to_enum :bsearch unless block_given?
 
-    m = Rubinius::Mirror::Array.reflect self
+    if idx = bsearch_index(&block)
+      self[idx]
+    else
+      nil
+    end
+  end
 
-    tuple = m.tuple
+  def bsearch_index
+    return to_enum :bsearch_index unless block_given?
 
-    min = start = m.start
-    max = total = start + m.total
+    min = 0
+    max = total = size
 
     last_true = nil
-    i = start + m.total / 2
+    i = size / 2
 
-    while max >= min and i >= start and i < total
-      x = yield tuple.at(i)
+    while max >= min and i >= 0 and i < total
+      x = yield at(i)
 
-      return tuple.at(i) if x == 0
+      return i if x == 0
 
       case x
-      when Numeric
-        if x > 0
+        when Numeric
+          if x > 0
+            min = i + 1
+          else
+            max = i - 1
+          end
+        when true
+          last_true = i
+          max = i - 1
+        when false, nil
           min = i + 1
         else
-          max = i - 1
-        end
-      when true
-        last_true = i
-        max = i - 1
-      when false, nil
-        min = i + 1
-      else
-        raise TypeError, "Array#bsearch block must return Numeric or boolean"
+          raise TypeError, "wrong argument type (must be numeric, true, false or nil)"
       end
 
       i = min + (max - min) / 2
     end
 
-    return tuple.at(i) if max > min
-    return tuple.at(last_true) if last_true
+    return i if max > min
+    return last_true if last_true
 
     nil
-  end
-
-  def clear
-    Truffle.check_frozen
-
-    @tuple = Rubinius::Tuple.new(1)
-    @total = 0
-    @start = 0
-    self
   end
 
   def combination(num)
@@ -433,7 +195,7 @@ class Array
 
     unless block_given?
       return to_enum(:combination, num) do
-        Rubinius::Mirror::Array.reflect(self).combination_size(num)
+        self.combination_size(num)
       end
     end
 
@@ -446,8 +208,8 @@ class Array
     elsif num == size
       yield self.dup
     elsif num >= 0 && num < size
-      stack = Rubinius::Tuple.pattern num + 1, 0
-      chosen = Rubinius::Tuple.new num
+      stack = Array.new(num + 1, 0)
+      chosen = Array.new(num)
       lev = 0
       done = false
       stack[0] = -1
@@ -457,7 +219,7 @@ class Array
           lev += 1
           chosen[lev] = self.at(stack[lev+1] = stack[lev] + 1)
         end
-        yield chosen.to_a
+        yield chosen.dup
         lev += 1
         begin
           done = lev == 0
@@ -469,37 +231,6 @@ class Array
     self
   end
 
-  def compact
-    out = dup
-    out.untaint if out.tainted?
-    out.trust if out.untrusted?
-
-    Array.new(out.compact! || out)
-  end
-
-  def compact!
-    Truffle.check_frozen
-
-    if (deleted = @tuple.delete(@start, @total, nil)) > 0
-      @total -= deleted
-      reallocate_shrink()
-      return self
-    else
-      return nil
-    end
-  end
-
-  def concat(other)
-    Truffle.primitive :array_concat
-
-    other = Rubinius::Type.coerce_to(other, Array, :to_ary)
-    Truffle.check_frozen
-
-    return self if other.empty?
-
-    concat other
-  end
-
   def count(item = undefined)
     seq = 0
     if !undefined.equal?(item)
@@ -507,7 +238,7 @@ class Array
     elsif block_given?
       each { |o| seq += 1 if yield(o) }
     else
-      return @total
+      return size
     end
     seq
   end
@@ -535,97 +266,21 @@ class Array
     nil
   end
 
-  def delete(obj)
-    key = undefined
-    i = @start
-    total = i + @total
-    tuple = @tuple
-
-    while i < total
-      element = tuple.at i
-      if element == obj
-        # We MUST check frozen here, not at the top, because MRI
-        # requires that #delete not raise unless an element would
-        # be deleted.
-        Truffle.check_frozen
-        tuple.put i, key
-        last_matched_element = element
-      end
-      i += 1
-    end
-
-    deleted = @tuple.delete @start, @total, key
-    if deleted > 0
-      @total -= deleted
-      reallocate_shrink()
-      return last_matched_element
-    end
-
-    if block_given?
-      yield
-    else
-      nil
-    end
-  end
-
-  def delete_at(idx)
-    Truffle.check_frozen
-
-    idx = Rubinius::Type.coerce_to_collection_index idx
-
-    # Flip to positive and weed out out of bounds
-    idx += @total if idx < 0
-    return nil if idx < 0 or idx >= @total
-
-    # Grab the object and adjust the indices for the rest
-    obj = @tuple.at(@start + idx)
-
-    # Shift style.
-    if idx == 0
-      @tuple.put @start, nil
-      @start += 1
-    else
-      @tuple.copy_from(@tuple, @start+idx+1, @total-idx-1, @start+idx)
-      @tuple.put(@start + @total - 1, nil)
-    end
-
-    @total -= 1
-    obj
-  end
-
-  def delete_if
-    return to_enum(:delete_if) { size } unless block_given?
-
-    Truffle.check_frozen
-
-    return self if empty?
-
-    i = pos = @start
-    total = i + @total
-    tuple = @tuple
-
-    while i < total
-      x = tuple.at i
-      unless yield x
-        # Ok, keep the value, so stick it back into the array at
-        # the insert position
-        tuple.put pos, x
-        pos += 1
-      end
-
-      i += 1
-    end
-
-    @total = pos - @start
-
-    self
+  def dig(idx, *more)
+     result = self.at(idx)
+     if result.nil? || more.empty?
+       result
+     else
+       raise TypeError, "#{result.class} does not have #dig method" unless result.respond_to?(:dig)
+       result.dig(*more)
+     end
   end
 
   def each_index
     return to_enum(:each_index) { size } unless block_given?
 
     i = 0
-    total = @total
+    total = size
 
     while i < total
       yield i
@@ -635,43 +290,10 @@ class Array
     self
   end
 
-  # WARNING: This method does no boundary checking. It is expected that
-  # the caller handle that, eg #slice!
-  def delete_range(index, del_length)
-    # optimize for fast removal..
-    reg_start = index + del_length
-    reg_length = @total - reg_start
-
-    if reg_start <= @total
-      # If we're removing from the front, also reset @start to better
-      # use the Tuple
-      if index == 0
-        # Use a shift start optimization if we're only removing one
-        # element and the shift started isn't already huge.
-        if del_length == 1
-          @tuple.put @start, nil
-          @start += 1
-        else
-          @tuple.copy_from @tuple, reg_start + @start, reg_length, 0
-          @start = 0
-        end
-      else
-        @tuple.copy_from @tuple, reg_start + @start, reg_length,
-          @start + index
-      end
-
-      # TODO we leave the old references in the Tuple, we should
-      # probably clear them out though.
-      @total -= del_length
-    end
-  end
-
-  private :delete_range
-
   def eql?(other)
     return true if equal? other
     return false unless other.kind_of?(Array)
-    return false if @total != other.size
+    return false if size != other.size
 
     Thread.detect_recursion self, other do
       i = 0
@@ -685,16 +307,16 @@ class Array
   end
 
   def empty?
-    @total == 0
+    size == 0
   end
 
   def fetch(idx, default=undefined)
     orig = idx
     idx = Rubinius::Type.coerce_to_collection_index idx
 
-    idx += @total if idx < 0
+    idx += size if idx < 0
 
-    if idx < 0 or idx >= @total
+    if idx < 0 or idx >= size
       if block_given?
         return yield(orig)
       end
@@ -707,7 +329,7 @@ class Array
     at(idx)
   end
 
-  def fill(a=undefined, b=undefined, c=undefined)
+  def fill_internal(a=undefined, b=undefined, c=undefined)
     Truffle.check_frozen
 
     if block_given?
@@ -759,27 +381,19 @@ class Array
       right = size
     end
 
-    total = @start + right
-
-    if right > @total
-      reallocate total
-      @total = right
+    if right.is_a?(Bignum)
+      raise RangeError, "bignum too big to convert into `long'"
     end
 
-    # Must be after the potential call to reallocate, since
-    # reallocate might change @tuple
-    tuple = @tuple
-
-    i = @start + left
-
+    i = left
     if block_given?
-      while i < total
-        tuple.put i, yield(i-@start)
+      while i < right
+        self[i] = yield(i)
         i += 1
       end
     else
-      while i < total
-        tuple.put i, obj
+      while i < right
+        self[i] = obj
         i += 1
       end
     end
@@ -814,7 +428,7 @@ class Array
 
     out = new_reserved size
     if recursively_flatten(self, out, level)
-      replace(out)
+      Truffle::Array.steal_storage(self, out)
       return self
     end
 
@@ -872,32 +486,6 @@ class Array
     return hash_val
   end
 
-  def include?(obj)
-
-    # This explicit loop is for performance only. Preferably,
-    # this method would be implemented as:
-    #
-    #   each { |x| return true if x == obj }
-    #
-    # but the JIT will currently not inline the block into the
-    # method that calls #include? which causes #include? to
-    # execute about 3x slower. Since this is a very commonly
-    # used method, this manual performance optimization is used.
-    # Ideally, this will be removed when the JIT can handle the
-    # block used here.
-
-    i = @start
-    total = i + @total
-    tuple = @tuple
-
-    while i < total
-      return true if tuple.at(i) == obj
-      i += 1
-    end
-
-    false
-  end
-
   def find_index(obj=undefined)
     super
   end
@@ -911,7 +499,7 @@ class Array
 
     # Adjust the index for correct insertion
     idx = Rubinius::Type.coerce_to_collection_index idx
-    idx += (@total + 1) if idx < 0    # Negatives add AFTER the element
+    idx += (size + 1) if idx < 0    # Negatives add AFTER the element
     raise IndexError, "#{idx} out of bounds" if idx < 0
 
     self[idx, 0] = items   # Cheat
@@ -919,7 +507,7 @@ class Array
   end
 
   def inspect
-    return "[]".force_encoding(Encoding::US_ASCII) if @total == 0
+    return "[]".force_encoding(Encoding::US_ASCII) if size == 0
     comma = ", "
     result = "["
 
@@ -940,7 +528,7 @@ class Array
   alias_method :to_s, :inspect
 
   def join(sep=nil)
-    return "".force_encoding(Encoding::US_ASCII) if @total == 0
+    return "".force_encoding(Encoding::US_ASCII) if size == 0
 
     out = ""
     raise ArgumentError, "recursive array join" if Thread.detect_recursion self do
@@ -948,7 +536,7 @@ class Array
 
       # We've manually unwound the first loop entry for performance
       # reasons.
-      x = @tuple[@start]
+      x = self[0]
 
       if str = String.try_convert(x)
         x = str
@@ -961,13 +549,13 @@ class Array
       out.force_encoding(x.encoding)
       out << x
 
-      total = @start + size()
-      i = @start + 1
+      total = size()
+      i = 1
 
       while i < total
         out << sep if sep
 
-        x = @tuple[i]
+        x = self[i]
 
         if str = String.try_convert(x)
           x = str
@@ -990,7 +578,7 @@ class Array
 
     Truffle.check_frozen
 
-    replace select(&block)
+    Truffle::Array.steal_storage(self, select(&block))
   end
 
   def last(n=undefined)
@@ -1009,26 +597,6 @@ class Array
     Array.new self[-n..-1]
   end
 
-  alias_method :collect, :map
-
-  alias_method :collect!, :map!
-
-  def nitems
-    sum = 0
-    each { |elem| sum += 1 unless elem.equal? nil }
-    sum
-  end
-
-  def pack(directives)
-    Truffle.primitive :array_pack
-
-    unless directives.kind_of? String
-      return pack(StringValue(directives))
-    end
-
-    raise ArgumentError, "invalid directives string: #{directives}"
-  end
-
   def permutation(num=undefined, &block)
     unless block_given?
       return to_enum(:permutation, num) do
@@ -1037,12 +605,12 @@ class Array
     end
 
     if undefined.equal? num
-      num = @total
+      num = size
     else
       num = Rubinius::Type.coerce_to_collection_index num
     end
 
-    if num < 0 || @total < num
+    if num < 0 || size < num
       # no permutations, yield nothing
     elsif num == 0
       # exactly one permutation: the zero-length array
@@ -1053,7 +621,7 @@ class Array
     else
       # this is the general case
       perm = Array.new(num)
-      used = Array.new(@total, false)
+      used = Array.new(size, false)
 
       if block
         # offensive (both definitions) copy.
@@ -1080,7 +648,7 @@ class Array
     # used: an array of booleans: whether a given index is already used
     #
     # Note: not as efficient as could be for big num.
-    @total.times do |i|
+    size.times do |i|
       unless used[i]
         perm[index] = i
         if index < num-1
@@ -1094,38 +662,6 @@ class Array
     end
   end
   private :__permute__
-
-  def pop(many=undefined)
-    Truffle.check_frozen
-
-    if undefined.equal?(many)
-      return nil if @total == 0
-
-      @total -= 1
-      index = @start + @total
-
-      elem = @tuple.at(index)
-      @tuple.put index, nil
-
-      elem
-    else
-      many = Rubinius::Type.coerce_to_collection_index many
-      raise ArgumentError, "negative array size" if many < 0
-
-      first = @total - many
-      first = 0 if first < 0
-
-      out = Array.new self[first, many]
-
-      if many > @total
-        @total = 0
-      else
-        @total -= many
-      end
-
-      return out
-    end
-  end
 
   # Implementation notes: We build a block that will generate all the
   # combinations by building it up successively using "inject" and starting
@@ -1167,14 +703,6 @@ class Array
     end
   end
 
-  def push(*args)
-    Truffle.check_frozen
-
-    return self if args.empty?
-
-    concat args
-  end
-
   def rassoc(obj)
     each do |elem|
       if elem.kind_of? Array and elem.at(1) == obj
@@ -1183,23 +711,6 @@ class Array
     end
 
     nil
-  end
-
-  def reject(&block)
-    return to_enum(:reject) { size } unless block_given?
-    Array.new(self).delete_if(&block)
-  end
-
-  def reject!(&block)
-    return to_enum(:reject!) { size } unless block_given?
-
-    Truffle.check_frozen
-
-    was = size()
-    delete_if(&block)
-
-    return nil if was == size()
-    self
   end
 
   def repeated_combination(combination_size, &block)
@@ -1272,28 +783,14 @@ class Array
     Array.new dup.reverse!
   end
 
-  def reverse!
-    Truffle.check_frozen
-
-    return self unless @total > 1
-
-    @tuple.reverse! @start, @total
-
-    return self
-  end
-
   def reverse_each
     return to_enum(:reverse_each) { size } unless block_given?
 
-    stop = @start - 1
-    i = stop + @total
-    tuple = @tuple
-
-    while i > stop
-      yield tuple.at(i)
+    i = size - 1
+    while i >= 0
+      yield at(i)
       i -= 1
     end
-
     self
   end
 
@@ -1301,22 +798,19 @@ class Array
     if undefined.equal?(obj)
       return to_enum(:rindex, obj) unless block_given?
 
-      i = @total - 1
+      i = size - 1
       while i >= 0
-        return i if yield @tuple.at(@start + i)
+        return i if yield at(i)
 
         # Compensate for the array being modified by the block
-        i = @total if i > @total
+        i = size if i > size
 
         i -= 1
       end
     else
-      stop = @start - 1
-      i = stop + @total
-      tuple = @tuple
-
-      while i > stop
-        return i - @start if tuple.at(i) == obj
+      i = size - 1
+      while i >= 0
+        return i if at(i) == obj
         i -= 1
       end
     end
@@ -1340,7 +834,7 @@ class Array
     return self if length == 0 || length == 1
 
     ary = rotate(cnt)
-    replace ary
+    Truffle::Array.steal_storage(self, ary)
   end
 
   class SampleRandom
@@ -1455,10 +949,11 @@ class Array
         end
       end
 
-      result = Array.new self
-      tuple = Rubinius::Mirror::Array.reflect(result).tuple
+      result = Array.new(self)
 
-      count.times { |i| tuple.swap i, rng.rand(size) }
+      count.times { |i|
+        result.swap i, rng.rand(size)
+      }
 
       return count == size ? result : result[0, count]
     end
@@ -1470,171 +965,7 @@ class Array
     Truffle.check_frozen
 
     ary = select(&block)
-    replace ary unless size == ary.size
-  end
-
-  def set_index(index, ent, fin=undefined)
-    Truffle.primitive :array_aset
-
-    Truffle.check_frozen
-
-    ins_length = nil
-    unless undefined.equal? fin
-      ins_length = Rubinius::Type.coerce_to_collection_index ent
-      ent = fin             # 2nd arg (ins_length) is the optional one!
-    end
-
-    # Normalise Ranges
-    if index.kind_of? Range
-      if ins_length
-        raise ArgumentError, "Second argument invalid with a range"
-      end
-
-      last = Rubinius::Type.coerce_to_collection_index index.last
-      last += @total if last < 0
-      last += 1 unless index.exclude_end?
-
-      index = Rubinius::Type.coerce_to_collection_index index.first
-
-      if index < 0
-        index += @total
-        raise RangeError, "Range begin #{index-@total} out of bounds" if index < 0
-      end
-
-      # m..n, m > n allowed
-      last = index if index > last
-
-      ins_length = last - index
-    else
-      index = Rubinius::Type.coerce_to_collection_index index
-
-      if index < 0
-        index += @total
-        raise IndexError,"Index #{index-@total} out of bounds" if index < 0
-      end
-    end
-
-    if ins_length
-      # ins_length < 0 not allowed
-      raise IndexError, "Negative length #{ins_length}" if ins_length < 0
-
-      # MRI seems to be forgiving here!
-      space = @total - index
-      if ins_length > space
-        ins_length = space > 0 ? space : 0
-      end
-
-      replace_count = 0
-
-      if ent.kind_of? Array
-        replacement = ent
-        replace_count = replacement.size
-        replacement = replacement.first if replace_count == 1
-      elsif ent.respond_to? :to_ary
-        replacement = ent.to_ary
-        replace_count = replacement.size
-        replacement = replacement.first if replace_count == 1
-      else
-        replacement = ent
-        replace_count = 1
-      end
-
-      new_total = (index > @total) ? index : @total
-      if replace_count > ins_length
-        new_total += replace_count - ins_length
-      elsif replace_count < ins_length
-        new_total -= ins_length - replace_count
-      end
-
-      if new_total > @tuple.size - @start
-        # Expand the size just like #<< does.
-        # MRI uses a straight realloc here to the exact size, but
-        # realloc can easily include bumper data so it's pretty fast.
-        # We simply compensate by using the same logic to reduce
-        # having to copy data.
-        new_tuple = Rubinius::Tuple.new(new_total + @tuple.size / 2)
-
-        new_tuple.copy_from(@tuple, @start, index < @total ? index : @total, 0)
-
-        case replace_count
-        when 1
-          new_tuple[index] = replacement
-        when 0
-          # nothing
-        else
-          m = Rubinius::Mirror::Array.reflect replacement
-          new_tuple.copy_from m.tuple, m.start, replace_count, index
-        end
-
-        if index < @total
-          new_tuple.copy_from(@tuple, @start + index + ins_length,
-                              @total - index - ins_length,
-                              index + replace_count)
-        end
-        @start = 0
-        @tuple = new_tuple
-        @total = new_total
-      else
-        # Move the elements to the right
-        if index < @total
-          right_start = @start + index + ins_length
-          right_len = @total - index - ins_length
-
-          @tuple.copy_from(@tuple, right_start, right_len,
-                           @start + index + replace_count)
-        end
-
-        case replace_count
-        when 1
-          @tuple[@start + index] = replacement
-        when 0
-          # nothing
-        else
-          m = Rubinius::Mirror::Array.reflect replacement
-          @tuple.copy_from m.tuple, m.start, replace_count, @start + index
-        end
-
-        @total = new_total
-      end
-
-      return ent
-    else
-      nt = @start + index + 1
-      reallocate(nt) if @tuple.size < nt
-
-      @tuple.put @start + index, ent
-      if index >= @total - 1
-        @total = index + 1
-      end
-      return ent
-    end
-  end
-
-  alias_method :[]=, :set_index
-
-  private :set_index
-
-  # Some code depends on Array having it's own #select method,
-  # not just using the Enumerable one. This alias achieves that.
-  alias_method :select, :find_all
-
-  def shift(n=undefined)
-    Truffle.check_frozen
-
-    if undefined.equal?(n)
-      return nil if @total == 0
-      obj = @tuple.at @start
-      @tuple.put @start, nil
-      @start += 1
-      @total -= 1
-
-      obj
-    else
-      n = Rubinius::Type.coerce_to_collection_index n
-      raise ArgumentError, "negative array size" if n < 0
-
-      Array.new slice!(0, n)
-    end
+    Truffle::Array.steal_storage(self, ary) unless size == ary.size
   end
 
   def shuffle(options = undefined)
@@ -1655,97 +986,21 @@ class Array
     size.times do |i|
       r = i + random_generator.rand(size - i).to_int
       raise RangeError, "random number too big #{r - i}" if r < 0 || r >= size
-      @tuple.swap(@start + i, @start + r)
+      swap(i, r)
     end
     self
-  end
-
-  def slice!(start, length=undefined)
-    Truffle.check_frozen
-
-    if undefined.equal? length
-      if start.kind_of? Range
-        range = start
-        out = self[range]
-
-        range_start = Rubinius::Type.coerce_to_collection_index range.begin
-        if range_start < 0
-          range_start = range_start + @total
-        end
-
-        range_end = Rubinius::Type.coerce_to_collection_index range.end
-        if range_end < 0
-          range_end = range_end + @total
-        elsif range_end >= @total
-          range_end = @total - 1
-          range_end += 1 if range.exclude_end?
-        end
-
-        range_length = range_end - range_start
-        range_length += 1 unless range.exclude_end?
-        range_end    -= 1 if     range.exclude_end?
-
-        if range_start < @total && range_start >= 0 && range_end < @total && range_end >= 0 && range_length > 0
-          delete_range(range_start, range_length)
-        end
-      else
-        # make sure that negative values are not passed through to the
-        # []= assignment
-        start = Rubinius::Type.coerce_to_collection_index start
-        start = start + @total if start < 0
-
-        # This is to match the MRI behaviour of not extending the array
-        # with nil when specifying an index greater than the length
-        # of the array.
-        return out unless start >= 0 and start < @total
-
-        out = @tuple.at start + @start
-
-        # Check for shift style.
-        if start == 0
-          @tuple.put @start, nil
-          @total -= 1
-          @start += 1
-        else
-          delete_range(start, 1)
-        end
-      end
-    else
-      start = Rubinius::Type.coerce_to_collection_index start
-      length = Rubinius::Type.coerce_to_collection_length length
-      return nil if length < 0
-
-      out = self[start, length]
-
-      if start < 0
-        start = @total + start
-      end
-      if start + length > @total
-        length = @total - start
-      end
-
-      if start < @total && start >= 0
-        delete_range(start, length)
-      end
-    end
-
-    out
   end
 
   def drop(n)
     n = Rubinius::Type.coerce_to_collection_index n
     raise ArgumentError, "attempt to drop negative size" if n < 0
 
-    return [] if @total == 0
+    return [] if size == 0
 
-    new_size = @total - n
+    new_size = size - n
     return [] if new_size <= 0
 
-    new_range @start + n, new_size
-  end
-
-  def sort(&block)
-    Array.new dup.sort_inplace(&block)
+    new_range n, new_size
   end
 
   def sort_by!(&block)
@@ -1753,38 +1008,8 @@ class Array
 
     return to_enum(:sort_by!) { size } unless block_given?
 
-    replace sort_by(&block)
+    Truffle::Array.steal_storage(self, sort_by(&block))
   end
-
-  # Sorts this Array in-place. See #sort.
-  #
-  # The threshold for choosing between Insertion sort and Mergesort
-  # is 13, as determined by a bit of quick tests.
-  #
-  # For results and methodology, see the commit message.
-  def sort_inplace(&block)
-    Truffle.check_frozen
-
-    return self unless @total > 1
-
-    if (@total - @start) < 13
-      if block
-        isort_block! @start, (@start + @total), block
-      else
-        isort! @start, (@start + @total)
-      end
-    else
-      if block
-        mergesort_block! block
-      else
-        mergesort!
-      end
-    end
-
-    self
-  end
-
-  protected :sort_inplace
 
   def to_a
     if self.instance_of? Array
@@ -1828,24 +1053,6 @@ class Array
     dup.uniq!(&block) or dup
   end
 
-  def uniq!(&block)
-    Truffle.check_frozen
-
-    if block_given?
-      im = Rubinius::IdentityMap.from(self, &block)
-    else
-      im = Rubinius::IdentityMap.from(self)
-    end
-    return if im.size == size
-
-    m = Rubinius::Mirror::Array.reflect im.to_array
-    @tuple = m.tuple
-    @start = m.start
-    @total = m.total
-
-    self
-  end
-
   def unshift(*values)
     Truffle.check_frozen
 
@@ -1863,10 +1070,10 @@ class Array
         finish = Rubinius::Type.coerce_to_collection_index elem.last
         start = Rubinius::Type.coerce_to_collection_index elem.first
 
-        start += @total if start < 0
+        start += size if start < 0
         next if start < 0
 
-        finish += @total if finish < 0
+        finish += size if finish < 0
         finish -= 1 if elem.exclude_end?
 
         next if finish < start
@@ -1882,7 +1089,7 @@ class Array
     out
   end
 
-  def zip(*others)
+  def zip_internal(*others)
     out = Array.new(size) { [] }
     others = others.map do |other|
       if other.respond_to?(:to_ary)
@@ -1894,7 +1101,7 @@ class Array
 
     size.times do |i|
       slot = out.at(i)
-      slot << @tuple.at(@start + i)
+      slot << at(i)
       others.each do |other|
         slot << case other
                 when Array
@@ -1917,45 +1124,6 @@ class Array
     out
   end
 
-  # Reallocates the internal Tuple to accommodate at least given size
-  def reallocate(at_least)
-    return if at_least < @tuple.size
-
-    new_total = @tuple.size * 2
-
-    if new_total < at_least
-      new_total = at_least
-    end
-
-    new_tuple = Rubinius::Tuple.new new_total
-    new_tuple.copy_from @tuple, @start, @total, 0
-
-    @start = 0
-    @tuple = new_tuple
-  end
-
-  private :reallocate
-
-  def reallocate_shrink
-    new_total = @tuple.size
-    return if @total > (new_total / 3)
-
-    # halve the tuple size until the total > 1/3 the size of the total
-    begin
-      new_total /= 2
-    end while @total < (new_total / 6)
-
-    new_tuple = Rubinius::Tuple.new(new_total)
-    # position values in the middle somewhere
-    new_start = (new_total - @total)/2
-    new_tuple.copy_from @tuple, @start, @total, new_start
-
-    @start = new_start
-    @tuple = new_tuple
-  end
-
-  private :reallocate_shrink
-
   # Helper to recurse through flattening since the method
   # is not allowed to recurse itself. Detects recursive structures.
   def recursively_flatten(array, out, max_levels = -1)
@@ -1969,14 +1137,13 @@ class Array
 
     max_levels -= 1
     recursion = Thread.detect_recursion(array) do
-      m = Rubinius::Mirror::Array.reflect array
+      array = Rubinius::Type.coerce_to(array, Array, :to_ary)
 
-      i = m.start
-      total = i + m.total
-      tuple = m.tuple
+      i = 0
+      size = array.size
 
-      while i < total
-        o = tuple.at i
+      while i < size
+        o = array.at i
 
         if Rubinius::Type.object_kind_of? o, Array
           modified = true
@@ -2006,19 +1173,20 @@ class Array
 
   private :recursively_flatten
 
-  # Non-recursive sort using a temporary tuple for scratch storage.
+  # Non-recursive sort using a temporary array for scratch storage.
   # This is a hybrid mergesort; it's hybrid because for short runs under
   # 8 elements long we use insertion sort and then merge those sorted
   # runs back together.
   def mergesort!
     width = 7
-    @scratch = Rubinius::Tuple.new @tuple.size
+    source = self
+    scratch = Array.new(size, at(0))
 
     # do a pre-loop to create a bunch of short sorted runs; isort on these
     # 7-element sublists is more efficient than doing merge sort on 1-element
     # sublists
-    left = @start
-    finish = @total + @start
+    left = 0
+    finish = size
     while left < finish
       right = left + width
       right = right < finish ? right : finish
@@ -2033,38 +1201,42 @@ class Array
 
     # now just merge together those sorted lists from the prior loop
     width = 7
-    while width < @total
-      left = @start
+    while width < size
+      left = 0
       while left < finish
         right = left + width
         right = right < finish ? right : finish
         last = left + (2 * width)
         last = last < finish ? last : finish
 
-        bottom_up_merge(left, right, last)
+        bottom_up_merge(left, right, last, source, scratch)
         left += 2 * width
       end
 
-      @tuple, @scratch = @scratch, @tuple
+      source, scratch = scratch, source
       width *= 2
     end
 
-    @scratch = nil
+    Truffle::Array.steal_storage(self, source)
+
     self
   end
   private :mergesort!
 
-  def bottom_up_merge(left, right, last)
+  def bottom_up_merge(left, right, last, source, scratch)
     left_index = left
     right_index = right
     i = left
 
     while i < last
-      if left_index < right && (right_index >= last || (@tuple.at(left_index) <=> @tuple.at(right_index)) <= 0)
-        @scratch[i] = @tuple.at(left_index)
+      left_element = source.at(left_index)
+      right_element = source.at(right_index)
+
+      if left_index < right && (right_index >= last || (left_element <=> right_element) <= 0)
+        scratch[i] = left_element
         left_index += 1
       else
-        @scratch[i] = @tuple.at(right_index)
+        scratch[i] = right_element
         right_index += 1
       end
 
@@ -2075,10 +1247,11 @@ class Array
 
   def mergesort_block!(block)
     width = 7
-    @scratch = Rubinius::Tuple.new @tuple.size
+    source = self
+    scratch = Array.new(size, at(0))
 
-    left = @start
-    finish = @total + @start
+    left = 0
+    finish = size
     while left < finish
       right = left + width
       right = right < finish ? right : finish
@@ -2092,38 +1265,42 @@ class Array
     end
 
     width = 7
-    while width < @total
-      left = @start
+    while width < size
+      left = 0
       while left < finish
         right = left + width
         right = right < finish ? right : finish
         last = left + (2 * width)
         last = last < finish ? last : finish
 
-        bottom_up_merge_block(left, right, last, block)
+        bottom_up_merge_block(left, right, last, source, scratch, block)
         left += 2 * width
       end
 
-      @tuple, @scratch = @scratch, @tuple
+      source, scratch = scratch, source
       width *= 2
     end
 
-    @scratch = nil
+    Truffle::Array.steal_storage(self, source)
+
     self
   end
   private :mergesort_block!
 
-  def bottom_up_merge_block(left, right, last, block)
+  def bottom_up_merge_block(left, right, last, source, scratch, block)
     left_index = left
     right_index = right
     i = left
 
     while i < last
-      if left_index < right && (right_index >= last || block.call(@tuple.at(left_index), @tuple.at(right_index)) <= 0)
-        @scratch[i] = @tuple.at(left_index)
+      left_element = source.at(left_index)
+      right_element = source.at(right_index)
+
+      if left_index < right && (right_index >= last || block.call(left_element, right_element) <= 0)
+        scratch[i] = left_element
         left_index += 1
       else
-        @scratch[i] = @tuple.at(right_index)
+        scratch[i] = right_element
         right_index += 1
       end
 
@@ -2136,15 +1313,13 @@ class Array
   def isort!(left, right)
     i = left + 1
 
-    tup = @tuple
-
     while i < right
       j = i
 
       while j > left
         jp = j - 1
-        el1 = tup.at(jp)
-        el2 = tup.at(j)
+        el1 = at(jp)
+        el2 = at(j)
 
         unless cmp = (el1 <=> el2)
           raise ArgumentError, "comparison of #{el1.inspect} with #{el2.inspect} failed (#{j})"
@@ -2152,8 +1327,8 @@ class Array
 
         break unless cmp > 0
 
-        tup.put(j, el1)
-        tup.put(jp, el2)
+        self[j] = el1
+        self[jp] = el2
 
         j = jp
       end
@@ -2171,12 +1346,15 @@ class Array
       j = i
 
       while j > left
-        block_result = block.call(@tuple.at(j - 1), @tuple.at(j))
+        el1 = at(j - 1)
+        el2 = at(j)
+        block_result = block.call(el1, el2)
 
         if block_result.nil?
           raise ArgumentError, 'block returned nil'
         elsif block_result > 0
-          @tuple.swap(j, (j - 1))
+          self[j] = el1
+          self[j - 1] = el2
           j -= 1
         else
           break
@@ -2187,12 +1365,6 @@ class Array
     end
   end
   private :isort_block!
-
-  # Move to compiler runtime
-  def __rescue_match__(exception)
-    each { |x| return true if x === exception }
-    false
-  end
 
   # Truffle: what follows is our changes
 
@@ -2209,13 +1381,9 @@ class Array
     self.class.new(0 , nil)
   end
 
-  # We must override the definition of `reverse!` because our Array isn't backed by a Tuple.  Rubinius expects
-  # modifications to the Tuple to update the backing store and to do that, we treat the Array itself as its own Tuple.
-  # However, Rubinius::Tuple#reverse! has a different, conflicting signature from Array#reverse!.  This override avoids
-  # all of those complications.
   def reverse!
     Truffle.check_frozen
-    return self unless @total > 1
+    return self unless size > 1
 
     i = 0
     while i < self.length / 2
@@ -2228,9 +1396,6 @@ class Array
     return self
   end
 
-  # Rubinius expects to be able to resize the array and adjust pointers by modifying `@total` and `@start`, respectively.
-  # We might be able to handle such changes by special handling in the body translator, however simply resizing could
-  # delete elements from either side and we're not able to tell which without additional context.
   def slice!(start, length=undefined)
     Truffle.check_frozen
 
@@ -2241,14 +1406,14 @@ class Array
 
         range_start = Rubinius::Type.coerce_to_collection_index range.begin
         if range_start < 0
-          range_start = range_start + @total
+          range_start = range_start + size
         end
 
         range_end = Rubinius::Type.coerce_to_collection_index range.end
         if range_end < 0
-          range_end = range_end + @total
-        elsif range_end >= @total
-          range_end = @total - 1
+          range_end = range_end + size
+        elsif range_end >= size
+          range_end = size - 1
           range_end += 1 if range.exclude_end?
         end
 
@@ -2256,27 +1421,26 @@ class Array
         range_length += 1 unless range.exclude_end?
         range_end    -= 1 if     range.exclude_end?
 
-        if range_start < @total && range_start >= 0 && range_end < @total && range_end >= 0 && range_length > 0
+        if range_start < size && range_start >= 0 && range_end < size && range_end >= 0 && range_length > 0
           delete_range(range_start, range_length)
         end
       else
         # make sure that negative values are not passed through to the
         # []= assignment
         start = Rubinius::Type.coerce_to_collection_index start
-        start = start + @total if start < 0
+        start = start + size if start < 0
 
         # This is to match the MRI behaviour of not extending the array
         # with nil when specifying an index greater than the length
         # of the array.
-        return out unless start >= 0 and start < @total
+        return out unless start >= 0 and start < size
 
-        out = @tuple.at start + @start
+        out = at start
 
         # Check for shift style.
         if start == 0
-          @tuple.put @start, nil
+          put 0, nil
           self.shift
-          @start += 1
         else
           delete_range(start, 1)
         end
@@ -2289,13 +1453,13 @@ class Array
       out = self[start, length]
 
       if start < 0
-        start = @total + start
+        start = size + start
       end
-      if start + length > @total
-        length = @total - start
+      if start + length > size
+        length = size - start
       end
 
-      if start < @total && start >= 0
+      if start < size && start >= 0
         delete_range(start, length)
       end
     end
@@ -2303,40 +1467,18 @@ class Array
     out
   end
 
-  # Rubinius expects to modify the backing store via updates to `@tuple` and we don't support that.  As such, we must
-  # provide our own modifying implementation here.
   def delete_range(index, del_length)
-    # optimize for fast removal..
     reg_start = index + del_length
-    reg_length = @total - reg_start
-    if reg_start <= @total
-      # If we're removing from the front, also reset @start to better
-      # use the Tuple
-      if index == 0
-        # Use a shift start optimization if we're only removing one
-        # element and the shift started isn't already huge.
-        if del_length == 1
-          @start += 1
-        else
-          @tuple.copy_from @tuple, reg_start + @start, reg_length, 0
-          @start = 0
-        end
-      else
-        @tuple.copy_from @tuple, reg_start + @start, reg_length,
-                         @start + index
-      end
+    reg_length = size - reg_start
+    if reg_start <= size
+      # copy tail
+      copy_from self, reg_start, reg_length, index
 
-      # TODO we leave the old references in the Tuple, we should
-      # probably clear them out though.
-      del_length.times do
-        self.pop
-      end
-
+      self.pop(del_length)
     end
   end
+  private :delete_range
 
-  # Rubinius expects to modify the backing store via updates to `@tuple` and we don't support that.  As such, we must
-  # provide our own modifying implementation here.
   def uniq!(&block)
     Truffle.check_frozen
 
@@ -2347,13 +1489,7 @@ class Array
     end
     return if im.size == size
 
-    m = Rubinius::Mirror::Array.reflect im.to_array
-    @tuple = m.tuple
-    @start = m.start
-    @total = m.total
-
-    copy_from(m.tuple, 0, m.total, 0)
-    delete_range(m.total, self.size - m.total)
+    Truffle::Array.steal_storage(self, im.to_array)
     self
   end
 
@@ -2395,42 +1531,9 @@ class Array
   end
 
   def sort!(&block)
-    replace sort(&block)
+    Truffle.check_frozen
+
+    Truffle::Array.steal_storage(self, sort(&block))
   end
   public :sort!
-end
-
-module Rubinius
-  class Mirror
-    class Array
-
-      def self.reflect(object)
-        if Rubinius::Type.object_kind_of? object, ::Array
-          Array.new(object)
-        elsif ary = Rubinius::Type.try_convert(object, ::Array, :to_ary)
-          Array.new(ary)
-        else
-          message = "expected Array, given #{Rubinius::Type.object_class(object)}"
-          raise TypeError, message
-        end
-      end
-
-      def initialize(array)
-        @array = array
-      end
-
-      def total
-        @array.size
-      end
-
-      def tuple
-        @array
-      end
-
-      def start
-        0
-      end
-
-    end
-  end
 end

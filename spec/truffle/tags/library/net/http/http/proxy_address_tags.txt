@@ -1,4 +1,0 @@
-fails:Net::HTTP.proxy_address when self is no proxy class returns nil
-fails:Net::HTTP.proxy_address when self is a proxy class returns the address for self's proxy connection
-fails:Net::HTTP#proxy_address when self is no proxy class instance returns nil
-fails:Net::HTTP#proxy_address when self is a proxy class instance returns the password for self's proxy connection

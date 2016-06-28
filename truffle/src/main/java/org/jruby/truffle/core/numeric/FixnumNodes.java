@@ -31,7 +31,6 @@ import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.rope.LazyIntRope;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -69,7 +68,7 @@ public abstract class FixnumNodes {
         @Specialization
         public Object negWithOverflow(long value) {
             if (fixnumOrBignumNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 fixnumOrBignumNode = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
             }
 
@@ -250,37 +249,10 @@ public abstract class FixnumNodes {
         private final BranchProfile bMinusOneANotMinimum = BranchProfile.create();
         private final BranchProfile finalCase = BranchProfile.create();
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
-        public int div(int a, int b) throws UnexpectedResultException {
-            if (b > 0) {
-                bGreaterZero.enter();
-                if (a >= 0) {
-                    bGreaterZeroAGreaterEqualZero.enter();
-                    return a / b;
-                } else {
-                    bGreaterZeroALessZero.enter();
-                    return (a + 1) / b - 1;
-                }
-            } else if (a > 0) {
-                aGreaterZero.enter();
-                return (a - 1) / b - 1;
-            } else if (b == -1) {
-                bMinusOne.enter();
-                if (a == Integer.MIN_VALUE) {
-                    bMinusOneAMinimum.enter();
-                    throw new UnexpectedResultException(BigInteger.valueOf(a).negate());
-                } else {
-                    bMinusOneANotMinimum.enter();
-                    return -a;
-                }
-            } else {
-                finalCase.enter();
-                return a / b;
-            }
-        }
+        // int
 
-        @Specialization
-        public Object divEdgeCase(int a, int b) {
+        @Specialization(rewriteOn = ArithmeticException.class)
+        public Object divInt(int a, int b) {
             if (b > 0) {
                 bGreaterZero.enter();
                 if (a >= 0) {
@@ -305,6 +277,16 @@ public abstract class FixnumNodes {
             } else {
                 finalCase.enter();
                 return a / b;
+            }
+        }
+
+        @Specialization
+        public Object divIntFallback(int a, int b,
+                @Cached("createBinaryProfile()") ConditionProfile zeroProfile) {
+            if (zeroProfile.profile(b == 0)) {
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
+            } else {
+                return divInt(a, b);
             }
         }
 
@@ -317,37 +299,10 @@ public abstract class FixnumNodes {
             return snippetNode.execute(frame, "redo_coerced :/, b", "b", b);
         }
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
-        public long div(long a, long b) throws UnexpectedResultException {
-            if (b > 0) {
-                bGreaterZero.enter();
-                if (a >= 0) {
-                    bGreaterZeroAGreaterEqualZero.enter();
-                    return a / b;
-                } else {
-                    bGreaterZeroALessZero.enter();
-                    return (a + 1) / b - 1;
-                }
-            } else if (a > 0) {
-                aGreaterZero.enter();
-                return (a - 1) / b - 1;
-            } else if (b == -1) {
-                bMinusOne.enter();
-                if (a == Long.MIN_VALUE) {
-                    bMinusOneAMinimum.enter();
-                    throw new UnexpectedResultException(BigInteger.valueOf(a).negate());
-                } else {
-                    bMinusOneANotMinimum.enter();
-                    return -a;
-                }
-            } else {
-                finalCase.enter();
-                return a / b;
-            }
-        }
+        // long
 
-        @Specialization
-        public Object divEdgeCase(long a, long b) {
+        @Specialization(rewriteOn = ArithmeticException.class)
+        public Object divLong(long a, long b) {
             if (b > 0) {
                 bGreaterZero.enter();
                 if (a >= 0) {
@@ -376,18 +331,28 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
+        public Object divLongFallback(long a, long b,
+                @Cached("createBinaryProfile()") ConditionProfile zeroProfile) {
+            if (zeroProfile.profile(b == 0)) {
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
+            } else {
+                return divLong(a, b);
+            }
+        }
+
+        @Specialization
         public double div(long a, double b) {
             return a / b;
         }
 
-        @Specialization(guards = {"!isLongMinValue(a)", "isRubyBignum(b)"})
-        public int div(long a, DynamicObject b) {
+        @Specialization(guards = { "isRubyBignum(b)", "!isLongMinValue(a)" })
+        public int divBignum(long a, DynamicObject b) {
             return 0;
         }
 
-        @Specialization(guards = {"isLongMinValue(a)", "isRubyBignum(b)"})
-        public int divEdgeCase(long a, DynamicObject b) {
-            return -(Layouts.BIGNUM.getValue(b).signum());
+        @Specialization(guards = { "isRubyBignum(b)", "isLongMinValue(a)" })
+        public int divBignumEdgeCase(long a, DynamicObject b) {
+            return -Layouts.BIGNUM.getValue(b).signum();
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
@@ -399,7 +364,7 @@ public abstract class FixnumNodes {
             return snippetNode.execute(frame, "redo_coerced :/, b", "b", b);
         }
 
-        public static boolean isLongMinValue(long a) {
+        protected static boolean isLongMinValue(long a) {
             return a == Long.MIN_VALUE;
         }
 
@@ -613,6 +578,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = {
+                "!isByte(b)",
+                "!isShort(b)",
                 "!isInteger(b)",
                 "!isLong(b)",
                 "!isRubyBignum(b)" })
@@ -877,7 +844,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = "b < 0")
         public Object leftShiftNeg(VirtualFrame frame, long a, int b) {
             if (rightShiftNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 rightShiftNode = insert(FixnumNodesFactory.RightShiftNodeFactory.create(null));
             }
             return rightShiftNode.executeRightShift(frame, a, -b);
@@ -886,7 +853,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = { "!isInteger(b)", "!isLong(b)" })
         public Object leftShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             return fallbackCallNode.call(frame, a, "left_shift_fallback", null, b);
@@ -937,7 +904,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = "b < 0")
         public Object rightShiftNeg(VirtualFrame frame, long a, int b) {
             if (leftShiftNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(null));
             }
             return leftShiftNode.executeLeftShift(frame, a, -b);
@@ -957,7 +924,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = { "isRubyBignum(b)", "!isPositive(b)" })
         public Object rightShiftNeg(VirtualFrame frame, long a, DynamicObject b) {
             if (leftShiftNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(null));
             }
             return leftShiftNode.executeLeftShift(frame, a, Layouts.BIGNUM.getValue(b).negate());
@@ -966,7 +933,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = { "!isInteger(b)", "!isLong(b)" })
         public Object rightShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             return fallbackCallNode.call(frame, a, "right_shift_fallback", null, b);

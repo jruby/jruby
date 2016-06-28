@@ -150,14 +150,6 @@ class IO
     raise PrimitiveFailure, "IO#query primitive failed"
   end
 
-  def reopen(other)
-    reopen_io other
-  end
-
-  def tty?
-    query :tty?
-  end
-
   def ttyname
     query :ttyname
   end
@@ -261,13 +253,10 @@ class IO
   # buffer.
   class InternalBuffer
 
-    attr_reader :total
-    attr_reader :start
-    attr_reader :used
-
     def initialize
       # Truffle: other fields are initialized in Java.
       @start = 0
+      @eof = false
     end
 
     ##
@@ -348,9 +337,9 @@ class IO
     end
 
     def inspect # :nodoc:
-      "#<IO::InternalBuffer:0x%x total=%p start=%p used=%p data=%p>" % [
-        object_id, @total, @start, @used, @storage
-      ]
+      content = (@start..@used).map { |i| @storage[i].chr }.join.inspect
+      format "#<IO::InternalBuffer:0x%x total=%p start=%p used=%p data=%p %s>",
+             object_id, @total, @start, @used, @storage, content
     end
 
     ##
@@ -919,6 +908,9 @@ class IO
     lhs = allocate
     rhs = allocate
 
+    lhs.send :initialize_allocated
+    rhs.send :initialize_allocated
+
     connect_pipe(lhs, rhs)
 
     lhs.set_encoding external || Encoding.default_external,
@@ -1218,6 +1210,7 @@ class IO
   # Create a new IO associated with the given fd.
   #
   def initialize(fd, mode=undefined, options=undefined)
+    initialize_allocated
     if block_given?
       warn 'IO::new() does not take block; use IO::open() instead'
     end
@@ -1256,6 +1249,12 @@ class IO
   end
 
   private :initialize
+
+  def initialize_allocated
+    @eof = false
+  end
+
+  private :initialize_allocated
 
   ##
   # Obtains a new duplicate descriptor for the current one.
@@ -1929,7 +1928,7 @@ class IO
   #
   def pos
     flush
-    @ibuffer.unseek! self
+    reset_buffering
 
     prim_seek 0, SEEK_CUR
   end
@@ -1959,14 +1958,6 @@ class IO
 
     write $\.to_s
     nil
-  end
-
-  ##
-  # Formats and writes to ios, converting parameters under
-  # control of the format string. See Kernel#sprintf for details.
-  def printf(fmt, *args)
-    fmt = StringValue(fmt)
-    write ::Rubinius::Sprinter.get(fmt).call(*args)
   end
 
   ##
@@ -2296,6 +2287,7 @@ class IO
         mode = IO.parse_mode(mode)
       end
 
+      reset_buffering
       reopen_path Rubinius::Type.coerce_to_path(other), mode
       seek 0, SEEK_SET
     end
@@ -2341,7 +2333,7 @@ class IO
   def seek(amount, whence=SEEK_SET)
     flush
 
-    @ibuffer.unseek! self
+    reset_buffering
     @eof = false
 
     prim_seek Integer(amount), whence
@@ -2640,7 +2632,7 @@ class IO
     if @sync
       prim_write(data)
     else
-      @ibuffer.unseek! self
+      reset_buffering
       bytes_to_write = data.bytesize
 
       while bytes_to_write > 0

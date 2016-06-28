@@ -43,7 +43,7 @@ public abstract class RescueNode extends RubyNode {
 
     protected IsANode getIsANode() {
         if (isANode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             isANode = insert(IsANodeGen.create(getContext(), getSourceSection(), null, null));
         }
 

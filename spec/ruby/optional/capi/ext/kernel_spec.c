@@ -112,7 +112,8 @@ VALUE kernel_spec_rb_eval_string(VALUE self, VALUE str) {
 #ifdef HAVE_RB_RAISE
 VALUE kernel_spec_rb_raise(VALUE self, VALUE hash) {
   rb_hash_aset(hash, ID2SYM(rb_intern("stage")), ID2SYM(rb_intern("before")));
-  rb_raise(rb_eTypeError, "Wrong argument type %s (expected %s)", "Integer", "String");
+  if (self != Qundef)
+    rb_raise(rb_eTypeError, "Wrong argument type %s (expected %s)", "Integer", "String");
   rb_hash_aset(hash, ID2SYM(rb_intern("stage")), ID2SYM(rb_intern("after")));
   return Qnil;
 }
@@ -120,14 +121,14 @@ VALUE kernel_spec_rb_raise(VALUE self, VALUE hash) {
 
 #ifdef HAVE_RB_THROW
 VALUE kernel_spec_rb_throw(VALUE self, VALUE result) {
-  rb_throw("foo", result);
+  if (self != Qundef) rb_throw("foo", result);
   return ID2SYM(rb_intern("rb_throw_failed"));
 }
 #endif
 
 #ifdef HAVE_RB_THROW_OBJ
 VALUE kernel_spec_rb_throw_obj(VALUE self, VALUE obj, VALUE result) {
-  rb_throw_obj(obj, result);
+  if (self != Qundef) rb_throw_obj(obj, result);
   return ID2SYM(rb_intern("rb_throw_failed"));
 }
 #endif
@@ -187,7 +188,7 @@ VALUE kernel_spec_rb_sys_fail(VALUE self, VALUE msg) {
   errno = 1;
   if(msg == Qnil) {
     rb_sys_fail(0);
-  } else {
+  } else if (self != Qundef) {
     rb_sys_fail(StringValuePtr(msg));
   }
   return Qnil;
@@ -198,7 +199,7 @@ VALUE kernel_spec_rb_sys_fail(VALUE self, VALUE msg) {
 VALUE kernel_spec_rb_syserr_fail(VALUE self, VALUE err, VALUE msg) {
   if(msg == Qnil) {
     rb_syserr_fail(NUM2INT(err), NULL);
-  } else {
+  } else if (self != Qundef) {
     rb_syserr_fail(NUM2INT(err), StringValuePtr(msg));
   }
   return Qnil;
@@ -287,7 +288,7 @@ static VALUE kernel_spec_rb_funcall_with_block(VALUE self, VALUE obj, VALUE meth
 }
 #endif
 
-void Init_kernel_spec() {
+void Init_kernel_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiKernelSpecs", rb_cObject);
 

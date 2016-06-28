@@ -645,7 +645,6 @@ public abstract class BigDecimalNodes {
 
             if (normalNegProfile.profile(bType == BigDecimalType.NEGATIVE_ZERO
                     || (bType == BigDecimalType.NORMAL && isNormalZero(b)))) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
             }
 
@@ -768,7 +767,7 @@ public abstract class BigDecimalNodes {
                     value = Integer.signum(exponent) == 1 ? BigDecimal.ZERO : BigDecimalType.NAN;
                     break;
                 default:
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(a));
             }
 
@@ -843,7 +842,7 @@ public abstract class BigDecimalNodes {
                     negZeroProfile.enter();
                     return createBigDecimal(frame, sqrt(BigDecimal.ZERO, new MathContext(precision, getRoundMode(frame))));
                 default:
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(a));
             }
         }
@@ -1035,7 +1034,7 @@ public abstract class BigDecimalNodes {
                     name = "SIGN_NaN";
                     break;
                 default:
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
             }
 
@@ -1044,7 +1043,7 @@ public abstract class BigDecimalNodes {
 
         private int getConstant(VirtualFrame frame, String name) {
             if (sign == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 sign = insert(GetIntegerConstantNodeGen.create(null, null));
             }
 
@@ -1135,7 +1134,7 @@ public abstract class BigDecimalNodes {
                     result = type;
                     break;
                 default:
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + type);
             }
 
@@ -1206,7 +1205,7 @@ public abstract class BigDecimalNodes {
                     nanProfile.enter();
                     throw new RaiseException(coreExceptions().floatDomainErrorResultsToNaN(this));
                 default:
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
 
             }
@@ -1314,7 +1313,7 @@ public abstract class BigDecimalNodes {
                     nanProfile.enter();
                     return Double.NaN;
                 default:
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
             }
         }
@@ -1370,7 +1369,7 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return 0;
                 default:
-                    CompilerDirectives.transferToInterpreter();
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new UnsupportedOperationException("unreachable code branch for value: " + Layouts.BIG_DECIMAL.getType(value));
             }
         }

@@ -83,11 +83,6 @@ class Struct
     return klass
   end
 
-  # Don't specialize any thing created in the kernel. We hook up
-  # better form of this in delta.
-  def self._specialize(attrs)
-  end
-
   def self.make_struct(name, attrs)
     new name, *attrs
   end
@@ -210,6 +205,20 @@ class Struct
     end
 
     return instance_variable_set(:"@#{var}", obj)
+  end
+
+  def dig(key, *more)
+    result = nil
+    begin
+      result = self[key]
+    rescue IndexError, NameError
+    end
+    if result.nil? || more.empty?
+      result
+    else
+      raise TypeError, "#{result.class} does not have #dig method" unless result.respond_to?(:dig)
+      result.dig(*more)
+    end
   end
 
   def eql?(other)

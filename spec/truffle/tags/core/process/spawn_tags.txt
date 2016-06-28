@@ -25,15 +25,6 @@ fails:Process.spawn raises a TypeError if given a symbol as :pgroup option
 fails:Process.spawn uses the current working directory as its working directory
 fails:Process.spawn uses the current umask by default
 fails:Process.spawn sets the umask if given the :umask option
-fails:Process.spawn redirects STDOUT to the given file descriptior if out: Fixnum
-fails:Process.spawn redirects STDOUT to the given file if out: IO
-fails:Process.spawn redirects STDOUT to the given file if out: String
-fails:Process.spawn redirects STDERR to the given file descriptior if err: Fixnum
-fails:Process.spawn redirects STDERR to the given file descriptor if err: IO
-fails:Process.spawn redirects STDERR to the given file if err: String
-fails:Process.spawn redirects both STDERR and STDOUT to the given file descriptior
-fails:Process.spawn redirects both STDERR and STDOUT to the given IO
-fails:Process.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
 fails:Process.spawn raises an ArgumentError if passed no command arguments
 fails:Process.spawn raises an ArgumentError if passed env or options but no command arguments
 fails:Process.spawn raises an ArgumentError if passed env and options but no command arguments
@@ -81,5 +72,17 @@ fails:Process.spawn when passed close_others: true does not close STDERR
 fails:Process.spawn when passed close_others: false does not close STDIN
 fails:Process.spawn when passed close_others: false does not close STDOUT
 fails:Process.spawn when passed close_others: false does not close STDERR
+slow:Process.spawn redirects STDOUT to the given file descriptior if out: Fixnum
+slow:Process.spawn redirects STDOUT to the given file if out: IO
+slow:Process.spawn redirects STDOUT to the given file if out: String
+slow:Process.spawn redirects STDOUT to the given file if out: [String name, String mode]
+slow:Process.spawn redirects STDERR to the given file descriptior if err: Fixnum
+slow:Process.spawn redirects STDERR to the given file descriptor if err: IO
+slow:Process.spawn redirects STDERR to the given file if err: String
+slow:Process.spawn redirects STDERR to child STDOUT if :err => [:child, :out]
+slow:Process.spawn redirects both STDERR and STDOUT to the given file descriptior
+slow:Process.spawn redirects both STDERR and STDOUT to the given IO
+slow:Process.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
+fails:Process.spawn redirects STDOUT to the given file if out: String
 fails:Process.spawn redirects STDOUT to the given file if out: [String name, String mode]
-fails:Process.spawn redirects STDERR to child STDOUT if :err => [:child, :out]
+fails:Process.spawn redirects STDERR to the given file if err: String

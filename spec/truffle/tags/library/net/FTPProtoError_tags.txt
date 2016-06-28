@@ -1,2 +1,0 @@
-fails:Net::FTPProtoError is an Exception
-fails:Net::FTPProtoError is a subclass of Net::FTPError

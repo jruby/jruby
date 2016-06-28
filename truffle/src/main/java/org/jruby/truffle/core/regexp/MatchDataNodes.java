@@ -43,6 +43,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+
 import java.util.Arrays;
 
 @CoreClass("MatchData")
@@ -229,7 +230,7 @@ public abstract class MatchDataNodes {
         @Specialization(guards = {"!isRubySymbol(index)", "!isRubyString(index)", "!isIntegerFixnumRange(index)"})
         public Object getIndex(VirtualFrame frame, DynamicObject matchData, Object index, NotProvided length) {
             if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toIntNode = insert(ToIntNode.create());
             }
 
@@ -314,7 +315,7 @@ public abstract class MatchDataNodes {
             }
 
             if (newTupleNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 newTupleNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 

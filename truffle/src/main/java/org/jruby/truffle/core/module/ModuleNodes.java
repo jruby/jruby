@@ -51,8 +51,6 @@ import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.cast.ToPathNodeGen;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
-import org.jruby.truffle.core.kernel.KernelNodes;
-import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringNodes;
@@ -68,11 +66,13 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.constants.ReadConstantNode;
+import org.jruby.truffle.language.constants.GetConstantNode;
+import org.jruby.truffle.language.constants.LookupConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.loader.CodeLoader;
+import org.jruby.truffle.language.loader.RequireNode;
 import org.jruby.truffle.language.methods.AddMethodNode;
 import org.jruby.truffle.language.methods.AddMethodNodeGen;
 import org.jruby.truffle.language.methods.Arity;
@@ -255,7 +255,7 @@ public abstract class ModuleNodes {
 
         private Object isSubclass(DynamicObject self, DynamicObject other) {
             if (subclassNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 subclassNode = insert(ModuleNodesFactory.IsSubclassOfOrEqualToNodeFactory.create(null));
             }
             return subclassNode.executeIsSubclassOfOrEqualTo(self, other);
@@ -293,12 +293,12 @@ public abstract class ModuleNodes {
 
         @CreateCast("newName")
         public RubyNode coercetNewNameToString(RubyNode newName) {
-            return NameToJavaStringNodeGen.create(null, null, newName);
+            return NameToJavaStringNodeGen.create(newName);
         }
 
         @CreateCast("oldName")
         public RubyNode coerceOldNameToString(RubyNode oldName) {
-            return NameToJavaStringNodeGen.create(null, null, oldName);
+            return NameToJavaStringNodeGen.create(oldName);
         }
 
         @Specialization
@@ -357,7 +357,7 @@ public abstract class ModuleNodes {
         public GenerateAccessorNode(RubyContext context, SourceSection sourceSection, boolean isGetter) {
             super(context, sourceSection);
             this.isGetter = isGetter;
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
+            this.nameToJavaStringNode = NameToJavaStringNode.create();
         }
 
         public abstract DynamicObject executeGenerateAccessor(VirtualFrame frame, DynamicObject module, Object name);
@@ -511,7 +511,7 @@ public abstract class ModuleNodes {
         }
 
         @CreateCast("name") public RubyNode coerceNameToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @CreateCast("filename") public RubyNode coerceFilenameToPath(RubyNode filename) {
@@ -576,7 +576,7 @@ public abstract class ModuleNodes {
 
         protected DynamicObject toStr(VirtualFrame frame, Object object) {
             if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
             return toStrNode.executeToStr(frame, object);
@@ -624,7 +624,7 @@ public abstract class ModuleNodes {
 
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
             final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
-            Source source = Source.fromText(space + code, file);
+            Source source = getContext().getSourceLoader().loadFragment(space + code, file);
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, encoding, ParserContext.MODULE, callerFrame, true, this);
             return getContext().getCodeLoader().prepareExecute(ParserContext.MODULE, DeclarationContext.CLASS_EVAL, rootNode, callerFrame, module);
@@ -680,7 +680,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -704,7 +704,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -733,7 +733,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -775,7 +775,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("inherit")
         public RubyNode coerceToBoolean(RubyNode inherit) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, inherit);
+            return BooleanCastWithDefaultNodeGen.create(true, inherit);
         }
 
         @TruffleBoundary
@@ -812,12 +812,12 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @CreateCast("inherit")
         public RubyNode coerceToBoolean(RubyNode inherit) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, inherit);
+            return BooleanCastWithDefaultNodeGen.create(true, inherit);
         }
 
         @TruffleBoundary
@@ -836,14 +836,10 @@ public abstract class ModuleNodes {
     })
     public abstract static class ConstGetNode extends CoreMethodNode {
 
-        @Child private ReadConstantNode readConstantNode;
-        @Child private KernelNodes.RequireNode requireNode;
-        @Child private IndirectCallNode indirectCallNode;
+        @Child private RequireNode requireNode;
 
-        public ConstGetNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.readConstantNode = new ReadConstantNode(context, sourceSection, true, true, null, null);
-        }
+        @Child LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, true);
+        @Child GetConstantNode getConstantNode = GetConstantNode.create();
 
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {
@@ -852,13 +848,13 @@ public abstract class ModuleNodes {
 
         @CreateCast("inherit")
         public RubyNode coerceToBoolean(RubyNode inherit) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, inherit);
+            return BooleanCastWithDefaultNodeGen.create(true, inherit);
         }
 
         // Symbol
         @Specialization(guards = { "inherit", "isRubySymbol(name)" })
         public Object getConstant(VirtualFrame frame, DynamicObject module, DynamicObject name, boolean inherit) {
-            return readConstantNode.readConstant(frame, module, Layouts.SYMBOL.getString(name));
+            return getConstant(frame, module, Layouts.SYMBOL.getString(name));
         }
 
         @Specialization(guards = { "!inherit", "isRubySymbol(name)" })
@@ -869,7 +865,7 @@ public abstract class ModuleNodes {
         // String
         @Specialization(guards = { "inherit", "isRubyString(name)", "!isScoped(name)" })
         public Object getConstantString(VirtualFrame frame, DynamicObject module, DynamicObject name, boolean inherit) {
-            return readConstantNode.readConstant(frame, module, name.toString());
+            return getConstant(frame, module, name.toString());
         }
 
         @Specialization(guards = { "!inherit", "isRubyString(name)", "!isScoped(name)" })
@@ -883,12 +879,16 @@ public abstract class ModuleNodes {
             return getConstantScoped(module, fullName.toString(), inherit);
         }
 
-        private Object getConstantNoInherit(VirtualFrame frame, DynamicObject module, String name, Node currentNode) {
-            CompilerDirectives.transferToInterpreter();
+        private Object getConstant(VirtualFrame frame, Object module, String name) {
+            final RubyConstant constant = lookupConstantNode.lookupConstant(frame, module, name);
+            return getConstantNode.executeGetConstant(frame, module, name, constant, lookupConstantNode);
+        }
 
+        private Object getConstantNoInherit(VirtualFrame frame, DynamicObject module, String name, Node currentNode) {
             RubyConstant constant = ModuleOperations.lookupConstantWithInherit(getContext(), module, name, false, currentNode);
             if (constant == null) {
-                throw new RaiseException(coreExceptions().nameErrorUninitializedConstant(module, name, this));
+                // Call const_missing
+                return getConstantNode.executeGetConstant(frame, module, name, null, lookupConstantNode);
             } else {
                 if (constant.isAutoload()) {
                     loadAutoloadedConstant(frame, constant);
@@ -918,16 +918,12 @@ public abstract class ModuleNodes {
 
         private void loadAutoloadedConstant(VirtualFrame frame, RubyConstant constant) {
             if (requireNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(null));
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                requireNode = insert(RequireNode.create());
             }
 
-            if (indirectCallNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                indirectCallNode = insert(IndirectCallNode.create());
-            }
-
-            requireNode.require(frame, (DynamicObject) constant.getValue(), indirectCallNode);
+            final String feature = StringOperations.getString((DynamicObject) constant.getValue());
+            requireNode.executeRequire(frame, feature);
         }
 
     }
@@ -941,7 +937,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -961,7 +957,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @TruffleBoundary
@@ -995,7 +991,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @TruffleBoundary
@@ -1132,10 +1128,10 @@ public abstract class ModuleNodes {
 
         void classEval(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             if (classExecNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            classExecNode.executeClassExec(frame, module, new Object[]{}, block);
+            classExecNode.executeClassExec(frame, module, new Object[]{module}, block);
         }
 
         @Specialization
@@ -1215,12 +1211,12 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @CreateCast("inherit")
         public RubyNode coerceToBoolean(RubyNode inherit) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, inherit);
+            return BooleanCastWithDefaultNodeGen.create(true, inherit);
         }
 
         @TruffleBoundary
@@ -1420,7 +1416,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -1457,7 +1453,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(true, includeAncestors);
         }
 
         @Specialization
@@ -1511,7 +1507,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -1558,7 +1554,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, true, includeAncestors);
+            return BooleanCastWithDefaultNodeGen.create(true, includeAncestors);
         }
 
         @TruffleBoundary
@@ -1578,7 +1574,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @Specialization
@@ -1600,12 +1596,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "private_constant", rest = true)
     public abstract static class PrivateConstantNode extends CoreMethodArrayArgumentsNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode;
-
-        public PrivateConstantNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
-        }
+        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
 
         @Specialization
         public DynamicObject privateConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
@@ -1620,12 +1611,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "public_constant", rest = true)
     public abstract static class PublicConstantNode extends CoreMethodArrayArgumentsNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode;
-
-        public PublicConstantNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
-        }
+        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
 
         @Specialization
         public DynamicObject publicConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
@@ -1663,7 +1649,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -1684,7 +1670,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(null, null, name);
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @TruffleBoundary
@@ -1715,7 +1701,7 @@ public abstract class ModuleNodes {
 
         public RemoveMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
+            this.nameToJavaStringNode = NameToJavaStringNode.create();
             this.isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             this.methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
@@ -1763,7 +1749,7 @@ public abstract class ModuleNodes {
 
         public UndefMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
+            this.nameToJavaStringNode = NameToJavaStringNode.create();
             this.raiseIfFrozenNode = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
             this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
@@ -1831,7 +1817,7 @@ public abstract class ModuleNodes {
         public SetMethodVisibilityNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
             super(context, sourceSection);
             this.visibility = visibility;
-            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
+            this.nameToJavaStringNode = NameToJavaStringNode.create();
             this.addMethodNode = AddMethodNodeGen.create(context, sourceSection, true, false, null, null, null);
         }
 

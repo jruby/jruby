@@ -1,1 +1,0 @@
-fails:Net::HTTPHeader#proxy_basic_auth when passed account, password sets the 'Proxy-Authorization' Header entry for basic authorization

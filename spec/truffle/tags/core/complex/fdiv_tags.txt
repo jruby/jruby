@@ -1,3 +1,0 @@
-fails:Complex#fdiv with no imaginary part sets the real part to self's real part fdiv'd with the argument
-fails:Complex#fdiv with an imaginary part sets the real part to self's real part fdiv'd with the argument
-fails:Complex#fdiv with an imaginary part sets the imaginary part to the imaginary part fdiv'd with the argument

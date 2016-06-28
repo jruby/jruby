@@ -10,6 +10,7 @@
 package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
@@ -22,6 +23,7 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.Backtrace;
+import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -37,22 +39,37 @@ public class CallStackManager {
         this.context = context;
     }
 
+    private static final Object STOP_ITERATING = new Object();
+
     @TruffleBoundary
     public FrameInstance getCallerFrameIgnoringSend() {
-        final Memo<Boolean> firstFrame = new Memo<>(true);
+        FrameInstance callerFrame = Truffle.getRuntime().getCallerFrame();
+        if (callerFrame == null) {
+            return null;
+        }
+        InternalMethod method = getMethod(callerFrame);
 
-        final FrameInstance fi = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
+        if (method == null) { // Not a Ruby frame
+            return null;
+        } else if (!context.getCoreLibrary().isSend(method)) {
+            return callerFrame;
+        }
+
+        // Need to iterate further
+        final Object frame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
+            int depth = 0;
+
             @Override
-            public FrameInstance visitFrame(FrameInstance frameInstance) {
-                if (firstFrame.get()) {
-                    firstFrame.set(false);
+            public Object visitFrame(FrameInstance frameInstance) {
+                depth++;
+                if (depth < 2) {
                     return null;
                 }
 
-                final InternalMethod method = getMethod(frameInstance);
-                assert method != null;
-
-                if (!context.getCoreLibrary().isSend(method)) {
+                InternalMethod method = getMethod(frameInstance);
+                if (method == null) {
+                    return STOP_ITERATING;
+                } else if (!context.getCoreLibrary().isSend(method)) {
                     return frameInstance;
                 } else {
                     return null;
@@ -60,7 +77,11 @@ public class CallStackManager {
             }
         });
 
-        return fi;
+        if (frame instanceof FrameInstance) {
+            return (FrameInstance) frame;
+        } else {
+            return null;
+        }
     }
 
     @TruffleBoundary
@@ -94,7 +115,7 @@ public class CallStackManager {
     }
 
     private InternalMethod getMethod(FrameInstance frame) {
-        return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true));
+        return RubyArguments.tryGetMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true));
     }
 
     public Backtrace getBacktrace(Node currentNode, Throwable javaThrowable) {
@@ -131,7 +152,7 @@ public class CallStackManager {
                 && DisablingBacktracesNode.areBacktracesDisabled()
                 && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getLogicalClass(exception),
                     context.getCoreLibrary().getStandardErrorClass())) {
-            return new Backtrace(new Activation[]{Activation.OMITTED_UNUSED}, null);
+            return new Backtrace(new Activation[] { Activation.OMITTED_UNUSED }, null);
         }
 
         final int limit = context.getOptions().BACKTRACES_LIMIT;
@@ -163,13 +184,14 @@ public class CallStackManager {
                 }
 
                 if (!ignoreFrame(frameInstance) && depth >= omit) {
-                    if (!filterNullSourceSection
-                            || !(frameInstance.getCallNode().getEncapsulatingSourceSection() == null
-                            || frameInstance.getCallNode().getEncapsulatingSourceSection().getSource() == null)) {
-                        final InternalMethod method = RubyArguments.getMethod(frameInstance
+                    if (!(filterNullSourceSection && hasNullSourceSection(frameInstance))) {
+                        final InternalMethod method = RubyArguments.tryGetMethod(frameInstance
                                 .getFrame(FrameInstance.FrameAccess.READ_ONLY, true));
 
-                        activations.add(new Activation(frameInstance.getCallNode(), method));
+                        Node callNode = getCallNode(frameInstance, method);
+                        if (callNode != null) {
+                            activations.add(new Activation(callNode, method));
+                        }
                     }
                 }
 
@@ -181,7 +203,6 @@ public class CallStackManager {
         });
 
         // TODO CS 3-Mar-16 The last activation is I think what calls jruby_root_node, and I can't seem to remove it any other way
-
         if (!activations.isEmpty()) {
             activations.remove(activations.size() - 1);
         }
@@ -200,16 +221,13 @@ public class CallStackManager {
     private boolean ignoreFrame(FrameInstance frameInstance) {
         final Node callNode = frameInstance.getCallNode();
 
-        // Nodes with no call node are top-level - we may have multiple of them due to require
-
+        // Nodes with no call node are top-level or require, which *should* appear in the backtrace.
         if (callNode == null) {
-            return true;
+            return false;
         }
 
         // Ignore the call to run_jruby_root
-
         // TODO CS 2-Feb-16 should find a better way to detect this than a string
-
         final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
         if (sourceSection != null && sourceSection.getShortDescription().endsWith("#run_jruby_root")) {
@@ -225,6 +243,25 @@ public class CallStackManager {
         }
 
         return false;
+    }
+
+    private boolean hasNullSourceSection(FrameInstance frameInstance) {
+        final Node callNode = frameInstance.getCallNode();
+        if (callNode == null) {
+            return true;
+        }
+
+        final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
+        return sourceSection == null || sourceSection.getSource() == null;
+    }
+
+    private Node getCallNode(FrameInstance frameInstance, final InternalMethod method) {
+        Node callNode = frameInstance.getCallNode();
+        if (callNode == null && method != null &&
+                BacktraceFormatter.isCore(method.getSharedMethodInfo().getSourceSection())) {
+            callNode = ((RootCallTarget) method.getCallTarget()).getRootNode();
+        }
+        return callNode;
     }
 
 }

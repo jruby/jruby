@@ -122,7 +122,7 @@ public abstract class ProcNodes {
 
         private AllocateObjectNode getAllocateObjectNode() {
             if (allocateObjectNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
             }
 
@@ -131,7 +131,7 @@ public abstract class ProcNodes {
 
         private CallDispatchHeadNode getInitializeNode() {
             if (initializeNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 initializeNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
@@ -164,7 +164,7 @@ public abstract class ProcNodes {
 
         private AllocateObjectNode getAllocateObjectNode() {
             if (allocateObjectNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
             }
 
@@ -194,7 +194,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = {"call", "[]", "yield"}, rest = true, needsBlock = true)
+    @CoreMethod(names = { "call", "[]", "yield" }, rest = true, needsBlock = true)
     public abstract static class CallNode extends YieldingCoreMethodNode {
 
         @Specialization
@@ -204,7 +204,7 @@ public abstract class ProcNodes {
 
         @Specialization
         public Object call(VirtualFrame frame, DynamicObject proc, Object[] args, DynamicObject block) {
-            return yieldWithModifiedBlock(frame, proc, block, args);
+            return yieldWithBlock(frame, proc, block, args);
         }
 
     }

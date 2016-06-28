@@ -27,21 +27,23 @@ public abstract class FormatFloatNode extends FormatNode {
     private final String infiniteFormatString;
     private final String finiteFormatString;
 
-    public FormatFloatNode(RubyContext context, int spacePadding, int zeroPadding, int precision, char format) {
+    public FormatFloatNode(RubyContext context, int width, int precision, char format, boolean hasSpaceFlag, boolean hasZeroFlag) {
         super(context);
-
         final StringBuilder inifiniteFormatBuilder = new StringBuilder();
         inifiniteFormatBuilder.append("%");
 
-        if (spacePadding != PrintfTreeBuilder.DEFAULT) {
+        if (hasSpaceFlag) {
             inifiniteFormatBuilder.append(" ");
-            inifiniteFormatBuilder.append(spacePadding + 5);
+            inifiniteFormatBuilder.append(width + 5);
+        }
+        if (hasZeroFlag && width != 0) {
+            inifiniteFormatBuilder.append("0");
+            inifiniteFormatBuilder.append(width + 5);
+        }
+        if(!hasSpaceFlag && !hasZeroFlag){
+            inifiniteFormatBuilder.append(width + 5);
         }
 
-        if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
-            inifiniteFormatBuilder.append("0");
-            inifiniteFormatBuilder.append(zeroPadding + 5);
-        }
 
         inifiniteFormatBuilder.append(format);
 
@@ -50,17 +52,23 @@ public abstract class FormatFloatNode extends FormatNode {
         final StringBuilder finiteFormatBuilder = new StringBuilder();
         finiteFormatBuilder.append("%");
 
-        if (spacePadding != PrintfTreeBuilder.DEFAULT) {
+        if (hasSpaceFlag) {
             finiteFormatBuilder.append(" ");
-            finiteFormatBuilder.append(spacePadding);
+            finiteFormatBuilder.append(width);
 
-            if (zeroPadding != PrintfTreeBuilder.DEFAULT) {
+            if (hasZeroFlag) {
                 finiteFormatBuilder.append(".");
-                finiteFormatBuilder.append(zeroPadding);
+                finiteFormatBuilder.append(width);
             }
-        } else if (zeroPadding != PrintfTreeBuilder.DEFAULT && zeroPadding != 0) {
+        } else if (hasZeroFlag) {
             finiteFormatBuilder.append("0");
-            finiteFormatBuilder.append(zeroPadding);
+            if(width > 0){
+                finiteFormatBuilder.append(width);
+            } else {
+                finiteFormatBuilder.append(1);
+            }
+        } else if (!hasSpaceFlag && !hasSpaceFlag && width > 0) {
+            finiteFormatBuilder.append(width);
         }
 
         if (precision != PrintfTreeBuilder.DEFAULT) {

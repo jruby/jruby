@@ -29,7 +29,7 @@ import static org.jruby.util.CodegenUtils.sig;
  * Created by headius on 1/31/16.
  */
 public class ConstantLookupSite extends MutableCallSite {
-    private static final Logger LOG = LoggerFactory.getLogger("ConstantLookupSite");
+    private static final Logger LOG = LoggerFactory.getLogger(ConstantLookupSite.class);
     private final String name;
     private final boolean publicOnly;
     private final MethodHandles.Lookup lookup;

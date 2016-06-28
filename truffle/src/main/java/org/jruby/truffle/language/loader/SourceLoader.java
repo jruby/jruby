@@ -12,6 +12,7 @@ package org.jruby.truffle.language.loader;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringOperations;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -44,9 +45,14 @@ public class SourceLoader {
             if (!file.canRead()) {
                 throw new IOException("Can't read file " + canonicalPath);
             }
-            assert file.getCanonicalPath().equals(canonicalPath) : canonicalPath;
             return Source.fromFileName(canonicalPath);
         }
+    }
+
+    public Source loadFragment(String fragment, String name) {
+        return Source.fromText(
+                fragment,
+                name);
     }
 
     private Source loadInlineScript() {

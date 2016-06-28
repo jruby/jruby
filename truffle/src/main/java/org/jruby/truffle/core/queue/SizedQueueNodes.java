@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.queue;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
@@ -28,6 +27,7 @@ import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -114,7 +114,7 @@ public abstract class SizedQueueNodes {
 
         @CreateCast("nonBlocking")
         public RubyNode coerceToBoolean(RubyNode nonBlocking) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, false, nonBlocking);
+            return BooleanCastWithDefaultNodeGen.create(false, nonBlocking);
         }
 
         @Specialization(guards = "!nonBlocking")
@@ -167,7 +167,7 @@ public abstract class SizedQueueNodes {
 
         @CreateCast("nonBlocking")
         public RubyNode coerceToBoolean(RubyNode nonBlocking) {
-            return BooleanCastWithDefaultNodeGen.create(null, null, false, nonBlocking);
+            return BooleanCastWithDefaultNodeGen.create(false, nonBlocking);
         }
 
         @Specialization(guards = "!nonBlocking")

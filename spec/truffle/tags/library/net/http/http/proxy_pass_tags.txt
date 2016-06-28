@@ -1,6 +1,0 @@
-fails:Net::HTTP.proxy_pass when self is no proxy class returns nil
-fails:Net::HTTP.proxy_pass when self is a proxy class returns nil if no password was set for self's proxy connection
-fails:Net::HTTP.proxy_pass when self is a proxy class returns the password for self's proxy connection
-fails:Net::HTTP#proxy_pass when self is no proxy class instance returns nil
-fails:Net::HTTP#proxy_pass when self is a proxy class instance returns nil if no password was set for self's proxy connection
-fails:Net::HTTP#proxy_pass when self is a proxy class instance returns the password for self's proxy connection

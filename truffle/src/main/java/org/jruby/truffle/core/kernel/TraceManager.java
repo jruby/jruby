@@ -156,7 +156,7 @@ public class TraceManager {
 
         protected YieldNode getYieldNode() {
             if (yieldNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 yieldNode = insert(new YieldNode(context));
             }
 
@@ -225,7 +225,7 @@ public class TraceManager {
 
         private DynamicObject getLogicalClass(Object object) {
             if (logicalClassNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 logicalClassNode = insert(LogicalClassNodeGen.create(context, null, null));
             }
 

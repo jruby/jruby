@@ -1,9 +1,0 @@
----
-:setup:
-  :file:
-    bundler.rb: |
-                module Bundler
-                  BundlerError = Class.new(Exception)
-                  def self.setup(*args)
-                  end
-                end

@@ -34,8 +34,4 @@ describe "Truffle::Debug.java_class_of" do
     Truffle::Debug.java_class_of(3.14).should == 'Double'
   end
 
-  it "returns 'DynamicObject*' for a String" do
-    Truffle::Debug.java_class_of('test').start_with?('DynamicObject').should be_true
-  end
-
 end

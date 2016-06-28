@@ -1048,16 +1048,6 @@ class File < IO
   end
 
   ##
-  # Copies a file from to to. If to is a directory, copies from to to/from.
-  def self.syscopy(from, to)
-    out = directory?(to) ? to + basename(from) : to
-
-    open(out, 'w') do |f|
-      f.write read(from).read
-    end
-  end
-
-  ##
   # Truncates the file file_name to be at most integer
   # bytes long. Not available on all platforms.
   #
@@ -1267,7 +1257,6 @@ class File < IO
   end
 
   def reopen(other, mode = 'r+')
-    rewind unless closed?
     unless other.kind_of? IO
       other = Rubinius::Type.coerce_to_path(other)
     end
@@ -1321,15 +1310,6 @@ class File < IO
   def size
     raise IOError, "closed stream" if closed?
     stat.size
-  end
-
-  ##
-  # Return the equivalent S-Expression of the file given.
-  # Raises +SyntaxError+ if there is a syntax issue in the
-  # file, making it unparsable.
-  #  File.to_sexp("/tmp/test.rb") #=> s(...)
-  def self.to_sexp(name)
-    File.read(name).to_sexp(name)
   end
 end     # File
 

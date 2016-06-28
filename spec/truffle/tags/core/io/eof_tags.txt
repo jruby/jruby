@@ -1,5 +1,0 @@
-fails:IO#eof? returns false when not at end of file
-fails:IO#eof? returns true after reading with sysread
-fails:IO#eof? returns false on just opened non-empty stream
-fails:IO#eof? does not consume the data from the stream
-fails:IO#eof? returns false on receiving side of Pipe when writing side wrote some data

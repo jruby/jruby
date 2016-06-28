@@ -43,23 +43,6 @@ class Fixnum < Integer
   MIN = -9223372036854775808
   MAX =  9223372036854775807
 
-  def self.induced_from(obj)
-    case obj
-    when Fixnum
-      return obj
-    when Float, Bignum
-      value = obj.to_i
-      if value.is_a? Bignum
-        raise RangeError, "Object is out of range for a Fixnum"
-      else
-        return value
-      end
-    else
-      value = Rubinius::Type.coerce_to(obj, Integer, :to_int)
-      return self.induced_from(value)
-    end
-  end
-
   #--
   # see README-DEVELOPERS regarding safe math compiler plugin
   #++

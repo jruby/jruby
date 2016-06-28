@@ -1,1 +1,0 @@
-fails:REXML::Attributes#size returns the number of attributes

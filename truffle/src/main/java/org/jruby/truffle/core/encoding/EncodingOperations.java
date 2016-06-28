@@ -18,7 +18,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.truffle.Layouts;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.string.StringOperations;
 
 public abstract class EncodingOperations {
 
@@ -26,9 +27,10 @@ public abstract class EncodingOperations {
         Encoding encoding = Layouts.ENCODING.getEncoding(rubyEncoding);
 
         if (encoding == null) {
-            CompilerDirectives.transferToInterpreter();
+            // Bounded by the number of encodings
+            CompilerDirectives.transferToInterpreterAndInvalidate();
 
-            final ByteList name = Layouts.ENCODING.getName(rubyEncoding);
+            final Rope name = StringOperations.rope(Layouts.ENCODING.getName(rubyEncoding));
             encoding = loadEncoding(name);
             Layouts.ENCODING.setEncoding(rubyEncoding, encoding);
         }
@@ -37,22 +39,22 @@ public abstract class EncodingOperations {
     }
 
     @TruffleBoundary
-    private static EncodingDB.Entry findEncodingEntry(ByteList bytes) {
-        return EncodingDB.getEncodings().get(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
+    private static EncodingDB.Entry findEncodingEntry(Rope name) {
+        return EncodingDB.getEncodings().get(name.getBytes(), 0, name.byteLength());
     }
 
     @TruffleBoundary
-    private static EncodingDB.Entry findAliasEntry(ByteList bytes) {
-        return EncodingDB.getAliases().get(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
+    private static EncodingDB.Entry findAliasEntry(Rope name) {
+        return EncodingDB.getAliases().get(name.getBytes(), 0, name.byteLength());
     }
 
-    private static EncodingDB.Entry findEncodingOrAliasEntry(ByteList bytes) {
-        final EncodingDB.Entry e = findEncodingEntry(bytes);
-        return e != null ? e : findAliasEntry(bytes);
+    private static EncodingDB.Entry findEncodingOrAliasEntry(Rope name) {
+        final EncodingDB.Entry e = findEncodingEntry(name);
+        return e != null ? e : findAliasEntry(name);
     }
 
     @TruffleBoundary
-    private static Encoding loadEncoding(ByteList name) {
+    private static Encoding loadEncoding(Rope name) {
         final EncodingDB.Entry entry = findEncodingOrAliasEntry(name);
 
         if (entry == null) {

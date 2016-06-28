@@ -150,18 +150,18 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         assert RubyGuards.isRubyModule(from);
 
         // Do not copy name, the copy is an anonymous module
-        final ModuleFields fields = Layouts.MODULE.getFields(from);
-        this.methods.putAll(fields.methods);
-        this.constants.putAll(fields.constants);
-        this.classVariables.putAll(fields.classVariables);
+        final ModuleFields fromFields = Layouts.MODULE.getFields(from);
+        this.methods.putAll(fromFields.methods);
+        this.constants.putAll(fromFields.constants);
+        this.classVariables.putAll(fromFields.classVariables);
 
-        if (fields.start.getParentModule() != fields) {
-            this.parentModule = fields.start.getParentModule();
+        if (fromFields.start.getParentModule() != fromFields) {
+            this.parentModule = fromFields.start.getParentModule();
         } else {
-            this.parentModule = fields.parentModule;
+            this.parentModule = fromFields.parentModule;
         }
 
-        for (DynamicObject ancestor : fields.ancestors()) {
+        for (DynamicObject ancestor : fromFields.parentAncestors()) {
             Layouts.MODULE.getFields(ancestor).addDependent(rubyModuleObject);
         }
     }
@@ -330,7 +330,10 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
         checkFrozen(context, currentNode);
         methods.put(method.getName(), method);
-        newVersion();
+
+        if (!context.getCoreLibrary().isInitializing()) {
+            newVersion();
+        }
 
         if (context.getCoreLibrary().isLoaded() && !method.isUndefined()) {
             if (Layouts.CLASS.isClass(rubyModuleObject) && Layouts.CLASS.getIsSingleton(rubyModuleObject)) {
@@ -480,11 +483,11 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     public void newVersion() {
-        newVersion(new HashSet<DynamicObject>(), false);
+        newVersion(new HashSet<>(), false);
     }
 
     public void newLexicalVersion() {
-        newVersion(new HashSet<DynamicObject>(), true);
+        newVersion(new HashSet<>(), true);
     }
 
     public void newVersion(Set<DynamicObject> alreadyInvalidated, boolean considerLexicalDependents) {
@@ -525,6 +528,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return constants.entrySet();
     }
 
+    @TruffleBoundary
     public RubyConstant getConstant(String name) {
         return constants.get(name);
     }

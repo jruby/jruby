@@ -10,10 +10,21 @@ class MSpecScript
     RbConfig::CONFIG['host_os'] == 'linux'
   end
 
-  set :target, File.expand_path("../../../bin/jruby#{windows? ? '.bat' : ''}", __FILE__)
+  JRUBY_DIR = File.expand_path('../../..', __FILE__)
+
+  set :target, "#{JRUBY_DIR}/bin/jruby#{windows? ? '.bat' : ''}"
 
   if ARGV[-2..-1] != %w[-t ruby] # No flags for MRI
-    set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G]
+    flags = %w[
+      -X+T
+      -J-ea
+      -J-esa
+      -J-Xmx2G
+      -Xtruffle.graal.warn_unless=false
+    ]
+    core_path = "#{JRUBY_DIR}/truffle/src/main/ruby"
+    flags << "-Xtruffle.core.load_path=#{core_path}" if File.directory?(core_path)
+    set :flags, flags
   end
 
   set :capi, [
@@ -92,6 +103,14 @@ class MSpecScript
     "^spec/ruby/library/openssl/x509/name/parse_spec.rb"
   ]
 
+  set :capi, [
+    "spec/ruby/optional/capi/array_spec.rb",
+    "spec/ruby/optional/capi/class_spec.rb",
+    "spec/ruby/optional/capi/module_spec.rb",
+    "spec/ruby/optional/capi/proc_spec.rb",
+    "spec/ruby/optional/capi/string_spec.rb",
+  ]
+
   set :truffle, [
     "spec/truffle/specs"
   ]
@@ -124,12 +143,12 @@ class MSpecScript
   MSpec.disable_feature :continuation_library
   MSpec.disable_feature :fork
   MSpec.enable_feature :encoding
-  MSpec.enable_feature :readline
 
   set :files, get(:language) + get(:core) + get(:library) + get(:truffle)
 end
 
-if respond_to?(:ruby_exe)
+is_child_process = respond_to?(:ruby_exe)
+if i = ARGV.index('slow') and ARGV[i-1] == '--excl-tag' and is_child_process
   class SlowSpecsTagger
     def initialize
       MSpec.register :exception, self
@@ -146,13 +165,26 @@ if respond_to?(:ruby_exe)
   class SlowSpecException < Exception
   end
 
-  class ::Object
-    alias old_ruby_exe ruby_exe
-    def ruby_exe(*args, &block)
-      if (MSpecScript.get(:xtags) || []).include? 'slow'
-        raise SlowSpecException, "Was tagged as slow as it uses ruby_exe(). Rerun specs."
+  require 'timeout'
+
+  slow_methods = [
+    [Object, [:ruby_exe, :ruby_cmd]],
+    [ObjectSpace.singleton_class, [:each_object]],
+    [GC.singleton_class, [:start]],
+    [Kernel, [:system]],
+    [Kernel.singleton_class, [:system]],
+    [Timeout.singleton_class, [:timeout]],
+  ]
+
+  slow_methods.each do |klass, meths|
+    klass.class_exec do
+      meths.each do |meth|
+        define_method(meth) do |*args, &block|
+          raise SlowSpecException, "Was tagged as slow as it uses #{meth}(). Rerun specs."
+        end
+        # Keep visibility of Kernel#system
+        private meth if klass == Kernel and meth == :system
       end
-      old_ruby_exe(*args, &block)
     end
   end
 

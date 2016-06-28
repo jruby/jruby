@@ -398,18 +398,9 @@ public class SuperCallSite extends CallSite {
     }
 
     protected static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self, RubyModule frameClass, String frameName) {
-        checkSuperDisabledOrOutOfMethod(context, frameClass, frameName);
+        Helpers.checkSuperDisabledOrOutOfMethod(context, frameClass, frameName);
 
         return Helpers.findImplementerIfNecessary(self.getMetaClass(), frameClass).getSuperClass();
     }
 
-    protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String frameName) {
-        if (frameClass == null) {
-            if (frameName != null) {
-                throw context.runtime.newNameError("superclass method '" + frameName + "' disabled", frameName);
-            } else {
-                throw context.runtime.newNoMethodError("super called outside of method", null, context.runtime.getNil());
-            }
-        }
-    }
 }

@@ -24,9 +24,11 @@ import static org.jruby.util.cli.Options.TRUFFLE_CLASS_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CONSTANT_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CORE_ALWAYS_CLONE;
 import static org.jruby.util.cli.Options.TRUFFLE_CORE_LOAD_PATH;
+import static org.jruby.util.cli.Options.TRUFFLE_CORE_PARALLEL_LOAD;
 import static org.jruby.util.cli.Options.TRUFFLE_COVERAGE_GLOBAL;
 import static org.jruby.util.cli.Options.TRUFFLE_DISPATCH_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_ENCODING_LOADED_CLASSES_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_EVAL_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
@@ -90,6 +92,7 @@ public class Options {
     // Resources
 
     public final String CORE_LOAD_PATH = TRUFFLE_CORE_LOAD_PATH.load();
+    public final boolean CORE_PARALLEL_LOAD = TRUFFLE_CORE_PARALLEL_LOAD.load();
 
     // Data structures
 
@@ -119,6 +122,7 @@ public class Options {
     public final int EVAL_CACHE = TRUFFLE_EVAL_CACHE.load();
     public final int CLASS_CACHE = TRUFFLE_CLASS_CACHE.load();
     public final int ENCODING_COMPATIBILE_QUERY_CACHE = TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE.load();
+    public final int ENCODING_LOADED_CLASSES_CACHE = TRUFFLE_ENCODING_LOADED_CLASSES_CACHE.load();
     public final int THREAD_CACHE = TRUFFLE_THREAD_CACHE.load();
     public final int ROPE_CLASS_CACHE = TRUFFLE_ROPE_CLASS_CACHE.load();
     public final int INTEROP_CONVERT_CACHE = TRUFFLE_INTEROP_CONVERT_CACHE.load();

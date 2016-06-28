@@ -23,6 +23,14 @@ public abstract class RubyGuards {
         return value instanceof Boolean;
     }
 
+    public static boolean isByte(Object value) {
+        return value instanceof Byte;
+    }
+
+    public static boolean isShort(Object value) {
+        return value instanceof Short;
+    }
+
     public static boolean isInteger(Object value) {
         return value instanceof Integer;
     }
@@ -123,6 +131,10 @@ public abstract class RubyGuards {
 
     public static boolean isRubyModule(DynamicObject value) {
         return Layouts.MODULE.isModule(value);
+    }
+
+    public static boolean isRubyMutex(DynamicObject value) {
+        return Layouts.MUTEX.isMutex(value);
     }
 
     public static boolean isRubyRegexp(Object value) {

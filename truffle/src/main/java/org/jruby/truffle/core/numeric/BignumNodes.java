@@ -47,7 +47,7 @@ public abstract class BignumNodes {
 
         public Object fixnumOrBignum(BigInteger value) {
             if (fixnumOrBignum == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
             }
             return fixnumOrBignum.fixnumOrBignum(value);
@@ -308,12 +308,12 @@ public abstract class BignumNodes {
         @Specialization(guards = "!isRubyBignum(b)")
         public boolean equal(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             if (booleanCastNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                booleanCastNode = insert(BooleanCastNodeGen.create(null));
             }
 
             if (reverseCallNode == null) {
-                CompilerDirectives.transferToInterpreter();
+                CompilerDirectives.transferToInterpreterAndInvalidate();
                 reverseCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 

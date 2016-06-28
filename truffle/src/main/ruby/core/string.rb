@@ -112,10 +112,6 @@ class String
     raise PrimitiveFailure, "String#find_character primitive failed"
   end
 
-  def num_bytes
-    bytesize
-  end
-
   def byte_append(str)
     Truffle.primitive :string_byte_append
     raise TypeError, "String#byte_append primitive only accepts Strings"
@@ -133,14 +129,6 @@ class String
     Rubinius::Type.try_convert obj, String, :to_str
   end
 
-  def %(args)
-    *args = args
-    ret = Rubinius::Sprinter.get(self).call(*args)
-
-    ret.taint if tainted?
-    return ret
-  end
-
   def =~(pattern)
     case pattern
       when Regexp
@@ -153,58 +141,6 @@ class String
         pattern =~ self
     end
   end
-
-  def [](index, other = undefined)
-    Truffle.primitive :string_aref
-
-    unless undefined.equal?(other)
-      if index.kind_of?(Fixnum) && other.kind_of?(Fixnum)
-        return substring(index, other)
-      elsif index.kind_of? Regexp
-        match, str = subpattern(index, other)
-        Regexp.last_match = match
-        return str
-      else
-        length = Rubinius::Type.coerce_to(other, Fixnum, :to_int)
-        start  = Rubinius::Type.coerce_to(index, Fixnum, :to_int)
-        return substring(start, length)
-      end
-    end
-
-    case index
-      when Regexp
-        match_data = index.search_region(self, 0, bytesize, true)
-        Regexp.last_match = match_data
-        if match_data
-          result = match_data.to_s
-          Rubinius::Type.infect result, index
-          return result
-        end
-      when String
-        return include?(index) ? index.dup : nil
-      when Range
-        start   = Rubinius::Type.coerce_to index.first, Fixnum, :to_int
-        length  = Rubinius::Type.coerce_to index.last,  Fixnum, :to_int
-
-        start += size if start < 0
-
-        length += size if length < 0
-        length += 1 unless index.exclude_end?
-
-        return "" if start == size
-        return nil if start < 0 || start > size
-
-        length = size if length > size
-        length = length - start
-        length = 0 if length < 0
-
-        return substring(start, length)
-      else
-        index = Rubinius::Type.coerce_to index, Fixnum, :to_int
-        return self[index]
-    end
-  end
-  alias_method :slice, :[]
 
   def chomp(separator=$/)
     str = dup
@@ -219,21 +155,6 @@ class String
   def delete(*strings)
     str = dup
     str.delete!(*strings) || str
-  end
-
-  def downcase
-    return dup if bytesize == 0
-    transform(Truffle::CType::Lowered)
-  end
-
-  def end_with?(*suffixes)
-    suffixes.each do |suffix|
-      suffix = Rubinius::Type.check_convert_type suffix, String, :to_str
-      next unless suffix
-
-      return true if self[-suffix.length, suffix.length] == suffix
-    end
-    false
   end
 
   def include?(needle)
@@ -367,15 +288,6 @@ class String
     str.squeeze!(*strings) || str
   end
 
-  def start_with?(*prefixes)
-    prefixes.each do |prefix|
-      prefix = Rubinius::Type.check_convert_type prefix, String, :to_str
-      next unless prefix
-      return true if self[0, prefix.length] == prefix
-    end
-    false
-  end
-
   def strip
     str = dup
     str.strip! || str
@@ -396,8 +308,6 @@ class String
     str.swapcase! || str
   end
 
-  alias_method :intern, :to_sym
-
   def to_i(base=10)
     base = Rubinius::Type.coerce_to base, Integer, :to_int
 
@@ -416,11 +326,6 @@ class String
   def tr_s(source, replacement)
     str = dup
     str.tr_s!(source, replacement) || str
-  end
-
-  def upcase
-    str = dup
-    str.upcase! || str
   end
 
   def to_sub_replacement(result, match)
@@ -488,11 +393,6 @@ class String
     raise ArgumentError, "invalid value for Integer"
   end
 
-  def apply_and!(other)
-    Truffle.primitive :string_apply_and
-    raise PrimitiveFailure, "String#apply_and! primitive failed"
-  end
-
   def compare_substring(other, start, size)
     Truffle.primitive :string_compare_substring
 
@@ -531,9 +431,8 @@ class String
   end
 
   def shorten!(size)
-    self.modify!
     return if bytesize == 0
-    self.num_bytes -= size
+    Truffle::String.truncate(self, bytesize - size)
   end
 
   def each_codepoint
@@ -841,6 +740,7 @@ class String
   def sub(pattern, replacement=undefined)
     # Because of the behavior of $~, this is duplicated from sub! because
     # if we call sub! from sub, the last_match can't be updated properly.
+    dup = self.dup
 
     unless valid_encoding?
       raise ArgumentError, "invalid byte sequence in #{encoding}"
@@ -866,7 +766,7 @@ class String
     end
 
     pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
-    match = pattern.match_from(self, 0)
+    match = pattern.match_from(dup, 0)
 
     Regexp.last_match = match
 
@@ -896,7 +796,7 @@ class String
       ret.append(match.post_match)
       tainted ||= val.tainted?
     else
-      return self
+      return dup
     end
 
     ret.taint if tainted
@@ -1033,7 +933,7 @@ class String
       end
     end
 
-    self.num_bytes = bytes
+    Truffle::String.truncate(self, bytes)
 
     self
   end
@@ -1099,12 +999,12 @@ class String
       bytes = bytesize - size
     end
 
-    self.num_bytes = bytes
+    Truffle::String.truncate(self, bytes)
 
     self
   end
 
-  def <<(other)
+  def concat_internal(other)
     Truffle.check_frozen
 
     unless other.kind_of? String
@@ -1122,7 +1022,6 @@ class String
     Rubinius::Type.infect(self, other)
     append(other)
   end
-  alias_method :concat, :<<
 
   def chr
     substring 0, 1

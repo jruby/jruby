@@ -31,10 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.digest;
 
-import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.util.HashMap;
 import java.util.Map;
@@ -242,6 +240,14 @@ public class RubyDigest {
         SHA512.setInternalVariable("metadata", new Metadata("SHA-512", 128));
     }
 
+    public static void createDigestBubbleBabble(Ruby runtime) {
+        runtime.getLoadService().require("digest");
+        RubyModule Digest = runtime.getModule("Digest");
+        RubyClass Base = Digest.getClass("Base");
+        RubyClass MD5 = Digest.defineClassUnder("BubbleBabble", Base, Base.getAllocator());
+        MD5.setInternalVariable("metadata", new Metadata("BubbleBabble", 64));
+    }
+
     @JRubyModule(name = "Digest::Instance")
     public static class DigestInstance {
 
@@ -385,6 +391,12 @@ public class RubyDigest {
             Ruby runtime = recv.getRuntime();
             byte[] digest = recv.callMethod(context, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
             return RubyDigest.toHexString(runtime, digest);
+        }
+
+        @JRubyMethod(name = "bubblebabble", required = 1, meta = true)
+        public static RubyString bubblebabble(IRubyObject recv, IRubyObject arg) {
+            byte[] digest = recv.callMethod(recv.getRuntime().getCurrentContext(), "digest", arg).convertToString().getBytes();
+            return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(digest, 0, digest.length));
         }
     }
 

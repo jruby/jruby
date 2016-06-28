@@ -60,7 +60,6 @@ import java.util.concurrent.locks.Lock;
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.internal.runtime.NativeThread;
@@ -851,7 +850,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             ts.setCritical(critical);
         }
 
-        return recv.getRuntime().getNil();
+        return runtime.getNil();
     }
 
     @JRubyMethod(meta = true)
@@ -938,7 +937,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if ((value = getThreadLocals().get(getSymbolKey(key))) != null) {
             return value;
         }
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "thread_variable_set", required = 2)
@@ -1151,7 +1150,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             }
         }
 
-        return receiver.getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(required = 1, meta = true)
@@ -1512,9 +1511,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         genericKill(getRuntime(), null);
     }
 
-    private static void debug(RubyThread thread, String message) {
-        if (LOG.isDebugEnabled()) LOG.debug( "{} ({}): {}", Thread.currentThread(), thread.status, message );
-    }
+    //private static void debug(RubyThread thread, String message) {
+    //    if (LOG.isDebugEnabled()) LOG.debug( "{} ({}): {}", Thread.currentThread(), thread.status, message );
+    //}
 
     @JRubyMethod
     public IRubyObject safe_level() {
@@ -1769,14 +1768,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     // so that we can ensure one failing does not affect the others
                     // running.
 
-                    // clean up the key in the selector
-                    try {
-                        if (key != null) key.cancel();
-                        if (currentSelector != null) currentSelector.selectNow();
-                    } catch (Exception e) {
-                        // ignore
-                    }
-
                     // shut down and null out the selector
                     try {
                         if (currentSelector != null) {
@@ -1880,12 +1871,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public void afterBlockingCall() {
         exitSleep();
         pollThreadEvents();
-    }
-
-    private void receivedAnException(ThreadContext context, IRubyObject exception) {
-        RubyModule kernelModule = getRuntime().getKernel();
-        debug(this, "before propagating exception");
-        kernelModule.callMethod(context, "raise", exception);
     }
 
     public boolean wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {

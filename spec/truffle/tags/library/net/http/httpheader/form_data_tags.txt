@@ -1,3 +1,0 @@
-fails:Net::HTTPHeader#form_data= when passed params automatically set the 'Content-Type' to 'application/x-www-form-urlencoded'
-fails:Net::HTTPHeader#form_data= when passed params sets self's body based on the passed form parameters
-fails:Net::HTTPHeader#form_data= when passed params, separator sets self's body based on the passed form parameters and the passed separator

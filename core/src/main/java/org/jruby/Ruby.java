@@ -727,22 +727,10 @@ public final class Ruby implements Constantizable {
      *
      * @param scriptNode The root node of the script to be executed
      * bytecode before execution
+ *     @param wrap whether to wrap the execution in an anonymous module
      * @return The result of executing the script
      */
-    @Deprecated
-    public IRubyObject runNormally(Node scriptNode, boolean unused) {
-        return runNormally(scriptNode);
-    }
-
-    /**
-     * Run the specified script without any of the loop-processing wrapper
-     * code.
-     *
-     * @param scriptNode The root node of the script to be executed
-     * bytecode before execution
-     * @return The result of executing the script
-     */
-    public IRubyObject runNormally(Node scriptNode) {
+    public IRubyObject runNormally(Node scriptNode, boolean wrap) {
         ScriptAndCode scriptAndCode = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
@@ -757,13 +745,25 @@ public final class Ruby implements Constantizable {
                 return getNil();
             }
 
-            return runScript(scriptAndCode.script());
+            return runScript(scriptAndCode.script(), wrap);
         } else {
             // FIXME: temporarily allowing JIT to fail for $0 and fall back on interpreter
 //            failForcedCompile(scriptNode);
 
             return runInterpreter(scriptNode);
         }
+    }
+
+    /**
+     * Run the specified script without any of the loop-processing wrapper
+     * code.
+     *
+     * @param scriptNode The root node of the script to be executed
+     * bytecode before execution
+     * @return The result of executing the script
+     */
+    public IRubyObject runNormally(Node scriptNode) {
+        return runNormally(scriptNode, false);
     }
 
     private ScriptAndCode precompileCLI(RootNode scriptNode) {
@@ -925,7 +925,7 @@ public final class Ruby implements Constantizable {
         try {
             clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.JRubyTruffleImpl");
         } catch (Exception e) {
-            throw new RuntimeException("Truffle backend not available", e);
+            throw new RuntimeException("JRuby's Truffle backend not available - either it was not compiled because JRuby was built with Java 7, or it has been removed", e);
         }
 
         final JRubyTruffleInterface truffleContext;
@@ -1777,6 +1777,7 @@ public final class Ruby implements Constantizable {
         addLazyBuiltin("digest/rmd160.jar", "digest/rmd160", "org.jruby.ext.digest.RMD160");
         addLazyBuiltin("digest/sha1.jar", "digest/sha1", "org.jruby.ext.digest.SHA1");
         addLazyBuiltin("digest/sha2.jar", "digest/sha2", "org.jruby.ext.digest.SHA2");
+        addLazyBuiltin("digest/bubblebabble.jar", "digest/bubblebabble", "org.jruby.ext.digest.BubbleBabble");
         addLazyBuiltin("bigdecimal.jar", "bigdecimal", "org.jruby.ext.bigdecimal.BigDecimalLibrary");
         addLazyBuiltin("io/wait.jar", "io/wait", "org.jruby.ext.io.wait.IOWaitLibrary");
         addLazyBuiltin("etc.jar", "etc", "org.jruby.ext.etc.EtcLibrary");
@@ -3014,61 +3015,19 @@ public final class Ruby implements Constantizable {
     public void compileAndLoadFile(String filename, InputStream in, boolean wrap) {
         InputStream readStream = in;
 
-        Script script = null;
-
-        try {
-            // read full contents of file, hash it, and try to load that class first
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int num;
-            while ((num = in.read(buffer)) > -1) {
-                baos.write(buffer, 0, num);
-            }
-            buffer = baos.toByteArray();
-            String hash = JITCompiler.getHashForBytes(buffer);
-            final String className = JITCompiler.RUBY_JIT_PREFIX + ".FILE_" + hash;
-
-            // FIXME: duplicated from ClassCache
-            Class contents;
-            try {
-                contents = getJRubyClassLoader().loadClass(className);
-                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
-                    LOG.debug("found jitted code for " + filename + " at class: " + className);
-                }
-                script = (Script) contents.newInstance();
-                readStream = new ByteArrayInputStream(buffer);
-            } catch (ClassNotFoundException cnfe) {
-                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
-                    LOG.debug("no jitted code in classloader for file " + filename + " at class: " + className);
-                }
-            } catch (InstantiationException ex) {
-                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
-                    LOG.debug("jitted code could not be instantiated for file " + filename + " at class: " + className + ' ' + ex);
-                }
-            } catch (IllegalAccessException ex) {
-                if (LOG.isDebugEnabled()) { // RubyInstanceConfig.JIT_LOADING_DEBUG
-                    LOG.debug("jitted code could not be instantiated for file " + filename + " at class: " + className + ' ' + ex);
-                }
-            }
-        } catch (IOException ioe) {
-            // TODO: log something?
-        }
-
         // script was not found in cache above, so proceed to compile
         RootNode scriptNode = (RootNode) parseFile(readStream, filename, null);
-        if (script == null) {
-            ScriptAndCode scriptAndCode = tryCompile(scriptNode,
-                new ClassDefiningJRubyClassLoader(getJRubyClassLoader())
-            );
-            if (scriptAndCode != null) script = scriptAndCode.script();
-        }
 
-        if (script == null) {
-            failForcedCompile(scriptNode);
+        ThreadContext context = getCurrentContext();
 
-            runInterpreter(scriptNode);
-        } else {
-            runScript(script, wrap);
+        String oldFile = context.getFile();
+        int oldLine = context.getLine();
+        try {
+            context.setFileAndLine(scriptNode.getFile(), scriptNode.getLine());
+
+            runNormally(scriptNode, wrap);
+        } finally {
+            context.setFileAndLine(oldFile, oldLine);
         }
     }
 
@@ -3316,7 +3275,7 @@ public final class Ruby implements Constantizable {
         // clear out threadlocals so they don't leak
         recursive = new ThreadLocal<Map<String, RubyHash>>();
 
-        ThreadContext context = getCurrentContext();
+        final ThreadContext context = getCurrentContext();
 
         // FIXME: 73df3d230b9d92c7237d581c6366df1b92ad9b2b exposed no toplevel scope existing anymore (I think the
         // bogus scope I removed was playing surrogate toplevel scope and wallpapering this bug).  For now, add a
@@ -3330,15 +3289,14 @@ public final class Ruby implements Constantizable {
             RubyProc proc = atExitBlocks.pop();
             // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
             try {
-                proc.call(getCurrentContext(), IRubyObject.NULL_ARRAY);
+                proc.call(context, IRubyObject.NULL_ARRAY);
             } catch (RaiseException rj) {
                 RubyException raisedException = rj.getException();
                 if (!getSystemExit().isInstance(raisedException)) {
                     status = 1;
                     printError(raisedException);
                 } else {
-                    IRubyObject statusObj = raisedException.callMethod(
-                            getCurrentContext(), "status");
+                    IRubyObject statusObj = raisedException.callMethod(context, "status");
                     if (statusObj != null && !statusObj.isNil()) {
                         status = RubyNumeric.fix2int(statusObj);
                     }
@@ -3354,7 +3312,7 @@ public final class Ruby implements Constantizable {
             IRubyObject[] trapResultEntries = ((RubyArray) trapResult).toJavaArray();
             IRubyObject exitHandlerProc = trapResultEntries[0];
             if (exitHandlerProc instanceof RubyProc) {
-                ((RubyProc) exitHandlerProc).call(this.getCurrentContext(), this.getSingleNilArray());
+                ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
             }
         }
 
@@ -3956,25 +3914,25 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getClass("Iconv").getClass("IllegalSequence"), message);
     }
 
-    public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
-        return new RaiseException(new RubyNoMethodError(this, getNoMethodError(), message, name, args), true);
-    }
-
-    public RaiseException newNameError(String message, String name) {
-        return newNameError(message, name, null);
-    }
-
-    @Deprecated
-    public RaiseException newNameErrorObject(String message, IRubyObject name) {
-        RubyException error = new RubyNameError(this, getNameError(), message, name);
-
-        return new RaiseException(error, false);
-    }
-
-    public RaiseException newNameError(String message, String name, Throwable origException) {
-        return newNameError(message, name, origException, false);
-    }
-
+    /**
+     * Construct a NameError that formats its message with an sprintf format string.
+     *
+     * The arguments given to sprintf are as follows:
+     *
+     * 0: the name that failed
+     * 1: the receiver object that failed
+     * 2: a ":" character for non-singleton recv, blank otherwise
+     * 3: the name of the a non-singleton recv's class, blank if recv is a singleton
+     *
+     * Passing a string with no format characters will warn in verbose mode and error in debug mode.
+     *
+     * See jruby/jruby#3934.
+     *
+     * @param message an sprintf format string for the message
+     * @param recv the receiver object
+     * @param name the name that failed
+     * @return a new NameError
+     */
     public RaiseException newNameError(String message, IRubyObject recv, IRubyObject name) {
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, name);
         RubyException err = RubyNameError.newNameError(getNameError(), msg, name);
@@ -3982,19 +3940,30 @@ public final class Ruby implements Constantizable {
         return new RaiseException(err);
     }
 
+    /**
+     * Construct a NameError that formats its message with an sprintf format string.
+     *
+     * This version just accepts a java.lang.String for the name.
+     *
+     * @see Ruby#newNameError(String, IRubyObject, IRubyObject)
+     */
     public RaiseException newNameError(String message, IRubyObject recv, String name) {
         RubySymbol nameSym = newSymbol(name);
         return newNameError(message, recv, nameSym);
     }
 
-    public RaiseException newNoMethodError(String message, IRubyObject recv, String name, RubyArray args) {
-        RubySymbol nameStr = newSymbol(name);
-        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
-        RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args);
-
-        return new RaiseException(err);
-    }
-
+    /**
+     * Construct a NameError with the given pre-formatted message, name, and optional original exception.
+     *
+     * If the original exception is given, and either we are in verbose mode with printWhenVerbose set to true
+     * or we are in debug mode.
+     *
+     * @param message the pre-formatted message for the NameError
+     * @param name the name that failed
+     * @param origException the original exception, or null
+     * @param printWhenVerbose whether to log this exception when verbose mode is enabled
+     * @return a new NameError
+     */
     public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
         if (origException != null) {
             if (printWhenVerbose && isVerbose()) {
@@ -4005,6 +3974,65 @@ public final class Ruby implements Constantizable {
         }
 
         return new RaiseException(new RubyNameError(this, getNameError(), message, name), false);
+    }
+
+    /**
+     * Construct a NameError with a pre-formatted message and name.
+     *
+     * This is the same as calling {@link #newNameError(String, String, Throwable)} with a null
+     * originating exception.
+     *
+     * @param message the pre-formatted message for the error
+     * @param name the name that failed
+     * @return a new NameError
+     */
+    public RaiseException newNameError(String message, String name) {
+        return newNameError(message, name, null);
+    }
+
+    /**
+     * Construct a NameError with an optional originating exception and a pre-formatted message.
+     *
+     * This is the same as calling {@link #newNameError(String, String, Throwable, boolean)} with a null
+     * originating exception and false for verbose-mode logging.
+     *
+     * @param message a formatted string message for the error
+     * @param name the name that failed
+     * @param origException the original exception, or null if none
+     * @return a new NameError
+     */
+    public RaiseException newNameError(String message, String name, Throwable origException) {
+        return newNameError(message, name, origException, false);
+    }
+
+    /**
+     * Construct a NoMethodError that formats its message with an sprintf format string.
+     *
+     * This works like {@link #newNameError(String, IRubyObject, IRubyObject)} but accepts
+     * a java.lang.String for name and a RubyArray of the original call arguments.
+     *
+     * @see Ruby#newNameError(String, IRubyObject, IRubyObject)
+     *
+     * @return a new NoMethodError
+     */
+    public RaiseException newNoMethodError(String message, IRubyObject recv, String name, RubyArray args) {
+        RubySymbol nameStr = newSymbol(name);
+        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
+        RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args);
+
+        return new RaiseException(err);
+    }
+
+    /**
+     * Construct a NoMethodError with a pre-formatted message.
+     *
+     * @param message the pre-formatted message
+     * @param name the name that failed
+     * @param args the original arguments to the call that failed
+     * @return a new NoMethodError
+     */
+    public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
+        return new RaiseException(new RubyNoMethodError(this, getNoMethodError(), message, name, args), true);
     }
 
     public RaiseException newLocalJumpError(RubyLocalJumpError.Reason reason, IRubyObject exitValue, String message) {
@@ -4753,15 +4781,13 @@ public final class Ruby implements Constantizable {
      *
      * @param name the name of the method
      * @param method
-     * @deprecated This should be an implementation detail of the ProfilingService and should remove from the Ruby class.
      */
-    @Deprecated
+    @SuppressWarnings("deprecation")
     void addProfiledMethod(final String name, final DynamicMethod method) {
         if (!config.isProfiling()) return;
         if (method.isUndefined()) return;
 
         getProfiledMethods().addProfiledMethod( name, method );
-
     }
 
     /**
@@ -5029,6 +5055,13 @@ public final class Ruby implements Constantizable {
 
     @Deprecated
     public void secure(int level) {
+    }
+
+    @Deprecated
+    public RaiseException newNameErrorObject(String message, IRubyObject name) {
+        RubyException error = new RubyNameError(this, getNameError(), message, name);
+
+        return new RaiseException(error, false);
     }
 
     // Parser stats methods

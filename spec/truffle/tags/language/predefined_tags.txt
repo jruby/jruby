@@ -4,3 +4,5 @@ slow:The predefined global constant STDIN has the encodings set by #set_encoding
 slow:The predefined global constant STDOUT has the encodings set by #set_encoding
 slow:The predefined global constant ARGV contains Strings encoded in locale Encoding
 linux:Global variable $0 actually sets the program name
+slow:Global variable $0 is the path given as the main script and the same as __FILE__
+slow:Global variable $? is thread-local

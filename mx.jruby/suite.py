@@ -1,3 +1,11 @@
+# Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 suite = {
     "mxversion": "5.6.6",
     "name": "jrubytruffle",
@@ -7,7 +15,7 @@ suite = {
         "suites": [
             {
                 "name": "truffle",
-                "version": "9c16d110f3aa63a17e3e2cf1b857e039c507078a",
+                "version": "47033f56665100fd5f7cbafd96d6c3112329f517",
                 "urls": [
                     {"url": "https://github.com/graalvm/truffle.git",
                         "kind": "git"},

@@ -1,1 +1,0 @@
-fails:Net::HTTPResponse.body_permitted? returns true if this response type can have a response body

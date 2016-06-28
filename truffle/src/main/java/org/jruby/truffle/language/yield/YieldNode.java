@@ -33,9 +33,7 @@ public class YieldNode extends Node {
         this.declarationContext = declarationContext;
     }
 
-    public Object dispatch(VirtualFrame frame,
-                           DynamicObject block,
-                           Object... argumentsObjects) {
+    public Object dispatch(VirtualFrame frame, DynamicObject block, Object... argumentsObjects) {
         return getCallBlockNode().executeCallBlock(
                 frame,
                 block,
@@ -44,22 +42,16 @@ public class YieldNode extends Node {
                 argumentsObjects);
     }
 
-    public Object dispatchWithModifiedBlock(VirtualFrame frame,
-                                            DynamicObject block,
-                                            DynamicObject modifiedBlock,
-                                            Object... argumentsObjects) {
+    public Object dispatchWithBlock(VirtualFrame frame, DynamicObject block, DynamicObject blockArgument, Object... argumentsObjects) {
         return getCallBlockNode().executeCallBlock(
                 frame,
                 block,
                 Layouts.PROC.getSelf(block),
-                modifiedBlock,
+                blockArgument,
                 argumentsObjects);
     }
 
-    public Object dispatchWithModifiedSelf(VirtualFrame currentFrame,
-                                           DynamicObject block,
-                                           Object self,
-                                           Object... argumentsObjects) {
+    public Object dispatchWithModifiedSelf(VirtualFrame currentFrame, DynamicObject block, Object self, Object... argumentsObjects) {
         return getCallBlockNode().executeCallBlock(
                 currentFrame,
                 block,
@@ -70,7 +62,7 @@ public class YieldNode extends Node {
 
     private CallBlockNode getCallBlockNode() {
         if (callBlockNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             callBlockNode = insert(CallBlockNodeGen.create(context, null, declarationContext, null, null, null, null));
         }
 

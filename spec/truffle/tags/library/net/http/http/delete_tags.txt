@@ -1,1 +1,0 @@
-fails:Net::HTTP#delete sends a DELETE request to the passed path and returns the response
