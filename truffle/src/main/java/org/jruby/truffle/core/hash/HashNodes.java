@@ -222,7 +222,7 @@ public abstract class HashNodes {
                 "isCompareByIdentity(hash)",
                 "cachedIndex >= 0",
                 "cachedIndex < getSize(hash)",
-                "equal(frame, key, getKeyAt(hash, cachedIndex))"
+                "equal(key, getKeyAt(hash, cachedIndex))"
         }, limit = "1")
         public Object getConstantIndexPackedArrayByIdentity(VirtualFrame frame, DynamicObject hash, Object key,
                 @Cached("index(frame, hash, key)") int cachedIndex) {
@@ -259,7 +259,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < size; n++) {
                 if (HashGuards.isCompareByIdentity(hash)) {
-                    if (equal(frame, key, PackedArrayStrategy.getKey(store, n))) {
+                    if (equal(key, PackedArrayStrategy.getKey(store, n))) {
                         return n;
                     }
                 } else {
@@ -280,8 +280,8 @@ public abstract class HashNodes {
             return eqlNode.callBoolean(frame, key1, "eql?", null, key2);
         }
 
-        protected boolean equal(VirtualFrame frame, Object key1, Object key2) {
-            return equalNode.executeReferenceEqual(frame, key1, key2);
+        protected boolean equal(Object key1, Object key2) {
+            return equalNode.executeReferenceEqual(key1, key2);
         }
 
         @ExplodeLoop
@@ -325,7 +325,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < getContext().getOptions().HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
-                    if (equal(frame, key, PackedArrayStrategy.getKey(store, n))) {
+                    if (equal(key, PackedArrayStrategy.getKey(store, n))) {
                         return PackedArrayStrategy.getValue(store, n);
                     }
                 }

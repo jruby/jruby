@@ -207,6 +207,20 @@ class Struct
     return instance_variable_set(:"@#{var}", obj)
   end
 
+  def dig(key, *more)
+    result = nil
+    begin
+      result = self[key]
+    rescue IndexError, NameError
+    end
+    if result.nil? || more.empty?
+      result
+    else
+      raise TypeError, "#{result.class} does not have #dig method" unless result.respond_to?(:dig)
+      result.dig(*more)
+    end
+  end
+
   def eql?(other)
     return true if equal? other
     return false if self.class != other.class

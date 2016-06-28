@@ -108,8 +108,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
 import org.jruby.truffle.language.globals.GlobalVariableStorage;
 import org.jruby.truffle.language.globals.GlobalVariables;
-import org.jruby.truffle.language.globals.TruffleGlobalsNodes;
-import org.jruby.truffle.language.globals.TruffleGlobalsNodesFactory;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
@@ -623,7 +621,6 @@ public class CoreLibrary {
         defineModule(truffleModule, "Process");
         defineModule(truffleModule, "Binding");
         defineModule(truffleModule, "POSIX");
-        defineModule(truffleModule, "Globals");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -846,7 +843,6 @@ public class CoreLibrary {
             coreMethodNodeManager.addCoreMethodNodes(TruffleBindingNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(TruffleArrayNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(TruffleStringNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleGlobalsNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(BCryptNodesFactory.getFactories());
             return null;
         }));

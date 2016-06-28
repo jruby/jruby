@@ -149,6 +149,16 @@ class Hash
     @default_proc = prc
   end
 
+  def dig(key, *more)
+    result = self[key]
+    if result.nil? || more.empty?
+      result
+    else
+      raise TypeError, "#{result.class} does not have #dig method" unless result.respond_to?(:dig)
+      result.dig(*more)
+    end
+  end
+
   def fetch(key, default=undefined)
     if item = find_item(key)
       return item.value
@@ -157,6 +167,12 @@ class Hash
     return yield(key) if block_given?
     return default unless undefined.equal?(default)
     raise KeyError, "key #{key} not found"
+  end
+
+  def fetch_values(*keys, &block)
+    keys.map do |key|
+      self.fetch(key, &block)
+    end
   end
 
   def flatten(level=1)

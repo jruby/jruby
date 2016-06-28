@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeChild(value = "value")
@@ -22,19 +23,33 @@ public abstract class WriteGlobalVariableNode extends RubyNode {
 
     private final String name;
 
+    public WriteGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
+        super(context, sourceSection);
+        this.name = name;
+    }
+
+    @Specialization(assumptions = "storage.getUnchangedAssumption()")
+    public Object writeTryToKeepConstant(Object value,
+            @Cached("getStorage()") GlobalVariableStorage storage,
+            @Cached("storage.getValue()") Object previousValue,
+            @Cached("create()") ReferenceEqualNode referenceEqualNode) {
+        if (referenceEqualNode.executeReferenceEqual(value, previousValue)) {
+            return previousValue;
+        } else {
+            storage.setValue(value);
+            return value;
+        }
+    }
+
     @Specialization
-    public Object write(Object value, @Cached("getStorage()") GlobalVariableStorage storage) {
+    public Object write(Object value,
+            @Cached("getStorage()") GlobalVariableStorage storage) {
         storage.setValue(value);
         return value;
     }
 
     protected GlobalVariableStorage getStorage() {
         return getContext().getCoreLibrary().getGlobalVariables().getStorage(name);
-    }
-
-    public WriteGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
-        super(context, sourceSection);
-        this.name = name;
     }
 
     @Override

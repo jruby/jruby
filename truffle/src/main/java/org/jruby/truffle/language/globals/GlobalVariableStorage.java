@@ -42,33 +42,26 @@ public class GlobalVariableStorage {
 
     public void setValue(Object value) {
         if (assumeConstant) {
-            if (value != this.value) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.value = value;
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            this.value = value;
 
-                synchronized (this) {
-                    if (!assumeConstant) {
-                        // Compiled code didn't see that we do not assumeConstant anymore
-                        return;
-                    }
+            synchronized (this) {
+                if (!assumeConstant) {
+                    // Compiled code didn't see that we do not assumeConstant anymore
+                    return;
+                }
 
-                    if (changes <= GLOBAL_VARIABLE_MAX_INVALIDATIONS) {
-                        changes++;
-                        unchangedAssumption.invalidate();
-                    } else {
-                        unchangedAssumption.getAssumption().invalidate();
-                        assumeConstant = false;
-                    }
+                if (changes <= GLOBAL_VARIABLE_MAX_INVALIDATIONS) {
+                    changes++;
+                    unchangedAssumption.invalidate();
+                } else {
+                    unchangedAssumption.getAssumption().invalidate();
+                    assumeConstant = false;
                 }
             }
         } else {
             this.value = value;
         }
-    }
-
-    public void permanentlyInvalidate() {
-        changes = Integer.MAX_VALUE;
-        unchangedAssumption.invalidate();
     }
 
 }

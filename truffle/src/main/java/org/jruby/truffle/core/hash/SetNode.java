@@ -111,7 +111,7 @@ public abstract class SetNode extends RubyNode {
             if (n < size) {
                 final boolean equal;
                 if (profiledByIdentity) {
-                    equal = equalNode.executeReferenceEqual(frame, key, PackedArrayStrategy.getKey(store, n));
+                    equal = equalNode.executeReferenceEqual(key, PackedArrayStrategy.getKey(store, n));
                 } else {
                     equal = hashed == PackedArrayStrategy.getHashed(store, n) &&
                             eqlNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, n));

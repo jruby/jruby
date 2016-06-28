@@ -110,8 +110,6 @@ def report(status, code, message = nil)
   puts message ? format(format_str + "\n         %s", status, code, message) : format('%14s: %s', status, code)
 end
 
-Truffle::Globals.permanently_invalidate :$value
-
 EXAMPLES.each do |example|
   next if example.tagged
 
@@ -120,14 +118,14 @@ EXAMPLES.each do |example|
   runner = proc do
     begin
       tested += 1
-      $value = nil
       eval "
       def test_pe_code
-        $value = Truffle::Graal.assert_constant(begin; #{example.code}; end)
+        value = Truffle::Graal.assert_constant(begin; #{example.code}; end)
         Truffle::Graal.assert_not_compiled
+        value
       end"
       while true
-        test_pe_code
+        value = test_pe_code
       end
     rescue RubyTruffleError => e
       if e.message.include? 'Truffle::Graal.assert_not_compiled'
@@ -147,7 +145,7 @@ EXAMPLES.each do |example|
             report 'FAILED', example.code, "wasn't constant"
             failed += 1
           else
-            if $value == example.expected_value
+            if value == example.expected_value
               report 'OK', example.code
             else
               report 'INCORRECT', example.code, "was: #{$value.inspect} and not: #{example.expected_value.inspect}"
