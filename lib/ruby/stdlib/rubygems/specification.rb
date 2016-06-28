@@ -209,9 +209,9 @@ class Gem::Specification < Gem::BasicSpecification
   ##
   # Paths in the gem to add to <code>$LOAD_PATH</code> when this gem is
   # activated.
-  #
+  #--
   # See also #require_paths
-  #
+  #++
   # If you have an extension you do not need to add <code>"ext"</code> to the
   # require path, the extension build process will copy the extension files
   # into "lib" for you.
@@ -2696,9 +2696,9 @@ class Gem::Specification < Gem::BasicSpecification
             "#{full_name} contains itself (#{file_name}), check your files list"
     end
 
-    unless specification_version.is_a?(Fixnum)
+    unless specification_version.is_a?(Integer)
       raise Gem::InvalidSpecificationException,
-            'specification_version must be a Fixnum (did you mean version?)'
+            'specification_version must be a Integer (did you mean version?)'
     end
 
     case platform
