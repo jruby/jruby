@@ -93,7 +93,7 @@ class Array
     return 0 if equal? other
     return nil if other.nil?
 
-    total = Rubinius::Mirror::Array.reflect(other).total
+    total = other.size
 
     Thread.detect_recursion self, other do
       i = 0
@@ -199,7 +199,7 @@ class Array
 
     unless block_given?
       return to_enum(:combination, num) do
-        Rubinius::Mirror::Array.reflect(self).combination_size(num)
+        self.combination_size(num)
       end
     end
 
