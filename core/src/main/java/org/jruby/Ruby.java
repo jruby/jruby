@@ -1451,6 +1451,8 @@ public final class Ruby implements Constantizable {
         falseObject.setFrozen(true);
         trueObject = new RubyBoolean.True(this);
         trueObject.setFrozen(true);
+
+        reportOnException = nilObject;
     }
 
     private void initCore() {
@@ -4286,6 +4288,14 @@ public final class Ruby implements Constantizable {
         globalAbortOnExceptionEnabled = enable;
     }
 
+    public IRubyObject getReportOnException() {
+        return reportOnException;
+    }
+
+    public void setReportOnException(IRubyObject enable) {
+        reportOnException = enable;
+    }
+
     public boolean isDoNotReverseLookupEnabled() {
         return doNotReverseLookupEnabled;
     }
@@ -5106,6 +5116,7 @@ public final class Ruby implements Constantizable {
     private volatile EventHook[] eventHooks = EMPTY_HOOKS;
     private boolean hasEventHooks;
     private boolean globalAbortOnExceptionEnabled = false;
+    private IRubyObject reportOnException;
     private boolean doNotReverseLookupEnabled = false;
     private volatile boolean objectSpaceEnabled;
     private boolean siphashEnabled;

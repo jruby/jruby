@@ -49,4 +49,14 @@ public interface ThreadLike {
     public boolean isInterrupted();
 
     public Thread nativeThread();
+
+    public void setNativeName(String name);
+
+    public String getNativeName();
+
+    public void setRubyName(CharSequence name);
+
+    public CharSequence getRubyName();
+
+    public String getReportName();
 }

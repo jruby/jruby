@@ -39,6 +39,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class NativeThread implements ThreadLike {
     private Reference<Thread> nativeThread;
     public RubyThread rubyThread;
+    public CharSequence rubyName;
+    public String nativeName;
     
     public NativeThread(RubyThread rubyThread, IRubyObject[] args, Block block) {
         throw new RuntimeException();
@@ -46,7 +48,9 @@ public class NativeThread implements ThreadLike {
     
     public NativeThread(RubyThread rubyThread, Thread nativeThread) {
         this.rubyThread = rubyThread;
-        this.nativeThread = new WeakReference<Thread>(nativeThread);
+        this.nativeThread = new WeakReference<>(nativeThread);
+        this.rubyName = null;
+        this.nativeName = nativeThread.getName();
     }
     
     public void start() {
@@ -108,5 +112,54 @@ public class NativeThread implements ThreadLike {
 
     public Thread nativeThread() {
         return nativeThread.get();
+    }
+
+    @Override
+    public void setNativeName(String name) {
+        assert name != null;
+
+        Thread nativeThread = getThread();
+        if (nativeThread != null) {
+            try {
+                nativeThread.setName(name);
+            } catch (SecurityException se) {
+                // current thread cannot modify...ignore
+            }
+        }
+
+        this.nativeName = name;
+    }
+
+    @Override
+    public String getNativeName() {
+        return nativeName;
+    }
+
+    @Override
+    public void setRubyName(CharSequence name) {
+        this.rubyName = name;
+    }
+
+    @Override
+    public CharSequence getRubyName() {
+        return rubyName;
+    }
+
+    @Override
+    public String getReportName() {
+        String nativeName = getNativeName();
+
+        if (rubyName == null || rubyName.length() == 0) {
+            if (nativeName.equals("")) {
+                return "(unnamed)";
+            } else {
+                return nativeName;
+            }
+        } else {
+            if (nativeName.equals("")) {
+                return rubyName.toString();
+            }
+            return rubyName + " (" + nativeName + ")";
+        }
     }
 }
