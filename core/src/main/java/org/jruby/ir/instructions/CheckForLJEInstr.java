@@ -1,5 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -10,8 +12,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 
-/**
-  */
 public class CheckForLJEInstr extends NoOperandInstr {
     private boolean maybeLambda;
 
@@ -51,5 +51,12 @@ public class CheckForLJEInstr extends NoOperandInstr {
 
     public void check(ThreadContext context, DynamicScope dynamicScope, Block.Type blockType) {
         IRRuntimeHelpers.checkForLJE(context, dynamicScope, maybeLambda, blockType);
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        super.computeScopeFlags(scope);
+        scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE);
+        return true;
     }
 }

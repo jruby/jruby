@@ -8,8 +8,8 @@ import org.jruby.ir.operands.Variable;
  * Result Instr with two operands.
  */
 public abstract class TwoOperandResultBaseInstr extends ResultBaseInstr {
-    private Operand operand1;
-    private Operand operand2;
+    private transient Operand operand1;
+    private transient Operand operand2;
 
     public TwoOperandResultBaseInstr(Operation operation, Variable result, Operand operand1, Operand operand2) {
         super(operation, result);

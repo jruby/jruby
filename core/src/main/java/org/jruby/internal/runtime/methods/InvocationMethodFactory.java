@@ -10,10 +10,10 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * Copyright (C) 2006 The JRuby Community <www.jruby.org>
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -30,23 +30,15 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodFactory;
-import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -62,10 +54,9 @@ import org.objectweb.asm.util.CheckClassAdapter;
 
 import java.io.PrintWriter;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-import static java.lang.System.out;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.params;
@@ -86,7 +77,7 @@ import static org.jruby.util.CodegenUtils.sig;
  */
 public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
-    private static final Logger LOG = LoggerFactory.getLogger("InvocationMethodFactory");
+    private static final Logger LOG = LoggerFactory.getLogger(InvocationMethodFactory.class);
 
     private static final boolean DEBUG = false;
 
@@ -186,162 +177,17 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         this.syncObject = classLoader;
 
         if (classLoader instanceof ClassDefiningJRubyClassLoader) {
-            this.classLoader = (ClassDefiningJRubyClassLoader)classLoader;
+            this.classLoader = (ClassDefiningJRubyClassLoader) classLoader;
         } else {
             this.classLoader = new ClassDefiningJRubyClassLoader(classLoader);
         }
     }
 
-    protected boolean safeFixedSignature(Signature signature) {
-        return signature.isFixed() && signature.required() <= 3;
-    }
+    //protected boolean safeFixedSignature(Signature signature) {
+    //    return signature.isFixed() && signature.required() <= 3;
+    //}
 
-    static class DescriptorInfo {
-        private int min;
-        private int max;
-        private boolean frame;
-        private boolean scope;
-        private boolean rest;
-        private boolean block;
-        private String parameterDesc;
-
-        private static final boolean RICH_NATIVE_METHOD_PARAMETERS = false;
-
-        public DescriptorInfo(List<JavaMethodDescriptor> descs) {
-            min = Integer.MAX_VALUE;
-            max = 0;
-            frame = false;
-            scope = false;
-            rest = false;
-            block = false;
-            boolean first = true;
-            boolean lastBlock = false;
-
-            for (JavaMethodDescriptor desc: descs) {
-                // make sure we don't have some methods with blocks and others without
-                // the handle generation logic can't handle such cases yet
-                if (first) {
-                    first = false;
-                } else {
-                    if (lastBlock != desc.hasBlock) {
-                        throw new RuntimeException("Mismatched block parameters for method " + desc.declaringClassName + "." + desc.name);
-                    }
-                }
-                lastBlock = desc.hasBlock;
-
-                int specificArity = -1;
-                if (desc.hasVarArgs) {
-                    if (desc.optional == 0 && !desc.rest && desc.required == 0) {
-                        throw new RuntimeException("IRubyObject[] args but neither of optional or rest specified for method " + desc.declaringClassName + "." + desc.name);
-                    }
-                    rest = true;
-                    if (descs.size() == 1) {
-                        min = -1;
-                    }
-                } else {
-                    if (desc.optional == 0 && !desc.rest) {
-                        if (desc.required == 0) {
-                            // No required specified, check actual number of required args
-                            if (desc.actualRequired <= 3) {
-                                // actual required is less than 3, so we use specific arity
-                                specificArity = desc.actualRequired;
-                            } else {
-                                // actual required is greater than 3, raise error (we don't support actual required > 3)
-                                throw new RuntimeException("Invalid specific-arity number of arguments (" + desc.actualRequired + ") on method " + desc.declaringClassName + "." + desc.name);
-                            }
-                        } else if (desc.required >= 0 && desc.required <= 3) {
-                            if (desc.actualRequired != desc.required) {
-                                throw new RuntimeException("Specified required args does not match actual on method " + desc.declaringClassName + "." + desc.name);
-                            }
-                            specificArity = desc.required;
-                        }
-                    }
-
-                    if (specificArity < min) {
-                        min = specificArity;
-                    }
-
-                    if (specificArity > max) {
-                        max = specificArity;
-                    }
-                }
-
-                if (frame && !desc.anno.frame()) throw new RuntimeException("Unbalanced frame property on method " + desc.declaringClassName + "." + desc.name);
-                if (scope && !desc.anno.scope()) throw new RuntimeException("Unbalanced scope property on method " + desc.declaringClassName + "." + desc.name);
-                frame |= desc.anno.frame();
-                scope |= desc.anno.scope();
-                block |= desc.hasBlock;
-            }
-
-            // Core methods currently only show :req's for fixed-arity or a single
-            // :rest if it's variable arity. I have filed a bug to improve this
-            // (using the skipped logic below, when the time comes) but for now
-            // we follow suit. See https://bugs.ruby-lang.org/issues/8088
-
-            StringBuilder descBuilder = new StringBuilder();
-            if (min == max) {
-                int i = 0;
-                for (; i < min; i++) {
-                    if (i > 0) descBuilder.append(';');
-                    descBuilder.append(ArgumentType.REQ);
-                }
-               // variable arity
-            } else if (RICH_NATIVE_METHOD_PARAMETERS) {
-                int i = 0;
-                for (; i < min; i++) {
-                    if (i > 0) descBuilder.append(';');
-                    descBuilder.append(ArgumentType.REQ);
-                }
-
-                for (; i < max; i++) {
-                    if (i > 0) descBuilder.append(';');
-                    descBuilder.append(ArgumentType.ANONOPT);
-                }
-
-                if (rest) {
-                    if (i > 0) descBuilder.append(';');
-                    descBuilder.append(ArgumentType.ANONREST);
-                }
-            } else {
-                descBuilder.append(ArgumentType.ANONREST);
-            }
-
-            parameterDesc = descBuilder.toString();
-        }
-
-        @Deprecated
-        public boolean isBacktrace() {
-            return false;
-        }
-
-        public boolean isFrame() {
-            return frame;
-        }
-
-        public int getMax() {
-            return max;
-        }
-
-        public int getMin() {
-            return min;
-        }
-
-        public boolean isScope() {
-            return scope;
-        }
-
-        public boolean isRest() {
-            return rest;
-        }
-
-        public boolean isBlock() {
-            return block;
-        }
-
-        public String getParameterDesc() {
-            return parameterDesc;
-        }
-    }
+    private static final Class[] RubyModule_and_Visibility = new Class[]{ RubyModule.class, Visibility.class };
 
     /**
      * Use code generation to provide a method handle based on an annotated Java
@@ -351,18 +197,18 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
         JavaMethodDescriptor desc1 = descs.get(0);
-        JRubyMethod anno = desc1.anno;
-        String javaMethodName = desc1.name;
+        final JRubyMethod anno = desc1.anno;
+        final String javaMethodName = desc1.name;
 
-        if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
+        if (DEBUG) LOG.debug("Binding multiple: " + desc1.declaringClassName + '.' + javaMethodName);
 
         try {
             Class c = getAnnotatedMethodClass(descs);
 
             DescriptorInfo info = new DescriptorInfo(descs);
-            if (DEBUG) out.println(" min: " + info.getMin() + ", max: " + info.getMax());
+            if (DEBUG) LOG.debug(" min: " + info.getMin() + ", max: " + info.getMax());
 
-            JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc1.anno.visibility()});
+            JavaMethod ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility).newInstance(implementationClass, anno.visibility());
 
             TypePopulator.populateMethod(
                     ic,
@@ -376,7 +222,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     desc1.getParameterClasses());
             return ic;
         } catch(Exception e) {
-            e.printStackTrace();
+            LOG.error(e);
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
@@ -387,20 +233,20 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      *
      * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
-    public Class getAnnotatedMethodClass(List<JavaMethodDescriptor> descs) throws Exception {
+    public Class getAnnotatedMethodClass(List<JavaMethodDescriptor> descs) {
         JavaMethodDescriptor desc1 = descs.get(0);
 
         if (!Modifier.isPublic(desc1.getDeclaringClass().getModifiers())) {
-            LOG.warn("warning: binding non-public class {}; reflected handles won't work", desc1.declaringClassName);
+            LOG.warn("binding non-public class {} reflected handles won't work", desc1.declaringClassName);
         }
 
         String javaMethodName = desc1.name;
 
         if (DEBUG) {
             if (descs.size() > 1) {
-                out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
+                LOG.debug("Binding multiple: " + desc1.declaringClassName + '.' + javaMethodName);
             } else {
-                out.println("Binding single: " + desc1.declaringClassName + "." + javaMethodName);
+                LOG.debug("Binding single: " + desc1.declaringClassName + '.' + javaMethodName);
             }
         }
 
@@ -421,7 +267,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 // try again
                 c = tryClass(generatedClassName, desc1.getDeclaringClass(), superclass);
                 if (c == null) {
-                    if (DEBUG) out.println("Generating " + generatedClassName + ", min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
+                    if (DEBUG) LOG.debug("Generating " + generatedClassName + ", min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
 
                     String superClassString = p(superclass);
 
@@ -437,7 +283,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return c;
     }
 
-    private Class determineSuperclass(DescriptorInfo info) {
+    private static Class determineSuperclass(DescriptorInfo info) {
         Class superClass;
         if (info.getMin() == -1) {
             // normal all-rest method
@@ -476,9 +322,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String javaMethodName = desc.name;
 
         try {
-            Class c = getAnnotatedMethodClass(Arrays.asList(desc));
+            Class c = getAnnotatedMethodClass(Collections.singletonList(desc));
 
-            JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc.anno.visibility()});
+            JavaMethod ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility).newInstance(implementationClass, desc.anno.visibility());
 
             TypePopulator.populateMethod(
                     ic,
@@ -492,7 +338,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     desc.getParameterClasses());
             return ic;
         } catch(Exception e) {
-            e.printStackTrace();
+            LOG.error(e);
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
@@ -503,10 +349,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * @param jrubyMethod The annotation of the called method
      * @param method The code generator for the handle being created
      */
-    private void checkArity(JRubyMethod jrubyMethod, SkinnyMethodAdapter method, int specificArity) {
-        Label arityError = new Label();
-        Label noArityError = new Label();
-
+    private static void checkArity(JRubyMethod jrubyMethod, SkinnyMethodAdapter method, int specificArity) {
         switch (specificArity) {
         case 0:
         case 1:
@@ -515,6 +358,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             // for zero, one, two, three arities, JavaMethod.JavaMethod*.call(...IRubyObject[] args...) will check
             return;
         default:
+            final Label arityError = new Label();
+            final Label noArityError = new Label();
             boolean checkArity = false;
             if (jrubyMethod.rest()) {
                 if (jrubyMethod.required() > 0) {
@@ -567,7 +412,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private ClassWriter createJavaMethodCtor(String namePath, String sup, String parameterDesc) throws Exception {
+    private static ClassWriter createJavaMethodCtor(String namePath, String sup, String parameterDesc) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         String sourceFile = namePath.substring(namePath.lastIndexOf('/') + 1) + ".gen";
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
@@ -600,7 +445,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.invokestatic(superClass, getPostMethod(callConfig), sig(void.class, params(ThreadContext.class)));
     }
 
-    private void prepareForPre(SkinnyMethodAdapter mv, int specificArity, boolean block, CallConfiguration callConfig) {
+    private static void prepareForPre(SkinnyMethodAdapter mv, int specificArity, boolean block, CallConfiguration callConfig) {
         if (callConfig.isNoop()) return;
 
         mv.aloadMany(0, THREADCONTEXT_INDEX);
@@ -619,7 +464,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private String getPreMethod(CallConfiguration callConfig) {
+    private static String getPreMethod(CallConfiguration callConfig) {
         switch (callConfig) {
         case FrameFullScopeFull: return "preFrameAndScope";
         case FrameFullScopeDummy: return "preFrameAndDummyScope";
@@ -634,7 +479,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private String getPreSignature(CallConfiguration callConfig) {
+    private static String getPreSignature(CallConfiguration callConfig) {
         switch (callConfig) {
         case FrameFullScopeFull: return sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class));
         case FrameFullScopeDummy: return sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class));
@@ -664,7 +509,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void loadArguments(SkinnyMethodAdapter mv, JavaMethodDescriptor desc, int specificArity) {
+    private static void loadArguments(SkinnyMethodAdapter mv, JavaMethodDescriptor desc, int specificArity) {
         switch (specificArity) {
         default:
         case -1:
@@ -688,7 +533,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void loadArgumentWithCast(SkinnyMethodAdapter mv, int argNumber, Class coerceType) {
+    private static void loadArgumentWithCast(SkinnyMethodAdapter mv, int argNumber, Class coerceType) {
         mv.aload(ARGS_INDEX + (argNumber - 1));
         if (coerceType != IRubyObject.class && coerceType != IRubyObject[].class) {
             if (coerceType == RubyString.class) {
@@ -705,7 +550,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * is we don't have a block we setup NULL_BLOCK as part of our null pattern
      * strategy (we do not allow null in any field which accepts block).
      */
-    private void loadBlockForPre(SkinnyMethodAdapter mv, int specificArity, boolean getsBlock) {
+    private static void loadBlockForPre(SkinnyMethodAdapter mv, int specificArity, boolean getsBlock) {
         if (!getsBlock) {            // No block so load null block instance
             mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
             return;
@@ -720,7 +565,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      *
      * If we don't have a block then this does nothing.
      */
-    private void loadBlock(SkinnyMethodAdapter mv, int specificArity, boolean getsBlock) {
+    private static void loadBlock(SkinnyMethodAdapter mv, int specificArity, boolean getsBlock) {
         if (!getsBlock) return;         // No block so nothing more to do
 
         switch (specificArity) {        // load block since it accepts a block
@@ -733,7 +578,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void loadReceiver(String typePath, JavaMethodDescriptor desc, SkinnyMethodAdapter mv) {
+    private static void loadReceiver(String typePath, JavaMethodDescriptor desc, SkinnyMethodAdapter mv) {
         // load target for invocations
         if (Modifier.isStatic(desc.modifiers)) {
             if (desc.hasContext) {
@@ -754,14 +599,19 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     private Class tryClass(String name, Class targetClass, Class expectedSuperclass) {
-        Class c;
+        final Class c;
         try {
             if (classLoader == null) {
                 c = Class.forName(name, true, classLoader);
             } else {
                 c = classLoader.loadClass(name);
             }
-        } catch(Exception e) {
+        } catch (ClassNotFoundException e) {
+            if (DEBUG) LOG.debug(e);
+            seenUndefinedClasses = true;
+            return null;
+        } catch (Exception e) {
+            if (DEBUG) LOG.warn(e);
             seenUndefinedClasses = true;
             return null;
         }
@@ -783,9 +633,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     protected Class endClass(ClassWriter cw, String name) {
         cw.visitEnd();
-        byte[] code = cw.toByteArray();
-        if (DEBUG) CheckClassAdapter.verify(new ClassReader(code), false, new PrintWriter(System.err));
 
+        final byte[] code = cw.toByteArray();
+        if (DEBUG) CheckClassAdapter.verify(new ClassReader(code), classLoader, false, new PrintWriter(System.err));
         return classLoader.defineClass(name, code);
     }
 
@@ -841,7 +691,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
 
             boolean hasBlock = desc.hasBlock;
-            SkinnyMethodAdapter mv = null;
+            SkinnyMethodAdapter mv;
 
             mv = beginMethod(cw, callName, specificArity, hasBlock);
             mv.visitCode();
@@ -863,8 +713,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             invokeCallConfigPre(method, superClass, specificArity, block, callConfig);
         }
 
+        final boolean FULL_TRACE_ENABLED = RubyInstanceConfig.FULL_TRACE_ENABLED;
+
         int traceBoolIndex = -1;
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+        if (FULL_TRACE_ENABLED) {
             // load and store trace enabled flag
             switch (specificArity) {
             case -1:
@@ -920,7 +772,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         // normal finally and exit
         {
-            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            if (FULL_TRACE_ENABLED) {
                 invokeCReturnTrace(method, traceBoolIndex);
             }
 
@@ -938,7 +790,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             {
                 method.label(doFinally);
 
-                if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                if (FULL_TRACE_ENABLED) {
                     invokeCReturnTrace(method, traceBoolIndex);
                 }
 
@@ -953,14 +805,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void invokeCCallTrace(SkinnyMethodAdapter method, int traceBoolIndex) {
+    private static void invokeCCallTrace(SkinnyMethodAdapter method, int traceBoolIndex) {
         method.aloadMany(0, 1); // method, threadContext
         method.iload(traceBoolIndex); // traceEnable
         method.aload(4); // invokedName
         method.invokevirtual(p(JavaMethod.class), "callTrace", sig(void.class, ThreadContext.class, boolean.class, String.class));
     }
 
-    private void invokeCReturnTrace(SkinnyMethodAdapter method, int traceBoolIndex) {
+    private static void invokeCReturnTrace(SkinnyMethodAdapter method, int traceBoolIndex) {
         method.aloadMany(0, 1); // method, threadContext
         method.iload(traceBoolIndex); // traceEnable
         method.aload(4); // invokedName

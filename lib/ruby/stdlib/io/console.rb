@@ -19,6 +19,31 @@
 # we don't actually disable echo and the password is shown...we will try to
 # do a better version of this in 1.7.1.
 
+require 'rbconfig'
+
+# Methods common to all backend impls
+class IO
+  def getch(*)
+    raw do
+      getc
+    end
+  end
+
+  def getpass(prompt = nil)
+    wio = self == $stdin ? $stderr : self
+    wio.write(prompt) if prompt
+    begin
+      str = nil
+      noecho do
+        str = gets
+      end
+    ensure
+      puts($/)
+    end
+    str.chomp
+  end
+end
+
 # attempt to call stty; if failure, fall back on stubbed version
 
 if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
@@ -108,12 +133,6 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
         ttymode_yield(block) { |t| t[:c_lflag] &= ~(TTY_ECHO) }
       end
 
-      def getch(*)
-        raw do
-          getc
-        end
-      end
-
       def winsize
         ws = LibC::Winsize.new
         if LibC.ioctl(self.fileno, LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
@@ -148,17 +167,17 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
       end
 
       # TODO: Windows version uses "conin$" and "conout$" instead of /dev/tty
-      def self.console(sym = nil)
+      def self.console(sym = nil, *args)
         raise TypeError, "expected Symbol, got #{sym.class}" unless sym.nil? || sym.kind_of?(Symbol)
-        klass = self == IO ? File : self
 
+        # klass = self == IO ? File : self
         if defined?(@console) # using ivar instead of hidden const as in MRI
           con = @console
-        end
-
-        if !con.kind_of?(File) || (con.kind_of?(IO) && !con.open? || !con.readable?) # MRI checks IO internals here
-          remove_instance_variable :@console if defined?(@console)
-          con = nil
+          # MRI checks IO internals : (!RB_TYPE_P(con, T_FILE) || (!(fptr = RFILE(con)->fptr) || GetReadFD(fptr) == -1))
+          if !con.kind_of?(File) || (con.kind_of?(IO) && (con.closed? || !FileTest.readable?(con)))
+            remove_instance_variable :@console
+            con = nil
+          end
         end
 
         if sym
@@ -166,17 +185,18 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
             if con
               con.close
               remove_instance_variable :@console if defined?(@console)
-              con = nil
             end
             return nil
           end
         end
 
-        if con.nil?
+        if !con && $stdin.tty?
           con = File.open('/dev/tty', 'r+')
+          con.sync = true
           @console = con
         end
 
+        return con.send(sym, *args) if sym
         return con
       end
     end
@@ -220,10 +240,6 @@ if !result || RbConfig::CONFIG['host_os'] =~ /(mswin)|(win32)|(ming)/
     end
 
     def cooked!(*)
-    end
-
-    def getch(*)
-      getc
     end
 
     def echo=(echo)
@@ -292,10 +308,6 @@ elsif !IO.method_defined?:ttymode
       stty('-raw')
     end
 
-    def getch(*)
-      getc
-    end
-
     def echo=(echo)
       stty(echo ? 'echo' : '-echo')
     end
@@ -333,5 +345,18 @@ elsif !IO.method_defined?:ttymode
 
     def ioflush
     end
+  end
+end
+
+module IO::GenericReadable
+  def getch(*)
+    getc
+  end
+
+  def getpass(prompt = nil)
+    write(prompt) if prompt
+    str = gets.chomp
+    puts($/)
+    str
   end
 end

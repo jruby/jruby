@@ -1,0 +1,2 @@
+fails:IO#sync is false by default for STDOUT
+fails:IO#sync is true by default for STDERR

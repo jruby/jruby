@@ -39,6 +39,7 @@ import org.jruby.RubyFile;
 import org.jruby.RubyFileStat;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
+import org.jruby.RubyString;
 import org.jruby.RubySystemCallError;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -95,9 +96,12 @@ public class Tempfile extends RubyFile implements Finalizable {
         super(runtime, type);
     }
 
-    @JRubyMethod(required = 1, optional = 2, visibility = PRIVATE)
+    @JRubyMethod(optional = 3, visibility = PRIVATE)
     @Override
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        if (args.length == 0) {
+            args = new IRubyObject[] {RubyString.newEmptyString(context.runtime)};
+        }
         return initializeCommon(context, args);
     }
     

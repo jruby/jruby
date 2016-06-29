@@ -10,6 +10,7 @@ import java.util.List;
 // SSS FIXME: Should we try to enforce the canonical property that within a method,
 // there is exactly one label object with the same label string?
 public class Label extends Operand {
+    // This is for 'ensure's at the end of top-level constructs ('def foo; ensure; end' or 'class Foo; ensure; end')
     public static final Label UNRESCUED_REGION_LABEL = new Label("UNRESCUED_REGION", 0);
     private static final Label GLOBAL_ENSURE_BLOCK_LABEL = new Label("_GLOBAL_ENSURE_BLOCK_", 0);
 

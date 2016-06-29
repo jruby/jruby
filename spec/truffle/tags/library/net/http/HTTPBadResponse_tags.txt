@@ -1,1 +1,0 @@
-fails:Net::HTTPBadResponse is a subclass of StandardError

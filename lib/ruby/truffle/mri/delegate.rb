@@ -1,1 +1,1 @@
-require_relative '../../stdlib/delegate'
+require_relative '../stdlib/delegate'

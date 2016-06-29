@@ -10,9 +10,18 @@ describe :socket_recv_nonblock, shared: true do
       @s2.close unless @s2.closed?
     end
 
-    it "raises EAGAIN if there's no data available" do
+    it "raises an exception extending IO::WaitReadable if there's no data available" do
       @s1.bind(Socket.pack_sockaddr_in(SocketSpecs.port, "127.0.0.1"))
-      lambda { @s1.recv_nonblock(5)}.should raise_error(Errno::EAGAIN)
+      lambda {
+        @s1.recv_nonblock(5)
+      }.should raise_error(IO::WaitReadable) { |e|
+        platform_is_not :windows do
+          e.should be_kind_of(Errno::EAGAIN)
+        end
+        platform_is :windows do
+          e.should be_kind_of(Errno::EWOULDBLOCK)
+        end
+      }
     end
 
     it "receives data after it's ready" do
@@ -27,7 +36,9 @@ describe :socket_recv_nonblock, shared: true do
       @s2.send("a", 0, @s1.getsockname)
       IO.select([@s1], nil, nil, 2)
       @s1.recv_nonblock(1).should == "a"
-      lambda { @s1.recv_nonblock(5)}.should raise_error(Errno::EAGAIN)
+      lambda {
+        @s1.recv_nonblock(5)
+      }.should raise_error(IO::WaitReadable)
     end
   end
 end

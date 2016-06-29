@@ -159,7 +159,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         }
     }
 
-    private void updateUnboxedVarsInfo(Instr i, UnboxState state, Variable dst, boolean hasRescuer, boolean isDFBarrier) {
+    private void updateUnboxedVarsInfoForBoxedInstr(Instr i, UnboxState state, Variable dst, boolean hasRescuer, boolean isDFBarrier) {
         HashSet<Variable> varsToBox = new HashSet<Variable>();
 
         // Special treatment for instructions that can raise exceptions
@@ -188,6 +188,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
             // We have to re-unbox all local variables (dirty or not) as necessary since
             // we don't know how they are going to change once we get past this instruction.
+            // Temp vars can continue in their unboxed state, even if dirty.
             List<Variable> lvs = new ArrayList<Variable>();
             markLocalVariables(lvs, state.unboxedVars.keySet());
             state.unboxedVars.keySet().removeAll(lvs);
@@ -331,7 +332,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         } else {
             // Since the instruction didn't run in unboxed form,
             // dirty unboxed vars will have to get boxed here.
-            updateUnboxedVarsInfo(i, tmpState, dst, hasExceptionsRescued(), hitDFBarrier);
+            updateUnboxedVarsInfoForBoxedInstr(i, tmpState, dst, hasExceptionsRescued(), hitDFBarrier);
         }
     }
 
@@ -349,8 +350,8 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         switch (t) {
         case FLOAT: return c == Float.class;
         case FIXNUM: return c == Fixnum.class;
-        case BOOLEAN: return c == Boolean.class;
-        default: return c != Float.class && c != Boolean.class && c != Fixnum.class;
+        case BOOLEAN: return c == java.lang.Boolean.class;
+        default: return c != Float.class && c != java.lang.Boolean.class && c != Fixnum.class;
         }
     }
 
@@ -387,7 +388,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     public void unboxVar(UnboxState state, Class reqdType, Map<Variable, TemporaryLocalVariable> unboxMap, Variable v, List<Instr> newInstrs) {
         Variable unboxedV = getUnboxedVar(reqdType, unboxMap, v);
-        if (reqdType == Boolean.class) {
+        if (reqdType == java.lang.Boolean.class) {
             newInstrs.add(new UnboxBooleanInstr(unboxedV, v));
         } else if (reqdType == Float.class) { // SSS FIXME: This is broken
             newInstrs.add(new UnboxFloatInstr(unboxedV, v));

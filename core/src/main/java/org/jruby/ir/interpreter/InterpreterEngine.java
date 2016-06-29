@@ -4,7 +4,6 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.BreakInstr;
@@ -12,7 +11,6 @@ import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
@@ -25,6 +23,7 @@ import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RestoreBindingVisibilityInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
+import org.jruby.ir.instructions.ReturnOrRethrowSavedExcInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SaveBindingVisibilityInstr;
 import org.jruby.ir.instructions.SearchConstInstr;
@@ -41,6 +40,7 @@ import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
+import org.jruby.ir.instructions.specialized.TwoOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.Fixnum;
@@ -65,7 +65,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 
 /**
@@ -119,7 +118,7 @@ public class InterpreterEngine {
 
         // Blocks with explicit call protocol shouldn't do this before args are prepared
         if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {
-            IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+            IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
         }
 
         StaticScope currScope = interpreterContext.getStaticScope();
@@ -315,6 +314,15 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
             }
+            case CALL_2O: {
+                TwoOperandArgNoBlockCallInstr call = (TwoOperandArgNoBlockCallInstr)instr;
+                IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                IRubyObject o1 = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
+                IRubyObject o2 = (IRubyObject)call.getArg2().retrieve(context, self, currScope, currDynScope, temp);
+                result = call.getCallSite().call(context, self, r, o1, o2);
+                setResult(temp, currDynScope, call.getResult(), result);
+                break;
+            }
             case CALL_1OB: {
                 OneOperandArgBlockCallInstr call = (OneOperandArgBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
@@ -380,15 +388,12 @@ public class InterpreterEngine {
             case POP_BINDING:
                 context.popScope();
                 break;
-            case RETHROW_SAVED_EXC_IN_LAMBDA:
-                IRRuntimeHelpers.rethrowSavedExcInLambda(context);
-                break; // may not be reachable
             case THREAD_POLL:
                 if (IRRuntimeHelpers.inProfileMode()) Profiler.clockTick();
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr) instr).checkArity(context, args, block == null ? null : block.type);
+                ((CheckArityInstr) instr).checkArity(context, currScope, args, block == null ? null : block.type);
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);
@@ -434,6 +439,10 @@ public class InterpreterEngine {
                 IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
                 return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, blockType, rv);
             }
+            case RETURN_OR_RETHROW_SAVED_EXC: {
+                IRubyObject retVal = (IRubyObject) retrieveOp(((ReturnBase) instr).getReturnValue(), context, self, currDynScope, currScope, temp);
+                return IRRuntimeHelpers.returnOrRethrowSavedException(context, retVal);
+            }
         }
         return null;
     }
@@ -457,21 +466,6 @@ public class InterpreterEngine {
                 } else {
                     setResult(temp, currDynScope, res, retrieveOp(src, context, self, currDynScope, currScope, temp));
                 }
-                break;
-            }
-
-            case GET_FIELD: {
-                GetFieldInstr gfi = (GetFieldInstr)instr;
-                IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currScope, currDynScope, temp);
-                VariableAccessor a = gfi.getAccessor(object);
-                result = a == null ? null : (IRubyObject)a.get(object);
-                if (result == null) {
-                    if (context.runtime.isVerbose()) {
-                        context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
-                    }
-                    result = context.nil;
-                }
-                setResult(temp, currDynScope, gfi.getResult(), result);
                 break;
             }
 

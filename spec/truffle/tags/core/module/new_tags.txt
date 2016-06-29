@@ -1,1 +1,0 @@
-fails:Module.new creates a new Module and passes it to the provided block

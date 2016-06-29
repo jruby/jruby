@@ -12,7 +12,7 @@ It aims to be a complete, correct and fast implementation of Ruby, at the same
 time as providing powerful new features such as concurrency without a
 [global-interpreter-lock](http://en.wikipedia.org/wiki/Global_Interpreter_Lock),
 true parallelism, and tight integration to the Java language to allow you to
-uses Java classes in your Ruby program and to allow JRuby to be embedded into a
+use Java classes in your Ruby program and to allow JRuby to be embedded into a
 Java application.
 
 You can use JRuby simply as a faster version of Ruby, you can use it to run Ruby
@@ -40,7 +40,7 @@ For [`rbenv`](https://github.com/sstephenson/rbenv) you will need the
 package manager can provide these. Then you can run:
 
 ```
-$ rbenv install jruby-9.0.0.0-dev
+$ rbenv install jruby-9.0.5.0
 ```
 
 For [`rvm`](https://rvm.io) you can simply do:

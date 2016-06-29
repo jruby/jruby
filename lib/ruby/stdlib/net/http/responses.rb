@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 # :stopdoc:
 class Net::HTTPUnknownResponse < Net::HTTPResponse
   HAS_BODY = true
@@ -231,6 +232,7 @@ class Net::HTTPResponse
     '304' => Net::HTTPNotModified,
     '305' => Net::HTTPUseProxy,
     '307' => Net::HTTPTemporaryRedirect,
+    '308' => Net::HTTPPermanentRedirect,
 
     '400' => Net::HTTPBadRequest,
     '401' => Net::HTTPUnauthorized,

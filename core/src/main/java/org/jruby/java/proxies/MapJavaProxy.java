@@ -34,6 +34,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
+import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -43,16 +44,18 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.invokedynamic.MethodNames;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 /**
+ * A proxy for wrapping <code>java.util.Map</code> instances.
  *
  * @author Yoko Harada
  */
-
-public class MapJavaProxy extends ConcreteJavaProxy {
+public final class MapJavaProxy extends ConcreteJavaProxy {
 
     private RubyHashMap wrappedMap;
 
@@ -98,19 +101,80 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return wrappedMap;
     }
 
-    private static class RubyHashMap extends RubyHash {
+    private static final class RubyHashMap extends RubyHash {
+
+        static final RubyHashEntry[] EMPTY_TABLE = new RubyHashEntry[0];
 
         private final MapJavaProxy receiver;
 
-        public RubyHashMap(Ruby runtime, MapJavaProxy receiver) {
-            super(runtime, 0);
+        RubyHashMap(Ruby runtime, MapJavaProxy receiver) {
+            super(runtime, runtime.getHash(), runtime.getNil(), EMPTY_TABLE, 0);
             this.receiver = receiver;
         }
+
+        private void syncSize() { this.size = mapDelegate().size(); }
 
         private void setSize(int size) { this.size = size; }
 
         // the underlying Map object operations should be delegated to
         private Map mapDelegate() { return receiver.getMapObject(); }
+
+        @Override
+        public RubyFixnum rb_size() {
+            return getRuntime().newFixnum( mapDelegate().size() );
+        }
+
+        @Override
+        public RubyBoolean empty_p() {
+            return mapDelegate().isEmpty() ? getRuntime().getTrue() : getRuntime().getFalse();
+        }
+
+        @Override
+        public IRubyObject inspect(ThreadContext context) {
+            syncSize();
+            return super.inspect(context);
+        }
+
+        @Override
+        public RubyArray to_a() {
+            syncSize();
+            return super.to_a();
+        }
+
+        @Override
+        public RubyFixnum hash() {
+            return getRuntime().newFixnum( mapDelegate().hashCode() );
+        }
+
+        @Override
+        public RubyArray keys() {
+            syncSize();
+            return super.keys();
+        }
+
+        @Override
+        public RubyArray rb_values() {
+            syncSize();
+            return super.rb_values();
+        }
+
+        @Override
+        public IRubyObject delete(ThreadContext context, IRubyObject key, Block block) {
+            modify();
+
+            Object value = mapDelegate().remove(key.toJava(Object.class));
+            if ( value != null ) return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value);
+
+            if ( block.isGiven() ) return block.yield(context, key);
+            return context.nil;
+        }
+
+        @Override
+        public RubyHash delete_ifInternal(final ThreadContext context, final Block block) {
+            RubyHash self = super.delete_ifInternal(context, block);
+            setSize( mapDelegate().size() );
+            return self;
+        }
 
         @Override
         public void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
@@ -122,7 +186,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             @SuppressWarnings("unchecked")
             final Map<Object, Object> map = mapDelegate();
             map.put(key.toJava(Object.class), value.toJava(Object.class));
-            this.size = map.size();
+            setSize( map.size() );
         }
 
         @Override
@@ -130,7 +194,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             @SuppressWarnings("unchecked")
             final Map<Object, Object> map = mapDelegate();
             map.put(key.decodeString(), value.toJava(Object.class));
-            this.size = map.size();
+            setSize( map.size() );
         }
 
         @Override
@@ -166,7 +230,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
             if (value != null) {
                 map.remove(convertedKey);
-                this.size = map.size();
+                setSize( map.size() );
                 return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
             }
             return NO_ENTRY;
@@ -179,7 +243,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
             if (map.containsKey(convertedKey)) {
                 map.remove(convertedKey);
-                this.size = map.size();
+                setSize( map.size() );
                 return entry;
             }
 
@@ -189,14 +253,24 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public void visitAll(Visitor visitor) {
             final Ruby runtime = getRuntime();
-            @SuppressWarnings("unchecked")
+            // NOTE: this is here to make maps act similar to Hash-es which allow modifications while
+            // iterating (meant from the same thread) ... thus we avoid iterating entrySet() directly
             final Map<Object, Object> map = mapDelegate();
-            final Map.Entry[] entries = map.entrySet().toArray( new Map.Entry[ map.size() ] );
+            final Map.Entry[] entries = map.entrySet().toArray( new Map.Entry[map.size() ] );
             for ( Map.Entry entry : entries ) {
                 IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
                 visitor.visit(key, value);
             }
+        }
+
+        @Override
+        public RubyBoolean compare(final ThreadContext context, final MethodNames method, IRubyObject other) {
+            syncSize();
+            if ( other instanceof RubyHashMap ) {
+                ((RubyHashMap) other).syncSize();
+            }
+            return super.compare(context, method, other);
         }
 
         @Override
@@ -206,15 +280,63 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
+        public RubyBoolean has_value_p(ThreadContext context, IRubyObject val) {
+            final Object convertedVal = val.toJava(Object.class);
+            return getRuntime().newBoolean( mapDelegate().containsValue(convertedVal) );
+        }
+
+        @Override
         public RubyHash rehash() {
             // java.util.Map does not expose rehash, and many maps don't use hashing, so we do nothing. #3142
             return this;
         }
 
         @Override
+        public RubyBoolean getCompareByIdentity_p(ThreadContext context) {
+            // NOTE: obviously little we can do to detect - but at least report Java built-in one :
+            return context.runtime.newBoolean( mapDelegate() instanceof java.util.IdentityHashMap );
+        }
+
+        @Override // re-invent @JRubyMethod(name = "any?")
+        public IRubyObject any_p(ThreadContext context, Block block) {
+            if (isEmpty()) return context.runtime.getFalse();
+
+            if (!block.isGiven()) return context.runtime.getTrue();
+
+            if (block.getSignature().arityValue() > 1) {
+                return any_p_i_fast(context, block);
+            }
+            return any_p_i(context, block);
+        }
+
+        private RubyBoolean any_p_i(ThreadContext context, Block block) {
+            final Ruby runtime = context.runtime;
+            for ( Map.Entry entry : entrySet() ) {
+                final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
+                final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
+                if ( block.yield(context, RubyArray.newArray(runtime, key, val)).isTrue() ) {
+                    return runtime.getTrue();
+                }
+            }
+            return runtime.getFalse();
+        }
+
+        private RubyBoolean any_p_i_fast(ThreadContext context, Block block) {
+            final Ruby runtime = context.runtime;
+            for ( Map.Entry entry : entrySet() ) {
+                final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
+                final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
+                if ( block.yieldArray(context, runtime.newArray(key, val), null).isTrue() ) {
+                    return runtime.getTrue();
+                }
+            }
+            return runtime.getFalse();
+        }
+
+        @Override
         public RubyHash rb_clear() {
             mapDelegate().clear();
-            this.size = 0;
+            setSize( 0 );
             return this;
         }
 
@@ -236,6 +358,25 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             }
             return hash;
         }
+
+        @Override
+        public final Set keySet() { return mapDelegate().keySet(); }
+
+        @Override
+        public final Set directKeySet() { return keySet(); }
+
+        @Override
+        public final Collection values() { return mapDelegate().values(); }
+
+        @Override
+        public final Collection directValues() { return values(); }
+
+        @Override
+        public final Set<Map.Entry> entrySet() { return mapDelegate().entrySet(); }
+
+        @Override
+        public final Set directEntrySet() { return entrySet(); }
+
     }
 
     @JRubyMethod(name = "default")
@@ -277,7 +418,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        return getOrCreateRubyHashMap().inspect19(context);
+        return getOrCreateRubyHashMap().inspect(context);
     }
 
     /** rb_hash_size
@@ -304,12 +445,17 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().to_a();
     }
 
+    @JRubyMethod(name = "to_proc")
+    public RubyProc to_proc(ThreadContext context) {
+        return getOrCreateRubyHashMap().to_proc(context);
+    }
+
     /** rb_hash_to_s
      *
      */
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return getOrCreateRubyHashMap().to_s19(context);
+        return getOrCreateRubyHashMap().to_s(context);
     }
 
     /** rb_hash_rehash
@@ -344,12 +490,12 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().op_equal(context, other);
     }
 
-    /** rb_hash_eql19
+    /** rb_hash_eql
      *
      */
     @JRubyMethod(name = "eql?")
-    public IRubyObject op_eql19(final ThreadContext context, IRubyObject other) {
-        return getOrCreateRubyHashMap().op_eql19(context, other);
+    public IRubyObject op_eql(final ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().op_eql(context, other);
     }
 
     /** rb_hash_aref
@@ -360,12 +506,32 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().op_aref(context, key);
     }
 
+    @JRubyMethod(name = "<", required = 1)
+    public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().op_lt(context, other);
+    }
+
+    @JRubyMethod(name = "<=", required = 1)
+    public IRubyObject op_le(ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().op_le(context, other);
+    }
+
+    @JRubyMethod(name = ">", required = 1)
+    public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().op_gt(context, other);
+    }
+
+    @JRubyMethod(name = ">=", required = 1)
+    public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().op_ge(context, other);
+    }
+
     /** rb_hash_hash
      *
      */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
-        return getOrCreateRubyHashMap().hash19();
+        return getOrCreateRubyHashMap().hash();
     }
 
     /** rb_hash_fetch
@@ -400,18 +566,9 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_each
      *
      */
-    @JRubyMethod
+    @JRubyMethod(name = {"each", "each_pair"})
     public IRubyObject each(final ThreadContext context, final Block block) {
-        return getOrCreateRubyHashMap().each19(context, block);
-    }
-
-
-    /** rb_hash_each_pair
-     *
-     */
-    @JRubyMethod(name = "each_pair")
-    public IRubyObject each_pair(final ThreadContext context, final Block block) {
-        return getOrCreateRubyHashMap().each_pair(context, block);
+        return getOrCreateRubyHashMap().each(context, block);
     }
 
     /** rb_hash_each_value
@@ -459,7 +616,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "index")
     public IRubyObject index(ThreadContext context, IRubyObject expected) {
-        return getOrCreateRubyHashMap().index19(context, expected);
+        return getOrCreateRubyHashMap().index(context, expected);
     }
 
     /** rb_hash_key
@@ -481,7 +638,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_values
      *
      */
-    @JRubyMethod(name = "values")
+    @JRubyMethod(name = { "values", "ruby_values" }) // collision with java.util.Map#values
     public RubyArray rb_values() {
         return getOrCreateRubyHashMap().rb_values();
     }
@@ -507,7 +664,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "select")
     public IRubyObject select(final ThreadContext context, final Block block) {
-        return getOrCreateRubyHashMap().select19(context, block);
+        return getOrCreateRubyHashMap().select(context, block);
     }
 
     /** rb_hash_delete_if
@@ -537,8 +694,8 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_clear
      *
      */
-    @JRubyMethod(name = "clear")
-    public RubyHash rb_clear() {
+    @JRubyMethod(name = { "clear", "ruby_clear" }) // collision with java.util.Map#clear (return type)
+    public IRubyObject rb_clear() {
         return getOrCreateRubyHashMap().rb_clear();
     }
 
@@ -553,15 +710,15 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_merge_bang
      *
      */
-    @JRubyMethod(name = {"merge!", "update"}, required = 1)
+    @JRubyMethod(name = { "merge!", "update" }, required = 1)
     public RubyHash merge_bang(final ThreadContext context, final IRubyObject other, final Block block) {
-        return getOrCreateRubyHashMap().merge_bang19(context, other, block);
+        return getOrCreateRubyHashMap().merge_bang(context, other, block);
     }
 
     /** rb_hash_merge
      *
      */
-    @JRubyMethod(name = "merge")
+    @JRubyMethod(name = { "merge", "ruby_merge" }) // collision with java.util.Map#merge on Java 8+
     public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
         return getOrCreateRubyHashMap().merge(context, other, block);
     }
@@ -571,15 +728,15 @@ public class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public RubyHash initialize_copy(ThreadContext context, IRubyObject other) {
-        return getOrCreateRubyHashMap().initialize_copy19(context, other);
+        return getOrCreateRubyHashMap().initialize_copy(context, other);
     }
 
     /** rb_hash_replace
      *
      */
-    @JRubyMethod(name = "replace", required = 1)
+    @JRubyMethod(name = { "replace", "ruby_replace" }, required = 1) // collision with java.util.Map#replace on Java 8+
     public RubyHash replace(final ThreadContext context, IRubyObject other) {
-        return getOrCreateRubyHashMap().replace19(context, other);
+        return getOrCreateRubyHashMap().replace(context, other);
     }
 
     /** rb_hash_values_at
@@ -588,6 +745,11 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     @JRubyMethod(name = "values_at", rest = true)
     public RubyArray values_at(ThreadContext context, IRubyObject[] args) {
         return getOrCreateRubyHashMap().values_at(context, args);
+    }
+
+    @JRubyMethod(name = "fetch_values", rest = true)
+    public RubyArray fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
+        return getOrCreateRubyHashMap().fetch_values(context, args, block);
     }
 
     @JRubyMethod(name = "assoc")
@@ -612,7 +774,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
     @JRubyMethod(name = "compare_by_identity")
     public IRubyObject getCompareByIdentity(ThreadContext context) {
-        return getOrCreateRubyHashMap().getCompareByIdentity(context);
+        return this; // has no effect - mostly for compatibility
     }
 
     @JRubyMethod(name = "compare_by_identity?")
@@ -630,34 +792,44 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return dupImpl("clone");
     }
 
+    @JRubyMethod(name = "any?")
+    public IRubyObject any_p(ThreadContext context, Block block) {
+        return getOrCreateRubyHashMap().any_p(context, block);
+    }
+
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        return getOrCreateRubyHashMap().dig(context, args);
+    }
+
     @SuppressWarnings("unchecked")
     private MapJavaProxy dupImpl(final String method) {
         final Map map = getMapObject();
         try {
-            Map newMap = (Map) map.getClass().newInstance();
+            Map newMap = map.getClass().newInstance();
             newMap.putAll(map);
             MapJavaProxy proxy = new MapJavaProxy(getRuntime(), metaClass);
             proxy.setObject(newMap);
             return proxy;
         }
-        catch (InstantiationException ex) {
-            throw initCause( getRuntime().newNotImplementedError("can't "+ method +" Map of type " + getObject().getClass().getName()), ex);
+        catch (InstantiationException|IllegalAccessException ex) {
+            final RaiseException e = getRuntime().newNotImplementedError("can't "+ method +" Map of type " + getObject().getClass().getName());
+            e.initCause(ex); throw e;
         }
-        catch (IllegalAccessException ex) {
-            throw initCause( getRuntime().newNotImplementedError("can't "+ method +" Map of type " + getObject().getClass().getName()), ex);
-        }
-    }
-
-    private static RaiseException initCause(final RaiseException re, final Exception e) {
-        re.initCause(e); return re;
     }
 
     final Map getMapObject() {
         return (Map) getObject();
     }
 
+    @Override
+    public final RubyHash convertToHash() {
+        return getOrCreateRubyHashMap();
+    }
+
     @Deprecated
     public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
         return getOrCreateRubyHashMap().op_aset19(context, key, value);
     }
+
 }

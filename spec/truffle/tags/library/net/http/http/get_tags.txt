@@ -1,2 +1,0 @@
-fails:Net::HTTP.get when passed URI when passed URI returns the body of the specified uri
-fails:Net::HTTP.get when passed URI when passed host, path, port returns the body of the specified host-path-combination

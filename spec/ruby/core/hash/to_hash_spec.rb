@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Hash#to_hash" do
   it "returns self for Hash instances" do
-    h = new_hash
+    h = {}
     h.to_hash.should equal(h)
   end
 

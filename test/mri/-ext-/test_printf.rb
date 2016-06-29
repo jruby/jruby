@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'test/unit'
 require "-test-/printf"
 require_relative '../ruby/allpairs'
@@ -9,10 +10,6 @@ class Test_SPrintf < Test::Unit::TestCase
 
   def inspect
     "<#{self.class}:#{object_id}>"
-  end
-
-  def test_int
-    assert_match(/\A<-?\d+>\z/, Bug::Printf.i(self))
   end
 
   def test_to_str

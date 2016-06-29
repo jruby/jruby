@@ -80,8 +80,8 @@ public class Sockaddr {
         return new UnixSocketAddress(new File(pathStr));
     }
 
-    public static IRubyObject unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
-        Ruby runtime = context.runtime;
+    public static RubyArray unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
+        final Ruby runtime = context.runtime;
         ByteList val = addr.convertToString().getByteList();
 
         validateSockaddr(runtime, val);
@@ -90,31 +90,25 @@ public class Sockaddr {
 
         AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
 
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder formatAddr = new StringBuilder();
 
         if (af == AddressFamily.AF_INET) {
-            sb.append(val.get(4) & 0xff)
-                .append(".")
-                .append(val.get(5) & 0xff)
-                .append(".")
-                .append(val.get(6) & 0xff)
-                .append(".")
-                .append(val.get(7) & 0xff);
+            formatAddr.append(val.get(4) & 0xff)
+                      .append('.')
+                      .append(val.get(5) & 0xff)
+                      .append('.')
+                      .append(val.get(6) & 0xff)
+                      .append('.')
+                      .append(val.get(7) & 0xff);
 
         } else {                                    // if af == AddressFamily.AF_INET6
             for (int i = 4; i <= 19; i++) {
-                if (i != 4 && i % 2 == 0) {
-                    sb.append(":");
-                }
-                sb.append(Integer.toHexString(val.get(i) & 0xff | 0x100).substring(1));
+                if (i != 4 && i % 2 == 0) formatAddr.append(':');
+                formatAddr.append(Integer.toHexString(val.get(i) & 0xff | 0x100).substring(1));
             }
         }
 
-        IRubyObject[] result = new IRubyObject[]{
-                runtime.newFixnum(port),
-                runtime.newString(sb.toString())};
-
-        return runtime.newArrayNoCopy(result);
+        return runtime.newArrayNoCopy(runtime.newFixnum(port), RubyString.newString(runtime, formatAddr));
     }
 
     public static IRubyObject packSockaddrFromAddress(ThreadContext context, InetSocketAddress sock) {
@@ -125,15 +119,15 @@ public class Sockaddr {
         }
     }
 
-    public static IRubyObject pack_sockaddr_in(ThreadContext context, int iport, String host) {
+    public static IRubyObject pack_sockaddr_in(ThreadContext context, int port, String host) {
         ByteArrayOutputStream bufS = new ByteArrayOutputStream();
         try {
             DataOutputStream ds = new DataOutputStream(bufS);
 
             try {
-                if(host != null && "".equals(host)) {
+                if ( host != null && host.length() == 0 ) {
                     writeSockaddrHeader(AddressFamily.AF_INET, ds);
-                    writeSockaddrPort(ds, iport);
+                    writeSockaddrPort(ds, port);
                     ds.writeInt(0);
                 } else {
                     InetAddress[] addrs = InetAddress.getAllByName(host);
@@ -145,16 +139,18 @@ public class Sockaddr {
                         writeSockaddrHeader(AddressFamily.AF_INET6, ds);
                     }
 
-                    writeSockaddrPort(ds, iport);
+                    writeSockaddrPort(ds, port);
 
                     ds.write(addr, 0, addr.length);
                 }
-            } catch (UnknownHostException e) {
+            }
+            catch (UnknownHostException e) {
                 throw sockerr(context.runtime, "getaddrinfo: No address associated with nodename");
             }
 
             writeSockaddrFooter(ds);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw sockerr(context.runtime, "pack_sockaddr_in: internal error");
         }
 

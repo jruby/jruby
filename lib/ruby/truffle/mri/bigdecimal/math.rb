@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/bigdecimal/math'
+require_relative '../../stdlib/bigdecimal/math'

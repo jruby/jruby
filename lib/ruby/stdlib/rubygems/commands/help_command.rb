@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'rubygems/command'
 
 class Gem::Commands::HelpCommand < Gem::Command
@@ -367,16 +368,6 @@ platform.
       alert_warning "Ambiguous command #{command_name} (#{possibilities.join(', ')})"
     else
       alert_warning "Unknown command #{command_name}.  Try: gem help commands"
-    end
-  end
-
-  def show_help # :nodoc:
-    command = @command_manager[options[:help]]
-    if command then
-      # help with provided command
-      command.invoke("--help")
-    else
-      alert_error "Unknown command #{options[:help]}.  Try 'gem help commands'"
     end
   end
 

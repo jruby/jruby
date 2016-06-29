@@ -139,6 +139,10 @@ describe :regexp_new_string_ascii, shared: true do
       lambda { Regexp.send(@method, "\\") }.should raise_error(RegexpError)
     end
 
+    it "does not raise a Regexp error if there is an escaped trailing backslash" do
+      lambda { Regexp.send(@method, "\\\\") }.should_not raise_error(RegexpError)
+    end
+
     it "accepts a backspace followed by a character" do
       Regexp.send(@method, "\\N").should == /#{"\x5cN"}/
     end

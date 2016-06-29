@@ -9,6 +9,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +19,7 @@ import java.util.Map;
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this array operand could get converted to calls
 // that actually build a Ruby object
-public class Array extends Operand {
+public class Array extends Operand implements Iterable<Operand> {
     private final Operand[] elts;
 
     // SSS FIXME: Do we create a special-case for zero-length arrays?
@@ -107,15 +109,18 @@ public class Array extends Operand {
         return new Array(d.decodeOperandArray());
     }
 
-    @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+    public IRubyObject[] retrieveArrayElts(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         IRubyObject[] elements = new IRubyObject[elts.length];
 
         for (int i = 0; i < elements.length; i++) {
             elements[i] = (IRubyObject) elts[i].retrieve(context, self, currScope, currDynScope, temp);
         }
+        return elements;
+    }
 
-        return context.runtime.newArray(elements);
+    @Override
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        return context.runtime.newArray(retrieveArrayElts(context, self, currScope, currDynScope, temp));
     }
 
     @Override
@@ -125,5 +130,10 @@ public class Array extends Operand {
 
     public Operand[] getElts() {
         return elts;
+    }
+
+    @Override
+    public Iterator<Operand> iterator() {
+        return Arrays.asList(elts).iterator();
     }
 }

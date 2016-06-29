@@ -1,21 +1,26 @@
+# frozen_string_literal: false
 require 'test/unit'
 require 'cgi'
 require 'stringio'
+require_relative 'update_env'
 
 
 class CGIUtilTest < Test::Unit::TestCase
   include CGI::Util
+  include UpdateEnv
 
   def setup
-    ENV['REQUEST_METHOD'] = 'GET'
+    @environ = {}
+    update_env(
+      'REQUEST_METHOD' => 'GET',
+      'SCRIPT_NAME' => nil,
+    )
     @str1="&<>\" \xE3\x82\x86\xE3\x82\x93\xE3\x82\x86\xE3\x82\x93"
     @str1.force_encoding("UTF-8") if defined?(::Encoding)
   end
 
   def teardown
-    %W[REQUEST_METHOD SCRIPT_NAME].each do |name|
-      ENV.delete(name)
-    end
+    ENV.update(@environ)
   end
 
 
@@ -54,15 +59,47 @@ class CGIUtilTest < Test::Unit::TestCase
   end
 
   def test_cgi_escapeHTML
-    assert_equal(CGI::escapeHTML("'&\"><"),"&#39;&amp;&quot;&gt;&lt;")
+    assert_equal("&#39;&amp;&quot;&gt;&lt;", CGI::escapeHTML("'&\"><"))
+  end
+
+  def test_cgi_escape_html_duplicated
+    orig = "Ruby".force_encoding("US-ASCII")
+    str = CGI::escapeHTML(orig)
+    assert_equal(orig, str)
+    assert_not_same(orig, str)
+  end
+
+  def assert_cgi_escape_html_preserve_encoding(str, encoding)
+    assert_equal(encoding, CGI::escapeHTML(str.dup.force_encoding(encoding)).encoding)
+  end
+
+  def test_cgi_escape_html_preserve_encoding
+    Encoding.list do |enc|
+      assert_cgi_escape_html_preserve_encoding("'&\"><", enc)
+      assert_cgi_escape_html_preserve_encoding("Ruby", enc)
+    end
+  end
+
+  def test_cgi_escape_html_preserve_tainted
+    assert_not_predicate CGI::escapeHTML("'&\"><"),       :tainted?
+    assert_predicate     CGI::escapeHTML("'&\"><".taint), :tainted?
+    assert_not_predicate CGI::escapeHTML("Ruby"),         :tainted?
+    assert_predicate     CGI::escapeHTML("Ruby".taint),   :tainted?
+  end
+
+  def test_cgi_escape_html_dont_freeze
+    assert_not_predicate CGI::escapeHTML("'&\"><".dup),    :frozen?
+    assert_not_predicate CGI::escapeHTML("'&\"><".freeze), :frozen?
+    assert_not_predicate CGI::escapeHTML("Ruby".dup),      :frozen?
+    assert_not_predicate CGI::escapeHTML("Ruby".freeze),   :frozen?
   end
 
   def test_cgi_unescapeHTML
-    assert_equal(CGI::unescapeHTML("&#39;&amp;&quot;&gt;&lt;"),"'&\"><")
+    assert_equal("'&\"><", CGI::unescapeHTML("&#39;&amp;&quot;&gt;&lt;"))
   end
 
   def test_cgi_unescapeHTML_uppercasecharacter
-    assert_equal(CGI::unescapeHTML("&#x3042;&#x3044;&#X3046;"),"\xE3\x81\x82\xE3\x81\x84\xE3\x81\x86")
+    assert_equal("\xE3\x81\x82\xE3\x81\x84\xE3\x81\x86", CGI::unescapeHTML("&#x3042;&#x3044;&#X3046;"))
   end
 
   def test_cgi_include_escape
@@ -70,11 +107,11 @@ class CGIUtilTest < Test::Unit::TestCase
   end
 
   def test_cgi_include_escapeHTML
-    assert_equal(escapeHTML("'&\"><"),"&#39;&amp;&quot;&gt;&lt;")
+    assert_equal("&#39;&amp;&quot;&gt;&lt;", escapeHTML("'&\"><"))
   end
 
   def test_cgi_include_h
-    assert_equal(h("'&\"><"),"&#39;&amp;&quot;&gt;&lt;")
+    assert_equal("&#39;&amp;&quot;&gt;&lt;", h("'&\"><"))
   end
 
   def test_cgi_include_unescape
@@ -84,7 +121,7 @@ class CGIUtilTest < Test::Unit::TestCase
   end
 
   def test_cgi_include_unescapeHTML
-    assert_equal(unescapeHTML("&#39;&amp;&quot;&gt;&lt;"),"'&\"><")
+    assert_equal("'&\"><", unescapeHTML("&#39;&amp;&quot;&gt;&lt;"))
   end
 
   def test_cgi_escapeElement

@@ -1,3 +1,0 @@
-fails:REXML::Element#prefixes returns an array of the prefixes of the namespaces
-fails:REXML::Element#prefixes does not include the default namespace
-fails:REXML::Element#prefixes returns an empty array if no namespace was defined

@@ -129,7 +129,7 @@ public class RubyRational extends RubyNumeric {
     /** rb_rational_raw
      * 
      */
-    static RubyRational newRationalRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
+    public static RubyRational newRationalRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
         return new RubyRational(runtime, runtime.getRational(), x, y);
     }
 
@@ -150,7 +150,7 @@ public class RubyRational extends RubyNumeric {
     /** rb_rational_new
      * 
      */
-    static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
+    public static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
         return canonicalizeInternal(context, context.runtime.getRational(), x, y);
     }
 
@@ -188,6 +188,11 @@ public class RubyRational extends RubyNumeric {
      */
     private static RubyRational newRationalBang(ThreadContext context, IRubyObject clazz, IRubyObject x) {
         return newRationalBang(context, clazz, x, RubyFixnum.one(context.runtime));
+    }
+
+    @Override
+    public ClassIndex getNativeClassIndex() {
+        return ClassIndex.RATIONAL;
     }
     
     private IRubyObject num;
@@ -402,6 +407,14 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "denominator")
     @Override
     public IRubyObject denominator(ThreadContext context) {
+        return den;
+    }
+
+    public IRubyObject getNumerator() {
+        return num;
+    }
+
+    public IRubyObject getDenominator() {
         return den;
     }
 

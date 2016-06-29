@@ -43,8 +43,22 @@ class TestJavaExtension < Test::Unit::TestCase
     two = short.new(2)
     three = short.new(3)
     list = [three, two, one]
-    list = list.sort
-    assert_equal([one, two, three], list)
+    list.sort!
+    assert_equal [one, two, three], list
+
+    assert_equal ['a'.to_java, 'b'.to_java], [java.lang.String.new('b'), java.lang.String.new('a')].sort
+  end
+
+  def test_comparable_error
+    list = [3.to_java(:int), java.lang.Byte.new(2), 1, 0]
+    assert_raise(TypeError) { list.sort }
+
+    begin
+      [ java.lang.Short.new(1), java.lang.Integer.new(0) ].sort!
+    rescue => e
+      assert_instance_of TypeError, e
+      assert_equal 'java.lang.Short cannot be cast to java.lang.Integer', e.message
+    end
   end
 
   def test_map
@@ -270,7 +284,7 @@ class TestJavaExtension < Test::Unit::TestCase
 
   def test_ruby_block_with_args_as_interface
     file = java.io.File.new(".")
-    listing = file.list {|file,str| !!(str =~ /\./) }
+    listing = file.list {|_,str| !!(str =~ /\./) }
     assert listing.size >= 0
   end
 
@@ -287,18 +301,6 @@ class TestJavaExtension < Test::Unit::TestCase
     rescue Exception => e
       flunk "Exception raised: #{e}"
     end
-  end
-
-  class CallAbstractInConstructor < org.jruby.test.Abstract
-    def initialize; super("call protected method in constructor!") end
-
-    def protected_method; "HELLO!" end
-  end
-
-  def test_calling_abstract_method_in_java_constructor
-    return skip('this leaking in super constructor (calling Ruby implemented methods)')
-    a = CallAbstractInConstructor.new
-    assert_equal "HELLO!", a.result
   end
 
   def test_map_interface_to_array

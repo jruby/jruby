@@ -1,7 +1,6 @@
 package org.jruby.ir.passes;
 
 import org.jruby.ir.*;
-import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.runtime.Signature;
 import org.jruby.ir.operands.ImmutableLiteral;
@@ -52,8 +51,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
         }
         if (requireBinding) instrs.add(new PopBindingInstr());
         if (scope instanceof IRClosure) {
-            instrs.add(new PopBlockFrameInstr(savedFrame));
-            instrs.add(new RestoreBindingVisibilityInstr(savedViz));
+            if (scope.needsFrame()) {
+                instrs.add(new RestoreBindingVisibilityInstr(savedViz));
+                instrs.add(new PopBlockFrameInstr(savedFrame));
+            }
         } else {
             if (requireFrame) instrs.add(new PopMethodFrameInstr());
         }
@@ -70,24 +71,11 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // to allocate a dynamic scope for it and add binding push/pop instructions.
         if (!explicitCallProtocolSupported(scope)) return null;
 
-        StoreLocalVarPlacementProblem slvpp = scope.getStoreLocalVarPlacementProblem();
-        boolean scopeHasLocalVarStores = false;
-        boolean bindingHasEscaped = scope.bindingHasEscaped();
-
         CFG cfg = scope.getCFG();
 
-        if (slvpp != null && bindingHasEscaped) {
-            scopeHasLocalVarStores = slvpp.scopeHasLocalVarStores();
-        } else {
-            // We dont require local-var load/stores to have been run.
-            // If it is not run, we go conservative and add push/pop binding instrs. everywhere
-            scopeHasLocalVarStores = bindingHasEscaped;
-        }
-
         // For now, we always require frame for closures
-        boolean requireFrame = doesItRequireFrame(scope, bindingHasEscaped);
-        boolean reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        boolean requireBinding = reuseParentDynScope || !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        boolean requireFrame = scope.needsFrame();
+        boolean requireBinding = scope.needsBinding();
 
         if (scope instanceof IRClosure || requireBinding || requireFrame) {
             BasicBlock entryBB = cfg.getEntryBB();
@@ -96,33 +84,37 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 savedViz = scope.createTemporaryVariable();
                 savedFrame = scope.createTemporaryVariable();
 
-                { // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
-                    int insertIndex = 0;
+                // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
+                int insertIndex = 0;
+
+                if (scope.needsFrame()) {
                     entryBB.insertInstr(insertIndex++, new SaveBindingVisibilityInstr(savedViz));
                     entryBB.insertInstr(insertIndex++, new PushBlockFrameInstr(savedFrame, scope.getName()));
-
-                    // NOTE: Order of these next two is important, since UBESI resets state PBBI needs.
-                    if (requireBinding) {
-                        entryBB.insertInstr(insertIndex++, new PushBlockBindingInstr());
-                    }
-                    entryBB.insertInstr(insertIndex++, new UpdateBlockExecutionStateInstr(Self.SELF));
                 }
 
-                Signature sig = ((IRClosure)scope).getSignature();
+                // NOTE: Order of these next two is important, since UBESI resets state PBBI needs.
+                if (requireBinding) {
+                    entryBB.insertInstr(insertIndex++, new PushBlockBindingInstr());
+                }
+
+                entryBB.insertInstr(insertIndex++, new UpdateBlockExecutionStateInstr(Self.SELF));
+
+                BasicBlock prologueBB = createPrologueBlock(cfg);
 
                 // Add the right kind of arg preparation instruction
+                Signature sig = ((IRClosure)scope).getSignature();
                 int arityValue = sig.arityValue();
                 if (arityValue == 0) {
-                    entryBB.addInstr(PrepareNoBlockArgsInstr.INSTANCE);
+                    prologueBB.addInstr(PrepareNoBlockArgsInstr.INSTANCE);
                 } else {
                     if (sig.isFixed()) {
                         if (arityValue == 1) {
-                            entryBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
+                            prologueBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
                         } else {
-                            entryBB.addInstr(PrepareFixedBlockArgsInstr.INSTANCE);
+                            prologueBB.addInstr(PrepareFixedBlockArgsInstr.INSTANCE);
                         }
                     } else {
-                        entryBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
+                        prologueBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
                     }
                 }
             } else {
@@ -155,7 +147,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     if (!bb.isExitBB() && i instanceof ReturnInstr) {
                         if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         // Add before the break/return
-                        instrs.previous();
+                        i = instrs.previous();
                         popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
                         if (bb == geb) gebProcessed = true;
                         break;
@@ -198,23 +190,28 @@ public class AddCallProtocolInstructions extends CompilerPass {
         return null;
     }
 
-    private boolean doesItRequireFrame(IRScope scope, boolean bindingHasEscaped) {
-        boolean requireFrame = bindingHasEscaped || scope.usesEval();
+    // We create an extra BB after entryBB for some ACP instructions which can possibly throw
+    // an exception.  We want to keep them out of entryBB so we have a safe place to put
+    // stuff before exception without needing to worry about weird flow control.
+    // FIXME: We need to centralize prologue logic in case there's other places we want to use it
+    private BasicBlock createPrologueBlock(CFG cfg) {
+        BasicBlock entryBB = cfg.getEntryBB();
 
-        for (IRFlags flag : scope.getFlags()) {
-            switch (flag) {
-                case BINDING_HAS_ESCAPED:
-                case CAN_CAPTURE_CALLERS_BINDING:
-                case REQUIRES_FRAME:
-                case REQUIRES_VISIBILITY:
-                case USES_BACKREF_OR_LASTLINE:
-                case USES_EVAL:
-                case USES_ZSUPER:
-                    requireFrame = true;
-            }
+        BasicBlock oldStart = cfg.getOutgoingDestinationOfType(entryBB, CFG.EdgeType.FALL_THROUGH);
+        BasicBlock prologueBB = new BasicBlock(cfg, cfg.getScope().getNewLabel());
+        cfg.removeEdge(entryBB, oldStart);
+        cfg.addBasicBlock(prologueBB);
+        cfg.addEdge(entryBB, prologueBB, CFG.EdgeType.FALL_THROUGH);
+        cfg.addEdge(prologueBB, oldStart, CFG.EdgeType.FALL_THROUGH);
+
+        // If there's already a GEB, make sure we have an edge to it and use it to rescue these instrs
+        if (cfg.getGlobalEnsureBB() != null) {
+            BasicBlock geb = cfg.getGlobalEnsureBB();
+            cfg.addEdge(prologueBB, geb, CFG.EdgeType.EXCEPTION);
+            cfg.setRescuerBB(prologueBB, geb);
         }
 
-        return requireFrame;
+        return prologueBB;
     }
 
     @Override

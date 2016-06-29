@@ -172,13 +172,11 @@ describe "Kernel#eval" do
     first_time.should == second_time
   end
 
-  deviates_on "jruby" do
-    it "can be aliased" do
-      alias aliased_eval eval
-      x = 2
-      aliased_eval('x += 40')
-      x.should == 42
-    end
+  it "can be aliased" do
+    alias aliased_eval eval
+    x = 2
+    aliased_eval('x += 40')
+    x.should == 42
   end
 
   # See http://jira.codehaus.org/browse/JRUBY-5163

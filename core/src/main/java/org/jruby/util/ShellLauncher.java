@@ -389,6 +389,9 @@ public class ShellLauncher {
 
     private static File findPathFile(Ruby runtime, String fname, String[] path, boolean isExec) {
         File pathFile = null;
+        if (Platform.IS_WINDOWS && fname.startsWith("\"") && fname.endsWith("\"")) {
+            fname = fname.substring(1, fname.length() - 1); // remove double quotes if present
+        }
         boolean doPathSearch = filenameIsPathSearchable(fname, isExec);
         if (doPathSearch) {
             for (String fdir: path) {

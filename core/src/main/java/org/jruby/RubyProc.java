@@ -19,7 +19,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -64,7 +64,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
         super(runtime, rubyClass);
-        
+
         this.type = type;
     }
 
@@ -80,13 +80,21 @@ public class RubyProc extends RubyObject implements DataType {
         this.line = line;
     }
 
+
+    public RubyProc(Ruby runtime, RubyClass rubyClass, Block block, String file, int line) {
+        this(runtime, rubyClass, block.type);
+        this.block = block;
+        this.file = file;
+        this.line = line;
+    }
+
     public static RubyClass createProcClass(Ruby runtime) {
         RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setProc(procClass);
 
         procClass.setClassIndex(ClassIndex.PROC);
         procClass.setReifiedClass(RubyProc.class);
-        
+
         procClass.defineAnnotatedMethods(RubyProc.class);
 
         return procClass;
@@ -124,10 +132,10 @@ public class RubyProc extends RubyObject implements DataType {
 
         return proc;
     }
-    
+
     /**
      * Create a new instance of a Proc object.  We override this method (from RubyClass)
-     * since we need to deal with special case of Proc.new with no arguments or block arg.  In 
+     * since we need to deal with special case of Proc.new with no arguments or block arg.  In
      * this case, we need to check previous frame for a block to consume.
      */
     @JRubyMethod(name = "new", rest = true, meta = true)
@@ -140,19 +148,19 @@ public class RubyProc extends RubyObject implements DataType {
         if (block.isGiven() && block.getProcObject() != null && block.getProcObject().getMetaClass() == recv) {
             return block.getProcObject();
         }
-        
+
         RubyProc obj = new RubyProc(context.runtime, (RubyClass)recv, Block.Type.PROC);
         obj.setup(block);
-        
+
         obj.callMethod(context, "initialize", args, block);
         return obj;
     }
-    
+
     private void setup(Block procBlock) {
         if (!procBlock.isGiven()) {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
         }
-        
+
         if (isLambda()) {
             // TODO: warn "tried to create Proc object without a block"
         }
@@ -185,11 +193,11 @@ public class RubyProc extends RubyObject implements DataType {
 
         block.type = type;
         block.setProcObject(this);
-        
+
         // pre-request dummy scope to avoid clone overhead in lightweight blocks
         block.getBinding().getDummyScope(block.getBody().getStaticScope());
     }
-    
+
     @JRubyMethod(name = "clone")
     @Override
     public IRubyObject rbClone() {
@@ -203,7 +211,7 @@ public class RubyProc extends RubyObject implements DataType {
     public IRubyObject dup() {
         return newProc(getRuntime(), block, type, file, line);
     }
-    
+
     @Override
     public IRubyObject to_s() {
         return to_s19();
@@ -212,7 +220,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s19() {
         StringBuilder sb = new StringBuilder(32);
-        sb.append("#<Proc:0x").append(Integer.toString(block.hashCode(), 16));
+        sb.append("#<Proc:0x").append(Integer.toString(System.identityHashCode(block), 16));
 
         String file = block.getBody().getFile();
         if (file != null) sb.append('@').append(file).append(':').append(block.getBody().getLine() + 1);
@@ -223,7 +231,7 @@ public class RubyProc extends RubyObject implements DataType {
         IRubyObject string = RubyString.newString(getRuntime(), sb.toString());
 
         if (isTaint()) string.setTaint(true);
-        
+
         return string;
     }
 
@@ -311,7 +319,7 @@ public class RubyProc extends RubyObject implements DataType {
         return args;
     }
 
-    @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true)
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
         IRubyObject[] preppedArgs = prepareArgs(context, type, block.getBody(), args);
 
@@ -320,9 +328,9 @@ public class RubyProc extends RubyObject implements DataType {
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
         assert args != null;
-        
+
         Block newBlock;
-        
+
         // bind to new self, if given
         if (self == null) {
             newBlock = block;
@@ -330,7 +338,7 @@ public class RubyProc extends RubyObject implements DataType {
             newBlock = block.cloneBlockAndFrame();
             newBlock.getBinding().setSelf(self);
         }
-        
+
         return newBlock.call(context, args, passedBlock);
     }
 
@@ -343,7 +351,7 @@ public class RubyProc extends RubyObject implements DataType {
         // FIXME: Consider min/max like MRI here instead of required + kwarg count.
         return getRuntime().newFixnum(signature.hasRest() ? signature.arityValue() : signature.required() + signature.getRequiredKeywordForArityCount());
     }
-    
+
     @JRubyMethod(name = "to_proc")
     public RubyProc to_proc() {
     	return this;
@@ -379,10 +387,10 @@ public class RubyProc extends RubyObject implements DataType {
     private boolean isLambda() {
         return type.equals(Block.Type.LAMBDA);
     }
-    
-    private boolean isProc() {
-        return type.equals(Block.Type.PROC);
-    }
+
+    //private boolean isProc() {
+    //    return type.equals(Block.Type.PROC);
+    //}
 
     private boolean isThread() {
         return type.equals(Block.Type.THREAD);

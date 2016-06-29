@@ -1,0 +1,61 @@
+fails:C-API constant rb_cArray references the Array class
+fails:C-API constant rb_cBignum references the Bignum class
+fails:C-API constant rb_cClass references the Class class
+fails:C-API constant rb_mComparable references the Comparable module
+fails:C-API constant rb_cData references the Data class
+fails:C-API constant rb_mEnumerable references the Enumerable module
+fails:C-API constant rb_cFalseClass references the FalseClass class
+fails:C-API constant rb_cFile references the File class
+fails:C-API constant rb_cFixnum references the Fixnum class
+fails:C-API constant rb_cFloat references the Float class
+fails:C-API constant rb_cHash references the Hash class
+fails:C-API constant rb_cInteger references the Integer class
+fails:C-API constant rb_cIO references the IO class
+fails:C-API constant rb_mKernel references the Kernel module
+fails:C-API constant rb_cMatch references the MatchData class
+fails:C-API constant rb_cModule references the Module class
+fails:C-API constant rb_cNilClass references the NilClass class
+fails:C-API constant rb_cNumeric references the Numeric class
+fails:C-API constant rb_cObject references the Object class
+fails:C-API constant rb_cRange references the Range class
+fails:C-API constant rb_cRegexp references the Regexp class
+fails:C-API constant rb_cString references the String class
+fails:C-API constant rb_cStruct references the Struct class
+fails:C-API constant rb_cSymbol references the Symbol class
+fails:C-API constant rb_cThread references the Thread class
+fails:C-API constant rb_cTrueClass references the TrueClass class
+fails:C-API constant rb_cProc references the Proc class
+fails:C-API constant rb_cMethod references the Method class
+fails:C-API constant rb_cDir references the Dir class
+fails:C-API exception constant rb_eArgError references the ArgumentError class
+fails:C-API exception constant rb_eEOFError references the EOFError class
+fails:C-API exception constant rb_eErrno references the Errno module
+fails:C-API exception constant rb_eException references the Exception class
+fails:C-API exception constant rb_eFloatDomainError references the FloatDomainError class
+fails:C-API exception constant rb_eIndexError references the IndexError class
+fails:C-API exception constant rb_eInterrupt references the Interrupt class
+fails:C-API exception constant rb_eIOError references the IOError class
+fails:C-API exception constant rb_eLoadError references the LoadError class
+fails:C-API exception constant rb_eLocalJumpError references the LocalJumpError class
+fails:C-API exception constant rb_eMathDomainError references the Math::DomainError class
+fails:C-API exception constant rb_eEncCompatError references the Encoding::CompatibilityError
+fails:C-API exception constant rb_eNameError references the NameError class
+fails:C-API exception constant rb_eNoMemError references the NoMemoryError class
+fails:C-API exception constant rb_eNoMethodError references the NoMethodError class
+fails:C-API exception constant rb_eNotImpError references the NotImplementedError class
+fails:C-API exception constant rb_eRangeError references the RangeError class
+fails:C-API exception constant rb_eRegexpError references the RegexpError class
+fails:C-API exception constant rb_eRuntimeError references the RuntimeError class
+fails:C-API exception constant rb_eScriptError references the ScriptError class
+fails:C-API exception constant rb_eSecurityError references the SecurityError class
+fails:C-API exception constant rb_eSignal references the SignalException class
+fails:C-API exception constant rb_eStandardError references the StandardError class
+fails:C-API exception constant rb_eSyntaxError references the SyntaxError class
+fails:C-API exception constant rb_eSystemCallError references the SystemCallError class
+fails:C-API exception constant rb_eSystemExit references the SystemExit class
+fails:C-API exception constant rb_eSysStackError references the SystemStackError class
+fails:C-API exception constant rb_eTypeError references the TypeError class
+fails:C-API exception constant rb_eThreadError references the ThreadError class
+fails:C-API exception constant rb_mWaitReadable references the IO::WaitReadable module
+fails:C-API exception constant rb_mWaitWritable references the IO::WaitWritable module
+fails:C-API exception constant rb_eZeroDivError references the ZeroDivisionError class

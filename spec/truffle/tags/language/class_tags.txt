@@ -1,2 +1,1 @@
-fails:A class definition extending an object (sclass) can use return to cause the enclosing method to return
-fails:A class definition extending an object (sclass) allows accessing the block of the original scope
+fails:A class definition raises an error when reopening a class with Object as superclass

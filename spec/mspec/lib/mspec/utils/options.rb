@@ -150,7 +150,7 @@ class MSpecOptions
         opt, arg, rest = split rest, 1
         opt = "-" + opt
         option = process argv, opt, opt, arg
-        break if option.arg?
+        break if !option or option.arg?
       end
     end
 

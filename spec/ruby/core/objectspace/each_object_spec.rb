@@ -1,5 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures', __FILE__)
+require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "ObjectSpace.each_object" do
   it "calls the block once for each living, non-immediate object in the Ruby process" do
@@ -129,16 +129,9 @@ describe "ObjectSpace.each_object" do
     ObjectSpaceFixtures.to_be_found_symbols.should include(:instance_variable)
   end
 
-  it "doesn't find an object stored in a WeakRef that should have been cleared" do
-    require 'weakref'
-
-    weak_ref = WeakRef.new(ObjectSpaceFixtures::ObjectToBeFound.new(:weakref))
-    ObjectSpaceFixtures.wait_for_weakref_cleared(weak_ref)
-    ObjectSpaceFixtures.to_be_found_symbols.should_not include(:weakref)
-  end
-
   it "finds an object stored in a thread local" do
-    Thread.current.thread_variable_set(:object_space_thread_local, ObjectSpaceFixtures::ObjectToBeFound.new(:thread_local))
+    thread = Thread.new {}
+    thread.thread_variable_set(:object_space_thread_local, ObjectSpaceFixtures::ObjectToBeFound.new(:thread_local))
     ObjectSpaceFixtures.to_be_found_symbols.should include(:thread_local)
   end
 
@@ -183,6 +176,13 @@ describe "ObjectSpace.each_object" do
       @meta = @klass.singleton_class
     end
 
+    it "does not walk hidden metaclasses" do
+      klass = Class.new.singleton_class
+      ancestors = ObjectSpace.each_object(Class).select { |c| klass.is_a? c }
+      hidden = ancestors.find { |h| h.inspect.include? klass.inspect }
+      hidden.should == nil
+    end
+
     ruby_version_is ""..."2.3" do
       it "does not walk singleton classes" do
         @sclass.should be_kind_of(@meta)
@@ -212,6 +212,7 @@ describe "ObjectSpace.each_object" do
     # singleton classes should be walked only on >= 2.3
     ruby_version_is "2.3" do
       expected << c_sclass
+      c_sclass.should be_kind_of(a.singleton_class)
     end
 
     b.extend Enumerable # included modules should not be walked

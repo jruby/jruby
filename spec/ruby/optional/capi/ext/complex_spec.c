@@ -41,7 +41,7 @@ static VALUE complex_spec_rb_complex_new2(VALUE self, VALUE num, VALUE den) {
 }
 #endif
 
-void Init_complex_spec() {
+void Init_complex_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiComplexSpecs", rb_cObject);
 

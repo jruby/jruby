@@ -40,7 +40,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         int       ipc       = 0;
         Object    exception = null;
 
-        if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+        if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -57,7 +57,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             Instr instr = instrs[ipc];
 
             Operation operation = instr.getOperation();
-            if (debug) Interpreter.LOG.info("I: {" + ipc + "} ", instr + "; <#RPCs=" + rescuePCs.size() + ">");
+            if (debug) Interpreter.LOG.info("I: {" + ipc + "} ", instr + "; <#RPCs=" + (rescuePCs == null ? 0 : rescuePCs.size()) + ">");
             Interpreter.interpInstrsCount++;
             ipc++;
 
@@ -115,8 +115,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             } catch (Throwable t) {
                 if (debug) extractToMethodToAvoidC2Crash(instr, t);
 
-                if (rescuePCs == null || rescuePCs.empty() || (t instanceof IRBreakJump && instr instanceof BreakInstr) ||
-                        (t instanceof IRReturnJump && instr instanceof NonlocalReturnInstr)) {
+                if (rescuePCs == null || rescuePCs.empty()) {
                     ipc = -1;
                 } else {
                     ipc = rescuePCs.pop();

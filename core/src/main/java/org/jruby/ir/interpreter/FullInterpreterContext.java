@@ -8,7 +8,6 @@ import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
-import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.passes.CompilerPass;
@@ -16,7 +15,6 @@ import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
-import org.jruby.runtime.callsite.InliningCallSite;
 
 /**
  * Created by enebo on 2/27/15.
@@ -24,7 +22,7 @@ import org.jruby.runtime.callsite.InliningCallSite;
 public class FullInterpreterContext extends InterpreterContext {
     private CFG cfg;
 
-    // Creation of this field will happen in generateInstructionsForInterpretation or during IRScope.prepareForInitialCompilation.
+    // Creation of this field will happen in generateInstructionsForInterpretation or during IRScope.prepareForCompilation.
     // FIXME: At some point when we relinearize after running another phase of passes we should document that here to know how this field is changed
     private BasicBlock[] linearizedBBList = null;
 
@@ -35,7 +33,7 @@ public class FullInterpreterContext extends InterpreterContext {
     private List<CompilerPass> executedPasses = new ArrayList<>();
 
     public FullInterpreterContext(IRScope scope, CFG cfg, BasicBlock[] linearizedBBList) {
-        super(scope, null);
+        super(scope, (List<Instr>) null);
 
         this.cfg = cfg;
         this.linearizedBBList = linearizedBBList;
@@ -43,7 +41,7 @@ public class FullInterpreterContext extends InterpreterContext {
 
     // FIXME: Perhaps abstract IC into interface of base class so we do not have a null instructions field here
     public FullInterpreterContext(IRScope scope, Instr[] instructions) {
-        super(scope, null);
+        super(scope, (List<Instr>)null);
 
         cfg = buildCFG(instructions);
     }

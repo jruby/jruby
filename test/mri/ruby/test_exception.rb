@@ -1,6 +1,6 @@
+# frozen_string_literal: false
 require 'test/unit'
 require 'tempfile'
-require_relative 'envutil'
 
 class TestException < Test::Unit::TestCase
   def test_exception_rescued
@@ -129,18 +129,47 @@ class TestException < Test::Unit::TestCase
     assert(!bad)
   end
 
+  def test_catch_no_throw
+    assert_equal(:foo, catch {:foo})
+  end
+
   def test_catch_throw
-    assert(catch(:foo) {
-             loop do
-               loop do
-                 throw :foo, true
-                 break
-               end
-               break
-               assert(false)			# should no reach here
-             end
-             false
-           })
+    result = catch(:foo) {
+      loop do
+        loop do
+          throw :foo, true
+          break
+        end
+        assert(false, "should not reach here")
+      end
+      false
+    }
+    assert(result)
+  end
+
+  def test_catch_throw_noarg
+    assert_nothing_raised(UncaughtThrowError) {
+      result = catch {|obj|
+        throw obj, :ok
+        assert(false, "should not reach here")
+      }
+      assert_equal(:ok, result)
+    }
+  end
+
+  def test_uncaught_throw
+    tag = nil
+    e = assert_raise_with_message(UncaughtThrowError, /uncaught throw/) {
+      catch("foo") {|obj|
+        tag = obj.dup
+        throw tag, :ok
+        assert(false, "should not reach here")
+      }
+      assert(false, "should not reach here")
+    }
+    assert_not_nil(tag)
+    assert_same(tag, e.tag)
+    assert_equal(:ok, e.value)
   end
 
   def test_catch_throw_in_require
@@ -148,7 +177,7 @@ class TestException < Test::Unit::TestCase
     Tempfile.create(["dep", ".rb"]) {|t|
       t.puts("throw :extdep, 42")
       t.close
-      assert_equal(42, catch(:extdep) {require t.path}, bug7185)
+      assert_equal(42, assert_throw(:extdep, bug7185) {require t.path}, bug7185)
     }
   end
 
@@ -274,6 +303,10 @@ class TestException < Test::Unit::TestCase
     assert_raise_with_message(TypeError, /C\u{4032}/) do
       [*o]
     end
+    obj = eval("class C\u{1f5ff}; self; end").new
+    assert_raise_with_message(TypeError, /C\u{1f5ff}/) do
+      Class.new {include obj}
+    end
   end
 
   def test_errat
@@ -309,7 +342,7 @@ class TestException < Test::Unit::TestCase
   end
 
   def test_thread_signal_location
-    _, stderr, _ = EnvUtil.invoke_ruby("--disable-gems -d", <<-RUBY, false, true)
+    _, stderr, _ = EnvUtil.invoke_ruby(%w"--disable-gems -d", <<-RUBY, false, true)
 Thread.start do
   begin
     Process.kill(:INT, $$)
@@ -397,9 +430,11 @@ end.join
     bug3237 = '[ruby-core:29948]'
     str = "\u2600"
     id = :"\u2604"
-    msg = "undefined method `#{id}' for #{str.inspect}:String"
-    assert_raise_with_message(NoMethodError, msg, bug3237) do
-      str.__send__(id)
+    EnvUtil.with_default_external(Encoding::UTF_8) do
+      msg = "undefined method `#{id}' for #{str.inspect}:String"
+      assert_raise_with_message(NoMethodError, msg, bug3237) do
+        str.__send__(id)
+      end
     end
   end
 
@@ -627,5 +662,93 @@ end.join
 
   def test_anonymous_message
     assert_in_out_err([], "raise Class.new(RuntimeError), 'foo'", [], /foo\n/)
+  end
+
+  def test_name_error_info
+    obj = BasicObject.new
+    class << obj
+      alias object_id __id__
+      def pretty_inspect; "`obj'"; end
+    end
+    e = assert_raise(NameError) {
+      obj.instance_eval("Object")
+    }
+    assert_equal(:Object, e.name)
+    e = assert_raise(NameError) {
+      BasicObject::X
+    }
+    assert_same(BasicObject, e.receiver)
+    e = assert_raise(NameError) {
+      obj.instance_eval {foo}
+    }
+    assert_equal(:foo, e.name)
+    assert_same(obj, e.receiver)
+    e = assert_raise(NoMethodError) {
+      obj.foo(1, 2)
+    }
+    assert_equal(:foo, e.name)
+    assert_equal([1, 2], e.args)
+    assert_same(obj, e.receiver)
+    def obj.test(a, b=nil, *c, &d)
+      e = a
+      1.times {|f| g = foo}
+    end
+    e = assert_raise(NameError) {
+      obj.test(3)
+    }
+    assert_equal(:foo, e.name)
+    assert_same(obj, e.receiver)
+  end
+
+  def test_name_error_local_variables
+    obj = BasicObject.new
+    def obj.test(a, b=nil, *c, &d)
+      e = a
+      1.times {|f| g = foo}
+    end
+    e = assert_raise(NameError) {
+      obj.test(3)
+    }
+    assert_equal(%i[a b c d e f g], e.local_variables.sort)
+  end
+
+  def test_output_string_encoding
+    # "\x82\xa0" in cp932 is "\u3042" (Japanese hiragana 'a')
+    # change $stderr to force calling rb_io_write() instead of fwrite()
+    assert_in_out_err(["-Eutf-8:cp932"], '# coding: cp932
+$stderr = $stdout; raise "\x82\xa0"') do |outs, errs, status|
+      assert_equal 1, outs.size
+      assert_equal 0, errs.size
+      err = outs.first.force_encoding('utf-8')
+      assert err.valid_encoding?, 'must be valid encoding'
+      assert_match /\u3042/, err
+    end
+  end
+
+  def test_multibyte_and_newline
+    bug10727 = '[ruby-core:67473] [Bug #10727]'
+    assert_in_out_err([], <<-'end;', [], /\u{306b 307b 3093 3054} \(E\)\n\u{6539 884c}/, bug10727, encoding: "UTF-8")
+      class E < StandardError
+        def initialize
+          super("\u{306b 307b 3093 3054}\n\u{6539 884c}")
+        end
+      end
+      raise E
+    end;
+  end
+
+  def test_method_missing_reason_clear
+    bug10969 = '[ruby-core:68515] [Bug #10969]'
+    a = Class.new {def method_missing(*) super end}.new
+    assert_raise(NameError) {a.instance_eval("foo")}
+    assert_raise(NoMethodError, bug10969) {a.public_send("bar", true)}
+  end
+
+  def test_message_of_name_error
+    assert_raise_with_message(NameError, /\Aundefined method `foo' for module `#<Module:.*>'$/) do
+      Module.new do
+        module_function :foo
+      end
+    end
   end
 end

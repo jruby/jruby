@@ -29,7 +29,7 @@ VALUE range_spec_rb_range_values(VALUE self, VALUE range) {
 }
 #endif
 
-void Init_range_spec() {
+void Init_range_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiRangeSpecs", rb_cObject);
 

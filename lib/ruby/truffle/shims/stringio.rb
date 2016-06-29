@@ -17,7 +17,7 @@ class StringIO
   def gets
     line = @lines.shift
     line += "\n" unless line.nil?
-    Truffle::Primitive.binding_of_caller.local_variable_set(:$_, line)
+    Truffle.binding_of_caller.local_variable_set(:$_, line)
     line
   end
 

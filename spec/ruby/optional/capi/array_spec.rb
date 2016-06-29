@@ -42,11 +42,9 @@ describe "C-API Array function" do
     end
   end
 
-  ruby_version_is "2.1" do
-    describe "rb_ary_new_from_args" do
-      it "returns an array with the passed cardinality and varargs" do
-        @s.rb_ary_new_from_args(1,2,3).should == [1,2,3]
-      end
+  describe "rb_ary_new_from_args" do
+    it "returns an array with the passed cardinality and varargs" do
+      @s.rb_ary_new_from_args(1,2,3).should == [1,2,3]
     end
   end
 
@@ -213,6 +211,13 @@ describe "C-API Array function" do
   describe "RARRAY_LEN" do
     it "returns the size of the array" do
       @s.RARRAY_LEN([1, 2, 3]).should == 3
+    end
+  end
+
+  describe "RARRAY_AREF" do
+    # This macro does NOT do any bounds checking!
+    it "returns an element from the array" do
+      @s.RARRAY_AREF([1, 2, 3], 1).should == 2
     end
   end
 

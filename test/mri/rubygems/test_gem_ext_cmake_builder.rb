@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'rubygems/test_case'
 require 'rubygems/ext'
 
@@ -20,7 +21,7 @@ class TestGemExtCmakeBuilder < Gem::TestCase
   def test_self_build
     File.open File.join(@ext, 'CMakeLists.txt'), 'w' do |cmakelists|
       cmakelists.write <<-eo_cmake
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.6)
 install (FILES test.txt DESTINATION bin)
       eo_cmake
     end

@@ -17,14 +17,77 @@ class TestBacktraces < Test::Unit::TestCase
 
   import org.jruby.test.TestHelper
 
-  def test_java_backtrace
+  def test_native_java_backtrace
+    # TestHelperException extends RuntimeException
     TestHelper.throwTestHelperException
+    fail 'did no raise exception'
   rescue NativeException => ex
-    backtrace = ex.backtrace.join("\r\n")
+    assert_equal '#<NativeException: org.jruby.test.TestHelper$TestHelperException: null>', ex.inspect
+    assert_equal 'org.jruby.test.TestHelper$TestHelperException: null', ex.message
+    assert_not_nil ex.cause
+    assert_instance_of org.jruby.test.TestHelper::TestHelperException, ex.cause
 
-    if (!backtrace.include?("test_java_backtrace"))
+    # ex.backtrace.each { |b| puts b.inspect }
+
+    # starts with Java stack trace part :
+    _throwTestHelperException = /org.jruby.test.TestHelper\.java:\d+:in `throwTestHelperException'/
+    assert_match _throwTestHelperException, ex.backtrace[0]
+    java_trace = ex.backtrace.find_all do |trace|
+      trace =~ _throwTestHelperException
+    end
+    assert_equal 1, java_trace.length # only once!
+
+    _test_native_java_backtrace = /test\/jruby\/test_backtraces.rb:\d+:in `test_native_java_backtrace'/
+
+    ruby_trace = ex.backtrace.find_all do |trace|
+      trace =~ _test_native_java_backtrace
+    end
+    assert_equal 1, ruby_trace.length # only once!
+
+    backtrace = ex.backtrace.join("\r\n")
+    unless backtrace.include?('test_native_java_backtrace')
       flunk("test_java_backtrace not in backtrace")
     end
+  end
+
+  def test_native_java_backtrace2
+    # TestHelperException extends RuntimeException
+    sample_class = Java::JavaClass.for_name('org.jruby.javasupport.test.name.Sample')
+    constructor = sample_class.constructor(Java::int)
+    constructor.new_instance 0
+    begin
+      constructor.new_instance(-1)
+      fail 'did no raise exception'
+    rescue NativeException => ex
+      assert_equal 'java.lang.IllegalStateException: param == -1', ex.message
+      assert_equal '#<NativeException: java.lang.IllegalStateException: param == -1>', ex.inspect
+      assert_instance_of java.lang.IllegalStateException, ex.cause
+      # NOTE: backtrace will be messed in this case as long as there's filtering
+      # clases org.jruby.javasupport.test.name.Sample "org.jruby.javasupport" prefix is considered internal
+      # ex.backtrace.each { |b| puts "  #{b.inspect}" }
+    end
+  end
+
+  def test_java_backtrace
+    # TestHelperException extends RuntimeException
+    TestHelper.throwTestHelperException
+    fail 'did no raise exception'
+  rescue java.lang.Exception => ex
+    # assert_nil ex.message
+
+    # ex.backtrace.each { |b| puts b.inspect }
+
+    _throwTestHelperException = /org.jruby.test.TestHelper.throwTestHelperException/
+    assert_match _throwTestHelperException, ex.backtrace[0]
+    java_trace = ex.backtrace.find_all do |trace|
+      trace =~ _throwTestHelperException
+    end
+    assert_equal 1, java_trace.length # only once!
+
+    ruby_trace = ex.backtrace.find_all do |trace|
+      trace.index('test_java_backtrace') && trace =~ /test\/jruby\/test_backtraces.rb:\d+/
+    end
+    assert_equal 1, ruby_trace.length # only once!
   end
 
   def test_simple_exception_recursive
@@ -260,7 +323,7 @@ class TestBacktraces < Test::Unit::TestCase
         begin
           throwing.doRun( (i += 1) > 0 )
         rescue java.lang.Exception
-          assert e = $!.backtrace.find { |e| e.index('org.jruby.RubyFixnum.times') }
+          assert e = $!.backtrace.find { |e2| e2.index('org.jruby.RubyFixnum.times') }
           assert_equal fixnum_times_, e[ 0...fixnum_times_.size ]
           backtrace = $!.backtrace.dup
           raise
@@ -273,7 +336,7 @@ class TestBacktraces < Test::Unit::TestCase
     rescue java.lang.Exception
       # puts $!.backtrace
       # second rewriting of the same exception :
-      assert e = $!.backtrace.find { |e| e.index('org.jruby.RubyFixnum.times') }
+      assert e = $!.backtrace.find { |e2| e2.index('org.jruby.RubyFixnum.times') }
       assert_equal fixnum_times_, e[ 0...fixnum_times_.size ]
       # NOTE back-trace gets duplicate .rb calls - seems not necessary to fix?!
       # assert_equal backtrace, $!.backtrace # expect the same back-trace
@@ -304,7 +367,7 @@ class TestBacktraces < Test::Unit::TestCase
       line.strip!
 
       # if line starts with +nnn, we prepend the current file and offset
-      if line.match /^\+(\d+)(:.*)/
+      if line.match(/^\+(\d+)(:.*)/)
         flunk("@offset is not defined in the test case") unless @offset ||= nil
         # For JRuby, we soften this requirement, since native calls will
         # show their actual .java file and line, rather than the caller.

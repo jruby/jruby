@@ -1,1 +1,0 @@
-fails:Net::HTTPResponse#value raises an HTTP error for non 2xx HTTP Responses

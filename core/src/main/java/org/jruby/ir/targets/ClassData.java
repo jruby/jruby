@@ -81,10 +81,10 @@ abstract class ClassData {
 
     public ClassVisitor cls;
     public final String clsName;
-    Stack<MethodData> methodStack = new Stack();
-    public AtomicInteger callSiteCount = new AtomicInteger(0);
-    public Set<Integer> arrayMethodsDefined = new HashSet();
-    public Set<Integer> hashMethodsDefined = new HashSet();
-    public Set<Integer> kwargsHashMethodsDefined = new HashSet();
-    public Set<Integer> dregexpMethodsDefined = new HashSet();
+    final Stack<MethodData> methodStack = new Stack();
+    public final AtomicInteger callSiteCount = new AtomicInteger(0);
+    public final Set<Integer> arrayMethodsDefined = new HashSet(4, 1);
+    public final Set<Integer> hashMethodsDefined = new HashSet(4, 1);
+    public final Set<Integer> kwargsHashMethodsDefined = new HashSet(4, 1);
+    public final Set<Integer> dregexpMethodsDefined = new HashSet(4, 1);
 }

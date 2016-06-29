@@ -6,7 +6,7 @@ public class UsesSingleMethodInterface {
     public Object result;
     public UsesSingleMethodInterface() {
     }
-    
+
     // coercion during constructor call
     public UsesSingleMethodInterface(SingleMethodInterface obj) {
         result = obj.callIt();
@@ -24,7 +24,7 @@ public class UsesSingleMethodInterface {
     public UsesSingleMethodInterface(Object a, Object b, Object c, Object d, SingleMethodInterface obj) {
         result = obj.callIt();
     }
-    
+
     // coercion during static call
     public static Object callIt(SingleMethodInterface obj) {
         return obj.callIt();
@@ -45,7 +45,7 @@ public class UsesSingleMethodInterface {
     public static Object castAndCallIt(Object obj) {
         return callIt((SingleMethodInterface) obj);
     }
-    
+
     // coercion during instance call
     public Object callIt2(SingleMethodInterface obj) {
         return obj.callIt();
@@ -67,6 +67,7 @@ public class UsesSingleMethodInterface {
     public SingleMethodInterface callIt3(Callable callable) throws Exception {
         return (SingleMethodInterface) callable.call();
     }
+
     public static int hashCode(Object obj) {
         return obj.hashCode();
     }
@@ -78,4 +79,13 @@ public class UsesSingleMethodInterface {
     public static Class getClass(Object obj) {
         return obj.getClass();
     }
+
+    public static boolean equals(Object obj1, Object obj2) {
+        return obj1.equals(obj2);
+    }
+
+    //public static boolean equal(Object obj1, Object obj2) {
+    //    return obj1 == obj2;
+    //}
+
 }

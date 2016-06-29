@@ -351,10 +351,11 @@ public class RubyConverter extends RubyObject {
     @JRubyMethod
     public IRubyObject convert(ThreadContext context, IRubyObject srcBuffer) {
         Ruby runtime = context.runtime;
+        RubyString orig = srcBuffer.convertToString();
         IRubyObject dest;
 
         IRubyObject[] newArgs = {
-                srcBuffer.convertToString().dup(),
+                orig.dup(),
                 dest = runtime.newString(),
                 context.nil,
                 context.nil,
@@ -381,6 +382,8 @@ public class RubyConverter extends RubyObject {
                 throw runtime.newRuntimeError("bug: unexpected result of primitive_convert: " + retSym);
             }
         }
+
+        dest.infectBy(orig);
 
         return dest;
     }

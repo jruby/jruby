@@ -14,9 +14,13 @@ public class ArgumentDescriptor {
     public final String name;
 
     public static final ArgumentDescriptor[] EMPTY_ARRAY = new ArgumentDescriptor[0];
+    public static final ArgumentDescriptor[] ANON_REST = {new ArgumentDescriptor(ArgumentType.anonrest)};
 
     public ArgumentDescriptor(ArgumentType type, String name) {
-        assert name != null || type.anonymous : "null argument name given for non-anonymous argument type";
+        if (name == null && !type.anonymous) {
+            throw new RuntimeException("null argument name given for non-anonymous argument type");
+        }
+
         this.type = type;
         this.name = name;
     }

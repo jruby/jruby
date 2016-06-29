@@ -1,4 +1,0 @@
-fails:REXML::Element#namespaces returns a hash of the namespaces
-fails:REXML::Element#namespaces returns an empty hash if no namespaces exist
-fails:REXML::Element#namespaces uses namespace prefixes as keys
-fails:REXML::Element#namespaces uses namespace values as the hash values

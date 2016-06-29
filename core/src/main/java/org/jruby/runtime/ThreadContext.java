@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -69,11 +70,10 @@ import java.util.Set;
 
 public final class ThreadContext {
 
-    private static final Logger LOG = LoggerFactory.getLogger("ThreadContext");
+    private static final Logger LOG = LoggerFactory.getLogger(ThreadContext.class);
 
     public static ThreadContext newContext(Ruby runtime) {
-        ThreadContext context = new ThreadContext(runtime);
-        return context;
+        return new ThreadContext(runtime);
     }
 
     private final static int INITIAL_SIZE = 10;
@@ -91,7 +91,6 @@ public final class ThreadContext {
     private boolean isWithinTrace;
 
     private RubyThread thread;
-    private RubyThread rootThread; // thread for fiber purposes
     private static final WeakReference<ThreadFiber> NULL_FIBER_REF = new WeakReference<ThreadFiber>(null);
     private WeakReference<ThreadFiber> fiber = NULL_FIBER_REF;
     private ThreadFiber rootFiber; // hard anchor for root threads' fibers
@@ -133,22 +132,36 @@ public final class ThreadContext {
     private Block.Type currentBlockType; // See prepareBlockArgs code in IRRuntimeHelpers
     private Throwable savedExcInLambda;  // See handleBreakAndReturnsInLambda in IRRuntimeHelpers
 
-    public final SecureRandom secureRandom = getSecureRandom();
+    /**
+     * This fields is no longer initialized, is null by default!
+     * Use {@link #getSecureRandom()} instead.
+     * @deprecated
+     */
+    @Deprecated
+    public transient SecureRandom secureRandom;
 
     private static boolean trySHA1PRNG = true;
 
-    private static SecureRandom getSecureRandom() {
-        SecureRandom sr;
-        try {
-            sr = trySHA1PRNG ?
-                    SecureRandom.getInstance("SHA1PRNG") :
-                    new SecureRandom();
-        } catch (Exception e) {
-            trySHA1PRNG = false;
-            sr = new SecureRandom();
+    @SuppressWarnings("deprecated")
+    public SecureRandom getSecureRandom() {
+        SecureRandom secureRandom = this.secureRandom;
+        if (secureRandom == null) {
+            if (trySHA1PRNG) {
+                try {
+                    secureRandom = SecureRandom.getInstance("SHA1PRNG");
+                } catch (Exception e) {
+                    trySHA1PRNG = false;
+                }
+            }
+            if (secureRandom == null) {
+                secureRandom = new SecureRandom();
+            }
+            this.secureRandom = secureRandom;
         }
-        return sr;
+        return secureRandom;
     }
+
+    private Encoding[] encodingHolder;
 
     /**
      * Constructor for Context.
@@ -308,8 +321,7 @@ public final class ThreadContext {
     }
 
     public RubyThread getFiberCurrentThread() {
-        if (rootThread != null) return rootThread;
-        return thread;
+        return thread.getFiberCurrentThread();
     }
 
     public RubyDateFormatter getRubyDateFormatter() {
@@ -320,7 +332,6 @@ public final class ThreadContext {
 
     public void setThread(RubyThread thread) {
         this.thread = thread;
-        this.rootThread = thread; // may be reset by fiber
 
         // associate the thread with this context, unless we're clearing the reference
         if (thread != null) {
@@ -337,15 +348,11 @@ public final class ThreadContext {
     }
 
     public void setFiber(ThreadFiber fiber) {
-        this.fiber = new WeakReference(fiber);
+        this.fiber = new WeakReference<ThreadFiber>(fiber);
     }
 
     public void setRootFiber(ThreadFiber rootFiber) {
         this.rootFiber = rootFiber;
-    }
-
-    public void setRootThread(RubyThread rootThread) {
-        this.rootThread = rootThread;
     }
 
     //////////////////// CATCH MANAGEMENT ////////////////////////
@@ -663,20 +670,21 @@ public final class ThreadContext {
     public IRubyObject createCallerBacktrace(int level, Integer length, StackTraceElement[] stacktrace) {
         runtime.incrementCallerCount();
 
-        RubyStackTraceElement[] trace = getTraceSubset(level, length, stacktrace);
+        RubyStackTraceElement[] fullTrace = getFullTrace(length, stacktrace);
 
-        if (trace == null) return nil;
+        int traceLength = safeLength(level, length, fullTrace);
+        if (traceLength < 0) return nil;
 
-        RubyArray newTrace = runtime.newArray(trace.length);
+        final RubyClass stringClass = runtime.getString();
+        final IRubyObject[] traceArray = new IRubyObject[traceLength];
 
-        for (int i = level; i - level < trace.length; i++) {
-            RubyString str = RubyString.newString(runtime, trace[i - level].mriStyleString());
-            newTrace.append(str);
+        for (int i = 0; i < traceLength; i++) {
+            traceArray[i] = new RubyString(runtime, stringClass, fullTrace[i + level].mriStyleString());
         }
 
-        if (RubyInstanceConfig.LOG_CALLERS) TraceType.dumpCaller(newTrace);
-
-        return newTrace;
+        RubyArray backTrace = RubyArray.newArrayNoCopy(runtime, traceArray);
+        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
+        return backTrace;
     }
 
     /**
@@ -688,34 +696,25 @@ public final class ThreadContext {
      * @return an Array with the backtrace locations
      */
     public IRubyObject createCallerLocations(int level, Integer length, StackTraceElement[] stacktrace) {
-        RubyStackTraceElement[] trace = getTraceSubset(level, length, stacktrace);
-
-        if (trace == null) return nil;
-
-        return RubyThread.Location.newLocationArray(runtime, trace);
-    }
-
-    private RubyStackTraceElement[] getTraceSubset(int level, Integer length, StackTraceElement[] stacktrace) {
         runtime.incrementCallerCount();
 
+        RubyStackTraceElement[] fullTrace = getFullTrace(length, stacktrace);
+
+        int traceLength = safeLength(level, length, fullTrace);
+        if (traceLength < 0) return nil;
+
+        RubyArray backTrace = RubyThread.Location.newLocationArray(runtime, fullTrace, level, traceLength);
+        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
+        return backTrace;
+    }
+
+    private RubyStackTraceElement[] getFullTrace(Integer length, StackTraceElement[] stacktrace) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
-
-        RubyStackTraceElement[] trace =
-                TraceType.Gather.CALLER.getBacktraceData(this, stacktrace, false).getBacktrace(runtime);
-
-        int traceLength = safeLength(level, length, trace);
-
-        if (traceLength < 0) return null;
-
-        trace = Arrays.copyOfRange(trace, level, level + traceLength);
-
-        if (RubyInstanceConfig.LOG_CALLERS) TraceType.dumpCaller(trace);
-
-        return trace;
+        return TraceType.Gather.CALLER.getBacktraceData(this, stacktrace, false).getBacktrace(runtime);
     }
 
     private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
-        int baseLength = trace.length - level;
+        final int baseLength = trace.length - level;
         return length != null ? Math.min(length, baseLength) : baseLength;
     }
 
@@ -729,7 +728,7 @@ public final class ThreadContext {
 
         RubyStackTraceElement[] trace = gatherCallerBacktrace();
 
-        if (RubyInstanceConfig.LOG_WARNINGS) TraceType.dumpWarning(trace);
+        if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
 
         return trace;
     }
@@ -746,16 +745,24 @@ public final class ThreadContext {
         eventHooksEnabled = flag;
     }
 
-    /**
-     * Create an Array with backtrace information.
-     * @param level
-     * @param nativeException
-     * @return an Array with the backtrace
-     */
+    @Deprecated
     public BacktraceElement[] createBacktrace2(int level, boolean nativeException) {
-        BacktraceElement[] backtrace = this.backtrace;
-        BacktraceElement[] newTrace = new BacktraceElement[backtraceIndex + 1];
-        System.arraycopy(backtrace, 0, newTrace, 0, newTrace.length);
+        return getBacktrace();
+    }
+
+    /**
+     * Create a snapshot Array with current backtrace information.
+     * @return the backtrace
+     */
+    public BacktraceElement[] getBacktrace() {
+        return getBacktrace(0);
+    }
+
+    public final BacktraceElement[] getBacktrace(int level) {
+        final int len = backtraceIndex + 1;
+        if ( level < 0 ) level = len + level;
+        BacktraceElement[] newTrace = new BacktraceElement[len - level];
+        System.arraycopy(backtrace, level, newTrace, 0, newTrace.length);
         return newTrace;
     }
 
@@ -765,7 +772,7 @@ public final class ThreadContext {
         if (javaStackTrace == null || javaStackTrace.length == 0) return "";
 
         return TraceType.printBacktraceJRuby(
-                new BacktraceData(javaStackTrace, new BacktraceElement[0], true, false, false).getBacktraceWithoutRuby(),
+                new BacktraceData(javaStackTrace, BacktraceElement.EMPTY_ARRAY, true, false, false).getBacktraceWithoutRuby(),
                 ex.getClass().getName(),
                 ex.getLocalizedMessage(),
                 color);
@@ -826,6 +833,10 @@ public final class ThreadContext {
 
     public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, Block block) {
         pushCallFrame(clazz, name, self, block);
+    }
+
+    public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self) {
+        pushCallFrame(clazz, name, self, Block.NULL_BLOCK);
     }
 
     public void postMethodFrameOnly() {
@@ -1069,10 +1080,8 @@ public final class ThreadContext {
     }
 
     public int profileEnter(String name, DynamicMethod nextMethod) {
-        if (isProfiling()) {
-            // TODO This can be removed, because the profiled method will be added in the MethodEnhancer if necessary
-            getRuntime().getProfiledMethods().addProfiledMethod( name, nextMethod );
-        }
+        // profiled method is added in the MethodEnhancer (if necessary)
+        // @see BuiltinProfilingService.DefaultMethodEnhancer
         return profileEnter((int) nextMethod.getSerialNumber());
     }
 
@@ -1097,17 +1106,22 @@ public final class ThreadContext {
         this.exceptionRequiresBacktrace = exceptionRequiresBacktrace;
     }
 
-    @Deprecated
-    public void setFile(String file) {
-        backtrace[backtraceIndex].filename = file;
-    }
-
     private Set<RecursiveComparator.Pair> recursiveSet;
 
     // Do we have to generate a backtrace when we generate an exception on this thread or can we
     // MAYBE omit creating the backtrace for the exception (only some rescue forms and only for
     // descendents of StandardError are eligible).
     public boolean exceptionRequiresBacktrace = true;
+
+    public Encoding[] encodingHolder() {
+        if (encodingHolder == null) encodingHolder = new Encoding[1];
+        return encodingHolder;
+    }
+
+    @Deprecated
+    public void setFile(String file) {
+        backtrace[backtraceIndex].filename = file;
+    }
 
     @Deprecated
     private org.jruby.util.RubyDateFormat dateFormat;

@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Hash#clone" do
   it "copies instance variable but not the objects they refer to" do
-    hash = new_hash('key' => 'value')
+    hash = { 'key' => 'value' }
 
     clone = hash.clone
 

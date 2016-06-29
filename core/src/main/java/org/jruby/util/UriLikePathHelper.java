@@ -30,9 +30,9 @@ import java.net.URL;
 
 public class UriLikePathHelper {
     
-    private final GetResources loader;
+    private final Loader loader;
 
-    public UriLikePathHelper(GetResources loader) {
+    public UriLikePathHelper(Loader loader) {
         this.loader = loader;
     }
 

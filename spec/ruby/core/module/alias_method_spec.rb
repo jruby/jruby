@@ -38,9 +38,10 @@ describe "Module#alias_method" do
   end
 
   it "fails if origin method not found" do
-    lambda { @class.make_alias :ni, :san }.should raise_error(NameError)
-    # a NameError and not a NoMethodError
-    lambda { @class.make_alias :ni, :san }.should_not raise_error(NoMethodError)
+    lambda { @class.make_alias :ni, :san }.should raise_error(NameError) { |e|
+      # a NameError and not a NoMethodError
+      e.class.should == NameError
+    }
   end
 
   it "raises RuntimeError if frozen" do
@@ -89,6 +90,10 @@ describe "Module#alias_method" do
 
   it "can call a method with super aliased twice" do
     ModuleSpecs::AliasingSuper::Target.new.super_call(1).should == 1
+  end
+
+  it "preserves original super call after alias redefine" do
+    ModuleSpecs::AliasingSuper::RedefineAfterAlias.new.alias_super_call(1).should == 1
   end
 
   describe "aliasing special methods" do

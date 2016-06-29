@@ -1,6 +1,4 @@
 fails:Time.at passed Numeric returns a subclass instance on a Time subclass
 fails:Time.at passed Time returns a subclass instance
-fails:Time.at passed [Integer, Numeric] returns a Time object representing the given number of seconds and Float microseconds since 1970-01-01 00:00:00 UTC
-fails(travis):Time.at passed Numeric returns a non-UTC Time
-fails(travis):Time.at passed Time returns a non-UTC time if the argument is non-UTC
 fails:Time.at passed Numeric roundtrips a Rational produced by #to_r
+fails:Time.at passed Numeric passed BigDecimal doesn't round input value

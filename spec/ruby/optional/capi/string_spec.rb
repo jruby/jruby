@@ -502,54 +502,6 @@ describe "C-API String function" do
       @s.rb_str_update("hello", 2, 3, "wuh").should == "hewuh"
     end
   end
-
-  extended_on :rubinius do
-    describe "rb_str_ptr" do
-      it "returns struct with a pointer to the string's contents" do
-        str = "xyz"
-        chars = []
-        @s.rb_str_ptr_iterate(str) do |c|
-          chars << c
-        end
-        chars.should == [120, 121, 122]
-      end
-
-      it "allows changing the characters in the string" do
-        str = "abc"
-        @s.rb_str_ptr_assign(str, 70)
-        str.should == "FFF"
-      end
-
-      it "allows changing the string and calling a rb_str_xxx function" do
-        str = "abc"
-        @s.rb_str_ptr_assign_call(str)
-        str.should == "axcd"
-      end
-
-      it "allows changing the string and calling a method via rb_funcall" do
-        str = "abc"
-        @s.rb_str_ptr_assign_funcall(str)
-        str.should == "axce"
-      end
-    end
-
-    describe "rb_str_ptr_readonly" do
-      it "returns struct with a pointer to the string's contents" do
-        str = "xyz"
-        chars = []
-        @s.rb_str_ptr_readonly_iterate(str) do |c|
-          chars << c
-        end
-        chars.should == [120, 121, 122]
-      end
-    end
-
-    describe "rb_str_len" do
-      it "returns the string's length" do
-        @s.rb_str_len("dewdrops").should == 8
-      end
-    end
-  end
 end
 
 describe "rb_str_free" do

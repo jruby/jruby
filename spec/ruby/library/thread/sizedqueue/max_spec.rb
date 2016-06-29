@@ -22,21 +22,9 @@ describe "Thread::SizedQueue#max=" do
     @sized_queue.max.should == 10
   end
 
-  ruby_version_is ""..."2.1" do
-    it "raises a NoMethodError when a value without #>" do
-      lambda { @sized_queue.max = Object.new }.should raise_error(NoMethodError)
-    end
-
-    it "raises an ArgumentError for values not comparable to a number" do
-      lambda { @sized_queue.max = "foo" }.should raise_error(ArgumentError)
-    end
-  end
-
-  ruby_version_is "2.1" do
-    it "raises a TypeError when given a non-numeric value" do
-      lambda { @sized_queue.max = "foo" }.should raise_error(TypeError)
-      lambda { @sized_queue.max = Object.new }.should raise_error(TypeError)
-    end
+  it "raises a TypeError when given a non-numeric value" do
+    lambda { @sized_queue.max = "foo" }.should raise_error(TypeError)
+    lambda { @sized_queue.max = Object.new }.should raise_error(TypeError)
   end
 
   it "raises an argument error when set to zero" do

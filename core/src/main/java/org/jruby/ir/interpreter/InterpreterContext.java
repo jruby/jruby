@@ -1,6 +1,8 @@
 package org.jruby.ir.interpreter;
 
 import java.util.List;
+import java.util.concurrent.Callable;
+
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
@@ -11,6 +13,7 @@ import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 
 public class InterpreterContext {
@@ -21,18 +24,35 @@ public class InterpreterContext {
     protected Instr[] instructions;
 
     // Cached computed fields
-    private final boolean hasExplicitCallProtocol;
-    private final boolean pushNewDynScope;
-    private final boolean reuseParentDynScope;
-    private final boolean popDynScope;
-    private final boolean receivesKeywordArguments;
-    private final boolean metaClassBodyScope;
+    private boolean hasExplicitCallProtocol;
+    private boolean pushNewDynScope;
+    private boolean reuseParentDynScope;
+    private boolean popDynScope;
+    private boolean receivesKeywordArguments;
+    private boolean metaClassBodyScope;
 
     private final static InterpreterEngine BODY_INTERPRETER = new BodyInterpreterEngine();
     private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
     private final static InterpreterEngine STARTUP_INTERPRETER = new StartupInterpreterEngine();
     private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
-    public final InterpreterEngine engine;
+
+    public InterpreterEngine getEngine() {
+        if (engine == null) {
+            try {
+                List<Instr> instrs = instructionsCallback.call();
+                instructions = instrs != null ? prepareBuildInstructions(instrs) : null;
+            } catch (Exception e) {
+                Helpers.throwException(e);
+            }
+            // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
+            // For impl testing - engine = determineInterpreterEngine(scope);
+            setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
+        }
+        return engine;
+    }
+
+    private InterpreterEngine engine;
+    public Callable<List<Instr>> instructionsCallback;
 
     // Which version of this method does this information represent (currently unused but intended for comparison
     // of a profiled optimization against a different version)
@@ -46,11 +66,21 @@ public class InterpreterContext {
 
         // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
         // For impl testing - engine = determineInterpreterEngine(scope);
-        engine = instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER;
+        setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
-        this.temporaryVariablecount = scope.getTemporaryVariablesCount();
         this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
+    }
+
+    public InterpreterContext(IRScope scope, Callable<List<Instr>> instructions) throws Exception {
+        this.instructionsCallback = instructions;
+        this.scope = scope;
+
+        this.metaClassBodyScope = scope instanceof IRMetaClassBody;
+    }
+
+    private void retrieveFlags() {
+        this.temporaryVariablecount = scope.getTemporaryVariablesCount();
         this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         // FIXME: Centralize this out of InterpreterContext
         this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
@@ -131,6 +161,9 @@ public class InterpreterContext {
     }
 
     public Instr[] getInstructions() {
+        if (instructions == null) {
+            getEngine();
+        }
         return instructions;
     }
 
@@ -214,5 +247,11 @@ public class InterpreterContext {
 
     public int getVersion() {
         return version;
+    }
+    
+    public void setEngine(InterpreterEngine engine) {
+        this.engine = engine;
+
+        retrieveFlags();
     }
 }

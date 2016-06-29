@@ -65,15 +65,17 @@ describe "Time#localtime" do
     t.utc_offset.should == -3600
   end
 
-  it "changes the timezone according to the set one" do
-    t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
-    t.utc_offset.should == -3600
+  platform_is_not :windows do
+    it "changes the timezone according to the set one" do
+      t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
+      t.utc_offset.should == -3600
 
-    with_timezone("America/New_York") do
-      t.localtime
+      with_timezone("America/New_York") do
+        t.localtime
+      end
+
+      t.utc_offset.should == -18000
     end
-
-    t.utc_offset.should == -18000
   end
 
   describe "with an argument that responds to #to_str" do

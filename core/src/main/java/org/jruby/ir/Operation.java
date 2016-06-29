@@ -65,6 +65,7 @@ public enum Operation {
     CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     NORESULT_CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     ATTR_ASSIGN(OpFlags.f_is_call | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    ARRAY_DEREF(OpFlags.f_is_call | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     CLASS_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     INSTANCE_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     UNRESOLVED_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
@@ -74,6 +75,7 @@ public enum Operation {
     CALL_1F(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_1D(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    CALL_2O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_1OB(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_0O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     NORESULT_CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
@@ -88,10 +90,12 @@ public enum Operation {
 
     /** returns -- returns unwind stack, etc. */
     RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
-    NONLOCAL_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
-    /* BREAK is a return because it can only be used within closures
+    /* These two insructions use exceptions to exit closures
+     * BREAK is a return because it can only be used within closures
      * and the net result is to return from the closure. */
-    BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return),
+    NONLOCAL_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return | OpFlags.f_can_raise_exception),
+    BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return | OpFlags.f_can_raise_exception),
+    RETURN_OR_RETHROW_SAVED_EXC(OpFlags.f_has_side_effect | OpFlags.f_is_return),
 
     /** defines **/
     ALIAS(OpFlags.f_has_side_effect| OpFlags.f_modifies_code | OpFlags.f_can_raise_exception),
@@ -117,6 +121,7 @@ public enum Operation {
     INHERITANCE_SEARCH_CONST(OpFlags.f_can_raise_exception),
     CONST_MISSING(OpFlags.f_can_raise_exception),
     SEARCH_CONST(OpFlags.f_can_raise_exception),
+    SEARCH_MODULE_FOR_CONST(OpFlags.f_can_raise_exception),
 
     GET_GLOBAL_VAR(OpFlags.f_is_load),
     GET_FIELD(OpFlags.f_is_load),
@@ -139,14 +144,15 @@ public enum Operation {
 
     /** JRuby-impl instructions **/
     ARG_SCOPE_DEPTH(0),
+    BACKTICK_STRING(OpFlags.f_can_raise_exception),
     BINDING_LOAD(OpFlags.f_is_load),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
+    BUILD_BACKREF(OpFlags.f_can_raise_exception),
     BUILD_COMPOUND_ARRAY(OpFlags.f_can_raise_exception),
     BUILD_COMPOUND_STRING(OpFlags.f_can_raise_exception),
     BUILD_DREGEXP(OpFlags.f_can_raise_exception),
     BUILD_RANGE(OpFlags.f_can_raise_exception),
     BUILD_SPLAT(OpFlags.f_can_raise_exception),
-    BACKTICK_STRING(OpFlags.f_can_raise_exception),
     CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
     CHECK_FOR_LJE(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
@@ -213,14 +219,13 @@ public enum Operation {
     POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     SAVE_BINDING_VIZ(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     RESTORE_BINDING_VIZ(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    RETHROW_SAVED_EXC_IN_LAMBDA(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     TOGGLE_BACKTRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     UPDATE_BLOCK_STATE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
 
-    PREPARE_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    PREPARE_SINGLE_BLOCK_ARG(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    PREPARE_FIXED_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
+    PREPARE_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    PREPARE_SINGLE_BLOCK_ARG(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    PREPARE_FIXED_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception);
 
     public final OpClass opClass;
     private int flags;
@@ -323,7 +328,13 @@ public enum Operation {
         return name().toLowerCase();
     }
 
+    private static final Operation[] VALUES = values();
+
     public static Operation fromOrdinal(int value) {
-        return value < 0 || value >= values().length ? null : values()[value];
+        if (value < 0 || value >= VALUES.length) {
+            throw new RuntimeException("invalid ordinal: " + value);
+        } else {
+            return VALUES[value];
+        }
     }
 }

@@ -63,7 +63,7 @@ import org.jruby.util.log.LoggerFactory;
 @Deprecated
 public class ChannelStream implements Stream, Finalizable {
 
-    private static final Logger LOG = LoggerFactory.getLogger("ChannelStream");
+    private static final Logger LOG = LoggerFactory.getLogger(ChannelStream.class);
 
     private final static boolean DEBUG = false;
 
@@ -152,7 +152,7 @@ public class ChannelStream implements Stream, Finalizable {
     public ModeFlags getModes() {
     	return modes;
     }
-    
+
     public void setModes(ModeFlags modes) {
         this.modes = modes;
     }
@@ -168,7 +168,7 @@ public class ChannelStream implements Stream, Finalizable {
     public void setBinmode() {
         // No-op here, no binmode handling needed.
     }
-    
+
     public boolean isBinmode() {
         return false;
     }
@@ -193,15 +193,15 @@ public class ChannelStream implements Stream, Finalizable {
         }
     }
 
-    public boolean readDataBuffered() {
-        return reading && (hasUngotChars() || buffer.hasRemaining());
+    public final boolean readDataBuffered() {
+        return hasBufferedInputBytes();
     }
 
     private boolean hasUngotChars() {
         return ungotChars.length() > 0;
     }
 
-    public boolean writeDataBuffered() {
+    public final boolean writeDataBuffered() {
         return !reading && buffer.position() > 0;
     }
 
@@ -308,7 +308,7 @@ public class ChannelStream implements Stream, Finalizable {
 
         int totalRead = 0;
         boolean found = false;
-        
+
         if (hasUngotChars()) {
             for(int i = 0; i < ungotChars.length(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
@@ -318,7 +318,7 @@ public class ChannelStream implements Stream, Finalizable {
             }
             clearUngotChars();
         }
-        
+
         while (!found) {
             final byte[] bytes = buffer.array();
             final int begin = buffer.arrayOffset() + buffer.position();
@@ -352,7 +352,7 @@ public class ChannelStream implements Stream, Finalizable {
 
         int totalRead = 0;
         boolean found = false;
-        
+
         if (hasUngotChars()) {
             for(int i = 0; i < ungotChars.length(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
@@ -363,7 +363,7 @@ public class ChannelStream implements Stream, Finalizable {
             }
             clearUngotChars();
         }
-        
+
         while (!found) {
             final byte[] bytes = buffer.array();
             final int begin = buffer.arrayOffset() + buffer.position();
@@ -393,7 +393,7 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     /**
-     * 
+     *
      */
     private void clearUngotChars() {
         if(ungotChars.length() > 0) {
@@ -494,7 +494,7 @@ public class ChannelStream implements Stream, Finalizable {
      */
     private final int copyBufferedBytes(ByteBuffer dst) {
         final int bytesToCopy = dst.remaining();
-        
+
         if (hasUngotChars() && dst.hasRemaining()) {
             for(int i = 0; i < ungotChars.length(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
@@ -533,7 +533,7 @@ public class ChannelStream implements Stream, Finalizable {
      */
     private final int copyBufferedBytes(byte[] dst, int off, int len) {
         int bytesCopied = 0;
-        
+
         if (hasUngotChars() && len > 0) {
             for(int i = 0; i < ungotChars.length(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
@@ -561,7 +561,7 @@ public class ChannelStream implements Stream, Finalizable {
         int bytesCopied = 0;
 
         dst.ensure(Math.min(len, bufferedInputBytesRemaining()));
-        
+
         if (hasUngotChars() && hasUngotChars()) {
             for(int i = 0; i < ungotChars.length(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
@@ -1208,7 +1208,7 @@ public class ChannelStream implements Stream, Finalizable {
     @Override
     public void finalize() throws Throwable {
         super.finalize();
-        
+
         if (closedExplicitly) return;
 
         if (DEBUG) {

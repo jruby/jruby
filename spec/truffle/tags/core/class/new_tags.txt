@@ -1,3 +1,1 @@
-fails:Class.new with a block given runs the inherited hook after yielding the block
 fails:Class.new raises a TypeError if passed a metaclass
-fails:Class#new passes the block to #initialize

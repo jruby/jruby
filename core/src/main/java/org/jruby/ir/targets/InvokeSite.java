@@ -4,6 +4,7 @@ import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
+import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -17,6 +18,7 @@ import org.jruby.ir.JIT;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -54,7 +56,7 @@ public abstract class InvokeSite extends MutableCallSite {
     private boolean boundOnce;
     CacheEntry cache = CacheEntry.NULL_CACHE;
 
-    private static final Logger LOG = LoggerFactory.getLogger("InvokeSite");
+    private static final Logger LOG = LoggerFactory.getLogger(InvokeSite.class);
 
     public String name() {
         return methodName;
@@ -128,9 +130,9 @@ public abstract class InvokeSite extends MutableCallSite {
             return callMethodMissing(entry, callType, context, self, methodName, args, block);
         }
 
-        MethodHandle mh = getHandle(selfClass, this, method);
+        MethodHandle mh = getHandle(self, selfClass, method);
 
-        updateInvocationTarget(mh, self, selfClass, entry, switchPoint);
+        updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
 
         return method.call(context, self, selfClass, methodName, args, block);
     }
@@ -182,15 +184,43 @@ public abstract class InvokeSite extends MutableCallSite {
         return binder.binder();
     }
 
-    MethodHandle getHandle(RubyClass dispatchClass, InvokeSite site, DynamicMethod method) throws Throwable {
+    MethodHandle getHandle(IRubyObject self, RubyClass dispatchClass, DynamicMethod method) throws Throwable {
         boolean blockGiven = signature.lastArgType() == Block.class;
 
-        MethodHandle mh = Bootstrap.buildNativeHandle(site, method, blockGiven);
-        if (mh == null) mh = Bootstrap.buildIndyHandle(site, method, method.getImplementationClass());
-        if (mh == null) mh = Bootstrap.buildJittedHandle(site, method, blockGiven);
-        if (mh == null) mh = Bootstrap.buildGenericHandle(site, method, dispatchClass);
+        MethodHandle mh = buildNewInstanceHandle(method, self, blockGiven);
+        if (mh == null) mh = Bootstrap.buildNativeHandle(this, method, blockGiven);
+        if (mh == null) mh = Bootstrap.buildIndyHandle(this, method, method.getImplementationClass());
+        if (mh == null) mh = Bootstrap.buildJittedHandle(this, method, blockGiven);
+        if (mh == null) mh = Bootstrap.buildAttrHandle(this, method, self, dispatchClass);
+        if (mh == null) mh = Bootstrap.buildGenericHandle(this, method, dispatchClass);
 
         assert mh != null : "we should have a method handle of some sort by now";
+
+        return mh;
+    }
+
+    MethodHandle buildNewInstanceHandle(DynamicMethod method, IRubyObject self, boolean blockGiven) {
+        MethodHandle mh = null;
+
+        if (method == self.getRuntime().getBaseNewMethod()) {
+            RubyClass recvClass = (RubyClass) self;
+
+            // Bind a second site as a dynamic invoker to guard against changes in new object's type
+            CallSite initSite = SelfInvokeSite.bootstrap(lookup(), "callFunctional:initialize", type());
+            MethodHandle initHandle = initSite.dynamicInvoker();
+
+            MethodHandle allocFilter = Binder.from(IRubyObject.class, IRubyObject.class)
+                    .cast(IRubyObject.class, RubyClass.class)
+                    .insert(0, new Class[] {ObjectAllocator.class, Ruby.class}, recvClass.getAllocator(), self.getRuntime())
+                    .invokeVirtualQuiet(lookup(), "allocate");
+
+            mh = SmartBinder.from(lookup(), signature)
+                    .filter("self", allocFilter)
+                    .fold("dummy", initHandle)
+                    .permute("self")
+                    .identity()
+                    .handle();
+        }
 
         return mh;
     }
@@ -200,7 +230,7 @@ public abstract class InvokeSite extends MutableCallSite {
      * guard and argument-juggling logic. Return a handle suitable for invoking
      * with the site's original method type.
      */
-    MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, CacheEntry entry, SwitchPoint switchPoint) {
+    MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, DynamicMethod method, SwitchPoint switchPoint) {
         if (target == null ||
                 clearCount > Options.INVOKEDYNAMIC_MAXFAIL.load() ||
                 (!hasSeenType(testClass.id)
@@ -213,7 +243,7 @@ public abstract class InvokeSite extends MutableCallSite {
             // if we've cached no types, and the site is bound and we haven't seen this new type...
             if (seenTypesCount() > 0 && getTarget() != null && !hasSeenType(testClass.id)) {
                 // stack it up into a PIC
-                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\tadded to PIC " + logMethod(entry.method));
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\tadded to PIC " + logMethod(method));
                 fallback = getTarget();
             } else {
                 // wipe out site with this new type and method

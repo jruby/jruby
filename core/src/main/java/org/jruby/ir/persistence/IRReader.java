@@ -9,6 +9,7 @@ package org.jruby.ir.persistence;
 import org.jruby.EvalType;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.*;
+import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
@@ -17,7 +18,10 @@ import org.jruby.runtime.Signature;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+
 import org.jruby.util.KeyValuePair;
 
 /**
@@ -25,7 +29,7 @@ import org.jruby.util.KeyValuePair;
  * @author enebo
  */
 public class IRReader implements IRPersistenceValues {
-    public static IRScope load(IRManager manager, IRReaderDecoder file) throws IOException {
+    public static IRScope load(IRManager manager, final IRReaderDecoder file) throws IOException {
         int version = file.decodeIntRaw();
 
         if (version != VERSION) {
@@ -48,10 +52,24 @@ public class IRReader implements IRPersistenceValues {
 
         // Lifecycle woes.  All IRScopes need to exist before we can decodeInstrs.
         for (KeyValuePair<IRScope, Integer> pair: scopes) {
-            IRScope scope = pair.getKey();
-            int instructionsOffset = pair.getValue();
+            final IRScope scope = pair.getKey();
+            final int instructionsOffset = pair.getValue();
 
-            scope.allocateInterpreterContext(file.decodeInstructionsAt(scope, instructionsOffset));
+//            System.out.println("lazy");
+            scope.allocateInterpreterContext(new Callable<List<Instr>>() {
+                @Override
+                public List<Instr> call() throws Exception {
+//                    System.out.println("eager");
+                    return file.decodeInstructionsAt(scope, instructionsOffset);
+                }
+            });
+        }
+
+        // Run through all scopes again and ensure they've calculated flags.
+        // This also forces lazy instrs from above to eagerly decode.
+        for (KeyValuePair<IRScope, Integer> pair: scopes) {
+            final IRScope scope = pair.getKey();
+            scope.computeScopeFlags();
         }
 
         return scopes[0].getKey(); // topmost scope;
@@ -139,9 +157,9 @@ public class IRReader implements IRPersistenceValues {
         case METACLASS_BODY:
             return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName(), line, staticScope);
         case INSTANCE_METHOD:
-            return new IRMethod(manager, lexicalParent, null, name, true, line, staticScope);
+            return new IRMethod(manager, lexicalParent, null, name, true, line, staticScope, false);
         case CLASS_METHOD:
-            return new IRMethod(manager, lexicalParent, null, name, false, line, staticScope);
+            return new IRMethod(manager, lexicalParent, null, name, false, line, staticScope, false);
         case MODULE_BODY:
             return new IRModuleBody(manager, lexicalParent, name, line, staticScope);
         case SCRIPT_BODY:

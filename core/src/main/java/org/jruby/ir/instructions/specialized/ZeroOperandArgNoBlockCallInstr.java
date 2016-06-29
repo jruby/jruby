@@ -31,9 +31,4 @@ public class ZeroOperandArgNoBlockCallInstr extends CallInstr {
 
         return getCallSite().call(context, self, object);
     }
-
-    @Override
-    public void visit(IRVisitor visitor) {
-        visitor.ZeroOperandArgNoBlockCallInstr(this);
-    }
 }

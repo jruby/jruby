@@ -1,7 +1,7 @@
 module HashSpecs
-  class MyHash < hash_class; end
+  class MyHash < Hash; end
 
-  class MyInitializerHash < hash_class
+  class MyInitializerHash < Hash
 
     def initialize
       raise "Constructor called"
@@ -9,7 +9,7 @@ module HashSpecs
 
   end
 
-  class NewHash < hash_class
+  class NewHash < Hash
     def initialize(*args)
       args.each_with_index do |val, index|
         self[index] = val
@@ -17,15 +17,15 @@ module HashSpecs
     end
   end
 
-  class DefaultHash < hash_class
+  class DefaultHash < Hash
     def default(key)
       100
     end
   end
 
-  class ToHashHash < hash_class
+  class ToHashHash < Hash
     def to_hash
-      new_hash "to_hash" => "was", "called!" => "duh."
+      { "to_hash" => "was", "called!" => "duh." }
     end
   end
 
@@ -33,14 +33,20 @@ module HashSpecs
     private :hash
   end
 
+  class ByIdentityKey
+    def hash
+      fail("#hash should not be called on compare_by_identity Hash")
+    end
+  end
+
   def self.empty_frozen_hash
-    @empty ||= new_hash
+    @empty ||= {}
     @empty.freeze
     @empty
   end
 
   def self.frozen_hash
-    @hash ||= new_hash(1 => 2, 3 => 4)
+    @hash ||= { 1 => 2, 3 => 4 }
     @hash.freeze
     @hash
   end

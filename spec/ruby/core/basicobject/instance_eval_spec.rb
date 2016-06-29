@@ -150,4 +150,22 @@ end
       (1 << 64).instance_eval { def foo; end }
     end.should raise_error(TypeError)
   end
+
+  it "evaluates procs originating from methods" do
+    def meth(arg); arg; end
+
+    m = method(:meth)
+    obj = Object.new
+
+    obj.instance_eval(&m).should == obj
+  end
+
+  it "evaluates string with given filename and linenumber" do
+    err = begin
+      Object.new.instance_eval("raise", "a_file", 10)
+    rescue => e
+      e
+    end
+    err.backtrace.first.split(":")[0..1].should == ["a_file", "10"]
+  end
 end

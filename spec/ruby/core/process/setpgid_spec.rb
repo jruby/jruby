@@ -14,12 +14,15 @@ describe "Process.setpgid" do
 
       rd.close
 
-      Process.getpgid(pid).should == Process.getpgrp
-      Process.setpgid(mock_int(pid), mock_int(pid)).should == 0
-      Process.getpgid(pid).should == pid
-
-      wr.write ' '
-      wr.close
+      begin
+        Process.getpgid(pid).should == Process.getpgrp
+        Process.setpgid(mock_int(pid), mock_int(pid)).should == 0
+        Process.getpgid(pid).should == pid
+      ensure
+        wr.write ' '
+        wr.close
+        Process.wait pid
+      end
     end
   end
 end

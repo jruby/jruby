@@ -7,17 +7,34 @@ describe "java package (and class)" do
 
   it 'have name' do
     expect( Java::JavaLang::Integer.name ).to eql 'Java::JavaLang::Integer'
-    #expect( Java::JavaLang.name ).to eql 'Java::JavaLang'
-    #expect( Java::Java.name ).to eql 'Java::Java'
-    #expect( Java::Javax.name ).to eql 'Java::Javax'
+    expect( Java::JavaLang.name ).to eql 'Java::JavaLang'
+    expect( Java::Java.name ).to eql 'Java::Java'
+    expect( Java::Javax.name ).to eql 'Java::Javax'
     expect( Java.name ).to eql 'Java'
-    #expect( Java::java.util.name ).to eql 'Java::JavaUtil'
-    #expect( org.xml.name ).to eql 'Java:OrgXml'
-    #expect( org.xml.sax.name ).to eql 'Java:OrgXmlSax'
+    expect( Java::java.util.name ).to eql 'Java::JavaUtil'
+    expect( org.xml.name ).to eql 'Java::OrgXml'
+    expect( org.xml.sax.name ).to eql 'Java::OrgXmlSax'
     #expect( Java::Default.name ).to eql ''
     # TODO avoid Default package in favor of Java :
     #expect( Java::DefaultPackageClass.name ).to eql 'Java::DefaultPackageClass'
     expect( Java::DefaultPackageClass.name ).to eql 'Java::Default::DefaultPackageClass'
+  end
+
+  it 'handles Kernel methods' do
+    expect( Java::JavaLang::Integer.to_s ).to eql 'Java::JavaLang::Integer'
+    expect( Java::JavaLang.to_s ).to eql 'java.lang'
+    expect( Java::Java.inspect ).to eql 'Java::Java'
+    expect( Java::Javax.inspect ).to eql 'Java::Javax'
+    expect( Java.inspect ).to eql 'Java'
+    expect( Java::java.util.inspect ).to eql 'Java::JavaUtil'
+    expect( org.xml.object_id ).to be_a Fixnum
+    expect( org.xml.sax.singleton_class ).to be_a Class
+    expect( org.xml == org.xml.sax ).to be false
+    expect( org.xml.eql? Java::org::xml ).to be true
+    expect( Java::OrgXmlSax.equal?org.xml.sax ).to be true
+    expect( Java::OrgXmlSax === org.xml.sax ).to be true
+    expect( Java::OrgXml === org.xml.sax ).to be false
+    expect( Java::OrgXml === org ).to be false
   end
 
   it 'have package name' do
@@ -45,8 +62,10 @@ describe "java package (and class)" do
     expect( org.xml.sax.respond_to?(:name) ).to be true
     expect( Java::Default.respond_to?(:name) ).to be true
 
-    if Object.const_defined?(:JavaPackageModuleTemplate) # should go-away in 9K
-      expect( JavaPackageModuleTemplate.respond_to?(:name) ).to be true
+    quiet do
+      if Object.const_defined?(:JavaPackageModuleTemplate) # should go-away in 9K
+        expect( JavaPackageModuleTemplate.respond_to?(:name) ).to be true
+      end
     end
   end
 

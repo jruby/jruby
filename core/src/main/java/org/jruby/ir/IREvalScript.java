@@ -2,6 +2,8 @@ package org.jruby.ir;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+
 import org.jruby.EvalType;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.interpreter.BeginEndInterpreterContext;
@@ -9,6 +11,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Helpers;
 
 public class IREvalScript extends IRClosure {
     private List<IRClosure> beginBlocks;
@@ -39,6 +42,17 @@ public class IREvalScript extends IRClosure {
     @Override
     public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
         interpreterContext =  new BeginEndInterpreterContext(this, instructions);
+
+        return interpreterContext;
+    }
+
+    @Override
+    public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
+        try {
+            interpreterContext = new BeginEndInterpreterContext(this, instructions);
+        } catch (Exception e) {
+            Helpers.throwException(e);
+        }
 
         return interpreterContext;
     }

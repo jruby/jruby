@@ -32,9 +32,7 @@ import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyHash;
 import org.jruby.RubyString;
-import org.jruby.ext.ripper.RipperLexer.LexState;
 import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.StackState;
@@ -139,7 +137,9 @@ public class RipperParserBase {
             }
         } else if (javaName.charAt(0) == '$') { // MRI: ID_GLOBAL
             return name;
-        } 
+        }
+
+        currentScope.assign(null, javaName.intern(), null);
         
         return name;
     }
@@ -186,8 +186,7 @@ public class RipperParserBase {
     
     // FIXME: Consider removing identifier.
     public boolean is_id_var(IRubyObject identifier) {
-        String ident = lexer.getIdent();
-        ident.intern();
+        String ident = lexer.getIdent().intern();
         char c = ident.charAt(0);
         
         if (c == '$' || c == '@' || Character.toUpperCase(c) == c) return true;
@@ -269,6 +268,20 @@ public class RipperParserBase {
     public void pushLocalScope() {
         currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope);
     }
+
+    public int getHeredocIndent() {
+        return lexer.getHeredocIndent();
+    }
+
+    public void setHeredocIndent(int indent) {
+        lexer.setHeredocIndent(indent);
+    }
+
+    public void heredoc_dedent(IRubyObject array) {
+        if (lexer.getHeredocIndent() <= 0) return;
+
+        dispatch("on_heredoc_dedent", array, getRuntime().newFixnum(lexer.getHeredocIndent()));
+    }
     
     public void setCommandStart(boolean value) {
         lexer.commandStart = value;
@@ -282,9 +295,9 @@ public class RipperParserBase {
         StaticScope current = getCurrentScope();
         if (current.isBlockScope()) {
             if (current.exists(name) >= 0) yyerror("duplicated argument name");
-            
-            if (lexer.isVerbose() && current.isDefined(name) >= 0) {
-                lexer.warning("shadowing outer local variable - " + name);
+
+            if (current.isDefined(name) >= 0) {
+                lexer.warning("shadowing outer local variable - %s", name);
             }
         } else if (current.exists(name) >= 0) {
             yyerror("duplicated argument name");
@@ -360,7 +373,7 @@ public class RipperParserBase {
         return lexer.getBraceNest();
     }
 
-    public LexState getState() {
+    public int getState() {
         return lexer.getState();
     }
 
@@ -368,7 +381,7 @@ public class RipperParserBase {
         lexer.setBraceNest(braceNest);
     }
 
-    public void setState(LexState lexState) {
+    public void setState(int lexState) {
         lexer.setState(lexState);
     }
 

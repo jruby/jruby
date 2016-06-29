@@ -1,3 +1,4 @@
+# @private
 module JavaUtilities
   def self.extend_proxy(java_class_name, &block)
     java_class = JavaUtilities.get_proxy_class(java_class_name)

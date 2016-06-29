@@ -4,7 +4,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 ruby_version_is "2.3" do
   describe "Hash#fetch_values" do
     before :each do
-      @hash = new_hash a: 1, b: 2, c: 3
+      @hash = { a: 1, b: 2, c: 3 }
     end
 
     describe "with matched keys" do

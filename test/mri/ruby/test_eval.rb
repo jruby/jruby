@@ -1,5 +1,5 @@
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 
 class TestEval < Test::Unit::TestCase
 
@@ -127,6 +127,10 @@ class TestEval < Test::Unit::TestCase
     }
   end
 
+  def test_module_eval_block_symbol
+    assert_equal "Math", Math.module_eval(&:to_s)
+  end
+
   def forall_TYPE
     objects = [Object.new, [], nil, true, false] # TODO: check
     objects.each do |obj|
@@ -188,6 +192,21 @@ class TestEval < Test::Unit::TestCase
         assert_equal 14,  o.instance_eval { $gvar__eval }
         assert_equal 15,  o.instance_eval { Const }
       }
+    end
+  end
+
+  def test_instance_eval_block_self
+    # instance_eval(&block)'s self must not be sticky (jruby/jruby#2060)
+    pr = proc { self }
+    assert_equal self, pr.call
+    o = Object.new
+    assert_equal o, o.instance_eval(&pr)
+    assert_equal self, pr.call
+  end
+
+  def test_instance_eval_block_symbol
+    forall_TYPE do |o|
+      assert_equal o.to_s, o.instance_eval(&:to_s)
     end
   end
 

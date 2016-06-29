@@ -1,2 +1,0 @@
-fails:Net::HTTPFatalError is a subclass of Net::ProtoFatalError
-fails:Net::HTTPFatalError includes the Net::HTTPExceptions module

@@ -50,17 +50,17 @@ import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
+import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -69,7 +69,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class JITCompiler implements JITCompilerMBean {
-    private static final Logger LOG = LoggerFactory.getLogger("JITCompiler");
+    private static final Logger LOG = LoggerFactory.getLogger(JITCompiler.class);
 
     public static final String RUBY_JIT_PREFIX = "rubyjit";
 
@@ -186,9 +186,9 @@ public class JITCompiler implements JITCompilerMBean {
     private static final MethodHandles.Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup().in(Ruby.class);
 
     private class FullBuildTask implements Runnable {
-        private final Compilable method;
+        private final Compilable<InterpreterContext> method;
 
-        public FullBuildTask(Compilable method) {
+        FullBuildTask(Compilable<InterpreterContext> method) {
             this.method = method;
         }
 
@@ -235,12 +235,12 @@ public class JITCompiler implements JITCompilerMBean {
                     }
 
                     if ((config.getExcludedMethods().contains(excludeModuleName)
-                            || config.getExcludedMethods().contains(excludeModuleName + "#" + methodName)
+                            || config.getExcludedMethods().contains(excludeModuleName + '#' + methodName)
                             || config.getExcludedMethods().contains(methodName))) {
                         method.setCallCount(-1);
 
                         if (config.isJitLogging()) {
-                            log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "skipping method: " + excludeModuleName + "#" + methodName);
+                            log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "skipping method: " + excludeModuleName + '#' + methodName);
                         }
                         return;
                     }
@@ -279,16 +279,18 @@ public class JITCompiler implements JITCompilerMBean {
                 }
 
                 if (config.isJitLogging()) {
-                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + "." + methodName, "done jitting");
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + '.' + methodName, "done jitting");
                 }
 
-                Map<Integer, MethodType> signatures = context.getNativeSignatures();
-                String jittedName = context.getJittedName();
-                if (signatures.size() == 1) {
+                final String jittedName = context.getJittedName();
+                MethodHandle variable = PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, context.getNativeSignature(-1));
+                IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
+
+                if (signatures.size() == 0) {
                     // only variable-arity
                     method.completeBuild(
                             new CompiledIRMethod(
-                                    PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, signatures.get(-1)),
+                                    variable,
                                     method.getIRScope(),
                                     method.getVisibility(),
                                     method.getImplementationClass(),
@@ -296,24 +298,22 @@ public class JITCompiler implements JITCompilerMBean {
 
                 } else {
                     // also specific-arity
-                    for (Map.Entry<Integer, MethodType> entry : signatures.entrySet()) {
-                        if (entry.getKey() == -1) continue; // variable arity handle pushed above
-
+                    for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
                         method.completeBuild(
                                 new CompiledIRMethod(
-                                        PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, signatures.get(-1)),
+                                        variable,
                                         PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, entry.getValue()),
                                         entry.getKey(),
                                         method.getIRScope(),
                                         method.getVisibility(),
                                         method.getImplementationClass(),
                                         method.getIRScope().receivesKeywordArgs()));
-                        break;
+                        break; // FIXME: only supports one arity
                     }
                 }
             } catch (Throwable t) {
                 if (config.isJitLogging()) {
-                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + "." + methodName, "Could not compile; passes run: " + method.getIRScope().getExecutedPasses(), t.getMessage());
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + '.' + methodName, "Could not compile; passes run: " + method.getIRScope().getExecutedPasses(), t.getMessage());
                     if (config.isJitLoggingVerbose()) {
                         t.printStackTrace();
                     }
@@ -419,8 +419,8 @@ public class JITCompiler implements JITCompilerMBean {
             } else {
                 digestString = key;
             }
-            this.className = packageName + "/" + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + "_" + digestString;
-            this.name = this.className.replaceAll("/", ".");
+            this.className = packageName + '/' + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + '_' + digestString;
+            this.name = this.className.replace('/', '.');
             this.methodName = methodName;
             this.method = method;
             this.visitor = visitor;
@@ -446,6 +446,14 @@ public class JITCompiler implements JITCompilerMBean {
             // This may not be ok since we'll end up running passes specific to JIT
             // CON FIXME: Really should clone scope before passes in any case
             bytecode = visitor.compileToBytecode(method.getIRScope(), context);
+
+//            try {
+//                java.io.FileOutputStream fos = new java.io.FileOutputStream(className + '#' + methodName + ".class");
+//                fos.write(bytecode);
+//                fos.close();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
 
             compileTime = System.nanoTime() - start;
         }
@@ -478,7 +486,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         @Override
         public String toString() {
-            return methodName + "() at " + method.getFile() + ":" + method.getLine();
+            return methodName + "() at " + method.getFile() + ':' + method.getLine();
         }
 
         private final String packageName;
@@ -490,7 +498,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         private byte[] bytecode;
         private long compileTime;
-        private String name;
+        private final String name;
     }
 
     public static class BlockJITClassGenerator {
@@ -508,8 +516,8 @@ public class JITCompiler implements JITCompilerMBean {
             } else {
                 digestString = key;
             }
-            this.className = packageName + "/" + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + "_" + digestString;
-            this.name = this.className.replaceAll("/", ".");
+            this.className = packageName + '/' + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + '_' + digestString;
+            this.name = this.className.replace('/', '.');
             this.methodName = methodName;
             this.body = body;
             this.visitor = visitor;
@@ -565,7 +573,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         @Override
         public String toString() {
-            return "{} at " + body.getFile() + ":" + body.getLine();
+            return "{} at " + body.getFile() + ':' + body.getLine();
         }
 
         private final String packageName;
@@ -577,7 +585,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         private byte[] bytecode;
         private long compileTime;
-        private String name;
+        private final String name;
     }
 
     static void log(RubyModule implementationClass, String file, int line, String name, String message, String... reason) {
@@ -585,16 +593,14 @@ public class JITCompiler implements JITCompilerMBean {
         String className = isBlock ? "<block>" : implementationClass.getBaseName();
         if (className == null) className = "<anon class>";
 
-        name = isBlock ? "" : "." + name;
-
         StringBuilder builder = new StringBuilder(32);
-        builder.append(message).append(':').append(className).append(name).append(" at ").append(file).append(':').append(line);
+        builder.append(message).append(": ").append(className)
+               .append(' ').append(name == null ? "" : name)
+               .append(" at ").append(file).append(':').append(line);
 
         if (reason.length > 0) {
             builder.append(" because of: \"");
-            for (String aReason : reason) {
-                builder.append(aReason);
-            }
+            for (String aReason : reason) builder.append(aReason);
             builder.append('"');
         }
 

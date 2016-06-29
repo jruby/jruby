@@ -2,6 +2,7 @@ package org.jruby.ir;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import org.jruby.ast.DefNode;
 import org.jruby.ast.IterNode;
@@ -14,6 +15,7 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
@@ -75,16 +77,27 @@ public class IRClosure extends IRScope {
         this.signature = c.signature;
     }
 
-    // Used by iter + lambda by IRBuilder
+    // Used by persistence.  Knowledge of coverage not needed here since it is already instrumented into the instrs
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature) {
-        this(manager, lexicalParent, lineNumber, staticScope, signature, "_CLOSURE_");
+        this(manager, lexicalParent, lineNumber, staticScope, signature, "_CLOSURE_", false);
     }
+
+    // Used by iter + lambda by IRBuilder
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, boolean needsCoverage) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, "_CLOSURE_", false, needsCoverage);
+    }
+
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix) {
         this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, false);
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix, boolean isBeginEndBlock) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, isBeginEndBlock, false);
+    }
+
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope,
+                     Signature signature, String prefix, boolean isBeginEndBlock, boolean needsCoverage) {
         this(manager, lexicalParent, lineNumber, staticScope, prefix);
         this.signature = signature;
         lexicalParent.addClosure(this);
@@ -99,11 +112,25 @@ public class IRClosure extends IRScope {
                 staticScope.setScopeType(this.getScopeType());
             }
         }
+
+        if (needsCoverage) getFlags().add(IRFlags.CODE_COVERAGE);
     }
+
 
     @Override
     public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
         interpreterContext = new ClosureInterpreterContext(this, instructions);
+
+        return interpreterContext;
+    }
+
+    @Override
+    public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
+        try {
+            interpreterContext = new ClosureInterpreterContext(this, instructions);
+        } catch (Exception e) {
+            Helpers.throwException(e);
+        }
 
         return interpreterContext;
     }
@@ -192,7 +219,7 @@ public class IRClosure extends IRScope {
         DefNode def = source;
         source = null;
 
-        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLineNumber(), getStaticScope());
+        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLineNumber(), getStaticScope(), getFlags().contains(IRFlags.CODE_COVERAGE));
     }
 
     public void setSource(IterNode iter) {

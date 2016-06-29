@@ -8,7 +8,7 @@ import org.jruby.ir.operands.Variable;
  * Created by enebo on 7/28/15.
  */
 public abstract class NOperandResultBaseInstr extends ResultBaseInstr {
-    private Operand[] operands;
+    private transient Operand[] operands;
 
     public NOperandResultBaseInstr(Operation operation, Variable result, Operand[] operands) {
         super(operation, result);

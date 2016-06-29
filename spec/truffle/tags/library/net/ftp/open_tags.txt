@@ -1,6 +1,0 @@
-fails:Net::FTP.open when passed no block returns a new Net::FTP instance
-fails:Net::FTP.open when passed no block passes the passed arguments down to Net::FTP.new
-fails:Net::FTP.open when passed a block yields a new Net::FTP instance to the passed block
-fails:Net::FTP.open when passed a block closes the Net::FTP instance after yielding
-fails:Net::FTP.open when passed a block closes the Net::FTP instance even if an exception is raised while yielding
-fails:Net::FTP.open when passed a block returns the block's return value

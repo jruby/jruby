@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/bigdecimal/newton'
+require_relative '../../stdlib/bigdecimal/newton'

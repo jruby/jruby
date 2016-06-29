@@ -18,7 +18,7 @@ static VALUE fixnum_spec_rb_fix2int(VALUE self, VALUE value) {
 #endif
 
 
-void Init_fixnum_spec() {
+void Init_fixnum_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiFixnumSpecs", rb_cObject);
 

@@ -5,6 +5,7 @@ require File.expand_path('../fixtures/http_server', __FILE__)
 describe "Net::HTTP.post_form when passed URI" do
   before :each do
     NetHTTPSpecs.start_server
+    @port = NetHTTPSpecs.port
   end
 
   after :each do
@@ -12,7 +13,7 @@ describe "Net::HTTP.post_form when passed URI" do
   end
 
   it "POSTs the passed form data to the given uri" do
-    uri = URI.parse('http://localhost:3333/request/body')
+    uri = URI.parse("http://localhost:#{@port}/request/body")
     data = { test: :data }
 
     res = Net::HTTP.post_form(uri, data)

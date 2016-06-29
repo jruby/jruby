@@ -300,7 +300,7 @@ static VALUE thread_spec_rb_thread_create(VALUE self, VALUE proc, VALUE arg) {
 #endif
 
 
-void Init_thread_spec() {
+void Init_thread_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiThreadSpecs", rb_cObject);
 

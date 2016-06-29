@@ -1,7 +1,0 @@
-fails:Net::HTTPGenericRequest#exec when passed socket, version, path executes the request over the socket to the path using the HTTP version
-fails:Net::HTTPGenericRequest#exec when passed socket, version, path when a request body is set sets the 'Content-Type' header to 'application/x-www-form-urlencoded' unless the 'Content-Type' header is supplied
-fails:Net::HTTPGenericRequest#exec when passed socket, version, path when a request body is set correctly sets the 'Content-Length' header and includes the body
-fails:Net::HTTPGenericRequest#exec when passed socket, version, path when a body stream is set sets the 'Content-Type' header to 'application/x-www-form-urlencoded' unless the 'Content-Type' header is supplied
-fails:Net::HTTPGenericRequest#exec when passed socket, version, path when a body stream is set sends the whole stream, regardless of the 'Content-Length' header
-fails:Net::HTTPGenericRequest#exec when passed socket, version, path when a body stream is set sends the request in chunks when 'Transfer-Encoding' is set to 'chunked'
-fails:Net::HTTPGenericRequest#exec when passed socket, version, path when a body stream is set raises an ArgumentError when the 'Content-Length' is not set or 'Transfer-Encoding' is not set to 'chunked'

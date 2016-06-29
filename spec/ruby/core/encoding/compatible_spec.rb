@@ -126,6 +126,42 @@ with_feature :encoding do
         Encoding.compatible?(@str, @str).should == Encoding::UTF_8
       end
     end
+
+    describe "when the first String is empty and the second is not" do
+      describe "and the first's Encoding is ASCII compatible" do
+        before :each do
+          @str = "".force_encoding("utf-8")
+        end
+
+        it "returns the first's encoding when the second String is ASCII only" do
+          Encoding.compatible?(@str, "def".encode("us-ascii")).should == Encoding::UTF_8
+        end
+
+        it "returns the second's encoding when the second String is not ASCII only" do
+          Encoding.compatible?(@str, "def".encode("utf-32le")).should == Encoding::UTF_32LE
+        end
+      end
+
+      describe "when the first's Encoding is not ASCII compatible" do
+        before :each do
+          @str = "".force_encoding Encoding::UTF_7
+        end
+
+        it "returns the second string's encoding" do
+          Encoding.compatible?(@str, "def".encode("us-ascii")).should == Encoding::US_ASCII
+        end
+      end
+    end
+
+    describe "when the second String is empty" do
+      before :each do
+        @str = "abc".force_encoding("utf-7")
+      end
+
+      it "returns the first Encoding" do
+        Encoding.compatible?(@str, "").should == Encoding::UTF_7
+      end
+    end
   end
 
   describe "Encoding.compatible? String, Regexp" do
@@ -171,6 +207,37 @@ with_feature :encoding do
         [Encoding, "\xa4\xa2".force_encoding("euc-jp"),     Encoding::EUC_JP],
         [Encoding, "\x82\xa0".force_encoding("shift_jis"),  Encoding::Shift_JIS],
       ].should be_computed_by(:compatible?, :abc)
+    end
+  end
+
+  describe "Encoding.compatible? String, Encoding" do
+    it "returns nil if the String's encoding is not ASCII compatible" do
+      Encoding.compatible?("abc".encode("utf-32le"), Encoding::US_ASCII).should be_nil
+    end
+
+    it "returns nil if the Encoding is not ASCII compatible" do
+      Encoding.compatible?("abc".encode("us-ascii"), Encoding::UTF_32LE).should be_nil
+    end
+
+    it "returns the String's encoding if the Encoding is US-ASCII" do
+      [ [Encoding, "\xff",                                  Encoding::ASCII_8BIT],
+        [Encoding, "\u3042".encode("utf-8"),                Encoding::UTF_8],
+        [Encoding, "\xa4\xa2".force_encoding("euc-jp"),     Encoding::EUC_JP],
+        [Encoding, "\x82\xa0".force_encoding("shift_jis"),  Encoding::Shift_JIS],
+      ].should be_computed_by(:compatible?, Encoding::US_ASCII)
+    end
+
+    it "returns the Encoding if the String's encoding is ASCII compatible and the String is ASCII only" do
+      str = "abc".encode("utf-8")
+
+      Encoding.compatible?(str, Encoding::ASCII_8BIT).should == Encoding::ASCII_8BIT
+      Encoding.compatible?(str, Encoding::UTF_8).should == Encoding::UTF_8
+      Encoding.compatible?(str, Encoding::EUC_JP).should == Encoding::EUC_JP
+      Encoding.compatible?(str, Encoding::Shift_JIS).should == Encoding::Shift_JIS
+    end
+
+    it "returns nil if the String's encoding is ASCII compatible but the string is not ASCII only" do
+      Encoding.compatible?("\u3042".encode("utf-8"), Encoding::ASCII_8BIT).should be_nil
     end
   end
 

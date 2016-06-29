@@ -1,0 +1,43 @@
+fails:C-API Array function rb_Array returns obj wrapped in an array if it cannot be converted to an array
+fails:C-API Array function rb_ary_new4 returns returns an array with the passed values
+fails:C-API Array function rb_ary_join joins elements of an array with a string
+fails:C-API Array function rb_ary_to_s creates an Array literal representation as a String
+fails:C-API Array function rb_ary_reverse reverses the order of elements in the array
+fails:C-API Array function rb_ary_reverse returns the original array
+fails:C-API Array function rb_ary_clear removes all elements from the array
+fails:C-API Array function rb_ary_unshift prepends the element to the array
+fails:C-API Array function rb_ary_shift removes and returns the first element
+fails:C-API Array function rb_ary_shift returns nil when the array is empty
+fails:C-API Array function rb_ary_concat concats two arrays
+fails:C-API Array function rb_ary_plus adds two arrays together
+fails:C-API Array function RARRAY_PTR returns a pointer to a C array of the array's elements
+fails:C-API Array function RARRAY_PTR allows assigning to the elements of the C array
+fails:C-API Array function rb_assoc_new returns an array containing the two elements
+fails:C-API Array function rb_ary_includes returns true if the array includes the element
+fails:C-API Array function rb_ary_includes returns false if the array does not include the element
+fails:C-API Array function rb_ary_aref returns the element at the given index
+fails:C-API Array function rb_ary_aref returns nil for an out of range index
+fails:C-API Array function rb_ary_aref returns a new array where the first argument is the index and the second is the length
+fails:C-API Array function rb_ary_aref accepts a range
+fails:C-API Array function rb_ary_aref returns nil when the start of a range is out of bounds
+fails:C-API Array function rb_ary_aref returns an empty array when the start of a range equals the last element
+fails:C-API Array function rb_iterate calls an callback function as a block passed to an method
+fails:C-API Array function rb_iterate calls a function with the other function available as a block
+fails:C-API Array function rb_iterate calls a function which can yield into the original block
+fails:C-API Array function rb_ary_delete removes an element from an array and returns it
+fails:C-API Array function rb_ary_delete returns nil if the element is not in the array
+fails:C-API Array function rb_mem_clear sets elements of a C array to nil
+fails:C-API Array function rb_ary_freeze freezes the object exactly like Kernel#freeze
+fails:C-API Array function rb_ary_delete_at removes an element from an array at a positive index
+fails:C-API Array function rb_ary_delete_at removes an element from an array at a negative index
+fails:C-API Array function rb_ary_delete_at returns nil if the index is out of bounds
+fails:C-API Array function rb_ary_delete_at returns nil if the negative index is out of bounds
+fails:C-API Array function rb_ary_to_ary with an array returns the given array
+fails:C-API Array function rb_ary_to_ary with an object that responds to to_ary calls to_ary on the object
+fails:C-API Array function rb_ary_to_ary with an object that responds to to_a returns the original object in an array
+fails:C-API Array function rb_ary_to_ary with an object that doesn't respond to to_ary returns the original object in an array
+fails:C-API Array function rb_ary_subseq returns a subsequence of the given array
+fails:C-API Array function rb_ary_subseq returns an empty array for a subsequence of 0 elements
+fails:C-API Array function rb_ary_subseq returns nil if the begin index is out of bound
+fails:C-API Array function rb_ary_subseq returns the existing subsequence of the length is out of bounds
+fails:C-API Array function rb_ary_subseq returns nil if the size is negative

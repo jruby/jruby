@@ -1,0 +1,2 @@
+fails:BigDecimal#% raises TypeError if the argument cannot be coerced to BigDecimal
+fails:BigDecimal#modulo raises TypeError if the argument cannot be coerced to BigDecimal

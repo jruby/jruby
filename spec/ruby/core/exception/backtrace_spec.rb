@@ -23,7 +23,7 @@ describe "Exception#backtrace" do
   end
 
   it "includes the line number of the location where self raised in the first element" do
-    @backtrace.first.should =~ /:22:in /
+    @backtrace.first.should =~ /:7:in /
   end
 
   it "includes the name of the method from where self raised in the first element" do

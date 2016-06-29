@@ -1,2 +1,0 @@
-fails:ARGF.to_i returns the current file number on each file
-fails:ARGF.to_i raises an ArgumentError when called on a closed stream

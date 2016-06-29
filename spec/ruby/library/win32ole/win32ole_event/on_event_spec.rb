@@ -21,6 +21,7 @@ platform_is :windows do
       @event  = ''
       @event2 = ''
       @event3 = ''
+      @ole.StatusBar = true
     end
 
     after :each do

@@ -1,2 +1,0 @@
-fails:Net::HTTPRetriableError is a subclass of Net::ProtoRetriableError
-fails:Net::HTTPRetriableError includes the Net::HTTPExceptions module

@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'digest.so'
 
 module Digest
@@ -5,22 +6,24 @@ module Digest
   REQUIRE_MUTEX = Mutex.new
 
   def self.const_missing(name) # :nodoc:
-    case name
-    when :SHA256, :SHA384, :SHA512
-      lib = 'digest/sha2.so'
-    else
-      lib = File.join('digest', name.to_s.downcase)
-    end
+    Digest::REQUIRE_MUTEX.synchronize do
+      case name
+      when :SHA256, :SHA384, :SHA512
+        lib = 'digest/sha2.so'
+      else
+        lib = File.join('digest', name.to_s.downcase)
+      end
 
-    begin
-      require lib
-    rescue LoadError
-      raise LoadError, "library not found for class Digest::#{name} -- #{lib}", caller(1)
+      begin
+        require lib
+      rescue LoadError
+        raise LoadError, "library not found for class Digest::#{name} -- #{lib}", caller(1)
+      end
+      unless Digest.const_defined?(name)
+        raise NameError, "uninitialized constant Digest::#{name}", caller(1)
+      end
+      Digest.const_get(name)
     end
-    unless Digest.const_defined?(name)
-      raise NameError, "uninitialized constant Digest::#{name}", caller(1)
-    end
-    Digest.const_get(name)
   end
 
   class ::Digest::Class
@@ -94,10 +97,9 @@ end
 #   # => LoadError: library not found for class Digest::Foo -- digest/foo
 def Digest(name)
   const = name.to_sym
-  Digest::REQUIRE_MUTEX.synchronize {
-    # Ignore autoload's because it is void when we have #const_missing
-    Digest.const_missing(const)
-  }
+
+  # Ignore autoload's because it is void when we have #const_missing
+  Digest.const_missing(const)
 rescue LoadError
   # Constants do not necessarily rely on digest/*.
   if Digest.const_defined?(const)

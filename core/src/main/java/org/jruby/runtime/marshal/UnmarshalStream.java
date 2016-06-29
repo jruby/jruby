@@ -17,7 +17,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -44,6 +44,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
@@ -105,29 +106,29 @@ public class UnmarshalStream extends InputStream {
     // introduced for keeping ivar read state recursively.
     private static class MarshalState {
         private boolean ivarWaiting;
-        
+
         MarshalState(boolean ivarWaiting) {
             this.ivarWaiting = ivarWaiting;
         }
-        
+
         boolean isIvarWaiting() {
             return ivarWaiting;
         }
-        
+
         void setIvarWaiting(boolean ivarWaiting) {
             this.ivarWaiting = ivarWaiting;
         }
     }
-    
+
     // r_object0
-    public IRubyObject unmarshalObject(MarshalState state) throws IOException {
+    private IRubyObject unmarshalObject(MarshalState state) throws IOException {
         return unmarshalObject(state, true);
     }
 
     // r_object0
-    public IRubyObject unmarshalObject(MarshalState state, boolean callProc) throws IOException {
-        int type = readUnsignedByte();
-        IRubyObject result = null;
+    private IRubyObject unmarshalObject(MarshalState state, boolean callProc) throws IOException {
+        final int type = readUnsignedByte();
+        final IRubyObject result;
         if (cache.isLinkType(type)) {
             result = cache.readLink(this, type);
             if (callProc) return doCallProcForLink(result, type);
@@ -135,7 +136,12 @@ public class UnmarshalStream extends InputStream {
             result = unmarshalObjectDirectly(type, state, callProc);
         }
 
-        if (!(result instanceof RubyNumeric)) result.setTaint(taint);
+        if (!(
+                result instanceof RubyNumeric ||
+                result instanceof RubyEncoding
+        )) {
+            result.setTaint(taint);
+        }
 
         return result;
     }
@@ -147,15 +153,29 @@ public class UnmarshalStream extends InputStream {
     }
 
     public static RubyModule getModuleFromPath(Ruby runtime, String path) {
-        RubyModule value = runtime.getClassFromPath(path);
-        if (!value.isModule()) throw runtime.newArgumentError(path + " does not refer module");
+        final RubyModule value = getConstantFromPath(runtime, path);
+        if ( ! value.isModule() ) throw runtime.newArgumentError(path + " does not refer module");
         return value;
     }
 
     public static RubyClass getClassFromPath(Ruby runtime, String path) {
-        RubyModule value = runtime.getClassFromPath(path);
-        if (!value.isClass()) throw runtime.newArgumentError(path + " does not refer class");
-        return (RubyClass)value;
+        final RubyModule value = getConstantFromPath(runtime, path);
+        if ( ! value.isClass() ) throw runtime.newArgumentError(path + " does not refer class");
+        return (RubyClass) value;
+    }
+
+    private static RubyModule getConstantFromPath(Ruby runtime, String path) {
+        final RubyModule value;
+        try {
+            value = runtime.getClassFromPath(path);
+        }
+        catch (RaiseException e) {
+            if ( runtime.getModule("NameError").isInstance(e.getException()) ) {
+                throw runtime.newArgumentError("undefined class/module " + path);
+            }
+            throw e;
+        }
+        return value;
     }
 
     private IRubyObject doCallProcForLink(IRubyObject result, int type) {
@@ -226,20 +246,12 @@ public class UnmarshalStream extends InputStream {
                 break;
             case 'e':
                 RubySymbol moduleName = (RubySymbol) unmarshalObject();
-                RubyModule tp = null;
-                try {
-                    tp = runtime.getClassFromPath(moduleName.asJavaString());
-                } catch (RaiseException e) {
-                    if (runtime.getModule("NameError").isInstance(e.getException())) {
-                        throw runtime.newArgumentError("undefined class/module " + moduleName.asJavaString());
-                    } 
-                    throw e;
-                }
+                final RubyModule tp = getModuleFromPath(runtime, moduleName.asJavaString());
 
                 rubyObj = unmarshalObject();
 
                 tp.extend_object(rubyObj);
-                tp.callMethod(runtime.getCurrentContext(),"extended", rubyObj);
+                tp.callMethod(runtime.getCurrentContext(), "extended", rubyObj);
                 break;
             case 'l' :
                 rubyObj = RubyBignum.unmarshalFrom(this);
@@ -266,7 +278,7 @@ public class UnmarshalStream extends InputStream {
         if (callProc) {
             return doCallProcForObj(rubyObj);
         }
-        
+
         return rubyObj;
     }
 
@@ -337,18 +349,7 @@ public class UnmarshalStream extends InputStream {
     private IRubyObject defaultObjectUnmarshal() throws IOException {
         RubySymbol className = (RubySymbol) unmarshalObject(false);
 
-        RubyClass type = null;
-        try {
-            type = getClassFromPath(runtime, className.toString());
-        } catch (RaiseException e) {
-            if (runtime.getModule("NameError").isInstance(e.getException())) {
-                throw runtime.newArgumentError("undefined class/module " + className.asJavaString());
-            }
-
-            throw e;
-        }
-
-        assert type != null : "type shouldn't be null.";
+        RubyClass type = getClassFromPath(runtime, className.toString());
 
         IRubyObject result = (IRubyObject)type.unmarshal(this);
 
@@ -359,17 +360,17 @@ public class UnmarshalStream extends InputStream {
         int count = unmarshalInt();
 
         RubyClass cls = object.getMetaClass().getRealClass();
-        
+
         for (int i = 0; i < count; i++) {
-            
+
             IRubyObject key = unmarshalObject(false);
-            
-            if (runtime.is1_9() && object instanceof EncodingCapable) {
-                
+
+            if (object instanceof EncodingCapable) {
+
                 EncodingCapable strObj = (EncodingCapable)object;
 
                 if (key.asJavaString().equals(MarshalStream.SYMBOL_ENCODING_SPECIAL)) {
-                    
+
                     // special case for USASCII and UTF8
                     if (unmarshalObject().isTrue()) {
                         strObj.setEncoding(UTF8Encoding.INSTANCE);
@@ -377,9 +378,9 @@ public class UnmarshalStream extends InputStream {
                         strObj.setEncoding(USASCIIEncoding.INSTANCE);
                     }
                     continue;
-                    
+
                 } else if (key.asJavaString().equals("encoding")) {
-                    
+
                     IRubyObject encodingNameObj = unmarshalObject(false);
                     String encodingNameStr = encodingNameObj.asJavaString();
                     ByteList encodingName = new ByteList(ByteList.plain(encodingNameStr));
@@ -391,10 +392,10 @@ public class UnmarshalStream extends InputStream {
                     Encoding encoding = entry.getEncoding();
                     strObj.setEncoding(encoding);
                     continue;
-                    
+
                 } // else fall through as normal ivar
             }
-            
+
             String name = key.asJavaString();
             IRubyObject value = unmarshalObject();
 
@@ -405,7 +406,7 @@ public class UnmarshalStream extends InputStream {
     private IRubyObject uclassUnmarshall() throws IOException {
         RubySymbol className = (RubySymbol)unmarshalObject(false);
 
-        RubyClass type = (RubyClass)runtime.getClassFromPath(className.asJavaString());
+        RubyClass type = getClassFromPath(runtime, className.asJavaString());
 
         // singleton, raise error
         if (type.isSingleton()) throw runtime.newTypeError("singleton can't be loaded");
@@ -431,13 +432,23 @@ public class UnmarshalStream extends InputStream {
         String className = unmarshalObject(false).asJavaString();
         ByteList marshaled = unmarshalString();
         RubyClass classInstance = findClass(className);
-        RubyString data = RubyString.newString(getRuntime(), marshaled);
-        if (state.isIvarWaiting()) {
-            defaultVariablesUnmarshal(data);
-            state.setIvarWaiting(false);
+        RubyString data = RubyString.newString(runtime, marshaled);
+        IRubyObject unmarshaled;
+
+        // Special case Encoding so they are singletons
+        // See https://bugs.ruby-lang.org/issues/11760
+        if (classInstance == runtime.getEncoding()) {
+            unmarshaled = RubyEncoding.find(runtime.getCurrentContext(), classInstance, data);
+        } else {
+            if (state.isIvarWaiting()) {
+                defaultVariablesUnmarshal(data);
+                state.setIvarWaiting(false);
+            }
+            unmarshaled = classInstance.smartLoadOldUser(data);
         }
-        IRubyObject unmarshaled = classInstance.smartLoadOldUser(data);
+
         registerLinkTarget(unmarshaled);
+
         return unmarshaled;
     }
 
@@ -451,19 +462,7 @@ public class UnmarshalStream extends InputStream {
     }
 
     private RubyClass findClass(String className) {
-        RubyModule classInstance;
-        try {
-            classInstance = runtime.getClassFromPath(className);
-        } catch (RaiseException e) {
-            if (runtime.getModule("NameError").isInstance(e.getException())) {
-                throw runtime.newArgumentError("undefined class/module " + className);
-            } 
-            throw e;
-        }
-        if (! (classInstance instanceof RubyClass)) {
-            throw runtime.newArgumentError(className + " does not refer class"); // sic
-        }
-        return (RubyClass) classInstance;
+        return getClassFromPath(runtime, className);
     }
 
     public int read() throws IOException {

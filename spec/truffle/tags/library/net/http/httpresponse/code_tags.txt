@@ -1,1 +1,0 @@
-fails:Net::HTTPResponse#code returns the result code string

@@ -30,7 +30,7 @@ import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
 public class IRManager {
     public static final String SAFE_COMPILER_PASSES = "";
     public static final String DEFAULT_BUILD_PASSES = "";
-    public static final String DEFAULT_JIT_PASSES = "OptimizeDelegationPass,DeadCodeElimination,AddLocalVarLoadStoreInstructions,OptimizeDynScopesPass,AddCallProtocolInstructions,EnsureTempsAssigned";
+    public static final String DEFAULT_JIT_PASSES = "LocalOptimizationPass,DeadCodeElimination,OptimizeDynScopesPass,OptimizeDelegationPass,AddCallProtocolInstructions,AddMissingInitsPass";
     public static final String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
 
     private final CompilerPass deadCodeEliminationPass = new DeadCodeElimination();
@@ -52,7 +52,6 @@ public class IRManager {
 
     private InstructionsListener instrsListener = null;
     private IRScopeListener irScopeListener = null;
-
 
     // FIXME: Eventually make these attrs into either a) set b) part of state machine
     private List<CompilerPass> compilerPasses;
@@ -264,17 +263,6 @@ public class IRManager {
         }
 
         return tempVar;
-    }
-
-    public Instr[] optimizeTemporaryVariablesIfEnabled(IRScope scope, Instr[] instrs) {
-        // Local opts don't move instrs across basic-block boundaries
-        // and are safe to run before the opt-tmp-vars pass.
-        // This ensures that local opts aren't affected by RAW hazards.
-        (new LocalOptimizationPass()).runLocalOptsOnInstrArray(scope, instrs);
-        // FIXME: Make this check ir.passes and not run if ir.passes is set and does not contain opttempvars.
-        // FIXME: LOP + Opttempvars cannot cope with y,d = d,y it propagates the intermediate temp var away
-        //return OptimizeTempVarsPass.optimizeTmpVars(scope, instrs);
-        return instrs;
     }
 
     /**

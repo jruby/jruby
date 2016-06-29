@@ -1,3 +1,0 @@
-fails:Net::HTTP#started? returns true when self has been started
-fails:Net::HTTP#started? returns false when self has not been started yet
-fails:Net::HTTP#started? returns false when self has been stopped again

@@ -118,5 +118,12 @@ with_feature :encoding do
       str << "\xDD".force_encoding('utf-8')
       str.valid_encoding?.should be_false
     end
+
+    it "returns true if an invalid string is appended another invalid one but both make a valid string" do
+      str = "\xD0"
+      str.valid_encoding?.should be_false
+      str << "\xBF"
+      str.valid_encoding?.should be_true
+    end
   end
 end

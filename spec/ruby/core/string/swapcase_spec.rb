@@ -14,10 +14,12 @@ describe "String#swapcase" do
     "hello".taint.swapcase.tainted?.should == true
   end
 
-  it "is locale insensitive (only upcases a-z and only downcases A-Z)" do
-    "ÄÖÜ".swapcase.should == "ÄÖÜ"
-    "ärger".swapcase.should == "äRGER"
-    "BÄR".swapcase.should == "bÄr"
+  ruby_version_is ''...'2.4' do
+    it "is locale insensitive (only upcases a-z and only downcases A-Z)" do
+      "ÄÖÜ".swapcase.should == "ÄÖÜ"
+      "ärger".swapcase.should == "äRGER"
+      "BÄR".swapcase.should == "bÄr"
+    end
   end
 
   it "returns subclass instances when called on a subclass" do

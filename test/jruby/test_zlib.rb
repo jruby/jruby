@@ -7,7 +7,9 @@ require 'tempfile'
 class TestZlib < Test::Unit::TestCase
   include TestHelper
 
-  def teardown;  File.unlink @filename if @filename; end
+  def teardown
+    File.unlink @filename if defined?(@filename)
+  end
 
   def test_inflate_deflate
     s = "test comression string"
@@ -350,6 +352,7 @@ class TestZlib < Test::Unit::TestCase
     def z.buf
       @buf
     end
+    z.instance_variable_set(:@buf, nil)
     assert_nil z.buf
     Zlib::GzipWriter.wrap(z) { |io| io.write("hello") }
     assert_not_nil z.buf

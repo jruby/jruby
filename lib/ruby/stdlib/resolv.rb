@@ -1,6 +1,9 @@
+# frozen_string_literal: true
+
 require 'socket'
 require 'timeout'
 require 'thread'
+require 'io/wait'
 
 begin
   require 'securerandom'
@@ -670,7 +673,7 @@ class Resolv
       end
 
       def request(sender, tout)
-        start = Time.now
+        start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         timelimit = start + tout
         begin
           sender.send
@@ -679,14 +682,18 @@ class Resolv
           raise ResolvTimeout
         end
         while true
-          before_select = Time.now
+          before_select = Process.clock_gettime(Process::CLOCK_MONOTONIC)
           timeout = timelimit - before_select
           if timeout <= 0
             raise ResolvTimeout
           end
-          select_result = IO.select(@socks, nil, nil, timeout)
+          if @socks.size == 1
+            select_result = @socks[0].wait_readable(timeout) ? [ @socks ] : nil
+          else
+            select_result = IO.select(@socks, nil, nil, timeout)
+          end
           if !select_result
-            after_select = Time.now
+            after_select = Process.clock_gettime(Process::CLOCK_MONOTONIC)
             next if after_select < timelimit
             raise ResolvTimeout
           end
@@ -1174,7 +1181,9 @@ class Resolv
       class Str # :nodoc:
         def initialize(string)
           @string = string
-          @downcase = string.downcase
+          # case insensivity of DNS labels doesn't apply non-ASCII characters. [RFC 4343]
+          # This assumes @string is given in ASCII compatible encoding.
+          @downcase = string.b.downcase
         end
         attr_reader :string, :downcase
 
@@ -1187,7 +1196,7 @@ class Resolv
         end
 
         def ==(other)
-          return @downcase == other.downcase
+          return self.class == other.class && @downcase == other.downcase
         end
 
         def eql?(other)
@@ -1223,6 +1232,14 @@ class Resolv
       end
 
       def initialize(labels, absolute=true) # :nodoc:
+        labels = labels.map {|label|
+          case label
+          when String then Label::Str.new(label)
+          when Label::Str then label
+          else
+            raise ArgumentError, "unexpected label: #{label.inspect}"
+          end
+        }
         @labels = labels
         @absolute = absolute
       end
@@ -1415,7 +1432,7 @@ class Resolv
 
       class MessageEncoder # :nodoc:
         def initialize
-          @data = ''
+          @data = ''.dup
           @names = {}
           yield self
         end
@@ -1463,7 +1480,9 @@ class Resolv
               self.put_pack("n", 0xc000 | idx)
               return
             else
-              @names[domain] = @data.length
+              if @data.length < 0x4000
+                @names[domain] = @data.length
+              end
               self.put_label(d[i])
             end
           }

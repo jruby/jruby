@@ -107,12 +107,6 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     JRUBY_ALREADY_ADDED=true
 done
 
-# The Truffle jar always needs to be on the boot classpath, if it exists, so
-# that the VM can substitute classes.
-if [ -e "$JRUBY_HOME/lib/jruby-truffle.jar" ]; then
-  JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
-fi
-
 # ----- Set Up The System Classpath -------------------------------------------
 
 if [ "$JRUBY_PARENT_CLASSPATH" != "" ]; then
@@ -122,6 +116,9 @@ else
     # add other jars in lib to CP for command-line execution
     for j in "$JRUBY_HOME"/lib/*.jar; do
         if [ "$j" == "$JRUBY_HOME"/lib/jruby.jar ]; then
+          continue
+        fi
+        if [ "$j" == "$JRUBY_HOME"/lib/jruby-truffle.jar ]; then
           continue
         fi
         if [ "$j" == "$JRUBY_HOME"/lib/jruby-complete.jar ]; then
@@ -199,6 +196,12 @@ do
      # Pass -X... and -X? search options through
      -X*\.\.\.|-X*\?)
         ruby_args="${ruby_args} $1" ;;
+     -X+T)
+      echo "error: -X+T isn't supported in the shell launcher"
+      exit 1
+      ;;
+     -Xclassic)
+      ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
      val=${1:2}

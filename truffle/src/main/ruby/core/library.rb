@@ -5,9 +5,7 @@
 # Eclipse Public License version 1.0
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
-#
-# Contains code adapted from platform/library.rb in Rubinius
-#
+
 # Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -40,32 +38,20 @@
 
 module Rubinius::FFI::Library
 
-  def attach_function(name, a2, a3, a4=nil, a5=nil)
-    # Argument handling from Rubinius
-
-    if a4 && (a2.kind_of?(String) || a2.kind_of?(Symbol))
-      cname = a2.to_s
-      args = a3
-      ret = a4
-    else
-      cname = name.to_s
-      args = a2
-      ret = a3
-    end
-
+  def attach_function(name, _, _, _=nil, _=nil)
     mname = name.to_sym
 
     # The difference is we already have the methods available in our version of
     # the POSIX class
 
-    caller = Truffle::Primitive.source_of_caller
+    caller = Truffle::Boot.source_of_caller
 
-    suffixes = ['ruby/truffle/rubysl/rubysl-socket/lib/rubysl/socket.rb', 'core/rubinius/platform/env.rb']
+    suffixes = ['ruby/truffle/rubysl/rubysl-socket/lib/rubysl/socket.rb', 'core/env.rb']
 
     suffixes.each do |suffix|
       if caller[-suffix.length, suffix.length] == suffix
-        if Rubinius::FFI::Platform::POSIX.respond_to? mname
-          define_method mname, &Rubinius::FFI::Platform::POSIX.method(mname)
+        if Truffle::POSIX.respond_to? mname
+          define_method mname, &Truffle::POSIX.method(mname)
           module_function mname
           return
         end

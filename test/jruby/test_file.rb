@@ -98,6 +98,14 @@ class TestFile < Test::Unit::TestCase
     }
   end
 
+  # JRUBY-3849
+  def test_expand_path_encoding
+    assert_equal(Encoding.find('UTF-8'), File.expand_path('/'.force_encoding('UTF-8')).encoding)
+    assert_equal(Encoding.find('US-ASCII'), File.expand_path('/'.force_encoding('US-ASCII')).encoding)
+    assert_equal(Encoding.find('UTF-8'), File.expand_path(Pathname.new('/'.force_encoding('UTF-8'))).encoding)
+    assert_equal(Encoding.find('US-ASCII'), File.expand_path(Pathname.new('/'.force_encoding('US-ASCII'))).encoding)
+  end
+
   def test_expand_path_nil
     assert_raise(TypeError) { File.expand_path(nil) }
     assert_raise(TypeError) { File.expand_path(nil, "/") }
@@ -296,6 +304,7 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_as_jar_with_file_prefix
       jruby_specific_test
       assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/foo/bar")
+      assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/../foo/bar")
       assert_equal "file:/my.jar!/bar", File.expand_path("file:/my.jar!/foo/../bar")
       assert_equal "file:/my.jar!/foo/bar/baz", File.expand_path("baz", "file:/my.jar!/foo/bar")
       assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/foo/bar", "file:/my.jar!/baz/quux")
@@ -791,12 +800,12 @@ class TestFile < Test::Unit::TestCase
     Dir.mkdir(subdir)
     Dir.chdir(subdir) { |dir|
       begin
-        file = File.open("__dummy_file.txt", "wb") { |file|
-          file.write("dummy text")
-          file
-        }
+        file = File.open("__dummy_file.txt", "wb")
+        file.write("dummy text")
+        file.close
         assert_nothing_raised { File.truncate(file.path, 0) }
       ensure
+        file.close rescue nil
         File.unlink(file.path)
       end
     }

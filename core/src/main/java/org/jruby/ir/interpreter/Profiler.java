@@ -270,7 +270,7 @@ public class Profiler {
 
             if (methodToInline instanceof CompiledIRMethod) {
                 System.out.println("Inlining " + methodToInline.getName() + " into " + parentIC.getName());
-                IRScope scope = ((CompiledIRMethod) methodToInline).getIRMethod();
+                IRScope scope = ((CompiledIRMethod) methodToInline).getIRScope();
                 CallBase call;
                 // If we are in same batch of interesting callsites then the underlying scope has already
                 // cloned any other interesting callsites.

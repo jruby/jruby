@@ -1,0 +1,20 @@
+fails:CApiBignumSpecs rb_big2long converts a Bignum
+fails:CApiBignumSpecs rb_big2long raises RangeError if passed Bignum overflow long
+fails:CApiBignumSpecs rb_big2ll converts a Bignum
+fails:CApiBignumSpecs rb_big2ll raises RangeError if passed Bignum overflow long
+fails:CApiBignumSpecs rb_big2ulong converts a Bignum
+fails:CApiBignumSpecs rb_big2ulong wraps around if passed a negative bignum
+fails:CApiBignumSpecs rb_big2ulong raises RangeError if passed Bignum overflow long
+fails:CApiBignumSpecs rb_big2dbl converts a Bignum to a double value
+fails:CApiBignumSpecs rb_big2dbl returns Infinity if the number is too big for a double
+fails:CApiBignumSpecs rb_big2dbl returns -Infinity if the number is negative and too big for a double
+fails:CApiBignumSpecs rb_big2str converts a Bignum to a string with base 10
+fails:CApiBignumSpecs rb_big2str converts a Bignum to a string with a different base
+fails:CApiBignumSpecs rb_big_cmp compares a Bignum with a Bignum
+fails:CApiBignumSpecs rb_big_cmp compares a Bignum with a Fixnum
+fails:CApiBignumSpecs rb_big_pack packs a Bignum into a Fixnum
+fails:CApiBignumSpecs rb_dbl2big returns a Fixnum for a Fixnum input value
+fails:CApiBignumSpecs rb_dbl2big returns a Fixnum for a Float input value
+fails:CApiBignumSpecs rb_dbl2big returns a Bignum for a large enough Float input value
+fails:CApiBignumSpecs rb_dbl2big raises FloatDomainError for Infinity values
+fails:CApiBignumSpecs rb_dbl2big raises FloatDomainError for NaN values

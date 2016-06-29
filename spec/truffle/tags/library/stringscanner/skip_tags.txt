@@ -1,0 +1,2 @@
+graalvm:StringScanner#skip returns length of the match
+graalvm:StringScanner#skip returns nil if there's no match

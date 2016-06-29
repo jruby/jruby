@@ -1,1 +1,0 @@
-fails:Net::HTTPHeader#set_content_type when passed type, params sets the 'Content-Type' header entry based on the passed type and params

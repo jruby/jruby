@@ -1,2 +1,0 @@
-fails:Net::HTTPHeader#to_hash returns a Hash representing all Header entries (keys in lower case, values as arrays)
-fails:Net::HTTPHeader#to_hash does not allow modifying the headers from the returned hash

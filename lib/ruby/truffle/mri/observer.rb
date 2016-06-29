@@ -1,1 +1,1 @@
-require_relative '../../stdlib/observer'
+require_relative '../stdlib/observer'

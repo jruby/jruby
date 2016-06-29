@@ -17,7 +17,7 @@ describe :enumerator_lazy_to_enum, shared: true do
     ret.should_not equal(@infinite)
   end
 
-  it "sets nil to size when not given a block" do
+  it "sets #size to nil when not given a block" do
     enumerator_class::Lazy.new(Object.new, 100) {}.send(@method).size.should == nil
   end
 

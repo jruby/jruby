@@ -1,0 +1,105 @@
+fails:C-API String function rb_str_set_len reduces the size of the string
+fails:C-API String function rb_str_set_len inserts a NULL byte at the length
+fails:C-API String function rb_str_set_len updates the string's attributes visible in C code
+fails:C-API String function rb_str_buf_new returns the equivalent of an empty string
+fails:C-API String function rb_str_buf_new returns a string that can be appended to
+fails:C-API String function rb_str_buf_new returns a string that can be concatenated to another string
+fails:C-API String function rb_str_buf_new returns a string whose bytes can be accessed by RSTRING_PTR
+fails:C-API String function rb_str_buf_new returns a string that can be modified by rb_str_set_len
+fails:C-API String function rb_str_buf_new2 returns a new string object calling strlen on the passed C string
+fails:C-API String function rb_str_new returns a new string object from a char buffer of len characters
+fails:C-API String function rb_str_new returns an empty string if len is 0
+fails:C-API String function rb_str_new2 returns a new string object calling strlen on the passed C string
+fails:C-API String function rb_str_new2 encodes the string with ASCII_8BIT
+fails:C-API String function rb_str_new creates a new String with ASCII-8BIT Encoding
+fails:C-API String function rb_str_new_cstr returns a new string object calling strlen on the passed C string
+fails:C-API String function rb_str_new_cstr encodes the string with ASCII_8BIT
+fails:C-API String function rb_usascii_str_new creates a new String with US-ASCII Encoding from a char buffer of len characters
+fails:C-API String function rb_usascii_str_new_cstr creates a new String with US-ASCII Encoding
+fails:C-API String function rb_str_encode returns a String in the destination encoding
+fails:C-API String function rb_str_encode transcodes the String
+fails:C-API String function rb_str_encode returns a dup of the original String
+fails:C-API String function rb_str_encode returns a duplicate of the original when the encoding doesn't change
+fails:C-API String function rb_str_encode accepts encoding flags
+fails:C-API String function rb_str_encode accepts an encoding options Hash specifying replacement String
+fails:C-API String function rb_str_new3 returns a copy of the string
+fails:C-API String function rb_str_new4 returns the original string if it is already frozen
+fails:C-API String function rb_str_new4 returns a frozen copy of the string
+fails:C-API String function rb_str_dup returns a copy of the string
+fails:C-API String function rb_str_new5 returns a new string with the same class as the passed string
+fails:C-API String function rb_str_append appends a string to another string
+fails:C-API String function rb_str_append raises a TypeError trying to append non-String-like object
+fails:C-API String function rb_str_append changes Encoding if a string is appended to an empty string
+fails:C-API String function rb_str_plus returns a new string from concatenating two other strings
+fails:C-API String function rb_str_buf_cat concatenates a C string to a ruby string
+fails:C-API String function rb_str_cat concatenates a C string to ruby string
+fails:C-API String function rb_str_cat2 concatenates a C string to a ruby string
+fails:C-API String function rb_str_cmp returns 0 if two strings are identical
+fails:C-API String function rb_str_cmp returns -1 if the first string is shorter than the second
+fails:C-API String function rb_str_cmp returns -1 if the first string is lexically less than the second
+fails:C-API String function rb_str_cmp returns 1 if the first string is longer than the second
+fails:C-API String function rb_str_cmp returns 1 if the first string is lexically greater than the second
+fails:C-API String function rb_str_split splits strings over a splitter
+fails:C-API String function rb_str2inum converts a string to a number given a base
+fails:C-API String function rb_cstr2inum converts a C string to a Fixnum given a base
+fails:C-API String function rb_cstr2inum converts a C string to a Bignum given a base
+fails:C-API String function rb_cstr2inum converts a C string to a Fixnum non-strictly if base is not 0
+fails:C-API String function rb_cstr2inum converts a C string to a Fixnum strictly if base is 0
+fails:C-API String function rb_cstr_to_inum converts a C string to a Fixnum given a base
+fails:C-API String function rb_cstr_to_inum converts a C string to a Bignum given a base
+fails:C-API String function rb_cstr_to_inum converts a C string to a Fixnum non-strictly
+fails:C-API String function rb_cstr_to_inum converts a C string to a Fixnum strictly
+fails:C-API String function rb_str_subseq returns a byte-indexed substring
+fails:C-API String function rb_str_substr returns a substring
+fails:C-API String function rb_str_to_str calls #to_str to coerce the value to a String
+fails:C-API String function rb_str_to_str raises a TypeError if coercion fails
+fails:C-API String function RSTRING_LEN returns the size of the string
+fails:C-API String function RSTRING_LENINT returns the size of a string
+fails:C-API String function StringValue does not call #to_str on a String
+fails:C-API String function StringValue does not call #to_s on a String
+fails:C-API String function StringValue calls #to_str on non-String objects
+fails:C-API String function StringValue does not call #to_s on non-String objects
+fails:C-API String function rb_str_resize reduces the size of the string
+fails:C-API String function rb_str_resize updates the string's attributes visible in C code
+fails:C-API String function rb_str_resize increases the size of the string
+fails:C-API String function rb_str_inspect returns the equivalent of calling #inspect on the String
+fails:C-API String function rb_str_intern returns a symbol created from the string
+fails:C-API String function rb_str_intern returns a symbol even if passed an empty string
+fails:C-API String function rb_str_intern returns a symbol even if the passed string contains NULL characters
+fails:C-API String function rb_str_freeze freezes the string
+fails:C-API String function rb_str_hash hashes the string into a number
+fails:C-API String function rb_str_update splices the replacement string into the original at the given location
+fails:rb_str_free indicates data for a string might be freed
+fails:C-API String function rb_str_length returns the string's length
+fails:C-API String function rb_str_length counts characters in multi byte encodings
+fails:C-API String function rb_str_equal compares two same strings
+fails:C-API String function rb_str_equal compares two different strings
+fails:C-API String function rb_external_str_new returns a String in the default external encoding
+fails:C-API String function rb_external_str_new returns an ASCII-8BIT encoded string if any non-ascii bytes are present and default external is US-ASCII
+fails:C-API String function rb_external_str_new returns a tainted String
+fails:C-API String function rb_external_str_new_cstr returns a String in the default external encoding
+fails:C-API String function rb_external_str_new_cstr returns an ASCII-8BIT encoded string if any non-ascii bytes are present and default external is US-ASCII
+fails:C-API String function rb_external_str_new_cstr returns a tainted String
+fails:C-API String function rb_external_str_new_with_enc returns a String in the specified encoding
+fails:C-API String function rb_external_str_new_with_enc returns an ASCII-8BIT encoded String if any non-ascii bytes are present and the specified encoding is US-ASCII
+fails:C-API String function rb_external_str_new_with_enc transcodes a String to Encoding.default_internal if it is set
+fails:C-API String function rb_external_str_new_with_enc returns a tainted String
+fails:C-API String function rb_locale_str_new returns a String with 'locale' encoding
+fails:C-API String function rb_locale_str_new_cstr returns a String with 'locale' encoding
+fails:C-API String function rb_str_conv_enc returns the original String when to encoding is not specified
+fails:C-API String function rb_str_conv_enc returns the original String if a transcoding error occurs
+fails:C-API String function rb_str_conv_enc returns a transcoded String
+fails:C-API String function rb_str_conv_enc when the String encoding is equal to the destination encoding returns the original String
+fails:C-API String function rb_str_conv_enc when the String encoding is equal to the destination encoding returns the original String if the destination encoding is ASCII compatible and the String has no high bits set
+fails:C-API String function rb_str_conv_enc when the String encoding is equal to the destination encoding returns the origin String if the destination encoding is ASCII-8BIT
+fails:C-API String function rb_str_conv_enc_opts returns the original String when to encoding is not specified
+fails:C-API String function rb_str_conv_enc_opts returns the original String if a transcoding error occurs
+fails:C-API String function rb_str_conv_enc_opts returns a transcoded String
+fails:C-API String function rb_str_conv_enc_opts when the String encoding is equal to the destination encoding returns the original String
+fails:C-API String function rb_str_conv_enc_opts when the String encoding is equal to the destination encoding returns the original String if the destination encoding is ASCII compatible and the String has no high bits set
+fails:C-API String function rb_str_conv_enc_opts when the String encoding is equal to the destination encoding returns the origin String if the destination encoding is ASCII-8BIT
+fails:C-API String function rb_str_export returns the original String with the external encoding
+fails:C-API String function rb_str_export_locale returns the original String with the locale encoding
+fails:C-API String function rb_sprintf replaces the parts like sprintf
+fails:C-API String function rb_sprintf accepts multiple arguments
+fails:C-API String function rb_vsprintf returns a formatted String from a variable number of arguments

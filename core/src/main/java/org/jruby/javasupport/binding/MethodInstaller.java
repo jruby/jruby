@@ -1,5 +1,9 @@
 package org.jruby.javasupport.binding;
 
+import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.invokers.MethodInvoker;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +34,20 @@ public abstract class MethodInstaller extends NamedInstaller {
             aliases = this.aliases = new ArrayList<String>(4);
         }
         if ( ! aliases.contains(alias) ) aliases.add(alias);
+    }
+
+    protected void defineMethods(RubyModule target, DynamicMethod invoker, boolean checkDups) {
+        String oldName = this.name;
+        target.addMethod(oldName, invoker);
+
+        List<String> aliases = this.aliases;
+        if ( aliases != null && isPublic() ) {
+            for (int i = 0; i < aliases.size(); i++) {
+                String name = aliases.get(i);
+                if (checkDups && oldName.equals(name)) continue;
+                target.addMethod(name, invoker);
+            }
+        }
     }
 
     @Override

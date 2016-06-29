@@ -41,6 +41,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -237,7 +238,21 @@ public class RubyStringScanner extends RubyObject {
         return str.makeSharedString19(runtime, beg, len);
     }
 
-    private IRubyObject scan(IRubyObject regex, boolean succptr, boolean getstr, boolean headonly) {
+    ThreadLocal<Matcher> currentMatcher = new ThreadLocal<>();
+    RubyThread.Task<RubyStringScanner, Integer> task = new RubyThread.Task<RubyStringScanner, Integer>() {
+        @Override
+        public Integer run(ThreadContext context, RubyStringScanner rubyStringScanner) throws InterruptedException {
+            ByteList value = str.getByteList();
+            return currentMatcher.get().matchInterruptible(value.begin() + pos, value.begin() + value.realSize(), Option.NONE);
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, RubyStringScanner rubyStringScanner) {
+            thread.getNativeThread().interrupt();
+        }
+    };
+
+    private IRubyObject scan(ThreadContext context, IRubyObject regex, boolean succptr, boolean getstr, boolean headonly) {
         final Ruby runtime = getRuntime();
         if (!(regex instanceof RubyRegexp)) throw runtime.newTypeError("wrong argument type " + regex.getMetaClass() + " (expected Regexp)");
         check();
@@ -250,10 +265,15 @@ public class RubyStringScanner extends RubyObject {
 
         ByteList value = str.getByteList();
         Matcher matcher = pattern.matcher(value.getUnsafeBytes(), value.getBegin() + pos, value.getBegin() + value.getRealSize());
+        currentMatcher.set(matcher);
 
         final int ret;
         if (headonly) {
-            ret = RubyRegexp.matcherMatch(runtime, matcher, value.getBegin() + pos, value.getBegin() + value.getRealSize(), Option.NONE);
+            try {
+                ret = runtime.getCurrentContext().getThread().executeTask(context, this, task);
+            } catch (InterruptedException ie) {
+                throw runtime.newInterruptedRegexpError("Regexp Interrupted");
+            }
         } else {
             ret = RubyRegexp.matcherSearch(runtime, matcher, value.getBegin() + pos, value.getBegin() + value.getRealSize(), Option.NONE);
         }
@@ -276,53 +296,53 @@ public class RubyStringScanner extends RubyObject {
     }
 
     @JRubyMethod(name = "scan", required = 1)
-    public IRubyObject scan(IRubyObject regex) {
-        return scan(regex, true, true, true);
+    public IRubyObject scan(ThreadContext context, IRubyObject regex) {
+        return scan(context, regex, true, true, true);
     }
 
     @JRubyMethod(name = "match?", required = 1)
-    public IRubyObject match_p(IRubyObject regex) {
-        return scan(regex, false, false, true);
+    public IRubyObject match_p(ThreadContext context, IRubyObject regex) {
+        return scan(context, regex, false, false, true);
     }
 
     @JRubyMethod(name = "skip", required = 1)
-    public IRubyObject skip(IRubyObject regex) {
-        return scan(regex, true, false, true);
+    public IRubyObject skip(ThreadContext context, IRubyObject regex) {
+        return scan(context, regex, true, false, true);
     }
 
     @JRubyMethod(name = "check", required = 1)
-    public IRubyObject check(IRubyObject regex) {
-        return scan(regex, false, true, true);
+    public IRubyObject check(ThreadContext context, IRubyObject regex) {
+        return scan(context, regex, false, true, true);
     }
 
     @JRubyMethod(name = "scan_full", required = 3)
-    public IRubyObject scan_full(IRubyObject regex, IRubyObject s, IRubyObject f) {
-        return scan(regex, s.isTrue(), f.isTrue(), true);
+    public IRubyObject scan_full(ThreadContext context, IRubyObject regex, IRubyObject s, IRubyObject f) {
+        return scan(context, regex, s.isTrue(), f.isTrue(), true);
     }
 
     @JRubyMethod(name = "scan_until", required = 1)
-    public IRubyObject scan_until(IRubyObject regex) {
-        return scan(regex, true, true, false);
+    public IRubyObject scan_until(ThreadContext context, IRubyObject regex) {
+        return scan(context, regex, true, true, false);
     }
 
     @JRubyMethod(name = "exist?", required = 1)
-    public IRubyObject exist_p(IRubyObject regex) {
-        return scan(regex, false, false, false);
+    public IRubyObject exist_p(ThreadContext context, IRubyObject regex) {
+        return scan(context, regex, false, false, false);
     }
 
     @JRubyMethod(name = "skip_until", required = 1)
-    public IRubyObject skip_until(IRubyObject regex) {
-        return scan(regex, true, false, false);
+    public IRubyObject skip_until(ThreadContext context, IRubyObject regex) {
+        return scan(context, regex, true, false, false);
     }
 
     @JRubyMethod(name = "check_until", required = 1)
-    public IRubyObject check_until(IRubyObject regex) {
-        return scan(regex, false, true, false);
+    public IRubyObject check_until(ThreadContext context, IRubyObject regex) {
+        return scan(context, regex, false, true, false);
     }
 
     @JRubyMethod(name = "search_full", required = 3)
-    public IRubyObject search_full(IRubyObject regex, IRubyObject s, IRubyObject f) {
-        return scan(regex, s.isTrue(), f.isTrue(), false);
+    public IRubyObject search_full(ThreadContext context, IRubyObject regex, IRubyObject s, IRubyObject f) {
+        return scan(context, regex, s.isTrue(), f.isTrue(), false);
     }
 
     private void adjustRegisters() {

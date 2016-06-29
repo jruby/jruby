@@ -1,2 +1,0 @@
-fails:Time#eql? returns false if self and other have differing numbers of microseconds
-fails:Time#eql? returns false if self and other have differing fractional microseconds

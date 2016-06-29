@@ -1,5 +1,6 @@
 package org.jruby.util.io;
 
+import jnr.enxio.channels.NativeSelectorProvider;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyIO;
@@ -49,17 +50,12 @@ public class SelectExecutor {
     }
 
     IRubyObject selectEnd(ThreadContext context) throws IOException {
-        fdTerm(readKeyList);
-        fdTerm(writeKeyList);
-        fdTerm(errorKeyList);
-
         if (selectors != null) {
             for (int i = 0; i < selectors.size(); i++) {
                 Selector selector = selectors.get(i);
                 // if it is a JDK selector, cache it
                 if (selector.provider() == SelectorProvider.provider()) {
-                    // clear cancelled keys (with selectNow) and return to pool
-                    selector.selectNow();
+                    // return to pool
                     context.runtime.getSelectorPool().put(selector);
                 } else {
                     selector.close();
@@ -68,8 +64,7 @@ public class SelectExecutor {
 
             // TODO: pool ENXIOSelector impls
             for (ENXIOSelector enxioSelector : enxioSelectors) {
-                enxioSelector.pipe.sink().close();
-                enxioSelector.pipe.source().close();
+                enxioSelector.cleanup();
             }
         }
 
@@ -277,20 +272,6 @@ public class SelectExecutor {
         return false;
     }
 
-    private void fdTerm(List<SelectionKey> keys) {
-        if (keys == null) return;
-        for (int i = 0; i < keys.size(); i++) {
-            SelectionKey key = keys.get(i);
-            killKey(key);
-        }
-    }
-
-    private void killKey(SelectionKey key) {
-        try {
-            if (key.isValid()) key.cancel();
-        } catch (Exception e) {}
-    }
-
     private SelectionKey trySelectRead(ThreadContext context, ChannelFD fd) throws IOException {
         if (fd.chSelect != null) {
             return registerSelect(getSelector(context, fd.chSelect), fd, fd.chSelect, READ_ACCEPT_OPS);
@@ -321,10 +302,10 @@ public class SelectExecutor {
         }
 
         if (selector == null) {
-            selector = context.runtime.getSelectorPool().get(channel.provider());
-            selectors.add(selector);
+            if (channel.provider() instanceof NativeSelectorProvider) {
+                // We don't pool these, so create it directly
+                selector = channel.provider().openSelector();
 
-            if (!selector.provider().equals(SelectorProvider.provider())) {
                 // need to create pipe between alt impl selector and native NIO selector
                 Pipe pipe = Pipe.open();
                 ENXIOSelector enxioSelector = new ENXIOSelector(selector, pipe);
@@ -332,9 +313,15 @@ public class SelectExecutor {
                 enxioSelectors.add(enxioSelector);
                 pipe.source().configureBlocking(false);
                 pipe.source().register(getSelector(context, pipe.source()), SelectionKey.OP_READ, enxioSelector);
-            } else if (mainSelector == null) {
-                mainSelector = selector;
+            } else {
+                selector = context.runtime.getSelectorPool().get();
+
+                if (mainSelector == null) {
+                    mainSelector = selector;
+                }
             }
+
+            selectors.add(selector);
         }
 
         return selector;
@@ -555,6 +542,11 @@ public class SelectExecutor {
             }
 
             return null;
+        }
+
+        public void cleanup() throws IOException {
+            pipe.sink().close();
+            pipe.source().close();
         }
     }
 

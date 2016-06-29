@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
@@ -11,6 +12,7 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -77,12 +79,19 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
     @Interp
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object blk = getBlockArg().retrieve(context, self, currScope, currDynScope, temp);
+        Block blk = (Block)getBlockArg().retrieve(context, self, currScope, currDynScope, temp);
         if (getYieldArg() == UndefinedValue.UNDEFINED) {
             return IRRuntimeHelpers.yieldSpecific(context, blk);
         } else {
-            IRubyObject yieldVal = (IRubyObject) getYieldArg().retrieve(context, self, currScope, currDynScope, temp);
-            return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);
+            Operand yieldOp = getYieldArg();
+            if (unwrapArray && yieldOp instanceof Array && ((Array)yieldOp).size() > 1) {
+                // Special case this path!
+                // Don't build a RubyArray.
+                return blk.yieldValues(context, ((Array)yieldOp).retrieveArrayElts(context, self, currScope, currDynScope, temp));
+            } else {
+                IRubyObject yieldVal = (IRubyObject) yieldOp.retrieve(context, self, currScope, currDynScope, temp);
+                return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);
+            }
         }
     }
 

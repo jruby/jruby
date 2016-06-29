@@ -6,14 +6,13 @@ require 'fileutils'
 class TestCommandLineSwitches < Test::Unit::TestCase
   include TestHelper
 
-  # FIXME: currently fails on Windows
-  if (!WINDOWS and not IS_JAR_EXECUTION)
-    def test_dash_0_splits_records
-      output = jruby_with_pipe("echo '1,2,3'", %Q{ -054 --disable-gems -n -e 'puts $_ + " "'})
-      assert_equal 0, $?.exitstatus
-      assert_equal "1, ,2, ,3\n ,", output
-    end
-  end
+  def test_dash_0_splits_records
+    # pend 'FIXME: currently fails on Windows' if WINDOWS
+
+    output = jruby_with_pipe("echo '1,2,3'", %Q{ -054 --disable-gems -n -e 'puts $_ + " "'})
+    assert_equal 0, $?.exitstatus
+    assert_equal "1, ,2, ,3\n ,", output
+  end if IS_JAR_EXECUTION
 
   def test_dash_little_c_checks_syntax
     with_jruby_shell_spawning do
@@ -35,24 +34,20 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
   # TODO -l: no idea what line ending processing is
   def test_dash_little_n_wraps_script_with_while_gets
-    # FIXME: currently fails on windows and IBM JDK
-    unless WINDOWS || IBM_JVM
-      with_temp_script(%q{ puts "#{$_}#{$_}" }) do |s|
-        output = IO.popen("echo \"a\nb\" | #{RUBY} -n #{s.path}", "r") { |p| p.read }
-        assert_equal 0, $?.exitstatus
-        assert_equal "a\na\nb\nb\n", output
-      end
+    # pend 'FIXME: currently fails on Windows and IBM JDK' if WINDOWS # || IBM_JVM
+    with_temp_script(%q{ puts "#{$_}#{$_}" }) do |s|
+      output = IO.popen("echo \"a\nb\" | #{RUBY} -n #{s.path}", "r") { |p| p.read }
+      assert_equal 0, $?.exitstatus
+      assert_equal "a\na\nb\nb\n", output
     end
   end
 
   def test_dash_little_p_wraps_script_with_while_gets_and_prints
-    # FIXME: currently fails on Windows and IBM JDK
-    unless WINDOWS || IBM_JVM
-      with_temp_script(%q{ puts "#{$_}#{$_}" }) do |s|
-        output = IO.popen("echo \"a\nb\" | #{RUBY} -p #{s.path}", "r") { |p| p.read }
-        assert_equal 0, $?.exitstatus
-        assert_equal "a\na\na\nb\nb\nb\n", output
-      end
+    # pend 'FIXME: currently fails on Windows and IBM JDK' if WINDOWS # || IBM_JVM
+    with_temp_script(%q{ puts "#{$_}#{$_}" }) do |s|
+      output = IO.popen("echo \"a\nb\" | #{RUBY} -p #{s.path}", "r") { |p| p.read }
+      assert_equal 0, $?.exitstatus
+      assert_equal "a\na\na\nb\nb\nb\n", output
     end
   end
 
@@ -106,7 +101,6 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   def test_dash_big_S_resolves_relative___FILE___correctly
-
     with_temp_script(%q{puts __FILE__}) do |s|
       Dir.chdir(Dir.tmpdir) do
         relative_tmp = File.basename(s.path)
@@ -120,7 +114,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
   def test_dash_little_v_version_verbose_T_taint_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop_19
     e_line = 'puts $VERBOSE, $SAFE, $DEBUG, Encoding.default_external, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
-    args = "-v -T3 -d -Ku -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
+    args = "-v -T3 -d -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
     # the options at the end will add -J-Dfoo=bar to the args
     lines = jruby_with_pipe("echo 1,2,3", args, :foo => 'bar').split("\n")
     assert_equal 0, $?.exitstatus, "failed execution with output:\n#{lines}"
@@ -157,7 +151,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   def test_dash_big_C_error
-    out = jruby('-CaeAEUAOEUAeu_NOT_EXIST_xxx -e "puts Dir.pwd"').rstrip
+    out = jruby('-CaeAEUAOEUAeu_NOT_EXIST_xxx -e "puts Dir.pwd" 2>&1').rstrip
     assert_equal 1, $?.exitstatus
     assert_match /chdir.*fatal/, out
   end
@@ -284,37 +278,31 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   # JRUBY-4288
-  if (WINDOWS)
-    def test_case_insensitive_jruby
-      weird_jruby = '"' + File.join([RbConfig::CONFIG['bindir'], 'jRuBy']) << RbConfig::CONFIG['EXEEXT'] + '"'
-      with_jruby_shell_spawning do
-        res = `cmd.exe /c #{weird_jruby} -e "puts 1"`.rstrip
-        assert_equal '1', res
-        assert_equal 0, $?.exitstatus
-      end
+  def test_case_insensitive_jruby
+    weird_jruby = '"' + File.join([RbConfig::CONFIG['bindir'], 'jRuBy']) << RbConfig::CONFIG['EXEEXT'] + '"'
+    with_jruby_shell_spawning do
+      res = `cmd.exe /c #{weird_jruby} -e "puts 1"`.rstrip
+      assert_equal '1', res
+      assert_equal 0, $?.exitstatus
     end
-  end
+  end if WINDOWS
 
   # JRUBY-4289
-  if (WINDOWS)
-    def test_uppercase_exe
-      weird_jruby = '"' + File.join([RbConfig::CONFIG['bindir'], 'jRuBy']) << '.ExE' + '"'
-      with_jruby_shell_spawning do
-        res = `#{weird_jruby} -e "puts 1"`.rstrip
-        assert_equal '1', res
-        assert_equal 0, $?.exitstatus
-      end
+  def test_uppercase_exe
+    weird_jruby = '"' + File.join([RbConfig::CONFIG['bindir'], 'jRuBy']) << '.ExE' + '"'
+    with_jruby_shell_spawning do
+      res = `#{weird_jruby} -e "puts 1"`.rstrip
+      assert_equal '1', res
+      assert_equal 0, $?.exitstatus
     end
-  end
+  end if WINDOWS
 
   # JRUBY-4290
-  if (WINDOWS)
-    def test_uppercase_in_process
-      version = `rUbY.ExE -v`.rstrip
-      assert_equal 0, $?.exitstatus
-      assert_match /java/, version
-    end
-  end
+  def test_uppercase_in_process
+    version = `rUbY.ExE -v`.rstrip
+    assert_equal 0, $?.exitstatus
+    assert_match /java/, version
+  end if WINDOWS
 
   # JRUBY-4783
   def test_rubyopts_with_require

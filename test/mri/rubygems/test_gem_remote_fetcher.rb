@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'rubygems/test_case'
 
 require 'webrick'
@@ -77,8 +78,34 @@ gems:
 
   DIR = File.expand_path(File.dirname(__FILE__))
 
+  # Generated via:
+  #   x = OpenSSL::PKey::DH.new(2048) # wait a while...
+  #   x.to_s => pem
+  #   x.priv_key.to_s => hex for OpenSSL::BN.new
+  TEST_KEY_DH2048 =  OpenSSL::PKey::DH.new <<-_end_of_pem_
+-----BEGIN DH PARAMETERS-----
+MIIBCAKCAQEA3Ze2EHSfYkZLUn557torAmjBgPsqzbodaRaGZtgK1gEU+9nNJaFV
+G1JKhmGUiEDyIW7idsBpe4sX/Wqjnp48Lr8IeI/SlEzLdoGpf05iRYXC8Cm9o8aM
+cfmVgoSEAo9YLBpzoji2jHkO7Q5IPt4zxbTdlmmGFLc/GO9q7LGHhC+rcMcNTGsM
+49AnILNn49pq4Y72jSwdmvq4psHZwwFBbPwLdw6bLUDDCN90jfqvYt18muwUxDiN
+NP0fuvVAIB158VnQ0liHSwcl6+9vE1mL0Jo/qEXQxl0+UdKDjaGfTsn6HIrwTnmJ
+PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
+-----END DH PARAMETERS-----
+    _end_of_pem_
+
+  TEST_KEY_DH2048.priv_key = OpenSSL::BN.new("108911488509734781344423639" \
+     "5585749502236089033416160524030987005037540379474123441273555416835" \
+     "4725688238369352738266590757370603937618499698665047757588998555345" \
+     "3446251978586372525530219375408331096098220027413238477359960428372" \
+     "0195464393332338164504352015535549496585792320286513563739305843396" \
+     "9294344974028713065472959376197728193162272314514335882399554394661" \
+     "5306385003430991221886779612878793446851681835397455333989268503748" \
+     "7862488679178398716189205737442996155432191656080664090596502674943" \
+     "7902481557157485795980326766117882761941455140582265347052939604724" \
+     "964857770053363840471912215799994973597613931991572884", 16)
+
   def setup
-    @proxies = %w[http_proxy HTTP_PROXY http_proxy_user HTTP_PROXY_USER http_proxy_pass HTTP_PROXY_PASS no_proxy NO_PROXY]
+    @proxies = %w[https_proxy http_proxy HTTP_PROXY http_proxy_user HTTP_PROXY_USER http_proxy_pass HTTP_PROXY_PASS no_proxy NO_PROXY]
     @old_proxies = @proxies.map {|k| ENV[k] }
     @proxies.each {|k| ENV[k] = nil }
 
@@ -108,6 +135,7 @@ gems:
   end
 
   def teardown
+    @fetcher.close_all
     self.class.stop_servers
     super
     Gem.configuration[:http_proxy] = nil
@@ -134,6 +162,7 @@ gems:
 
   def test_fetch_size_bad_uri
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
 
     e = assert_raises ArgumentError do
       fetcher.fetch_size 'gems.example.com/yaml'
@@ -144,6 +173,7 @@ gems:
 
   def test_fetch_size_socket_error
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
     def fetcher.request(uri, request_class, last_modified = nil)
       raise SocketError, "tarded"
     end
@@ -164,6 +194,21 @@ gems:
   end
 
   def test_api_endpoint
+    uri = URI.parse "http://example.com/foo"
+    target = MiniTest::Mock.new
+    target.expect :target, "gems.example.com"
+
+    dns = MiniTest::Mock.new
+    dns.expect :getresource, target, [String, Object]
+
+    fetch = Gem::RemoteFetcher.new nil, dns
+    assert_equal URI.parse("http://gems.example.com/foo"), fetch.api_endpoint(uri)
+
+    target.verify
+    dns.verify
+  end
+
+  def test_api_endpoint_ignores_trans_domain_values
     uri = URI.parse "http://gems.example.com/foo"
     target = MiniTest::Mock.new
     target.expect :target, "blah.com"
@@ -172,9 +217,64 @@ gems:
     dns.expect :getresource, target, [String, Object]
 
     fetch = Gem::RemoteFetcher.new nil, dns
-    assert_equal URI.parse("http://blah.com/foo"), fetch.api_endpoint(uri)
+    assert_equal URI.parse("http://gems.example.com/foo"), fetch.api_endpoint(uri)
 
     target.verify
+    dns.verify
+  end
+
+  def test_api_endpoint_ignores_trans_domain_values_that_starts_with_original
+    uri = URI.parse "http://example.com/foo"
+    target = MiniTest::Mock.new
+    target.expect :target, "example.combadguy.com"
+
+    dns = MiniTest::Mock.new
+    dns.expect :getresource, target, [String, Object]
+
+    fetch = Gem::RemoteFetcher.new nil, dns
+    assert_equal URI.parse("http://example.com/foo"), fetch.api_endpoint(uri)
+
+    target.verify
+    dns.verify
+  end
+
+  def test_api_endpoint_ignores_trans_domain_values_that_end_with_original
+    uri = URI.parse "http://example.com/foo"
+    target = MiniTest::Mock.new
+    target.expect :target, "badexample.com"
+
+    dns = MiniTest::Mock.new
+    dns.expect :getresource, target, [String, Object]
+
+    fetch = Gem::RemoteFetcher.new nil, dns
+    assert_equal URI.parse("http://example.com/foo"), fetch.api_endpoint(uri)
+
+    target.verify
+    dns.verify
+  end
+
+  def test_api_endpoint_timeout_warning
+    uri = URI.parse "http://gems.example.com/foo"
+
+    dns = MiniTest::Mock.new
+    def dns.getresource arg, *rest
+      raise Resolv::ResolvError.new('timeout!')
+    end
+
+    fetch = Gem::RemoteFetcher.new nil, dns
+    begin
+      old_verbose, Gem.configuration.verbose = Gem.configuration.verbose, 1
+      endpoint = use_ui @ui do
+        fetch.api_endpoint(uri)
+      end
+    ensure
+      Gem.configuration.verbose = old_verbose
+    end
+
+    assert_equal uri, endpoint
+
+    assert_equal "Getting SRV record failed: timeout!\n", @ui.output
+
     dns.verify
   end
 
@@ -435,6 +535,7 @@ gems:
 
   def test_fetch_path_gzip
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
 
     def fetcher.fetch_http(uri, mtime, head = nil)
       Gem.gzip 'foo'
@@ -445,6 +546,7 @@ gems:
 
   def test_fetch_path_gzip_unmodified
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
 
     def fetcher.fetch_http(uri, mtime, head = nil)
       nil
@@ -455,6 +557,7 @@ gems:
 
   def test_fetch_path_io_error
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
 
     def fetcher.fetch_http(*)
       raise EOFError
@@ -472,6 +575,7 @@ gems:
 
   def test_fetch_path_socket_error
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
 
     def fetcher.fetch_http(uri, mtime, head = nil)
       raise SocketError
@@ -489,6 +593,7 @@ gems:
 
   def test_fetch_path_system_call_error
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
 
     def fetcher.fetch_http(uri, mtime = nil, head = nil)
       raise Errno::ECONNREFUSED, 'connect(2)'
@@ -507,6 +612,7 @@ gems:
 
   def test_fetch_path_unmodified
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
 
     def fetcher.fetch_http(uri, mtime, head = nil)
       nil
@@ -519,6 +625,7 @@ gems:
     use_ui @ui do
       ENV['http_proxy'] = 'http://fakeurl:12345'
       fetcher = Gem::RemoteFetcher.new :no_proxy
+      @fetcher = fetcher
       assert_data_from_server fetcher.fetch_path(@server_uri)
     end
   end
@@ -527,6 +634,7 @@ gems:
     use_ui @ui do
       ENV['http_proxy'] = @proxy_uri
       fetcher = Gem::RemoteFetcher.new nil
+      @fetcher = fetcher
       assert_data_from_proxy fetcher.fetch_path(@server_uri)
     end
   end
@@ -535,6 +643,7 @@ gems:
     use_ui @ui do
       ENV['HTTP_PROXY'] = @proxy_uri
       fetcher = Gem::RemoteFetcher.new nil
+      @fetcher = fetcher
       assert_data_from_proxy fetcher.fetch_path(@server_uri)
     end
   end
@@ -542,12 +651,14 @@ gems:
   def test_implicit_proxy_no_env
     use_ui @ui do
       fetcher = Gem::RemoteFetcher.new nil
+      @fetcher = fetcher
       assert_data_from_server fetcher.fetch_path(@server_uri)
     end
   end
 
   def test_fetch_http
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
     url = 'http://gems.example.com/redirect'
 
     def fetcher.request(uri, request_class, last_modified = nil)
@@ -571,6 +682,7 @@ gems:
 
   def test_fetch_http_redirects
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
     url = 'http://gems.example.com/redirect'
 
     def fetcher.request(uri, request_class, last_modified = nil)
@@ -587,8 +699,17 @@ gems:
     assert_equal "too many redirects (#{url})", e.message
   end
 
+  def test_fetch_http_with_additional_headers
+    ENV["http_proxy"] = @proxy_uri
+    ENV["no_proxy"] = URI::parse(@server_uri).host
+    fetcher = Gem::RemoteFetcher.new nil, nil, {"X-Captain" => "murphy"}
+    @fetcher = fetcher
+    assert_equal "murphy", fetcher.fetch_path(@server_uri)
+  end
+
   def test_fetch_s3
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
     url = 's3://testuser:testpass@my-bucket/gems/specs.4.8.gz'
     $fetched_uri = nil
 
@@ -613,6 +734,7 @@ gems:
 
   def test_fetch_s3_no_creds
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
     url = 's3://my-bucket/gems/specs.4.8.gz'
     e = assert_raises Gem::RemoteFetcher::FetchError do
       fetcher.fetch_s3 URI.parse(url)
@@ -626,6 +748,7 @@ gems:
       ENV["http_proxy"] = @proxy_uri
       ENV["no_proxy"] = URI::parse(@server_uri).host
       fetcher = Gem::RemoteFetcher.new nil
+      @fetcher = fetcher
       assert_data_from_server fetcher.fetch_path(@server_uri)
     end
   end
@@ -635,12 +758,14 @@ gems:
       ENV["http_proxy"] = @proxy_uri
       ENV["no_proxy"] = "fakeurl.com, #{URI::parse(@server_uri).host}"
       fetcher = Gem::RemoteFetcher.new nil
+      @fetcher = fetcher
       assert_data_from_server fetcher.fetch_path(@server_uri)
     end
   end
 
   def test_request_block
     fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
 
     assert_throws :block_called do
       fetcher.request URI('http://example'), Net::HTTP::Get do |req|
@@ -654,6 +779,7 @@ gems:
     use_ui @ui do
       self.class.enable_yaml = false
       fetcher = Gem::RemoteFetcher.new nil
+      @fetcher = fetcher
       assert_error { fetcher.size }
     end
   end
@@ -736,8 +862,10 @@ gems:
       end
       Gem.configuration = Gem::ConfigFile.new %W[--config-file #{temp_conf}]
     end
-    yield Gem::RemoteFetcher.new
+    fetcher = Gem::RemoteFetcher.new
+    yield fetcher
   ensure
+    fetcher.close_all
     Gem.configuration = nil
   end
 
@@ -830,7 +958,7 @@ gems:
       server.mount_proc("/insecure_redirect") { |req, res|
         res.set_redirect(WEBrick::HTTPStatus::MovedPermanently, req.query['to'])
       }
-      server.ssl_context.tmp_dh_callback = proc { OpenSSL::PKey::DH.new 128 }
+      server.ssl_context.tmp_dh_callback = proc { TEST_KEY_DH2048 }
       t = Thread.new do
         begin
           server.start
@@ -865,7 +993,9 @@ gems:
         )
       s.mount_proc("/kill") { |req, res| s.shutdown }
       s.mount_proc("/yaml") { |req, res|
-        if @enable_yaml
+        if req["X-Captain"]
+          res.body = req["X-Captain"]
+        elsif @enable_yaml
           res.body = data
           res['Content-Type'] = 'text/plain'
           res['content-length'] = data.size

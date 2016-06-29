@@ -98,7 +98,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
             case IS_DEFINED_NTH_REF:
                 return IRRuntimeHelpers.isDefinedNthRef(context, (int) ((Fixnum) operands[0]).getValue());
             case IS_DEFINED_GLOBAL:
-                return IRRuntimeHelpers.isDefinedGlobal(context, ((StringLiteral) operands[0]).getString());
+                return IRRuntimeHelpers.isDefinedGlobal(context, ((Stringable) operands[0]).getString());
         }
 
         Object arg1 = operands[0].retrieve(context, self, currScope, currDynScope, temp);
@@ -111,19 +111,19 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
             case HANDLE_BREAK_AND_RETURNS_IN_LAMBDA:
                 return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, currDynScope, arg1, blockType);
             case IS_DEFINED_CALL:
-                return IRRuntimeHelpers.isDefinedCall(context, self, (IRubyObject) arg1, ((StringLiteral) operands[1]).getString());
+                return IRRuntimeHelpers.isDefinedCall(context, self, (IRubyObject) arg1, ((Stringable) operands[1]).getString());
             case IS_DEFINED_CONSTANT_OR_METHOD:
                 return IRRuntimeHelpers.isDefinedConstantOrMethod(context, (IRubyObject) arg1,
                         ((FrozenString) operands[1]).getString());
             case IS_DEFINED_INSTANCE_VAR:
-                return IRRuntimeHelpers.isDefinedInstanceVar(context, (IRubyObject) arg1, ((StringLiteral) operands[1]).getString());
+                return IRRuntimeHelpers.isDefinedInstanceVar(context, (IRubyObject) arg1, ((Stringable) operands[1]).getString());
             case IS_DEFINED_CLASS_VAR:
-                return IRRuntimeHelpers.isDefinedClassVar(context, (RubyModule) arg1, ((StringLiteral) operands[1]).getString());
+                return IRRuntimeHelpers.isDefinedClassVar(context, (RubyModule) arg1, ((Stringable) operands[1]).getString());
             case IS_DEFINED_SUPER:
                 return IRRuntimeHelpers.isDefinedSuper(context, (IRubyObject) arg1);
             case IS_DEFINED_METHOD:
                 return IRRuntimeHelpers.isDefinedMethod(context, (IRubyObject) arg1,
-                        ((StringLiteral) operands[1]).getString(),
+                        ((Stringable) operands[1]).getString(),
                         ((Boolean) operands[2]).isTrue());
             case MERGE_KWARGS:
                 return IRRuntimeHelpers.mergeKeywordArguments(context, (IRubyObject) arg1,

@@ -1,1 +1,0 @@
-fails:Net::HTTPResponse#error_type returns self's class 'EXCEPTION_TYPE' constant

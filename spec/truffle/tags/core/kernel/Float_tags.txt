@@ -10,3 +10,7 @@ fails:Kernel#Float raises an ArgumentError for a String with an embedded \0
 fails:Kernel#Float raises an ArgumentError for a String with a trailing \0
 fails:Kernel#Float allows embedded _ in a number on either side of the e
 fails:Kernel#Float allows embedded _ in a number on either side of the E
+fails:Kernel.Float for hexadecimal literals with binary exponent allows embedded _ in a number on either side of the p
+fails:Kernel.Float for hexadecimal literals with binary exponent allows embedded _ in a number on either side of the P
+fails:Kernel#Float for hexadecimal literals with binary exponent allows embedded _ in a number on either side of the p
+fails:Kernel#Float for hexadecimal literals with binary exponent allows embedded _ in a number on either side of the P

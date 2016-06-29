@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'webrick'
 begin
   require "webrick/https"
@@ -36,16 +37,19 @@ module TestNetHTTPUtils
       @server.shutdown
       @server_thread.join
     end
+    @log_tester.call(@log) if @log_tester
     # resume global state
     Net::HTTP.version_1_2
   end
 
   def spawn_server
+    @log = []
+    @log_tester = lambda {|log| assert_equal([], log ) }
     @config = self.class::CONFIG
     server_config = {
       :BindAddress => config('host'),
       :Port => 0,
-      :Logger => WEBrick::Log.new(NullWriter.new),
+      :Logger => WEBrick::Log.new(@log, WEBrick::BasicLog::WARN),
       :AccessLog => [],
       :ServerType => Thread,
     }
@@ -63,15 +67,6 @@ module TestNetHTTPUtils
     @server.mount('/', Servlet, config('chunked'))
     @server_thread = @server.start
     @config['port'] = @server[:Port]
-    n_try_max = 5
-    begin
-      TCPSocket.open(config('host'), config('port')).close
-    rescue Errno::ECONNREFUSED
-      sleep 0.2
-      n_try_max -= 1
-      raise 'cannot spawn server; give up' if n_try_max < 0
-      retry
-    end
   end
 
   $test_net_http = nil

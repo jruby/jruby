@@ -1,2 +1,0 @@
-fails:Net::FTP#passive returns true when self is in passive mode
-fails:Net::FTP#passive= sets self to passive mode when passed true

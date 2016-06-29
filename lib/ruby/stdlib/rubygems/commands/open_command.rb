@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'English'
 require 'rubygems/command'
 require 'rubygems/version_option'
@@ -13,6 +14,10 @@ class Gem::Commands::OpenCommand < Gem::Command
     add_option('-e', '--editor EDITOR', String,
                "Opens gem sources in EDITOR") do |editor, options|
       options[:editor] = editor || get_env_editor
+    end
+    add_option('-v', '--version VERSION', String,
+               "Opens specific gem version") do |version|
+      options[:version]  = version
     end
   end
 

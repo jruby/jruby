@@ -13,39 +13,27 @@ describe "TCPSocket#gethostbyname" do
 
   platform_is_not :windows do
     it "returns the canonical name as first value" do
-    @host_info[0].should == SocketSpecs.hostname
+      @host_info[0].should == SocketSpecs.hostname
     end
 
-    not_compliant_on :jruby do
-      it "returns the address type as the third value" do
-        address_type = @host_info[2]
-        [Socket::AF_INET, Socket::AF_INET6].include?(address_type).should be_true
-      end
-
-      it "returns the IP address as the fourth value" do
-        ip = @host_info[3]
-        ["127.0.0.1", "::1"].include?(ip).should be_true
-      end
+    it "returns the address type as the third value" do
+      address_type = @host_info[2]
+      [Socket::AF_INET, Socket::AF_INET6].include?(address_type).should be_true
     end
 
-    deviates_on :jruby do
-      it "returns the address type as the third value" do
-        address_type = @host_info[2]
-        [Socket::AF_INET, Socket::AF_INET6].include?(address_type).should be_true
-      end
-
-      it "returns the IP address as the fourth value" do
-        ip = @host_info[3]
-        ["127.0.0.1", "::1"].include?(ip).should be_true
-      end
+    it "returns the IP address as the fourth value" do
+      ip = @host_info[3]
+      ["127.0.0.1", "::1"].include?(ip).should be_true
     end
   end
 
   platform_is :windows do
-    it "returns the canonical name as first value" do
-      host = "#{ENV['COMPUTERNAME'].downcase}"
-      host << ".#{ENV['USERDNSDOMAIN'].downcase}" if ENV['USERDNSDOMAIN']
-      @host_info[0].should == host
+    quarantine! do # name lookup seems not working on Windows CI
+      it "returns the canonical name as first value" do
+        host = "#{ENV['COMPUTERNAME'].downcase}"
+        host << ".#{ENV['USERDNSDOMAIN'].downcase}" if ENV['USERDNSDOMAIN']
+        @host_info[0].should == host
+      end
     end
 
     it "returns the address type as the third value" do

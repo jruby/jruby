@@ -33,20 +33,33 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
+import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.runtime.scope.NoVarsDynamicScope;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
 public class Binding {
+
+    public static final Binding DUMMY =
+            new Binding(
+                    RubyBasicObject.NEVER,
+                    Frame.DUMMY,
+                    Visibility.PUBLIC,
+                    new NoVarsDynamicScope(StaticScopeFactory.newStaticScope(null, StaticScope.Type.BLOCK, null)),
+                    "<dummy>",
+                    "dummy",
+                    -1);
     
     /**
      * frame of method which defined this block
      */
-    private final Frame frame;
+    private Frame frame;
 
     public String method;
     public String filename;
@@ -61,7 +74,7 @@ public class Binding {
     /**
      * A reference to all variable values (and names) that are in-scope for this block.
      */
-    private final DynamicScope dynamicScope;
+    private DynamicScope dynamicScope;
 
     /**
      * Binding-local scope for 1.9 mode.
@@ -110,6 +123,30 @@ public class Binding {
         this.method = method;
         this.filename = filename;
         this.line = line;
+    }
+
+    public Binding(IRubyObject self) {
+        this.self = self;
+    }
+
+    public Binding(IRubyObject self, Frame frame,
+                   Visibility visibility) {
+        this.self = self;
+        this.frame = frame;
+        this.visibility = visibility;
+    }
+
+    public Binding(IRubyObject self, DynamicScope dynamicScope) {
+        this.self = self;
+        this.dynamicScope = dynamicScope;
+    }
+
+    public Binding(IRubyObject self, Frame frame,
+                   Visibility visibility, DynamicScope dynamicScope) {
+        this.self = self;
+        this.frame = frame;
+        this.visibility = visibility;
+        this.dynamicScope = dynamicScope;
     }
     
     private Binding(Binding other) {

@@ -15,7 +15,7 @@ public class MurmurHash {
 
     // 'm' and 'r' are mixing constants generated offline.
     // They're not really 'magic', they just happen to work well.
-    private static final int MURMUR2_MAGIC = 0x5bd1e995;
+    public static final int MURMUR2_MAGIC = 0x5bd1e995;
     // CRuby 1.9 uses 16 but original C++ implementation uses 24 with above Magic.
     private static final int MURMUR2_R = 24;
 

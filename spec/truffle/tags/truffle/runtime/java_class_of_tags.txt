@@ -1,0 +1,1 @@
+graalvm:Truffle.java_class_of returns 'DynamicObject*' for a String

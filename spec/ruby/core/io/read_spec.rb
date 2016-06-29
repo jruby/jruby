@@ -106,28 +106,52 @@ end
 
 describe "IO.read from a pipe" do
   it "runs the rest as a subprocess and returns the standard output" do
-    IO.read("|sh -c 'echo hello'").should == "hello\n"
+    cmd = "|sh -c 'echo hello'"
+    platform_is :windows do
+      cmd = "|cmd.exe /C echo hello"
+    end
+    IO.read(cmd).should == "hello\n"
   end
 
-  it "opens a pipe to a fork if the rest is -" do
-    str = IO.read("|-")
-    if str # parent
-      str.should == "hello from child\n"
-    else #child
-      puts "hello from child"
-      exit!
+  with_feature :fork do
+    it "opens a pipe to a fork if the rest is -" do
+      str = IO.read("|-")
+      if str # parent
+        str.should == "hello from child\n"
+      else #child
+        puts "hello from child"
+        exit!
+      end
     end
   end
 
   it "reads only the specified number of bytes requested" do
-    IO.read("|sh -c 'echo hello'", 1).should == "h"
+    cmd = "|sh -c 'echo hello'"
+    platform_is :windows do
+      cmd = "|cmd.exe /C echo hello"
+    end
+    IO.read(cmd, 1).should == "h"
   end
 
-  it "raises Errno::ESPIPE if passed an offset" do
-    lambda {
-      IO.read("|sh -c 'echo hello'", 1, 1)
-    }.should raise_error(Errno::ESPIPE)
+  platform_is_not :windows do
+    it "raises Errno::ESPIPE if passed an offset" do
+      lambda {
+        IO.read("|sh -c 'echo hello'", 1, 1)
+      }.should raise_error(Errno::ESPIPE)
+    end
   end
+
+quarantine! do # The process tried to write to a nonexistent pipe.
+  platform_is :windows do
+    # TODO: It should raise Errno::ESPIPE on Windows as well
+    # once https://bugs.ruby-lang.org/issues/12230 is fixed.
+    it "raises Errno::EINVAL if passed an offset" do
+      lambda {
+        IO.read("|cmd.exe /C echo hello", 1, 1)
+      }.should raise_error(Errno::EINVAL)
+    end
+  end
+end
 end
 
 describe "IO.read on an empty file" do
@@ -288,8 +312,8 @@ platform_is :windows do
     end
 
     after :each do
-      rm_r @fname
       @io.close if @io
+      rm_r @fname
     end
 
     it "normalizes line endings in text mode" do
@@ -340,12 +364,10 @@ describe "IO#read in binary mode" do
     result.should == "abc\xE2def".force_encoding(Encoding::ASCII_8BIT)
   end
 
-  ruby_version_is "2.1" do
-    it "does not transcode file contents when an internal encoding is specified" do
-      result = File.open(@name, "r:binary:utf-8") { |f| f.read }.chomp
-      result.encoding.should == Encoding::ASCII_8BIT
-      result.should == "abc\xE2def".force_encoding(Encoding::ASCII_8BIT)
-    end
+  it "does not transcode file contents when an internal encoding is specified" do
+    result = File.open(@name, "r:binary:utf-8") { |f| f.read }.chomp
+    result.encoding.should == Encoding::ASCII_8BIT
+    result.should == "abc\xE2def".force_encoding(Encoding::ASCII_8BIT)
   end
 end
 

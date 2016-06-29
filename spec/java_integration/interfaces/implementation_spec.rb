@@ -16,27 +16,6 @@ java_import "java_integration.fixtures.BooleanReturningInterfaceConsumer"
 java_import "java.lang.Runnable"
 
 describe "Single-method Java interfaces implemented in Ruby" do
-  before :all do
-    @value_holder1 = Class.new do
-      include SingleMethodInterface
-      def initialize(val)
-        @value = val
-      end
-      def callIt
-        @value
-      end
-    end
-
-    @value_holder2 = Class.new do
-      include SingleMethodInterface
-      def initialize(val)
-        @value = val
-      end
-      def call_it
-        @value
-      end
-    end
-  end
 
   # JRUBY-6945
   it "should allow aggregating interfaces in a module" do
@@ -51,82 +30,147 @@ describe "Single-method Java interfaces implemented in Ruby" do
     end.not_to raise_error
   end
 
+  before :all do
+    @value_holder1 = Class.new do
+      include SingleMethodInterface
+      def initialize(val)
+        @value = val
+      end
+      def callIt
+        @value
+      end
+    end
+  end
+
   it "should be kind_of? the interface" do
-    expect(@value_holder1.new(1)).to be_kind_of(SingleMethodInterface)
-    expect(SingleMethodInterface === @value_holder1.new(1)).to be true
+    expect( @value_holder1.new(1) ).to be_kind_of SingleMethodInterface
+    expect( @value_holder1.new(1) ).to be_a SingleMethodInterface
+    expect( SingleMethodInterface === @value_holder1.new(1) ).to be true
   end
 
   it "should be implemented with 'include InterfaceClass'" do
     expect(UsesSingleMethodInterface.callIt(@value_holder1.new(1))).to eq(1)
-    expect(UsesSingleMethodInterface.callIt(@value_holder2.new(1))).to eq(1)
   end
 
   it "should be cast-able to the interface on the Java side" do
     expect(UsesSingleMethodInterface.castAndCallIt(@value_holder1.new(2))).to eq(2)
-    expect(UsesSingleMethodInterface.castAndCallIt(@value_holder2.new(2))).to eq(2)
   end
 
   it "should allow implementation using the underscored version" do
-    expect(UsesSingleMethodInterface.callIt(@value_holder2.new(3))).to eq(3)
+    klass = Class.new do
+      include SingleMethodInterface
+
+      def initialize(val)
+        @value = val
+      end
+      def call_it
+        @value
+      end
+    end
+
+    expect(UsesSingleMethodInterface.callIt(klass.new(3))).to eq(3)
+    expect(UsesSingleMethodInterface.castAndCallIt(klass.new(2))).to eq(2)
   end
 
   it "should allow reopening implementations" do
-    @value_holder3 = Class.new do
+    klass = Class.new do
       include SingleMethodInterface
-      def initialize(val)
-        @value = val
-      end
-      def callIt
-        @value
-      end
+
+      def initialize(val); @value = val end
+      def callIt; @value end
     end
-    obj = @value_holder3.new(4);
+
+    obj = klass.new(4)
     expect(UsesSingleMethodInterface.callIt(obj)).to eq(4)
-    @value_holder3.class_eval do
-      def callIt
-        @value + @value
-      end
+    klass.class_eval do
+      def callIt; @value + @value end
     end
     expect(UsesSingleMethodInterface.callIt(obj)).to eq(8)
+  end
 
-    @value_holder3 = Class.new do
+  it "should allow reopening implementations (underscore version)" do
+    klass = Class.new do
       include SingleMethodInterface
-      def initialize(val)
-        @value = val
-      end
-      def call_it
-        @value
-      end
+
+      def call_it; 4 end
     end
-    obj = @value_holder3.new(4);
+
+    obj = klass.new
     expect(UsesSingleMethodInterface.callIt(obj)).to eq(4)
-    @value_holder3.class_eval do
-      def call_it
-        @value + @value
-      end
+    klass.class_eval do
+      def call_it; 8 end
     end
     expect(UsesSingleMethodInterface.callIt(obj)).to eq(8)
   end
 
   it "should use Object#equals if there is no Ruby equals defined" do
-    c = Class.new
-    c.send :include, java.util.Map
-    arr = java.util.ArrayList.new
-    v = c.new
-    arr.add(v)
-    expect(arr).to include(v)
+    klass = Class.new
+    klass.send :include, java.util.Map
+    val = klass.new
+
+    arr = java.util.ArrayList.new; arr.add(val)
+    expect(arr).to include(val)
+
+    eq = UsesSingleMethodInterface.equals(val, val)
+    expect(eq).to be true
+    eq = UsesSingleMethodInterface.equals(val, nil)
+    expect(eq).to be false
+    eq = UsesSingleMethodInterface.equals(val, klass.new)
+    expect(eq).to be false
   end
 
   it "should use Object#hashCode if there is no Ruby hashCode defined" do
-    c = Class.new
-    c.send :include, java.util.Map
-    UsesSingleMethodInterface.hashCode(c.new)
+    klass = Class.new
+    klass.send :include, java.util.Map
+
+    hash = UsesSingleMethodInterface.hashCode(val = klass.new)
+    expect( hash ).to eql java.lang.System.identityHashCode(val)
   end
 
   it "should use Object#toString if there is no Ruby toString defined" do
-    c = Class.new
-    c.send :include, java.util.Map
-    UsesSingleMethodInterface.toString(c.new)
+    klass = Class.new
+    klass.send :include, java.util.Map
+
+    str = UsesSingleMethodInterface.toString(klass.new)
+    expect( str ).to match(/\:0x[0-9a-f]+>$/)
+  end
+
+  it "should use Ruby defined equals/hashCode/toString impls" do
+    klass = Class.new do
+      include java.util.Map
+
+      attr_reader :val
+      def initialize(val); @val = val end
+
+      def equals(obj); obj.respond_to?(:val) ? val == obj.val : false end
+      def hashCode; val == 'a' ? 42 : val.hash end
+
+      def toString; val == 'a' ? raise(NotImplementedError.new('a')) : val end
+    end
+    val_a = klass.new 'a'
+    val_b = klass.new 'b'
+
+    eq = UsesSingleMethodInterface.equals(val_a, val_a)
+    expect(eq).to be true
+    eq = UsesSingleMethodInterface.equals(val_a, nil)
+    expect(eq).to be false
+    eq = UsesSingleMethodInterface.equals(val_a, val_b)
+    expect(eq).to be false
+    eq = UsesSingleMethodInterface.equals(val_a, klass.new(:'a'.to_s))
+    expect(eq).to be true
+
+    hash = UsesSingleMethodInterface.hashCode(val_a)
+    expect( hash ).to eql 42
+
+    # TODO: currently this only works as expected with Proxy-based impls
+    # RealClassGenerator#defineRealImplClass does not trigger a toString
+    # method definition since toString is not part of java.util.Map ...
+    if java.lang.reflect.Proxy.isProxyClass(val_b.java_class)
+      str = UsesSingleMethodInterface.toString(val_b)
+      expect( str ).to eql 'b'
+
+      expect { UsesSingleMethodInterface.toString(val_a) }.to raise_error(NotImplementedError)
+    end
   end
 
   it "should allow including the same interface twice" do
@@ -189,7 +233,25 @@ describe "Single-method Java interfaces" do
     expect(UsesSingleMethodInterface.new.callIt2(impl)).to eq(:callIt)
   end
 
-  it "passes correct arguments to proc .impl" do
+  it '.impl should always dispatch interface method (even when it conflicts from method in Ruby hierarchy)' do
+    begin
+      Kernel.module_eval { def callIt; raise RuntimeError.new('Kernel#callIt') end }
+      expect { callIt }.to raise_error(RuntimeError)
+
+      impl = SingleMethodInterface.impl { |name| name ? 'CALL-IT' : 'FALSY!' }
+
+      # NOTE: prior to 9.1 impls would fail with RuntimeError 'Kernel#callIt'
+
+      expect(UsesSingleMethodInterface.new.callIt2(impl)).to eq 'CALL-IT'
+
+      impl = DescendantOfSingleMethodInterface.impl { |name| name.to_s.upcase }
+      #expect(UsesSingleMethodInterface.new.callIt2(impl)).to eq 'CALLIT'
+    ensure
+      Kernel.send :remove_method, :callIt if defined? Kernel.callIt
+    end
+  end
+
+  it "passes correct arguments to proc implementation" do
     Java::java.io.File.new('.').list do |dir, name| # FilenameFilter
       expect(dir).to be_kind_of(java.io.File)
       expect(name).to be_kind_of(String)
@@ -210,7 +272,7 @@ describe "Single-method Java interfaces" do
     end
   end
 
-  it "resolves 'ambiguous' method by proc argument count (with .impl)" do
+  it "resolves 'ambiguous' method by proc argument count (with proc-implementation)" do
     java.io.File.new('.').listFiles do |pathname| # FileFilter#accept(File)
       expect(pathname).to be_kind_of(java.io.File)
     end
@@ -508,45 +570,26 @@ describe "Single object implementing methods of interface" do
 end
 
 describe "Calling include to include a Java interface into a Ruby class" do
-  it "should implement all interfaces specified into it" do
-    m = Module.new do
-      include SingleMethodInterface
-      include BeanLikeInterface
-    end
-
-    c = Class.new do
-      include m
-      def call_it; "bar"; end
-      def value; 1; end
-    end
-
-    obj = c.new
-    blih = BeanLikeInterfaceHandler.new(obj)
-
-    expect(SingleMethodInterface::Caller.call(obj)).to eq("bar")
-    expect(blih.value).to eq(1)
-  end
-
   it "should incorporate constants from the interface into the class's metaclass" do
-    c = Class.new do
+    klass = Class.new do
       include ConstantHoldingInterface
     end
 
-    expect(c::MY_INT).to eq(1)
-    expect(c::MY_STRING).to eq("foo")
+    expect(klass::MY_INT).to eq(1)
+    expect(klass::MY_STRING).to eq("foo")
   end
 end
 
 describe "A ruby module used as a carrier for Java interfaces" do
   it "allows multiple interfaces" do
-    m = Module.new do
+    mod = Module.new do
       include SingleMethodInterface
       include BeanLikeInterface
 
       def self.java_interfaces; @java_interface_mods; end
     end
-    expect(m.java_interfaces).to include(SingleMethodInterface)
-    expect(m.java_interfaces).to include(BeanLikeInterface)
+    expect(mod.java_interfaces).to include(SingleMethodInterface)
+    expect(mod.java_interfaces).to include(BeanLikeInterface)
   end
 
   it "calls append_features on each interface" do
@@ -567,7 +610,7 @@ describe "A ruby module used as a carrier for Java interfaces" do
       end
     end
 
-    m = Module.new do
+    mod = Module.new do
       include my_smi
       include my_bli
     end
@@ -575,31 +618,29 @@ describe "A ruby module used as a carrier for Java interfaces" do
     expect(my_smi.called).to eq(1)
     expect(my_bli.called).to eq(1)
 
-    c = Class.new do
-      include m
-    end
+    Class.new { include mod }
 
     expect(my_smi.called).to eq(2)
     expect(my_bli.called).to eq(2)
   end
 
   it "causes an including class to implement all interfaces" do
-    m = Module.new do
+    mod = Module.new do
       include SingleMethodInterface
       include BeanLikeInterface
     end
 
-    c = Class.new do
-      include m
-      def call_it; "bar"; end
-      def value; 1; end
+    klass = Class.new do
+      include mod
+      def callIt; "bar"; end
+      def getValue; 100; end
     end
 
-    obj = c.new
+    obj = klass.new
     blih = BeanLikeInterfaceHandler.new(obj)
 
     expect(SingleMethodInterface::Caller.call(obj)).to eq("bar")
-    expect(blih.value).to eq(1)
+    expect(blih.value).to eq(100)
   end
 end
 
@@ -659,7 +700,7 @@ end
 describe "A child extending a Ruby class that includes Java interfaces" do
   it "should implement all those interfaces" do
     sup = Class.new { include BeanLikeInterface }
-    child = Class.new(sup) { def value; 1; end }
+    child = Class.new(sup) { def getValue; 1; end }
 
     obj = child.new
     blih = BeanLikeInterfaceHandler.new(obj)
@@ -768,9 +809,10 @@ describe "A Ruby class implementing an interface" do
   end
 end
 
-# JRUBY-6590
-require 'delegate'
 describe "A class that extends a DelegateClass" do
+
+  before(:all) { require 'delegate' }
+
   it "can include a Java interface without error" do
     c1 = Class.new
     lambda do

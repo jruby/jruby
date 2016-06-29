@@ -8,6 +8,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.Type;
 import org.jruby.runtime.ObjectAllocator;
@@ -48,8 +49,8 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         RubyClass cbClass = module.defineClassUnder("Callback", module.getClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
-        cbClass.defineAnnotatedMethods(NativeCallbackPointer.class);
-        cbClass.defineAnnotatedConstants(NativeCallbackPointer.class);
+        cbClass.defineAnnotatedMethods(AbstractInvoker.class);
+        cbClass.defineAnnotatedConstants(AbstractInvoker.class);
 
         return cbClass;
     }

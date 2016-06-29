@@ -2,12 +2,15 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 
 has_dir_fileno = begin
-  Dir.new('.').fileno
+  dir = Dir.new('.')
+  dir.fileno
   true
 rescue NotImplementedError
   false
 rescue Exception
   true
+ensure
+  dir.close
 end
 
 ruby_version_is "2.2" do

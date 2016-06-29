@@ -1,11 +1,8 @@
 require 'test/unit'
+require 'test/jruby/test_helper'
 require 'socket'
 require 'thread'
-require 'test/jruby/test_helper'
 require 'ipaddr'
-require 'timeout'
-
-WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
 class SocketTest < Test::Unit::TestCase
   include TestHelper
@@ -131,10 +128,25 @@ class SocketTest < Test::Unit::TestCase
 
   # JRUBY-2874
   def test_raises_socket_error_on_out_of_range_port
-    [-2**16, -2**8, -2, -1, 2**16, 2**16 + 1, 2**17, 2**30 -1].each do |port|
-      assert_raises(SocketError) do
-        TCPSocket.new('localhost', port)
-      end
+    port = -2**16
+    assert_raises(SocketError) { TCPSocket.new('localhost', port) }
+    # SocketError(<getaddrinfo: Servname not supported for ai_socktype>)
+
+    port = -2**8
+    assert_raises(SocketError) { TCPSocket.new('localhost', port) }
+    # SocketError(<getaddrinfo: Servname not supported for ai_socktype>)
+
+    port = -2
+    assert_raises(SocketError) { TCPSocket.new('localhost', port) }
+    # SocketError(<getaddrinfo: Servname not supported for ai_socktype>)
+
+    port = -1
+    assert_raises(SocketError) { TCPSocket.new('localhost', port) }
+    # SocketError(<getaddrinfo: Servname not supported for ai_socktype>)
+
+    error = defined?(JRUBY_VERSION) ? SocketError : Errno::ECONNREFUSED
+    [ 2**16, 2**16 + 1, 2**17, 2**30 - 1 ].each do |p|
+      assert_raises(error) { TCPSocket.new('localhost', p) }
     end
   end
 
@@ -168,7 +180,7 @@ class SocketTest < Test::Unit::TestCase
   def test_ipv4_socket
     socket = Socket.new(:INET, :STREAM)
     server_socket = ServerSocket.new(:INET, :STREAM)
-  
+
     addr = Addrinfo.tcp('0.0.0.0', 3030)
     addr1 = Addrinfo.tcp('0.0.0.0', 3031)
 
@@ -177,10 +189,68 @@ class SocketTest < Test::Unit::TestCase
     assert_not_equal(server_socket.bind(addr1), nil)
     assert_not_equal(server_socket.listen(128), nil)
   end
+
+  def test_udp_socket_bind
+    begin
+      UDPSocket.new.bind nil, 42
+    rescue Errno::EACCES => e
+      # Permission denied - bind(2) for nil port 42
+      assert_equal 'Permission denied - bind(2) for nil port 42', e.message
+    else; fail 'not raised'
+    end
+
+    #begin
+    #  UDPSocket.new.bind nil, nil
+    #rescue SocketError
+    #  # getaddrinfo: Name or service not known
+    #else; fail 'not raised'
+    #end
+
+    begin
+      socket = UDPSocket.new
+      socket.bind 0, 42
+    rescue Errno::EACCES
+      # Permission denied - bind(2) for 0 port 42
+    else; fail 'not raised'
+    end
+
+    begin
+      UDPSocket.new.bind "127.0.0.1", 191
+    rescue Errno::EACCES
+      # Permission denied - bind(2) for "127.0.0.1" port 191
+    else; fail 'not raised'
+    end
+  end
+
+  def test_tcp_socket_errors
+    begin
+      TCPSocket.new('0.0.0.0', 42)
+    rescue Errno::ECONNREFUSED => e
+      # Connection refused - connect(2) for "0.0.0.0" port 42
+      assert_equal 'Connection refused - connect(2) for "0.0.0.0" port 42', e.message
+    else; fail 'not raised'
+    end
+
+    server = TCPServer.new('127.0.0.1', 10022)
+    Thread.new { server.accept }
+    socket = TCPSocket.new('127.0.0.1', 10022)
+    begin
+      socket.read_nonblock 100
+    rescue IO::EAGAINWaitReadable
+      # Resource temporarily unavailable - read would block
+    else; fail 'not raised'
+    ensure
+      server.close rescue nil
+      socket.close rescue nil
+    end
+  end
+
 end
 
 
 class UNIXSocketTests < Test::Unit::TestCase
+  include TestHelper
+
   # this is intentional, otherwise test run fails on windows
   def test_dummy; end
 
@@ -230,27 +300,27 @@ class UNIXSocketTests < Test::Unit::TestCase
       File.unlink(path) if File.exist?(path)
     end
 
-=begin new UNIXSocket stuff needs work
-       def test_unix_socket_peeraddr
-         path = "/tmp/sample"
+     def test_unix_socket_peeraddr
+       path = "/tmp/sample"
 
-         File.unlink(path) if File.exist?(path)
+       File.unlink(path) if File.exist?(path)
 
-         server = UNIXServer.open(path)
+       server = UNIXServer.open(path)
 
-         cli = UNIXSocket.open(path)
+       cli = UNIXSocket.open(path)
 
-         ssrv = server.accept
+       ssrv = server.accept
 
-         assert_equal ["AF_UNIX", ""], ssrv.peeraddr
-         assert_equal ["AF_UNIX", path], cli.peeraddr
+       assert_equal ["AF_UNIX", ""], ssrv.peeraddr
+       # TODO doesn't work as expected :
+       pend "UNIXSocket#peeraddr #{cli.peeraddr.inspect} does not include path: #{path.inspect}"
+       assert_equal ["AF_UNIX", path], cli.peeraddr
 
-         ssrv.close
-         cli.close
-         server.close
-         File.unlink(path) if File.exist?(path)
-       end
-=end
+       ssrv.close
+       cli.close
+       server.close
+       File.unlink(path) if File.exist?(path)
+     end
 
      def test_unix_socket_raises_exception_on_too_long_path
        assert_raises(ArgumentError) do
@@ -347,85 +417,83 @@ class UNIXSocketTests < Test::Unit::TestCase
        File.unlink(path) if File.exist?(path)
      end
 
-     def test_can_create_socket_server_and_client_connected_to_it
-       path = "/tmp/sample"
+      def test_can_create_socket_server_and_client_connected_to_it
+        path = "/tmp/sample"
 
-       File.unlink(path) if File.exist?(path)
+        File.unlink(path) if File.exist?(path)
 
-       sock = UNIXServer.open(path)
-       assert File.exist?(path)
+        sock = UNIXServer.open(path)
+        assert File.exist?(path)
 
-       cli = UNIXSocket.open(path)
-       cli.close
+        cli = UNIXSocket.open(path)
+        cli.close
 
-       sock.close
+        sock.close
 
-       File.unlink(path) if File.exist?(path)
-     end
+        File.unlink(path) if File.exist?(path)
+      end
 
-     def test_can_create_socket_server_and_client_connected_to_it_and_send_from_client_to_server
-       path = "/tmp/sample"
-       File.unlink(path) if File.exist?(path)
-       sock = UNIXServer.open(path)
-       assert File.exist?(path)
-       cli = UNIXSocket.open(path)
-       servsock = sock.accept
-       cli.send("hello",0)
-       assert_equal "hello", servsock.recv(5)
-       servsock.close
-       cli.close
-       sock.close
-       File.unlink(path) if File.exist?(path)
-     end
+      def test_can_create_socket_server_and_client_connected_to_it_and_send_from_client_to_server
+        path = "/tmp/sample"
+        File.unlink(path) if File.exist?(path)
+        sock = UNIXServer.open(path)
+        assert File.exist?(path)
+        cli = UNIXSocket.open(path)
+        servsock = sock.accept
+        cli.send("hello",0)
+        assert_equal "hello", servsock.recv(5)
+        servsock.close
+        cli.close
+        sock.close
+        File.unlink(path) if File.exist?(path)
+      end
 
-=begin New UNIXSocket stuff needs work
-        def test_can_create_socket_server_and_client_connected_to_it_and_send_from_server_to_client
-          path = "/tmp/sample"
-          File.unlink(path) if File.exist?(path)
-          sock = UNIXServer.open(path)
-          assert File.exist?(path)
-          cli = UNIXSocket.open(path)
-          servsock = sock.accept
-          servsock.send("hello",0)
-          assert_equal "hello", cli.recv(5)
-          servsock.close
-          cli.close
-          sock.close
-          File.unlink(path) if File.exist?(path)
-        end
+      def test_can_create_socket_server_and_client_connected_to_it_and_send_from_server_to_client
+        path = "/tmp/sample"
+        File.unlink(path) if File.exist?(path)
+        sock = UNIXServer.open(path)
+        assert File.exist?(path)
+        cli = UNIXSocket.open(path)
+        servsock = sock.accept
+        servsock.send("hello",0)
+        assert_equal "hello", cli.recv(5)
+        servsock.close
+        cli.close
+        sock.close
+        File.unlink(path) if File.exist?(path)
+      end
 
-        def test_can_create_socket_server_and_client_connected_to_it_and_send_from_client_to_server_using_recvfrom
-          path = "/tmp/sample"
-          File.unlink(path) if File.exist?(path)
-          sock = UNIXServer.open(path)
-          assert File.exist?(path)
-          cli = UNIXSocket.open(path)
-          servsock = sock.accept
-          cli.send("hello",0)
-          assert_equal ["hello", ["AF_UNIX", ""]], servsock.recvfrom(5)
-          servsock.close
-          cli.close
-          sock.close
-          File.unlink(path) if File.exist?(path)
-        end
+      def test_can_create_socket_server_and_client_connected_to_it_and_send_from_client_to_server_using_recvfrom
+        path = "/tmp/sample"
+        File.unlink(path) if File.exist?(path)
+        sock = UNIXServer.open(path)
+        assert File.exist?(path)
+        cli = UNIXSocket.open(path)
+        servsock = sock.accept
+        cli.send("hello",0)
+        assert_equal ["hello", ["AF_UNIX", ""]], servsock.recvfrom(5)
+        servsock.close
+        cli.close
+        sock.close
+        File.unlink(path) if File.exist?(path)
+      end
 
-        def test_can_create_socket_server_and_client_connected_to_it_and_send_from_server_to_client_using_recvfrom
-          path = "/tmp/sample"
-          File.unlink(path) if File.exist?(path)
-          sock = UNIXServer.open(path)
-          assert File.exist?(path)
-          cli = UNIXSocket.open(path)
-          servsock = sock.accept
-          servsock.send("hello",0)
-          data = cli.recvfrom(5)
-          assert_equal "hello", data[0]
-          assert_equal "AF_UNIX", data[1][0]
-          servsock.close
-          cli.close
-          sock.close
-          File.unlink(path) if File.exist?(path)
-        end
-=end
+      def test_can_create_socket_server_and_client_connected_to_it_and_send_from_server_to_client_using_recvfrom
+        path = "/tmp/sample"
+        File.unlink(path) if File.exist?(path)
+        sock = UNIXServer.open(path)
+        assert File.exist?(path)
+        cli = UNIXSocket.open(path)
+        servsock = sock.accept
+        servsock.send("hello",0)
+        data = cli.recvfrom(5)
+        assert_equal "hello", data[0]
+        assert_equal "AF_UNIX", data[1][0]
+        servsock.close
+        cli.close
+        sock.close
+        File.unlink(path) if File.exist?(path)
+      end
 
       def test_can_create_socketpair_and_send_from_one_to_the_other
         sock1, sock2 = UNIXSocket.socketpair
@@ -472,10 +540,37 @@ class UNIXSocketTests < Test::Unit::TestCase
           sock1.recv(1)
         end
       end
+
+      def test_recv_nonblock
+        s1, s2 = UNIXSocket.pair(Socket::SOCK_DGRAM)
+        begin
+          s1.recv_nonblock(1)
+          assert false
+        rescue => e
+          assert(IO::EAGAINWaitReadable === e)
+          assert(IO::WaitReadable === e)
+        end
+        # TODO '' does not get through as expected :
+        #s2.send('', 0)
+        #assert_equal '', s1.recv_nonblock(10, nil)
+        begin
+          s1.recv_nonblock(10, nil)
+          assert false
+        rescue IO::EAGAINWaitReadable
+        end
+        s2.send('a', 0)
+        s1.recv_nonblock(5, nil, str = '')
+        assert_equal 'a', str
+        assert_raise(IO::EAGAINWaitReadable) { s1.recv_nonblock(5, nil, str) }
+        assert_equal :wait_readable, s1.recv_nonblock(5, exception: false)
+      end
+
     end
   end
 
 class ServerTest < Test::Unit::TestCase
+  include TestHelper
+
   def test_server_close_interrupts_pending_accepts
     # unfortunately this test is going to not be 100% reliable
     # since it involves thread interaction and it's impossible to
@@ -498,9 +593,9 @@ class ServerTest < Test::Unit::TestCase
 
   # JRUBY-2874
   def test_raises_socket_error_on_out_of_range_port
-    [-2**16, -2**8, -2, -1, 2**16, 2**16 + 1, 2**17, 2**30 -1].each do |port|
+    [-2**16, -2**8, -2, -1, 2**16, 2**16 + 1, 2**17, 2**30 - 1].each do |p|
       assert_raises(SocketError) do
-        TCPServer.new('localhost', port)
+        TCPServer.new('localhost', p)
       end
     end
   end
@@ -555,6 +650,7 @@ class ServerTest < Test::Unit::TestCase
 
   # jruby/jruby#1637
   def test_read_zero_never_blocks
+    require 'timeout'
     assert_nothing_raised do
       server = TCPServer.new(nil, 12345)
       t = Thread.new do

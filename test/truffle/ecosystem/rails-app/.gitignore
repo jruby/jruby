@@ -1,0 +1,8 @@
+.bundle
+.jruby+truffle_bundle
+.rakeTasks
+
+# Ignore all logfiles and tempfiles.
+/log/*
+!/log/.keep
+/tmp

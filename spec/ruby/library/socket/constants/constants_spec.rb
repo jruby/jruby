@@ -48,14 +48,17 @@ describe "Socket::Constants" do
   end
 
   it "defines multicast options" do
-    consts = ["IP_ADD_MEMBERSHIP", "IP_DEFAULT_MULTICAST_LOOP", "IP_DEFAULT_MULTICAST_TTL",
+    consts = ["IP_ADD_MEMBERSHIP",
               "IP_MULTICAST_LOOP", "IP_MULTICAST_TTL"]
+    platform_is_not :windows do
+      consts += ["IP_DEFAULT_MULTICAST_LOOP", "IP_DEFAULT_MULTICAST_TTL"]
+    end
     consts.each do |c|
       Socket::Constants.should have_constant(c)
     end
   end
 
-  platform_is_not :solaris do
+  platform_is_not :solaris, :windows do
     it "defines multicast options" do
       consts = ["IP_MAX_MEMBERSHIPS"]
       consts.each do |c|
@@ -65,7 +68,10 @@ describe "Socket::Constants" do
   end
 
   it "defines TCP options" do
-    consts = ["TCP_MAXSEG", "TCP_NODELAY"]
+    consts = ["TCP_NODELAY"]
+    platform_is_not :windows do
+      consts << "TCP_MAXSEG"
+    end
     consts.each do |c|
       Socket::Constants.should have_constant(c)
     end

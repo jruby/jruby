@@ -38,10 +38,19 @@ describe "IO.select" do
 
   it "leaves out IO objects for which there is no I/O ready" do
     @wr.write "be ready"
-    # Order matters here. We want to see that @wr doesn't expand the size
-    # of the returned array, so it must be 1st.
-    result = IO.select [@wr, @rd], nil, nil, nil
-    result.should == [[@rd], [], []]
+    platform_is :aix do
+      # In AIX, when a pipe is readable, select(2) returns the write side
+      # of the pipe as "readable", even though you cannot actually read
+      # anything from the write side.
+      result = IO.select [@wr, @rd], nil, nil, nil
+      result.should == [[@wr, @rd], [], []]
+    end
+    platform_is_not :aix do
+      # Order matters here. We want to see that @wr doesn't expand the size
+      # of the returned array, so it must be 1st.
+      result = IO.select [@wr, @rd], nil, nil, nil
+      result.should == [[@rd], [], []]
+    end
   end
 
   it "returns supplied objects correctly even when monitoring the same object in different arrays" do

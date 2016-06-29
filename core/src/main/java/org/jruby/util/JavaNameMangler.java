@@ -1,8 +1,28 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
+/***** BEGIN LICENSE BLOCK *****
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the EPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the EPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
 import org.jruby.ir.IRClassBody;
@@ -15,6 +35,7 @@ import org.jruby.ir.IRScriptBody;
 import org.jruby.platform.Platform;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -203,6 +224,10 @@ public class JavaNameMangler {
     private static final String NULL_ESCAPE = ESCAPE_C +""+ NULL_ESCAPE_C;
 
     public static String mangleMethodName(final String name) {
+        return mangleMethodNameInternal(name).toString();
+    }
+
+    private static CharSequence mangleMethodNameInternal(final String name) {
         // scan for characters that need escaping
         StringBuilder builder = null; // lazy
         for (int i = 0; i < name.length(); i++) {
@@ -220,37 +245,36 @@ public class JavaNameMangler {
             else if (builder != null) builder.append(candidate);
         }
 
-        if (builder != null) return builder.toString();
-
-        return name;
+        return builder != null ? builder : name;
     }
 
     public static String demangleMethodName(String name) {
-        if (!name.startsWith(NULL_ESCAPE)) return name;
-        final int len = name.length();
-        StringBuilder builder = new StringBuilder(len);
-        for (int i = 2; i < len; i++) {
-            char candidate = name.charAt(i);
-            if (candidate == ESCAPE_C) {
-                i++;
-                char escaped = name.charAt(i);
-                char unescape = unescapeChar(escaped);
-                builder.append(unescape);
-            }
-            else builder.append(candidate);
-        }
-
-        return builder.toString();
+        return demangleMethodNameInternal(name).toString();
     }
 
-    public static boolean willMethodMangleOk(String name) {
+    private static CharSequence demangleMethodNameInternal(String name) {
+        if (!name.startsWith(NULL_ESCAPE)) return name;
+
+        final int len = name.length();
+        StringBuilder builder = new StringBuilder(len);
+        for (int i = 2; i < len; i++) { // 2 == NULL_ESCAPE.length
+            final char c = name.charAt(i);
+            if (c == ESCAPE_C) {
+                i++;
+                builder.append( unescapeChar(name.charAt(i)) );
+            }
+            else builder.append(c);
+        }
+        return builder;
+    }
+
+    public static boolean willMethodMangleOk(CharSequence name) {
         if (Platform.IS_IBM) {
-            // IBM's JVM is much less forgiving, so we disallow anythign with non-alphanumeric, _, and $
-            for (char c : name.toCharArray()) {
-                if (!Character.isJavaIdentifierPart(c)) return false;
+            // IBM's JVM is much less forgiving, so we disallow anything with non-alphanumeric, _, and $
+            for ( int i = 0; i < name.length(); i++ ) {
+                if (!Character.isJavaIdentifierPart(name.charAt(i))) return false;
             }
         }
-
         // other JVMs will accept our mangling algorithm
         return true;
     }
@@ -267,45 +291,41 @@ public class JavaNameMangler {
 
     public static String encodeScopeForBacktrace(IRScope scope) {
         if (scope instanceof IRMethod) {
-            return "RUBY$method$" + mangleMethodName(scope.getName());
-        } else if (scope instanceof IRClosure) {
-            return "RUBY$block$" + mangleMethodName(scope.getNearestTopLocalVariableScope().getName());
-        } else if (scope instanceof IRMetaClassBody) {
+            return "RUBY$method$" + mangleMethodNameInternal(scope.getName());
+        }
+        if (scope instanceof IRClosure) {
+            return "RUBY$block$" + mangleMethodNameInternal(scope.getNearestTopLocalVariableScope().getName());
+        }
+        if (scope instanceof IRMetaClassBody) {
             return "RUBY$metaclass";
-        } else if (scope instanceof IRClassBody) {
-            return "RUBY$class$" + mangleMethodName(scope.getName());
-        } else if (scope instanceof IRModuleBody) {
-            return "RUBY$module$" + mangleMethodName(scope.getName());
-        } else if (scope instanceof IRScriptBody) {
+        }
+        if (scope instanceof IRClassBody) {
+            return "RUBY$class$" + mangleMethodNameInternal(scope.getName());
+        }
+        if (scope instanceof IRModuleBody) {
+            return "RUBY$module$" + mangleMethodNameInternal(scope.getName());
+        }
+        if (scope instanceof IRScriptBody) {
             return "RUBY$script";
         }
-        throw new RuntimeException("unknown scope type for backtrace encoding: " + scope.getClass());
+        throw new IllegalStateException("unknown scope type for backtrace encoding: " + scope.getClass());
     }
 
     public static String decodeMethodForBacktrace(String methodName) {
-        if (!methodName.startsWith("RUBY$")) return null;
+        if ( ! methodName.startsWith("RUBY$") ) return null;
 
-        String[] elts = methodName.split("\\$");
-        String type = elts[1];
-        String name;
-
+        final List<String> name = StringSupport.split(methodName, '$');
+        final String type = name.get(1); // e.g. RUBY $ class $ methodName
         // root body gets named (root)
         switch (type) {
-            case "script":
-                return "<top>";
-            case "metaclass":
-                return "singleton class";
+            case "script":    return "<top>";
+            case "metaclass": return "singleton class";
+            // remaining cases have an encoded name
+            case "method":    return demangleMethodName(name.get(2));
+            case "block":     return "block in " + demangleMethodNameInternal(name.get(2));
+            case "class":     // fall through
+            case "module":    return '<' + type + ':' + demangleMethodNameInternal(name.get(2)) + '>';
         }
-
-        // remaining cases have an encoded name
-        name = demangleMethodName(elts[2]);
-        switch (type) {
-            case "method":  return name;
-            case "block":   return "block in " + name;
-            case "class":   // fall through
-            case "module":  return "<" + type + ":" + name + ">";
-            default:
-                throw new RuntimeException("unknown encoded method type '" + type + "' from '" + methodName);
-        }
+        throw new IllegalStateException("unknown encoded method type '" + type + "' from " + methodName);
     }
 }

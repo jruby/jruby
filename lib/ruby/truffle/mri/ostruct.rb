@@ -1,1 +1,1 @@
-require_relative '../../stdlib/ostruct'
+require_relative '../stdlib/ostruct'

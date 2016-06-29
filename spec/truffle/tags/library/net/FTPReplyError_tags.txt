@@ -1,2 +1,0 @@
-fails:Net::FTPReplyError is an Exception
-fails:Net::FTPReplyError is a subclass of Net::FTPError

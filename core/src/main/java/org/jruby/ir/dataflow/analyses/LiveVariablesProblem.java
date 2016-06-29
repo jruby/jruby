@@ -14,8 +14,7 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
 
     public LiveVariablesProblem(IRScope scope) {
         super(DataFlowProblem.DF_Direction.BACKWARD);
-        alwaysLiveVars = new ArrayList<LocalVariable>();
-        varsLiveOnScopeExit = new ArrayList<LocalVariable>(alwaysLiveVars);
+        varsLiveOnScopeExit = new ArrayList<LocalVariable>();
         setup(scope);
     }
 
@@ -43,18 +42,6 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
 
         if (v instanceof LocalVariable && !v.isSelf()) {
             //System.out.println("Adding df var for " + v + ":" + dfv.id);
-            IRScope s = getScope();
-            for (int n = ((LocalVariable) v).getScopeDepth(); s != null && n >= 0; n--) {
-                if (s instanceof IREvalScript) {
-                    // If a variable is at the topmost scope of the eval OR crosses an eval boundary,
-                    // it is going to be marked always live since it could be used by other evals (n = 0)
-                    // or by enclosing scopes (n > 0)
-                    alwaysLiveVars.add((LocalVariable) v);
-                    break;
-                }
-
-                s = s.getLexicalParent();
-            }
             localVars.add((LocalVariable) v);
         }
     }
@@ -87,8 +74,8 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     @Override
     public String getDataFlowVarsForOutput() {
         StringBuilder buf = new StringBuilder();
-        for (Variable v : dfVarMap.keySet()) {
-            buf.append("DF Var ").append(dfVarMap.get(v)).append(" = ").append(v).append("\n");
+        for (Map.Entry<Variable, Integer> entry : dfVarMap.entrySet()) {
+            buf.append("DF Var ").append(entry.getValue()).append(" = ").append(entry.getKey()).append('\n');
         }
 
         return buf.toString();
@@ -125,8 +112,5 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     private HashMap<Variable, Integer> dfVarMap = new HashMap<Variable, Integer>();
     private HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
     private HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
-
-    // Variables that cross eval boundaries and are always live in this scope
-    private List<LocalVariable> alwaysLiveVars;
     private Collection<LocalVariable> varsLiveOnScopeExit;
 }

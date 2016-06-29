@@ -1,0 +1,1 @@
+fails:Etc.group raises a RuntimeError for parallel iteration

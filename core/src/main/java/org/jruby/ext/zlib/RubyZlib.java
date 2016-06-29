@@ -97,31 +97,30 @@ public class RubyZlib {
         mZlib.defineAnnotatedMethods(RubyZlib.class);
 
         RubyClass cStandardError = runtime.getStandardError();
-        RubyClass cZlibError = mZlib.defineClassUnder("Error", cStandardError, cStandardError.getAllocator());
-        mZlib.defineClassUnder("StreamEnd", cZlibError, cZlibError.getAllocator());
-        mZlib.defineClassUnder("StreamError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineClassUnder("BufError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineClassUnder("NeedDict", cZlibError, cZlibError.getAllocator());
-        mZlib.defineClassUnder("MemError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineClassUnder("VersionError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineClassUnder("DataError", cZlibError, cZlibError.getAllocator());
+        RubyClass cZlibError = mZlib.defineOrGetClassUnder("Error", cStandardError, cStandardError.getAllocator());
+        mZlib.defineOrGetClassUnder("StreamEnd", cZlibError, cZlibError.getAllocator());
+        mZlib.defineOrGetClassUnder("StreamError", cZlibError, cZlibError.getAllocator());
+        mZlib.defineOrGetClassUnder("BufError", cZlibError, cZlibError.getAllocator());
+        mZlib.defineOrGetClassUnder("NeedDict", cZlibError, cZlibError.getAllocator());
+        mZlib.defineOrGetClassUnder("MemError", cZlibError, cZlibError.getAllocator());
+        mZlib.defineOrGetClassUnder("VersionError", cZlibError, cZlibError.getAllocator());
+        mZlib.defineOrGetClassUnder("DataError", cZlibError, cZlibError.getAllocator());
 
-        RubyClass cGzFile = mZlib.defineClassUnder("GzipFile", runtime.getObject(), RubyGzipFile.GZIPFILE_ALLOCATOR);
+        RubyClass cGzFile = mZlib.defineOrGetClassUnder("GzipFile", runtime.getObject(), RubyGzipFile.GZIPFILE_ALLOCATOR);
         cGzFile.defineAnnotatedMethods(RubyGzipFile.class);
 
-        cGzFile.defineClassUnder("Error", cZlibError, cZlibError.getAllocator());
-        RubyClass cGzError = cGzFile.defineClassUnder("Error", cZlibError, cZlibError.getAllocator());
+        cGzFile.defineOrGetClassUnder("Error", cZlibError, cZlibError.getAllocator());
+        RubyClass cGzError = cGzFile.defineOrGetClassUnder("Error", cZlibError, cZlibError.getAllocator());
         cGzError.addReadAttribute(runtime.getCurrentContext(), "input");
-        cGzError.defineAnnotatedMethods(RubyGzipFile.Error.class);
-        cGzFile.defineClassUnder("CRCError", cGzError, cGzError.getAllocator());
-        cGzFile.defineClassUnder("NoFooter", cGzError, cGzError.getAllocator());
-        cGzFile.defineClassUnder("LengthError", cGzError, cGzError.getAllocator());
+        cGzFile.defineOrGetClassUnder("CRCError", cGzError, cGzError.getAllocator());
+        cGzFile.defineOrGetClassUnder("NoFooter", cGzError, cGzError.getAllocator());
+        cGzFile.defineOrGetClassUnder("LengthError", cGzError, cGzError.getAllocator());
 
-        RubyClass cGzReader = mZlib.defineClassUnder("GzipReader", cGzFile, JZlibRubyGzipReader.GZIPREADER_ALLOCATOR);
+        RubyClass cGzReader = mZlib.defineOrGetClassUnder("GzipReader", cGzFile, JZlibRubyGzipReader.GZIPREADER_ALLOCATOR);
         cGzReader.includeModule(runtime.getEnumerable());
         cGzReader.defineAnnotatedMethods(JZlibRubyGzipReader.class);
 
-        RubyClass cGzWriter = mZlib.defineClassUnder("GzipWriter", cGzFile, JZlibRubyGzipWriter.GZIPWRITER_ALLOCATOR);
+        RubyClass cGzWriter = mZlib.defineOrGetClassUnder("GzipWriter", cGzFile, JZlibRubyGzipWriter.GZIPWRITER_ALLOCATOR);
         cGzWriter.defineAnnotatedMethods(JZlibRubyGzipWriter.class);
 
         mZlib.defineConstant("ZLIB_VERSION", runtime.newString(ZLIB_VERSION));
@@ -168,14 +167,14 @@ public class RubyZlib {
         mZlib.defineConstant("MAX_WBITS", runtime.newFixnum(JZlib.MAX_WBITS));
 
         // ZStream actually *isn't* allocatable
-        RubyClass cZStream = mZlib.defineClassUnder("ZStream", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass cZStream = mZlib.defineOrGetClassUnder("ZStream", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         cZStream.defineAnnotatedMethods(ZStream.class);
         cZStream.undefineMethod("new");
 
-        RubyClass cInflate = mZlib.defineClassUnder("Inflate", cZStream, JZlibInflate.INFLATE_ALLOCATOR);
+        RubyClass cInflate = mZlib.defineOrGetClassUnder("Inflate", cZStream, JZlibInflate.INFLATE_ALLOCATOR);
         cInflate.defineAnnotatedMethods(JZlibInflate.class);
 
-        RubyClass cDeflate = mZlib.defineClassUnder("Deflate", cZStream, JZlibDeflate.DEFLATE_ALLOCATOR);
+        RubyClass cDeflate = mZlib.defineOrGetClassUnder("Deflate", cZStream, JZlibDeflate.DEFLATE_ALLOCATOR);
         cDeflate.defineAnnotatedMethods(JZlibDeflate.class);
 
         runtime.getKernel().callMethod(runtime.getCurrentContext(), "require", runtime.newString("stringio"));

@@ -1,1 +1,0 @@
-fails:Net::HTTPHeader#chunked? returns true if the 'Transfer-Encoding' header entry is set to chunked

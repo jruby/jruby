@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# frozen_string_literal: true
 #--
 # Copyright (C) 2004 Mauricio Julio Fernández Pradier
 # See LICENSE.txt for additional licensing information.
@@ -234,6 +235,25 @@ class Gem::Package::TarWriter
   end
 
   ##
+  # Adds symlink +name+ with permissions +mode+, linking to +target+.
+
+  def add_symlink(name, target, mode)
+    check_closed
+
+    name, prefix = split_name name
+
+    header = Gem::Package::TarHeader.new(:name => name, :mode => mode,
+                                         :size => 0, :typeflag => "2",
+                                         :linkname => target,
+                                         :prefix => prefix,
+                                         :mtime => Time.now).to_s
+
+    @io.write header
+
+    self
+  end
+
+  ##
   # Raises IOError if the TarWriter is closed
 
   def check_closed
@@ -290,27 +310,21 @@ class Gem::Package::TarWriter
   # Splits +name+ into a name and prefix that can fit in the TarHeader
 
   def split_name(name) # :nodoc:
-    if name.bytesize > 256
+    if name.bytesize > 256 then
       raise Gem::Package::TooLongFileName.new("File \"#{name}\" has a too long path (should be 256 or less)")
     end
 
-    if name.bytesize <= 100 then
-      prefix = ""
-    else
-      parts = name.split(/\//)
-      newname = parts.pop
-      nxt = ""
-
-      loop do
-        nxt = parts.pop
-        break if newname.bytesize + 1 + nxt.bytesize > 100
-        newname = nxt + "/" + newname
+    prefix = ''
+    if name.bytesize > 100 then
+      parts = name.split('/', -1) # parts are never empty here
+      name = parts.pop            # initially empty for names with a trailing slash ("foo/.../bar/")
+      prefix = parts.join('/')    # if empty, then it's impossible to split (parts is empty too)
+      while !parts.empty? && (prefix.bytesize > 155 || name.empty?)
+        name = parts.pop + '/' + name
+        prefix = parts.join('/')
       end
 
-      prefix = (parts + [nxt]).join "/"
-      name = newname
-
-      if name.bytesize > 100
+      if name.bytesize > 100 or prefix.empty? then
         raise Gem::Package::TooLongFileName.new("File \"#{prefix}/#{name}\" has a too long name (should be 100 or less)")
       end
 
@@ -323,4 +337,3 @@ class Gem::Package::TarWriter
   end
 
 end
-

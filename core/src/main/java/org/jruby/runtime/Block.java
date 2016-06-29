@@ -17,7 +17,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2004-2007 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -41,44 +41,45 @@
 
 package org.jruby.runtime;
 
+import java.util.Objects;
 import org.jruby.EvalType;
-import org.jruby.RubyArray;
 import org.jruby.RubyProc;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public final class Block {
+public class Block {
     public enum Type {
         NORMAL(false), PROC(false), LAMBDA(true), THREAD(false);
-        
+
         Type(boolean checkArity) {
             this.checkArity = checkArity;
         }
-        
+
         public final boolean checkArity;
     }
-    
+
     /**
      * The Proc that this block is associated with.  When we reference blocks via variable
      * reference they are converted to Proc objects.  We store a reference of the associated
-     * Proc object for easy conversion.  
+     * Proc object for easy conversion.
      */
     private RubyProc proc = null;
-    
+
     public Type type = Type.NORMAL;
-    
+
     private final Binding binding;
-    
+
     private final BlockBody body;
-    
+
     /** Whether this block and any clones of it should be considered "escaped" */
     private boolean escaped;
-    
+
     /** What block to use for determining escape; defaults to this */
     private Block escapeBlock = this;
-    
+
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
@@ -174,18 +175,17 @@ public final class Block {
         // SSS FIXME: Later on, we can move this code into IR insructions or
         // introduce a specialized entry-point when we know that this block has
         // explicit call protocol IR instructions.
-        IRubyObject[] args;
-        if (value instanceof RubyArray) {
-            args = value.convertToArray().toJavaArray();
-        } else {
-            args = new IRubyObject[] { value };
-        }
+        IRubyObject[] args = IRRuntimeHelpers.singleBlockArgToArray(value);
         return body.yield(context, this, args, self);
+    }
+
+    public IRubyObject yieldValues(ThreadContext context, IRubyObject[] args) {
+        return body.yield(context, this, args, null);
     }
 
     public Block cloneBlock() {
         Block newBlock = new Block(body, binding);
-        
+
         newBlock.type = type;
         newBlock.escapeBlock = this;
 
@@ -202,9 +202,9 @@ public final class Block {
                 oldBinding.getMethod(),
                 oldBinding.getFile(),
                 oldBinding.getLine());
-        
+
         Block newBlock = new Block(body, binding);
-        
+
         newBlock.type = type;
         newBlock.escapeBlock = this;
 
@@ -223,12 +223,12 @@ public final class Block {
 
     /**
      * What is the arity of this block?
-     * 
+     *
      * @return the arity
      */
     @Deprecated
     public Arity arity() {
-        return body.getSignature().arity();
+        return getSignature().arity();
     }
 
     public Signature getSignature() {
@@ -237,69 +237,72 @@ public final class Block {
 
     /**
      * Retrieve the proc object associated with this block
-     * 
+     *
      * @return the proc or null if this has no proc associated with it
      */
     public RubyProc getProcObject() {
     	return proc;
     }
-    
+
     /**
      * Set the proc object associated with this block
-     * 
+     *
      * @param procObject
      */
     public void setProcObject(RubyProc procObject) {
     	this.proc = procObject;
     }
-    
+
     /**
      * Is the current block a real yield'able block instead a null one
-     * 
+     *
      * @return true if this is a valid block or false otherwise
      */
-    final public boolean isGiven() {
+    public final boolean isGiven() {
         return this != NULL_BLOCK;
     }
-    
+
     public Binding getBinding() {
         return binding;
     }
-    
+
     public BlockBody getBody() {
         return body;
     }
 
     /**
      * Gets the frame.
-     * 
+     *
      * @return Returns a RubyFrame
      */
     public Frame getFrame() {
         return binding.getFrame();
     }
-    
+
     public boolean isEscaped() {
         return escapeBlock.escaped;
     }
-    
+
     public void escape() {
         escapeBlock.escaped = true;
     }
 
     @Override
     public boolean equals(Object other) {
-        if(this == other) {
-            return true;
-        }
+        if ( this == other ) return true;
+        if ( ! ( other instanceof Block ) ) return false;
 
-        if(!(other instanceof Block)) {
-            return false;
-        }
+        final Block that = (Block) other;
 
-        Block bOther = (Block)other;
-
-        return this.binding.equals(bOther.binding) &&
-            this.body == bOther.body;
+        return this.binding.equals(that.binding) && this.body == that.body;
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 11;
+        hash = 13 * hash + Objects.hashCode(this.binding);
+        hash = 17 * hash + Objects.hashCode(this.body);
+        return hash;
+    }
+
 }

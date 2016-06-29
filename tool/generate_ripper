@@ -48,8 +48,8 @@ $JAY $DEBUG_FLAG $PARSER_BASE.y < skeleton.parser | grep -v $DEBUG_STRIP >$PARSE
 
 # Patch file to get around Java static initialization issues plus extract
 # a bunch of stuff to seperate file (yytables).
-$RUBY $BACKUP_DIR/bin/patch_parser.rb $PARSER_BASE.out $YYTABLE_PREFIX > $PARSER_BASE.out2
-$RUBY $BACKUP_DIR/bin/optimize_parser.rb $PARSER_BASE.out2 $YYTABLE_PREFIX > $PARSER_BASE.java
+$RUBY $BACKUP_DIR/tool/patch_parser.rb $PARSER_BASE.out $YYTABLE_PREFIX > $PARSER_BASE.out2
+$RUBY $BACKUP_DIR/tool/optimize_parser.rb $PARSER_BASE.out2 $YYTABLE_PREFIX > $PARSER_BASE.java
 rm -f $PARSER_BASE.out $PARSER_BASE.out2
 
 popd

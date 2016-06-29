@@ -1,0 +1,4 @@
+graalvm:StringScanner#rest returns the rest of the string
+graalvm:StringScanner#rest returns an instance of String when passed a String subclass
+graalvm:StringScanner#rest taints the returned String if the input was tainted
+graalvm:StringScanner#rest? returns true if there is more data in the string

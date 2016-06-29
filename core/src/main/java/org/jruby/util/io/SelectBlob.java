@@ -11,7 +11,7 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,7 +28,7 @@ package org.jruby.util.io;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
 import org.jruby.RubyFloat;
 import org.jruby.RubyIO;
 import org.jruby.RubyThread;
@@ -44,11 +44,12 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import org.jruby.exceptions.RaiseException;
 
 /**
  * This is a reimplementation of MRI's IO#select logic. It has been rewritten
  * from an earlier version in JRuby to improve performance and readability.
- * 
+ *
  * This version avoids allocating a selector or any data structures to hold
  * data about the channels/IOs being selected unless absolutely necessary. It
  * also uses simple boolean arrays to track characteristics like whether an IO
@@ -70,13 +71,13 @@ public class SelectBlob {
                 checkArrayType(runtime, args[2]);
                 // Java's select doesn't do anything about this, so we leave it be.
             }
-            boolean has_timeout = args.length > 3 && !args[3].isNil();
-            long timeout = !has_timeout ? 0 : getTimeoutFromArg(args[3], runtime);
-            
+            final boolean has_timeout = args.length > 3 && !args[3].isNil();
+            final long timeout = !has_timeout ? 0 : convertTimeout(context, args[3]);
+
             if (timeout < 0) {
                 throw runtime.newArgumentError("time interval must be positive");
             }
-            
+
             // If all streams are nil, just sleep the specified time (JRUBY-4699)
             if (args[0].isNil() && args[1].isNil() && args[2].isNil()) {
                 RubyThread thread = context.getThread();
@@ -98,7 +99,7 @@ public class SelectBlob {
                 processPendingAndUnselectable();
                 tidyUp();
             }
-            
+
             if (readResults == null && writeResults == null && errorResults == null) {
                 return runtime.getNil();
             }
@@ -136,7 +137,7 @@ public class SelectBlob {
                 for (int i = 0; i < readSize; i++) {
                     RubyIO ioObj = saveReadIO(i, context);
                     saveReadBlocking(ioObj, i);
-                    saveBufferedRead(ioObj, i);                    
+                    saveBufferedRead(ioObj, i);
                     attachment.clear();
                     attachment.put('r', i);
                     trySelectRead(context, attachment, ioObj.getOpenFileChecked());
@@ -194,7 +195,7 @@ public class SelectBlob {
                 for (int i = 0; i < writeSize; i++) {
                     RubyIO ioObj = saveWriteIO(i, context);
                     saveWriteBlocking(ioObj, i);
-                    attachment.clear();                    
+                    attachment.clear();
                     attachment.put('w', i);
                     trySelectWrite(context, attachment, ioObj.getOpenFileChecked());
                 }
@@ -236,82 +237,95 @@ public class SelectBlob {
         }
     }
 
-    private static long getTimeoutFromArg(IRubyObject timeArg, Ruby runtime) {
-        long timeout = 0;
-        if (timeArg instanceof RubyFloat) {
-            timeout = Math.round(((RubyFloat) timeArg).getDoubleValue() * 1000);
-        } else if (timeArg instanceof RubyFixnum) {
-            timeout = Math.round(((RubyFixnum) timeArg).getDoubleValue() * 1000);
-        } else {
-            // TODO: MRI also can hadle Bignum here
-            throw runtime.newTypeError("can't convert " + timeArg.getMetaClass().getName() + " into time interval");
+    private static long convertTimeout(final ThreadContext context, IRubyObject timeoutArg) {
+        final long timeout;
+        if (timeoutArg instanceof RubyFloat) {
+            timeout = Math.round(((RubyFloat) timeoutArg).getDoubleValue() * 1000);
         }
-        if (timeout < 0) {
-            throw runtime.newArgumentError("negative timeout given");
+        else if (timeoutArg instanceof RubyInteger) {
+            timeout = Math.round(((RubyInteger) timeoutArg).getDoubleValue() * 1000);
         }
+        else {
+            final Ruby runtime = context.runtime;
+            if ( ! runtime.is1_8() ) {
+                RubyFloat t = null;
+                try {
+                    t = timeoutArg.callMethod(context, "to_f").convertToFloat();
+                }
+                catch (RaiseException e) { /* fallback to TypeError */ }
+
+                timeout = t != null ? Math.round(t.getDoubleValue() * 1000) : -1;
+            }
+            else timeout = -1;
+            if ( timeout == -1 ) {
+                throw runtime.newTypeError("can't convert " + timeoutArg.getMetaClass().getName() + " into time interval");
+            }
+        }
+
+        if ( timeout < 0 ) throw context.runtime.newArgumentError("negative timeout given");
         return timeout;
 }
 
-private void doSelect(Ruby runtime, final boolean has_timeout, long timeout) throws IOException {
-    if (mainSelector != null) {
-        if (pendingReads == null && unselectableReads == null && unselectableWrites == null) {
-            if (has_timeout && timeout == 0) {
-                for (Selector selector : selectors.values()) selector.selectNow();
-            } else {
-                List<Future> futures = new ArrayList<Future>(enxioSelectors.size());
-                for (ENXIOSelector enxioSelector : enxioSelectors) {
-                    futures.add(runtime.getExecutor().submit(enxioSelector));
-                }
+    private void doSelect(Ruby runtime, final boolean has_timeout, long timeout) throws IOException {
+        if (mainSelector != null) {
+            if (pendingReads == null && unselectableReads == null && unselectableWrites == null) {
+                if (has_timeout && timeout == 0) {
+                    for (Selector selector : selectors.values()) selector.selectNow();
+                } else {
+                    List<Future> futures = new ArrayList<Future>(enxioSelectors.size());
+                    for (ENXIOSelector enxioSelector : enxioSelectors) {
+                        futures.add(runtime.getExecutor().submit(enxioSelector));
+                    }
 
-                mainSelector.select(has_timeout ? timeout : 0);
-                for (ENXIOSelector enxioSelector : enxioSelectors) enxioSelector.selector.wakeup();
-                // ensure all the enxio threads have finished
-                for (Future f : futures) try {
-                    f.get();
-                } catch (InterruptedException iex) {
-                } catch (ExecutionException eex) {
-                    if (eex.getCause() instanceof IOException) {
-                        throw (IOException) eex.getCause();
+                    mainSelector.select(has_timeout ? timeout : 0);
+                    for (ENXIOSelector enxioSelector : enxioSelectors) enxioSelector.selector.wakeup();
+                    // ensure all the enxio threads have finished
+                    for (Future f : futures) try {
+                        f.get();
+                    } catch (InterruptedException iex) {
+                    } catch (ExecutionException eex) {
+                        if (eex.getCause() instanceof IOException) {
+                            throw (IOException) eex.getCause();
+                        }
                     }
                 }
+            } else {
+                for (Selector selector : selectors.values()) selector.selectNow();
             }
-        } else {
-            for (Selector selector : selectors.values()) selector.selectNow();
+        }
+
+        // If any enxio selectors woke up, remove them from the selected key set of the main selector
+        for (ENXIOSelector enxioSelector : enxioSelectors) {
+            Pipe.SourceChannel source = enxioSelector.pipe.source();
+            SelectionKey key = source.keyFor(mainSelector);
+            if (key != null && mainSelector.selectedKeys().contains(key)) {
+                mainSelector.selectedKeys().remove(key);
+                ByteBuffer buf = ByteBuffer.allocate(1);
+                source.read(buf);
+            }
         }
     }
 
-    // If any enxio selectors woke up, remove them from the selected key set of the main selector
-    for (ENXIOSelector enxioSelector : enxioSelectors) {
-        Pipe.SourceChannel source = enxioSelector.pipe.source();
-        SelectionKey key = source.keyFor(mainSelector);
-        if (key != null && mainSelector.selectedKeys().contains(key)) {
-            mainSelector.selectedKeys().remove(key);
-            ByteBuffer buf = ByteBuffer.allocate(1);
-            source.read(buf);
-        }
-    }
-}
-    
     public static final int READ_ACCEPT_OPS = SelectExecutor.READ_ACCEPT_OPS;
     public static final int WRITE_CONNECT_OPS = SelectExecutor.WRITE_CONNECT_OPS;
     private static final int CANCELLED_OPS = SelectionKey.OP_READ | SelectionKey.OP_ACCEPT | SelectionKey.OP_CONNECT;
-    
+
     private static boolean ready(int ops, int mask) {
         return (ops & mask) != 0;
     }
-    
+
     private static boolean readAcceptReady(int ops) {
         return ready(ops, READ_ACCEPT_OPS);
     }
-    
+
     private static boolean writeConnectReady(int ops) {
         return ready(ops, WRITE_CONNECT_OPS);
     }
-    
+
     private static boolean cancelReady(int ops) {
         return ready(ops, CANCELLED_OPS);
     }
-    
+
     private static boolean writeReady(int ops) {
         return ready(ops, SelectionKey.OP_WRITE);
     }
@@ -319,7 +333,7 @@ private void doSelect(Ruby runtime, final boolean has_timeout, long timeout) thr
     @SuppressWarnings("unchecked")
     private void processSelectedKeys(Ruby runtime) throws IOException {
         for (Selector selector : selectors.values()) {
-            
+
             for (SelectionKey key : selector.selectedKeys()) {
                 int readIoIndex = 0;
                 int writeIoIndex = 0;
@@ -551,7 +565,7 @@ private void doSelect(Ruby runtime, final boolean has_timeout, long timeout) thr
             return null;
         }
     }
-    
+
     Ruby runtime;
     RubyArray readArray = null;
     int readSize = 0;

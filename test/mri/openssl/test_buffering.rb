@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require_relative 'utils'
 require 'stringio'
 
@@ -61,7 +62,7 @@ class OpenSSL::TestBuffering < Test::Unit::TestCase
       raise SystemCallError, 'fail'
     end
 
-    assert_raises SystemCallError do
+    assert_raise SystemCallError do
       @io.flush
     end
 
@@ -84,4 +85,4 @@ class OpenSSL::TestBuffering < Test::Unit::TestCase
     assert_equal([97, 98, 99], res)
   end
 
-end if defined?(OpenSSL)
+end if defined?(OpenSSL::TestUtils)

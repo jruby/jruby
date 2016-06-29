@@ -74,6 +74,7 @@ public @interface JRubyMethod {
     /**
      * Whether this method expects to have a heap-based variable scope allocated for it.
      */
+    @Deprecated
     boolean scope() default false;
     /**
      * Whether this method is specific to Ruby 1.9

@@ -486,43 +486,132 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject[] strings, RegexpOptions options) {
         RubyString string = null;
         Encoding regexpEnc = null;
-        Encoding[] fixedEnc = new Encoding[1];
 
         for (int i = 0; i < strings.length; i++) {
             RubyString str = strings[i].convertToString();
-            Encoding strEnc = str.getEncoding();
-
-            if (options.isEncodingNone() && strEnc != ASCIIEncoding.INSTANCE) {
-                if (str.scanForCodeRange() != StringSupport.CR_7BIT) {
-                    throw runtime.newRegexpError("/.../n has a non escaped non ASCII character in non ASCII-8BIT script");
-                }
-                strEnc = ASCIIEncoding.INSTANCE;
-            }
-
-            // This used to call preprocess, but the resulting bytelist was not
-            // used. Since the preprocessing error-checking can be done without
-            // creating a new bytelist, I added a "light" path.
-            RubyRegexp.preprocessLight(runtime, str.getByteList(), strEnc, fixedEnc, RegexpSupport.ErrorMode.PREPROCESS);
-
-            if (fixedEnc[0] != null) {
-                if (regexpEnc != null && regexpEnc != fixedEnc[0]) {
-                    throw runtime.newRegexpError("encoding mismatch in dynamic regexp: " + new String(regexpEnc.getName()) + " and " + new String(fixedEnc[0].getName()));
-                }
-                regexpEnc = fixedEnc[0];
-            }
-
-            if (string == null) {
-                string = (RubyString)str.dup();
-            } else {
-                string.append19(str);
-            }
+            regexpEnc = processDRegexpElement(runtime, options, regexpEnc, runtime.getCurrentContext().encodingHolder(), str);
+            string = string == null ? string = (RubyString)str.dup() : string.append19(str);
         }
 
-        if (regexpEnc != null) {
-            string.setEncoding(regexpEnc);
-        }
+        if (regexpEnc != null) string.setEncoding(regexpEnc);
 
         return string;
+    }
+
+    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, RegexpOptions options) {
+        return processElementIntoResult(runtime, null, arg0, options, null, runtime.getCurrentContext().encodingHolder());
+    }
+
+    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, RegexpOptions options) {
+        return processElementIntoResult(runtime, null, arg0, arg1, options, null, runtime.getCurrentContext().encodingHolder());
+    }
+
+    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, RegexpOptions options) {
+        return processElementIntoResult(runtime, null, arg0, arg1, arg2, options, null, runtime.getCurrentContext().encodingHolder());
+    }
+
+    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, RegexpOptions options) {
+        return processElementIntoResult(runtime, null, arg0, arg1, arg2, arg3, options, null, runtime.getCurrentContext().encodingHolder());
+    }
+
+    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, RegexpOptions options) {
+        return processElementIntoResult(runtime, null, arg0, arg1, arg2, arg3, arg4, options, null, runtime.getCurrentContext().encodingHolder());
+    }
+
+    private static RubyString processElementIntoResult(
+            Ruby runtime,
+            RubyString result,
+            IRubyObject arg0,
+            IRubyObject arg1,
+            IRubyObject arg2,
+            IRubyObject arg3,
+            IRubyObject arg4,
+            RegexpOptions options,
+            Encoding regexpEnc,
+            Encoding[] fixedEnc) {
+        RubyString str = arg0.convertToString();
+        regexpEnc = processDRegexpElement(runtime, options, regexpEnc, fixedEnc, str);
+        return processElementIntoResult(runtime, result == null ? str.strDup(runtime) : result.append19(str), arg1, arg2, arg3, arg4, options, regexpEnc, fixedEnc);
+    }
+
+    private static RubyString processElementIntoResult(
+            Ruby runtime,
+            RubyString result,
+            IRubyObject arg0,
+            IRubyObject arg1,
+            IRubyObject arg2,
+            IRubyObject arg3,
+            RegexpOptions options,
+            Encoding regexpEnc,
+            Encoding[] fixedEnc) {
+        RubyString str = arg0.convertToString();
+        regexpEnc = processDRegexpElement(runtime, options, regexpEnc, fixedEnc, str);
+        return processElementIntoResult(runtime, result == null ? str.strDup(runtime) : result.append19(str), arg1, arg2, arg3, options, regexpEnc, fixedEnc);
+    }
+
+    private static RubyString processElementIntoResult(
+            Ruby runtime,
+            RubyString result,
+            IRubyObject arg0,
+            IRubyObject arg1,
+            IRubyObject arg2,
+            RegexpOptions options,
+            Encoding regexpEnc,
+            Encoding[] fixedEnc) {
+        RubyString str = arg0.convertToString();
+        regexpEnc = processDRegexpElement(runtime, options, regexpEnc, fixedEnc, str);
+        return processElementIntoResult(runtime, result == null ? str.strDup(runtime) : result.append19(str), arg1, arg2, options, regexpEnc, fixedEnc);
+    }
+
+    private static RubyString processElementIntoResult(
+            Ruby runtime,
+            RubyString result,
+            IRubyObject arg0,
+            IRubyObject arg1,
+            RegexpOptions options,
+            Encoding regexpEnc,
+            Encoding[] fixedEnc) {
+        RubyString str = arg0.convertToString();
+        regexpEnc = processDRegexpElement(runtime, options, regexpEnc, fixedEnc, str);
+        return processElementIntoResult(runtime, result == null ? str.strDup(runtime) : result.append19(str), arg1, options, regexpEnc, fixedEnc);
+    }
+
+    private static RubyString processElementIntoResult(
+            Ruby runtime,
+            RubyString result,
+            IRubyObject arg0,
+            RegexpOptions options,
+            Encoding regexpEnc,
+            Encoding[] fixedEnc) {
+        RubyString str = arg0.convertToString();
+        regexpEnc = processDRegexpElement(runtime, options, regexpEnc, fixedEnc, str);
+        result = result == null ? str.strDup(runtime) : result.append19(str);
+        if (regexpEnc != null) result.setEncoding(regexpEnc);
+        return result;
+    }
+
+    private static Encoding processDRegexpElement(Ruby runtime, RegexpOptions options, Encoding regexpEnc, Encoding[] fixedEnc, RubyString str) {
+        Encoding strEnc = str.getEncoding();
+
+        if (options.isEncodingNone() && strEnc != ASCIIEncoding.INSTANCE) {
+            if (str.scanForCodeRange() != StringSupport.CR_7BIT) {
+                throw runtime.newRegexpError("/.../n has a non escaped non ASCII character in non ASCII-8BIT script");
+            }
+            strEnc = ASCIIEncoding.INSTANCE;
+        }
+
+        // This used to call preprocess, but the resulting bytelist was not
+        // used. Since the preprocessing error-checking can be done without
+        // creating a new bytelist, I added a "light" path.
+        RubyRegexp.preprocessLight(runtime, str.getByteList(), strEnc, fixedEnc, RegexpSupport.ErrorMode.PREPROCESS);
+
+        if (fixedEnc[0] != null) {
+            if (regexpEnc != null && regexpEnc != fixedEnc[0]) {
+                throw runtime.newRegexpError("encoding mismatch in dynamic regexp: " + new String(regexpEnc.getName()) + " and " + new String(fixedEnc[0].getName()));
+            }
+            regexpEnc = fixedEnc[0];
+        }
+        return regexpEnc;
     }
 
     private void check() {
@@ -1345,7 +1434,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyArray ary = runtime.newArray(pattern.numberOfNames());
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
-            RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP);
+            RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP, pattern.getEncoding());
             ary.append(name);
         }
         return ary;

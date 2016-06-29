@@ -14,7 +14,9 @@ end
 platform_is_not :windows do
   describe "Etc.getgrnam" do
     it "returns a Etc::Group struct instance for the given group" do
-      gr = Etc.getgrnam("daemon")
+      gr_name = Etc.getgrent.name
+      Etc.endgrent
+      gr = Etc.getgrnam(gr_name)
       gr.is_a?(Etc::Group).should == true
     end
 

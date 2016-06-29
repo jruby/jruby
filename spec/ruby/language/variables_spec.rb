@@ -290,6 +290,13 @@ describe "Multiple assignment" do
       a[1], a[2] = 1
       a.should == [nil, 1, nil]
     end
+
+    it "assigns constants" do
+      module VariableSpecs
+        SINGLE_RHS_1, SINGLE_RHS_2 = 1
+        [SINGLE_RHS_1, SINGLE_RHS_2].should == [1, nil]
+      end
+    end
   end
 
   context "with a single splatted RHS value" do
@@ -523,6 +530,13 @@ describe "Multiple assignment" do
       [a, b, c, d].should == [1, [2], 3, 4]
       x.should == [1, 2, 3, 4]
     end
+
+    it "assigns constants" do
+      module VariableSpecs
+        (*SINGLE_SPLATTED_RHS) = *1
+        SINGLE_SPLATTED_RHS.should == [1]
+      end
+    end
   end
 
   context "with a MRHS value" do
@@ -705,6 +719,21 @@ describe "Multiple assignment" do
     it "does not mutate the assigned Array" do
       x = ((a, *b, c, d) = 1, 2, 3, 4, 5)
       x.should == [1, 2, 3, 4, 5]
+    end
+
+    it "assigns RHS values to LHS constants" do
+      module VariableSpecs
+        MRHS_VALUES_1, MRHS_VALUES_2 = 1, 2
+        MRHS_VALUES_1.should == 1
+        MRHS_VALUES_2.should == 2
+      end
+    end
+
+    it "assigns all RHS values as an array to a single LHS constant" do
+      module VariableSpecs
+        MRHS_VALUES = 1, 2, 3
+        MRHS_VALUES.should == [1, 2, 3]
+      end
     end
   end
 

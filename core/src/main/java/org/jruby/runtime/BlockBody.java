@@ -33,12 +33,16 @@
 
 package org.jruby.runtime;
 
+import com.headius.invokebinder.Binder;
 import org.jruby.EvalType;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 
 /**
  * The executable body portion of a closure.
@@ -48,6 +52,7 @@ public abstract class BlockBody {
     public static final String[] EMPTY_PARAMETER_LIST = org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
     protected final Signature signature;
+    protected volatile MethodHandle testBlockBody;
 
     public BlockBody(Signature signature) {
         this.signature = signature;
@@ -58,11 +63,22 @@ public abstract class BlockBody {
     }
 
     public void setEvalType(EvalType evalType) {
-        System.err.println("setEvalType unimplemented in " + this.getClass().getName());
     }
 
     public boolean canCallDirect() {
         return false;
+    }
+
+    public MethodHandle getTestBlockBody() {
+        if (testBlockBody != null) return testBlockBody;
+
+        return testBlockBody = Binder.from(boolean.class, ThreadContext.class, Block.class).drop(0).append(this).invoke(TEST_BLOCK_BODY);
+    }
+
+    private static final MethodHandle TEST_BLOCK_BODY = Binder.from(boolean.class, Block.class, BlockBody.class).invokeStaticQuiet(MethodHandles.lookup(), BlockBody.class, "testBlockBody");
+
+    public static boolean testBlockBody(Block block, BlockBody body) {
+        return block.getBody() == body;
     }
 
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {

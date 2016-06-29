@@ -8,7 +8,12 @@ module TestHelper
   SEPARATOR = WINDOWS ? '\\' : '/'
   # using the classloader setup to determine whether it runs inside
   # ScriptingContainer or via commandline
-  IS_COMMAND_LINE_EXECUTION = JRuby.runtime.jruby_class_loader == java.lang.Thread.current_thread.context_class_loader
+  if defined?(JRUBY_VERSION)
+    IS_COMMAND_LINE_EXECUTION = JRuby.runtime.jruby_class_loader == java.lang.Thread.current_thread.context_class_loader
+  else
+    IS_COMMAND_LINE_EXECUTION = true
+  end
+
   IS_JAR_EXECUTION = RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//)
   RUBY = if IS_JAR_EXECUTION
            exe = 'java'
@@ -41,6 +46,8 @@ module TestHelper
 
   IBM_JVM = RbConfig::CONFIG['host_vendor'] =~ /IBM Corporation/
 
+  JAVA_8 = ENV_JAVA['java.specification.version'] >= '1.8'
+
   def q
     WINDOWS ? '"' : '\''
   end
@@ -61,7 +68,7 @@ module TestHelper
       args = args[0..-2]
     end
     options.each { |k,v| args.unshift "-J-D#{k}=\"#{v}\"" } unless RUBY =~ /-cp /
-    with_jruby_shell_spawning { `#{interpreter(options)} #{args.join(' ')}` }
+    with_jruby_shell_spawning { sh "#{interpreter(options)} #{args.join(' ')}" }
   end
 
   def jruby_with_pipe(pipe, *args)
@@ -71,8 +78,14 @@ module TestHelper
       args = args[0..-2]
     end
     options.each { |k,v| args.unshift "-J-D#{k}=\"#{v}\"" } unless RUBY =~ /-cp /
-    with_jruby_shell_spawning { `#{pipe} | #{interpreter(options)} #{args.join(' ')}` }
+    with_jruby_shell_spawning { sh "#{pipe} | #{interpreter(options)} #{args.join(' ')}" }
   end
+
+  def sh(cmd)
+    puts cmd if $DEBUG
+    return `#{cmd}`
+  end
+  private :sh
 
   def with_temp_script(script, filename="test-script")
     Tempfile.open([filename, ".rb"]) do |f|

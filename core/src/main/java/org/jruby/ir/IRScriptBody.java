@@ -5,9 +5,11 @@ import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public class IRScriptBody extends IRScope {
     private List<IRClosure> beginBlocks;
@@ -35,6 +37,17 @@ public class IRScriptBody extends IRScope {
     @Override
     public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
         interpreterContext = new BeginEndInterpreterContext(this, instructions);
+
+        return interpreterContext;
+    }
+
+    @Override
+    public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
+        try {
+            interpreterContext = new BeginEndInterpreterContext(this, instructions);
+        } catch (Exception e) {
+            Helpers.throwException(e);
+        }
 
         return interpreterContext;
     }

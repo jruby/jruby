@@ -11,20 +11,21 @@ describe :file_world_readable, shared: true do
     rm_r @file
   end
 
-  # These will surely fail on Windows.
-  it "returns nil if the file is chmod 600" do
-    File.chmod(0600, @file)
-    @object.world_readable?(@file).should be_nil
-  end
+  platform_is_not :windows do
+    it "returns nil if the file is chmod 600" do
+      File.chmod(0600, @file)
+      @object.world_readable?(@file).should be_nil
+    end
 
-  it "returns nil if the file is chmod 000" do
-    File.chmod(0000, @file)
-    @object.world_readable?(@file).should be_nil
-  end
+    it "returns nil if the file is chmod 000" do
+      File.chmod(0000, @file)
+      @object.world_readable?(@file).should be_nil
+    end
 
-  it "returns nil if the file is chmod 700" do
-    File.chmod(0700, @file)
-    @object.world_readable?(@file).should be_nil
+    it "returns nil if the file is chmod 700" do
+      File.chmod(0700, @file)
+      @object.world_readable?(@file).should be_nil
+    end
   end
 
   # We don't specify what the Fixnum is because it's system dependent

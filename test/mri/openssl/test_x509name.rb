@@ -1,7 +1,8 @@
 # coding: US-ASCII
+# frozen_string_literal: false
 require_relative 'utils'
 
-if defined?(OpenSSL)
+if defined?(OpenSSL::TestUtils)
 
 class OpenSSL::TestX509Name < Test::Unit::TestCase
   OpenSSL::ASN1::ObjectId.register(

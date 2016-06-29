@@ -35,12 +35,8 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.common.RubyWarnings;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.util.concurrent.Callable;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
@@ -68,7 +64,7 @@ public class RubyComparable {
      *
      */
     public static int cmpint(ThreadContext context, IRubyObject val, IRubyObject a, IRubyObject b) {
-        if (val.isNil()) cmperr(a, b);
+        if (val == context.nil) cmperr(a, b);
         if (val instanceof RubyFixnum) {
             final int asInt = RubyNumeric.fix2int((RubyFixnum) val);
 
@@ -146,36 +142,19 @@ public class RubyComparable {
         if (recv == other) return runtime.getTrue();
 
         final IRubyObject $ex = context.getErrorInfo();
-        try {
-            IRubyObject result = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
-                @Override
-                public IRubyObject call(IRubyObject obj, boolean recur) {
-                    if (recur) return runtime.getNil();
-                    return invokedynamic(context, recv, OP_CMP, other);
-                }
-            }, recv);
 
-            // This is only to prevent throwing exceptions by cmperr - it has poor performance
-            if ( result.isNil() ) return returnValueOnError;
-
-            return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
-        }
-        catch (RaiseException e) {
-            if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
-                cmpFailed(context);
-                // clear error info resulting from failure to compare (JRUBY-3292)
-                context.setErrorInfo($ex); // restore previous $! error (if any)
-                return returnValueOnError;
+        IRubyObject result = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
+            @Override
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                if (recur) return runtime.getNil();
+                return invokedynamic(context, recv, OP_CMP, other);
             }
-            throw e;
-        }
-    }
+        }, recv);
 
-    private static void cmpFailed(ThreadContext context) {
-        RubyWarnings warnings = context.runtime.getWarnings();
+        // This is only to prevent throwing exceptions by cmperr - it has poor performance
+        if ( result.isNil() ) return returnValueOnError;
 
-        warnings.warn("Comparable#== will no more rescue exceptions of #<=> in the next release.");
-        warnings.warn("Return nil in #<=> if the comparison is inappropriate or avoid such comparison.");
+        return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
     }
 
     /** cmp_gt

@@ -65,6 +65,10 @@ public class FilenoUtil {
         filenoMap.remove(fileno);
     }
 
+    public int getNumberOfWrappers() {
+        return filenoMap.size();
+    }
+
     public int getNewFileno() {
         return internalFilenoIndex.getAndIncrement();
     }

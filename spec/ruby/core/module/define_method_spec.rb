@@ -71,6 +71,66 @@ describe "Module#define_method when given an UnboundMethod" do
   end
 end
 
+describe "Module#define_method when name is not a special private name" do
+  describe "given an UnboundMethod" do
+    describe "and called from the target module" do
+      it "sets the visibility of the method to the current visibility" do
+        klass = Class.new do
+          define_method(:bar, ModuleSpecs::EmptyFooMethod)
+          private
+          define_method(:baz, ModuleSpecs::EmptyFooMethod)
+        end
+
+        klass.should have_public_instance_method(:bar)
+        klass.should have_private_instance_method(:baz)
+      end
+    end
+
+    describe "and called from another module" do
+      it "sets the visibility of the method to public" do
+        klass = Class.new
+        Class.new do
+          klass.send(:define_method, :bar, ModuleSpecs::EmptyFooMethod)
+          private
+          klass.send(:define_method, :baz, ModuleSpecs::EmptyFooMethod)
+        end
+
+        klass.should have_public_instance_method(:bar)
+        klass.should have_public_instance_method(:baz)
+      end
+    end
+  end
+
+  describe "passed a block" do
+    describe "and called from the target module" do
+      it "sets the visibility of the method to the current visibility" do
+        klass = Class.new do
+          define_method(:bar) {}
+          private
+          define_method(:baz) {}
+        end
+
+        klass.should have_public_instance_method(:bar)
+        klass.should have_private_instance_method(:baz)
+      end
+    end
+
+    describe "and called from another module" do
+      it "sets the visibility of the method to public" do
+        klass = Class.new
+        Class.new do
+          klass.send(:define_method, :bar) {}
+          private
+          klass.send(:define_method, :baz) {}
+        end
+
+        klass.should have_public_instance_method(:bar)
+        klass.should have_public_instance_method(:baz)
+      end
+    end
+  end
+end
+
 describe "Module#define_method when name is :initialize" do
   describe "passed a block" do
     it "sets visibility to private when method name is :initialize" do
@@ -206,6 +266,26 @@ describe "Module#define_method" do
     }.should raise_error(TypeError)
   end
 
+  it "accepts a proc from a method" do
+    class ProcFromMethod
+      attr_accessor :data
+      def cool_method
+        "data is #{@data}"
+      end
+    end
+
+    object1 = ProcFromMethod.new
+    object1.data = :foo
+
+    method_proc = object1.method(:cool_method).to_proc
+    klass = Class.new(ProcFromMethod)
+    klass.send(:define_method, :other_cool_method, &method_proc)
+
+    object2 = klass.new
+    object2.data = :bar
+    object2.other_cool_method.should == "data is foo"
+  end
+
   it "maintains the Proc's scope" do
     class DefineMethodByProcClass
       in_scope = true
@@ -232,25 +312,10 @@ describe "Module#define_method" do
     Module.should have_private_instance_method(:define_method)
   end
 
-  ruby_version_is ""..."2.1" do
-    it "returns a Proc" do
-      class DefineMethodSpecClass
-        method = define_method("return_test") { || true }
-        method.is_a?(Proc).should be_true
-        # check if it is a lambda:
-        lambda {
-          method.call :too_many_arguments
-        }.should raise_error(ArgumentError)
-      end
-    end
-  end
-
-  ruby_version_is "2.1" do
-    it "returns its symbol" do
-      class DefineMethodSpecClass
-        method = define_method("return_test") { || true }
-        method.should == :return_test
-      end
+  it "returns its symbol" do
+    class DefineMethodSpecClass
+      method = define_method("return_test") { || true }
+      method.should == :return_test
     end
   end
 

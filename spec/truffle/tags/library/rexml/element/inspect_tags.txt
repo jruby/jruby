@@ -1,3 +1,0 @@
-fails:REXML::Element#inspect returns the node as a string
-fails:REXML::Element#inspect inserts '...' if the node has children
-fails:REXML::Element#inspect inserts the attributes in the string

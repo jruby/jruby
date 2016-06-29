@@ -63,6 +63,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.runtime.builtin.IRubyObject.NULL_ARRAY;
 import org.jruby.util.Numeric;
 import org.jruby.util.SafeDoubleParser;
+import org.jruby.util.StringSupport;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -423,12 +424,16 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static RubyBigDecimal getVpRubyObjectWithPrec19Inner(ThreadContext context, RubyRational value) {
+        return getVpRubyObjectWithPrec19Inner(context, value, getRoundingMode(context.runtime));
+    }
+
+    public static RubyBigDecimal getVpRubyObjectWithPrec19Inner(ThreadContext context, RubyRational value, RoundingMode roundingMode) {
         BigDecimal numerator = BigDecimal.valueOf(RubyNumeric.num2long(value.numerator(context)));
         BigDecimal denominator = BigDecimal.valueOf(RubyNumeric.num2long(value.denominator(context)));
 
         int len = numerator.precision() + denominator.precision();
         int pow = len / 4;
-        MathContext mathContext = new MathContext((pow + 1) * 4, getRoundingMode(context.runtime));
+        MathContext mathContext = new MathContext((pow + 1) * 4, roundingMode);
 
         return new RubyBigDecimal(context.runtime, numerator.divide(denominator, mathContext));
     }
@@ -1514,31 +1519,11 @@ public class RubyBigDecimal extends RubyNumeric {
     public IRubyObject to_r(ThreadContext context) {
         checkFloatDomain();
 
-        RubyArray i = split(context);
-        long sign = (long)i.get(0);
-        String digits = (String)i.get(1).toString();
-        long base = (long)i.get(2);
-        long power = (long)i.get(3);
-        long denomi_power = power - digits.length();
+        int scale = value.scale();
+        BigInteger numerator = value.scaleByPowerOfTen(scale).toBigInteger();
+        BigInteger denominator = BigInteger.valueOf((long)Math.pow(10, scale));
 
-        IRubyObject bigDigits = RubyBignum.newBignum(getRuntime(), (String)digits).op_mul(context, sign);
-        RubyBignum numerator;
-        if(bigDigits instanceof RubyBignum) {
-          numerator = (RubyBignum)bigDigits;
-        }
-        else {
-          numerator = RubyBignum.newBignum(getRuntime(), bigDigits.toString());
-        }
-        IRubyObject num, den;
-        if(denomi_power < 0) {
-            num = numerator;
-            den = RubyFixnum.newFixnum(getRuntime(), base).op_mul(context, RubyFixnum.newFixnum(getRuntime(), -denomi_power));
-        }
-        else {
-            num = numerator.op_pow(context, RubyFixnum.newFixnum(getRuntime(), base).op_mul(context, RubyFixnum.newFixnum(getRuntime(), denomi_power)));
-            den = RubyFixnum.newFixnum(getRuntime(), 1);
-        }
-        return RubyRational.newInstance(context, context.runtime.getRational(), num, den);
+        return RubyRational.newInstance(context, context.runtime.getRational(), RubyBignum.newBignum(context.runtime, numerator), RubyBignum.newBignum(context.runtime, denominator));
     }
 
     public IRubyObject to_int19() {
@@ -1642,14 +1627,14 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private CharSequence floatingPointValue(String arg) {
-        String values[] = value.abs().stripTrailingZeros().toPlainString().split("\\.");
-        String whole = values.length > 0 ? values[0] : "0";
-        String after = values.length > 1 ? values[1] : "0";
+        List<String> values = StringSupport.split(value.abs().stripTrailingZeros().toPlainString(), '.');
+        String whole = values.size() > 0 ? values.get(0) : "0";
+        String after = values.size() > 1 ? values.get(1) : "0";
         StringBuilder build = new StringBuilder().append(sign(arg, value.signum()));
 
         if (groups(arg) == 0) {
             build.append(whole);
-            if (after != null) build.append(".").append(after);
+            if (after != null) build.append('.').append(after);
         } else {
             int index = 0;
             String sep = "";
@@ -1662,7 +1647,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 index += groups(arg);
             }
             if (null != after) {
-                build.append(".");
+                build.append('.');
                 index = 0;
                 sep = "";
                 while (index < after.length()) {

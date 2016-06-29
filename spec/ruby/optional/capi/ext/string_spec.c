@@ -170,12 +170,6 @@ VALUE string_spec_rb_str_intern(VALUE self, VALUE str) {
 }
 #endif
 
-#ifdef HAVE_RB_STR_LEN
-VALUE string_spec_rb_str_len(VALUE self, VALUE str) {
-  return INT2FIX(rb_str_len(str));
-}
-#endif
-
 #ifdef HAVE_RB_STR_LENGTH
 VALUE string_spec_rb_str_length(VALUE self, VALUE str) {
   return rb_str_length(str);
@@ -265,84 +259,6 @@ VALUE string_spec_rb_str_new5(VALUE self, VALUE str, VALUE ptr, VALUE len) {
 #ifdef HAVE_RB_STR_PLUS
 VALUE string_spec_rb_str_plus(VALUE self, VALUE str1, VALUE str2) {
   return rb_str_plus(str1, str2);
-}
-#endif
-
-#ifdef HAVE_RB_STR_PTR
-VALUE string_spec_rb_str_ptr_iterate(VALUE self, VALUE str) {
-  int i;
-  char* ptr;
-
-  ptr = rb_str_ptr(str);
-  for(i = 0; i < RSTRING_LEN(str); i++) {
-    rb_yield(INT2FIX(ptr[i]));
-  }
-  return Qnil;
-}
-
-VALUE string_spec_rb_str_ptr_assign(VALUE self, VALUE str, VALUE chr) {
-  int i;
-  char c;
-  char* ptr;
-
-  ptr = rb_str_ptr(str);
-  c = FIX2INT(chr);
-
-  for(i = 0; i < RSTRING_LEN(str); i++) {
-    ptr[i] = c;
-  }
-  return Qnil;
-}
-
-VALUE string_spec_rb_str_ptr_assign_call(VALUE self, VALUE str) {
-  char *ptr = rb_str_ptr(str);
-
-  ptr[1] = 'x';
-  rb_str_concat(str, rb_str_new2("d"));
-  return str;
-}
-
-VALUE string_spec_rb_str_ptr_assign_funcall(VALUE self, VALUE str) {
-  char *ptr = rb_str_ptr(str);
-
-  ptr[1] = 'x';
-  rb_funcall(str, rb_intern("<<"), 1, rb_str_new2("e"));
-  return str;
-}
-#endif
-
-#ifdef HAVE_RB_STR_PTR_READONLY
-VALUE string_spec_rb_str_ptr_readonly_iterate(VALUE self, VALUE str) {
-  int i;
-  char* ptr;
-
-  ptr = rb_str_ptr_readonly(str);
-  for(i = 0; i < RSTRING_LEN(str); i++) {
-    rb_yield(INT2FIX(ptr[i]));
-  }
-  return Qnil;
-}
-
-VALUE string_spec_rb_str_ptr_readonly_assign(VALUE self, VALUE str, VALUE chr) {
-  int i;
-  char c;
-  char* ptr;
-
-  ptr = rb_str_ptr_readonly(str);
-  c = FIX2INT(chr);
-
-  for(i = 0; i < RSTRING_LEN(str); i++) {
-    ptr[i] = c;
-  }
-  return Qnil;
-}
-
-VALUE string_spec_rb_str_ptr_readonly_append(VALUE self, VALUE str, VALUE more) {
-  char *ptr = rb_str_ptr_readonly(str);
-
-  rb_str_concat(str, more);
-
-  return rb_str_new2(ptr);
 }
 #endif
 
@@ -500,7 +416,7 @@ static VALUE string_spec_rb_usascii_str_new_cstr(VALUE self, VALUE str) {
 }
 #endif
 
-void Init_string_spec() {
+void Init_string_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiStringSpecs", rb_cObject);
 
@@ -576,10 +492,6 @@ void Init_string_spec() {
   rb_define_method(cls, "rb_str_intern", string_spec_rb_str_intern, 1);
 #endif
 
-#ifdef HAVE_RB_STR_LEN
-  rb_define_method(cls, "rb_str_len", string_spec_rb_str_len, 1);
-#endif
-
 #ifdef HAVE_RB_STR_LENGTH
   rb_define_method(cls, "rb_str_length", string_spec_rb_str_length, 1);
 #endif
@@ -635,23 +547,6 @@ void Init_string_spec() {
 
 #ifdef HAVE_RB_STR_PLUS
   rb_define_method(cls, "rb_str_plus", string_spec_rb_str_plus, 2);
-#endif
-
-#ifdef HAVE_RB_STR_PTR
-  rb_define_method(cls, "rb_str_ptr_iterate", string_spec_rb_str_ptr_iterate, 1);
-  rb_define_method(cls, "rb_str_ptr_assign", string_spec_rb_str_ptr_assign, 2);
-  rb_define_method(cls, "rb_str_ptr_assign_call", string_spec_rb_str_ptr_assign_call, 1);
-  rb_define_method(cls, "rb_str_ptr_assign_funcall",
-      string_spec_rb_str_ptr_assign_funcall, 1);
-#endif
-
-#ifdef HAVE_RB_STR_PTR_READONLY
-  rb_define_method(cls, "rb_str_ptr_readonly_iterate",
-      string_spec_rb_str_ptr_readonly_iterate, 1);
-  rb_define_method(cls, "rb_str_ptr_readonly_assign",
-      string_spec_rb_str_ptr_readonly_assign, 2);
-  rb_define_method(cls, "rb_str_ptr_readonly_append",
-      string_spec_rb_str_ptr_readonly_append, 2);
 #endif
 
 #ifdef HAVE_RB_STR_RESIZE

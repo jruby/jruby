@@ -7,18 +7,23 @@ import com.headius.invokebinder.SmartHandle;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.*;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.JIT;
-import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
+import org.jruby.runtime.CompiledIRBlockBody;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.GlobalSite;
+import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.runtime.invokedynamic.MathLinker;
 import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.runtime.ivars.FieldVariableAccessor;
@@ -43,8 +48,8 @@ import static org.jruby.util.CodegenUtils.sig;
 
 public class Bootstrap {
     public final static String BOOTSTRAP_BARE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class);
-    public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, String.class, int.class);
-    public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, String.class, int.class);
+    public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, int.class, String.class, int.class);
+    public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, int.class, String.class, int.class);
     public static final Class[] REIFIED_OBJECT_CLASSES = {
         RubyObjectVar0.class,
         RubyObjectVar1.class,
@@ -57,37 +62,41 @@ public class Bootstrap {
         RubyObjectVar8.class,
         RubyObjectVar9.class,
     };
-    private static final Logger LOG = LoggerFactory.getLogger("Bootstrap");
+    private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
     static final Lookup LOOKUP = MethodHandles.lookup();
 
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
-        Encoding encoding;
-        EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
-        if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
-        if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
-        encoding = entry.getEncoding();
-        ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
         MutableCallSite site = new MutableCallSite(type);
         Binder binder = Binder
                 .from(RubyString.class, ThreadContext.class)
-                .insert(0, arrayOf(MutableCallSite.class, ByteList.class, int.class), site, byteList, cr);
-        if (name.equals("frozen")) {
-            site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "frozenString"));
-        } else {
-            site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "string"));
-        }
+                .insert(0, arrayOf(MutableCallSite.class, ByteList.class, int.class), site, bytelist(value, encodingName), cr);
+        site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "string"));
+
+        return site;
+    }
+
+    public static CallSite fstring(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr, String file, int line) {
+        MutableCallSite site = new MutableCallSite(type);
+        Binder binder = Binder
+                .from(RubyString.class, ThreadContext.class)
+                .insert(0, arrayOf(MutableCallSite.class, ByteList.class, int.class, String.class, int.class), site, bytelist(value, encodingName), cr, file, line);
+        site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "frozenString"));
 
         return site;
     }
 
     public static CallSite bytelist(Lookup lookup, String name, MethodType type, String value, String encodingName) {
+        return new ConstantCallSite(constant(ByteList.class, bytelist(value, encodingName)));
+    }
+
+    private static ByteList bytelist(String value, String encodingName) {
         Encoding encoding;
         EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
         if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
         if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
         encoding = entry.getEncoding();
         ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
-        return new ConstantCallSite(constant(ByteList.class, byteList));
+        return byteList;
     }
 
     public static CallSite array(Lookup lookup, String name, MethodType type) {
@@ -132,24 +141,12 @@ public class Bootstrap {
         return site;
     }
 
-    public static CallSite searchConst(Lookup lookup, String name, MethodType type, int noPrivateConsts) {
-        MutableCallSite site = new MutableCallSite(type);
-        String[] bits = name.split(":");
-        String constName = bits[1];
-
-        MethodHandle handle = Binder
-                .from(lookup, type)
-                .append(site, constName.intern())
-                .append(noPrivateConsts == 0 ? false : true)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, bits[0]);
-
-        site.setTarget(handle);
-
-        return site;
-    }
-
     public static Handle string() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class));
+    }
+
+    public static Handle fstring() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "fstring", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class, String.class, int.class));
     }
 
     public static Handle bytelist() {
@@ -176,10 +173,6 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "ivar", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
-    public static Handle searchConst() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
-    }
-
     public static Handle global() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "globalBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
@@ -195,8 +188,8 @@ public class Bootstrap {
         return RubyString.newStringShared(context.runtime, value, cr);
     }
 
-    public static RubyString frozenString(MutableCallSite site, ByteList value, int cr, ThreadContext context) throws Throwable {
-        RubyString frozen = context.runtime.freezeAndDedupString(RubyString.newStringShared(context.runtime, value, cr));
+    public static RubyString frozenString(MutableCallSite site, ByteList value, int cr, String file, int line, ThreadContext context) throws Throwable {
+        RubyString frozen = IRRuntimeHelpers.newFrozenString(context, value, cr, file, line);
         MethodHandle handle = Binder.from(RubyString.class, ThreadContext.class)
                 .dropAll()
                 .constant(frozen);
@@ -309,43 +302,45 @@ public class Bootstrap {
             HandleMethod handleMethod = (HandleMethod)method;
             boolean blockGiven = site.signature.lastArgType() == Block.class;
 
-            if (site.arity >= 0 && site.arity <= 3) {
+            if (site.arity >= 0) {
                 mh = handleMethod.getHandle(site.arity);
                 if (mh != null) {
                     if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
                     mh = dropArguments(mh, 1, IRubyObject.class);
                 } else {
-                    mh = handleMethod.getHandle(4);
+                    mh = handleMethod.getHandle(-1);
+                    mh = dropArguments(mh, 1, IRubyObject.class);
                     if (site.arity == 0) {
-                        mh = dropArguments(mh, 1, IRubyObject.class);
                         if (!blockGiven) {
                             mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
                         } else {
-                            mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY);
+                            mh = insertArguments(mh, mh.type().parameterCount() - 2, (Object)IRubyObject.NULL_ARRAY);
                         }
                     } else {
                         // bundle up varargs
                         if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
 
                         mh = SmartBinder.from(lookup(), siteToDyncall)
-                                .permute("context", "self", "class", "name", "block", "arg.*")
                                 .collect("args", "arg.*")
-                                .permute("context", "self", "class", "name", "args", "block")
                                 .invoke(mh)
                                 .handle();
                     }
                 }
             } else {
-                mh = handleMethod.getHandle(4);
-                if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+                mh = handleMethod.getHandle(-1);
+                if (mh != null) {
+                    mh = dropArguments(mh, 1, IRubyObject.class);
+                    if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
 
-                mh = SmartBinder.from(lookup(), siteToDyncall)
-                        .permute("context", "self", "class", "name", "args", "block")
-                        .invoke(mh)
-                        .handle();
+                    mh = SmartBinder.from(lookup(), siteToDyncall)
+                            .invoke(mh)
+                            .handle();
+                }
             }
 
-            mh = insertArguments(mh, 3, implClass, site.name());
+            if (mh != null) {
+                mh = insertArguments(mh, 3, implClass, site.name());
+            }
         }
 
         return mh;
@@ -364,6 +359,112 @@ public class Bootstrap {
         }
 
         return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
+    }
+
+    static MethodHandle buildAttrHandle(InvokeSite site, DynamicMethod method, IRubyObject self, RubyClass dispatchClass) {
+        if (method instanceof AttrReaderMethod) {
+            AttrReaderMethod attrReader = (AttrReaderMethod) method;
+            String varName = attrReader.getVariableName();
+
+            // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
+            VariableAccessor accessor = dispatchClass.getRealClass().getVariableAccessorForWrite(varName);
+
+            // Ruby to attr reader
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                //            if (accessor instanceof FieldVariableAccessor) {
+                //                LOG.info(site.name() + "\tbound as field attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                //            } else {
+                //                LOG.info(site.name() + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                //            }
+            }
+
+            return createAttrReaderHandle(site, self, dispatchClass.getRealClass(), accessor);
+        } else if (method instanceof AttrWriterMethod) {
+            AttrWriterMethod attrReader = (AttrWriterMethod)method;
+            String varName = attrReader.getVariableName();
+
+            // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
+            VariableAccessor accessor = dispatchClass.getRealClass().getVariableAccessorForWrite(varName);
+
+            // Ruby to attr reader
+//            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+//                if (accessor instanceof FieldVariableAccessor) {
+//                    LOG.info(site.name() + "\tbound as field attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+//                } else {
+//                    LOG.info(site.name() + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+//                }
+//            }
+
+            return createAttrWriterHandle(site, self, dispatchClass.getRealClass(), accessor);
+        }
+
+        return null;
+    }
+
+    private static MethodHandle createAttrReaderHandle(InvokeSite site, IRubyObject self, RubyClass cls, VariableAccessor accessor) {
+        MethodHandle nativeTarget;
+
+        MethodHandle filter = Binder
+                .from(IRubyObject.class, IRubyObject.class)
+                .insert(1, cls.getRuntime().getNil())
+                .cast(IRubyObject.class, IRubyObject.class, IRubyObject.class)
+                .invokeStaticQuiet(lookup(), Bootstrap.class, "valueOrNil");
+
+        MethodHandle getValue;
+
+        // FIXME: Duplicated from ivar get
+        if (accessor instanceof FieldVariableAccessor) {
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            getValue = Binder.from(site.type())
+                    .drop(0, 2)
+                    .filterReturn(filter)
+                    .cast(methodType(Object.class, self.getClass()))
+                    .getFieldQuiet(LOOKUP, "var" + offset);
+        } else {
+            getValue = Binder.from(site.type())
+                    .drop(0, 2)
+                    .filterReturn(filter)
+                    .cast(methodType(Object.class, RubyBasicObject.class))
+                    .append(accessor.getIndex())
+                    .invokeVirtualQuiet(LOOKUP, "getVariable");
+        }
+
+        // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
+
+        return getValue;
+    }
+
+    public static IRubyObject valueOrNil(IRubyObject value, IRubyObject nil) {
+        return value == null ? nil : value;
+    }
+
+    private static MethodHandle createAttrWriterHandle(InvokeSite site, IRubyObject self, RubyClass cls, VariableAccessor accessor) {
+        MethodHandle nativeTarget;
+
+        MethodHandle filter = Binder
+                .from(IRubyObject.class, Object.class)
+                .drop(0)
+                .constant(cls.getRuntime().getNil());
+
+        MethodHandle setValue;
+
+        if (accessor instanceof FieldVariableAccessor) {
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            setValue = Binder.from(site.type())
+                    .drop(0, 2)
+                    .filterReturn(filter)
+                    .cast(methodType(void.class, self.getClass(), Object.class))
+                    .invokeVirtualQuiet(LOOKUP, "setVariable" + offset);
+        } else {
+            setValue = Binder.from(site.type())
+                    .drop(0, 2)
+                    .filterReturn(filter)
+                    .cast(methodType(void.class, RubyBasicObject.class, Object.class))
+                    .insert(1, accessor.getIndex())
+                    .invokeVirtualQuiet(LOOKUP, "setVariable");
+        }
+
+        return setValue;
     }
 
     static MethodHandle buildJittedHandle(InvokeSite site, DynamicMethod method, boolean blockGiven) {
@@ -431,13 +532,13 @@ public class Bootstrap {
             NativeCallMethod nativeMethod = (NativeCallMethod)method;
             DynamicMethod.NativeCall nativeCall = nativeMethod.getNativeCall();
 
-            int nativeArgCount = getNativeArgCount(method, nativeCall);
-
             DynamicMethod.NativeCall nc = nativeCall;
 
             if (nc.isJava()) {
                 // not supported yet, use DynamicMethod.call
             } else {
+                int nativeArgCount = getNativeArgCount(method, nativeCall);
+
                 if (nativeArgCount >= 0) { // native methods only support arity 3
                     if (nativeArgCount == site.arity) {
                         // nothing to do
@@ -488,6 +589,11 @@ public class Bootstrap {
                                 .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
                                 .handle();
                     }
+                }
+
+                JRubyMethod anno = nativeCall.getMethod().getAnnotation(JRubyMethod.class);
+                if (anno != null && anno.frame()) {
+                    mh = InvocationLinker.wrapWithFrameOnly(site.signature, method.getImplementationClass(), site.name(), mh);
                 }
             }
         }
@@ -552,9 +658,7 @@ public class Bootstrap {
         VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name());
 
         // produce nil if the variable has not been initialize
-        MethodHandle nullToNil = findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        nullToNil = insertArguments(nullToNil, 1, self.getRuntime().getNil());
-        nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
+        MethodHandle nullToNil = self.getRuntime().getNullToNilHandle();
 
         // get variable value and filter with nullToNil
         MethodHandle getValue;
@@ -563,8 +667,7 @@ public class Bootstrap {
         if (accessor instanceof FieldVariableAccessor) {
             direct = true;
             int offset = ((FieldVariableAccessor)accessor).getOffset();
-            Class cls = REIFIED_OBJECT_CLASSES[offset];
-            getValue = lookup().findGetter(cls, "var" + offset, Object.class);
+            getValue = lookup().findGetter(self.getClass(), "var" + offset, Object.class);
             getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class));
         } else {
             getValue = findStatic(VariableAccessor.class, "getVariable", methodType(Object.class, RubyBasicObject.class, int.class));
@@ -621,8 +724,7 @@ public class Bootstrap {
         if (accessor instanceof FieldVariableAccessor) {
             direct = true;
             int offset = ((FieldVariableAccessor)accessor).getOffset();
-            Class cls = REIFIED_OBJECT_CLASSES[offset];
-            setValue = findStatic(cls, "setVariableChecked", methodType(void.class, cls, Object.class));
+            setValue = findVirtual(self.getClass(), "setVariable" + offset, methodType(void.class, Object.class));
             setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, IRubyObject.class));
         } else {
             setValue = findStatic(accessor.getClass(), "setVariableChecked", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
@@ -679,6 +781,18 @@ public class Bootstrap {
         }
     }
 
+    private static MethodHandle findVirtual(Class target, String name, MethodType type) {
+        return findVirtual(lookup(), target, name, type);
+    }
+
+    private static MethodHandle findVirtual(Lookup lookup, Class target, String name, MethodType type) {
+        try {
+            return lookup.findVirtual(target, name, type);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static boolean testRealClass(int id, IRubyObject self) {
         return id == ((RubyBasicObject)self).getMetaClass().getRealClass().id;
     }
@@ -686,118 +800,6 @@ public class Bootstrap {
     public static boolean testType(RubyClass original, IRubyObject self) {
         // naive test
         return ((RubyBasicObject)self).getMetaClass() == original;
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // constant lookup
-
-    public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, MutableCallSite site, String constName, boolean noPrivateConsts) throws Throwable {
-
-        // Lexical lookup
-        Ruby runtime = context.getRuntime();
-        RubyModule object = runtime.getObject();
-        IRubyObject constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
-
-        // Inheritance lookup
-        RubyModule module = null;
-        if (constant == null) {
-            // SSS FIXME: Is this null check case correct?
-            module = staticScope == null ? object : staticScope.getModule();
-            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
-        }
-
-        // Call const_missing or cache
-        if (constant == null) {
-            return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
-        }
-
-        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
-
-        // bind constant until invalidated
-        MethodHandle target = Binder.from(site.type())
-                .drop(0, 2)
-                .constant(constant);
-        MethodHandle fallback = Binder.from(site.type())
-                .append(site, constName)
-                .append(noPrivateConsts)
-                .invokeStatic(LOOKUP, Bootstrap.class, "searchConst");
-
-        site.setTarget(switchPoint.guardWithTest(target, fallback));
-
-        return constant;
-    }
-
-    public static IRubyObject inheritanceSearchConst(ThreadContext context, IRubyObject cmVal, MutableCallSite site, String constName, boolean noPrivateConsts) throws Throwable {
-        Ruby runtime = context.runtime;
-        RubyModule module;
-
-        if (cmVal instanceof RubyModule) {
-            module = (RubyModule) cmVal;
-        } else {
-            throw runtime.newTypeError(cmVal + " is not a type/class");
-        }
-
-        IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
-
-        if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
-        }
-
-        // This caching does not take into consideration sites that have many different module targets.
-        //
-        if (true) {
-            return constant;
-        }
-
-        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
-
-        // bind constant until invalidated
-        MethodHandle target = Binder.from(site.type())
-                .drop(0, 2)
-                .constant(constant);
-        MethodHandle fallback = Binder.from(site.type())
-                .append(site, constName)
-                .append(noPrivateConsts)
-                .invokeStatic(LOOKUP, Bootstrap.class, "inheritanceSearchConst");
-
-        // test that module is same as before
-        MethodHandle test = Binder.from(site.type().changeReturnType(boolean.class))
-                .drop(0, 1)
-                .insert(1, module.id)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testArg0ModuleMatch");
-        target = guardWithTest(test, target, fallback);
-        site.setTarget(switchPoint.guardWithTest(target, fallback));
-
-        if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) {
-            LOG.info(constName + "\tretrieved and cached from type " + cmVal.getMetaClass());// + " added to PIC" + extractSourceInfo(site));
-        }
-
-        return constant;
-    }
-
-    public static IRubyObject lexicalSearchConst(ThreadContext context, StaticScope scope, MutableCallSite site, String constName, boolean noPrivateConsts) throws Throwable {
-        Ruby runtime = context.runtime;
-
-        IRubyObject constant = scope.getConstantInner(constName);
-
-        if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
-        }
-
-        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
-
-        // bind constant until invalidated
-        MethodHandle target = Binder.from(site.type())
-                .drop(0, 2)
-                .constant(constant);
-        MethodHandle fallback = Binder.from(site.type())
-                .append(site, constName)
-                .append(noPrivateConsts)
-                .invokeStatic(LOOKUP, Bootstrap.class, "lexicalSearchConst");
-
-        site.setTarget(switchPoint.guardWithTest(target, fallback));
-
-        return constant;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -815,7 +817,6 @@ public class Bootstrap {
     }
 
     public static boolean testArg0ModuleMatch(IRubyObject arg0, int id) {
-        System.out.println("testing " + arg0 + " for match (id = " + ((RubyModule)arg0).id + "): " + (arg0 instanceof RubyModule && ((RubyModule)arg0).id == id));
         return arg0 instanceof RubyModule && ((RubyModule)arg0).id == id;
     }
 
@@ -923,5 +924,71 @@ public class Bootstrap {
 
     public static IRubyObject getGlobalUncached(GlobalVariable variable) throws Throwable {
         return variable.getAccessor().getValue();
+    }
+
+    public static Handle prepareBlock() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "prepareBlock", sig(CallSite.class, Lookup.class, String.class, MethodType.class, MethodHandle.class, MethodHandle.class, long.class));
+    }
+
+    public static CallSite prepareBlock(Lookup lookup, String name, MethodType type, MethodHandle bodyHandle, MethodHandle scopeHandle, long encodedSignature) throws Throwable {
+        IRScope scope = (IRScope)scopeHandle.invokeExact();
+
+        CompiledIRBlockBody body = new CompiledIRBlockBody(bodyHandle, scope, encodedSignature);
+
+        Binder binder = Binder.from(type);
+
+        binder = binder.fold(FRAME_SCOPE_BINDING);
+
+        // This optimization can't happen until we can see into the method we're calling to know if it reifies the block
+        if (false) {
+            if (scope.needsBinding()) {
+                if (scope.needsFrame()) {
+                    binder = binder.fold(FRAME_SCOPE_BINDING);
+                } else {
+                    binder = binder.fold(SCOPE_BINDING);
+                }
+            } else {
+                if (scope.needsFrame()) {
+                    binder = binder.fold(FRAME_BINDING);
+                } else {
+                    binder = binder.fold(SELF_BINDING);
+                }
+            }
+        }
+
+        MethodHandle blockMaker = binder.drop(1, 3)
+                .append(body)
+                .invoke(CONSTRUCT_BLOCK);
+
+        return new ConstantCallSite(blockMaker);
+    }
+
+    private static final Binder BINDING_MAKER_BINDER = Binder.from(Binding.class, ThreadContext.class, IRubyObject.class, DynamicScope.class);
+
+    private static final MethodHandle FRAME_SCOPE_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "frameScopeBinding");
+    public static Binding frameScopeBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        Frame frame = context.getCurrentFrame().capture();
+        return new Binding(self, frame, frame.getVisibility(), scope);
+    }
+
+    private static final MethodHandle FRAME_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "frameBinding");
+    public static Binding frameBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        Frame frame = context.getCurrentFrame().capture();
+        return new Binding(self, frame, frame.getVisibility());
+    }
+
+    private static final MethodHandle SCOPE_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "scopeBinding");
+    public static Binding scopeBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        return new Binding(self, scope);
+    }
+
+    private static final MethodHandle SELF_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "selfBinding");
+    public static Binding selfBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
+        return new Binding(self);
+    }
+
+    private static final MethodHandle CONSTRUCT_BLOCK = Binder.from(Block.class, Binding.class, CompiledIRBlockBody.class).invokeStaticQuiet(LOOKUP, Bootstrap.class, "constructBlock");
+    public static Block constructBlock(Binding binding, CompiledIRBlockBody body) throws Throwable {
+        return new Block(body, binding);
     }
 }

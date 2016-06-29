@@ -1,1 +1,0 @@
-fails:Kernel#untrust raises RuntimeError on a trusted, frozen object

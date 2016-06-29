@@ -37,7 +37,7 @@ describe "BasicSocket#send" do
      data.should == 'hello'
    end
 
-  platform_is_not :solaris do
+  platform_is_not :solaris, :windows do
     it "accepts flags to specify unusual sending behaviour" do
       data = nil
       peek_data = nil

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -18,7 +18,6 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
@@ -55,13 +54,6 @@ public class Main {
 
             RootNode scriptNode = (RootNode) runtime.parseFromMain(filename, in);
 
-            // If no DATA, we're done with the stream, shut it down
-            if (runtime.fetchGlobalConstant("DATA") == null) {
-                try {
-                    in.close();
-                } catch (IOException ioe) {
-                }
-            }
             ThreadContext context = runtime.getCurrentContext();
 
             String oldFile = context.getFile();

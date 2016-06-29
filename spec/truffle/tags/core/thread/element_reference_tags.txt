@@ -1,2 +1,1 @@
-fails:Thread#[] is accessible using strings or symbols
 fails:Thread#[] raises exceptions on the wrong type of keys

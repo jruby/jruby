@@ -4,6 +4,7 @@ with_feature :fiber do
   describe "Fiber.new" do
     it "creates a fiber from the given block" do
       fiber = Fiber.new {}
+      fiber.resume
       fiber.should be_an_instance_of(Fiber)
     end
 
@@ -11,6 +12,7 @@ with_feature :fiber do
       class MyFiber < Fiber
       end
       fiber = MyFiber.new {}
+      fiber.resume
       fiber.should be_an_instance_of(MyFiber)
     end
 
@@ -22,6 +24,7 @@ with_feature :fiber do
       invoked = false
       fiber = Fiber.new { invoked = true }
       invoked.should be_false
+      fiber.resume
     end
 
     it "closes over lexical environments" do

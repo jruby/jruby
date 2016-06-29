@@ -43,6 +43,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
+import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.joda.time.Chronology;
@@ -548,7 +549,12 @@ public class RubyDateFormatter {
                     throw new Error("FORMAT_SPECIAL is a special token only for the lexer.");
             }
 
-            output = formatter.format(output, value, type);
+            try {
+                output = formatter.format(output, value, type);
+            } catch (IndexOutOfBoundsException ioobe) {
+                throw context.runtime.newErrnoFromErrno(Errno.ERANGE, "strftime");
+            }
+
             // reset formatter
             formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
 

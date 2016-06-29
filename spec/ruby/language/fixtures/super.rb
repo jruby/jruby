@@ -361,11 +361,29 @@ module Super
       def a
         yield
       end
+
+      def b(&block)
+        block.call
+      end
+
+      def c
+        yield
+      end
     end
 
     class B < A
       def a
         super { 14 }
+      end
+
+      def b
+        block_ref = lambda { 15 }
+        [super { 14 }, super(&block_ref)]
+      end
+
+      def c
+        block_ref = lambda { 16 }
+        super &block_ref
       end
     end
   end
@@ -437,4 +455,92 @@ module Super
     end
   end
 
+  module KeywordArguments
+    class A
+      def foo(**args)
+        args
+      end
+    end
+
+    class B < A
+      def foo(**)
+        super
+      end
+    end
+
+    class C < A
+    end
+  end
+
+  module FromBasicObject
+    def __send__(name, *args, &block)
+      super
+    end
+  end
+
+  module IntermediateBasic
+    include FromBasicObject
+  end
+
+  class IncludesFromBasic
+    include FromBasicObject
+
+    def foobar; 43; end
+  end
+
+  class IncludesIntermediate
+    include IntermediateBasic
+
+    def foobar; 42; end
+  end
+
+  module SingletonCase
+    class Base
+      def foobar(array)
+        array << :base
+      end
+    end
+
+    class Foo < Base
+      def foobar(array)
+        array << :foo
+        super
+      end
+    end
+  end
+
+  module SingletonAliasCase
+    class Base
+      def foobar(array)
+        array << :base
+      end
+
+      def alias_on_singleton
+        object = self
+        singleton = (class << object; self; end)
+        singleton.__send__(:alias_method, :new_foobar, :foobar)
+      end
+    end
+
+    class Foo < Base
+      def foobar(array)
+        array << :foo
+        super
+      end
+    end
+  end
+
+  module SplatAndKeyword
+    class A
+      def foo(*args, **options)
+        [args, options]
+      end
+    end
+
+    class B < A
+      def foo(*args, **options)
+        super
+      end
+    end
+  end
 end

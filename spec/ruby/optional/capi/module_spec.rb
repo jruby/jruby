@@ -179,7 +179,7 @@ describe "CApiModule" do
   end
 
   describe "rb_define_global_function" do
-    it "defines a method on Object" do
+    it "defines a method on Kernel" do
       @m.rb_define_global_function("module_specs_global_function")
       Kernel.should have_method(:module_specs_global_function)
       module_specs_global_function.should == :test_method
@@ -213,7 +213,7 @@ describe "CApiModule" do
 
     it "defines a private instance method" do
       cls = Class.new
-      cls.send :include, @mod
+      cls.include(@mod)
 
       cls.should have_private_instance_method(:test_module_function)
     end

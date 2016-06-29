@@ -58,17 +58,14 @@ describe "Enumerable#slice_before" do
           end
           e.to_a
         end
+      end
+    end
 
-        quarantine! do # need to double-check with ruby-core. Might be wrong or too specific
-          it "duplicates the argument directly without calling dup" do
-            arg = EnumerableSpecs::Undupable.new
-            e = @enum.slice_before(arg) do |i, init|
-              init.initialize_dup_called.should be_true
-              false
-            end
-            e.to_a.should == [[7, 6, 5, 4, 3, 2, 1]]
-          end
-        end
+    ruby_version_is "2.3" do
+      it "does not accept arguments" do
+        lambda {
+          @enum.slice_before(1) {}
+        }.should raise_error(ArgumentError)
       end
     end
   end
@@ -76,6 +73,14 @@ describe "Enumerable#slice_before" do
   it "raises an ArgumentError when given an incorrect number of arguments" do
     lambda { @enum.slice_before("one", "two") }.should raise_error(ArgumentError)
     lambda { @enum.slice_before }.should raise_error(ArgumentError)
+  end
+
+  describe "when an iterator method yields more than one value" do
+    it "processes all yielded values" do
+      enum = EnumerableSpecs::YieldsMulti.new
+      result = enum.slice_before { |i| i == [3, 4, 5] }.to_a
+      result.should == [[[1, 2]], [[3, 4, 5], [6, 7, 8, 9]]]
+    end
   end
 
   it_behaves_like :enumerable_enumeratorized_with_unknown_size, [:slice_before, 3]

@@ -1,3 +1,0 @@
-fails:Net::HTTPGenericRequest#body_stream returns self's body stream Object
-fails:Net::HTTPGenericRequest#body_stream= sets self's body stream to the passed Object
-fails:Net::HTTPGenericRequest#body_stream= sets self's body to nil

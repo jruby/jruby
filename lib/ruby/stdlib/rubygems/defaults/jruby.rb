@@ -1,11 +1,7 @@
-require 'rubygems/config_file'
 require 'rbconfig'
 require 'jruby/util'
 
 module Gem
-
-  ConfigFile::PLATFORM_DEFAULTS['install'] = '--no-rdoc --no-ri --env-shebang'
-  ConfigFile::PLATFORM_DEFAULTS['update']  = '--no-rdoc --no-ri --env-shebang'
 
   class << self
     alias_method :original_ruby, :ruby
@@ -20,22 +16,13 @@ module Gem
     def jarred_path?(p)
       p =~ /^(file|uri|jar|classpath):/
     end
+  end
 
-    # A jar path looks like this on non-Windows platforms:
-    #   file:/path/to/file.jar!/path/within/jar/to/file.txt
-    # and like this on Windows:
-    #   file:/C:/path/to/file.jar!/path/within/jar/to/file.txt
-    #
-    # This method returns:
-    #   /path/to/file.jar
-    # or
-    #   C:/path/to/file.jar
-    # as appropriate.
-    def jar_path(p)
-      path = p.sub(/^file:/, "").sub(/!.*/, "")
-      path = path.sub(/^\//, "") if win_platform? && path =~ /^\/[A-Za-z]:/
-      path
-    end
+  def self.platform_defaults
+    return {
+        'install' => '--no-rdoc --no-ri --env-shebang',
+        'update' => '--no-rdoc --no-ri --env-shebang'
+    }
   end
 
   # Default home directory path to be used if an alternate value is not
@@ -72,7 +59,7 @@ module Gem
   # Allow specifying jar and classpath type gem path entries
   def self.path_separator
     return File::PATH_SEPARATOR unless File::PATH_SEPARATOR == ':'
-    /(?<!jar:file|jar|file|classpath|uri:classloader|uri):/
+    /#{org.jruby.util.cli.ArgumentProcessor::SEPARATOR}/
   end
 end
 

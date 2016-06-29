@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'test/unit'
 
 class TestTimeTZ < Test::Unit::TestCase
@@ -148,10 +149,18 @@ class TestTimeTZ < Test::Unit::TestCase
   def test_europe_brussels
     with_tz(tz="Europe/Brussels") {
       assert_time_constructor(tz, "1916-04-30 23:59:59 +0100", :local, [1916,4,30,23,59,59])
-      assert_time_constructor(tz, "1916-05-01 01:00:00 +0200", :local, [1916,5,1], "[ruby-core:30672]")
+      assert_time_constructor(tz, "1916-05-01 01:00:00 +0200", :local, [1916,5,1], "[ruby-core:30672] [Bug #3411]")
       assert_time_constructor(tz, "1916-05-01 01:59:59 +0200", :local, [1916,5,1,0,59,59])
       assert_time_constructor(tz, "1916-05-01 01:00:00 +0200", :local, [1916,5,1,1,0,0])
       assert_time_constructor(tz, "1916-05-01 01:59:59 +0200", :local, [1916,5,1,1,59,59])
+    }
+  end
+
+  def test_europe_berlin
+    with_tz(tz="Europe/Berlin") {
+      assert_time_constructor(tz, "2011-10-30 02:00:00 +0100", :local, [2011,10,30,2,0,0], "[ruby-core:67345] [Bug #10698]")
+      assert_time_constructor(tz, "2011-10-30 02:00:00 +0100", :local, [0,0,2,30,10,2011,nil,nil,false,nil])
+      assert_time_constructor(tz, "2011-10-30 02:00:00 +0200", :local, [0,0,2,30,10,2011,nil,nil,true,nil])
     }
   end
 
@@ -259,6 +268,7 @@ class TestTimeTZ < Test::Unit::TestCase
           assert_equal(format_gmtoff(gmtoff), t.strftime("%z"))
           assert_equal(format_gmtoff(gmtoff, true), t.strftime("%:z"))
           assert_equal(format_gmtoff2(gmtoff), t.strftime("%::z"))
+          assert_equal(Encoding::US_ASCII, t.zone.encoding)
         }
       }
     }

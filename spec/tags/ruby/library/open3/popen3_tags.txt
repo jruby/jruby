@@ -1,0 +1,4 @@
+windows:Open3.popen3 returns in, out, err and a thread waiting the process
+windows:Open3.popen3 executes a process with a pipe to read stdout
+windows:Open3.popen3 executes a process with a pipe to read stderr
+windows:Open3.popen3 executes a process with a pipe to write stdin

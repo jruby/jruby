@@ -3,4 +3,3 @@ fails:Time.new with a utc_offset argument raises ArgumentError if the String arg
 fails:Time.new with a utc_offset argument with an argument that responds to #to_r coerces using #to_r
 fails:Time.new with a utc_offset argument with an argument that responds to #to_str coerces using #to_str
 fails:Time.new with a utc_offset argument returns a non-UTC time
-fails(Joda Time behavior):Time.new respects rare old timezones

@@ -1,2 +1,0 @@
-fails:Net::HTTPGenericRequest#set_body_internal when passed string sets self's body to the passed string
-fails:Net::HTTPGenericRequest#set_body_internal when passed string raises an ArgumentError when the body or body_stream of self have already been set

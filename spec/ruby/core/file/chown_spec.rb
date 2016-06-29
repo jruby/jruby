@@ -64,10 +64,12 @@ describe "File.chown" do
     File.chown(nil, nil, @fname, @fname).should == 2
   end
 
-  it "raises an error for a non existent path" do
-    lambda {
-      File.chown(nil, nil, "#{@fname}.not.existing")
-    }.should raise_error(Errno::ENOENT)
+  platform_is_not :windows do
+    it "raises an error for a non existent path" do
+      lambda {
+        File.chown(nil, nil, "#{@fname}_not_existing")
+      }.should raise_error(Errno::ENOENT)
+    end
   end
 
   it "accepts an object that has a #to_path method" do

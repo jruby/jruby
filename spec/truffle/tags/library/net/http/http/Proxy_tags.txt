@@ -1,5 +1,0 @@
-fails:Net::HTTP.Proxy returns a new subclass of Net::HTTP
-fails:Net::HTTP.Proxy returns Net::HTTP when the passed address is nil
-fails:Net::HTTP.Proxy sets the returned subclasses' proxy options based on the passed arguments
-fails:Net::HTTP#proxy? when self is no proxy class instance returns false
-fails:Net::HTTP#proxy? when self is a proxy class instance returns false

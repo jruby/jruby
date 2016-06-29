@@ -7,14 +7,17 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+
 public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
-    private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRBlockBody");
+    private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
     protected boolean pushScope;
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
@@ -84,6 +87,12 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         }
 
         if (interpreterContext == null) {
+            if (Options.IR_PRINT.load()) {
+                ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
+
+                LOG.info("Printing simple IR for " + closure.getName() + ":\n" + new String(baos.toByteArray()));
+            }
+
             interpreterContext = closure.getInterpreterContext();
         }
         return interpreterContext;
@@ -122,9 +131,6 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
         InterpreterContext ic = ensureInstrsReady();
 
-        // double check if full build completed
-        if (canCallDirect()) return callOrYieldDirect(context, block, type, args, self, blockArg);
-
         Binding binding = block.getBinding();
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame prevFrame = context.preYieldNoScope(binding);
@@ -159,11 +165,18 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     protected void promoteToFullBuild(ThreadContext context) {
-        if (context.runtime.isBooting()) return; // don't JIT during runtime boot
+        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
         if (callCount >= 0) {
+            // ensure we've got code ready for JIT
+            ensureInstrsReady();
+            closure.prepareForCompilation();
+
             // if we don't have an explicit protocol, disable JIT
             if (!closure.hasExplicitCallProtocol()) {
+                if (Options.JIT_LOGGING.load()) {
+                    LOG.info("JIT failed; no protocol found in block: " + closure);
+                }
                 callCount = -1;
                 return;
             }

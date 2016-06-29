@@ -273,7 +273,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         String str = obj.toString();
         
         if (str.indexOf('\0') >= 0) {
-            String trim = str.substring(0, str.toString().indexOf('\0'));
+            String trim = str.substring(0, str.indexOf('\0'));
             obj.setValue(new ByteList(trim.getBytes()));
         }
     }
