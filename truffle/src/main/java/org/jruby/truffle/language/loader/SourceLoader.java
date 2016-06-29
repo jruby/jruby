@@ -42,12 +42,11 @@ public class SourceLoader {
         } else if (canonicalPath.startsWith(TRUFFLE_SCHEME) || canonicalPath.startsWith(JRUBY_SCHEME)) {
             return loadResource(canonicalPath);
         } else {
-            final File file = new File(canonicalPath);
+            final File file = new File(canonicalPath).getCanonicalFile();
             if (!file.canRead()) {
                 throw new IOException("Can't read file " + canonicalPath);
             }
-            return Source.fromFileName(canonicalPath);
-            //return Source.newBuilder(new File(canonicalPath)).build();
+            return Source.newBuilder(file).name(file.getPath()).mimeType(RubyLanguage.MIME_TYPE).build();
         }
     }
 
