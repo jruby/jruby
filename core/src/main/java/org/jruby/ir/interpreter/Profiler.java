@@ -217,18 +217,18 @@ public class Profiler {
             }
 
             if (inlineCall) {
-                //noInlining = false;
-                //long start = new java.util.Date().getTime();
-                //hs.getScope().inlineMethod(tgtMethod, implClass, classToken, null, call, !inlinedScopes.contains(hs));
-                //inlinedScopes.add(hs);
-                //long end = new java.util.Date().getTime();
-                // System.out.println("Inlined " + tgtMethod + " in " + hs +
-                //     " @ instr " + call + " in time (ms): "
-                //     + (end-start) + " # instrs: " + instrs.length);
+                noInlining = false;
+                long start = new java.util.Date().getTime();
+                hs.getScope().inlineMethod(tgtMethod, implClass, classToken, null, call, !inlinedScopes.contains(hs));
+                inlinedScopes.add(hs);
+                long end = new java.util.Date().getTime();
+                 System.out.println("Inlined " + tgtMethod + " in " + hs +
+                     " @ instr " + call + " in time (ms): "
+                     + (end-start) + " # instrs: " + instrs.length);
 
                 inlineCount++;
             } else {
-                //System.out.println("--no inlining--");
+                System.out.println("--no inlining--");
             }
 
         }

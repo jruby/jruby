@@ -1038,7 +1038,7 @@ public abstract class IRScope implements ParseResult {
         new CFGInliner(getCFG()).inlineMethod(method, implClass, classToken, basicBlock, call, cloneHost);
 
         // Reset state
-        resetState();
+        //resetState();
 
         // Re-run opts
         for (CompilerPass pass: getManager().getInliningCompilerPasses(this)) {
