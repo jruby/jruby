@@ -654,11 +654,6 @@ public class RubyHash extends RubyObject implements Map {
         public abstract void visit(IRubyObject key, IRubyObject value);
     }
 
-    public void visitAll(Visitor visitor) {
-        // use -1 to disable concurrency checks
-        visitLimited(getRuntime().getCurrentContext(), visitor, -1, null);
-    }
-
     public <T> void visitAll(ThreadContext context, VisitorWithState visitor, T state) {
         // use -1 to disable concurrency checks
         visitLimited(context, visitor, -1, state);
@@ -2606,5 +2601,11 @@ public class RubyHash extends RubyObject implements Map {
     @Deprecated
     public RubyHash replace19(final ThreadContext context, IRubyObject other) {
         return replace(context, other);
+    }
+
+    @Deprecated
+    public final void visitAll(Visitor visitor) {
+        // use -1 to disable concurrency checks
+        visitLimited(getRuntime().getCurrentContext(), visitor, -1, null);
     }
 }
