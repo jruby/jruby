@@ -72,6 +72,11 @@ public class RubyRootNode extends RootNode {
     }
 
     @Override
+    public String getName() {
+        return sharedMethodInfo.toString();
+    }
+
+    @Override
     public String toString() {
         return sharedMethodInfo.toString();
     }
