@@ -389,9 +389,9 @@ public class CFGInliner {
 
             BasicBlock cbProtector = ii.getRenamedBB(closureCFG.getRescuerBBFor(cb));
             if (cbProtector != null) {
-                cfg.setRescuerBB(cb.cloneForInlining(ii), cbProtector);
+                cfg.setRescuerBB(ii.getRenamedBB(cb), cbProtector);
             } else if (yieldBBrescuer != null) {
-                cfg.setRescuerBB(cb.cloneForInlining(ii), yieldBBrescuer);
+                cfg.setRescuerBB(ii.getRenamedBB(cb), yieldBBrescuer);
             }
         }
     }
