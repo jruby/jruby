@@ -15,7 +15,7 @@ suite = {
         "suites": [
             {
                 "name": "truffle",
-                "version": "6a91d68cc4b39bf059c5de38eb7df2a13b5bf93c",
+                "version": "47033f56665100fd5f7cbafd96d6c3112329f517",
                 "urls": [
                     {"url": "https://github.com/graalvm/truffle.git",
                         "kind": "git"},
@@ -50,6 +50,8 @@ suite = {
             "dependencies": [
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
+                "truffle:TRUFFLE_DSL_PROCESSOR",
+                "truffle:TRUFFLE_TCK",
             ],
         },
         "jruby-lib-jni": {
@@ -59,6 +61,8 @@ suite = {
             "dependencies": [
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
+                "truffle:TRUFFLE_DSL_PROCESSOR",
+                "truffle:TRUFFLE_TCK",
             ],
         },
     },
@@ -85,6 +89,8 @@ suite = {
                 "RUBY-ZIP",
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
+ 		"truffle:TRUFFLE_DSL_PROCESSOR",
+                "truffle:TRUFFLE_TCK",
             ],
             "description": "JRuby+Truffle",
             "license": "EPL"
@@ -100,6 +106,8 @@ suite = {
             "distDependencies": [
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
+		"truffle:TRUFFLE_DSL_PROCESSOR",
+                "truffle:TRUFFLE_TCK",
             ],
             "description": "JRuby+Truffle Native Libs",
             "license": "EPL"

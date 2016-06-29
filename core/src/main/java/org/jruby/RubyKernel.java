@@ -1157,23 +1157,20 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject message) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
         if (runtime.warningsEnabled()) {
             IRubyObject out = runtime.getGlobalVariables().get("$stderr");
             Helpers.invoke(context, out, "write", message);
             Helpers.invoke(context, out, "write", runtime.getGlobalVariables().getDefaultSeparator());
         }
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(module = true, required = 1, rest = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject... messages) {
-        Ruby runtime = context.runtime;
-
         for (IRubyObject message : messages) warn(context, recv, message);
-
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -1194,7 +1191,7 @@ public class RubyKernel {
         String var = args[0].toString();
         // ignore if it's not a global var
         if (var.charAt(0) != '$') {
-            return context.runtime.getNil();
+            return context.nil;
         }
         if (args.length == 1) {
             proc = RubyProc.newProc(context.runtime, block, Block.Type.PROC);
@@ -1205,7 +1202,7 @@ public class RubyKernel {
 
         context.runtime.getGlobalVariables().setTraceVar(var, proc);
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
@@ -1217,11 +1214,11 @@ public class RubyKernel {
 
         // ignore if it's not a global var
         if (var.charAt(0) != '$') {
-            return context.runtime.getNil();
+            return context.nil;
         }
 
         if (args.length > 1) {
-            ArrayList<IRubyObject> success = new ArrayList<IRubyObject>();
+            ArrayList<IRubyObject> success = new ArrayList<>(args.length);
             for (int i = 1; i < args.length; i++) {
                 if (context.runtime.getGlobalVariables().untraceVar(var, args[i])) {
                     success.add(args[i]);
@@ -1232,7 +1229,7 @@ public class RubyKernel {
             context.runtime.getGlobalVariables().untraceVar(var);
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(required = 1, optional = 1, reads = VISIBILITY)
@@ -1259,8 +1256,9 @@ public class RubyKernel {
         }
     }
 
+    @JRubyMethod(name = "proc", module = true, visibility = PRIVATE)
     public static RubyProc proc(ThreadContext context, IRubyObject recv, Block block) {
-        return proc_1_9(context, recv, block);
+        return context.runtime.newProc(Block.Type.PROC, block);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -1271,9 +1269,9 @@ public class RubyKernel {
         return context.runtime.newProc(type, block);
     }
 
-    @JRubyMethod(name = "proc", module = true, visibility = PRIVATE)
+    @Deprecated
     public static RubyProc proc_1_9(ThreadContext context, IRubyObject recv, Block block) {
-        return context.runtime.newProc(Block.Type.PROC, block);
+        return proc(context, recv, block);
     }
 
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
