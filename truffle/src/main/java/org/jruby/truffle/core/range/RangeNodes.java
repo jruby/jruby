@@ -41,6 +41,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
+
 @CoreClass("Range")
 public abstract class RangeNodes {
 
@@ -82,7 +83,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true, enumeratorSize = "size")
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode eachInternalCall;

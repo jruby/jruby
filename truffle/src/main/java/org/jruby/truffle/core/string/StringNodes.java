@@ -1020,7 +1020,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "each_byte", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each_byte", needsBlock = true, enumeratorSize = "bytesize")
     public abstract static class EachByteNode extends YieldingCoreMethodNode {
 
         @Specialization
@@ -1044,7 +1044,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "each_char", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each_char", needsBlock = true, enumeratorSize = "size")
     @ImportStatic(StringGuards.class)
     public abstract static class EachCharNode extends YieldingCoreMethodNode {
 

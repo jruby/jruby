@@ -51,6 +51,7 @@ import org.jruby.truffle.language.yield.YieldNode;
 import java.util.Arrays;
 import java.util.Map;
 
+
 @CoreClass("Hash")
 public abstract class HashNodes {
 
@@ -581,7 +582,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = { "each", "each_pair" }, needsBlock = true)
+    @CoreMethod(names = { "each", "each_pair" }, needsBlock = true, enumeratorSize = "size")
     @ImportStatic(HashGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 

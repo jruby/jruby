@@ -791,7 +791,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each", needsBlock = true, enumeratorSize = "size")
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
@@ -827,7 +827,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "each_with_index", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "each_with_index", needsBlock = true, enumeratorSize = "size")
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
@@ -1196,7 +1196,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = { "map", "collect" }, needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = { "map", "collect" }, needsBlock = true, enumeratorSize = "size")
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
@@ -1230,7 +1230,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = { "map!", "collect!" }, needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "map!", "collect!" }, needsBlock = true, enumeratorSize = "size", raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
@@ -1742,7 +1742,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "reject", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "reject", needsBlock = true, enumeratorSize = "size")
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
@@ -1781,7 +1781,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "delete_if" , needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete_if" , needsBlock = true, enumeratorSize = "size", raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteIfNode extends YieldingCoreMethodNode {
 
@@ -1799,7 +1799,7 @@ public abstract class ArrayNodes {
     }
 
 
-    @CoreMethod(names = "reject!", needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "reject!", needsBlock = true, enumeratorSize = "size", raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
@@ -1881,7 +1881,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "select", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "select", needsBlock = true, enumeratorSize = "size")
     @ImportStatic(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
