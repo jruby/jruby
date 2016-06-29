@@ -50,6 +50,8 @@ suite = {
             "dependencies": [
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
+                "truffle:TRUFFLE_DSL_PROCESSOR",
+                "truffle:TRUFFLE_TCK",
             ],
         },
         "jruby-lib-jni": {
@@ -59,6 +61,8 @@ suite = {
             "dependencies": [
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
+                "truffle:TRUFFLE_DSL_PROCESSOR",
+                "truffle:TRUFFLE_TCK",
             ],
         },
     },
@@ -85,6 +89,8 @@ suite = {
                 "RUBY-ZIP",
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
+ 		"truffle:TRUFFLE_DSL_PROCESSOR",
+                "truffle:TRUFFLE_TCK",
             ],
             "description": "JRuby+Truffle",
             "license": "EPL"
@@ -100,6 +106,8 @@ suite = {
             "distDependencies": [
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
+		"truffle:TRUFFLE_DSL_PROCESSOR",
+                "truffle:TRUFFLE_TCK",
             ],
             "description": "JRuby+Truffle Native Libs",
             "license": "EPL"
