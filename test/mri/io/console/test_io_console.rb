@@ -1,10 +1,10 @@
+# frozen_string_literal: false
 begin
   require 'io/console'
   require 'test/unit'
   require 'pty'
 rescue LoadError
 end
-require_relative '../../ruby/envutil'
 
 class TestIO_Console < Test::Unit::TestCase
   Bug6116 = '[ruby-dev:45309]'
@@ -66,6 +66,14 @@ class TestIO_Console < Test::Unit::TestCase
       ensure
         th.join
       end
+    }
+  end
+
+  def test_raw!
+    helper {|m, s|
+      s.raw!
+      s.print "foo\n"
+      assert_equal("foo\n", m.gets)
     }
   end
 
@@ -173,6 +181,17 @@ class TestIO_Console < Test::Unit::TestCase
     }
   end
 
+  def test_getpass
+    skip unless IO.method_defined?("getpass")
+    run_pty("p IO.console.getpass('> ')") do |r, w|
+      assert_equal("> ", r.readpartial(10))
+      w.print "asdf\n"
+      sleep 1
+      assert_equal("\r\n", r.gets)
+      assert_equal("\"asdf\"", r.gets.chomp)
+    end
+  end
+
   def test_iflush
     helper {|m, s|
       m.print "a"
@@ -219,21 +238,30 @@ class TestIO_Console < Test::Unit::TestCase
   end
 
   if IO.console
+    def test_close
+      IO.console.close
+      assert_kind_of(IO, IO.console)
+      assert_nothing_raised(IOError) {IO.console.fileno}
+
+      IO.console(:close)
+      assert(IO.console(:tty?))
+    ensure
+      IO.console(:close)
+    end
+
     def test_sync
       assert(IO.console.sync, "console should be unbuffered")
+    ensure
+      IO.console(:close)
     end
   else
+    def test_close
+      assert_equal(["true"], run_pty("IO.console.close; p IO.console.fileno >= 0"))
+      assert_equal(["true"], run_pty("IO.console(:close); p IO.console(:tty?)"))
+    end
+
     def test_sync
-      r, w, pid = PTY.spawn(EnvUtil.rubybin, "-rio/console", "-e", "p IO.console.class")
-    rescue RuntimeError
-      skip $!
-    else
-      con = r.gets.chomp
-      Process.wait(pid)
-      assert_match("File", con)
-    ensure
-      r.close if r
-      w.close if w
+      assert_equal(["true"], run_pty("p IO.console.sync"))
     end
   end
 
@@ -248,6 +276,24 @@ class TestIO_Console < Test::Unit::TestCase
     m.close if m
     s.close if s
   end
+
+  def run_pty(src, n = 1)
+    r, w, pid = PTY.spawn(EnvUtil.rubybin, "-rio/console", "-e", src)
+  rescue RuntimeError
+    skip $!
+  else
+    if block_given?
+      yield r, w, pid
+    else
+      result = []
+      n.times {result << r.gets.chomp}
+      result
+    end
+  ensure
+    r.close if r
+    w.close if w
+    Process.wait(pid) if pid
+  end
 end if defined?(PTY) and defined?(IO::console)
 
 class TestIO_Console < Test::Unit::TestCase
@@ -256,16 +302,17 @@ class TestIO_Console < Test::Unit::TestCase
     noctty = [EnvUtil.rubybin, "-e", "Process.daemon(true)"]
   when !(rubyw = RbConfig::CONFIG["RUBYW_INSTALL_NAME"]).empty?
     dir, base = File.split(EnvUtil.rubybin)
-    noctty = [File.join(dir, base.sub(/ruby/, rubyw))]
+    base = base.sub(/ruby/, rubyw) if base != rubyw
+    noctty = [File.join(dir, base)]
   end
 
   if noctty
     require 'tempfile'
     NOCTTY = noctty
     def test_noctty
-      t = Tempfile.new("console")
+      t = Tempfile.new("noctty_out")
       t.close
-      t2 = Tempfile.new("console")
+      t2 = Tempfile.new("noctty_run")
       t2.close
       cmd = [*NOCTTY[1..-1],
         '-e', 'open(ARGV[0], "w") {|f|',

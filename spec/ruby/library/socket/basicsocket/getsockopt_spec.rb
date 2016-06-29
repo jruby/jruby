@@ -11,14 +11,19 @@ describe "BasicSocket#getsockopt" do
     @sock.close
   end
 
-  it "gets a socket option Socket::SO_TYPE" do
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_TYPE).to_s
-    n.should == [Socket::SOCK_STREAM].pack("i")
-  end
+  platform_is_not :aix do
+    # A known bug in AIX.  getsockopt(2) does not properly set
+    # the fifth argument for SO_TYPE, SO_OOBINLINE, SO_BROADCAST, etc.
 
-  it "gets a socket option Socket::SO_OOBINLINE" do
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
-    n.should == [0].pack("i")
+    it "gets a socket option Socket::SO_TYPE" do
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_TYPE).to_s
+      n.should == [Socket::SOCK_STREAM].pack("i")
+    end
+
+    it "gets a socket option Socket::SO_OOBINLINE" do
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
+      n.should == [0].pack("i")
+    end
   end
 
   it "gets a socket option Socket::SO_LINGER" do

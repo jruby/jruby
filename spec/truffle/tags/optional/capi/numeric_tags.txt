@@ -1,0 +1,69 @@
+fails:CApiNumericSpecs rb_num2int raises a TypeError if passed nil
+fails:CApiNumericSpecs rb_num2int converts a Float
+fails:CApiNumericSpecs rb_num2int converts a Bignum
+fails:CApiNumericSpecs rb_num2int converts a Fixnum
+fails:CApiNumericSpecs rb_num2int converts -1 to an signed number
+fails:CApiNumericSpecs rb_num2int converts a negative Bignum into an signed number
+fails:CApiNumericSpecs rb_num2int raises a RangeError if the value is more than 32bits
+fails:CApiNumericSpecs rb_num2int calls #to_int to coerce the value
+fails:CApiNumericSpecs rb_num2uint raises a TypeError if passed nil
+fails:CApiNumericSpecs rb_num2uint converts a Float
+fails:CApiNumericSpecs rb_num2uint converts a Bignum
+fails:CApiNumericSpecs rb_num2uint converts a Fixnum
+fails:CApiNumericSpecs rb_num2uint converts a negative number to the complement
+fails:CApiNumericSpecs rb_num2uint converts a signed int value to the complement
+fails:CApiNumericSpecs rb_num2uint raises a RangeError if the value is more than 32bits
+fails:CApiNumericSpecs rb_num2uint raises a RangeError if the value is less than 32bits negative
+fails:CApiNumericSpecs rb_num2uint raises a RangeError if the value is more than 64bits
+fails:CApiNumericSpecs rb_num2uint calls #to_int to coerce the value
+fails:CApiNumericSpecs rb_num2long raises a TypeError if passed nil
+fails:CApiNumericSpecs rb_num2long converts a Float
+fails:CApiNumericSpecs rb_num2long converts a Bignum
+fails:CApiNumericSpecs rb_num2long converts a Fixnum
+fails:CApiNumericSpecs rb_num2long converts -1 to an signed number
+fails:CApiNumericSpecs rb_num2long converts a negative Bignum into an signed number
+fails:CApiNumericSpecs rb_num2long raises a RangeError if the value is more than 64bits
+fails:CApiNumericSpecs rb_num2long calls #to_int to coerce the value
+fails:CApiNumericSpecs rb_int2num raises a TypeError if passed nil
+fails:CApiNumericSpecs rb_int2num converts a Float
+fails:CApiNumericSpecs rb_int2num raises a RangeError when passed a Bignum
+fails:CApiNumericSpecs rb_int2num converts a Fixnum
+fails:CApiNumericSpecs rb_int2num converts a negative Fixnum
+fails:CApiNumericSpecs rb_num2ulong raises a TypeError if passed nil
+fails:CApiNumericSpecs rb_num2ulong converts a Float
+fails:CApiNumericSpecs rb_num2ulong converts a Bignum
+fails:CApiNumericSpecs rb_num2ulong converts a Fixnum
+fails:CApiNumericSpecs rb_num2ulong converts -1 to an unsigned number
+fails:CApiNumericSpecs rb_num2ulong converts a negative Bignum into an unsigned number
+fails:CApiNumericSpecs rb_num2ulong raises a RangeError if the value is more than 64bits
+fails:CApiNumericSpecs rb_num2ulong calls #to_int to coerce the value
+fails:CApiNumericSpecs rb_Integer creates a new Integer from a String
+fails:CApiNumericSpecs rb_ll2inum creates a new Fixnum from a small signed long long
+fails:CApiNumericSpecs rb_int2inum creates a new Fixnum from a long
+fails:CApiNumericSpecs rb_num2dbl raises a TypeError if passed nil
+fails:CApiNumericSpecs rb_num2dbl raises a TypeError if passed a String
+fails:CApiNumericSpecs rb_num2dbl converts a Float
+fails:CApiNumericSpecs rb_num2dbl converts a Bignum
+fails:CApiNumericSpecs rb_num2dbl converts a Fixnum
+fails:CApiNumericSpecs rb_num2dbl calls #to_f to coerce the value
+fails:CApiNumericSpecs NUM2CHR returns the first character of a String
+fails:CApiNumericSpecs NUM2CHR returns the least significant byte of an Integer
+fails:CApiNumericSpecs NUM2CHR returns the least significant byte of a Float converted to an Integer
+fails:CApiNumericSpecs NUM2CHR raises a TypeError when passed an empty String
+fails:CApiNumericSpecs rb_num_zerodiv raises a RuntimeError
+fails:CApiNumericSpecs rb_cmpint returns a Fixnum if passed one
+fails:CApiNumericSpecs rb_cmpint uses > to check if the value is greater than 1
+fails:CApiNumericSpecs rb_cmpint uses < to check if the value is less than 1
+fails:CApiNumericSpecs rb_cmpint returns 0 if < and > are false
+fails:CApiNumericSpecs rb_cmpint raises an ArgumentError when passed nil
+fails:CApiNumericSpecs rb_num_coerce_bin calls #coerce on the first argument
+fails:CApiNumericSpecs rb_num_coerce_bin calls the specified method on the first argument returned by #coerce
+fails:CApiNumericSpecs rb_num_coerce_bin raises a TypeError if #coerce does not return an Array
+fails:CApiNumericSpecs rb_num_coerce_cmp calls #coerce on the first argument
+fails:CApiNumericSpecs rb_num_coerce_cmp calls the specified method on the first argument returned by #coerce
+fails:CApiNumericSpecs rb_num_coerce_cmp returns nil if passed nil
+fails:CApiNumericSpecs rb_num_coerce_cmp returns nil if #coerce does not return an Array
+fails:CApiNumericSpecs rb_num_coerce_relop calls #coerce on the first argument
+fails:CApiNumericSpecs rb_num_coerce_relop calls the specified method on the first argument returned by #coerce
+fails:CApiNumericSpecs rb_num_coerce_relop raises an ArgumentError if #<op> returns nil
+fails:CApiNumericSpecs rb_num_coerce_relop raises an ArgumentError if #coerce does not return an Array

@@ -23,7 +23,7 @@ VALUE file_spec_FilePathValue(VALUE self, VALUE obj) {
 }
 #endif
 
-void Init_file_spec() {
+void Init_file_spec(void) {
   VALUE cls = rb_define_class("CApiFileSpecs", rb_cObject);
 
 #ifdef HAVE_RB_FILE_OPEN

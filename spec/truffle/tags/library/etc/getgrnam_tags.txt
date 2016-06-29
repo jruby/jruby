@@ -1,0 +1,2 @@
+fails:Etc.getgrnam returns a Etc::Group struct instance for the given group
+fails:Etc.getgrnam only accepts strings as argument

@@ -2,15 +2,18 @@ language: java
 
 sudo: false
 
-#cache:
-#  directories:
-#    - $HOME/.m2
+cache:
+ directories:
+   - $HOME/.m2
+
+before_install:
+  - export MAVEN_SKIP_RC=true
+  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=240M"; else export MAVEN_OPTS="-XX:MaxMetaspaceSize=240M -XX:CompressedClassSpaceSize=240M"; fi
+  - export MAVEN_OPTS="-Xmx512M $MAVEN_OPTS"
 
 before_script:
-  - export MAVEN_SKIP_RC=true
-  - export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=512m"
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
-  - "export PATH=`pwd`/bin:$PATH"
+  - export PATH="`pwd`/bin:$PATH"
   - echo $HOME
 
 jdk:
@@ -22,29 +25,27 @@ os:
 
 env:
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn48M -Xmx512M"
     - MALLOC_ARENA_MAX=2
   matrix:
     - PHASE='-Ptest'
     - PHASE='-Prake -Dtask=test:jruby'
+    - PHASE='-Prake -Dtask=test:jruby:fullint'
     - PHASE='-Prake -Dtask=test:jruby:jit'
     - PHASE='-Prake -Dtask=test:mri'
+    - PHASE='-Prake -Dtask=test:mri:fullint'
     - PHASE='-Prake -Dtask=test:mri:jit'
     - PHASE='-Prake -Dtask=test:slow_suites'
     - PHASE='-Prake -Dtask=test:tracing'
     - PHASE='-Prake -Dtask=spec:ji'
     - PHASE='-Prake -Dtask=spec:compiler'
+    - PHASE='-Prake -Dtask=spec:compiler' JRUBY_OPTS=-Xcompile.invokedynamic
     - PHASE='-Prake -Dtask=spec:ffi'
     - PHASE='-Prake -Dtask=spec:regression'
     - PHASE='-Prake -Dtask=spec:ruby:fast'
     - PHASE='-Prake -Dtask=spec:jruby'
     - PHASE='-Prake -Dtask=spec:jrubyc'
     - PHASE='-Prake -Dtask=spec:profiler'
-    - PHASE='-Ptruffle-specs-language'
-    - PHASE='-Ptruffle-specs-core'
-    - PHASE='-Ptruffle-specs-library'
-    - PHASE='-Ptruffle-specs-truffle'
-    - PHASE='-Ptruffle-mri-tests'
 
 matrix:
   include:
@@ -70,11 +71,41 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
-    - env: COMMAND=tool/truffle-findbugs.sh
+    # JRuby+Truffle needs Java 8
+    - env: JT='test specs :command_line'
       jdk: oraclejdk8
-    - env: COMMAND='ruby tool/jt.rb check_ambiguous_arguments'
+    - env: JT='test specs :language'
       jdk: oraclejdk8
-    - env: COMMAND=test/truffle/integration-tests.sh
+    - env: JT='test specs :core'
+      jdk: oraclejdk8
+    - env: JT='test specs :library'
+      jdk: oraclejdk8
+    - env: JT='test specs :truffle'
+      jdk: oraclejdk8
+    - env: JT='test integration'
+      jdk: oraclejdk8
+    - env:
+      - COMMAND=test/truffle/gems/install-gems.sh
+      - JT='test gems'
+      jdk: oraclejdk8
+    - env:
+      - JAVA_OPTS="$JAVA_OPTS -Xmx512m"
+      - HAS_REDIS=true
+      - JT='test ecosystem'
+      jdk: oraclejdk8
+    - env: JT='test tck'
+      jdk: oraclejdk8
+    - env:
+      - JT=check_ambiguous_arguments
+      - SKIP_BUILD=true
+      jdk: oraclejdk8
+    - env:
+      - USE_BUILD_PACK=yes
+      - JT='test fast'
+      jdk: oraclejdk8
+  allow_failures:
+    - env: PHASE='-Prake -Dtask=test:mri:fullint'
+    - env: JT='test mri'
       jdk: oraclejdk8
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
@@ -83,16 +114,8 @@ matrix:
     #  group: edge
     #  jdk: oraclejdk9
 
-branches:
-  only:
-    - master
-    - jruby-1_7
-    - truffle-head
-    - /^test-.*$/
-    - /^ha-feature/
-
-script: if [[ -v COMMAND ]]; then $COMMAND; else ./mvnw install -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
-install: travis_retry ./mvnw -Pbootstrap clean install -Dinvoker.skip -Dmaven.test.skip
+install: tool/travis-install.sh
+script: tool/travis-script.sh
 
 notifications:
   irc:
@@ -111,3 +134,6 @@ notifications:
 # we are on a branch
     on_success: always
     on_failure: never
+
+services:
+  - redis-server

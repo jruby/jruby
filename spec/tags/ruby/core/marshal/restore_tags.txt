@@ -3,7 +3,6 @@ fails:Marshal.restore for a Integer loads 0
 fails:Marshal.restore for a Class raises ArgumentError if given a nonexistent class
 fails:Marshal.restore for a Module loads an old module
 fails:Marshal.restore for a wrapped C pointer loads
-fails:Marshal.restore for a wrapped C pointer raises TypeError when the local class is missing _data_load
 fails:Marshal.restore for a Hash loads an extended_user_hash with a parameter to initialize
 fails:Marshal.restore for a user Class loads a user-marshaled extended object
 fails:Marshal.restore for a user Class loads an extended Object

@@ -1,3 +1,0 @@
-fails:Net::HTTPHeader#delete when passed key removes the header entry with the passed key
-fails:Net::HTTPHeader#delete when passed key returns the removed values
-fails:Net::HTTPHeader#delete when passed key is case-insensitive

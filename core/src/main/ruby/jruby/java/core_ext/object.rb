@@ -3,13 +3,14 @@ class Object
   # using either its base name or by using a name returned from an optional block,
   # passing all specified classes in turn and providing the block package name
   # and base class name.
+  # @deprecated use {Object#java_import}
   def include_class(include_class, &block)
     warn "#{__method__} is deprecated. Use java_import."
     java_import(include_class, &block)
   end
-  
-  # TODO: this can go away now, but people may be using it
-  def java_kind_of?(other)
+
+  # @deprecated
+  def java_kind_of?(other) # TODO: this can go away now, but people may be using it
     return true if self.kind_of?(other)
     return false unless self.respond_to?(:java_class) && other.respond_to?(:java_class) &&
       other.kind_of?(Module) && !self.kind_of?(Module) 
@@ -22,6 +23,7 @@ class Object
   #   java_import java.lang.System, java.lang.Thread
   #   java_import [java.lang.System, java.lang.Thread]
   #
+  # @!visibility public
   def java_import(*import_classes)
     import_classes = import_classes.each_with_object([]) do |classes, flattened|
       if classes.is_a?(Array)
@@ -96,9 +98,9 @@ class Object
       import_class
     end
   end
-  
   private :java_import
 
+  # @private
   def handle_different_imports(*args, &block)
     if args.first.respond_to?(:java_class)
       java_import(*args, &block)

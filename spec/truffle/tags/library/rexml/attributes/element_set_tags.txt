@@ -1,1 +1,0 @@
-fails:REXML::Attributes#[]= deletes an attribute is value is nil

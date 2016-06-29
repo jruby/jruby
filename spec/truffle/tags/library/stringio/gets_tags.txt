@@ -1,5 +1,0 @@
-fails:StringIO#gets when passed [separator] sets $_ to the read content
-fails:StringIO#gets when passed [separator] accepts string as separator
-fails:StringIO#gets when passed no argument sets $_ to the read content
-fails:StringIO#gets when passed [limit] sets $_ to the read content
-fails:StringIO#gets when passed [separator] and [limit] sets $_ to the read content

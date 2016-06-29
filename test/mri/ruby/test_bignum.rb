@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'test/unit'
 
 class TestBignum < Test::Unit::TestCase
@@ -268,6 +269,18 @@ class TestBignum < Test::Unit::TestCase
     assert_equal(2**180, (2**80) * o)
   end
 
+  def test_positive_p
+    assert_predicate(T_ONE, :positive?)
+    assert_not_predicate(T_MONE, :positive?)
+    assert_not_predicate(T_ZERO, :positive?)
+  end
+
+  def test_negative_p
+    assert_not_predicate(T_ONE, :negative?)
+    assert_predicate(T_MONE, :negative?)
+    assert_not_predicate(T_ZERO, :negative?)
+  end
+
   def test_mul_balance
     assert_equal(3**7000, (3**5000) * (3**2000))
   end
@@ -440,9 +453,6 @@ class TestBignum < Test::Unit::TestCase
   def test_pow
     assert_equal(1.0, T32 ** 0.0)
     assert_equal(1.0 / T32, T32 ** -1)
-    assert_equal(1, (T31 ** T31).infinite?)
-    assert_equal(1, (T31 ** T32).infinite?)
-    assert_equal(1, (T32 ** T31).infinite?)
     assert_equal(1, (T32 ** T32).infinite?)
     assert_equal(1, (T32 ** (2**30-1)).infinite?)
 
@@ -559,6 +569,8 @@ class TestBignum < Test::Unit::TestCase
   def test_coerce
     assert_equal([T64P, T31P], T31P.coerce(T64P))
     assert_raise(TypeError) { T31P.coerce(nil) }
+    obj = eval("class C\u{1f5ff}; self; end").new
+    assert_raise_with_message(TypeError, /C\u{1f5ff}/) { T31P.coerce(obj) }
   end
 
   def test_abs

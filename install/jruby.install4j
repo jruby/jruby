@@ -84,13 +84,15 @@
       <dirEntry mountPoint="103" file="${compiler:jruby.location}" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
         <exclude>
           <entry location="bin" fileType="regular" />
-          <entry location="lib/jni/arm-Linux" fileType="regular" />
           <entry location="lib/jni/Darwin" fileType="regular" />
-          <entry location="lib/jni/i386-FreeBSD" fileType="regular" />
+          <entry location="lib/jni/arm-Linux" fileType="regular" />
           <entry location="lib/jni/i386-Linux" fileType="regular" />
-          <entry location="lib/jni/i386-OpenBSD" fileType="regular" />
           <entry location="lib/jni/i386-SunOS" fileType="regular" />
+          <entry location="lib/jni/i386-FreeBSD" fileType="regular" />
+          <entry location="lib/jni/i386-OpenBSD" fileType="regular" />
           <entry location="lib/jni/ppc-AIX" fileType="regular" />
+          <entry location="lib/jni/ppc64-Linux" fileType="regular" />
+          <entry location="lib/jni/ppc64le-Linux" fileType="regular" />
           <entry location="lib/jni/ppc-Linux" fileType="regular" />
           <entry location="lib/jni/s390x-Linux" fileType="regular" />
           <entry location="lib/jni/sparc-SunOS" fileType="regular" />
@@ -111,6 +113,8 @@
           <entry location="lib/jni/i386-OpenBSD" fileType="regular" />
           <entry location="lib/jni/i386-SunOS" fileType="regular" />
           <entry location="lib/jni/i386-Windows" fileType="regular" />
+          <entry location="lib/jni/ppc64-Linux" fileType="regular" />
+          <entry location="lib/jni/ppc64le-Linux" fileType="regular" />
           <entry location="lib/jni/ppc-AIX" fileType="regular" />
           <entry location="lib/jni/ppc-Linux" fileType="regular" />
           <entry location="lib/jni/s390x-Linux" fileType="regular" />
@@ -128,8 +132,8 @@
     <components />
   </files>
   <launchers>
-    <launcher name="irb (2.2)" id="261" external="false" excludeFromMenu="false" menuName="" icnsFile="" pngIcon16File="./icon16.png" pngIcon32File="./icon32.png" macServiceDependencies="" swtApp="false" fileset="">
-      <executable name="irb (2.2)" type="1" iconSet="true" iconFile="" executableDir="" redirectStderr="true" stderrFile="error.log" stderrMode="overwrite" redirectStdout="false" stdoutFile="output.log" stdoutMode="overwrite" failOnStderrOutput="true" executableMode="1" changeWorkingDirectory="true" workingDirectory="." singleInstance="false" serviceStartType="2" serviceDependencies="" serviceDescription="" jreLocation="" executionLevel="asInvoker" checkConsoleParameter="false" globalSingleInstance="false">
+    <launcher name="irb (2.3)" id="261" external="false" excludeFromMenu="false" menuName="" icnsFile="" pngIcon16File="./icon16.png" pngIcon32File="./icon32.png" macServiceDependencies="" swtApp="false" fileset="">
+      <executable name="irb (2.3)" type="1" iconSet="true" iconFile="" executableDir="" redirectStderr="true" stderrFile="error.log" stderrMode="overwrite" redirectStdout="false" stdoutFile="output.log" stdoutMode="overwrite" failOnStderrOutput="true" executableMode="1" changeWorkingDirectory="true" workingDirectory="." singleInstance="false" serviceStartType="2" serviceDependencies="" serviceDescription="" jreLocation="" executionLevel="asInvoker" checkConsoleParameter="false" globalSingleInstance="false">
         <versionInfo include="false" fileVersion="" fileDescription="" legalCopyright="" internalName="" productName="" />
       </executable>
       <splashScreen show="false" autoOff="true" alwaysOnTop="true" width="0" height="0" bitmapFile="./jruby-logo.png" java6SplashScreen="false">

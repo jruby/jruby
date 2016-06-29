@@ -1,7 +1,7 @@
 # -*- coding: us-ascii -*-
+# frozen_string_literal: false
 require 'test/unit'
 require 'timeout'
-require_relative 'envutil'
 
 module TestStruct
   def test_struct
@@ -95,6 +95,12 @@ module TestStruct
   def test_initialize
     klass = @Struct.new(:a)
     assert_raise(ArgumentError) { klass.new(1, 2) }
+    klass = @Struct.new(:total) do
+      def initialize(a, b)
+        super(a+b)
+      end
+    end
+    assert_equal 3, klass.new(1,2).total
   end
 
   def test_each
@@ -141,7 +147,7 @@ module TestStruct
     assert_equal("#<struct :@a=3>", o.inspect)
 
     methods = klass.instance_methods(false)
-    assert_equal([:@a, :"@a="].inspect, methods.inspect, '[Bug #8756]')
+    assert_equal([:@a, :"@a="].sort.inspect, methods.sort.inspect, '[Bug #8756]')
     assert_include(methods, :@a)
     assert_include(methods, :"@a=")
   end
@@ -156,8 +162,8 @@ module TestStruct
     klass = @Struct.new(:a)
     o = klass.new(1)
     assert_equal(1, o[0])
-    assert_raise(IndexError) { o[-2] }
-    assert_raise(IndexError) { o[1] }
+    assert_raise_with_message(IndexError, /offset -2\b/) {o[-2]}
+    assert_raise_with_message(IndexError, /offset 1\b/) {o[1]}
     assert_raise_with_message(NameError, /foo/) {o["foo"]}
     assert_raise_with_message(NameError, /foo/) {o[:foo]}
   end
@@ -167,8 +173,8 @@ module TestStruct
     o = klass.new(1)
     o[0] = 2
     assert_equal(2, o[:a])
-    assert_raise(IndexError) { o[-2] = 3 }
-    assert_raise(IndexError) { o[1] = 3 }
+    assert_raise_with_message(IndexError, /offset -2\b/) {o[-2] = 3}
+    assert_raise_with_message(IndexError, /offset 1\b/) {o[1] = 3}
     assert_raise_with_message(NameError, /foo/) {o["foo"] = 3}
     assert_raise_with_message(NameError, /foo/) {o[:foo] = 3}
   end
@@ -185,6 +191,48 @@ module TestStruct
     o = klass.new(1, 2, 3, 4, 5, 6)
     assert_equal([1, 3, 5], o.select {|v| v % 2 != 0 })
     assert_raise(ArgumentError) { o.select(1) }
+  end
+
+  def test_big_struct
+    klass1 = @Struct.new(*('a'..'z').map(&:to_sym))
+    o = klass1.new
+    assert_nil o.z
+    assert_equal(:foo, o.z = :foo)
+    assert_equal(:foo, o.z)
+    assert_equal(:foo, o[25])
+  end
+
+  def test_overridden_aset
+    bug10601 = '[ruby-core:66846] [Bug #10601]: should not be affected by []= method'
+
+    struct = Class.new(Struct.new(*(:a..:z), :result)) do
+      def []=(*args)
+        raise args.inspect
+      end
+    end
+
+    obj = struct.new
+    assert_nothing_raised(RuntimeError, bug10601) do
+      obj.result = 42
+    end
+    assert_equal(42, obj.result, bug10601)
+  end
+
+  def test_overridden_aref
+    bug10601 = '[ruby-core:66846] [Bug #10601]: should not be affected by [] method'
+
+    struct = Class.new(Struct.new(*(:a..:z), :result)) do
+      def [](*args)
+        raise args.inspect
+      end
+    end
+
+    obj = struct.new
+    obj.result = 42
+    result = assert_nothing_raised(RuntimeError, bug10601) do
+      break obj.result
+    end
+    assert_equal(42, result, bug10601)
   end
 
   def test_equal
@@ -310,6 +358,13 @@ module TestStruct
     klass = @Struct.new(:a)
     x = klass.new
     assert_equal "[Bug #9353]", x.send(:a=, "[Bug #9353]")
+  end
+
+  def test_dig
+    klass = @Struct.new(:a)
+    o = klass.new(klass.new({b: [1, 2, 3]}))
+    assert_equal(1, o.dig(:a, :a, :b, 0))
+    assert_nil(o.dig(:b, 0))
   end
 
   class TopStruct < Test::Unit::TestCase

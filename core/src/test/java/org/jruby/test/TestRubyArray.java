@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <Ola.Bini@ki.se>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -30,7 +30,6 @@ package org.jruby.test;
 import java.util.Arrays;
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 
 /**
@@ -76,7 +75,7 @@ public class TestRubyArray extends TestRubyBase {
     }
 
     /**
-     * Test Array#[]= (store) and Array#[] (retrieve).  
+     * Test Array#[]= (store) and Array#[] (retrieve).
      */
     public void testLookups() throws Exception {
         // value equality
@@ -171,19 +170,19 @@ public class TestRubyArray extends TestRubyBase {
         assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
         assertSame("second element not nil", runtime.getNil(), arr.eltInternal(1));
     }
-    
+
     private void assertSublistContainsCorrectSubset(final List<?> list) {
         final List<?> subList = list.subList(1, 3);
         assertEquals(2, subList.size());
         assertEquals("bar", subList.get(0));
         assertEquals("baz", subList.get(1));
     }
-    
+
     public void testSubListContainsCorrectSubset() {
         // Demonstrates that this is a fair test
         final List<?> javaArray = Arrays.asList("foo", "bar", "baz", "anything");
         assertSublistContainsCorrectSubset(javaArray);
-        
+
         // Ruby should give the same results
         final RubyArray rubyArray = (RubyArray)runtime.evalScriptlet("$h = ['foo', 'bar', 'baz', 'anything']");
         assertSublistContainsCorrectSubset(rubyArray);

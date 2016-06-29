@@ -1,4 +1,4 @@
-JRuby is Copyright (c) 2007-2015 The JRuby project, and is released
+JRuby is Copyright (c) 2007-2016 The JRuby project, and is released
 under a tri EPL/GPL/LGPL license. You can use it, redistribute it
 and/or modify it under the terms of the:
 
@@ -12,7 +12,7 @@ bytelist (http://github.com/jruby/bytelist),
 yydebug (http://svn.codehaus.org/jruby/trunk/jay/yydebug)
 are released under the same copyright/license.
 
-The Truffle component is copyright (c) 2013-2015 Oracle and/or its
+The Truffle component is copyright (c) 2013-2016 Oracle and/or its
 affiliates and is released under the same licenses.
 
 Some additional libraries distributed with JRuby are not covered by
@@ -77,6 +77,10 @@ below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
 
  Some parts of the RubySL implementations of the stdlib in lib/ruby/truffle/rubysl
  are copyright (c) 2013 Brian Shirai and are licensed under the 3-clause BSD license.
+
+ pr-zlib is copyright Park Heesob and Daniel Berger. "This library is covered
+ under the same license as zlib itself. For the text of the zlib license,
+ please see http://zlib.net/zlib_license.html."
 
 The complete text of the Eclipse Public License is as follows:
 

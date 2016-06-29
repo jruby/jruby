@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'rubygems/test_case'
 require "rubygems/text"
 
@@ -35,6 +36,22 @@ Without the wrapping, the text might not look good in the RSS feed.
     assert_equal expected, format_text(text, 78)
   end
 
+  def test_min3
+    assert_equal 1, min3(1, 1, 1)
+    assert_equal 1, min3(1, 1, 2)
+    assert_equal 1, min3(1, 2, 1)
+    assert_equal 1, min3(2, 1, 1)
+    assert_equal 1, min3(1, 2, 2)
+    assert_equal 1, min3(2, 1, 2)
+    assert_equal 1, min3(2, 2, 1)
+    assert_equal 1, min3(1, 2, 3)
+    assert_equal 1, min3(1, 3, 2)
+    assert_equal 1, min3(2, 1, 3)
+    assert_equal 1, min3(2, 3, 1)
+    assert_equal 1, min3(3, 1, 2)
+    assert_equal 1, min3(3, 2, 1)
+  end
+
   def test_levenshtein_distance_add
     assert_equal 2, levenshtein_distance("zentest", "zntst")
     assert_equal 2, levenshtein_distance("zntst", "zentest")
@@ -48,6 +65,8 @@ Without the wrapping, the text might not look good in the RSS feed.
   def test_levenshtein_distance_remove
     assert_equal 3, levenshtein_distance("zentest", "zentestxxx")
     assert_equal 3, levenshtein_distance("zentestxxx", "zentest")
+    assert_equal 13, levenshtein_distance("cat", "thundercatsarego")
+    assert_equal 13, levenshtein_distance("thundercatsarego", "cat")
   end
 
   def test_levenshtein_distance_replace

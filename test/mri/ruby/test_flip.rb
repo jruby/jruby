@@ -1,5 +1,5 @@
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 
 class TestFlip < Test::Unit::TestCase
   def test_hidden_key

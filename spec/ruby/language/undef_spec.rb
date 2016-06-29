@@ -7,8 +7,8 @@ end
 class UndefMultipleAtOnce
   def method1; end
   def method2; :nope; end
-  
-  undef :method1, :method2  
+
+  undef :method1, :method2
 end
 
 describe "The undef keyword" do
@@ -20,7 +20,7 @@ describe "The undef keyword" do
     end
     lambda { obj.meth 5 }.should raise_error(NoMethodError)
   end
-  
+
   it "allows undefining multiple methods at a time" do
     obj = UndefMultipleAtOnce.new
     obj.respond_to?(:method1).should == false
@@ -28,8 +28,9 @@ describe "The undef keyword" do
   end
 
   it "raises a NameError when passed a missing name" do
-    lambda { class ::UndefSpecClass; undef not_exist; end }.should raise_error(NameError)
-    # a NameError and not a NoMethodError
-    lambda { class ::UndefSpecClass; undef not_exist; end }.should_not raise_error(NoMethodError)
+    lambda { class ::UndefSpecClass; undef not_exist; end }.should raise_error(NameError) { |e|
+      # a NameError and not a NoMethodError
+      e.class.should == NameError
+    }
   end
 end

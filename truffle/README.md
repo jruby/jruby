@@ -25,25 +25,31 @@ University Linz](http://ssw.jku.at).
 * Lucas Allan Amorim
 * Aditya Bhardwaj
 
-The best way to get in touch with us is to join us in `#jruby` on Freenode, but you can also Tweet to @chrisgseaton, @nirvdrum or @eregontp, or email chris.seaton@oracle.com.
+The best way to get in touch with us is to join us in `#jruby` on Freenode, but 
+you can also Tweet to @chrisgseaton, @nirvdrum, @eregontp or @pitr-ch, or email
+chris.seaton@oracle.com.
 
 ## Using Truffle
 
 To run JRuby in Truffle mode, pass the `-X+T` option.
 
-Truffle is designed to be used on the Graal VM rather than a conventional JVM.
-Download a build of Graal:
+JRuby+Truffle is designed to be run with a JVM that has the Graal compiler. The
+easiest way to get this is via the GraalVM, available from the Oracle
+Technology Network.
 
-* http://lafo.ssw.uni-linz.ac.at/graalvm/openjdk-8-graalvm-b132-macosx-x86_64-0.7.tar.gz
-* http://lafo.ssw.uni-linz.ac.at/graalvm/openjdk-8-graalvm-b132-linux-x86_64-0.7.tar.gz
+https://github.com/jruby/jruby/wiki/Downloading-GraalVM
 
-You can then run JRuby with GraalVM
+But you can also build it yourself, which you will need to do if you are on the
+`truffle-head` branch.
 
-    JAVACMD=path/to/graal/java bin/jruby -X+T ...
+https://github.com/jruby/jruby/wiki/Building-Graal
 
-If you want to develop against the latest version of Graal, you should use the
-`truffle-head` branch of JRuby and you will need to
-[build Graal for yourself](https://wiki.openjdk.java.net/display/Graal/Instructions).
+You then need to set the `JAVACMD` environment variable as described on those
+pages, and tell the JVM to use the Graal compiler.
+
+```
+$ JAVACMD=... bin/jruby -X+T -J-Djvmci.Compiler=graal ...
+```
 
 ### What to expect
 
@@ -66,8 +72,10 @@ fannkuch, and also kernels from two real-word Ruby gems,
 ## Research
 
 * [Chris Seaton's blog posts](http://www.chrisseaton.com/rubytruffle/)
-* F. Niephaus, M. Springer, T. Felgentreff, T. Pape, R. Hirschfeld. **Call-target-specific Method Arguments**. In Proceedings of the 10th Implementation, Compilation, Optimization of Object-Oriented Languages, Programs and Systems Workshop (ICOOOLPS), 2015.
-* B. Daloze, C. Seaton, D. Bonetta, H. Mössenböck. **Techniques and Applications for Guest-Language Safepoints**. In Proceedings of the 10th Implementation, Compilation, Optimization of Object-Oriented Languages, Programs and Systems Workshop (ICOOOLPS), 2015.
+* C. Seaton. **[Specialising Dynamic Techniques for Implementing the Ruby Programming Language](http://chrisseaton.com/phd/)**. PhD thesis, University of Manchester, 2015.
+* M. Grimmer, C. Seaton, R. Schatz, T. Würthinger, H. Mössenböck. **[High-Performance Cross-Language Interoperability in a Multi-Language Runtime](http://chrisseaton.com/rubytruffle/dls15-interop/dls15-interop.pdf)**. In Proceedings of 11th Dynamic Languages Symposium (DLS).
+* F. Niephaus, M. Springer, T. Felgentreff, T. Pape, R. Hirschfeld. **[Call-target-specific Method Arguments](https://github.com/HPI-SWA-Lab/TargetSpecific-ICOOOLPS/raw/gh-pages/call_target_specific_method_arguments.pdf)**. In Proceedings of the 10th Implementation, Compilation, Optimization of Object-Oriented Languages, Programs and Systems Workshop (ICOOOLPS), 2015.
+* B. Daloze, C. Seaton, D. Bonetta, H. Mössenböck. **[Techniques and Applications for Guest-Language Safepoints](http://chrisseaton.com/rubytruffle/icooolps15-safepoints/safepoints.pdf)**. In Proceedings of the 10th Implementation, Compilation, Optimization of Object-Oriented Languages, Programs and Systems Workshop (ICOOOLPS), 2015.
 * M. Grimmer, C. Seaton, T. Würthinger, H. Mössenböck. **[Dynamically Composing Languages in a Modular Way: Supporting C Extensions for Dynamic Languages](http://www.chrisseaton.com/rubytruffle/modularity15/rubyextensions.pdf)**. In Proceedings of the 14th International Conference on Modularity, 2015.
 * A. Wöß, C. Wirth, D. Bonetta, C. Seaton, C. Humer, and H. Mössenböck. **[An object storage model for the Truffle language implementation framework](http://www.chrisseaton.com/rubytruffle/pppj14-om/pppj14-om.pdf)**. In Proceedings of the International Conference on Principles and Practices of Programming on the Java Platform (PPPJ), 2014.
 * C. Seaton, M. L. Van De Vanter, and M. Haupt. **[Debugging at full speed](http://www.lifl.fr/dyla14/papers/dyla14-3-Debugging_at_Full_Speed.pdf)**. In Proceedings of the 8th Workshop on Dynamic Languages and Applications (DYLA), 2014.
@@ -84,9 +92,9 @@ There are runtime configuration options that can be set on the command line with
 
 ### Truffle Module
 
-The `Truffle` and `Truffle::Debug` modules include Truffle-specific
-functionality. They're documented for the current development version at
-http://lafo.ssw.uni-linz.ac.at/graalvm/jruby/doc/.
+The `Truffle`, `Truffle::Debug` and `Truffle::Interop` modules include
+Truffle-specific functionality. They're documented for the current development
+version at http://lafo.ssw.uni-linz.ac.at/graalvm/jruby/doc/.
 
 ### Debugger
 

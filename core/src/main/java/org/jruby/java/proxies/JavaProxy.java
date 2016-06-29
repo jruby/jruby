@@ -36,6 +36,7 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaMethod;
 import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -79,26 +80,20 @@ public class JavaProxy extends RubyObject {
     }
 
     @Override
-    public Object dataGetStruct() {
-        return getJavaObject();
+    public final Object dataGetStruct() {
+        if (javaObject == null) {
+            javaObject = asJavaObject(object);
+        }
+        return javaObject;
     }
 
     @Override
-    public void dataWrapStruct(Object object) {
+    public final void dataWrapStruct(Object object) {
         this.javaObject = (JavaObject) object;
         this.object = javaObject.getValue();
     }
 
-    public Object getObject() {
-        // FIXME: Added this because marshal_spec seemed to reconstitute objects without calling dataWrapStruct
-        // this resulted in object being null after unmarshalling...
-        if (object == null) {
-            if (javaObject == null) {
-                throw getRuntime().newRuntimeError("Java wrapper with no contents: " + this.getMetaClass().getName());
-            } else {
-                object = javaObject.getValue();
-            }
-        }
+    public final Object getObject() {
         return object;
     }
 
@@ -108,15 +103,12 @@ public class JavaProxy extends RubyObject {
 
     public Object unwrap() { return getObject(); }
 
-    private JavaObject getJavaObject() {
-        if (javaObject == null) {
-            javaObject = JavaObject.wrap(getRuntime(), object);
-        }
-        return javaObject;
+    protected JavaObject asJavaObject(final Object object) {
+        return JavaObject.wrap(getRuntime(), object);
     }
 
     @Override
-    public Class getJavaClass() {
+    public Class<?> getJavaClass() {
         return getObject().getClass();
     }
 
@@ -171,15 +163,25 @@ public class JavaProxy extends RubyObject {
     public IRubyObject initialize_copy(IRubyObject original) {
         super.initialize_copy(original);
         // because we lazily init JavaObject in the data-wrapped slot, explicitly copy over the object
-        setObject( ((JavaProxy) original).getObject() );
+        setObject( ((JavaProxy) original).cloneObject() );
         return this;
+    }
+
+    protected Object cloneObject() {
+        final Object object = getObject();
+        if (object instanceof Cloneable) {
+            // sufficient for java.util collection classes e.g. HashSet, ArrayList
+            Object clone = JavaUtil.clone(object);
+            return clone == null ? object : clone;
+        }
+        return object; // this is what JRuby did prior to <= 9.0.5
     }
 
     /**
      * Create a name/newname map of fields to be exposed as methods.
      */
     private static Map<String, String> getFieldListFromArgs(final IRubyObject[] args) {
-        final Map<String, String> map = new HashMap<String, String>();
+        final HashMap<String, String> map = new HashMap<>(args.length, 1);
         // Get map of all fields we want to define.
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
@@ -451,6 +453,7 @@ public class JavaProxy extends RubyObject {
         final Class<?> clazz = object.getClass();
 
         if ( type.isAssignableFrom(clazz) ) return object;
+        if ( type.isAssignableFrom(getClass()) ) return this; // e.g. IRubyObject.class
 
         throw getRuntime().newTypeError("failed to coerce " + clazz.getName() + " to " + type.getName());
     }
@@ -501,7 +504,7 @@ public class JavaProxy extends RubyObject {
     public static class ClassMethods {
 
         // handling non-public inner classes retrieval ... like private constants
-        @JRubyMethod(name = "const_missing", required = 1, meta = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "const_missing", required = 1, meta = true, visibility = Visibility.PRIVATE, frame = true)
         public static IRubyObject const_missing(ThreadContext context, IRubyObject self, IRubyObject name) {
             return Java.get_inner_class(context, (RubyModule) self, name);
         }

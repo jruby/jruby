@@ -1,4 +1,6 @@
-version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
+version = ENV['JRUBY_VERSION'] ||
+  File.read( File.join( basedir, '..', 'VERSION' ) ).strip
+
 project 'JRuby Core' do
 
   model_version '4.0.0'
@@ -11,7 +13,7 @@ project 'JRuby Core' do
               'tzdata.version' => '2013d',
               'tzdata.scope' => 'provided',
 
-              'unsafe.version' => '8.0',
+              'unsafe.version' => '8.92.1',
               'unsafe.jar' => '${settings.localRepository}/com/headius/unsafe-mock/${unsafe.version}/unsafe-mock-${unsafe.version}.jar',
 
               'maven.build.timestamp.format' => 'yyyy-MM-dd',
@@ -42,22 +44,22 @@ project 'JRuby Core' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.1.5', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.10', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.12', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.10', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.23', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.9.0', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.0.7'
+  jar 'com.github.jnr:jnr-unixsocket:0.12', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.29', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.9.2', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.0.9'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.8'
+  jar 'org.jruby.joni:joni:2.1.10'
   jar 'org.jruby.extras:bytelist:1.0.13'
-  jar 'org.jruby.jcodings:jcodings:1.0.13'
+  jar 'org.jruby.jcodings:jcodings:1.0.17'
   jar 'org.jruby:dirgra:0.3'
 
-  jar 'com.headius:invokebinder:1.5'
-  jar 'com.headius:options:1.3'
+  jar 'com.headius:invokebinder:1.7'
+  jar 'com.headius:options:1.4'
   jar 'com.headius:coro-mock:1.0', :scope => 'provided'
   jar 'com.headius:unsafe-mock', '${unsafe.version}', :scope => 'provided'
   jar 'com.headius:jsr292-mock:1.1', :scope => 'provided'
@@ -73,7 +75,9 @@ project 'JRuby Core' do
   jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
   jar 'joda-time:joda-time:${joda.time.version}'
 
-  jar 'com.boundary:high-scale-lib:1.0.6'
+  # SLF4J only used within SLF4JLogger (JRuby logger impl) class
+  jar 'org.slf4j:slf4j-api:1.7.12', :scope => 'provided', :optional => true
+  jar 'org.slf4j:slf4j-simple:1.7.12', :scope => 'test'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -220,7 +224,6 @@ project 'JRuby Core' do
           'forkCount' =>  '1',
           'reuseForks' =>  'false',
           'systemProperties' => {
-            'jruby.compat.version' =>  '1.9',
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
@@ -247,6 +250,12 @@ project 'JRuby Core' do
       includes '${Constants.java}'
       target_path '${project.build.sourceDirectory}'
       filtering 'true'
+    end
+
+    resource do
+      directory '${project.basedir}/..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
     end
   end
 
@@ -278,24 +287,20 @@ project 'JRuby Core' do
     end
   end
 
-  jruby_bin_config = [ 'run', { :id => 'copy',
-                                'tasks' => {
-                                  'exec' => {
-                                    '@executable' =>  '/bin/sh',
-                                    '@osfamily' =>  'unix',
-                                    'arg' => {
-                                      '@line' =>  '-c \'cp "${jruby.basedir}/bin/jruby.bash" "${jruby.basedir}/bin/jruby"\''
-                                    }
-                                  },
-                                  'chmod' => {
-                                    '@file' =>  '${jruby.basedir}/bin/jruby',
-                                    '@perm' =>  '755'
-                                  }
-                                } } ]
+  copy_goal = [:exec, :executable => '/bin/sh', :arguments => ['-c', 'cp ${jruby.basedir}/bin/jruby.bash ${jruby.basedir}/bin/jruby']]
 
-  phase :clean do
-    plugin :antrun do
-      execute_goals( *jruby_bin_config )
+  profile :clean do
+    activation do
+      # hack to get the os triggeer into the model
+      os = org.apache.maven.model.ActivationOS.new
+      os.family = 'unix'
+      @current.os = os
+    end
+
+    phase :clean do
+      plugin 'org.codehaus.mojo:exec-maven-plugin' do
+        execute_goals( *copy_goal )
+      end
     end
   end
 
@@ -304,10 +309,16 @@ project 'JRuby Core' do
     activation do
       file( :missing => '../bin/jruby' )
     end
+    activation do
+      # hack to get the os triggeer into the model
+      os = org.apache.maven.model.ActivationOS.new
+      os.family = 'unix'
+      @current.os = os
+    end
 
     phase :initialize do
-      plugin :antrun do
-        execute_goals( *jruby_bin_config )
+      plugin 'org.codehaus.mojo:exec-maven-plugin' do
+        execute_goals *copy_goal
       end
     end
 

@@ -45,6 +45,7 @@ import org.jruby.util.StringSupport;
 public class StrNode extends Node implements ILiteralNode, SideEffectFree {
     private final ByteList value;
     private final int codeRange;
+    private boolean frozen;
 
     public StrNode(ISourcePosition position, ByteList value) {
         this(position, value, StringSupport.codeRangeScan(value.getEncoding(), value));
@@ -68,6 +69,7 @@ public class StrNode extends Node implements ILiteralNode, SideEffectFree {
         myValue.append(headBL);
         myValue.append(tailBL);
 
+        frozen = head.isFrozen() && tail.isFrozen();
         value = myValue;
         codeRange = StringSupport.codeRangeScan(value.getEncoding(), value);
     }
@@ -102,5 +104,13 @@ public class StrNode extends Node implements ILiteralNode, SideEffectFree {
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
+    }
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
     }
 }

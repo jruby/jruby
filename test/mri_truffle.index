@@ -45,7 +45,7 @@ ruby/test_integer.rb
 ruby/test_integer_comb.rb
 # ruby/test_io.rb # cannot load such file -- io/nonblock
 ruby/test_io_m17n.rb
-ruby/test_iterator.rb
+# ruby/test_iterator.rb /Users/chrisseaton/Documents/ruby/jruby/test/mri/lib/minitest/unit.rb:1417:in `sort': internal implementation error - NullPointerException null org.jruby.truffle.runtime.subsystems.TraceManager$4.probeTaggedAs(TraceManager.java:117) (RubyTruffleError)
 ruby/test_lambda.rb
 ruby/test_literal.rb
 # ruby/test_m17n.rb # NPE in Body Translator
@@ -496,54 +496,54 @@ optparse/test_autoconf.rb
 # psych/handlers/test_recorder.rb
 # psych/test_safe_load.rb
 # psych/test_yamldbm.rb
-# rake/test_private_reader.rb
-# rake/test_rake.rb
-# rake/test_rake_application.rb
+rake/test_private_reader.rb
+rake/test_rake.rb
+rake/test_rake_application.rb
 # rake/test_rake_application_options.rb
-# rake/test_rake_backtrace.rb
+rake/test_rake_backtrace.rb
 # rake/test_rake_clean.rb
 # rake/test_rake_cpu_counter.rb
-# rake/test_rake_definitions.rb
-# rake/test_rake_directory_task.rb
-# rake/test_rake_dsl.rb
-# rake/test_rake_early_time.rb
-# rake/test_rake_extension.rb
-# rake/test_rake_file_creation_task.rb
-# rake/test_rake_file_list.rb
-# rake/test_rake_file_list_path_map.rb
+rake/test_rake_definitions.rb
+rake/test_rake_directory_task.rb
+rake/test_rake_dsl.rb
+rake/test_rake_early_time.rb
+rake/test_rake_extension.rb
+rake/test_rake_file_creation_task.rb
+rake/test_rake_file_list.rb
+rake/test_rake_file_list_path_map.rb
 # rake/test_rake_file_task.rb
-# rake/test_rake_file_utils.rb
-# rake/test_rake_ftp_file.rb
+rake/test_rake_file_utils.rb
+rake/test_rake_ftp_file.rb
 # rake/test_rake_functional.rb
-# rake/test_rake_invocation_chain.rb
-# rake/test_rake_linked_list.rb
-# rake/test_rake_makefile_loader.rb
-# rake/test_rake_multi_task.rb
-# rake/test_rake_name_space.rb
-# rake/test_rake_package_task.rb
-# rake/test_rake_path_map.rb
-# rake/test_rake_path_map_explode.rb
-# rake/test_rake_path_map_partial.rb
-# rake/test_rake_pathname_extensions.rb
-# rake/test_rake_pseudo_status.rb
+rake/test_rake_invocation_chain.rb
+rake/test_rake_linked_list.rb
+rake/test_rake_makefile_loader.rb
+rake/test_rake_multi_task.rb
+rake/test_rake_name_space.rb
+rake/test_rake_package_task.rb
+rake/test_rake_path_map.rb
+rake/test_rake_path_map_explode.rb
+rake/test_rake_path_map_partial.rb
+rake/test_rake_pathname_extensions.rb
+rake/test_rake_pseudo_status.rb
 # rake/test_rake_rake_test_loader.rb
 # rake/test_rake_reduce_compat.rb
-# rake/test_rake_require.rb
-# rake/test_rake_rules.rb
-# rake/test_rake_scope.rb
-# rake/test_rake_task.rb
-# rake/test_rake_task_argument_parsing.rb
-# rake/test_rake_task_arguments.rb
-# rake/test_rake_task_lib.rb
-# rake/test_rake_task_manager.rb
-# rake/test_rake_task_manager_argument_resolution.rb
-# rake/test_rake_task_with_arguments.rb
-# rake/test_rake_test_task.rb
-# rake/test_rake_thread_pool.rb
-# rake/test_rake_top_level_functions.rb
-# rake/test_rake_win32.rb
-# rake/test_thread_history_display.rb
-# rake/test_trace_output.rb
+rake/test_rake_require.rb
+rake/test_rake_rules.rb
+rake/test_rake_scope.rb
+rake/test_rake_task.rb
+rake/test_rake_task_argument_parsing.rb
+rake/test_rake_task_arguments.rb
+rake/test_rake_task_lib.rb
+rake/test_rake_task_manager.rb
+rake/test_rake_task_manager_argument_resolution.rb
+rake/test_rake_task_with_arguments.rb
+rake/test_rake_test_task.rb
+rake/test_rake_thread_pool.rb
+rake/test_rake_top_level_functions.rb
+rake/test_rake_win32.rb
+rake/test_thread_history_display.rb
+rake/test_trace_output.rb
 # rdoc/test_attribute_manager.rb
 # rdoc/test_rdoc_alias.rb
 # rdoc/test_rdoc_any_method.rb

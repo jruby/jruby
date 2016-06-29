@@ -15,6 +15,11 @@ describe "Symbol#to_proc" do
   it "raises an ArgumentError when calling #call on the Proc without receiver" do
     lambda { :object_id.to_proc.call }.should raise_error(ArgumentError)
   end
+
+  it "produces a proc that always returns [[:rest]] for #parameters" do
+    pr = :to_s.to_proc
+    pr.parameters.should == [[:rest]]
+  end
 end
 
 describe "Symbol#to_proc" do

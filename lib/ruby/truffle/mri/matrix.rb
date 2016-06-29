@@ -1,1 +1,1 @@
-require_relative '../../stdlib/matrix'
+require_relative '../stdlib/matrix'

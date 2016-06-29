@@ -46,6 +46,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -275,7 +276,7 @@ public class RubyMatchData extends RubyObject {
         charOffsetUpdated = true;
     }
 
-    private static final int MATCH_BUSY = USER2_F;
+    private static final int MATCH_BUSY = Constants.MATCH_BUSY;
 
     // rb_match_busy
     public final void use() {
@@ -405,9 +406,9 @@ public class RubyMatchData extends RubyObject {
             }
             IRubyObject v = RubyRegexp.nth_match(i, this);
             if (v.isNil()) {
-                result.cat("nil".getBytes());
+                result.cat(RubyNil.nilBytes); // "nil"
             } else {
-                result.append(((RubyString)v).inspect19());
+                result.append(((RubyString) v).inspect(runtime));
             }
         }
 

@@ -34,6 +34,9 @@ module ProcessSpecs
     attr_reader :pid_file, :pid
 
     def initialize(scenario=nil, ruby_exe=nil)
+      platform_is :windows do
+        fail "not supported on windows"
+      end
       @script = fixture __FILE__, "kill.rb"
       @pid_file = tmp("process_kill_signal_file")
       rm_r @pid_file

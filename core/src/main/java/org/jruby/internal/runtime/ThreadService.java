@@ -15,7 +15,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -105,7 +105,7 @@ import org.jruby.runtime.ThreadContext;
  * <ul>
  */
 public class ThreadService {
-    private Ruby runtime;
+    private final Ruby runtime;
     /**
      * A hard reference to the "main" context, so we always have one waiting for
      * "main" thread execution.
@@ -119,7 +119,7 @@ public class ThreadService {
      * through ThreadContext instances every time a Java thread enters and exits
      * Ruby space.
      */
-    private ThreadLocal<SoftReference<ThreadContext>> localContext;
+    private final ThreadLocal<SoftReference<ThreadContext>> localContext;
 
     /**
      * The Java thread group into which we register all Ruby threads. This is
@@ -141,10 +141,10 @@ public class ThreadService {
      * we don't need to be polling for cross-thread events.
      */
     private volatile boolean polling = false;
-    
+
     private final ReentrantLock criticalLock = new ReentrantLock();
 
-    public ThreadService(Ruby runtime) {
+    public ThreadService(final Ruby runtime) {
         this.runtime = runtime;
         this.localContext = new ThreadLocal<SoftReference<ThreadContext>>();
 
@@ -176,9 +176,9 @@ public class ThreadService {
      * not be immediately available. This method should be used sparingly, and
      * if it is possible to pass ThreadContext on the argument list, it is
      * preferable.
-     * 
+     *
      * <b>Description of behavior</b>
-     * 
+     *
      * The threadlocal does not actually contain the ThreadContext directly;
      * instead, it contains a SoftReference that holds the ThreadContext. This
      * is to allow new threads to enter the system and execute Ruby code with
@@ -187,24 +187,24 @@ public class ThreadService {
      * WeakReference is collected too quickly, resulting in very expensive
      * ThreadContext churn (and this originally lead to JRUBY-2261's leak of
      * adopted RubyThread instances).
-     * 
+     *
      * @return The ThreadContext instance for the current thread, or a new one
      * if none has previously been created or the old ThreadContext has been
      * collected.
      */
-    public ThreadContext getCurrentContext() {
-        SoftReference sr = null;
+    public final ThreadContext getCurrentContext() {
+        SoftReference<ThreadContext> ref;
         ThreadContext context = null;
-        
+
         while (context == null) {
             // loop until a context is available, to clean up softrefs that might have been collected
-            if ((sr = (SoftReference)localContext.get()) == null) {
-                sr = adoptCurrentThread();
-                context = (ThreadContext)sr.get();
+            if ((ref = localContext.get()) == null) {
+                ref = adoptCurrentThread();
+                context = ref.get();
             } else {
-                context = (ThreadContext)sr.get();
+                context = ref.get();
             }
-            
+
             // context is null, wipe out the SoftReference (this could be done with a reference queue)
             if (context == null) {
                 localContext.set(null);
@@ -217,16 +217,16 @@ public class ThreadService {
     /*
      * Used only for Fiber context management
      */
-    public void setCurrentContext(ThreadContext context) {
+    public final void setCurrentContext(ThreadContext context) {
         localContext.set(new SoftReference<ThreadContext>(context));
     }
-    
-    private SoftReference adoptCurrentThread() {
+
+    private SoftReference<ThreadContext> adoptCurrentThread() {
         Thread current = Thread.currentThread();
-        
+
         RubyThread.adopt(runtime.getThread(), current);
-        
-        return (SoftReference) localContext.get();
+
+        return localContext.get();
     }
 
     public RubyThread getMainThread() {
@@ -241,17 +241,17 @@ public class ThreadService {
     public boolean getPolling() {
         return polling;
     }
-    
+
     public synchronized RubyThread[] getActiveRubyThreads() {
     	// all threads in ruby thread group plus main thread
 
         synchronized(rubyThreadMap) {
-            List<RubyThread> rtList = new ArrayList<RubyThread>(rubyThreadMap.size());
-        
+            List<RubyThread> rtList = new ArrayList<>(rubyThreadMap.size());
+
             for (Map.Entry<Object, RubyThread> entry : rubyThreadMap.entrySet()) {
                 Object key = entry.getKey();
                 if (key == null) continue;
-                
+
                 if (key instanceof Thread) {
                     Thread t = (Thread)key;
 
@@ -263,14 +263,11 @@ public class ThreadService {
                     // future is done or cancelled, skip it
                     if (f.isDone() || f.isCancelled()) continue;
                 }
-            
+
                 rtList.add(entry.getValue());
             }
 
-            RubyThread[] rubyThreads = new RubyThread[rtList.size()];
-            rtList.toArray(rubyThreads);
-    	
-            return rubyThreads;
+            return rtList.toArray(new RubyThread[rtList.size()]);
         }
     }
 
@@ -284,7 +281,7 @@ public class ThreadService {
 
     public synchronized ThreadContext registerNewThread(RubyThread thread) {
         ThreadContext context = ThreadContext.newContext(runtime);
-        localContext.set(new SoftReference(context));
+        localContext.set(new SoftReference<ThreadContext>(context));
         context.setThread(thread);
         ThreadFiber.initRootFiber(context); // may be overwritten by fiber
         return context;
@@ -299,14 +296,14 @@ public class ThreadService {
         rubyThreadMap.remove(threadOrFuture);
         if (rubyThreadMap.size() <= 1) polling = false;
     }
-    
+
     public synchronized void unregisterThread(RubyThread thread) {
         rubyThreadMap.remove(Thread.currentThread());
         getCurrentContext().setThread(null);
         localContext.set(null);
         if (rubyThreadMap.size() >= 0) polling = false;
     }
-    
+
     public void setCritical(boolean critical) {
         if (critical && !criticalLock.isHeldByCurrentThread()) {
             acquireCritical();
@@ -322,7 +319,7 @@ public class ThreadService {
     private void releaseCritical() {
         criticalLock.unlock();
     }
-    
+
     public boolean getCritical() {
         return criticalLock.isHeldByCurrentThread();
     }

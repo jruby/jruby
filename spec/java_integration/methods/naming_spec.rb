@@ -109,6 +109,11 @@ describe "Java instance method names" do
                                     "myvalue=")
   end
 
+  it "with colliding is/get property - ruby name does get" do
+    expect( MethodNames.new.foo? ).to be false
+    expect( MethodNames.new.foo ).to eql 42
+  end
+
   it "keeps all caps in a name together as a single downcased word" do
     expect(members).to have_strings_or_symbols("value_obj",
                                 "value_obj=",
@@ -186,37 +191,37 @@ end
 
 describe "Needed implementation methods for interfaces" do
   it "should have __id__ method" do
-    expect(BeanLikeInterface.new.methods).to have_strings_or_symbols("__id__")
+    expect(BeanLikeInterface.impl {}.methods).to have_strings_or_symbols("__id__")
   end
   it "should have __send__ method" do
-    expect(BeanLikeInterface.new.methods).to have_strings_or_symbols("__send__")
+    expect(BeanLikeInterface.impl {}.methods).to have_strings_or_symbols("__send__")
   end
   it "should have == method" do
-    expect(BeanLikeInterface.new.methods).to have_strings_or_symbols("==")
+    expect(BeanLikeInterface.impl {}.methods).to have_strings_or_symbols("==")
   end
   it "should have inspect method" do
-    expect(BeanLikeInterface.new.methods).to have_strings_or_symbols("inspect")
+    expect(BeanLikeInterface.impl {}.methods).to have_strings_or_symbols("inspect")
   end
   it "should have respond_to? method" do
-    expect(BeanLikeInterface.new.methods).to have_strings_or_symbols("respond_to?")
+    expect(BeanLikeInterface.impl {}.methods).to have_strings_or_symbols("respond_to?")
   end
   it "should have class method" do
-    expect(BeanLikeInterface.new.methods).to have_strings_or_symbols("class")
+    expect(BeanLikeInterface.impl {}.methods).to have_strings_or_symbols("class")
   end
   it "should have methods method" do
-    expect(BeanLikeInterface.new.methods).to have_strings_or_symbols("methods")
+    expect(BeanLikeInterface.impl {}.methods).to have_strings_or_symbols("methods")
   end
   it "should have send method" do
-    expect(BeanLikeInterface.new.methods).to have_strings_or_symbols("send")
+    expect(BeanLikeInterface.impl {}.methods).to have_strings_or_symbols("send")
   end
   it "should have equal? method" do
-    expect(BeanLikeInterface.new.methods).to have_strings_or_symbols("equal?")
+    expect(BeanLikeInterface.impl {}.methods).to have_strings_or_symbols("equal?")
   end
   it "should have eql? method" do
-    expect(BeanLikeInterface.new.methods).to have_strings_or_symbols("eql?")
+    expect(BeanLikeInterface.impl {}.methods).to have_strings_or_symbols("eql?")
   end
   it "should have to_s method" do
-    expect(BeanLikeInterface.new.methods).to have_strings_or_symbols("to_s")
+    expect(BeanLikeInterface.impl {}.methods).to have_strings_or_symbols("to_s")
   end
 
   it "should be able to access Java methods of core Ruby Methods via __method" do

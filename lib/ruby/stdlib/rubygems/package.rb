@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# frozen_string_literal: true
 #--
 # Copyright (C) 2004 Mauricio Julio Fernández Pradier
 # See LICENSE.txt for additional licensing information.
@@ -58,7 +59,7 @@ class Gem::Package
       if source
         @path = source.path
 
-        message << " in #{path}" if path
+        message = message + " in #{path}" if path
       end
 
       super message
@@ -123,7 +124,7 @@ class Gem::Package
   # If +gem+ is an existing file in the old format a Gem::Package::Old will be
   # returned.
 
-  def self.new gem
+  def self.new gem, security_policy = nil
     gem = if gem.is_a?(Gem::Package::Source)
             gem
           elsif gem.respond_to? :read
@@ -132,7 +133,7 @@ class Gem::Package
             Gem::Package::FileSource.new gem
           end
 
-    return super(gem) unless Gem::Package == self
+    return super unless Gem::Package == self
     return super unless gem.present?
 
     return super unless gem.start
@@ -144,7 +145,7 @@ class Gem::Package
   ##
   # Creates a new package that will read or write to the file +gem+.
 
-  def initialize gem # :notnew:
+  def initialize gem, security_policy # :notnew:
     @gem = gem
 
     @build_time      = Time.now
@@ -152,10 +153,17 @@ class Gem::Package
     @contents        = nil
     @digests         = Hash.new { |h, algorithm| h[algorithm] = {} }
     @files           = nil
-    @security_policy = nil
+    @security_policy = security_policy
     @signatures      = {}
     @signer          = nil
     @spec            = nil
+  end
+
+  ##
+  # Copies this package to +path+ (if possible)
+
+  def copy_to path
+    FileUtils.cp @gem.path, path unless File.exist? path
   end
 
   ##
@@ -200,7 +208,13 @@ class Gem::Package
 
   def add_files tar # :nodoc:
     @spec.files.each do |file|
-      stat = File.stat file
+      stat = File.lstat file
+
+      if stat.symlink?
+        relative_dir = File.dirname(file).sub("#{Dir.pwd}/", '')
+        target_path = File.join(relative_dir, File.readlink(file))
+        tar.add_symlink file, target_path, stat.mode
+      end
 
       next unless stat.file?
 
@@ -370,6 +384,8 @@ EOM
           out.write entry.read
           FileUtils.chmod entry.header.mode, destination
         end if entry.file?
+
+        File.symlink(entry.header.linkname, destination) if entry.symlink?
 
         verbose destination
       end
@@ -611,4 +627,3 @@ require 'rubygems/package/tar_header'
 require 'rubygems/package/tar_reader'
 require 'rubygems/package/tar_reader/entry'
 require 'rubygems/package/tar_writer'
-

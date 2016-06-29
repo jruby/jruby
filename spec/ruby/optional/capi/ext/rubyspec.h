@@ -1,7 +1,7 @@
 #ifndef RUBYSPEC_H
 #define RUBYSPEC_H
 
-/* Define convenience macros similar to the RubySpec guards to assist
+/* Define convenience macros similar to the mspec guards to assist
  * with version incompatibilities.
  */
 
@@ -23,6 +23,10 @@
    (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR < (minor)) || \
    (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR == (minor) && RUBY_VERSION_TEENY < (teeny)))
 
+#if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 3)
+#define RUBY_VERSION_IS_2_3
+#endif
+
 #if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 2)
 #define RUBY_VERSION_IS_2_2
 #endif
@@ -35,6 +39,9 @@
 
 /* Array */
 #define HAVE_RB_ARRAY                      1
+#ifdef RUBY_VERSION_IS_2_1
+#define HAVE_RARRAY_AREF                   1
+#endif
 #define HAVE_RARRAY_LEN                    1
 #define HAVE_RARRAY_PTR                    1
 #define HAVE_RB_ARY_AREF                   1
@@ -65,8 +72,6 @@
 #define HAVE_RB_ARY_TO_S                   1
 #define HAVE_RB_ARY_UNSHIFT                1
 #define HAVE_RB_ASSOC_NEW                  1
-#define HAVE_RB_INSPECTING_P               1
-#define HAVE_RB_PROTECT_INSPECT            1
 
 #define HAVE_RB_EACH                       1
 #define HAVE_RB_ITERATE                    1
@@ -91,7 +96,6 @@
 /* Class */
 #define HAVE_RB_CALL_SUPER                 1
 #define HAVE_RB_CLASS2NAME                 1
-#define HAVE_RB_CLASS_INHERITED            1
 #define HAVE_RB_CLASS_NAME                 1
 #define HAVE_RB_CLASS_NEW                  1
 #define HAVE_RB_CLASS_NEW_INSTANCE         1
@@ -119,12 +123,16 @@
 
 /* Constants */
 #define HAVE_RB_CARRAY                     1
+#ifndef RUBY_INTEGER_UNIFICATION
 #define HAVE_RB_CBIGNUM                    1
+#endif
 #define HAVE_RB_CCLASS                     1
 #define HAVE_RB_CDATA                      1
 #define HAVE_RB_CFALSECLASS                1
 #define HAVE_RB_CFILE                      1
+#ifndef RUBY_INTEGER_UNIFICATION
 #define HAVE_RB_CFIXNUM                    1
+#endif
 #define HAVE_RB_CFLOAT                     1
 #define HAVE_RB_CHASH                      1
 #define HAVE_RB_CINTEGER                   1
@@ -390,7 +398,9 @@
 #define HAVE_RB_CONST_GET_FROM             1
 #define HAVE_RB_CONST_SET                  1
 #define HAVE_RB_DEFINE_ALIAS               1
+#define HAVE_RB_DEFINE_CLASS               1
 #define HAVE_RB_DEFINE_CLASS_UNDER         1
+#define HAVE_RB_DEFINE_CLASS_ID_UNDER      1
 #define HAVE_RB_DEFINE_CONST               1
 #define HAVE_RB_DEFINE_GLOBAL_CONST        1
 #define HAVE_RB_DEFINE_GLOBAL_FUNCTION     1
@@ -519,15 +529,12 @@
 #define HAVE_RB_STR_UPDATE                 1
 #define HAVE_RB_STR_INSPECT                1
 #define HAVE_RB_STR_INTERN                 1
-#define HAVE_RB_STR_LEN                    1
 #define HAVE_RB_STR_NEW                    1
 #define HAVE_RB_STR_NEW2                   1
 #define HAVE_RB_STR_NEW3                   1
 #define HAVE_RB_STR_NEW4                   1
 #define HAVE_RB_STR_NEW5                   1
 #define HAVE_RB_STR_PLUS                   1
-#define HAVE_RB_STR_PTR                    1
-#define HAVE_RB_STR_PTR_READONLY           1
 #define HAVE_RB_STR_RESIZE                 1
 #define HAVE_RB_STR_SET_LEN                1
 #define HAVE_RB_STR_SPLIT                  1
@@ -593,6 +600,9 @@
 #define HAVE_RB_TIME_INTERVAL              1
 #define HAVE_RB_TIME_TIMEVAL               1
 #define HAVE_RB_TIME_TIMESPEC              1
+#ifdef RUBY_VERSION_IS_2_3
+#define HAVE_RB_TIME_TIMESPEC_NEW          1
+#endif
 
 /* Util */
 #define HAVE_RB_SCAN_ARGS                  1
@@ -603,16 +613,15 @@
  * is significant. The alternative implementations should define RUBY because
  * some extensions depend on that. But only one alternative implementation
  * macro should be defined at a time. The conditional is structured so that if
- * no alternative implementation is defined then MRI is assumed and "mri.h"
- * will be included.
+ * no alternative implementation is defined then MRI is assumed.
  */
 
 #if defined(RUBINIUS)
 #include "rubinius.h"
 #elif defined(JRUBY)
 #include "jruby.h"
-#else /* MRI */
-#include "mri.h"
+#elif defined(JRUBY_TRUFFLE)
+#include "jruby_truffle.h"
 #endif
 
 #endif

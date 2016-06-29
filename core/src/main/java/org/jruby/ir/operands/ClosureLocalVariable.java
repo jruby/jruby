@@ -72,6 +72,6 @@ public class ClosureLocalVariable extends LocalVariable {
 
     @Override
     public String toString() {
-        return "<" + name + "(" + scopeDepth + ":" + offset + ":local=" + definedLocally + ")>";
+        return name + "(" + scopeDepth + ":" + offset + ":local=" + definedLocally + ")";
     }
 }

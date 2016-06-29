@@ -106,11 +106,23 @@ describe "C-API Thread function" do
     end
 
     it "handles throwing an exception in the thread" do
-      proc = lambda { |x| raise NotImplementedError }
+      proc = lambda { |x| raise "my error" }
       thr = @t.rb_thread_create(proc, nil)
       thr.should be_kind_of(Thread)
 
-      lambda { thr.join }.should raise_error(NotImplementedError)
+      lambda {
+        thr.join
+      }.should raise_error(RuntimeError, "my error")
+    end
+
+    it "sets the thread's group" do
+      thr = @t.rb_thread_create(lambda { |x| }, nil)
+      begin
+        thread_group = thr.group
+        thread_group.should be_an_instance_of(ThreadGroup)
+      ensure
+        thr.join
+      end
     end
   end
 
@@ -128,7 +140,7 @@ describe :rb_thread_blocking_region, shared: true do
     end
 
     # Wait until it's blocking...
-    sleep 1
+    Thread.pass while thr.status and thr.status != "sleep"
 
     # Wake it up, causing the unblock function to be run.
     thr.wakeup
@@ -142,19 +154,17 @@ describe :rb_thread_blocking_region, shared: true do
 end
 
 describe "C-API Thread function" do
-  describe "rb_thread_blocking_region" do
-    extended_on :rubinius do
+  ruby_version_is ""..."2.2" do
+    describe "rb_thread_blocking_region_with_ubf_io" do
       it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region_with_ubf_io
-      it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region
     end
 
-    ruby_version_is ""..."2.2" do
-      it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region_with_ubf_io
+    describe "rb_thread_blocking_region" do
       it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region
     end
+  end
 
+  describe "rb_thread_call_without_gvl" do
     it_behaves_like :rb_thread_blocking_region, :rb_thread_call_without_gvl
-    it_behaves_like :rb_thread_blocking_region, :rb_thread_call_without_gvl2
   end
 end
-

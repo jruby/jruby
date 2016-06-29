@@ -1,15 +1,29 @@
 require 'test/unit'
 
 class TestCaller < Test::Unit::TestCase
-  def foo
-    eval "caller(0)"
+
+  def test_normal_caller
+    trace0 = caller(0)
+    assert_match(/test\/jruby\/test_caller\.rb\:6\:in `test_normal_caller'/, trace0.first)
+    assert(trace0.length > 1, "caller(0) is not > 1: #{trace0.inspect}")
+
+    trace = caller
+    assert_not_match(/test\/jruby\/test_caller\.rb\:16\:in `test_normal_caller'/, trace[0])
+    assert_equal trace0[1..-1], trace
   end
 
+  def foo0; eval "caller(0)" end
+
   def test_evaled_caller_has_full_trace
-    trace = foo
+    trace = foo0
+
+    # puts trace.join("\n ")
 
     # simple test, make sure the trace is more than one entry
-    assert(trace.length > 1)
+    assert(trace.length > 1, "caller(0) is not > 1: #{trace.inspect}")
+
+    assert_match(/test\/jruby\/test_caller\.rb\:\d\d\:in `eval'/, trace[1])
+    assert_match(/test\/jruby\/test_caller\.rb\:\d\d\:in `foo0'/, trace[2])
   end
 
   def test_jitted_caller_excludes_abstractscript
@@ -23,4 +37,5 @@ class TestCaller < Test::Unit::TestCase
     caller = jitted_method(1,2,3) {}
     assert caller.to_s !~ /AbstractScript/
   end
+
 end

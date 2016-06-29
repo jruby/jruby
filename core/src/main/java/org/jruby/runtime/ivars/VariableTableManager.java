@@ -37,6 +37,7 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 import org.jruby.util.unsafe.UnsafeHolder;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
@@ -545,10 +546,19 @@ public class VariableTableManager {
         String[] newVariableNames = new String[newIndex + 1];
 
         VariableAccessor newVariableAccessor;
-        if (UnsafeHolder.U == null) {
-            newVariableAccessor = new SynchronizedVariableAccessor(realClass, name, newIndex, id);
+        if (Options.VOLATILE_VARIABLES.load()) {
+            if (UnsafeHolder.U == null) {
+                newVariableAccessor = new SynchronizedVariableAccessor(realClass, name, newIndex, id);
+            } else {
+                newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+            }
         } else {
-            newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+            if (UnsafeHolder.U == null) {
+                newVariableAccessor = new NonvolatileVariableAccessor(realClass, name, newIndex, id);
+            } else {
+                // We still need safe updating of the vartable, so we fall back on sync here too.
+                newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+            }
         }
 
         System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);

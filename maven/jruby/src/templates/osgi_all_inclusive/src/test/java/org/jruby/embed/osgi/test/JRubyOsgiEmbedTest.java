@@ -54,7 +54,7 @@ public class JRubyOsgiEmbedTest {
 
     @Configuration
     public Option[] config() {
-        File f = new File("target/osgi-test.jar");
+        File f = new File("pkg/osgi-test.jar");
         return options(junitBundles(), bundle(f.toURI().toString()));
     }
 

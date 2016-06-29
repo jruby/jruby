@@ -211,7 +211,7 @@ VALUE io_spec_rb_io_close(VALUE self, VALUE io) {
 }
 #endif
 
-void Init_io_spec() {
+void Init_io_spec(void) {
   VALUE cls = rb_define_class("CApiIOSpecs", rb_cObject);
 
 #ifdef HAVE_GET_OPEN_FILE

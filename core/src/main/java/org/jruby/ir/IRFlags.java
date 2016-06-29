@@ -58,4 +58,5 @@ public enum IRFlags {
     DYNSCOPE_ELIMINATED,          // local var load/stores have been converted to tmp var accesses
     REUSE_PARENT_DYNSCOPE,        // for closures -- reuse parent's dynscope
     SIMPLE_METHOD,                // probably temporary flag.  Can this method scope fit into a simple method interpreter
+    CODE_COVERAGE,                // Was marked as needing code coverage (only used by lazy methods and converting closures->methods)
 }

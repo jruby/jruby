@@ -1,5 +1,5 @@
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 
 class TestKeywordArguments < Test::Unit::TestCase
   def f1(str: "foo", num: 424242)
@@ -311,11 +311,16 @@ class TestKeywordArguments < Test::Unit::TestCase
     feature7701 = '[ruby-core:51454] [Feature #7701] required keyword argument'
     o = Object.new
     assert_nothing_raised(SyntaxError, feature7701) do
-      eval("def o.foo(a:) a; end")
+      eval("def o.foo(a:) a; end", nil, "xyzzy")
       eval("def o.bar(a:,**b) [a, b]; end")
     end
     assert_raise_with_message(ArgumentError, /missing keyword/, feature7701) {o.foo}
     assert_raise_with_message(ArgumentError, /unknown keyword/, feature7701) {o.foo(a:0, b:1)}
+    begin
+      o.foo(a: 0, b: 1)
+    rescue => e
+      assert_equal('xyzzy', e.backtrace_locations[0].path)
+    end
     assert_equal(42, o.foo(a: 42), feature7701)
     assert_equal([[:keyreq, :a]], o.method(:foo).parameters, feature7701)
 
@@ -363,10 +368,16 @@ class TestKeywordArguments < Test::Unit::TestCase
   def test_block_required_keyword
     feature7701 = '[ruby-core:51454] [Feature #7701] required keyword argument'
     b = assert_nothing_raised(SyntaxError, feature7701) do
-      break eval("proc {|a:| a}", nil, __FILE__, __LINE__)
+      break eval("proc {|a:| a}", nil, 'xyzzy', __LINE__)
     end
     assert_raise_with_message(ArgumentError, /missing keyword/, feature7701) {b.call}
     assert_raise_with_message(ArgumentError, /unknown keyword/, feature7701) {b.call(a:0, b:1)}
+    begin
+      b.call(a: 0, b: 1)
+    rescue => e
+      assert_equal('xyzzy', e.backtrace_locations[0].path)
+    end
+
     assert_equal(42, b.call(a: 42), feature7701)
     assert_equal([[:keyreq, :a]], b.parameters, feature7701)
 
@@ -527,6 +538,63 @@ class TestKeywordArguments < Test::Unit::TestCase
     end
     assert_raise_with_message(ArgumentError, /unknown keyword: k1/, bug10413) {
       o.foo {raise "unreachable"}
+    }
+  end
+
+  def test_super_with_anon_restkeywords
+    bug10659 = '[ruby-core:67157] [Bug #10659]'
+
+    foo = Class.new do
+      def foo(**h)
+        h
+      end
+    end
+
+    class << (obj = foo.new)
+      def foo(bar: "bar", **)
+        super
+      end
+    end
+
+    assert_nothing_raised(TypeError, bug10659) {
+      assert_equal({:bar => "bar"}, obj.foo, bug10659)
+    }
+  end
+
+  def m(a) yield a end
+
+  def test_nonsymbol_key
+    result = m(["a" => 10]) { |a = nil, **b| [a, b] }
+    assert_equal([{"a" => 10}, {}], result)
+  end
+
+  def method_for_test_to_hash_call_during_setup_complex_parameters k1:, k2:, **rest_kw
+    [k1, k2, rest_kw]
+  end
+
+  def test_to_hash_call_during_setup_complex_parameters
+    sym = "sym_#{Time.now}".to_sym
+    h = method_for_test_to_hash_call_during_setup_complex_parameters k1: "foo", k2: "bar", sym => "baz"
+    assert_equal ["foo", "bar", {sym => "baz"}], h, '[Bug #11027]'
+  end
+
+  class AttrSetTest
+    attr_accessor :foo
+    alias set_foo :foo=
+  end
+
+  def test_attr_set_method_cache
+    obj = AttrSetTest.new
+    h = {a: 1, b: 2}
+    2.times{
+      obj.foo = 1
+      assert_equal(1, obj.foo)
+      obj.set_foo 2
+      assert_equal(2, obj.foo)
+      obj.set_foo(x: 1, y: 2)
+      assert_equal({x: 1, y: 2}, obj.foo)
+      obj.set_foo(x: 1, y: 2, **h)
+      assert_equal({x: 1, y: 2, **h}, obj.foo)
     }
   end
 end

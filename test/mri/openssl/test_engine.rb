@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require_relative 'utils'
 
 class OpenSSL::TestEngine < Test::Unit::TestCase
@@ -71,5 +72,5 @@ class OpenSSL::TestEngine < Test::Unit::TestCase
     cipher.update(data) + cipher.final
   end
 
-end if defined?(OpenSSL)
+end if defined?(OpenSSL::TestUtils)
 

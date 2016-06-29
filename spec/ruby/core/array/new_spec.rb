@@ -65,6 +65,8 @@ describe "Array.new with (size, object=nil)" do
     a.should == [obj, obj]
     a[0].should equal(obj)
     a[1].should equal(obj)
+
+    Array.new(3, 14).should == [14, 14, 14]
   end
 
   it "returns an array of size filled with nil when object is omitted" do

@@ -25,8 +25,8 @@ class TestProcess < Test::Unit::TestCase
   end
 
   def test_process_status_to_s
-    assert_match /exit 1/, @first_status.to_s
-    assert_match /exit 2/, @second_status.to_s
+    assert_match(/exit 1/, @first_status.to_s)
+    assert_match(/exit 2/, @second_status.to_s)
   end
 
   def test_process_status_exitstatus

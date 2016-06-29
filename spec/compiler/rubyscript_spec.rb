@@ -7,7 +7,7 @@ describe JRuby::Compiler::RubyScript do
     script1.add_import('my.java.import')
 
     script2 = JRuby::Compiler::RubyScript.new("script2")
-    expect(script2.imports).not_to include('my.java.import')
+    expect(script2.imports).to_not include('my.java.import')
   end
 
 end

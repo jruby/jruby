@@ -34,5 +34,14 @@ ruby_version_is "2.2" do
         lambda { @enum.slice_when }.should raise_error(ArgumentError)
       end
     end
+
+    describe "when an iterator method yields more than one value" do
+      it "processes all yielded values" do
+        def foo
+          yield 1, 2
+        end
+        to_enum(:foo).slice_when { true }.to_a.should == [[[1, 2]]]
+      end
+    end
   end
 end

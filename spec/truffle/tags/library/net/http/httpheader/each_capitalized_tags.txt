@@ -1,2 +1,0 @@
-fails:Net::HTTPHeader#each_capitalized when passed a block yields each header entry to the passed block (capitalized keys, values joined)
-fails:Net::HTTPHeader#each_capitalized when passed no block returns an Enumerator

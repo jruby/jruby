@@ -73,9 +73,14 @@ public class JavaArray extends JavaObject {
         return Array.getLength(getValue());
     }
 
+    @Override
     public boolean equals(Object other) {
-        return other instanceof JavaArray &&
-            this.getValue() == ((JavaArray)other).getValue();
+        return other instanceof JavaArray && this.getValue() == ((JavaArray) other).getValue();
+    }
+
+    @Override
+    public int hashCode() {
+        return 17 * getValue().hashCode();
     }
 
     public IRubyObject arefDirect(Ruby runtime, int intIndex) {

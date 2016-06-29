@@ -32,13 +32,8 @@ module KernelSpecs
   end
 
   def self.has_private_method(name)
-    cmd = <<-EOC
-| #{RUBY_EXE} -n -e '
-m = Kernel.private_instance_methods(false).grep(/^#{name}$/)
-print m.map { |x| x.to_s }.join("")
-'
-    EOC
-    ruby_exe("puts", args: cmd) == name.to_s
+    cmd = %[| #{RUBY_EXE} -n -e "print Kernel.private_method_defined?('#{name}')"]
+    ruby_exe("puts", args: cmd) == "true"
   end
 
   def self.chop(str, method)

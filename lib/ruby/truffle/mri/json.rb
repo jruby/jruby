@@ -1,1 +1,1 @@
-require_relative '../../stdlib/json'
+require_relative '../stdlib/json'

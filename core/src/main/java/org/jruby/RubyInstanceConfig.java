@@ -35,19 +35,21 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
-import org.jruby.util.ClassLoaderGetResourses;
+import org.jruby.util.ClassesLoader;
 import org.jruby.util.ClasspathLauncher;
 import org.jruby.util.FileResource;
-import org.jruby.util.GetResources;
+import org.jruby.util.Loader;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.StringSupport;
 import org.jruby.util.UriLikePathHelper;
 import org.jruby.util.cli.ArgumentProcessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
+
 import org.objectweb.asm.Opcodes;
 
 import java.io.BufferedInputStream;
@@ -59,9 +61,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -95,8 +95,7 @@ public class RubyInstanceConfig {
             managementEnabled = false;
         } else {
             if (COMPILE_EXCLUDE != null) {
-                String[] elements = COMPILE_EXCLUDE.split(",");
-                excludedMethods.addAll(Arrays.asList(elements));
+                excludedMethods.addAll(StringSupport.split(COMPILE_EXCLUDE, ','));
             }
 
             managementEnabled = Options.MANAGEMENT_ENABLED.load();
@@ -114,12 +113,7 @@ public class RubyInstanceConfig {
 
         threadDumpSignal = Options.THREAD_DUMP_SIGNAL.load();
 
-        environment = new HashMap<String,String>();
-        try {
-            environment.putAll(System.getenv());
-        } catch (SecurityException se) {
-        }
-        setupEnvironment(getJRubyHome());
+        initEnvironment();
     }
 
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
@@ -141,11 +135,15 @@ public class RubyInstanceConfig {
         profilingService = parentConfig.profilingService;
         profilingMode = parentConfig.profilingMode;
 
-        environment = new HashMap<String, String>();
+        initEnvironment();
+    }
+
+    private void initEnvironment() {
+        environment = new HashMap<String,String>();
         try {
             environment.putAll(System.getenv());
-        } catch (SecurityException se) {
         }
+        catch (SecurityException se) { /* ignore missing getenv permission */ }
         setupEnvironment(getJRubyHome());
     }
 
@@ -167,18 +165,22 @@ public class RubyInstanceConfig {
 
     public void tryProcessArgumentsWithRubyopts() {
         try {
-            // environment defaults to System.getenv normally
-            Object rubyoptObj = environment.get("RUBYOPT");
-            String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
-
-            if (rubyopt == null || "".equals(rubyopt)) return;
-
-            if (rubyopt.split("\\s").length != 0) {
-                String[] rubyoptArgs = rubyopt.split("\\s+");
-                new ArgumentProcessor(rubyoptArgs, false, true, true, this).processArguments();
-            }
+            processArgumentsWithRubyopts();
         } catch (SecurityException se) {
             // ignore and do nothing
+        }
+    }
+
+    public void processArgumentsWithRubyopts() {
+        // environment defaults to System.getenv normally
+        Object rubyoptObj = environment.get("RUBYOPT");
+        String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
+
+        if (rubyopt == null || rubyopt.length() == 0) return;
+
+        String[] rubyoptArgs = rubyopt.split("\\s+");
+        if (rubyoptArgs.length != 0) {
+            new ArgumentProcessor(rubyoptArgs, false, true, true, this).processArguments();
         }
     }
 
@@ -402,7 +404,7 @@ public class RubyInstanceConfig {
                             // return the script between shebang and __END__ or CTRL-Z (0x1A)
                             return findScript(resource.inputStream());
                         }
-                        return new BufferedInputStream(resource.inputStream(), 8192);
+                        return resource.inputStream();
                     }
                     else {
                         throw new FileNotFoundException(script + " (Not a file)");
@@ -702,6 +704,11 @@ public class RubyInstanceConfig {
         return extraGemPaths;
     }
 
+    private final List<Loader> extraLoaders = new LinkedList<>();
+    public List<Loader> getExtraLoaders() {
+        return extraLoaders;
+    }
+
     /**
      * adds a given ClassLoader to jruby. i.e. adds the root of
      * the classloader to the LOAD_PATH so embedded ruby scripts
@@ -718,7 +725,7 @@ public class RubyInstanceConfig {
      * @param loader
      */
     public void addLoader(ClassLoader loader) {
-        addLoader(new ClassLoaderGetResourses(loader));
+        addLoader(new ClassesLoader(loader));
     }
 
     /**
@@ -729,13 +736,14 @@ public class RubyInstanceConfig {
      * method to do so.
      * @param bundle
      */
-    public void addLoader(GetResources bundle) {
+    public void addLoader(Loader bundle) {
         // loader can be a ClassLoader or an Bundle from OSGi
         UriLikePathHelper helper = new UriLikePathHelper(bundle);
         String uri = helper.getUriLikePath();
         if (uri != null) extraLoadPaths.add(uri);
         uri = helper.getUriLikeGemPath();
         if (uri != null) extraGemPaths.add(uri);
+        extraLoaders.add(bundle);
     }
 
     public String[] getArgv() {
@@ -1188,6 +1196,13 @@ public class RubyInstanceConfig {
     }
 
     /**
+     * @see Options#CLI_DID_YOU_MEAN_ENABLE
+     */
+    public boolean isDisableDidYouMean() {
+        return disableDidYouMean;
+    }
+
+    /**
      * @see Options#CLI_RUBYOPT_ENABLE
      */
     public void setDisableRUBYOPT(boolean dr) {
@@ -1199,6 +1214,13 @@ public class RubyInstanceConfig {
      */
     public void setDisableGems(boolean dg) {
         this.disableGems = dg;
+    }
+
+    /**
+     * @see Options#CLI_DID_YOU_MEAN_ENABLE
+     */
+    public void setDisableDidYouMean(boolean ddym) {
+        this.disableDidYouMean = ddym;
     }
 
     /**
@@ -1442,6 +1464,22 @@ public class RubyInstanceConfig {
         this.profilingService = service;
     }
 
+    public boolean isFrozenStringLiteral() {
+        return frozenStringLiteral;
+    }
+
+    public void setFrozenStringLiteral(boolean frozenStringLiteral) {
+        this.frozenStringLiteral = frozenStringLiteral;
+    }
+
+    public boolean isDebuggingFrozenStringLiteral() {
+        return debuggingFrozenStringLiteral;
+    }
+
+    public void setDebuggingFrozenStringLiteral(boolean debuggingFrozenStringLiteral) {
+        this.debuggingFrozenStringLiteral = debuggingFrozenStringLiteral;
+    }
+
     public static ClassLoader defaultClassLoader() {
         ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
 
@@ -1536,12 +1574,14 @@ public class RubyInstanceConfig {
     private String threadDumpSignal = null;
     private boolean hardExit = false;
     private boolean disableGems = !Options.CLI_RUBYGEMS_ENABLE.load();
+    private boolean disableDidYouMean = !Options.CLI_DID_YOU_MEAN_ENABLE.load();
     private boolean disableRUBYOPT = !Options.CLI_RUBYOPT_ENABLE.load();
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;
     private boolean hasScriptArgv = false;
     private boolean preferIPv4 = Options.PREFER_IPV4.load();
-
+    private boolean frozenStringLiteral = false;
+    private boolean debuggingFrozenStringLiteral = false;
     private String jrubyHome;
 
     /**
@@ -1605,20 +1645,15 @@ public class RubyInstanceConfig {
         public boolean shouldPrecompileAll() {
             return this == FORCE;
         }
+
+        public boolean isTruffle() {
+            return this == TRUFFLE;
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // Static configuration fields, used as defaults for new JRuby instances.
     ////////////////////////////////////////////////////////////////////////////
-
-    // NOTE: These BigDecimal fields must be initialized before calls to initGlobalJavaVersion
-
-    /** A BigDecimal representing 1.5, for Java spec version matching */
-    private static final BigDecimal BIGDECIMAL_1_5 = new BigDecimal("1.5");
-    /** A BigDecimal representing 1.6, for Java spec version matching */
-    private static final BigDecimal BIGDECIMAL_1_6 = new BigDecimal("1.6");
-    /** A BigDecimal representing 1.7, for Java spec version matching */
-    private static final BigDecimal BIGDECIMAL_1_7 = new BigDecimal("1.7");
 
     /**
      * The version to use for generated classes. Set to current JVM version by default
@@ -1835,6 +1870,7 @@ public class RubyInstanceConfig {
     public static String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
     public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
+    public static boolean RECORD_LEXICAL_HIERARCHY = Options.RECORD_LEXICAL_HIERARCHY.load();
 
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
 
@@ -1853,19 +1889,16 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
 
     private static int initGlobalJavaVersion() {
-        String specVersion = Options.BYTECODE_VERSION.load();
-
-        // stack map calculation is failing for some compilation scenarios, so
-        // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.
-        if (specVersion.equals("1.5")) {// || specVersion.equals("1.6")) {
-           return Opcodes.V1_5;
-        } else if (specVersion.equals("1.6")) {
-            return Opcodes.V1_6;
-        } else if (specVersion.equals("1.7") || specVersion.equals("1.8") || specVersion.equals("1.9")) {
-            return Opcodes.V1_7;
-        } else {
-            System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.5");
-            return Opcodes.V1_5;
+        final String specVersion = Options.BYTECODE_VERSION.load();
+        switch ( specVersion ) {
+            case "1.6" : return Opcodes.V1_6;
+            case "1.7" : return Opcodes.V1_7;
+            case "1.8" : return Opcodes.V1_8;
+            // NOTE: JDK 9 now returns "9" instead of "1.9"
+            case "1.9" : case "9" : return Opcodes.V1_8; // +1
+            default :
+                System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.7");
+                return Opcodes.V1_7;
         }
     }
 

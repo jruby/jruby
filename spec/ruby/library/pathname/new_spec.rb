@@ -15,5 +15,14 @@ describe "Pathname.new" do
     Pathname.new(path).tainted?.should == true
   end
 
-end
+  it "raises a TypeError if not passed a String type" do
+    lambda { Pathname.new(nil)   }.should raise_error(TypeError)
+    lambda { Pathname.new(0)     }.should raise_error(TypeError)
+    lambda { Pathname.new(true)  }.should raise_error(TypeError)
+    lambda { Pathname.new(false) }.should raise_error(TypeError)
+  end
 
+  it "initializes with an object with to_path" do
+    Pathname.new(mock_to_path('foo')).should == Pathname.new('foo')
+  end
+end

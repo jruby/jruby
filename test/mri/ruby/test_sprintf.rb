@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 require 'test/unit'
 
 class TestSprintf < Test::Unit::TestCase
@@ -166,6 +167,9 @@ class TestSprintf < Test::Unit::TestCase
         end
       end
     end
+
+    bug11766 = '[ruby-core:71806] [Bug #11766]'
+    assert_equal("x"*10+"     1.0", sprintf("x"*10+"%8.1f", 1r))
   end
 
   def test_hash
@@ -219,8 +223,9 @@ class TestSprintf < Test::Unit::TestCase
                  sprintf("%20.0f", 36893488147419107329.0))
     assert_equal(" Inf", sprintf("% 0e", 1.0/0.0), "moved from btest/knownbug")
     assert_equal("       -0.", sprintf("%#10.0f", -0.5), "[ruby-dev:42552]")
-    assert_equal("0x1p+2",   sprintf('%.0a', Float('0x1.fp+1')),   "[ruby-dev:42551]")
-    assert_equal("-0x1.0p+2", sprintf('%.1a', Float('-0x1.ffp+1')), "[ruby-dev:42551]")
+    # out of spec
+    #assert_equal("0x1p+2",   sprintf('%.0a', Float('0x1.fp+1')),   "[ruby-dev:42551]")
+    #assert_equal("-0x1.0p+2", sprintf('%.1a', Float('-0x1.ffp+1')), "[ruby-dev:42551]")
   end
 
   def test_float_hex
@@ -407,5 +412,16 @@ class TestSprintf < Test::Unit::TestCase
       e = assert_raise_with_message(KeyError, "key{#{k}} not found") {sprintf("%{#{k}}", {})}
       assert_equal(enc, e.message.encoding)
     end
+  end
+
+  def test_named_default
+    h = Hash.new('world')
+    assert_equal("hello world", "hello %{location}" % h)
+    assert_equal("hello world", "hello %<location>s" % h)
+  end
+
+  def test_named_with_nil
+    h = { key: nil, key2: "key2_val" }
+    assert_equal("key is , key2 is key2_val", "key is %{key}, key2 is %{key2}" % h)
   end
 end

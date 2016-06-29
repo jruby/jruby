@@ -76,6 +76,9 @@ public class StaticScope implements Serializable {
     // Our name holder (offsets are assigned as variables are added)
     private String[] variableNames;
 
+    // A list of booleans indicating which variables are named captures from regexp
+    private boolean[] namedCaptures;
+
     // Arity of this scope if there is one
     private Signature signature;
 
@@ -185,7 +188,7 @@ public class StaticScope implements Serializable {
      * current scope.
      *
      * @param name of new variable
-     * @return index+depth merged location of scope
+     * @return index of variable
      */
     public int addVariableThisScope(String name) {
         // Ignore duplicate "_" args in blocks
@@ -204,6 +207,20 @@ public class StaticScope implements Serializable {
 
         // Returns slot of variable
         return variableNames.length - 1;
+    }
+
+    /**
+     * Add a new named capture variable to this (current) scope.
+     *
+     * @param name name of variable.
+     * @return index of variable
+     */
+    public int addNamedCaptureVariable(String name) {
+        int index = addVariableThisScope(name);
+
+        growNamedCaptures(index);
+
+        return index;
     }
 
     /**
@@ -239,6 +256,25 @@ public class StaticScope implements Serializable {
 
         variableNames = new String[names.length];
         System.arraycopy(names, 0, variableNames, 0, names.length);
+    }
+
+    /**
+     * Gets a constant back from lexical search from the cref in this scope.
+     * As it is for defined? we will not forced resolution of autoloads nor
+     * call const_defined
+     */
+    public IRubyObject getConstantDefined(String internedName) {
+        IRubyObject result = cref.fetchConstant(internedName);
+
+        if (result != null) return result;
+
+        return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(internedName);
+    }
+
+    public IRubyObject getConstantDefinedNoObject(String internedName) {
+        if (previousCRefScope == null) return null;
+
+        return getConstantDefined(internedName);
     }
 
     public IRubyObject getConstant(String internedName) {
@@ -509,6 +545,24 @@ public class StaticScope implements Serializable {
         variableNames[variableNames.length - 1] = name;
     }
 
+    private void growNamedCaptures(int index) {
+        boolean[] namedCaptures = this.namedCaptures;
+        boolean[] newNamedCaptures;
+        if (namedCaptures != null) {
+            newNamedCaptures = new boolean[Math.max(index + 1, namedCaptures.length)];
+            System.arraycopy(namedCaptures, 0, newNamedCaptures, 0, namedCaptures.length);
+        } else {
+            newNamedCaptures = new boolean[index + 1];
+        }
+        newNamedCaptures[index] = true;
+        this.namedCaptures = newNamedCaptures;
+    }
+
+    public boolean isNamedCapture(int index) {
+        boolean[] namedCaptures = this.namedCaptures;
+        return namedCaptures != null && index < namedCaptures.length && namedCaptures[index];
+    }
+
     @Override
     public String toString() {
         // FIXME: Do we need to persist cref as well?
@@ -536,7 +590,11 @@ public class StaticScope implements Serializable {
         return dupe;
     }
 
-    public RubyModule getOverlayModule(ThreadContext context) {
+    public RubyModule getOverlayModuleForRead() {
+        return overlayModule;
+    }
+
+    public RubyModule getOverlayModuleForWrite(ThreadContext context) {
         RubyModule omod = overlayModule;
         if (omod == null) {
             overlayModule = omod = RubyModule.newModule(context.runtime);

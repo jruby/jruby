@@ -20,18 +20,39 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 // Represents a dynamic regexp in Ruby
 // Ex: /#{a}#{b}/
 public class BuildDynRegExpInstr extends NOperandResultBaseInstr {
+    // Create a cache object so that this can be shared
+    // through the lifetime of the original instruction independent
+    // of it being cloned (because of inlining, JIT-ting, whatever).
+    private static class RECache  {
+        // Cached regexp
+        private volatile RubyRegexp rubyRegexp;
+        private static final AtomicReferenceFieldUpdater<RECache, RubyRegexp> UPDATER =
+                AtomicReferenceFieldUpdater.newUpdater(RECache.class, RubyRegexp.class, "rubyRegexp");
+        public void updateCache(boolean isOnce, RubyRegexp re) {
+            if (isOnce) {
+                // Atomically update this, so we only see one instance cached ever.
+                // See MRI's ruby/test_regexp.rb, test_once_multithread
+                UPDATER.compareAndSet(this, null, re);
+            } else {
+                rubyRegexp = re;
+            }
+        }
+    };
+
     final private RegexpOptions options;
+    final private RECache reCache;
 
-    // Cached regexp
-    private volatile RubyRegexp rubyRegexp;
-
-    private static final AtomicReferenceFieldUpdater<BuildDynRegExpInstr, RubyRegexp> UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(BuildDynRegExpInstr.class, RubyRegexp.class, "rubyRegexp");
+    // Only used by cloning
+    private BuildDynRegExpInstr(Variable result, Operand[] pieces, RegexpOptions options, RECache reCache) {
+        super(Operation.BUILD_DREGEXP, result, pieces);
+        this.options = options;
+        this.reCache = reCache;
+    }
 
     public BuildDynRegExpInstr(Variable result, Operand[] pieces, RegexpOptions options) {
         super(Operation.BUILD_DREGEXP, result, pieces);
-
         this.options = options;
+        this.reCache = new RECache();
     }
 
     public Operand[] getPieces() {
@@ -43,7 +64,7 @@ public class BuildDynRegExpInstr extends NOperandResultBaseInstr {
     }
 
     public RubyRegexp getRegexp() {
-       return rubyRegexp;
+       return reCache.rubyRegexp;
     }
 
     @Override
@@ -53,7 +74,8 @@ public class BuildDynRegExpInstr extends NOperandResultBaseInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BuildDynRegExpInstr(ii.getRenamedVariable(result), cloneOperands(ii), options);
+        // Share the cache!
+        return new BuildDynRegExpInstr(ii.getRenamedVariable(result), cloneOperands(ii), options, this.reCache);
     }
 
     private RubyString[] retrievePieces(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
@@ -82,21 +104,15 @@ public class BuildDynRegExpInstr extends NOperandResultBaseInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // FIXME (from RegexpNode.java): 1.9 should care about internal or external encoding and not kcode.
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
-        if (rubyRegexp == null || !options.isOnce() || context.runtime.getKCode() != rubyRegexp.getKCode()) {
+        if (reCache.rubyRegexp == null || !options.isOnce() || context.runtime.getKCode() != reCache.rubyRegexp.getKCode()) {
             RubyString[] pieces  = retrievePieces(context, self, currScope, currDynScope, temp);
             RubyString   pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
             RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
             re.setLiteral();
-            if (options.isOnce()) {
-                // Atomically update this, so we only see one instance cached ever.
-                // See MRI's ruby/test_regexp.rb, test_once_multithread
-                UPDATER.compareAndSet(this, null, re);
-            } else {
-                rubyRegexp = re;
-            }
+            reCache.updateCache(options.isOnce(), re);
         }
 
-        return rubyRegexp;
+        return reCache.rubyRegexp;
     }
 
     @Override

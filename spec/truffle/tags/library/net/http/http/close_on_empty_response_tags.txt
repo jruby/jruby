@@ -1,2 +1,0 @@
-fails:Net::HTTP#close_on_empty_response needs to be reviewed for spec completeness
-fails:Net::HTTP#close_on_empty_response= needs to be reviewed for spec completeness

@@ -21,7 +21,7 @@ import org.jruby.ir.representations.CFGLinearizer;
 public class FullInterpreterContext extends InterpreterContext {
     private CFG cfg;
 
-    // Creation of this field will happen in generateInstructionsForInterpretation or during IRScope.prepareForInitialCompilation.
+    // Creation of this field will happen in generateInstructionsForInterpretation or during IRScope.prepareForCompilation.
     // FIXME: At some point when we relinearize after running another phase of passes we should document that here to know how this field is changed
     private BasicBlock[] linearizedBBList = null;
 
@@ -33,7 +33,7 @@ public class FullInterpreterContext extends InterpreterContext {
 
     // FIXME: Perhaps abstract IC into interface of base class so we do not have a null instructions field here
     public FullInterpreterContext(IRScope scope, Instr[] instructions) {
-        super(scope, null);
+        super(scope, (List<Instr>)null);
 
         cfg = buildCFG(instructions);
     }

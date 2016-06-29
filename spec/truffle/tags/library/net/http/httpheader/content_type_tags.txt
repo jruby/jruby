@@ -1,3 +1,0 @@
-fails:Net::HTTPHeader#content_type returns the content type string, as per 'Content-Type' header entry
-fails:Net::HTTPHeader#content_type returns nil if the 'Content-Type' header entry does not exist
-fails:Net::HTTPHeader#content_type= when passed type, params sets the 'Content-Type' header entry based on the passed type and params

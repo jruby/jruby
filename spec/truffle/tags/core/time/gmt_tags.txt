@@ -1,1 +1,0 @@
-fails(travis):Time#gmt? returns true if time represents a time in UTC (GMT)

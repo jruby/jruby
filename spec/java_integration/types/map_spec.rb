@@ -2,6 +2,81 @@ require File.dirname(__FILE__) + "/../spec_helper"
 
 describe "a java.util.Map instance" do
 
+  it 'return compared_by_identity for IdentityHashMap' do
+    h = java.util.HashMap.new
+    expect( h.compare_by_identity? ).to be false
+    h.compare_by_identity # has no effect
+    expect( h.compare_by_identity? ).to be false
+    h = java.util.IdentityHashMap.new
+    expect( h.compare_by_identity? ).to be true
+  end
+
+  it 'digs like a Hash' do
+    m3 = java.util.TreeMap.new; m3.put('3'.to_java, obj = java.lang.Object.new)
+    m1 = java.util.HashMap.new; m1['1'] = { 2 => m3 }
+    expect( m1.dig(1) ).to be nil
+    expect( m1.dig('1', 2) ).to be m3
+    expect( m1.dig('1', 2, '3') ).to be obj
+  end
+
+  it 'compares like a Hash' do
+    m1 = java.util.HashMap.new; m1['a'] = 1; m1['b'] = 2
+    m2 = java.util.LinkedHashMap.new; m2['b'] = 2; m2['a'] = 1; m2['c'] = 3
+    m3 = java.util.Hashtable.new; m3['b'] = 3; m3['a'] = 2
+    expect( m1 > m2 ).to be false
+    expect( m1 >= m2 ).to be false
+    expect( m2 > m1 ).to be true
+    expect( m1 <= m2 ).to be true
+    expect( m1 > m1 ).to be false
+    expect( m3 < m1 ).to be false
+    expect( m3 > m1 ).to be false
+  end
+
+  it 'compares with a Hash' do
+    m1 = Hash.new; m1['a'] = 1; m1['b'] = 2
+    m2 = java.util.LinkedHashMap.new; m2['b'] = 2; m2['a'] = 1; m2['c'] = 3
+    m3 = java.util.Hashtable.new; m3['b'] = 3; m3['a'] = 2
+    expect( m1 > m2 ).to be false
+    expect( m1 >= m2 ).to be false
+
+    pending 'TODO need more handling to compare Map-s with Hash-es (as expected)'
+
+    expect( m2 > m1 ).to be true
+    expect( m1 <= m2 ).to be true
+    expect( m1 > m1 ).to be false
+    expect( m3 < m1 ).to be false
+    expect( m3 > m1 ).to be false
+    expect( m2 >= { 'a' => 1, 'b' => 2 } ).to be true
+  end
+
+  it 'fetch-es values' do
+    m = java.util.HashMap.new({ '1' => 1, '2' => 2, 3 => '3' })
+    expect( m.fetch_values(3) ).to eql [ '3' ]
+    expect( m.fetch_values('2', '1') ).to eql [ 2, 1 ]
+    expect { m.fetch_values(1) }.to raise_error(KeyError)
+  end
+
+  it 'converts to a proc' do
+    m = java.util.TreeMap.new({ '1' => 1, '2' => 2 })
+    expect( m.to_proc.call('3') ).to be nil
+    expect( m.to_proc.call('1') ).to be 1
+  end
+
+  it 'handles any?' do
+    h = java.util.Hashtable.new; h[1] = 10; h['2'] = 20
+    expect( h.any? ).to be true
+    expect( h.any? { |e, v| v > 10 } ).to be true
+    expect( h.any? { |e, v| v > 20 } ).to be false
+    expect( h.any? { |e| e[1] > 10 } ).to be true
+  end
+
+  it 'returns self on clear like a Hash (if aliased)' do
+    java.util.concurrent.ConcurrentSkipListMap.class_eval { alias clear ruby_clear }
+    m = java.util.concurrent.ConcurrentSkipListMap.new({ '1' => 1, '2' => 2 })
+    expect( m.clear ).to_not be nil # Java's clear returns void
+    expect( m.empty? ).to be true
+  end
+
   it "supports Hash-like operations" do
     h = java.util.HashMap.new
     test_ok(h.kind_of? java.util.Map)
@@ -21,6 +96,26 @@ describe "a java.util.Map instance" do
     test_equal("z not found", h.delete("z") { |el| "#{el} not found" })
     test_equal({"c"=>300}, h.delete_if { |key, value| key <= "b" })
 
+    h = java.util.concurrent.ConcurrentHashMap.new(10)
+    h.put(:b, 200); h.put(:c, 300); h.put(:a, 100)
+    test_equal(h.delete_if { |key, value| key <= :b }, {:"c"=>300})
+    expect( {:c => 300}.eql? h ).to be true
+    h.put(:b, 200)
+    expect( {'c'.to_sym => 300}.eql? h ).to be false
+    h.remove(:b)
+    expect( h.eql?({:c => 300}) ).to be true
+
+    h.clear; h['a'] = 100; h['c'] = 300; h.put('b', 200)
+
+    h2 = java.util.TreeMap.new
+    h2.put('b', 200); h2.put('c', 300); h2.put('a', 100)
+    test_equal( h2, h )
+    expect( h2.eql? h ).to be true
+    expect( h2.equal? h ).to be false
+
+    h.remove('c')
+    test_equal( h2.delete_if { |key, value| key >= 'c' }, h )
+
     h = java.util.LinkedHashMap.new
     h.put("a", 100); h.put("b", 200); h.put("c", 300)
     a1=[]; a2=[]
@@ -36,12 +131,8 @@ describe "a java.util.Map instance" do
     test_ok(h.clear.empty?)
 
     # Java 8 adds a replace method to Map that takes a key and value
-    if ENV_JAVA['java.specification.version'] < '1.8'
-      h.replace({1=>100})
-    else
-      h.clear
-      h[1]=100
-    end
+    h.ruby_replace({1=>100})
+
     test_equal({1=>100}, h)
     h[2]=200; h[3]=300
     test_equal(300, h.fetch(3))
@@ -72,9 +163,12 @@ describe "a java.util.Map instance" do
     # Java 8 adds a merge method to Map used for merging multiple values for a given key in-place
     if ENV_JAVA['java.specification.version'] < '1.8'
       test_equal({"a"=>100, "b"=>254, "c"=>300}, h1.merge(h2))
-      test_equal({"a"=>100, "b"=>454, "c"=>300}, h1.merge(h2) { |k, o, n| o+n })
-      test_equal("{\"a\"=>100, \"b\"=>200}", h1.inspect)
+    else
+      test_equal({"a"=>100, "b"=>254, "c"=>300}, h1.ruby_merge(h2))
     end
+    test_equal({"a"=>100, "b"=>454, "c"=>300}, h1.ruby_merge(h2) { |k, o, n| o+n })
+    test_equal("{\"a\"=>100, \"b\"=>200}", h1.inspect)
+
     h1.merge!(h2) { |k, o, n| o }
     test_equal("{\"a\"=>100, \"b\"=>200, \"c\"=>300}", h1.inspect)
     test_equal(Java::JavaUtil::LinkedHashMap, h1.class)
@@ -87,12 +181,7 @@ describe "a java.util.Map instance" do
     test_equal("{1=>100, 2=>200}", h.inspect)
 
     # Java 8 adds a replace method to Map that takes a key and value
-    if ENV_JAVA['java.specification.version'] < '1.8'
-      test_equal({"c"=>300, "d"=>400, "e"=>500}, h.replace({"c"=>300, "d"=>400, "e"=>500}))
-    else
-      h.clear
-      h.put_all({"c"=>300, "d"=>400, "e"=>500})
-    end
+    test_equal({"c"=>300, "d"=>400, "e"=>500}, h.ruby_replace({"c"=>300, "d"=>400, "e"=>500}))
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
 
     test_equal({"d"=>400, "e"=>500}, h.select {|k,v| k > "c"})
@@ -102,8 +191,7 @@ describe "a java.util.Map instance" do
     if ENV_JAVA['java.specification.version'] < '1.8'
       h.replace({"a"=>20, "d"=>10, "c"=>30, "b"=>0})
     else
-      h.clear
-      h.put_all({"a"=>20, "d"=>10, "c"=>30, "b"=>0})
+      h.ruby_replace({"a"=>20, "d"=>10, "c"=>30, "b"=>0})
     end
     test_equal([["a", 20], ["b", 0], ["c", 30], ["d", 10]], h.sort)
     test_equal([["b", 0], ["d", 10], ["a", 20], ["c", 30]], h.sort { |a, b| a[1]<=>b[1] })
@@ -123,12 +211,8 @@ describe "a java.util.Map instance" do
     test_equal([["a", 20], ["d", 10]], h.take(2))
 
     # Java 8 adds a replace method to Map that takes a key and value
-    if ENV_JAVA['java.specification.version'] < '1.8'
-      h.replace({"a"=>100, "b"=>200})
-    else
-      h.clear
-      h.put_all({"a"=>100, "b"=>200})
-    end
+    h.ruby_replace({"a"=>100, "b"=>200})
+
     h2 = {"b"=>254, "c"=>300}
     test_equal({"a"=>100, "b"=>200, "c"=>300}, h.update(h2) { |k, o, n| o })
     test_equal("{\"a\"=>100, \"b\"=>200, \"c\"=>300}", h.inspect)

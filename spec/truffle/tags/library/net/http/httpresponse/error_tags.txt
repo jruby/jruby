@@ -1,1 +1,0 @@
-fails:Net::HTTPResponse#error! raises self's class 'EXCEPTION_TYPE' Exception

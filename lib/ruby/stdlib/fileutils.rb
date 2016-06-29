@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 #
 # = fileutils.rb
 #
@@ -518,7 +519,7 @@ module FileUtils
       begin
         if destent.exist?
           if destent.directory?
-            raise Errno::EEXIST, dest
+            raise Errno::EEXIST, d
           else
             destent.remove_file if rename_cannot_overwrite_file?
           end
@@ -556,7 +557,7 @@ module FileUtils
   OPT_TABLE['move'] = [:force, :noop, :verbose, :secure]
 
   def rename_cannot_overwrite_file?   #:nodoc:
-    /cygwin|mswin|mingw|bccwin|emx/ =~ RUBY_PLATFORM
+    /emx/ =~ RUBY_PLATFORM
   end
   private_module_function :rename_cannot_overwrite_file?
 

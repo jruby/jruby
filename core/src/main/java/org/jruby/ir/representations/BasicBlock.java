@@ -86,6 +86,10 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         instrs.add(0, i);
     }
 
+    public void insertInstr(int index, Instr i) {
+        instrs.add(index, i);
+    }
+
     public List<Instr> getInstrs() {
         return instrs;
     }
@@ -194,11 +198,11 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
     @Override
     public String toString() {
-        return "BB [" + id + ":" + label + "]";
+        return "BB [" + id + ':' + label + ']';
     }
 
     public String toStringInstrs() {
-        StringBuilder buf = new StringBuilder(toString()).append("\n");
+        StringBuilder buf = new StringBuilder(toString()).append('\n');
 
         for (Instr instr : getInstrs()) {
             buf.append('\t').append(instr).append('\n');

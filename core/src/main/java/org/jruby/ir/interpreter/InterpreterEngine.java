@@ -4,7 +4,6 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.BreakInstr;
@@ -12,13 +11,11 @@ import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.PopBlockFrameInstr;
-import org.jruby.ir.instructions.PrepareBlockArgsInstr;
 import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
@@ -26,6 +23,7 @@ import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RestoreBindingVisibilityInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
+import org.jruby.ir.instructions.ReturnOrRethrowSavedExcInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SaveBindingVisibilityInstr;
 import org.jruby.ir.instructions.SearchConstInstr;
@@ -42,6 +40,7 @@ import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
+import org.jruby.ir.instructions.specialized.TwoOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.Fixnum;
@@ -59,8 +58,6 @@ import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
-import org.jruby.EvalType;
-import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
@@ -68,7 +65,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 
 /**
@@ -107,18 +103,6 @@ public class InterpreterEngine {
         return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
     }
 
-    private DynamicScope getBlockScope(ThreadContext context, Block block, InterpreterContext interpreterContext) {
-        DynamicScope newScope = block.getBinding().getDynamicScope();
-        if (interpreterContext.pushNewDynScope()) {
-            context.pushScope(block.allocScope(newScope));
-        } else if (interpreterContext.reuseParentDynScope()) {
-            // Reuse! We can avoid the push only if surrounding vars aren't referenced!
-            context.pushScope(newScope);
-        }
-
-        return newScope;
-    }
-
     public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                          InterpreterContext interpreterContext, RubyModule implClass,
                                          String name, IRubyObject[] args, Block blockArg) {
@@ -130,12 +114,15 @@ public class InterpreterEngine {
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
+        boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+        // Blocks with explicit call protocol shouldn't do this before args are prepared
+        if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {
+            IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
+        }
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
@@ -147,6 +134,7 @@ public class InterpreterEngine {
             Instr instr = instrs[ipc];
 
             Operation operation = instr.getOperation();
+
             if (debug) Interpreter.LOG.info("I: {" + ipc + "} ", instr);
             Interpreter.interpInstrsCount++;
             ipc++;
@@ -175,31 +163,30 @@ public class InterpreterEngine {
                         }
                         break;
                     case BOOK_KEEPING_OP:
+                        // IMPORTANT: Preserve these update to currDynScope, self, and args.
+                        // They affect execution of all following instructions in this scope.
                         switch (operation) {
                         case PUSH_METHOD_BINDING:
-                            // IMPORTANT: Preserve this update of currDynScope.
-                            // This affects execution of all instructions in this scope
-                            // which will now use the updated value of currDynScope.
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                             break;
                         case PUSH_BLOCK_BINDING:
-                            currDynScope = getBlockScope(context, block, interpreterContext);
+                            currDynScope = IRRuntimeHelpers.pushBlockDynamicScopeIfNeeded(context, block, interpreterContext.pushNewDynScope(), interpreterContext.reuseParentDynScope());
                             break;
                         case UPDATE_BLOCK_STATE:
-                            if (self == null || block.getEvalType() == EvalType.BINDING_EVAL) {
-                                // Update self to the binding's self
-                                Binding b = block.getBinding();
-                                self = b.getSelf();
-                                b.getFrame().setSelf(self);
-                            }
-                            // Clear block's eval type
-                            block.setEvalType(EvalType.NONE);
+                            self = IRRuntimeHelpers.updateBlockState(block, self);
+                            break;
+                        case PREPARE_NO_BLOCK_ARGS:
+                            args = IRRuntimeHelpers.prepareNoBlockArgs(context, block, args);
                             break;
                         case PREPARE_SINGLE_BLOCK_ARG:
+                            args = IRRuntimeHelpers.prepareSingleBlockArgs(context, block, args);
+                            break;
                         case PREPARE_FIXED_BLOCK_ARGS:
+                            args = IRRuntimeHelpers.prepareFixedBlockArgs(context, block, args);
+                            break;
                         case PREPARE_BLOCK_ARGS:
-                            args = ((PrepareBlockArgsInstr)instr).prepareBlockArgs(context, block, args);
+                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument);
                             break;
                         default:
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
@@ -328,6 +315,15 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
             }
+            case CALL_2O: {
+                TwoOperandArgNoBlockCallInstr call = (TwoOperandArgNoBlockCallInstr)instr;
+                IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                IRubyObject o1 = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
+                IRubyObject o2 = (IRubyObject)call.getArg2().retrieve(context, self, currScope, currDynScope, temp);
+                result = call.getCallSite().call(context, self, r, o1, o2);
+                setResult(temp, currDynScope, call.getResult(), result);
+                break;
+            }
             case CALL_1OB: {
                 OneOperandArgBlockCallInstr call = (OneOperandArgBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
@@ -365,27 +361,20 @@ public class InterpreterEngine {
     protected static void processBookKeepingOp(ThreadContext context, Block block, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block blockArg, RubyModule implClass,
                                              DynamicScope currDynScope, Object[] temp, StaticScope currScope) {
-        Block.Type blockType = block == null ? null : block.type;
-        Frame f;
-        Visibility viz;
         switch(operation) {
             case LABEL:
                 break;
             case SAVE_BINDING_VIZ:
-                viz = block.getBinding().getVisibility();
-                setResult(temp, currDynScope, ((SaveBindingVisibilityInstr)instr).getResult(), viz);
+                setResult(temp, currDynScope, ((SaveBindingVisibilityInstr) instr).getResult(), block.getBinding().getFrame().getVisibility());
                 break;
             case RESTORE_BINDING_VIZ:
-                viz = (Visibility)retrieveOp(((RestoreBindingVisibilityInstr)instr).getVisibility(), context, self, currDynScope, currScope, temp);
-                block.getBinding().setVisibility(viz);
+                block.getBinding().getFrame().setVisibility((Visibility) retrieveOp(((RestoreBindingVisibilityInstr) instr).getVisibility(), context, self, currDynScope, currScope, temp));
                 break;
             case PUSH_BLOCK_FRAME:
-                f = context.preYieldNoScope(block.getBinding());
-                setResult(temp, currDynScope, ((PushBlockFrameInstr)instr).getResult(), f);
+                setResult(temp, currDynScope, ((PushBlockFrameInstr) instr).getResult(), context.preYieldNoScope(block.getBinding()));
                 break;
             case POP_BLOCK_FRAME:
-                f = (Frame)retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp);
-                context.postYieldNoScope(f);
+                context.postYieldNoScope((Frame) retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp));
                 break;
             case PUSH_METHOD_FRAME:
                 context.preMethodFrameOnly(implClass, name, self, blockArg);
@@ -405,7 +394,7 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr)instr).checkArity(context, args, blockType);
+                ((CheckArityInstr) instr).checkArity(context, currScope, args, block == null ? null : block.type);
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);
@@ -451,6 +440,10 @@ public class InterpreterEngine {
                 IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
                 return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, blockType, rv);
             }
+            case RETURN_OR_RETHROW_SAVED_EXC: {
+                IRubyObject retVal = (IRubyObject) retrieveOp(((ReturnBase) instr).getReturnValue(), context, self, currDynScope, currScope, temp);
+                return IRRuntimeHelpers.returnOrRethrowSavedException(context, retVal);
+            }
         }
         return null;
     }
@@ -474,21 +467,6 @@ public class InterpreterEngine {
                 } else {
                     setResult(temp, currDynScope, res, retrieveOp(src, context, self, currDynScope, currScope, temp));
                 }
-                break;
-            }
-
-            case GET_FIELD: {
-                GetFieldInstr gfi = (GetFieldInstr)instr;
-                IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currScope, currDynScope, temp);
-                VariableAccessor a = gfi.getAccessor(object);
-                result = a == null ? null : (IRubyObject)a.get(object);
-                if (result == null) {
-                    if (context.runtime.isVerbose()) {
-                        context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
-                    }
-                    result = context.nil;
-                }
-                setResult(temp, currDynScope, gfi.getResult(), result);
                 break;
             }
 

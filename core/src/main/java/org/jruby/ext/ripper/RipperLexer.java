@@ -32,26 +32,20 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import org.jcodings.Encoding;
-import org.joni.Matcher;
-import org.joni.Option;
-import org.joni.Regex;
 import org.jruby.Ruby;
-import org.jruby.RubyRegexp;
 import org.jruby.lexer.LexerSource;
-import org.jruby.lexer.yacc.StackState;
+import org.jruby.lexer.LexingCommon;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
-
-import static org.jruby.lexer.LexingCommon.*;
-import static org.jruby.lexer.LexingCommon.parseMagicComment;
+import org.jruby.util.cli.Options;
 
 /**
  *
  * @author enebo
  */
-public class RipperLexer {
+public class RipperLexer extends LexingCommon {
     private static final HashMap<String, Keyword> map;
 
     static {
@@ -99,24 +93,11 @@ public class RipperLexer {
         map.put("__ENCODING__", Keyword.__ENCODING__);
     }
 
-    private Encoding current_enc;
-    
     public boolean ignoreNextScanEvent = false;
 
-    public Encoding getEncoding() {
-        return current_enc;
-    }
-
-    private void ambiguousOperator(String op, String syn) {
-        warn("`" + op + "' after local variable is interpreted as binary operator\nevent though it seems like \"" + syn + "\"");
-    }
-
-    private void warn_balanced(int c, boolean spaceSeen, String op, String syn) {
-        if (false && last_state != LexState.EXPR_CLASS && last_state != LexState.EXPR_DOT &&
-                last_state != LexState.EXPR_FNAME && last_state != LexState.EXPR_ENDFN &&
-                last_state != LexState.EXPR_ENDARG && spaceSeen && !Character.isWhitespace(c)) {
-            ambiguousOperator(op, syn);
-        }
+    protected void ambiguousOperator(String op, String syn) {
+        warn("`" + op + "' after local variable or literal is interpreted as binary operator");
+        warn("even though it seems like " + syn);
     }
 
     private int getFloatToken(String number, int suffix) {
@@ -142,8 +123,7 @@ public class RipperLexer {
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
-        ByteList buf = new ByteList(number.getBytes());
-        yaccValue = new Token(buf);
+
         return considerComplex(Tokens.tFLOAT, suffix);
     }
 
@@ -161,62 +141,65 @@ public class RipperLexer {
     }
 
     public void warn(String message) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        parser.dispatch("warn", getRuntime().newString(message));
     }
-    
-    public void warning(String message) {
-        throw new UnsupportedOperationException("Not supported yet.");
+
+    public void warning(String fmt) {
+        parser.dispatch("warning", getRuntime().newString(fmt));
+    }
+    public void warning(String fmt, String arg) {
+        parser.dispatch("warning", getRuntime().newString(fmt), getRuntime().newString(arg));
     }
     
     public enum Keyword {
-        END ("end", Tokens.kEND, Tokens.kEND, LexState.EXPR_END),
-        ELSE ("else", Tokens.kELSE, Tokens.kELSE, LexState.EXPR_BEG),
-        CASE ("case", Tokens.kCASE, Tokens.kCASE, LexState.EXPR_BEG),
-        ENSURE ("ensure", Tokens.kENSURE, Tokens.kENSURE, LexState.EXPR_BEG),
-        MODULE ("module", Tokens.kMODULE, Tokens.kMODULE, LexState.EXPR_BEG),
-        ELSIF ("elsif", Tokens.kELSIF, Tokens.kELSIF, LexState.EXPR_BEG),
-        DEF ("def", Tokens.kDEF, Tokens.kDEF, LexState.EXPR_FNAME),
-        RESCUE ("rescue", Tokens.kRESCUE, Tokens.kRESCUE_MOD, LexState.EXPR_MID),
-        NOT ("not", Tokens.kNOT, Tokens.kNOT, LexState.EXPR_ARG),
-        THEN ("then", Tokens.kTHEN, Tokens.kTHEN, LexState.EXPR_BEG),
-        YIELD ("yield", Tokens.kYIELD, Tokens.kYIELD, LexState.EXPR_ARG),
-        FOR ("for", Tokens.kFOR, Tokens.kFOR, LexState.EXPR_BEG),
-        SELF ("self", Tokens.kSELF, Tokens.kSELF, LexState.EXPR_END),
-        FALSE ("false", Tokens.kFALSE, Tokens.kFALSE, LexState.EXPR_END),
-        RETRY ("retry", Tokens.kRETRY, Tokens.kRETRY, LexState.EXPR_END),
-        RETURN ("return", Tokens.kRETURN, Tokens.kRETURN, LexState.EXPR_MID),
-        TRUE ("true", Tokens.kTRUE, Tokens.kTRUE, LexState.EXPR_END),
-        IF ("if", Tokens.kIF, Tokens.kIF_MOD, LexState.EXPR_BEG),
-        DEFINED_P ("defined?", Tokens.kDEFINED, Tokens.kDEFINED, LexState.EXPR_ARG),
-        SUPER ("super", Tokens.kSUPER, Tokens.kSUPER, LexState.EXPR_ARG),
-        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, LexState.EXPR_FNAME),
-        BREAK ("break", Tokens.kBREAK, Tokens.kBREAK, LexState.EXPR_MID),
-        IN ("in", Tokens.kIN, Tokens.kIN, LexState.EXPR_BEG),
-        DO ("do", Tokens.kDO, Tokens.kDO, LexState.EXPR_BEG),
-        NIL ("nil", Tokens.kNIL, Tokens.kNIL, LexState.EXPR_END),
-        UNTIL ("until", Tokens.kUNTIL, Tokens.kUNTIL_MOD, LexState.EXPR_BEG),
-        UNLESS ("unless", Tokens.kUNLESS, Tokens.kUNLESS_MOD, LexState.EXPR_BEG),
-        OR ("or", Tokens.kOR, Tokens.kOR, LexState.EXPR_BEG),
-        NEXT ("next", Tokens.kNEXT, Tokens.kNEXT, LexState.EXPR_MID),
-        WHEN ("when", Tokens.kWHEN, Tokens.kWHEN, LexState.EXPR_BEG),
-        REDO ("redo", Tokens.kREDO, Tokens.kREDO, LexState.EXPR_END),
-        AND ("and", Tokens.kAND, Tokens.kAND, LexState.EXPR_BEG),
-        BEGIN ("begin", Tokens.kBEGIN, Tokens.kBEGIN, LexState.EXPR_BEG),
-        __LINE__ ("__LINE__", Tokens.k__LINE__, Tokens.k__LINE__, LexState.EXPR_END),
-        CLASS ("class", Tokens.kCLASS, Tokens.kCLASS, LexState.EXPR_CLASS),
-        __FILE__("__FILE__", Tokens.k__FILE__, Tokens.k__FILE__, LexState.EXPR_END),
-        LEND ("END", Tokens.klEND, Tokens.klEND, LexState.EXPR_END),
-        LBEGIN ("BEGIN", Tokens.klBEGIN, Tokens.klBEGIN, LexState.EXPR_END),
-        WHILE ("while", Tokens.kWHILE, Tokens.kWHILE_MOD, LexState.EXPR_BEG),
-        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, LexState.EXPR_FNAME),
-        __ENCODING__("__ENCODING__", Tokens.k__ENCODING__, Tokens.k__ENCODING__, LexState.EXPR_END);
+        END ("end", Tokens.kEND, Tokens.kEND, EXPR_END),
+        ELSE ("else", Tokens.kELSE, Tokens.kELSE, EXPR_BEG),
+        CASE ("case", Tokens.kCASE, Tokens.kCASE, EXPR_BEG),
+        ENSURE ("ensure", Tokens.kENSURE, Tokens.kENSURE, EXPR_BEG),
+        MODULE ("module", Tokens.kMODULE, Tokens.kMODULE, EXPR_BEG),
+        ELSIF ("elsif", Tokens.kELSIF, Tokens.kELSIF, EXPR_BEG),
+        DEF ("def", Tokens.kDEF, Tokens.kDEF, EXPR_FNAME),
+        RESCUE ("rescue", Tokens.kRESCUE, Tokens.kRESCUE_MOD, EXPR_MID),
+        NOT ("not", Tokens.kNOT, Tokens.kNOT, EXPR_ARG),
+        THEN ("then", Tokens.kTHEN, Tokens.kTHEN, EXPR_BEG),
+        YIELD ("yield", Tokens.kYIELD, Tokens.kYIELD, EXPR_ARG),
+        FOR ("for", Tokens.kFOR, Tokens.kFOR, EXPR_BEG),
+        SELF ("self", Tokens.kSELF, Tokens.kSELF, EXPR_END),
+        FALSE ("false", Tokens.kFALSE, Tokens.kFALSE, EXPR_END),
+        RETRY ("retry", Tokens.kRETRY, Tokens.kRETRY, EXPR_END),
+        RETURN ("return", Tokens.kRETURN, Tokens.kRETURN, EXPR_MID),
+        TRUE ("true", Tokens.kTRUE, Tokens.kTRUE, EXPR_END),
+        IF ("if", Tokens.kIF, Tokens.kIF_MOD, EXPR_BEG),
+        DEFINED_P ("defined?", Tokens.kDEFINED, Tokens.kDEFINED, EXPR_ARG),
+        SUPER ("super", Tokens.kSUPER, Tokens.kSUPER, EXPR_ARG),
+        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, EXPR_FNAME),
+        BREAK ("break", Tokens.kBREAK, Tokens.kBREAK, EXPR_MID),
+        IN ("in", Tokens.kIN, Tokens.kIN, EXPR_BEG),
+        DO ("do", Tokens.kDO, Tokens.kDO, EXPR_BEG),
+        NIL ("nil", Tokens.kNIL, Tokens.kNIL, EXPR_END),
+        UNTIL ("until", Tokens.kUNTIL, Tokens.kUNTIL_MOD, EXPR_BEG),
+        UNLESS ("unless", Tokens.kUNLESS, Tokens.kUNLESS_MOD, EXPR_BEG),
+        OR ("or", Tokens.kOR, Tokens.kOR, EXPR_BEG),
+        NEXT ("next", Tokens.kNEXT, Tokens.kNEXT, EXPR_MID),
+        WHEN ("when", Tokens.kWHEN, Tokens.kWHEN, EXPR_BEG),
+        REDO ("redo", Tokens.kREDO, Tokens.kREDO, EXPR_END),
+        AND ("and", Tokens.kAND, Tokens.kAND, EXPR_BEG),
+        BEGIN ("begin", Tokens.kBEGIN, Tokens.kBEGIN, EXPR_BEG),
+        __LINE__ ("__LINE__", Tokens.k__LINE__, Tokens.k__LINE__, EXPR_END),
+        CLASS ("class", Tokens.kCLASS, Tokens.kCLASS, EXPR_CLASS),
+        __FILE__("__FILE__", Tokens.k__FILE__, Tokens.k__FILE__, EXPR_END),
+        LEND ("END", Tokens.klEND, Tokens.klEND, EXPR_END),
+        LBEGIN ("BEGIN", Tokens.klBEGIN, Tokens.klBEGIN, EXPR_END),
+        WHILE ("while", Tokens.kWHILE, Tokens.kWHILE_MOD, EXPR_BEG),
+        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, EXPR_FNAME),
+        __ENCODING__("__ENCODING__", Tokens.k__ENCODING__, Tokens.k__ENCODING__, EXPR_END);
 
         public final String name;
         public final int id0;
         public final int id1;
-        public final LexState state;
+        public final int state;
 
-        Keyword(String name, int id0, int id1, LexState state) {
+        Keyword(String name, int id0, int id1, int state) {
             this.name = name;
             this.id0 = id0;
             this.id1 = id1;
@@ -224,20 +207,9 @@ public class RipperLexer {
         }
     }
     
-    public enum LexState {
-        EXPR_BEG, EXPR_END, EXPR_ARG, EXPR_CMDARG, EXPR_ENDARG, EXPR_MID,
-        EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE, EXPR_ENDFN, EXPR_LABELARG
-    }
-    
     public static Keyword getKeyword(String str) {
         return (Keyword) map.get(str);
     }
-    
-    // Last token read via yylex().
-    private int token;
-    
-    // Value of last token which had a value associated with it.
-    Object yaccValue;
     
     // MRI can directly seek source but we do not so we store all idents
     // here so the parser can then look at it on-demand to check things like
@@ -245,96 +217,33 @@ public class RipperLexer {
     // field since all ident logic should hit sequentially.
     String identValue;
 
-    // Stream of data that yylex() examines.
-    private LexerSource src;
-    
     // Used for tiny smidgen of grammar in lexer (see setParserSupport())
     private RipperParserBase parser = null;
 
-    // Additional context surrounding tokens that both the lexer and
-    // grammar use.
-    private LexState lex_state;
-    private LexState last_state;
-    
-    // Tempory buffer to build up a potential token.  Consumer takes responsibility to reset 
-    // this before use.
-    private StringBuilder tokenBuffer = new StringBuilder(60);
-
-    private StackState conditionState = new StackState();
-    private StackState cmdArgumentState = new StackState();
     private StrTerm lex_strterm;
-    public boolean commandStart;
 
     // When the heredoc identifier specifies <<-EOF that indents before ident. are ok (the '-').
     static final int STR_FUNC_INDENT=0x20;
 
-    // Count of nested parentheses (1.9 only)
-    private int parenNest = 0;
-    private int braceNest = 0;
-
-    private int leftParenBegin = 0;
-    public boolean inKwarg = false;
-
-    public int incrementParenNest() {
-        parenNest++;
-
-        return parenNest;
-    }
-
-    public int getBraceNest() {
-        return braceNest;
-    }
-
-    public void setBraceNest(int nest) {
-        braceNest = nest;
-    }
-
-    public int getLeftParenBegin() {
-        return leftParenBegin;
-    }
-
-    public void setLeftParenBegin(int value) {
-        leftParenBegin = value;
-    }
-
     public RipperLexer(RipperParserBase parser, LexerSource src) {
+        super(src);
         this.parser = parser;
-    	token = 0;
-    	yaccValue = null;
-    	this.src = src;
-        setState(null);
-        resetStacks();
+        setState(0);
         lex_strterm = null;
-        commandStart = true;
-        current_enc = src.getEncoding();
+        // FIXME: Do we need to parser_prepare like normal lexer?
+        setCurrentEncoding(src.getEncoding());
+        reset();
     }
-    
-    protected int tokp = 0; // Where last token started
-    protected ByteList lexb = null;
-    protected int lex_p = 0; // Where current position is in current line
-    protected int lex_pbeg = 0; 
-    protected int lex_pend = 0; // Where line ends
-    protected ByteList lex_lastline = null;
-    private ByteList lex_nextline = null;
-    private boolean __end__seen = false;
-    protected boolean eofp = false;
-    private boolean has_shebang = false;
+
     protected ByteList delayed = null;
     private int delayed_line = 0;
     private int delayed_col = 0;
-    private int ruby_sourceline = 0;
-    private int heredoc_end = 0;
-    private int line_count = 0;
-    
+
     /**
      * Has lexing started yet?
      */
     public boolean hasStarted() {
         return src != null; // if no current line then nextc has never been called.
-    }
-    
-    public boolean isEndSeen() {
-        return __end__seen;
     }
     
     protected void flush_string_content(Encoding encoding) {
@@ -349,12 +258,10 @@ public class RipperLexer {
         }
     }
     
-    public int p(int offset) {
-        return lexb.get(offset) & 0xff;
-    }
-    
     public int nextc() {
         if (lex_p == lex_pend) {
+            line_offset += lex_pend;
+
             ByteList v = lex_nextline;
             lex_nextline = null;
             
@@ -372,7 +279,7 @@ public class RipperLexer {
             if (tokp < lex_pend) {
                 if (delayed == null) {
                     delayed = new ByteList();
-                    delayed.setEncoding(current_enc);
+                    delayed.setEncoding(getEncoding());
                     delayed.append(lexb, tokp, lex_pend - tokp);
                     delayed_line = ruby_sourceline;
                     delayed_col = tokp - lex_pbeg;
@@ -388,7 +295,6 @@ public class RipperLexer {
             ruby_sourceline++;
             line_count++;
             lex_pbeg = lex_p = 0;
-//            System.out.println("VLEN: " + v.length() + "V = (" + v.toString() + ")");
             lex_pend = lex_p + v.length();
             lexb = v;
             flush();
@@ -397,33 +303,19 @@ public class RipperLexer {
         
         int c = p(lex_p);
         lex_p++;
-        if (c == '\r' && peek('\n')) {
-            lex_p++;
-            c = '\n';
+        if (c == '\r') {
+            if (peek('\n')) {
+                lex_p++;
+                c = '\n';
+            } else if (ruby_sourceline > last_cr_line) {
+                last_cr_line = ruby_sourceline;
+                warn("encountered \\\\r in middle of line, treated as a mere space");
+                c = ' ';
+            }
         }
 
 //        System.out.println("C: " + (char) c + ", LEXP: " + lex_p + ", PEND: "+ lex_pend);
         return c;
-    }
-    
-    public boolean peek(int c) {
-        return peek(c, 0);
-    }
-    
-    private boolean peek(int c, int n) {
-        return lex_p+n < lex_pend && p(lex_p+n) == c;
-    }
-    
-    protected void lex_goto_eol() {
-        lex_p = lex_pend;
-    }
-    
-    public int column() {
-        return tokp - lex_pbeg;
-    }
-    
-    public int lineno() {
-        return ruby_sourceline + src.getLineOffset();
     }
     
     public void dispatchHeredocEnd() {
@@ -434,48 +326,21 @@ public class RipperLexer {
         dispatchIgnoredScanEvent(Tokens.tHEREDOC_END);
     }
     
-    public boolean was_bol() {
-        return lex_p == lex_pbeg + 1;
-    }
-    
-    private boolean strncmp(ByteList one, ByteList two, int length) {
-        if (one.length() < length || two.length() < length) return false;
-        
-        return one.makeShared(0, length).equal(two.makeShared(0, length));
-    }
-    
-    public void pushback(int c) {
-        if (c == -1) return;
-        
-        lex_p--;
-        
-        if (lex_p > lex_pbeg && p(lex_p) == '\n' && p(lex_p-1) == '\r') {
-            lex_p--;
-        }
-    }
-    
-    private void flush() {
-        tokp = lex_p;
-    }
-    
     public void compile_error(String message) {
         parser.error();
         parser.dispatch("compile_error", getRuntime().newString(message));
 //        throw new SyntaxException(lexb.toString(), message);
     }
-    
-    // FIXME: This is our main lexer code mangled into here...
-    // Super slow codepoint reader when we detect non-asci chars
-    public int readCodepoint(int first, Encoding encoding) throws IOException {
-        int length = encoding.length(lexb.getUnsafeBytes(), lex_p - 1, lex_pend);
-        if (length < 0) {
-            return -2;
-        }
-        int codepoint = encoding.mbcToCode(lexb.getUnsafeBytes(), lex_p - 1, length);
-        
-        lex_p += length - 1;
 
-        return codepoint;
+    public int tokenize_ident(int result) {
+        String value = createTokenString();
+
+        if (!isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parser.getCurrentScope().isDefined(value) >= 0) {
+            setState(EXPR_END);
+        }
+
+        identValue = value.intern();
+        return result;
     }
     
     public void heredoc_restore(HeredocTerm here) {
@@ -488,28 +353,6 @@ public class RipperLexer {
         heredoc_end = ruby_sourceline;
         ruby_sourceline = here.line;
         flush();
-    }
-    
-    public void parser_prepare() {
-        int c = nextc();
-        
-        switch(c) {
-            case '#':
-                if (peek('!')) has_shebang = true;
-                break;
-            case 0xef:
-                if (lex_pend - lex_p >= 2 && p(lex_p) == 0xbb && p(lex_p + 1) == 0xbf) {
-                    setEncoding(UTF8_ENCODING);
-                    lex_p += 2;
-                    lex_pbeg = lex_p;
-                    return;
-                }
-                break;
-            case EOF:
-                return;
-        }
-        pushback(c);
-        current_enc = lex_lastline.getEncoding();
     }
 
     public int nextToken() throws IOException { //mri: yylex
@@ -530,46 +373,6 @@ public class RipperLexer {
         return identValue;
     }
     
-    /**
-     * Last token read from the lexer at the end of a call to yylex()
-     * 
-     * @return last token read
-     */
-    public int token() {
-        return token;
-    }
-
-    public StringBuilder getTokenBuffer() {
-        return tokenBuffer;
-    }
-    
-    /**
-     * Value of last token (if it is a token which has a value).
-     * 
-     * @return value of last value-laden token
-     */
-    public Object value() {
-        return yaccValue;
-    }
-    
-    public boolean whole_match_p(ByteList eos, boolean indent) {
-        int len = eos.length();
-        int p = lex_pbeg;
-        
-        if (indent) {
-            for (int i = 0; i < lex_pend; i++) {
-                if (!Character.isWhitespace(p(i+p))) {
-                    p += i;
-                    break;
-                }
-            }
-        }
-        int n = lex_pend - (p + len);
-        if (n < 0 || (n > 0 && p(p+len) != '\n' && p(p+len) != '\r')) return false;
-
-        return strncmp(eos, lexb.makeShared(p, len), len);
-    }
-    
     public Ruby getRuntime() {
         return parser.context.getRuntime();
     }
@@ -585,7 +388,20 @@ public class RipperLexer {
         this.parser = parserSupport;
     }
 
-    private void setEncoding(ByteList name) {
+    @Override
+    protected void setCompileOptionFlag(String name, ByteList value) {
+        if (tokenSeen) {
+            warning("`%s' is ignored after any tokens", name);
+            return;
+        }
+    }
+
+    @Override
+    protected void setTokenInfo(String name, ByteList value) {
+
+    }
+
+    protected void setEncoding(ByteList name) {
         Encoding newEncoding = parser.getRuntime().getEncodingService().loadEncoding(name);
 
         if (newEncoding == null) {
@@ -601,147 +417,12 @@ public class RipperLexer {
         setEncoding(newEncoding);
     }
 
-    // FIXME: This is mucked up...current line knows it's own encoding so that must be changed.  but we also have two
-    // other sources.  I am thinking current_enc should be removed in favor of src since it needs to know encoding to
-    // provide next line.
-    public void setEncoding(Encoding encoding) {
-        this.current_enc = encoding;
-        src.setEncoding(encoding);
-        lexb.setEncoding(encoding);
-    }
-
     public StrTerm getStrTerm() {
         return lex_strterm;
     }
     
     public void setStrTerm(StrTerm strterm) {
         this.lex_strterm = strterm;
-    }
-
-    public void resetStacks() {
-        conditionState.reset();
-        cmdArgumentState.reset();
-    }
-    
-    private void printState() {
-        if (lex_state == null) {
-            System.out.println("NULL");
-        } else {
-            System.out.println(lex_state);
-        }
-    }
-
-    public LexState getState() {
-        return lex_state;
-    }
-
-    public void setState(LexState state) {
-        this.lex_state = state;
-//        printState();
-    }
-
-    public StackState getCmdArgumentState() {
-        return cmdArgumentState;
-    }
-
-    public StackState getConditionState() {
-        return conditionState;
-    }
-    
-    public void setValue(Object yaccValue) {
-        this.yaccValue = yaccValue;
-    }
-
-    private boolean isNext_identchar() throws IOException {
-        int c = nextc();
-        pushback(c);
-
-        return c != EOF && (Character.isLetterOrDigit(c) || c == '_');
-    }
-
-    // mri: parser_isascii
-    public boolean isASCII() {
-        return Encoding.isMbcAscii((byte)lexb.get(lex_p-1));
-    }
-
-    private boolean isBEG() {
-        return lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
-                lex_state == LexState.EXPR_CLASS || lex_state == LexState.EXPR_VALUE ||
-                lex_state == LexState.EXPR_LABELARG;
-    }
-    
-    private boolean isEND() {
-        return lex_state == LexState.EXPR_END || lex_state == LexState.EXPR_ENDARG ||
-                lex_state == LexState.EXPR_ENDFN;
-    }
-
-    private boolean isARG() {
-        return lex_state == LexState.EXPR_ARG || lex_state == LexState.EXPR_CMDARG;
-    }
-    
-    private boolean isLabelPossible(boolean commandState) {
-        return ((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !commandState) || isARG();
-    }    
-    
-    private boolean isSpaceArg(int c, boolean spaceSeen) {
-        return isARG() && spaceSeen && !Character.isWhitespace(c);
-    }
-
-    private boolean isLabelSuffix() {
-        return peek(':') && !peek(':', 1);
-    }
-
-    private boolean isAfterOperator() {
-        return lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT;
-    }
-
-    private void determineExpressionState() {
-        switch (lex_state) {
-        case EXPR_FNAME: case EXPR_DOT:
-            setState(LexState.EXPR_ARG);
-            break;
-        default:
-            setState(LexState.EXPR_BEG);
-            break;
-        }
-    }
-
-	/**
-	 * @param c the character to test
-	 * @return true if character is a hex value (0-9a-f)
-	 */
-    static boolean isHexChar(int c) {
-        return Character.isDigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
-    }
-
-    /**
-	 * @param c the character to test
-     * @return true if character is an octal value (0-7)
-	 */
-    static boolean isOctChar(int c) {
-        return '0' <= c && c <= '7';
-    }
-    
-    /**
-     * This is a valid character for an identifier?
-     *
-     * @param c is character to be compared
-     * @return whether c is an identifier or not
-     *
-     * mri: is_identchar
-     */
-    public boolean isIdentifierChar(int c) {
-        return Character.isLetterOrDigit(c) || c == '_' || isMultiByteChar(c);
-    }
-
-    /**
-     * Is this a multibyte character from a multibyte encoding?
-     *
-     * @param c
-     * @return whether c is an multibyte char or not
-     */
-    protected boolean isMultiByteChar(int c) {
-        return current_enc.codeToMbcLength(c) != 1;
     }
 
     // STR_NEW3/parser_str_new
@@ -770,17 +451,17 @@ public class RipperLexer {
      */
     private int parseQuote(int c) throws IOException {
         int begin, end;
-        boolean shortHand;
+
         String value = "%" + (char) c;
         
         // Short-hand (e.g. %{,%.,%!,... versus %Q{).
         if (!Character.isLetterOrDigit(c)) {
             begin = c;
             c = 'Q';
-            shortHand = true;
+
         // Long-hand (e.g. %Q{}).
         } else {
-            shortHand = false;
+
             begin = nextc();
             value = value + (char) begin;
             if (Character.isLetterOrDigit(begin) || !isASCII()) {
@@ -812,7 +493,6 @@ public class RipperLexer {
         }
         pushback(w);
         
-        yaccValue = new Token(value);
         switch (c) {
         case 'Q':
             lex_strterm = new StringTerm(str_dquote, begin ,end);
@@ -844,7 +524,7 @@ public class RipperLexer {
 
         case 's':
             lex_strterm = new StringTerm(str_ssym, begin, end);
-            setState(LexState.EXPR_FNAME);
+            setState(EXPR_FNAME);
             return Tokens.tSYMBEG;
 
         case 'I':
@@ -872,8 +552,13 @@ public class RipperLexer {
         if (c == '-') {
             c = nextc();
             func = STR_FUNC_INDENT;
+        } else if (c == '~') {
+            c = nextc();
+            func = STR_FUNC_INDENT;
+            heredoc_indent = Integer.MAX_VALUE;
+            heredoc_line_indent = 0;
         }
-        
+
         ByteList markerValue;
         if (c == '\'' || c == '"' || c == '`') {
             if (c == '\'') {
@@ -885,7 +570,7 @@ public class RipperLexer {
             }
 
             markerValue = new ByteList();
-            markerValue.setEncoding(current_enc);
+            markerValue.setEncoding(getEncoding());
             term = c;
             while ((c = nextc()) != EOF && c != term) {
                 if (!tokenAddMBC(c, markerValue)) return EOF;
@@ -895,12 +580,12 @@ public class RipperLexer {
             if (!isIdentifierChar(c)) {
                 pushback(c);
                 if ((func & STR_FUNC_INDENT) != 0) {
-                    pushback('-');
+                    pushback(heredoc_indent > 0 ? '~' : '-');
                 }
                 return 0;
             }
             markerValue = new ByteList();
-            markerValue.setEncoding(current_enc);
+            markerValue.setEncoding(getEncoding());
             term = '"';
             func |= str_dquote;
             do {
@@ -919,62 +604,9 @@ public class RipperLexer {
         return term == '`' ? Tokens.tXSTRING_BEG : Tokens.tSTRING_BEG;
     }
     
-    private void arg_ambiguous() {
+    private boolean arg_ambiguous() {
         parser.dispatch("on_arg_ambiguous");
-    }
-
-    private boolean comment_at_top() {
-        int p = lex_pbeg;
-        int pend = lex_p - 1;
-        if (line_count != (has_shebang ? 2 : 1)) return false;
-        while (p < pend) {
-            if (!Character.isSpaceChar(p(p))) return false;
-            p++;
-        }
         return true;
-    }
-
-    protected void set_file_encoding(int str, int send) {
-        boolean sep = false;
-        for (;;) {
-            if (send - str <= 6) return;
-            
-            switch(p(str+6)) {
-                case 'C': case 'c': str += 6; continue;
-                case 'O': case 'o': str += 5; continue;
-                case 'D': case 'd': str += 4; continue;
-                case 'I': case 'i': str += 3; continue;
-                case 'N': case 'n': str += 2; continue;
-                case 'G': case 'g': str += 1; continue;
-                case '=': case ':':
-                    sep = true;
-                    str += 6;
-                    break;
-                default:
-                    str += 6;
-                    if (Character.isSpaceChar(p(str))) break;
-                    continue;
-            }
-            if (lexb.makeShared(str - 6, 6).caseInsensitiveCmp(CODING) == 0) break;
-        }
-        
-        for(;;) {
-            do {
-                str++;
-                if (str >= send) return;
-            } while(Character.isSpaceChar(p(str)));
-            if (sep) break;
-            
-            if (p(str) != '=' && p(str) != ':') return;
-            sep = true;
-            str++;
-        }
-        
-        int beg = str;
-        while ((p(str) == '-' || p(str) == '_' || Character.isLetterOrDigit(p(str))) && ++str < send) {}
-        setEncoding(lexb.makeShared(beg, str - beg));
-        src.setEncoding(getEncoding()); // Change source to know what bytelist encodings to send for next source lines
-        lexb.setEncoding(getEncoding()); // Also retroactively change current line to new encoding
     }
 
     /*
@@ -1168,6 +800,7 @@ public class RipperLexer {
             case ' ': return "on_words_sep";
             case Tokens.tBANG: return "on_op";
             case Tokens.tPERCENT: return "on_op";
+            case Tokens.tANDDOT: return "on_op";
             case Tokens.tAMPER2: return "on_op";
             case Tokens.tSTAR2: return "on_op";
             case Tokens.tPLUS: return "on_op";
@@ -1345,23 +978,24 @@ public class RipperLexer {
         int c;
         boolean spaceSeen = false;
         boolean commandState;
+        boolean tokenSeen = this.tokenSeen;
         
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this, src);
 
-            if (tok == Tokens.tSTRING_END && (peek('"', -1) || peek('\'', -1))) {
-                if (((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !conditionState.isInState() ||
+            if (tok == Tokens.tSTRING_END && (lex_strterm.getFlags() & STR_FUNC_LABEL) != 0) {
+                if ((isLexState(lex_state, EXPR_BEG|EXPR_ENDFN) && !conditionState.isInState() ||
                         isARG()) && isLabelSuffix()) {
                     nextc();
                     tok = Tokens.tLABEL_END;
-                    setState(LexState.EXPR_LABELARG);
+                    setState(EXPR_BEG|EXPR_LABEL);
                     lex_strterm = null;
                 }
             }
 
             if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END) {
                 lex_strterm = null;
-                setState(LexState.EXPR_END);
+                setState(EXPR_END);
             }
 
             return tok;
@@ -1369,6 +1003,7 @@ public class RipperLexer {
 
         commandState = commandStart;
         commandStart = false;
+        this.tokenSeen = true;
 
         loop: for(;;) {
             boolean fallthru = false;
@@ -1404,12 +1039,9 @@ public class RipperLexer {
                 continue;
             }
             case '#': { /* it's a comment */
-                ByteList encodingName = parseMagicComment(getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p));
-                // FIXME: boolean to mark we already found a magic comment to stop searching.  When found or we went too far
-                if (encodingName != null) {
-                    setEncoding(encodingName);
-                } else if (comment_at_top()) {
-                    set_file_encoding(lex_p, lex_pend);
+                this.tokenSeen = tokenSeen;
+                if (!parseMagicComment(getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p))) {
+                    if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
                 }
                 lex_p = lex_pend;
                 dispatchScanEvent(Tokens.tCOMMENT);
@@ -1417,25 +1049,18 @@ public class RipperLexer {
                 fallthru = true;
             }
             /* fall through */
-            case '\n':
-                switch (lex_state) {
-                    case EXPR_BEG:
-                    case EXPR_FNAME:
-                    case EXPR_DOT:
-                    case EXPR_CLASS:
-                    case EXPR_VALUE:
-                        if (!fallthru) dispatchScanEvent(Tokens.tIGNORED_NL);
-
-                        continue loop;
-                    case EXPR_LABELARG:
-                        if (inKwarg) {
-                            commandStart = true;
-                            setState(LexState.EXPR_BEG);
-                            return '\n';
-                        }
-                        if (!fallthru) dispatchScanEvent(Tokens.tIGNORED_NL);
-
-                        continue loop;
+            case '\n': {
+                this.tokenSeen = tokenSeen;
+                boolean normalArg = isLexState(lex_state, EXPR_BEG | EXPR_CLASS | EXPR_FNAME | EXPR_DOT) &&
+                        !isLexState(lex_state, EXPR_LABELED);
+                if (normalArg || isLexStateAll(lex_state, EXPR_ARG | EXPR_LABELED)) {
+                    if (!fallthru) dispatchScanEvent(Tokens.tIGNORED_NL);
+                    if (!normalArg && inKwarg) {
+                        commandStart = true;
+                        setState(EXPR_BEG);
+                        return '\n';
+                    }
+                    continue loop;
                 }
 
                 boolean done = false;
@@ -1447,11 +1072,11 @@ public class RipperLexer {
                         case '\13': /* '\v' */
                             spaceSeen = true;
                             continue;
+                        case '&':
                         case '.': {
                             dispatchDelayedToken(Tokens.tIGNORED_NL);
-                            if ((c = nextc()) != '.') {
+                            if (peek('.') == (c == '&')) {
                                 pushback(c);
-                                pushback('.');
 
                                 dispatchScanEvent(Tokens.tSP);
                                 continue loop;
@@ -1460,7 +1085,7 @@ public class RipperLexer {
                         default:
                             ruby_sourceline--;
                             lex_nextline = lex_lastline;
-                        case -1:		// EOF (ENEBO: After default?
+                        case -1:        // EOF (ENEBO: After default?
                             lex_goto_eol();
                             if (c != -1) tokp = lex_p;
                             done = true;
@@ -1468,8 +1093,9 @@ public class RipperLexer {
                 }
 
                 commandStart = true;
-                setState(LexState.EXPR_BEG);
+                setState(EXPR_BEG);
                 return '\n';
+            }
             case '*':
                 return star(spaceSeen);
             case '!':
@@ -1512,7 +1138,7 @@ public class RipperLexer {
                 }
 
 
-                determineExpressionState();
+                setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 
                 c = nextc();
                 if (c == '=') {
@@ -1537,11 +1163,11 @@ public class RipperLexer {
             case '>':
                 return greaterThan();
             case '"':
-                return doubleQuote();
+                return doubleQuote(commandState);
             case '`':
                 return backtick(commandState);
             case '\'':
-                return singleQuote();
+                return singleQuote(commandState);
             case '?':
                 return questionMark();
             case '&':
@@ -1571,7 +1197,7 @@ public class RipperLexer {
                 return caret();
             case ';':
                 commandStart = true;
-                setState(LexState.EXPR_BEG);
+                setState(EXPR_BEG);
                 return ';';
             case ',':
                 return comma(c);
@@ -1613,35 +1239,15 @@ public class RipperLexer {
         }
     }
 
-    private int identifierToken(LexState last_state, int result, String value) {
+    private int identifierToken(int last_state, int result, String value) {
 
-        if (result == Tokens.tIDENTIFIER && last_state != LexState.EXPR_DOT &&
+        if (result == Tokens.tIDENTIFIER && !isLexState(last_state, EXPR_DOT) &&
                 parser.getCurrentScope().isDefined(value) >= 0) {
-            setState(LexState.EXPR_END);
+            setState(EXPR_END);
         }
 
-        yaccValue = new Token(value);
-        identValue = value;
+        identValue = value.intern();
         return result;
-    }
-
-    private int getIdentifier(int first) throws IOException {
-        if (isMultiByteChar(first)) first = readCodepoint(first, current_enc);
-        if (!isIdentifierChar(first)) return first;
-
-        tokenBuffer.append((char) first);
-
-        int c;
-        for (c = nextc(); c != EOF; c = nextc()) {
-            if (isMultiByteChar(c)) c = readCodepoint(c, current_enc);
-            if (!isIdentifierChar(c)) break;
-
-            tokenBuffer.append((char) c);
-        }
-
-        pushback(c);
-
-        return first;
     }
     
     private int ampersand(boolean spaceSeen) throws IOException {
@@ -1649,16 +1255,19 @@ public class RipperLexer {
         
         switch (c) {
         case '&':
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
             if ((c = nextc()) == '=') {
-                setState(LexState.EXPR_BEG);
+                setState(EXPR_BEG);
                 return Tokens.tOP_ASGN;
             }
             pushback(c);
             return Tokens.tANDOP;
         case '=':
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
             return Tokens.tOP_ASGN;
+        case '.':
+            setState(EXPR_DOT);
+            return Tokens.tANDDOT;
         }
         pushback(c);
 
@@ -1670,73 +1279,68 @@ public class RipperLexer {
         } else {
             c = Tokens.tAMPER2;
         }
-        
-        determineExpressionState();
+
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
         
         return c;
     }
-    
+
     private int at() throws IOException {
+        newtok(true);
         int c = nextc();
         int result;
-        tokenBuffer.setLength(0);
-        tokenBuffer.append('@');
         if (c == '@') {
-            tokenBuffer.append('@');
             c = nextc();
             result = Tokens.tCVAR;
         } else {
-            result = Tokens.tIVAR;                    
+            result = Tokens.tIVAR;
         }
-        
-        if (c != EOF && (Character.isDigit(c) || !isIdentifierChar(c))) {
-            if (tokenBuffer.length() == 1) {
-                compile_error("`@" + ((char) c) + "' is not allowed as an instance variable name");
-                return EOF;
+
+        if (c == EOF || Character.isSpaceChar(c)) {
+            if (result == Tokens.tIVAR) {
+                compile_error("`@' without identifiers is not allowed as an instance variable name");
             }
 
-            compile_error("`@@" + ((char) c) + "' is not allowed as a class variable name");
-            return EOF;
-        }
-        
-        if (!isIdentifierChar(c)) {
+            compile_error("`@@' without identifiers is not allowed as a class variable name");
+        } else if (Character.isDigit(c) || !isIdentifierChar(c)) {
             pushback(c);
-            return '@';
+            if (result == Tokens.tIVAR) {
+                compile_error("`@" + ((char) c) + "' is not allowed as an instance variable name");
+            }
+            compile_error("`@@" + ((char) c) + "' is not allowed as a class variable name");
         }
 
-        getIdentifier(c);
+        if (!tokadd_ident(c)) return EOF;
 
         last_state = lex_state;
-        setState(LexState.EXPR_END);
+        setState(EXPR_END);
 
-        return identifierToken(last_state, result, tokenBuffer.toString().intern());
+        return tokenize_ident(result);
     }
     
     private int backtick(boolean commandState) throws IOException {
-        switch (lex_state) {
-        case EXPR_FNAME:
-            setState(LexState.EXPR_ENDFN);
-            
+        if (isLexState(lex_state, EXPR_FNAME)) {
+            setState(EXPR_ENDFN);
             return Tokens.tBACK_REF2;
-        case EXPR_DOT:
-            setState(commandState ? LexState.EXPR_CMDARG : LexState.EXPR_ARG);
-            
-            return Tokens.tBACK_REF2;
-        default:
-            lex_strterm = new StringTerm(str_xquote, '\0', '`');
-            
-            return Tokens.tXSTRING_BEG;
         }
+        if (isLexState(lex_state, EXPR_DOT)) {
+            setState(commandState ? EXPR_CMDARG : EXPR_ARG);
+
+            return Tokens.tBACK_REF2;
+        }
+
+        lex_strterm = new StringTerm(str_xquote, '\0', '`');
+        return Tokens.tXSTRING_BEG;
     }
     
     private int bang() throws IOException {
         int c = nextc();
 
-        if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
-            setState(LexState.EXPR_ARG);
+        if (isAfterOperator()) {
+            setState(EXPR_ARG);
             if (c == '@') return Tokens.tBANG;
         } else {
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
         }
         
         switch (c) {
@@ -1754,12 +1358,12 @@ public class RipperLexer {
     private int caret() throws IOException {
         int c = nextc();
         if (c == '=') {
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
             
             return Tokens.tOP_ASGN;
         }
-        
-        determineExpressionState();
+
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
         
         pushback(c);
         
@@ -1770,17 +1374,17 @@ public class RipperLexer {
         int c = nextc();
         
         if (c == ':') {
-            if (isBEG() || lex_state == LexState.EXPR_CLASS || (isARG() && spaceSeen)) {
-                setState(LexState.EXPR_BEG);
+            if (isBEG() || isLexState(lex_state, EXPR_CLASS) || (isARG() && spaceSeen)) {
+                setState(EXPR_BEG);
                 return Tokens.tCOLON3;
             }
-            setState(LexState.EXPR_DOT);
+            setState(EXPR_DOT);
             return Tokens.tCOLON2;
         }
 
-        if (isEND() || Character.isWhitespace(c)) {
+        if (isEND() || Character.isWhitespace(c) || c == '#') {
             pushback(c);
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
             return ':';
         }
         
@@ -1795,51 +1399,50 @@ public class RipperLexer {
             pushback(c);
             break;
         }
-        
-        setState(LexState.EXPR_FNAME);
+
+        setState(EXPR_FNAME);
         return Tokens.tSYMBEG;
     }
 
     private int comma(int c) throws IOException {
-        setState(LexState.EXPR_BEG);
+        setState(EXPR_BEG|EXPR_LABEL);
         return c;
     }
 
-    private int doKeyword(LexState state) {
+    private int doKeyword(int state) {
+        int leftParenBegin = getLeftParenBegin();
         if (leftParenBegin > 0 && leftParenBegin == parenNest) {
-            leftParenBegin = 0;
+            setLeftParenBegin(0);
             parenNest--;
-            
             return Tokens.kDO_LAMBDA;
         }
 
         if (conditionState.isInState()) return Tokens.kDO_COND;
 
-        if (state != LexState.EXPR_CMDARG && cmdArgumentState.isInState()) {
+        if (cmdArgumentState.isInState() && !isLexState(state, EXPR_CMDARG)) {
             return Tokens.kDO_BLOCK;
         }
-        if (state == LexState.EXPR_ENDARG || state == LexState.EXPR_BEG) {
+        if (isLexState(state,  EXPR_BEG|EXPR_ENDARG)) {
             return Tokens.kDO_BLOCK;
         }
         return Tokens.kDO;
     }
     
     private int dollar() throws IOException {
-        last_state = lex_state;
-        setState(LexState.EXPR_END);
+        setState(EXPR_END);
+        newtok(true);
         int c = nextc();
         
         switch (c) {
         case '_':       /* $_: last read line string */
             c = nextc();
             if (isIdentifierChar(c)) {
-                tokenBuffer.setLength(0);
-                tokenBuffer.append("$_");
-                getIdentifier(c);
-                last_state = lex_state;
-                setState(LexState.EXPR_END);
+                if (tokadd_ident(c)) return EOF;
 
-                return identifierToken(last_state, Tokens.tGVAR, tokenBuffer.toString().intern());
+                last_state = lex_state;
+                setState(EXPR_END);
+                identValue = createTokenString().intern();
+                return Tokens.tGVAR;
             }
             pushback(c);
             c = '_';
@@ -1862,21 +1465,18 @@ public class RipperLexer {
         case '>':       /* $>: default output handle */
         case '\"':      /* $": already loaded files */
             identValue = "$" + (char) c;
-            yaccValue = new Token(identValue, Tokens.tGVAR);
             return Tokens.tGVAR;
 
         case '-':
-            tokenBuffer.setLength(0);
-            tokenBuffer.append('$');
-            tokenBuffer.append((char) c);
             c = nextc();
             if (isIdentifierChar(c)) {
-                tokenBuffer.append((char) c);
+                if (!tokadd_mbchar(c)) return EOF;
             } else {
                 pushback(c);
+                pushback('-');
+                return '$';
             }
-            identValue = tokenBuffer.toString();
-            yaccValue = new Token(identValue, Tokens.tGVAR);
+            identValue = createTokenString().intern();
             /* xxx shouldn't check if valid option variable */
             return Tokens.tGVAR;
 
@@ -1885,54 +1485,63 @@ public class RipperLexer {
         case '\'':      /* $': string after last match */
         case '+':       /* $+: string matches last paren. */
             // Explicit reference to these vars as symbols...
-            identValue = "$" + (char) c;
-            yaccValue = new Token(identValue);
-            if (last_state == LexState.EXPR_FNAME) return Tokens.tGVAR;
-
-            return Tokens.tBACK_REF;
-        case '1': case '2': case '3': case '4': case '5': case '6':
-        case '7': case '8': case '9':
-            tokenBuffer.setLength(0);
-            tokenBuffer.append('$');
-            do {
-                tokenBuffer.append((char) c);
-                c = nextc();
-            } while (Character.isDigit(c));
-            pushback(c);
-            if (last_state == LexState.EXPR_FNAME) {
-                identValue = tokenBuffer.toString();
-                yaccValue = new Token(identValue, Tokens.tGVAR);
+            if (last_state == EXPR_FNAME) {
+                identValue = "$" + (char) c;
                 return Tokens.tGVAR;
             }
 
-            identValue = tokenBuffer.toString();
-            yaccValue = new Token(identValue);
+            identValue = "$" + (char) c;
+            return Tokens.tBACK_REF;
+
+        case '1': case '2': case '3': case '4': case '5': case '6':
+        case '7': case '8': case '9':
+            do {
+                c = nextc();
+            } while (Character.isDigit(c));
+            pushback(c);
+            if (last_state == EXPR_FNAME) {
+                identValue = createTokenString().intern();
+                return Tokens.tGVAR;
+            }
+
+            String refAsString = createTokenString();
+
+            try {
+                Integer.parseInt(refAsString.substring(1).intern());
+            } catch (NumberFormatException e) {
+                warn("`" + refAsString + "' is too big for a number variable, always nil");
+            }
+
+            identValue = createTokenString().intern();
             return Tokens.tNTH_REF;
         case '0':
-            setState(LexState.EXPR_END);
+            setState(EXPR_END);
 
             return identifierToken(last_state, Tokens.tGVAR, ("$" + (char) c).intern());
         default:
             if (!isIdentifierChar(c)) {
-                compile_error("`$" + ((char) c) + "' is not allowed as a global variable name");
+                if (c == EOF || Character.isSpaceChar(c)) {
+                    compile_error("`$' without identifiers is not allowed as a global variable name");
+                } else {
+                    pushback(c);
+                    compile_error("`$" + ((char) c) + "' is not allowed as a global variable name");
+                }
                 return EOF;
             }
-        
-            // $blah
-            tokenBuffer.setLength(0);
-            tokenBuffer.append('$');
-            getIdentifier(c);
-            last_state = lex_state;
-            setState(LexState.EXPR_END);
 
-            return identifierToken(last_state, Tokens.tGVAR, tokenBuffer.toString().intern());
+            last_state = lex_state;
+            setState(EXPR_END);
+
+            tokadd_ident(c);
+
+            return identifierToken(last_state, Tokens.tGVAR, createTokenString().intern()); // $blah
         }
     }
     
     private int dot() throws IOException {
         int c;
         
-        setState(LexState.EXPR_BEG);
+        setState(EXPR_BEG);
         if ((c = nextc()) == '.') {
             if ((c = nextc()) == '.') return Tokens.tDOT3;
             
@@ -1944,19 +1553,20 @@ public class RipperLexer {
         pushback(c);
         if (Character.isDigit(c)) compile_error("no .<digit> floating literal anymore; put 0 before dot");
         
-        setState(LexState.EXPR_DOT);
+        setState(EXPR_DOT);
         
         return Tokens.tDOT;
     }
     
-    private int doubleQuote() throws IOException {
-        lex_strterm = new StringTerm(str_dquote, '\0', '"');
+    private int doubleQuote(boolean commandState) throws IOException {
+        int label = isLabelPossible(commandState) ? str_label : 0;
+        lex_strterm = new StringTerm(str_dquote|label, '\0', '"');
 
         return Tokens.tSTRING_BEG;
     }
     
     private int greaterThan() throws IOException {
-        determineExpressionState();
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 
         int c = nextc();
 
@@ -1965,7 +1575,7 @@ public class RipperLexer {
             return Tokens.tGEQ;
         case '>':
             if ((c = nextc()) == '=') {
-                setState(LexState.EXPR_BEG);
+                setState(EXPR_BEG);
                 return Tokens.tOP_ASGN;
             }
             pushback(c);
@@ -1977,23 +1587,32 @@ public class RipperLexer {
             return Tokens.tGT;
         }
     }
-    
+
     private int identifier(int c, boolean commandState) throws IOException {
         if (!isIdentifierChar(c)) {
             String badChar = "\\" + Integer.toOctalString(c & 0xff);
             compile_error("Invalid char `" + badChar + "' ('" + (char) c + "') in expression");
         }
-    
-        tokenBuffer.setLength(0);
-        int first = getIdentifier(c);
-        c = nextc();
+        // FIXME: on_kw: will return BOM as part of the ident string "\xfeffclass" on MRI and Yard also seems
+        // to need this to properly parse.  So I record where token should really start so I can extract as
+        // a proper ident for keyword check but createTempValue below will end up creating the bom + kw.  This feels like
+        // an MRI bug but it is well baked into libraries at this point???  newtok+tokadd is still different from MRI
+        // and does not construct a temp buf.  Once I convert that to be the same I think I can do exactly what MRI does
+        // and this hack can disappear.
+        int whereKeywordShouldStart = lex_p - 1;
+
+        int first = c;
+        do {
+            if (!tokadd_mbchar(c)) return EOF;
+            c = nextc();
+        } while (isIdentifierChar(c));
+
         boolean lastBangOrPredicate = false;
 
         // methods 'foo!' and 'foo?' are possible but if followed by '=' it is relop
         if (c == '!' || c == '?') {
             if (!peek('=')) {
                 lastBangOrPredicate = true;
-                tokenBuffer.append((char) c);
             } else {
                 pushback(c);
             }
@@ -2007,14 +1626,13 @@ public class RipperLexer {
         if (lastBangOrPredicate) {
             result = Tokens.tFID;
         } else {
-            if (lex_state == LexState.EXPR_FNAME) {
+            if (isLexState(lex_state, EXPR_FNAME)) {
                 if ((c = nextc()) == '=') { 
                     int c2 = nextc();
 
                     if (c2 != '~' && c2 != '>' &&
                             (c2 != '=' || peek('>'))) {
                         result = Tokens.tIDENTIFIER;
-                        tokenBuffer.append((char) c);
                         pushback(c2);
                     } else { 
                         pushback(c2);
@@ -2031,60 +1649,58 @@ public class RipperLexer {
             }
         }
 
-        String tempVal = tokenBuffer.toString().intern();
+        String tempVal = createTokenString();
 
         if (isLabelPossible(commandState)) {
             if (isLabelSuffix()) {
-                setState(LexState.EXPR_LABELARG);
+                setState(EXPR_ARG|EXPR_LABELED);
                 nextc();
-                identValue = tempVal + ':';
-                yaccValue = new Token(identValue);
+                identValue = tempVal.intern();
                 return Tokens.tLABEL;
             }
         }
 
-        if (lex_state != LexState.EXPR_DOT) {
-            Keyword keyword = getKeyword(tempVal); // Is it is a keyword?
+        if (lex_state != EXPR_DOT) {
+            Keyword keyword = getKeyword(createTokenString(whereKeywordShouldStart)); // Is it is a keyword?
 
             if (keyword != null) {
-                LexState state = lex_state; // Save state at time keyword is encountered
+                int state = lex_state; // Save state at time keyword is encountered
                 setState(keyword.state);
 
-                if (state == LexState.EXPR_FNAME) {
-                    identValue = keyword.name;
-                    yaccValue = new Token(identValue);
+                if (isLexState(state, EXPR_FNAME)) {
+                    identValue = tempVal;
                     return keyword.id0;
-                } else {
-                    yaccValue = new Token(tempVal);
                 }
+
+                if (isLexState(lex_state, EXPR_BEG)) commandStart = true;
 
                 if (keyword.id0 == Tokens.kDO) return doKeyword(state);
 
-                if (state == LexState.EXPR_BEG || state == LexState.EXPR_VALUE || state == LexState.EXPR_LABELARG) {
+                if (isLexState(state, EXPR_BEG|EXPR_LABELED)) {
                     return keyword.id0;
                 } else {
-                    if (keyword.id0 != keyword.id1) lex_state = LexState.EXPR_BEG;
+                    if (keyword.id0 != keyword.id1) setState(EXPR_BEG|EXPR_LABEL);
                     return keyword.id1;
                 }
             }
         }
 
-        if (isBEG() || lex_state == LexState.EXPR_DOT || isARG()) {
-            setState(commandState ? LexState.EXPR_CMDARG : LexState.EXPR_ARG);
-        } else if (lex_state == LexState.EXPR_FNAME) {
-            setState(LexState.EXPR_ENDFN);
+        if (isLexState(lex_state, EXPR_BEG_ANY|EXPR_ARG_ANY|EXPR_DOT)) {
+            setState(commandState ? EXPR_CMDARG : EXPR_ARG);
+        } else if (lex_state == EXPR_FNAME) {
+            setState(EXPR_ENDFN);
         } else {
-            setState(LexState.EXPR_END);
+            setState(EXPR_END);
         }
         
-        return identifierToken(last_state, result, tempVal);
+        return identifierToken(last_state, result, tempVal.intern());
     }
 
     private int leftBracket(boolean spaceSeen) throws IOException {
         parenNest++;
         int c = '[';
-        if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
-            setState(LexState.EXPR_ARG);
+        if (isAfterOperator()) {
+            setState(EXPR_ARG);
 
             if ((c = nextc()) == ']') {
                 if (peek('=')) {
@@ -2094,12 +1710,13 @@ public class RipperLexer {
                 return Tokens.tAREF;
             }
             pushback(c);
+            setState(getState() | EXPR_LABEL);
             return '[';
-        } else if (isBEG() || (isARG() && spaceSeen)) {
+        } else if (isBEG() || (isARG() && (spaceSeen || isLexState(lex_state, EXPR_LABELED)))) {
             c = Tokens.tLBRACK;
         }
 
-        setState(LexState.EXPR_BEG);
+        setState(EXPR_BEG|EXPR_LABEL);
         conditionState.stop();
         cmdArgumentState.stop();
         yaccValue = "[";
@@ -2108,10 +1725,10 @@ public class RipperLexer {
 
     private int leftCurly() {
         braceNest++;
-        //System.out.println("lcurly: " + braceNest);
+        int leftParenBegin = getLeftParenBegin();
         if (leftParenBegin > 0 && leftParenBegin == parenNest) {
-            setState(LexState.EXPR_BEG);
-            leftParenBegin = 0;
+            setState(EXPR_BEG);
+            setLeftParenBegin(0);
             parenNest--;
             conditionState.stop();
             cmdArgumentState.stop();
@@ -2119,9 +1736,11 @@ public class RipperLexer {
         }
 
         char c;
-        if (isARG() || lex_state == LexState.EXPR_END || lex_state == LexState.EXPR_ENDFN) { // block (primary)
+        if (isLexState(lex_state, EXPR_LABELED)) {
+            c = Tokens.tLBRACE;
+        } else if (isLexState(lex_state, EXPR_ARG_ANY|EXPR_END|EXPR_ENDFN)) { // block (primary)
             c = Tokens.tLCURLY;
-        } else if (lex_state == LexState.EXPR_ENDARG) { // block (expr)
+        } else if (isLexState(lex_state, EXPR_ENDARG)) { // block (expr)
             c = Tokens.tLBRACE_ARG;
         } else { // hash
             c = Tokens.tLBRACE;
@@ -2129,9 +1748,10 @@ public class RipperLexer {
 
         conditionState.stop();
         cmdArgumentState.stop();
-        setState(LexState.EXPR_BEG);
-
+        setState(EXPR_BEG);
+        if (c != Tokens.tLBRACE_ARG) setState(getState() | EXPR_LABEL);
         if (c != Tokens.tLBRACE) commandStart = true;
+
         return c;
     }
 
@@ -2149,23 +1769,22 @@ public class RipperLexer {
         parenNest++;
         conditionState.stop();
         cmdArgumentState.stop();
-        setState(LexState.EXPR_BEG);
+        setState(EXPR_BEG|EXPR_LABEL);
 
         return result;
     }
     
     private int lessThan(boolean spaceSeen) throws IOException {
+        last_state = lex_state;
         int c = nextc();
-        if (c == '<' && lex_state != LexState.EXPR_DOT && lex_state != LexState.EXPR_CLASS &&
-                !isEND() && (!isARG() || spaceSeen)) {
+        if (c == '<' && !isLexState(lex_state, EXPR_DOT|EXPR_CLASS) &&
+                !isEND() && (!isARG() || isLexState(lex_state, EXPR_LABELED) || spaceSeen)) {
             int tok = hereDocumentIdentifier();
             
-            if (tok != 0) {
-                return tok;
-            }
+            if (tok != 0) return tok;
         }
-        
-        determineExpressionState();
+
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
         
         switch (c) {
         case '=':
@@ -2176,10 +1795,11 @@ public class RipperLexer {
             return Tokens.tLEQ;
         case '<':
             if ((c = nextc()) == '=') {
-                setState(LexState.EXPR_BEG);
+                setState(EXPR_BEG);
                 return Tokens.tOP_ASGN;
             }
             pushback(c);
+            warn_balanced(c, spaceSeen, "<<", "here document");
             return Tokens.tLSHFT;
         default:
             pushback(c);
@@ -2190,8 +1810,8 @@ public class RipperLexer {
     private int minus(boolean spaceSeen) throws IOException {
         int c = nextc();
         
-        if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
-            setState(LexState.EXPR_ARG);
+        if (isAfterOperator()) {
+            setState(EXPR_ARG);
             if (c == '@') {
                 return Tokens.tUMINUS;
             }
@@ -2199,26 +1819,25 @@ public class RipperLexer {
             return Tokens.tMINUS;
         }
         if (c == '=') {
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
 
             return Tokens.tOP_ASGN;
         }
         if (c == '>') {
-            setState(LexState.EXPR_ENDFN);
+            setState(EXPR_ENDFN);
             return Tokens.tLAMBDA;
         }
-        if (isBEG() || isSpaceArg(c, spaceSeen)) {
-            if (isARG()) arg_ambiguous();
-            setState(LexState.EXPR_BEG);
+        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous())) {
+            setState(EXPR_BEG);
             pushback(c);
             if (Character.isDigit(c)) {
                 return Tokens.tUMINUS_NUM;
             }
             return Tokens.tUMINUS;
         }
-        setState(LexState.EXPR_BEG);
+        setState(EXPR_BEG);
         pushback(c);
-        
+        warn_balanced(c, spaceSeen, "-", "unary operator");
         return Tokens.tMINUS;
     }
 
@@ -2228,15 +1847,16 @@ public class RipperLexer {
         int c = nextc();
 
         if (c == '=') {
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
             return Tokens.tOP_ASGN;
         }
         
         if (isSpaceArg(c, spaceSeen)) return parseQuote(c);
-        
-        determineExpressionState();
-        
+
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
+
         pushback(c);
+        warn_balanced(c, spaceSeen, "%", "string literal");
         return Tokens.tPERCENT;
     }
 
@@ -2245,20 +1865,20 @@ public class RipperLexer {
         
         switch (c) {
         case '|':
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
             if ((c = nextc()) == '=') {
-                setState(LexState.EXPR_BEG);
+                setState(EXPR_BEG);
                 return Tokens.tOP_ASGN;
             }
             pushback(c);
             return Tokens.tOROP;
         case '=':
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
             
             return Tokens.tOP_ASGN;
-        default:
-            determineExpressionState();
-            
+            default:
+                setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG|EXPR_LABEL);
+
             pushback(c);
             
             return Tokens.tPIPE;
@@ -2268,7 +1888,7 @@ public class RipperLexer {
     private int plus(boolean spaceSeen) throws IOException {
         int c = nextc();
         if (isAfterOperator()) {
-            setState(LexState.EXPR_ARG);
+            setState(EXPR_ARG);
             if (c == '@') return Tokens.tUPLUS;
 
             pushback(c);
@@ -2277,14 +1897,13 @@ public class RipperLexer {
         }
         
         if (c == '=') {
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
 
             return Tokens.tOP_ASGN;
         }
-        
-        if (isBEG() || isSpaceArg(c, spaceSeen)) {
-            if (isARG()) arg_ambiguous();
-            setState(LexState.EXPR_BEG);
+
+        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous())) {
+            setState(EXPR_BEG);
             pushback(c);
             if (Character.isDigit(c)) {
                 c = '+';
@@ -2293,18 +1912,22 @@ public class RipperLexer {
 
             return Tokens.tUPLUS;
         }
-        
-        setState(LexState.EXPR_BEG);
-        pushback(c);
 
+        setState(EXPR_BEG);
+        pushback(c);
+        warn_balanced(c, spaceSeen, "+", "unary operator");
         return Tokens.tPLUS;
     }
-    
+
+    // FIXME: This is a bit different than regular parser but the problem
+    // I ran into was not returning the '?' with the char it is finding.
+    // This in part must be some difference between MRI and our lexer impls
+    // doing things a little differently.
     private int questionMark() throws IOException {
         int c;
         
         if (isEND()) {
-            setState(LexState.EXPR_VALUE);
+            setState(EXPR_VALUE);
 
             return '?';
         }
@@ -2345,18 +1968,17 @@ public class RipperLexer {
                 }
             }
             pushback(c);
-            setState(LexState.EXPR_VALUE);
+            setState(EXPR_VALUE);
             return '?';
         } else if (isASCII()) {
             ByteList buffer = new ByteList(1);
             if (!tokenAddMBC(c, buffer)) return EOF;
 
-            setState(LexState.EXPR_END);
-            yaccValue = new Token(buffer);
+            setState(EXPR_END);
             return Tokens.tCHAR;
         } else if (isIdentifierChar(c) && !peek('\n') && isNext_identchar()) {
             pushback(c);
-            setState(LexState.EXPR_VALUE);
+            setState(EXPR_VALUE);
 
             return '?';
         } else if (c == '\\') {
@@ -2371,20 +1993,18 @@ public class RipperLexer {
                     oneCharBL.append(c);
                 }
                 
-                setState(LexState.EXPR_END);
-                yaccValue = new Token(oneCharBL);
-                
+                setState(EXPR_END);
+
                 return org.jruby.parser.Tokens.tINTEGER; // FIXME: This should be something else like a tCHAR in 1.9/2.0
             } else {
                 c = readEscape();
             }
         }
-        
-        setState(LexState.EXPR_END);
+
+        setState(EXPR_END);
         // TODO: this isn't handling multibyte yet
         ByteList oneCharBL = new ByteList(1);
         oneCharBL.append(c);
-        yaccValue = new Token(oneCharBL);
         return Tokens.tCHAR;
     }
 
@@ -2392,14 +2012,14 @@ public class RipperLexer {
         parenNest--;
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(LexState.EXPR_ENDARG);
+        setState(EXPR_ENDARG);
         return Tokens.tRBRACK;
     }
 
     private int rightCurly() {
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(LexState.EXPR_ENDARG);
+        setState(EXPR_ENDARG);
         //System.out.println("braceNest: " + braceNest);
         int tok = braceNest == 0 ? Tokens.tSTRING_DEND : Tokens.tRCURLY;
         braceNest--;
@@ -2410,12 +2030,13 @@ public class RipperLexer {
         parenNest--;
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(LexState.EXPR_ENDFN);
+        setState(EXPR_ENDFN);
         return Tokens.tRPAREN;
     }
     
-    private int singleQuote() throws IOException {
-        lex_strterm = new StringTerm(str_squote, '\0', '\'');
+    private int singleQuote(boolean commandState) throws IOException {
+        int label = isLabelPossible(commandState) ? str_label : 0;
+        lex_strterm = new StringTerm(str_squote|label, '\0', '\'');
         return Tokens.tSTRING_BEG;
     }
     
@@ -2429,7 +2050,7 @@ public class RipperLexer {
         int c = nextc();
         
         if (c == '=') {
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
             
             return Tokens.tOP_ASGN;
         }
@@ -2440,9 +2061,11 @@ public class RipperLexer {
             
             return Tokens.tREGEXP_BEG;
         }
-        
-        determineExpressionState();
-        
+
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
+
+
+        warn_balanced(c, spaceSeen, "/", "regexp literal");
         return Tokens.tDIVIDE;
     }
 
@@ -2452,53 +2075,60 @@ public class RipperLexer {
         switch (c) {
         case '*':
             if ((c = nextc()) == '=') {
-                setState(LexState.EXPR_BEG);
+                setState(EXPR_BEG);
+
                 return Tokens.tOP_ASGN;
             }
+
             pushback(c);
 
+
             if (isSpaceArg(c, spaceSeen)) {
-                if (isVerbose()) warning("`**' interpreted as argument prefix");
+                if (isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load()) warning("`**' interpreted as argument prefix");
                 c = Tokens.tDSTAR;
             } else if (isBEG()) {
                 c = Tokens.tDSTAR;
             } else {
-                warn_balanced(c, spaceSeen, "*", "argument prefix");
+                warn_balanced(c, spaceSeen, "**", "argument prefix");
                 c = Tokens.tPOW;
             }
             break;
         case '=':
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
+
             return Tokens.tOP_ASGN;
         default:
             pushback(c);
             if (isSpaceArg(c, spaceSeen)) {
-                if (isVerbose()) warning("`*' interpreted as argument prefix");
+                if (isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load()) warning("`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {
                 c = Tokens.tSTAR;
             } else {
+                warn_balanced(c, spaceSeen, "*", "argument prefix");
                 c = Tokens.tSTAR2;
             }
+
         }
-        
-        determineExpressionState();
+
+        setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
         return c;
     }
 
     private int tilde() throws IOException {
         int c;
         
-        if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
+        if (isAfterOperator()) {
             if ((c = nextc()) != '@') pushback(c);
-            setState(LexState.EXPR_ARG);
+            setState(EXPR_ARG);
         } else {
-            setState(LexState.EXPR_BEG);
+            setState(EXPR_BEG);
         }
         
         return Tokens.tTILDE;
     }
 
+    private ByteList numberBuffer = new ByteList(10); // ascii is good enough.
     /**
      *  Parse a number from the input stream.
      *
@@ -2506,12 +2136,12 @@ public class RipperLexer {
      *@return A int constant wich represents a token.
      */
     private int parseNumber(int c) throws IOException {
-        setState(LexState.EXPR_END);
+        setState(EXPR_END);
 
-        tokenBuffer.setLength(0);
+        numberBuffer.setRealSize(0);
 
         if (c == '-') {
-        	tokenBuffer.append((char) c);
+        	numberBuffer.append((char) c);
             c = nextc();
         } else if (c == '+') {
         	// We don't append '+' since Java number parser gets confused
@@ -2521,7 +2151,7 @@ public class RipperLexer {
         int nondigit = 0;
 
         if (c == '0') {
-            int startLen = tokenBuffer.length();
+            int startLen = numberBuffer.length();
 
             switch (c = nextc()) {
                 case 'x' :
@@ -2534,7 +2164,7 @@ public class RipperLexer {
                                 nondigit = c;
                             } else if (isHexChar(c)) {
                                 nondigit = '\0';
-                                tokenBuffer.append((char) c);
+                                numberBuffer.append((char) c);
                             } else {
                                 break;
                             }
@@ -2542,12 +2172,12 @@ public class RipperLexer {
                     }
                     pushback(c);
 
-                    if (tokenBuffer.length() == startLen) {
+                    if (numberBuffer.length() == startLen) {
                         compile_error("Hexadecimal number without hex-digits.");
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
                     }
-                    return setIntegerLiteral(tokenBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
+                    return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
                 case 'b' :
                 case 'B' : // binary
                     c = nextc();
@@ -2558,7 +2188,7 @@ public class RipperLexer {
 								nondigit = c;
                             } else if (c == '0' || c == '1') {
                                 nondigit = '\0';
-                                tokenBuffer.append((char) c);
+                                numberBuffer.append((char) c);
                             } else {
                                 break;
                             }
@@ -2566,12 +2196,12 @@ public class RipperLexer {
                     }
                     pushback(c);
 
-                    if (tokenBuffer.length() == startLen) {
+                    if (numberBuffer.length() == startLen) {
                         compile_error("Binary number without digits.");
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
                     }
-                    return setIntegerLiteral(tokenBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
+                    return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
                 case 'd' :
                 case 'D' : // decimal
                     c = nextc();
@@ -2582,7 +2212,7 @@ public class RipperLexer {
 								nondigit = c;
                             } else if (Character.isDigit(c)) {
                                 nondigit = '\0';
-                                tokenBuffer.append((char) c);
+                                numberBuffer.append((char) c);
                             } else {
                                 break;
                             }
@@ -2590,12 +2220,12 @@ public class RipperLexer {
                     }
                     pushback(c);
 
-                    if (tokenBuffer.length() == startLen) {
+                    if (numberBuffer.length() == startLen) {
                         compile_error("Binary number without digits.");
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
                     }
-                    return setIntegerLiteral(tokenBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
+                    return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
                 case 'o':
                 case 'O':
                     c = nextc();
@@ -2608,17 +2238,17 @@ public class RipperLexer {
 							nondigit = c;
                         } else if (c >= '0' && c <= '7') {
                             nondigit = '\0';
-                            tokenBuffer.append((char) c);
+                            numberBuffer.append((char) c);
                         } else {
                             break;
                         }
                     }
-                    if (tokenBuffer.length() > startLen) {
+                    if (numberBuffer.length() > startLen) {
                         pushback(c);
 
                         if (nondigit != '\0') compile_error("Trailing '_' in number.");
 
-                        return setIntegerLiteral(tokenBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
+                        return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
                     }
                 case '8' :
                 case '9' :
@@ -2626,12 +2256,12 @@ public class RipperLexer {
                 case '.' :
                 case 'e' :
                 case 'E' :
-                	tokenBuffer.append('0');
+                	numberBuffer.append('0');
                     break;
                 default :
                     pushback(c);
-                    yaccValue = parser.getRuntime().newFixnum(0);
-                    return Tokens.tINTEGER;
+                    numberBuffer.append('0');
+                    return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
             }
         }
 
@@ -2651,7 +2281,7 @@ public class RipperLexer {
                 case '8' :
                 case '9' :
                     nondigit = '\0';
-                    tokenBuffer.append((char) c);
+                    numberBuffer.append((char) c);
                     break;
                 case '.' :
                     if (nondigit != '\0') {
@@ -2659,7 +2289,7 @@ public class RipperLexer {
                         compile_error("Trailing '_' in number.");
                     } else if (seen_point || seen_e) {
                         pushback(c);
-                        return getNumberLiteral(tokenBuffer.toString(), seen_e, seen_point, nondigit);
+                        return getNumberLiteral(numberBuffer.toString(), seen_e, seen_point, nondigit);
                     } else {
                     	int c2;
                         if (!Character.isDigit(c2 = nextc())) {
@@ -2669,11 +2299,11 @@ public class RipperLexer {
                             		// Enebo:  c can never be antrhign but '.'
                             		// Why did I put this here?
                             } else {
-                                return getNumberLiteral(tokenBuffer.toString(), seen_e, seen_point, nondigit);
+                                return getNumberLiteral(numberBuffer.toString(), seen_e, seen_point, nondigit);
                             }
                         } else {
-                            tokenBuffer.append('.');
-                            tokenBuffer.append((char) c2);
+                            numberBuffer.append('.');
+                            numberBuffer.append((char) c2);
                             seen_point = true;
                             nondigit = '\0';
                         }
@@ -2685,14 +2315,14 @@ public class RipperLexer {
                         compile_error("Trailing '_' in number.");
                     } else if (seen_e) {
                         pushback(c);
-                        return getNumberLiteral(tokenBuffer.toString(), seen_e, seen_point, nondigit);
+                        return getNumberLiteral(numberBuffer.toString(), seen_e, seen_point, nondigit);
                     } else {
-                        tokenBuffer.append((char) c);
+                        numberBuffer.append((char) c);
                         seen_e = true;
                         nondigit = c;
                         c = nextc();
                         if (c == '-' || c == '+') {
-                            tokenBuffer.append((char) c);
+                            numberBuffer.append((char) c);
                             nondigit = c;
                         } else {
                             pushback(c);
@@ -2707,7 +2337,7 @@ public class RipperLexer {
                     break;
                 default :
                     pushback(c);
-                    return getNumberLiteral(tokenBuffer.toString(), seen_e, seen_point, nondigit);
+                    return getNumberLiteral(numberBuffer.toString(), seen_e, seen_point, nondigit);
             }
         }
     }
@@ -2734,29 +2364,6 @@ public class RipperLexer {
         return setNumberLiteral(value, type, suffix);
     }
 
-    private int numberLiteralSuffix(int mask) throws IOException {
-        int c = nextc();
-
-        if (c == 'i') return (mask & SUFFIX_I) != 0 ?  mask & SUFFIX_I : 0;
-
-        if (c == 'r') {
-            int result = 0;
-            if ((mask & SUFFIX_R) != 0) result |= (mask & SUFFIX_R);
-
-            if (peek('i') && (mask & SUFFIX_I) != 0) {
-                nextc();
-                result |= (mask & SUFFIX_I);
-            }
-
-            return result;
-        }
-        pushback(c);
-
-        return 0;
-    }
-
-
-
     // Note: parser_tokadd_utf8 variant just for regexp literal parsing.  This variant is to be
     // called when string_literal and regexp_literal.
     public void readUTFEscapeRegexpLiteral(ByteList buffer) throws IOException {
@@ -2779,7 +2386,6 @@ public class RipperLexer {
         } else { // handle \\uxxxx
             scanHexLiteral(buffer, 4, true, "Invalid Unicode escape");
         }
-        buffer.setEncoding(UTF8_ENCODING);
     }
 
     // mri: parser_tokadd_mbchar
@@ -2798,32 +2404,6 @@ public class RipperLexer {
         if (length > 1) tokCopy(length - 1, buffer); // copy next n bytes over.
 
         return true;
-    }
-
-    public void tokCopy(int length, ByteList buffer) {
-        buffer.append(lexb, lex_p - length, length);
-    }
-
-
-    public void tokAdd(int value, ByteList buffer) {
-        buffer.append((byte) value);
-    }
-
-    public int precise_mbclen() {
-        byte[] data = lexb.getUnsafeBytes();
-        int p = lex_p - 1;
-        int begin = lexb.begin();
-
-        return current_enc.length(data, begin+p, lex_pend-p);
-    }
-
-    public void tokenAddMBCFromSrc(int c, ByteList buffer) throws IOException {
-        // read bytes for length of character
-        int length = buffer.getEncoding().length((byte)c);
-        buffer.append((byte)c);
-        for (int off = 0; off < length - 1; off++) {
-            buffer.append((byte)nextc());
-        }
     }
 
     // MRI: parser_tokadd_utf8 sans regexp literal parsing
@@ -2902,7 +2482,7 @@ public class RipperLexer {
                 } 
                 return (char) ((c & 0xff) | 0x80);
             case 'C' :
-                if ((c = nextc()) != '-') {
+                if (nextc() != '-') {
                     compile_error("Invalid escape character syntax");
                 }
             case 'c' :
@@ -2977,22 +2557,4 @@ public class RipperLexer {
 
         return hexValue;
     }
-
-    private char scanOct(int count) throws IOException {
-        char value = '\0';
-
-        for (int i = 0; i < count; i++) {
-            int c = nextc();
-
-            if (!isOctChar(c)) {
-                pushback(c);
-                break;
-            }
-
-            value <<= 3;
-            value |= Integer.parseInt(String.valueOf((char) c), 8);
-        }
-
-        return value;
-    } 
 }

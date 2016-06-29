@@ -74,6 +74,7 @@ public class BuiltinProfilingService implements ProfilingService {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public DynamicMethod enhance( String name, DynamicMethod delegate ) {
             getRuntime().getProfiledMethods().addProfiledMethod( name, delegate );
             return new ProfilingDynamicMethod(delegate);
@@ -95,12 +96,8 @@ public class BuiltinProfilingService implements ProfilingService {
             this.context = context;
         }
 
-        private ThreadContext getThreadContext() {
-            return context;
-        }
-
         private Ruby getRuntime() {
-            return getThreadContext().getRuntime();
+            return context.runtime;
         }
 
         private RubyInstanceConfig getConfig() {

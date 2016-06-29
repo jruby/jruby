@@ -1,4 +1,0 @@
-fails:Time#<=> returns 1 if the first argument is a fraction of a microsecond after the second argument
-fails:Time#<=> returns -1 if the first argument is a fraction of a microsecond before the second argument
-fails(Joda Time behavior):Time#<=> returns 1 if the first argument is a point in time after the second argument (down to a microsecond)
-fails(Joda Time behavior):Time#<=> returns -1 if the first argument is a point in time before the second argument (down to a microsecond)

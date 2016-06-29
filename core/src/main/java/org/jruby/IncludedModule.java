@@ -1,10 +1,7 @@
 package org.jruby;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class IncludedModule extends RubyClass {
@@ -51,7 +48,7 @@ public class IncludedModule extends RubyClass {
    /**
     * We don't want to reveal ourselves to Ruby code, so origin this
     * operation.
-    */    
+    */
     @Override
     public IRubyObject id() {
         return origin.id();

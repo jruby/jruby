@@ -1,3 +1,0 @@
-fails:REXML::Attributes#delete_all deletes all attributes that match name
-fails:REXML::Attributes#delete_all deletes all attributes that match name with a namespace
-fails:REXML::Attributes#delete_all returns the removed attribute

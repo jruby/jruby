@@ -1,1 +1,5 @@
 fails:StringScanner#scan treats ^ as matching from the beginning of the current position
+graalvm:StringScanner#scan returns the matched string
+graalvm:StringScanner#scan returns nil if there's no match
+graalvm:StringScanner#scan returns nil when there is no more to scan
+graalvm:StringScanner#scan returns an empty string when the pattern matches empty

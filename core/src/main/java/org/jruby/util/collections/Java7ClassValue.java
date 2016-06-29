@@ -1,22 +1,22 @@
 package org.jruby.util.collections;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
  * A proxy cache that uses Java 7's ClassValue.
  */
-public class Java7ClassValue<T> extends ClassValue<T> {
+final class Java7ClassValue<T> extends ClassValue<T> {
 
     public Java7ClassValue(ClassValueCalculator<T> calculator) {
         super(calculator);
     }
 
-    public T get(Class cls) {
+    public T get(Class<?> cls) {
         // We don't check for null on the WeakReference since the
         // value is strongly referenced by proxy's list
-        return (T)proxy.get(cls).get();
+        return proxy.get(cls).get();
     }
 
     // If we put any objects that reference an org.jruby.Ruby runtime
@@ -29,12 +29,12 @@ public class Java7ClassValue<T> extends ClassValue<T> {
         // Strongly reference all computed values so they don't get
         // garbage collected until this Java7ClassValue instance goes
         // out of scope
-        private final List<T> values = new ArrayList<T>();
+        private final List<T> computedValues = new LinkedList<>();
 
         @Override
         protected WeakReference<T> computeValue(Class<?> type) {
             T value = calculator.computeValue(type);
-            values.add(value);
+            computedValues.add(value);
             return new WeakReference(value);
         }
     };

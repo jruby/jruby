@@ -82,6 +82,33 @@ public class InvocationLinker {
         return nativeTarget;
     }
 
+    public static MethodHandle wrapWithFrameOnly(Signature signature, RubyModule implClass, String name, MethodHandle nativeTarget) {
+        MethodHandle framePre = getFrameOnlyPre(signature, CallConfiguration.FrameFullScopeNone, implClass, name);
+
+        MethodHandle framePost = getFramePost(signature, CallConfiguration.FrameFullScopeNone);
+
+        // post logic for frame
+        nativeTarget = Binder
+                .from(nativeTarget.type())
+                .tryFinally(framePost)
+                .invoke(nativeTarget);
+
+        // pre logic for frame
+        nativeTarget = foldArguments(nativeTarget, framePre);
+
+
+        // call polling and call number increment
+        nativeTarget = Binder
+                .from(nativeTarget.type())
+                .fold(Binder
+                        .from(nativeTarget.type().changeReturnType(void.class))
+                        .permute(0)
+                        .invokeStaticQuiet(lookup(), ThreadContext.class, "callThreadPoll"))
+                .invoke(nativeTarget);
+
+        return nativeTarget;
+    }
+
     public static MethodHandle getFramePre(Signature signature, CallConfiguration callConfig, RubyModule implClass, String name, StaticScope scope) {
         Signature inbound = signature.asFold(void.class);
         SmartBinder binder = SmartBinder
@@ -114,14 +141,6 @@ public class InvocationLinker {
                         .invokeVirtualQuiet(lookup(), "preMethodFrameOnly")
                         .handle();
 
-            case FrameNoneScopeFull:
-                // before logic
-                return binder
-                        .permute("context")
-                        .insert(1, arrayOf("selfClass", "scope"), arrayOf(RubyModule.class, StaticScope.class), implClass, scope)
-                        .invokeVirtualQuiet(lookup(), "preMethodScopeOnly")
-                        .handle();
-
             case FrameNoneScopeDummy:
                 // before logic
                 return binder
@@ -130,9 +149,32 @@ public class InvocationLinker {
                         .invokeVirtualQuiet(lookup(), "preMethodNoFrameAndDummyScope")
                         .handle();
 
+            case FrameNoneScopeFull:
+                return getFrameOnlyPre(signature, callConfig, implClass, name);
+
         }
         
         return null;
+    }
+
+    public static MethodHandle getFrameOnlyPre(Signature signature, CallConfiguration callConfig, RubyModule implClass, String name) {
+        Signature inbound = signature.asFold(void.class);
+        SmartBinder binder = SmartBinder
+                .from(inbound);
+
+        switch (callConfig) {
+            case FrameFullScopeNone:
+                // before logic
+                return binder
+                        .permute("context", "self", "block")
+                        .insert(1, arrayOf("selfClass", "name"), arrayOf(RubyModule.class, String.class), implClass, name)
+                        .invokeVirtualQuiet(lookup(), "preMethodFrameOnly")
+                        .handle();
+
+            default:
+                throw new RuntimeException("invalid input: " + callConfig);
+
+        }
     }
 
     public static MethodHandle getFramePost(Signature signature, CallConfiguration callConfig) {

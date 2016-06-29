@@ -8,7 +8,7 @@ class SpecEvaluate
   end
 
   def initialize(ruby, desc)
-    @ruby = ruby
+    @ruby = ruby.rstrip
     @desc = desc || self.class.desc
   end
 
@@ -18,8 +18,8 @@ class SpecEvaluate
   # the source does contain newline characters, sets the indent level to four
   # characters.
   def format(ruby, newline=true)
-    if /\n/ =~ ruby
-      lines = ruby.rstrip.each_line.to_a
+    if ruby.include?("\n")
+      lines = ruby.each_line.to_a
       if /( *)/ =~ lines.first
         if $1.size > 4
           dedent = $1.size - 4
@@ -31,7 +31,7 @@ class SpecEvaluate
       end
       "\n#{ruby}"
     else
-      "'#{ruby}'"
+      "'#{ruby.lstrip}'"
     end
   end
 

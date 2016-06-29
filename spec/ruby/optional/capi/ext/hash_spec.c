@@ -128,7 +128,7 @@ VALUE hash_spec_rb_hash_set_ifnone(VALUE self, VALUE hash, VALUE def) {
 }
 #endif
 
-void Init_hash_spec() {
+void Init_hash_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiHashSpecs", rb_cObject);
 

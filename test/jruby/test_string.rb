@@ -87,6 +87,15 @@ class TestString < Test::Unit::TestCase
     do_sub "あ" + EOL + EOL + "あ", 6, 3, 1
   end
 
+  def test_count
+    assert_equal(1, "abc\u{3042 3044 3046}".count("\u3042"))
+    assert_equal(1, "abc\u{3042 3044 3046}".count("\u3044"))
+    assert_equal(2, "abc\u{3042 3044 3046}".count("abc\u3044", 'bc'))
+    assert_equal(0, "abc\u{3042 3044 3046}".count("\u3042", "\u3044", "\u3046"))
+    assert_equal(1, "abc\u{3042 3044 3046}".count("c\u3044\u3042", "\u3042\u3042\u3044", "\u3042"))
+    assert_equal(2, "abc\u{3042 3044 3046}".count("^\u3042", "^\u3044", "^\u3046", "^c"))
+  end
+
   private
 
   def do_sub buf, e1, e2, e3
@@ -103,6 +112,27 @@ class TestString < Test::Unit::TestCase
 
     assert_equal e2,  head.size
     assert_equal e3,  buf.size
+  end
+
+  public
+
+  def test_try_squeeze
+    ' '.squeeze
+    try ' ', :squeeze # ArrayIndexOutOfBoundsException
+  end
+
+  private
+
+  def try(obj, *a, &b) # ~ AS 4.2
+    if a.empty? && block_given?
+      if b.arity == 0
+        obj.instance_eval(&b)
+      else
+        yield obj
+      end
+    else
+      obj.public_send(*a, &b)
+    end
   end
 
 end

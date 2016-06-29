@@ -55,7 +55,7 @@ public class StarNode extends Node {
      * @see Node#accept(NodeVisitor)
      */
     public Object accept(NodeVisitor visitor) {
-    	return null; // never visited, should be fine
+    	return visitor.visitStarNode(this);
     }
     
     public List<Node> childNodes() {

@@ -31,11 +31,11 @@ describe "Enumerator::Lazy#initialize" do
     end
   end
 
-  it "sets nil to size if not given a size" do
+  it "sets #size to nil if not given a size" do
     @uninitialized.send(:initialize, @receiver) {}.size.should be_nil
   end
 
-  it "sets nil to size if given size is nil" do
+  it "sets #size to nil if given size is nil" do
     @uninitialized.send(:initialize, @receiver, nil) {}.size.should be_nil
   end
 

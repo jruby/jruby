@@ -7,14 +7,17 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+
 public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
-    private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRBlockBody");
+    private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
     protected boolean pushScope;
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
@@ -29,7 +32,8 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
         // JIT currently JITs blocks along with their method and no on-demand by themselves.  We only
         // promote to full build here if we are -X-C.
-        if (!closure.getManager().getInstanceConfig().getCompileMode().shouldJIT()) {
+        if (!closure.getManager().getInstanceConfig().getCompileMode().shouldJIT() ||
+                Options.JIT_THRESHOLD.load() < 0) {
             callCount = -1;
         }
     }
@@ -38,6 +42,11 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     public void setEvalType(EvalType evalType) {
         if (jittedBody == null) this.evalType.set(evalType);
         else jittedBody.setEvalType(evalType);
+    }
+
+    @Override
+    public boolean canCallDirect() {
+        return jittedBody != null || (interpreterContext != null && interpreterContext.hasExplicitCallProtocol());
     }
 
     @Override
@@ -74,6 +83,12 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         }
 
         if (interpreterContext == null) {
+            if (Options.IR_PRINT.load()) {
+                ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
+
+                LOG.info("Printing simple IR for " + closure.getName() + ":\n" + new String(baos.toByteArray()));
+            }
+
             interpreterContext = closure.getInterpreterContext();
         }
         return interpreterContext;
@@ -89,13 +104,26 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         return closure.getName();
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
-        if (callCount >= 0) promoteToFullBuild(context);
+    @Override
+    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        // We should never get here if jittedBody is null
+        assert jittedBody != null : "direct call in MixedModeIRBlockBody without jitted body";
 
-        CompiledIRBlockBody jittedBody = this.jittedBody;
-        if (jittedBody != null) {
-            return jittedBody.commonYieldPath(context, block, args, self, blockArg);
-        }
+        context.setCurrentBlockType(Block.Type.PROC);
+        return jittedBody.callDirect(context, block, args, blockArg);
+    }
+
+    @Override
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        // We should never get here if jittedBody is null
+        assert jittedBody != null : "direct yield in MixedModeIRBlockBody without jitted body";
+
+        context.setCurrentBlockType(Block.Type.NORMAL);
+        return jittedBody.yieldDirect(context, block, args, self);
+    }
+
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
+        if (callCount >= 0) promoteToFullBuild(context);
 
         InterpreterContext ic = ensureInstrsReady();
 
@@ -114,13 +142,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
             context.pushScope(actualScope);
         }
 
-        // SSS FIXME: Why is self null in non-binding-eval contexts?
-        if (self == null || this.evalType.get() == EvalType.BINDING_EVAL) {
-            self = useBindingSelf(binding);
-        }
-
-        // Clear evaltype now that it has been set on dyn-scope
-        block.setEvalType(EvalType.NONE);
+        self = IRRuntimeHelpers.updateBlockState(block, self);
 
         try {
             return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
@@ -139,10 +161,23 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     protected void promoteToFullBuild(ThreadContext context) {
-        if (context.runtime.isBooting()) return; // don't JIT during runtime boot
+        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
-        synchronized (this) {
-            if (callCount >= 0) {
+        if (callCount >= 0) {
+            // ensure we've got code ready for JIT
+            ensureInstrsReady();
+            closure.prepareForCompilation();
+
+            // if we don't have an explicit protocol, disable JIT
+            if (!closure.hasExplicitCallProtocol()) {
+                if (Options.JIT_LOGGING.load()) {
+                    LOG.info("JIT failed; no protocol found in block: " + closure);
+                }
+                callCount = -1;
+                return;
+            }
+
+            synchronized (this) {
                 if (callCount++ >= Options.JIT_THRESHOLD.load()) {
                     callCount = -1;
                     context.runtime.getJITCompiler().buildThresholdReached(context, this);

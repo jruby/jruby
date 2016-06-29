@@ -60,6 +60,7 @@ import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * RubyObject represents the implementation of the Object class in Ruby. As such,
@@ -277,16 +278,6 @@ public class RubyObject extends RubyBasicObject {
             return klass.allocate();
         }
     };
-
-    @Deprecated
-    @Override
-    public IRubyObject initialize() {
-        return getRuntime().getNil();
-    }
-
-    public IRubyObject initialize(ThreadContext context) {
-        return initialize19(context);
-    }
 
     /**
      * Will make sure that this object is added to the current object
@@ -522,19 +513,44 @@ public class RubyObject extends RubyBasicObject {
      * Prefered over callMethod(context, "inspect")
      */
     public static RubyString inspect(ThreadContext context, IRubyObject object) {
-        Ruby runtime = context.runtime;
-        RubyString str = RubyString.objAsString(context, object.callMethod(context, "inspect"));
-        Encoding ext = runtime.getDefaultExternalEncoding();
-        if (!ext.isAsciiCompatible()) {
-            if (!str.isAsciiOnly()) {
-                throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only if default external encoding is ASCII incompatible");
+        return (RubyString)rbInspect(context, object);
+    }
+
+    // MRI: rb_obj_dig
+    public static IRubyObject dig(ThreadContext context, IRubyObject obj, IRubyObject[] args, int idx) {
+        if ( obj.isNil() ) return context.nil;
+        if ( obj instanceof RubyArray ) {
+            // TODO: cache somewhere
+            if (obj.getMetaClass().searchMethod("dig").isBuiltin()) {
+                return ((RubyArray) obj).dig(context, args, idx);
             }
-            return str;
         }
-        if (str.getEncoding() != ext && !str.isAsciiOnly()) {
-            throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only or use the default external encoding");
+        if ( obj instanceof RubyHash ) {
+            // TODO: cache somewhere
+            if (obj.getMetaClass().searchMethod("dig").isBuiltin()) {
+                return ((RubyHash) obj).dig(context, args, idx);
+            }
         }
-        return str;
+        if ( obj instanceof RubyStruct ) {
+            // TODO: cache somewhere
+            if (obj.getMetaClass().searchMethod("dig").isBuiltin()) {
+                return ((RubyStruct) obj).dig(context, args, idx);
+            }
+        }
+        if ( obj.respondsTo("dig") ) {
+            final int len = args.length - idx;
+            switch ( len ) {
+                case 1:
+                    return obj.callMethod(context, "dig", args[idx]);
+                case 2:
+                    return obj.callMethod(context, "dig", new IRubyObject[] { args[idx], args[idx+1] });
+                default:
+                    IRubyObject[] rest = new IRubyObject[len];
+                    System.arraycopy(args, idx, rest, 0, len);
+                    return obj.callMethod(context, "dig", rest);
+            }
+        }
+        throw context.runtime.newTypeError(obj.getMetaClass().getName() + " does not have #dig method");
     }
 
     /**

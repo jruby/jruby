@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# frozen_string_literal: false
 
 require "rexml/document"
 require "test/unit"
@@ -32,7 +33,18 @@ EOF
       assert_equal("Hello world!", doc.root.children.first.value)
     end
 
-    XML_WITH_NESTED_ENTITY = <<EOF
+    class EntityExpansionLimitTest < Test::Unit::TestCase
+      def setup
+        @default_entity_expansion_limit = REXML::Security.entity_expansion_limit
+      end
+
+      def teardown
+        REXML::Security.entity_expansion_limit = @default_entity_expansion_limit
+      end
+
+      class GeneralEntityTest < self
+        def test_have_value
+          xml = <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE member [
   <!ENTITY a "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;">
@@ -48,7 +60,77 @@ EOF
 </member>
 EOF
 
-    XML_WITH_NESTED_PARAMETER_ENTITY = <<EOF
+          doc = REXML::Document.new(xml)
+          assert_raise(RuntimeError) do
+            doc.root.children.first.value
+          end
+          REXML::Security.entity_expansion_limit = 100
+          assert_equal(100, REXML::Security.entity_expansion_limit)
+          doc = REXML::Document.new(xml)
+          assert_raise(RuntimeError) do
+            doc.root.children.first.value
+          end
+          assert_equal(101, doc.entity_expansion_count)
+        end
+
+        def test_empty_value
+          xml = <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE member [
+  <!ENTITY a "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;">
+  <!ENTITY b "&c;&c;&c;&c;&c;&c;&c;&c;&c;&c;">
+  <!ENTITY c "&d;&d;&d;&d;&d;&d;&d;&d;&d;&d;">
+  <!ENTITY d "&e;&e;&e;&e;&e;&e;&e;&e;&e;&e;">
+  <!ENTITY e "&f;&f;&f;&f;&f;&f;&f;&f;&f;&f;">
+  <!ENTITY f "&g;&g;&g;&g;&g;&g;&g;&g;&g;&g;">
+  <!ENTITY g "">
+]>
+<member>
+&a;
+</member>
+EOF
+
+          doc = REXML::Document.new(xml)
+          assert_raise(RuntimeError) do
+            doc.root.children.first.value
+          end
+          REXML::Security.entity_expansion_limit = 100
+          assert_equal(100, REXML::Security.entity_expansion_limit)
+          doc = REXML::Document.new(xml)
+          assert_raise(RuntimeError) do
+            doc.root.children.first.value
+          end
+          assert_equal(101, doc.entity_expansion_count)
+        end
+
+        def test_with_default_entity
+          xml = <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE member [
+  <!ENTITY a "a">
+  <!ENTITY a2 "&a; &a;">
+]>
+<member>
+&a;
+&a2;
+&lt;
+</member>
+EOF
+
+          REXML::Security.entity_expansion_limit = 4
+          doc = REXML::Document.new(xml)
+          assert_equal("\na\na a\n<\n", doc.root.children.first.value)
+          REXML::Security.entity_expansion_limit = 3
+          doc = REXML::Document.new(xml)
+          assert_raise(RuntimeError) do
+            doc.root.children.first.value
+          end
+        end
+      end
+
+      class ParameterEntityTest < self
+        def test_have_value
+          xml = <<EOF
 <!DOCTYPE root [
   <!ENTITY % a "BOOM.BOOM.BOOM.BOOM.BOOM.BOOM.BOOM.BOOM.BOOM.">
   <!ENTITY % b "%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;">
@@ -62,55 +144,41 @@ EOF
 <cd></cd>
 EOF
 
-    XML_WITH_4_ENTITY_EXPANSION = <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE member [
-  <!ENTITY a "a">
-  <!ENTITY a2 "&a; &a;">
+          assert_raise(REXML::ParseException) do
+            REXML::Document.new(xml)
+          end
+          REXML::Security.entity_expansion_limit = 100
+          assert_equal(100, REXML::Security.entity_expansion_limit)
+          assert_raise(REXML::ParseException) do
+            REXML::Document.new(xml)
+          end
+        end
+
+        def test_empty_value
+          xml = <<EOF
+<!DOCTYPE root [
+  <!ENTITY % a "">
+  <!ENTITY % b "%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;%a;">
+  <!ENTITY % c "%b;%b;%b;%b;%b;%b;%b;%b;%b;%b;%b;%b;%b;%b;%b;">
+  <!ENTITY % d "%c;%c;%c;%c;%c;%c;%c;%c;%c;%c;%c;%c;%c;%c;%c;">
+  <!ENTITY % e "%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;">
+  <!ENTITY % f "%e;%e;%e;%e;%e;%e;%e;%e;%e;%e;%e;%e;%e;%e;%e;">
+  <!ENTITY % g "%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;">
+  <!ENTITY test "test %g;">
 ]>
-<member>
-&a;
-&a2;
-&lt;
-</member>
+<cd></cd>
 EOF
 
-    def test_entity_expansion_limit
-      doc = REXML::Document.new(XML_WITH_NESTED_ENTITY)
-      assert_raise(RuntimeError) do
-        doc.root.children.first.value
+          assert_raise(REXML::ParseException) do
+            REXML::Document.new(xml)
+          end
+          REXML::Security.entity_expansion_limit = 100
+          assert_equal(100, REXML::Security.entity_expansion_limit)
+          assert_raise(REXML::ParseException) do
+            REXML::Document.new(xml)
+          end
+        end
       end
-      REXML::Security.entity_expansion_limit = 100
-      assert_equal(100, REXML::Security.entity_expansion_limit)
-      doc = REXML::Document.new(XML_WITH_NESTED_ENTITY)
-      assert_raise(RuntimeError) do
-        doc.root.children.first.value
-      end
-      assert_equal(101, doc.entity_expansion_count)
-
-      REXML::Security.entity_expansion_limit = 4
-      doc = REXML::Document.new(XML_WITH_4_ENTITY_EXPANSION)
-      assert_equal("\na\na a\n<\n", doc.root.children.first.value)
-      REXML::Security.entity_expansion_limit = 3
-      doc = REXML::Document.new(XML_WITH_4_ENTITY_EXPANSION)
-      assert_raise(RuntimeError) do
-        doc.root.children.first.value
-      end
-    ensure
-      REXML::Security.entity_expansion_limit = 10000
-    end
-
-    def test_entity_expansion_limit_for_parameter_entity
-      assert_raise(REXML::ParseException) do
-        REXML::Document.new(XML_WITH_NESTED_PARAMETER_ENTITY)
-      end
-      REXML::Security.entity_expansion_limit = 100
-      assert_equal(100, REXML::Security.entity_expansion_limit)
-      assert_raise(REXML::ParseException) do
-        REXML::Document.new(XML_WITH_NESTED_PARAMETER_ENTITY)
-      end
-    ensure
-      REXML::Security.entity_expansion_limit = 10000
     end
 
     def test_tag_in_cdata_with_not_ascii_only_but_ascii8bit_encoding_source
@@ -260,7 +328,7 @@ EOX
       end
     end
 
-    class BomTest < self
+    class BomTest < Test::Unit::TestCase
       class HaveEncodingTest < self
         def test_utf_8
           xml = <<-EOX.force_encoding("ASCII-8BIT")

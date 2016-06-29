@@ -10,10 +10,10 @@ java_import "java_integration.fixtures.ProtectedConstructor"
 java_import "java_integration.fixtures.PrivateConstructor"
 
 describe "Java String and primitive-typed methods" do
-  it "should coerce to Ruby types when returned" do 
+  it "should coerce to Ruby types when returned" do
     expect(CoreTypeMethods.getString).to be_kind_of(String)
     expect(CoreTypeMethods.getString).to eq("foo");
-    
+
     expect(CoreTypeMethods.getByte).to be_kind_of(Fixnum)
     expect(CoreTypeMethods.getByte).to eq(1)
     expect(CoreTypeMethods.getShort).to be_kind_of(Fixnum)
@@ -24,34 +24,34 @@ describe "Java String and primitive-typed methods" do
     expect(CoreTypeMethods.getInt).to eq(4)
     expect(CoreTypeMethods.getLong).to be_kind_of(Fixnum)
     expect(CoreTypeMethods.getLong).to eq(8)
-    
+
     expect(CoreTypeMethods.getFloat).to be_kind_of(Float)
     expect(CoreTypeMethods.getFloat).to eq(4.5)
     expect(CoreTypeMethods.getDouble).to be_kind_of(Float)
     expect(CoreTypeMethods.getDouble).to eq(8.5)
-    
+
     expect(CoreTypeMethods.getBooleanTrue).to be_kind_of(TrueClass)
     expect(CoreTypeMethods.getBooleanTrue).to eq(true)
     expect(CoreTypeMethods.getBooleanFalse).to be_kind_of(FalseClass)
     expect(CoreTypeMethods.getBooleanFalse).to eq(false)
-    
+
     expect(CoreTypeMethods.getNull).to be_kind_of(NilClass)
     expect(CoreTypeMethods.getNull).to eq(nil)
-    
+
     expect(CoreTypeMethods.getVoid).to eq(nil)
 
     expect(CoreTypeMethods.getBigInteger).to eq(1234567890123456789012345678901234567890)
   end
-  
+
   it "should be coerced from Ruby types when passing parameters" do
     expect(CoreTypeMethods.setString("string")).to eq("string")
-    
+
     expect(CoreTypeMethods.setByte(1)).to eq("1")
     expect(CoreTypeMethods.setShort(1)).to eq("1")
     expect(CoreTypeMethods.setChar(1)).to eq("\001")
     expect(CoreTypeMethods.setInt(1)).to eq("1")
     expect(CoreTypeMethods.setLong(1)).to eq("1")
-    
+
     expect(CoreTypeMethods.setFloat(1)).to eq("1.0")
     expect(CoreTypeMethods.setDouble(1)).to eq("1.0")
 
@@ -63,7 +63,7 @@ describe "Java String and primitive-typed methods" do
 
     expect(CoreTypeMethods.setFloat(1.5)).to eq("1.5")
     expect(CoreTypeMethods.setDouble(1.5)).to eq("1.5")
-    
+
     expect(CoreTypeMethods.setBooleanTrue(true)).to eq("true")
     expect(CoreTypeMethods.setBooleanFalse(false)).to eq("false")
 
@@ -119,7 +119,7 @@ describe "Java String and primitive-typed methods" do
 
     expect(CoreTypeMethods.setBooleanTrueObj(nil)).to eq("null")
     expect(CoreTypeMethods.setBooleanFalseObj(nil)).to eq("null")
-    
+
     expect(CoreTypeMethods.setNull(nil)).to eq("null")
   end
 
@@ -147,7 +147,7 @@ describe "Java String and primitive-typed methods" do
     expect(CoreTypeMethods.setBooleanTrue(true.to_java(:boolean))).to eq("true")
     expect(CoreTypeMethods.setBooleanFalse(false.to_java(:boolean))).to eq("false")
   end
-  
+
   it "should raise errors when passed values can not be precisely coerced" do
     expect { CoreTypeMethods.setByte(1 << 8) }.to raise_error(RangeError)
     expect { CoreTypeMethods.setShort(1 << 16) }.to raise_error(RangeError)
@@ -155,12 +155,12 @@ describe "Java String and primitive-typed methods" do
     expect { CoreTypeMethods.setInt(1 << 32) }.to raise_error(RangeError)
     expect { CoreTypeMethods.setLong(1 << 64) }.to raise_error(RangeError)
   end
-  
+
   it "should select the method that matches precision of the incoming value" do
     expect(CoreTypeMethods.getType(1 << 32)).to eq("long")
-    
+
     expect(CoreTypeMethods.getType(2.0 ** 128)).to eq("double")
-    
+
     expect(CoreTypeMethods.getType("foo")).to eq("String")
   end
 end
@@ -206,6 +206,16 @@ describe "Java Object-typed methods" do
     expect(CoreTypeMethods.getObjectType(true)).to eq("class java.lang.Boolean")
     expect(CoreTypeMethods.getObjectType(1 << 128)).to eq("class java.math.BigInteger")
   end
+
+  it "passes coerced to_java values - keeping the Java type" do
+    expect(CoreTypeMethods.getObjectType('foo'.to_java)).to eq "class java.lang.String"
+    expect(CoreTypeMethods.getObjectType(0.to_java)).to eq "class java.lang.Long"
+    expect(CoreTypeMethods.getObjectType(1.to_java(:int))).to eq "class java.lang.Integer"
+    expect(CoreTypeMethods.getObjectType(1.to_java(:byte))).to eq "class java.lang.Byte"
+    expect(CoreTypeMethods.getObjectType(0.1.to_java(:double))).to eq "class java.lang.Double"
+    expect(CoreTypeMethods.getObjectType(0.1.to_java('java.lang.Float'))).to eq "class java.lang.Float"
+    expect(CoreTypeMethods.getObjectType(false.to_java)).to eq "class java.lang.Boolean"
+  end
 end
 
 describe "Java String and primitive-typed fields" do
@@ -213,7 +223,7 @@ describe "Java String and primitive-typed fields" do
     # static
     expect(JavaFields.stringStaticField).to be_kind_of(String)
     expect(JavaFields.stringStaticField).to eq("foo");
-    
+
     expect(JavaFields.byteStaticField).to be_kind_of(Fixnum)
     expect(JavaFields.byteStaticField).to eq(1)
     expect(JavaFields.shortStaticField).to be_kind_of(Fixnum)
@@ -224,17 +234,17 @@ describe "Java String and primitive-typed fields" do
     expect(JavaFields.intStaticField).to eq(4)
     expect(JavaFields.longStaticField).to be_kind_of(Fixnum)
     expect(JavaFields.longStaticField).to eq(8)
-    
+
     expect(JavaFields.floatStaticField).to be_kind_of(Float)
     expect(JavaFields.floatStaticField).to eq(4.5)
     expect(JavaFields.doubleStaticField).to be_kind_of(Float)
     expect(JavaFields.doubleStaticField).to eq(8.5)
-    
+
     expect(JavaFields.trueStaticField).to be_kind_of(TrueClass)
     expect(JavaFields.trueStaticField).to eq(true)
     expect(JavaFields.falseStaticField).to be_kind_of(FalseClass)
     expect(JavaFields.falseStaticField).to eq(false)
-    
+
     expect(JavaFields.nullStaticField).to be_kind_of(NilClass)
     expect(JavaFields.nullStaticField).to eq(nil)
 
@@ -242,12 +252,12 @@ describe "Java String and primitive-typed fields" do
     expect(JavaFields.bigIntegerStaticField).to eq(
       1234567890123456789012345678901234567890
     )
-    
+
     # instance
     jf = JavaFields.new
     expect(jf.stringField).to be_kind_of(String)
     expect(jf.stringField).to eq("foo");
-    
+
     expect(jf.byteField).to be_kind_of(Fixnum)
     expect(jf.byteField).to eq(1)
     expect(jf.shortField).to be_kind_of(Fixnum)
@@ -258,17 +268,17 @@ describe "Java String and primitive-typed fields" do
     expect(jf.intField).to eq(4)
     expect(jf.longField).to be_kind_of(Fixnum)
     expect(jf.longField).to eq(8)
-    
+
     expect(jf.floatField).to be_kind_of(Float)
     expect(jf.floatField).to eq(4.5)
     expect(jf.doubleField).to be_kind_of(Float)
     expect(jf.doubleField).to eq(8.5)
-    
+
     expect(jf.trueField).to be_kind_of(TrueClass)
     expect(jf.trueField).to eq(true)
     expect(jf.falseField).to be_kind_of(FalseClass)
     expect(jf.falseField).to eq(false)
-    
+
     expect(jf.nullField).to be_kind_of(NilClass)
     expect(jf.nullField).to eq(nil)
 
@@ -292,17 +302,17 @@ describe "Java primitive-box-typed fields" do
     expect(JavaFields.intObjStaticField).to eq(4)
     expect(JavaFields.longObjStaticField).to be_kind_of(Fixnum)
     expect(JavaFields.longObjStaticField).to eq(8)
-    
+
     expect(JavaFields.floatObjStaticField).to be_kind_of(Float)
     expect(JavaFields.floatObjStaticField).to eq(4.5)
     expect(JavaFields.doubleObjStaticField).to be_kind_of(Float)
     expect(JavaFields.doubleObjStaticField).to eq(8.5)
-    
+
     expect(JavaFields.trueObjStaticField).to be_kind_of(TrueClass)
     expect(JavaFields.trueObjStaticField).to eq(true)
     expect(JavaFields.falseObjStaticField).to be_kind_of(FalseClass)
     expect(JavaFields.falseObjStaticField).to eq(false)
-    
+
     # instance
     jf = JavaFields.new
     expect(jf.byteObjField).to be_kind_of(Fixnum)
@@ -315,12 +325,12 @@ describe "Java primitive-box-typed fields" do
     expect(jf.intObjField).to eq(4)
     expect(jf.longObjField).to be_kind_of(Fixnum)
     expect(jf.longObjField).to eq(8)
-    
+
     expect(jf.floatObjField).to be_kind_of(Float)
     expect(jf.floatObjField).to eq(4.5)
     expect(jf.doubleObjField).to be_kind_of(Float)
     expect(jf.doubleObjField).to eq(8.5)
-    
+
     expect(jf.trueObjField).to be_kind_of(TrueClass)
     expect(jf.trueObjField).to eq(true)
     expect(jf.falseObjField).to be_kind_of(FalseClass)
@@ -333,42 +343,42 @@ describe "Java String, primitive, and object-typed interface methods" do
     impl = Class.new {
       attr_accessor :result
       include ValueReceivingInterface
-      
+
       def receiveObject(obj)
         self.result = obj
         obj
       end
-      
+
       def receiveLongAndDouble(l, d)
         str = (l + d).to_s
         self.result = str
         str
       end
-      
+
       %w[String Byte Short Char Int Long Float Double Null True False].each do |type|
         alias_method "receive#{type}".intern, :receiveObject
       end
     }
-    
+
     vri = impl.new
     vri_handler = ValueReceivingInterfaceHandler.new(vri);
-    
+
     obj = java.lang.Object.new
     expect(vri_handler.receiveObject(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
     expect(vri.result.class).to eq(java.lang.Object)
-    
+
     obj = "foo"
     expect(vri_handler.receiveString(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
     expect(vri.result.class).to eq(String)
-    
+
     obj = 1
-    
+
     expect(vri_handler.receiveByte(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
     expect(vri.result.class).to eq(Fixnum)
-    
+
     expect(vri_handler.receiveShort(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
     expect(vri.result.class).to eq(Fixnum)
@@ -376,35 +386,35 @@ describe "Java String, primitive, and object-typed interface methods" do
     expect(vri_handler.receiveChar(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
     expect(vri.result.class).to eq(Fixnum)
-    
+
     expect(vri_handler.receiveInt(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
     expect(vri.result.class).to eq(Fixnum)
-    
+
     expect(vri_handler.receiveLong(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
     expect(vri.result.class).to eq(Fixnum)
-    
+
     expect(vri_handler.receiveFloat(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
     expect(vri.result.class).to eq(Float)
-    
+
     expect(vri_handler.receiveDouble(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
     expect(vri.result.class).to eq(Float)
-    
+
     expect(vri_handler.receiveNull(nil)).to eq(nil)
     expect(vri.result).to eq(nil)
     expect(vri.result.class).to eq(NilClass)
-    
+
     expect(vri_handler.receiveTrue(true)).to eq(true)
     expect(vri.result).to eq(true)
     expect(vri.result.class).to eq(TrueClass)
-    
+
     expect(vri_handler.receiveFalse(false)).to eq(false)
     expect(vri.result).to eq(false)
     expect(vri.result.class).to eq(FalseClass)
-    
+
     expect(vri_handler.receiveLongAndDouble(1, 1.0)).to eq("2.0")
     expect(vri.result).to eq("2.0")
     expect(vri.result.class).to eq(String)
@@ -426,7 +436,7 @@ describe "Java primitive-typed interface methods" do
         alias_method "receive#{type}".intern, :receive_primitive
       end
     }
-    
+
     vri = impl.new
     vri_handler = ValueReceivingInterfaceHandler.new(vri);
 
@@ -623,7 +633,7 @@ describe "Fixnum\#to_java" do
     expect(float.class).to eq(java.lang.Float)
     expect(double.class).to eq(java.lang.Double)
   end
-  
+
   it "coerces to java.lang.Long when asked to coerce to java.lang.Object" do
     obj = 123.to_java java.lang.Object
     obj2 = 123.to_java :object
@@ -718,15 +728,17 @@ describe "Class\#to_java" do
       end
     end
 
-    it "provides nearest reified class for unreified user classes" do
-      rubycls = Class.new
-      expect(rubycls.to_java(cls)).to eq(cls.forName('org.jruby.RubyObject'));
+    class UserKlass < Object; end
+
+    it "reifies user class on-demand" do
+      expect(klass = UserKlass.to_java(cls)).to be_a java.lang.Class
+      expect( klass.getSuperclass ).to be cls.forName('org.jruby.RubyObject')
     end
 
     it "returns reified class for reified used classes" do
-      rubycls = Class.new
+      rubycls = Class.new; require 'jruby/core_ext'
       rubycls.become_java!
-      expect(rubycls.to_java(cls)).to eq(JRuby.reference(rubycls).reified_class)
+      expect(rubycls.to_java(cls)).to be JRuby.reference(rubycls).getReifiedClass
     end
 
     it "converts Java proxy classes to their JavaClass/java.lang.Class equivalent" do
@@ -735,21 +747,27 @@ describe "Class\#to_java" do
   end
 
   describe "when passed java.lang.Object.class" do
-    cls = java.lang.Object
     it "coerces core classes to their Ruby class object" do
-      # TODO: add all core, native types here
       [Object, Array, String, Hash, File, IO].each do |rubycls|
-        expect(rubycls.to_java(cls)).to eq(rubycls)
+        expect(rubycls.to_java(java.lang.Object)).to eq(rubycls)
       end
+      BasicObject.to_java(java.lang.Object).should == BasicObject if defined? BasicObject
+      [Bignum, Dir, ENV, FalseClass, Fixnum, Float, Kernel, Struct, Symbol, Thread].each do |clazz|
+        expect(clazz.to_java(java.lang.Object)).to eq(clazz)
+      end
+      expect(Exception.to_java(java.lang.Object)).to eq Exception
+      expect(StandardError.to_java(java.lang.Object)).to eq StandardError
     end
 
-    it "coerces user classes to their Ruby class object" do
-      rubycls = Class.new
-      expect(rubycls.to_java(cls)).to eq(rubycls);
+    it "coerces user classes/modules to their Ruby class object" do
+      clazz = Class.new
+      expect(clazz.to_java(java.lang.Object)).to eq(clazz)
+      clazz = Module.new
+      expect(clazz.to_java(java.lang.Object)).to eq(clazz)
     end
 
     it "converts Java proxy classes to their proxy class (Ruby class) equivalent" do
-      expect(java.util.ArrayList.to_java(cls)).to eq(java.util.ArrayList)
+      expect(java.util.ArrayList.to_java(java.lang.Object)).to eq(java.util.ArrayList)
     end
   end
 end
@@ -816,11 +834,11 @@ describe "A Rational object" do
   before :each do
     @rational = Rational(1,2)
   end
-  
+
   it "is left uncoerced with to_java" do
     expect(@rational.to_java).to eq(@rational)
   end
-  
+
   it "fails to coerce to types not assignable from the given type" do
     expect do
       @rational.to_java(java.lang.String)
@@ -836,7 +854,7 @@ describe "A Complex object" do
   it "is left uncoerced with to_java" do
     expect(@complex.to_java).to eq(@complex)
   end
-  
+
   it "fails to coerce to types not assignable from the given type" do
     expect do
       @complex.to_java(java.lang.String)

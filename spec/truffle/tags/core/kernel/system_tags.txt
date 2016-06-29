@@ -14,3 +14,5 @@ fails:Kernel.system executes with `sh` if the command contains shell characters
 fails:Kernel.system ignores SHELL env var and always uses `sh`
 fails:Kernel.system expands shell variables when given a single string argument
 fails:Kernel.system does not expand shell variables when given multiples arguments
+slow:Kernel#system returns true when the command exits with a zero exit status
+slow:Kernel.system returns true when the command exits with a zero exit status

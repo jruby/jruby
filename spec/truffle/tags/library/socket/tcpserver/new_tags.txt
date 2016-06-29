@@ -6,3 +6,4 @@ fails:TCPServer.new coerces port to string, then determines port from that numbe
 fails:TCPServer.new raises Errno::EADDRNOTAVAIL when the adress is unknown
 fails:TCPServer.new raises a SocketError when the host is unknown
 fails:TCPServer.new raises Errno::EADDRINUSE when address is already in use
+fails:TCPServer.new sets SO_REUSEADDR on the resulting server

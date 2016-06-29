@@ -1,36 +1,14 @@
 require 'rubygems/package'
 require 'fileutils'
 project 'JRuby Dist' do
-
-  version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
+  
+  version = ENV['JRUBY_VERSION'] ||
+    File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby-dist:#{version}"
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'pom'
-
-  properties( 'main.basedir' => '${project.parent.parent.basedir}',
-              'ruby.maven.version' => '3.3.3',
-              'ruby.maven.libs.version' => '3.3.3' )
-
-  # pre-installed gems - not default gems !
-  gem 'ruby-maven', '${ruby.maven.version}', :scope => 'provided'
-
-  # HACK: add torquebox repo only when building from filesystem
-  # not when using the pom as "dependency" in some other projects
-  profile 'gem proxy' do
-
-    activation do
-      file( :exists => '../jruby' )
-    end
-
-    repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
-                :id => 'rubygems-releases' )
-  end
-
-  jruby_plugin :gem do
-    execute_goal :initialize
-  end
 
   phase 'prepare-package' do
 

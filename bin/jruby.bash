@@ -91,10 +91,6 @@ if [ -z "$JAVACMD" ] ; then
   fi
 fi
 
-if [ -z "$JAVA_MEM" ] ; then
-  JAVA_MEM=-Xmx500m
-fi
-
 if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss2048k
 fi
@@ -146,12 +142,6 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     JRUBY_ALREADY_ADDED=true
 done
 
-# The Truffle jar always needs to be on the boot classpath, if it exists, so
-# that the VM can substitute classes.
-if [ -e "$JRUBY_HOME/lib/jruby-truffle.jar" ]; then
-  JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
-fi
-
 if $cygwin; then
     JRUBY_CP=`cygpath -p -w "$JRUBY_CP"`
 fi
@@ -165,6 +155,9 @@ else
     # add other jars in lib to CP for command-line execution
     for j in "$JRUBY_HOME"/lib/*.jar; do
         if [ "$j" == "$JRUBY_HOME"/lib/jruby.jar ]; then
+          continue
+        fi
+        if [ "$j" == "$JRUBY_HOME"/lib/jruby-truffle.jar ]; then
           continue
         fi
         if [ "$j" == "$JRUBY_HOME"/lib/jruby-complete.jar ]; then
@@ -229,6 +222,15 @@ do
             CP="$CP$CP_DELIMITER$2"
             CLASSPATH=""
             shift
+        elif [ "${val:0:3}" = "-G:" ]; then # Graal options
+            opt=${val:3}
+            case $opt in
+              +*)
+                opt="${opt:1}=true" ;;
+              -*)
+                opt="${opt:1}=false" ;;
+            esac
+            java_args=("${java_args[@]}" "-Dgraal.$opt")
         else
             if [ "${val:0:3}" = "-ea" ]; then
                 VERIFY_JRUBY="yes"
@@ -241,6 +243,12 @@ do
      # Pass -X... and -X? search options through
      -X*\.\.\.|-X*\?)
         ruby_args=("${ruby_args[@]}" "$1") ;;
+     -Xclassic)
+        unset USING_TRUFFLE
+        ;;
+     -X+T)
+        USING_TRUFFLE="true"
+        ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
         val=${1:2}
@@ -308,6 +316,11 @@ do
     shift
 done
 
+if [[ "$USING_TRUFFLE" != "" ]]; then
+   JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
+   ruby_args=("-X+T" "${ruby_args[@]}")
+fi
+
 # Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
 if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
   java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
@@ -350,7 +363,7 @@ if [ "$nailgun_client" != "" ]; then
     exit 1
   fi
 else
-if [ "$VERIFY_JRUBY" != "" ]; then
+if [[ "$VERIFY_JRUBY" != "" && -z "$USING_TRUFFLE" ]]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Running with instrumented profiler"
   fi
@@ -364,7 +377,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
-    $java_class $JRUBY_OPTS "$@"
+    $java_class $mode "$@"
 
   # Record the exit status immediately, or it will be overridden.
   JRUBY_STATUS=$?

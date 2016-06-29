@@ -48,3 +48,17 @@ describe "IO#sync" do
     lambda { IOSpecs.closed_io.sync }.should raise_error(IOError)
   end
 end
+
+describe "IO#sync" do
+  it "is false by default for STDIN" do
+    STDIN.sync.should == false
+  end
+
+  it "is false by default for STDOUT" do
+    STDOUT.sync.should == false
+  end
+
+  it "is true by default for STDERR" do
+    STDERR.sync.should == true
+  end
+end

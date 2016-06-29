@@ -1,8 +1,0 @@
-fails:Net::HTTP.newobj when passed address returns a new Net::HTTP instance
-fails:Net::HTTP.newobj when passed address sets the new Net::HTTP instance's address to the passed address
-fails:Net::HTTP.newobj when passed address sets the new Net::HTTP instance's port to the default HTTP port
-fails:Net::HTTP.newobj when passed address does not start the new Net::HTTP instance
-fails:Net::HTTP.newobj when passed address, port returns a new Net::HTTP instance
-fails:Net::HTTP.newobj when passed address, port sets the new Net::HTTP instance's address to the passed address
-fails:Net::HTTP.newobj when passed address, port sets the new Net::HTTP instance's port to the passed port
-fails:Net::HTTP.newobj when passed address, port does not start the new Net::HTTP instance

@@ -1,1 +1,0 @@
-fails:Net::HTTP.proxy_class? returns true if sels is a class created with Net::HTTP.Proxy

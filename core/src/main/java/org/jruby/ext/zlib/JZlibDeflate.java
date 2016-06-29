@@ -182,7 +182,7 @@ public class JZlibDeflate extends ZStream {
         int s = RubyNumeric.fix2int(strategy);
         checkStrategy(getRuntime(), s);
         
-        if (flater.next_out == null) flater.setOutput(new byte[0]);
+        if (flater.next_out == null) flater.setOutput(ByteList.NULL_ARRAY);
 
         int err = flater.params(l, s);
         if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {

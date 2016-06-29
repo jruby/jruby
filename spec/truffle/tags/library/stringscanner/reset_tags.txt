@@ -1,0 +1,1 @@
+graalvm:StringScanner#reset reset the scan pointer and clear matching data

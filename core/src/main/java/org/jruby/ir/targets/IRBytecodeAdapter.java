@@ -17,7 +17,13 @@ import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.RefinedCachingCallSite;
+import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.util.ByteList;
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -42,6 +48,60 @@ public abstract class IRBytecodeAdapter {
         this.adapter = adapter;
         this.signature = signature;
         this.classData = classData;
+    }
+
+    /**
+     * Utility to lazily construct and cache a call site object.
+     *
+     * @param method the SkinnyMethodAdapter to that's generating the containing method body
+     * @param className the name of the class in which the field will reside
+     * @param siteName the unique name of the site, used for the field
+     * @param rubyName the Ruby method name being invoked
+     * @param callType the type of call
+     * @param isPotentiallyRefined whether the call might be refined
+     */
+    public static void cacheCallSite(SkinnyMethodAdapter method, String className, String siteName, String rubyName, CallType callType, boolean isPotentiallyRefined) {
+        // call site object field
+        method.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, siteName, ci(CachingCallSite.class), null, null).visitEnd();
+
+        // lazily construct it
+        method.getstatic(className, siteName, ci(CachingCallSite.class));
+        method.dup();
+        Label doCall = new Label();
+        method.ifnonnull(doCall);
+        method.pop();
+        method.ldc(rubyName);
+        Class<? extends CachingCallSite> siteClass;
+        String signature;
+        if (isPotentiallyRefined) {
+            siteClass = RefinedCachingCallSite.class;
+            signature = sig(siteClass, String.class, String.class);
+            method.ldc(callType.name());
+        } else {
+            switch (callType) {
+                case NORMAL:
+                    siteClass = NormalCachingCallSite.class;
+                    break;
+                case FUNCTIONAL:
+                    siteClass = FunctionalCachingCallSite.class;
+                    break;
+                case VARIABLE:
+                    siteClass = VariableCachingCallSite.class;
+                    break;
+                default:
+                    throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
+            }
+            signature = sig(siteClass, String.class);
+        }
+        method.invokestatic(p(IRRuntimeHelpers.class), "new" + siteClass.getSimpleName(), signature);
+        method.dup();
+        method.putstatic(className, siteName, ci(CachingCallSite.class));
+
+        method.label(doCall);
+    }
+
+    public String getUniqueSiteName(String name) {
+        return "invokeOther" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
     }
 
     public ClassData getClassData() {
@@ -72,6 +132,10 @@ public abstract class IRBytecodeAdapter {
         adapter.aload(signature.argOffset("context"));
     }
 
+    public void loadSelfBlock() {
+        adapter.aload(signature.argOffset(JVMVisitor.SELF_BLOCK_NAME));
+    }
+
     public void loadStaticScope() {
         adapter.aload(signature.argOffset("scope"));
     }
@@ -85,7 +149,7 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void loadBlock() {
-        adapter.aload(signature.argOffset("block"));
+        adapter.aload(signature.argOffset(JVMVisitor.BLOCK_ARG_NAME));
     }
 
     public void loadFrameClass() {
@@ -108,6 +172,14 @@ public abstract class IRBytecodeAdapter {
         } else {
             adapter.aload(signature.argOffset("type"));
         }
+    }
+
+    public void storeSelf() {
+        adapter.astore(signature.argOffset("self"));
+    }
+
+    public void storeArgs() {
+        adapter.astore(signature.argOffset("args"));
     }
 
     public void storeLocal(int i) {
@@ -194,30 +266,6 @@ public abstract class IRBytecodeAdapter {
         return new org.objectweb.asm.Label();
     }
 
-    public void pushBlockBody(Handle handle, org.jruby.runtime.Signature signature, String className) {
-        // FIXME: too much bytecode
-        String cacheField = "blockBody" + getClassData().callSiteCount.getAndIncrement();
-        Label done = new Label();
-        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(CompiledIRBlockBody.class), null, null).visitEnd();
-        adapter.getstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
-        adapter.dup();
-        adapter.ifnonnull(done);
-        {
-            adapter.pop();
-            adapter.newobj(p(CompiledIRBlockBody.class));
-            adapter.dup();
-
-            adapter.ldc(handle);
-            adapter.getstatic(className, handle.getName() + "_IRScope", ci(IRScope.class));
-            adapter.ldc(signature.encode());
-
-            adapter.invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, IRScope.class, long.class));
-            adapter.dup();
-            adapter.putstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
-        }
-        adapter.label(done);
-    }
-
     /**
      * Stack required: none
      *
@@ -244,7 +292,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param bl ByteList for the String to push
      */
-    public abstract void pushFrozenString(ByteList bl, int cr);
+    public abstract void pushFrozenString(ByteList bl, int cr, String path, int line);
 
     /**
      * Stack required: none
@@ -279,14 +327,25 @@ public abstract class IRBytecodeAdapter {
      * Stack required: none
      *
      * @param sym the symbol's string identifier
+     * @param encoding the symbol's encoding
      */
     public abstract void pushSymbol(String sym, Encoding encoding);
 
     /**
-     * Push the JRuby runtime on the stack.
+     * Push a Symbol.to_proc on the stack.
      *
      * Stack required: none
+     *
+     * @param name the symbol's string identifier
+     * @param encoding the symbol's encoding
      */
+    public abstract void pushSymbolProc(String name, Encoding encoding);
+
+        /**
+         * Push the JRuby runtime on the stack.
+         *
+         * Stack required: none
+         */
     public abstract void loadRuntime();
 
     /**
@@ -307,7 +366,16 @@ public abstract class IRBytecodeAdapter {
      * @param arity arity of the call
      * @param hasClosure whether a closure will be on the stack for passing
      */
-    public abstract void invokeOther(String name, int arity, boolean hasClosure, boolean isPotentiallyRefined);
+    public abstract void invokeOther(String file, int line, String name, int arity, boolean hasClosure, boolean isPotentiallyRefined);
+
+    /**
+     * Invoke the array dereferencing method ([]) on an object other than self.
+     *
+     * If this invokes against a Hash with a frozen string, it will follow an optimized path.
+     *
+     * Stack required: context, self, target, arg0
+     */
+    public abstract void invokeArrayDeref();
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.
@@ -316,7 +384,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param name name of the method to invoke
      */
-    public abstract void invokeOtherOneFixnum(String name, long fixnum);
+    public abstract void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType);
 
     /**
      * Invoke a float-receiving method on an object other than self.
@@ -325,7 +393,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param name name of the method to invoke
      */
-    public abstract void invokeOtherOneFloat(String name, double flote);
+    public abstract void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType);
 
 
     /**
@@ -333,60 +401,70 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: context, caller, self, all arguments, optional block
      *
+     * @param file the filename of the script making this call
+     * @param line the line number where this call appears
      * @param name name of the method to invoke
      * @param arity arity of the call
      * @param hasClosure whether a closure will be on the stack for passing
      * @param callType
      */
-    public abstract void invokeSelf(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined);
+    public abstract void invokeSelf(String file, int line, String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined);
 
     /**
      * Invoke a superclass method from an instance context.
      *
      * Stack required: context, caller, self, start class, arguments[, block]
      *
+     * @param file the filename of the script making this call
+     * @param line the line number where this call appears
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from a class context.
      *
      * Stack required: context, caller, self, start class, arguments[, block]
      *
+     * @param file the filename of the script making this call
+     * @param line the line number where this call appears
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeClassSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from an unresolved context.
      *
      * Stack required: context, caller, self, arguments[, block]
      *
+     * @param file the filename of the script making this call
+     * @param line the line number where this call appears
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeUnresolvedSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from a zsuper in a block.
      *
      * Stack required: context, caller, self, arguments[, block]
      *
+     * @param file the filename of the script making this call
+     * @param line the line number where this call appears
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeZSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Lookup a constant from current context.
@@ -397,6 +475,17 @@ public abstract class IRBytecodeAdapter {
      * @param noPrivateConsts whether to ignore private constants
      */
     public abstract void searchConst(String name, boolean noPrivateConsts);
+
+
+    /**
+     * Lookup a constant from current module.
+     *
+     * Stack required: context, static scope
+     *
+     * @param name name of the constant
+     * @param noPrivateConsts whether to ignore private constants
+     */
+    public abstract void searchModuleForConst(String name, boolean noPrivateConsts);
 
     /**
      * Lookup a constant from a given class or module.
@@ -509,6 +598,34 @@ public abstract class IRBytecodeAdapter {
      * Stack required: the new value
      */
     public abstract void setGlobalVariable(String name);
+
+    /**
+     * Yield argument list to a block.
+     *
+     * Stack required: context, block, argument
+     */
+    public abstract void yield(boolean unwrap);
+
+    /**
+     * Yield to a block.
+     *
+     * Stack required: context, block
+     */
+    public abstract void yieldSpecific();
+
+    /**
+     * Yield a number of flat arguments to a block.
+     *
+     * Stack required: context, block
+     */
+    public abstract void yieldValues(int arity);
+
+    /**
+     * Prepare a block for a subsequent call.
+     *
+     * Stack required: context, self, dynamicScope
+     */
+    public abstract void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className);
 
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;

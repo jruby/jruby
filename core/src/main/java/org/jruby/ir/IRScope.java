@@ -11,7 +11,6 @@ import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.passes.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -20,8 +19,10 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jruby.runtime.Helpers;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -57,7 +58,7 @@ import static org.jruby.ir.IRFlags.*;
  * and so on ...
  */
 public abstract class IRScope implements ParseResult {
-    public static final Logger LOG = LoggerFactory.getLogger("IRScope");
+    public static final Logger LOG = LoggerFactory.getLogger(IRScope.class);
 
     private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
 
@@ -89,10 +90,10 @@ public abstract class IRScope implements ParseResult {
     private final StaticScope staticScope;
 
     /** Local variables defined in this scope */
-    private Set<Variable> definedLocalVars;
+    private Set<LocalVariable> definedLocalVars;
 
     /** Local variables used in this scope */
-    private Set<Variable> usedLocalVars;
+    private Set<LocalVariable> usedLocalVars;
 
     /** Startup interpretation depends on this */
     protected InterpreterContext interpreterContext;
@@ -189,7 +190,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void setupLexicalContainment() {
-        if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING) {
+        if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING || RubyInstanceConfig.RECORD_LEXICAL_HIERARCHY) {
             lexicalChildren = new ArrayList<>(1);
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }
@@ -481,7 +482,6 @@ public abstract class IRScope implements ParseResult {
     }
 
     public List<CompilerPass> getExecutedPasses() {
-        // FIXME: Super annoying...because OptimizeTempVars is a pre-CFG pass we have no full build info yet
         return fullInterpreterContext == null ? new ArrayList<CompilerPass>(1) : fullInterpreterContext.getExecutedPasses();
     }
 
@@ -516,6 +516,19 @@ public abstract class IRScope implements ParseResult {
         return interpreterContext;
     }
 
+    /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
+    public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
+        try {
+            interpreterContext = new InterpreterContext(this, instructions);
+        } catch (Exception e) {
+            Helpers.throwException(e);
+        }
+
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
+
+        return interpreterContext;
+    }
+
     private Instr[] cloneInstrs() {
         SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
 
@@ -530,21 +543,15 @@ public abstract class IRScope implements ParseResult {
         return newInstructions;
     }
 
-    public void prepareFullBuildCommon() {
+    private void prepareFullBuildCommon() {
         // We already made it.
         if (fullInterpreterContext != null) return;
 
         // Clone instrs from startup interpreter so we do not swap out instrs out from under the
         // startup interpreter as we are building the full interpreter.
-        Instr[] instrs = cloneInstrs();
-
-        // This is a complicating pseudo-pass which needs to be run before CFG is generated.  This
-        // necessitates us needing a clonedInstrs field on IRScope.  If we can rewrite this to a full
-        // CFG using pass we can eliminate this intermediate save and field.
-        instrs = getManager().optimizeTemporaryVariablesIfEnabled(this, instrs);
-
-        fullInterpreterContext = new FullInterpreterContext(this, instrs);
+        fullInterpreterContext = new FullInterpreterContext(this, cloneInstrs());
     }
+
     /**
      * This initializes a more complete(full) InterpreterContext which if used in mixed mode will be
      * used by the JIT and if used in pure-interpreted mode it will be used by an interpreter engine.
@@ -563,11 +570,12 @@ public abstract class IRScope implements ParseResult {
         if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
 
         fullInterpreterContext.generateInstructionsForIntepretation();
+
         return fullInterpreterContext;
     }
 
-    /** Run any necessary passes to get the IR ready for compilation */
-    public synchronized BasicBlock[] prepareForInitialCompilation() {
+    /** Run any necessary passes to get the IR ready for compilation (AOT and/or JIT) */
+    public synchronized BasicBlock[] prepareForCompilation() {
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.
@@ -577,7 +585,9 @@ public abstract class IRScope implements ParseResult {
 
         runCompilerPasses(getManager().getJITPasses(this));
 
-        return fullInterpreterContext.linearizeBasicBlocks();
+        BasicBlock[] bbs = fullInterpreterContext.linearizeBasicBlocks();
+
+        return bbs;
     }
 
     // FIXME: For inlining, culmulative or extra passes run based on profiled execution we need to re-init data or even
@@ -652,14 +662,18 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
+    private static final EnumSet<IRFlags> NEEDS_DYNAMIC_SCOPE_FLAGS =
+            EnumSet.of(
+                    CAN_RECEIVE_BREAKS,
+                    HAS_NONLOCAL_RETURNS,CAN_RECEIVE_NONLOCAL_RETURNS,
+                    BINDING_HAS_ESCAPED);
+
     private void computeNeedsDynamicScopeFlag() {
-        // SSS FIXME: checkArity for keyword args looks up a keyword arg in the static scope which
-        // currently requires a dynamic scope to be recovered. If there is another way to do this,
-        // we can get rid of this.
-        if (flags.contains(CAN_RECEIVE_BREAKS) || flags.contains(HAS_NONLOCAL_RETURNS) ||
-                flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS) || flags.contains(BINDING_HAS_ESCAPED) ||
-                flags.contains(USES_ZSUPER) || flags.contains(RECEIVES_KEYWORD_ARGS)) {
-            flags.add(REQUIRES_DYNSCOPE);
+        for (IRFlags f : NEEDS_DYNAMIC_SCOPE_FLAGS) {
+            if (flags.contains(f)) {
+                flags.add(REQUIRES_DYNSCOPE);
+                return;
+            }
         }
     }
 
@@ -711,7 +725,7 @@ public abstract class IRScope implements ParseResult {
 
     @Override
     public String toString() {
-        return getScopeType() + " " + getName() + "[" + getFileName() + ":" + getLineNumber() + "]";
+        return String.valueOf(getScopeType()) + ' ' + getName() + '[' + getFileName() + ':' + getLineNumber() + ']';
     }
 
     public String debugOutput() {
@@ -726,7 +740,7 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    public LocalVariable getSelf() {
+    public Variable getSelf() {
         return Self.SELF;
     }
 
@@ -758,6 +772,13 @@ public abstract class IRScope implements ParseResult {
      */
     public Map<String, LocalVariable> getLocalVariables() {
         return localVars;
+    }
+
+    /**
+     * Get all variables referenced by this scope.
+     */
+    public Set<LocalVariable> getUsedLocalVariables() {
+        return usedLocalVars;
     }
 
     /**
@@ -856,7 +877,7 @@ public abstract class IRScope implements ParseResult {
             varType = TemporaryVariableType.FLOAT;
         } else if (type == Fixnum.class) {
             varType = TemporaryVariableType.FIXNUM;
-        } else if (type == Boolean.class) {
+        } else if (type == java.lang.Boolean.class) {
             varType = TemporaryVariableType.BOOLEAN;
         } else {
             varType = TemporaryVariableType.LOCAL;
@@ -920,13 +941,15 @@ public abstract class IRScope implements ParseResult {
         for (BasicBlock bb : getCFG().getBasicBlocks()) {
             for (Instr i : bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
-                    if (v instanceof LocalVariable) usedLocalVars.add(v);
+                    if (v instanceof LocalVariable) usedLocalVars.add((LocalVariable) v);
                 }
 
                 if (i instanceof ResultInstr) {
                     Variable v = ((ResultInstr) i).getResult();
 
-                    if (v instanceof LocalVariable) definedLocalVars.add(v);
+                    if (v instanceof LocalVariable && ((LocalVariable)v).getScopeDepth() == 0) {
+                        definedLocalVars.add((LocalVariable) v);
+                    }
                 }
             }
         }
@@ -996,13 +1019,16 @@ public abstract class IRScope implements ParseResult {
 
         // Invalidate compiler pass state.
         //
-        // SSS FIXME: This is to get around concurrent-modification issues
-        // since CompilerPass.invalidate modifies this, but some passes
-        // cannot be invalidated.
-        int i = 0;
-        while (i < getFullInterpreterContext().getExecutedPasses().size()) {
-            if (!getFullInterpreterContext().getExecutedPasses().get(i).invalidate(this)) {
-                i++;
+        // SSS FIXME: Re-grabbing passes each iter is to get around concurrent-modification issues
+        // since CompilerPass.invalidate modifies this, but some passes cannot be invalidated.  This
+        // should be wrapped in an iterator.
+        FullInterpreterContext fic = getFullInterpreterContext();
+        if (fic != null) {
+            int i = 0;
+            while (i < fic.getExecutedPasses().size()) {
+                if (!fic.getExecutedPasses().get(i).invalidate(this)) {
+                    i++;
+                }
             }
         }
     }
@@ -1095,5 +1121,33 @@ public abstract class IRScope implements ParseResult {
      */
     public boolean isScriptScope() {
         return false;
+    }
+
+    public boolean needsFrame() {
+        boolean bindingHasEscaped = bindingHasEscaped();
+        boolean requireFrame = bindingHasEscaped || usesEval();
+
+        for (IRFlags flag : getFlags()) {
+            switch (flag) {
+                case BINDING_HAS_ESCAPED:
+                case CAN_CAPTURE_CALLERS_BINDING:
+                case REQUIRES_FRAME:
+                case REQUIRES_VISIBILITY:
+                case USES_BACKREF_OR_LASTLINE:
+                case USES_EVAL:
+                case USES_ZSUPER:
+                    requireFrame = true;
+            }
+        }
+
+        return requireFrame;
+    }
+
+    public boolean reuseParentScope() {
+        return getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+    }
+
+    public boolean needsBinding() {
+        return reuseParentScope() || !getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
     }
 }

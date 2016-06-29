@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 begin
   require "openssl"
 
@@ -12,7 +13,6 @@ require "digest/md5"
 require 'tempfile'
 require "rbconfig"
 require "socket"
-require_relative '../ruby/envutil'
 
 module OpenSSL::TestUtils
   TEST_KEY_RSA1024 = OpenSSL::PKey::RSA.new <<-_end_of_pem_
@@ -190,8 +190,6 @@ AQjjxMXhwULlmuR/K+WwlaZPiLIBYalLAZQ7ZbOPeVkJ8ePao0eLAgEC
 
   class OpenSSL::SSLTestCase < Test::Unit::TestCase
     RUBY = EnvUtil.rubybin
-    SSL_SERVER = File.join(File.dirname(__FILE__), "ssl_server.rb")
-    PORT = 20443
     ITERATIONS = ($0 == __FILE__) ? 100 : 10
 
     def setup
@@ -240,88 +238,87 @@ AQjjxMXhwULlmuR/K+WwlaZPiLIBYalLAZQ7ZbOPeVkJ8ePao0eLAgEC
       ssl.close rescue nil
     end
 
-    def server_loop(ctx, ssls, server_proc, threads)
+    def server_loop(ctx, ssls, stop_pipe_r, ignore_listener_error, server_proc, threads)
       loop do
         ssl = nil
         begin
+          readable, = IO.select([ssls, stop_pipe_r])
+          if readable.include? stop_pipe_r
+            return
+          end
           ssl = ssls.accept
         rescue OpenSSL::SSL::SSLError
-          retry
+          if ignore_listener_error
+            retry
+          else
+            raise
+          end
         end
 
         th = Thread.start do
-          Thread.current.abort_on_exception = true
           server_proc.call(ctx, ssl)
         end
         threads << th
       end
     rescue Errno::EBADF, IOError, Errno::EINVAL, Errno::ECONNABORTED, Errno::ENOTSOCK, Errno::ECONNRESET
+      if !ignore_listener_error
+        raise
+      end
     end
 
-    def start_server(port0, verify_mode, start_immediately, args = {}, &block)
-      ctx_proc = args[:ctx_proc]
-      server_proc = args[:server_proc]
-      server_proc ||= method(:readwrite_loop)
-      threads = []
+    def start_server(verify_mode, start_immediately, args = {}, &block)
+      IO.pipe {|stop_pipe_r, stop_pipe_w|
+        ctx_proc = args[:ctx_proc]
+        server_proc = args[:server_proc]
+        ignore_listener_error = args.fetch(:ignore_listener_error, false)
+        use_anon_cipher = args.fetch(:use_anon_cipher, false)
+        server_proc ||= method(:readwrite_loop)
 
-      store = OpenSSL::X509::Store.new
-      store.add_cert(@ca_cert)
-      store.purpose = OpenSSL::X509::PURPOSE_SSL_CLIENT
-      ctx = OpenSSL::SSL::SSLContext.new
-      ctx.cert_store = store
-      #ctx.extra_chain_cert = [ ca_cert ]
-      ctx.cert = @svr_cert
-      ctx.key = @svr_key
-      ctx.tmp_dh_callback = proc { OpenSSL::TestUtils::TEST_KEY_DH1024 }
-      ctx.verify_mode = verify_mode
-      ctx_proc.call(ctx) if ctx_proc
+        store = OpenSSL::X509::Store.new
+        store.add_cert(@ca_cert)
+        store.purpose = OpenSSL::X509::PURPOSE_SSL_CLIENT
+        ctx = OpenSSL::SSL::SSLContext.new
+        ctx.ciphers = "ADH-AES256-GCM-SHA384" if use_anon_cipher
+        ctx.cert_store = store
+        #ctx.extra_chain_cert = [ ca_cert ]
+        ctx.cert = @svr_cert
+        ctx.key = @svr_key
+        ctx.tmp_dh_callback = proc { OpenSSL::TestUtils::TEST_KEY_DH1024 }
+        ctx.verify_mode = verify_mode
+        ctx_proc.call(ctx) if ctx_proc
 
-      Socket.do_not_reverse_lookup = true
-      tcps = nil
-      port = port0
-      begin
-        tcps = TCPServer.new("127.0.0.1", port)
-      rescue Errno::EADDRINUSE
-        port += 1
-        retry
-      end
+        Socket.do_not_reverse_lookup = true
+        tcps = nil
+        tcps = TCPServer.new("127.0.0.1", 0)
+        port = tcps.connect_address.ip_port
 
-      ssls = OpenSSL::SSL::SSLServer.new(tcps, ctx)
-      ssls.start_immediately = start_immediately
+        ssls = OpenSSL::SSL::SSLServer.new(tcps, ctx)
+        ssls.start_immediately = start_immediately
 
-      begin
-        server = Thread.new do
-          Thread.current.abort_on_exception = true
-          server_loop(ctx, ssls, server_proc, threads)
-        end
-
-        $stderr.printf("%s started: pid=%d port=%d\n", SSL_SERVER, $$, port) if $DEBUG
-
-        block.call(server, port.to_i)
-      ensure
+        threads = []
         begin
-          begin
-            tcps.shutdown
-          rescue Errno::ENOTCONN
-            # when `Errno::ENOTCONN: Socket is not connected' on some platforms,
-            # call #close instead of #shutdown.
-            tcps.close
-            tcps = nil
-          end if (tcps)
-          if (server)
-            server.join(5)
-            if server.alive?
-              server.join
-              flunk("TCPServer was closed and SSLServer is still alive") unless $!
+          server = Thread.new do
+            begin
+              server_loop(ctx, ssls, stop_pipe_r, ignore_listener_error, server_proc, threads)
+            ensure
+              tcps.close
             end
           end
+          threads.unshift server
+
+          $stderr.printf("SSL server started: pid=%d port=%d\n", $$, port) if $DEBUG
+
+          client = Thread.new do
+            begin
+              block.call(server, port.to_i)
+            ensure
+              stop_pipe_w.close
+            end
+          end
+          threads.unshift client
         ensure
-          tcps.close if (tcps)
+          assert_join_threads(threads)
         end
-      end
-    ensure
-      threads.each {|th|
-        th.join
       }
     end
 
@@ -333,4 +330,5 @@ AQjjxMXhwULlmuR/K+WwlaZPiLIBYalLAZQ7ZbOPeVkJ8ePao0eLAgEC
     end
   end
 
-end if defined?(OpenSSL)
+end if defined?(OpenSSL::OPENSSL_LIBRARY_VERSION) and
+  /\AOpenSSL +0\./ !~ OpenSSL::OPENSSL_LIBRARY_VERSION

@@ -33,7 +33,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
- * Represents a temporary variable for an unboxed Float operand.
+ * Represents a temporary variable for an unboxed Fixnum operand.
  */
 public class TemporaryFixnumVariable extends TemporaryLocalVariable {
     public static final String PREFIX = "%i_";

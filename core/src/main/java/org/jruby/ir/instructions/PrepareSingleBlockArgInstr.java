@@ -5,12 +5,11 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class PrepareSingleBlockArgInstr extends PrepareBlockArgsInstr  {
-    public PrepareSingleBlockArgInstr() {
+    public static final PrepareSingleBlockArgInstr INSTANCE = new PrepareSingleBlockArgInstr();
+
+    private PrepareSingleBlockArgInstr() {
         super(Operation.PREPARE_SINGLE_BLOCK_ARG);
     }
 
@@ -20,14 +19,7 @@ public class PrepareSingleBlockArgInstr extends PrepareBlockArgsInstr  {
     }
 
     public static PrepareSingleBlockArgInstr decode(IRReaderDecoder d) {
-        return new PrepareSingleBlockArgInstr();
-    }
-
-    public IRubyObject[] prepareBlockArgs(ThreadContext context, Block b, IRubyObject[] args) {
-        if (args == null) args = IRubyObject.NULL_ARRAY;
-        // Nothing more to do! Hurray!
-        // If there are insufficient args, ReceivePreReqdInstr will return nil
-        return args;
+        return INSTANCE;
     }
     
     @Override

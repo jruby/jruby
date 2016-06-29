@@ -5,14 +5,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * A simple Map-based cache of proxies.
  */
-public class MapBasedClassValue<T> extends ClassValue<T> {
+public final class MapBasedClassValue<T> extends ClassValue<T> {
     
     public MapBasedClassValue(ClassValueCalculator<T> calculator) {
         super(calculator);
     }
 
     @Override
-    public T get(Class cls) {
+    public T get(Class<?> cls) {
         T obj = cache.get(cls);
 
         if (obj != null) return obj;
@@ -35,6 +35,5 @@ public class MapBasedClassValue<T> extends ClassValue<T> {
     // expensive, for one; many lookups are performed when passing parameters to/from
     // methods; etc.).
     // TODO: faster custom concurrent map
-    private final ConcurrentHashMap<Class,T> cache =
-        new ConcurrentHashMap<Class, T>(128);
+    private final ConcurrentHashMap<Class<?>,T> cache = new ConcurrentHashMap<>(128);
 }

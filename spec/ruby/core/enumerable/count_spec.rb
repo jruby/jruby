@@ -43,8 +43,15 @@ describe "Enumerable#count" do
     @numerous.count(4){|x| x%2==0 }.should == 1
   end
 
-  it "gathers initial args as elements when each yields multiple" do
-    multi = EnumerableSpecs::YieldsMulti.new
-    multi.count {|e| e == 1 }.should == 1
+  describe "when each yields multiple values" do
+    it "gathers initial args as elements" do
+      multi = EnumerableSpecs::YieldsMulti.new
+      multi.count {|e| e == 1 }.should == 1
+    end
+
+    it "accepts an argument for comparison using ==" do
+      multi = EnumerableSpecs::YieldsMulti.new
+      multi.count([1, 2]).should == 1
+    end
   end
 end

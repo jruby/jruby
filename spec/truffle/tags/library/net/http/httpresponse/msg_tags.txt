@@ -1,1 +1,0 @@
-fails:Net::HTTPResponse#msg returns self's response message

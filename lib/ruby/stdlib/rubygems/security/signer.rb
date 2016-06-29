@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 ##
 # Basic OpenSSL-based package signing class.
 
@@ -100,6 +101,8 @@ class Gem::Security::Signer
 
   def sign data
     return unless @key
+
+    raise Gem::Security::Exception, 'no certs provided' if @cert_chain.empty?
 
     if @cert_chain.length == 1 and @cert_chain.last.not_after < Time.now then
       re_sign_key

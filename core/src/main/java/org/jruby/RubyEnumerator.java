@@ -95,22 +95,22 @@ public class RubyEnumerator extends RubyObject {
     private RubyEnumerator(Ruby runtime, RubyClass type) {
         super(runtime, type);
         object = runtime.getNil();
-        initialize(runtime.getNil(), RubyString.newEmptyString(runtime), IRubyObject.NULL_ARRAY);
+        initialize(runtime, runtime.getNil(), RubyString.newEmptyString(runtime), IRubyObject.NULL_ARRAY);
     }
 
-    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[]args, IRubyObject size) {
+    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[] args, IRubyObject size) {
         super(runtime, type);
-        initialize20(object, method, args, size, null);
+        initialize20(runtime, object, method, args, size, null);
     }
 
-    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[]args, SizeFn sizeFn) {
+    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[] args, SizeFn sizeFn) {
         super(runtime, type);
-        initialize20(object, method, args, null, sizeFn);
+        initialize20(runtime, object, method, args, null, sizeFn);
     }
 
-    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[]args) {
+    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[] args) {
         super(runtime, type);
-        initialize(object, method, args);
+        initialize(runtime, object, method, args);
     }
 
     /**
@@ -186,13 +186,13 @@ public class RubyEnumerator extends RubyObject {
                 size = args[0];
                 args = Arrays.copyOfRange(args, 1, args.length);
 
-                if (!(size.isNil() || size.respondsTo("call")) &&
-                        !(runtime.getFloat().isInstance(size) && ((RubyFloat)size).getDoubleValue() == Float.POSITIVE_INFINITY) &&
-                        !(size instanceof RubyInteger)) {
+                if ( ! (size.isNil() || size.respondsTo("call")) &&
+                     ! (runtime.getFloat().isInstance(size) && ((RubyFloat) size).getDoubleValue() == Float.POSITIVE_INFINITY) &&
+                     ! (size instanceof RubyInteger) ) {
                     throw runtime.newTypeError(size, runtime.getInteger());
                 }
             }
-            object = context.runtime.getGenerator().newInstance(context, IRubyObject.NULL_ARRAY, block);
+            object = runtime.getGenerator().newInstance(context, IRubyObject.NULL_ARRAY, block);
 
         } else {
             Arity.checkArgumentCount(runtime, args, 1, -1);
@@ -205,7 +205,7 @@ public class RubyEnumerator extends RubyObject {
             }
         }
 
-        return initialize20(object, method, args, size, null);
+        return initialize20(runtime, object, method, args, size, null);
     }
 
     public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method) {
@@ -220,9 +220,8 @@ public class RubyEnumerator extends RubyObject {
     public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
         if (block.isGiven()) {
             throw context.runtime.newArgumentError(2, 1);
-        } else {
-            return initialize(object, method, NULL_ARRAY);
         }
+        return initialize(context.runtime, object, method, NULL_ARRAY);
     }
 
     public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg) {
@@ -237,9 +236,8 @@ public class RubyEnumerator extends RubyObject {
     public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
         if (block.isGiven()) {
             throw context.runtime.newArgumentError(3, 1);
-        } else {
-            return initialize(object, method, new IRubyObject[] { methodArg });
         }
+        return initialize(context.runtime, object, method, new IRubyObject[] { methodArg });
     }
 
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
@@ -250,12 +248,11 @@ public class RubyEnumerator extends RubyObject {
         return initialize20(context, args, block);
     }
 
-    private IRubyObject initialize(IRubyObject object, IRubyObject method, IRubyObject[] methodArgs) {
-        return initialize20(object, method, methodArgs, null, null);
+    private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs) {
+        return initialize20(runtime, object, method, methodArgs, null, null);
     }
 
-    private IRubyObject initialize20(IRubyObject object, IRubyObject method, IRubyObject[] methodArgs, IRubyObject size, SizeFn sizeFn) {
-        final Ruby runtime = getRuntime();
+    private IRubyObject initialize20(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs, IRubyObject size, SizeFn sizeFn) {
         this.object = object;
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
@@ -438,7 +435,7 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod
     public IRubyObject each_with_index(ThreadContext context, final Block block) {
-        return with_index_common(context, block, "each_with_index", context.runtime.getNil());
+        return with_index_common(context, block, "each_with_index", context.nil);
     }
 
     public IRubyObject with_index(ThreadContext context, final Block block) {
@@ -447,7 +444,7 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod(name = "with_index")
     public IRubyObject with_index19(ThreadContext context, final Block block) {
-        return with_index_common(context, block, "with_index", context.runtime.getNil());
+        return with_index_common(context, block, "with_index", context.nil);
     }
 
     @JRubyMethod(name = "with_index")
@@ -615,7 +612,7 @@ public class RubyEnumerator extends RubyObject {
         }
 
         private void checkIndex() throws RaiseException {
-            if (index >= array.size()) throw runtime.newLightweightStopIterationError("stop iteration");
+            if (index >= array.size()) throw runtime.newStopIteration(array, null);
         }
     }
 
@@ -623,7 +620,7 @@ public class RubyEnumerator extends RubyObject {
         private static final boolean DEBUG = false;
 
         /** sync queue to wait for values */
-        private SynchronousQueue<IRubyObject> out = new SynchronousQueue<IRubyObject>();
+        final SynchronousQueue<IRubyObject> out = new SynchronousQueue<IRubyObject>();
 
         /** thread that's executing this Nexter */
         private volatile Thread thread;
@@ -639,6 +636,9 @@ public class RubyEnumerator extends RubyObject {
 
         /** the last value we got, used for peek */
         private IRubyObject lastValue;
+
+        /** the block return value, to be fed as StopIteration#result */
+        private volatile IRubyObject stopValue;
 
         /** Exception used for unrolling the iteration on terminate */
         private static class TerminateEnumeration extends RuntimeException implements Unrescuable {}
@@ -700,7 +700,18 @@ public class RubyEnumerator extends RubyObject {
         }
 
         private void ensureStarted() {
-            if (thread == null) future = runtime.getFiberExecutor().submit(this);
+            try {
+                if (thread == null) future = runtime.getFiberExecutor().submit(this);
+            } catch (OutOfMemoryError oome) {
+                String oomeMessage = oome.getMessage();
+                if (oomeMessage != null && oomeMessage.contains("unable to create new native thread")) {
+                    // try to clean out stale enumerator threads by forcing GC
+                    System.gc();
+                    future = runtime.getFiberExecutor().submit(this);
+                } else {
+                    throw oome;
+                }
+            }
         }
 
         private IRubyObject peekTake() {
@@ -729,7 +740,7 @@ public class RubyEnumerator extends RubyObject {
             // if it's the NEVER object, raise StopIteration
             if (value == NEVER) {
                 doneObject = value;
-                throw runtime.newLightweightStopIterationError("stop iteration");
+                throw runtime.newStopIteration(stopValue, "iteration reached an end");
             }
 
             // if it's an exception, raise it
@@ -754,38 +765,41 @@ public class RubyEnumerator extends RubyObject {
             IRubyObject finalObject = NEVER;
 
             try {
-                IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
+                final IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
                 final TerminateEnumeration terminateEnumeration = new TerminateEnumeration();
-                try {
-                    object.callMethod(context, method, methodArgs, CallBlock.newCallClosure(object, object.getMetaClass(), Signature.OPTIONAL, new BlockCallback() {
-                        @Override
-                        public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                            try {
-                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + Arrays.toString(args));
-                                if (die) throw terminateEnumeration;
-                                out.put(RubyEnumerable.packEnumValues(context, args));
-                                if (die) throw terminateEnumeration;
-                            } catch (InterruptedException ie) {
-                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": interrupted");
+                Block generatorClosure = CallBlock.newCallClosure(object, object.getMetaClass(), Signature.OPTIONAL, new BlockCallback() {
 
-                                throw terminateEnumeration;
-                            }
-
-                            IRubyObject feedValue = getFeedValue();
-                            setFeedValue(context.nil);
-                            return feedValue;
+                    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+                        try {
+                            if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + Arrays.toString(args));
+                            if (die) throw terminateEnumeration;
+                            out.put( RubyEnumerable.packEnumValues(context, args) );
+                            if (die) throw terminateEnumeration;
                         }
-                    }, context));
-                } catch (TerminateEnumeration te) {
-                    if (te != terminateEnumeration) {
-                        throw te;
+                        catch (InterruptedException ie) {
+                            if (DEBUG) System.out.println(Thread.currentThread().getName() + ": interrupted");
+
+                            throw terminateEnumeration;
+                        }
+
+                        IRubyObject feedValue = getFeedValue();
+                        setFeedValue(context.nil);
+                        return feedValue;
                     }
+                }, context);
+                try {
+                    this.stopValue = object.callMethod(context, method, methodArgs, generatorClosure);
+                }
+                catch (TerminateEnumeration te) {
+                    if (te != terminateEnumeration) throw te;
                     // ignore, we're shutting down
-                } catch (RaiseException re) {
+                }
+                catch (RaiseException re) {
                     if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + re.getException());
                     finalObject = re.getException();
                     runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
-                } catch (Throwable t) {
+                }
+                catch (Throwable t) {
                     if (DEBUG) {
                         System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + t);
                         t.printStackTrace();
@@ -795,12 +809,11 @@ public class RubyEnumerator extends RubyObject {
 
                 try {
                     if (!die) out.put(finalObject);
-                } catch (InterruptedException ie) {
-                    // ignore
                 }
-            } finally {
-                // disassociate this Nexter with the thread running it
-                thread = null;
+                catch (InterruptedException ie) { /* ignore */ }
+            }
+            finally {
+                thread = null; // disassociate this Nexter with the thread running it
             }
         }
     }

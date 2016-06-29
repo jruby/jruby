@@ -63,7 +63,7 @@ module PTY
     end
   end
   def self.spawn(*args, &block)
-    self.getpty("/bin/sh", "-c", args[0], &block)
+    self.getpty(*args, &block)
   end
 end
 module LibC

@@ -56,7 +56,7 @@ module JITSpecUtils
     end
 
     method = oj.ir.IRBuilder.build_root(JRuby.runtime.getIRManager(), node).scope
-    method.prepareForInitialCompilation
+    method.prepareForCompilation
 
     compiler = oj.ir.targets.JVMVisitor.new
     compiled = compiler.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
@@ -348,7 +348,11 @@ modes.each do |mode|
     end
 
     it "compiles dynamic regexp" do
-      run('"foo" =~ /#{"foo"}/') {|result| expect(result).to eq 0 }
+      # test different arities since we optimize smaller ones
+      1.upto(10) do |i|
+        run('x = "foo"; i = ' + i.to_s + '; x * i =~ /' + '#{x}' * i + '/') {|result| expect(result).to eq 0 }
+      end
+
       run('ary = []; 2.times {|i| ary << ("foo0" =~ /#{"foo" + i.to_s}/o)}; ary') {|result| expect(result).to eq([0, 0]) }
     end
 
@@ -394,6 +398,8 @@ modes.each do |mode|
       # non-local flow control with while loops
       run("a = 0; 1.times { a += 1; redo if a < 2 }; a") {|result| expect(result).to eq 2 }
       run("def foo(&b); while true; b.call; end; end; foo { break 3 }") {|result| expect(result).to eq 3 }
+      
+      expect(lambda { run("def foo(&b); while true; b.call; end; end; foo { eval 'break 3' }") }).to raise_error(LocalJumpError)
     end
 
     it "compiles block passing" do
@@ -1065,6 +1071,76 @@ modes.each do |mode|
         expect(x).to eq('foobar.rb')
         expect(y).to eq(1)
       end
+    end
+
+    it "handles circular optional argument assignment" do
+      begin
+        verbose = $VERBOSE
+        $VERBOSE = nil
+
+        run('def foo(a = a, b = b, c = c); [a.inspect, b.inspect, c.inspect]; end; foo') do |x|
+          expect(x).to eq(["nil", "nil", "nil"])
+        end
+        run('def foo; yield; end; foo {|a = a, b = b, c = c|; [a.inspect, b.inspect, c.inspect]}') do |x|
+          expect(x).to eq(["nil", "nil", "nil"])
+        end
+
+        run('def foo(a: a, b: b, c: c); [a.inspect, b.inspect, c.inspect]; end; foo') do |x|
+          expect(x).to eq(["nil", "nil", "nil"])
+        end
+        run('def foo; yield; end; foo {|a: a, b: b, c: c|; [a.inspect, b.inspect, c.inspect]}') do |x|
+          expect(x).to eq(["nil", "nil", "nil"])
+        end
+      ensure
+        $VERBOSE = verbose
+      end
+    end
+
+    it "combines optional args and zsuper properly" do
+      begin
+        verbose = $VERBOSE
+        $VERBOSE = nil
+
+        run('class OptZSuperA; def foo(a, b); [a, b]; end; end; class OptZSuperB < OptZSuperA; def foo(a = "", b = nil); super; end; end; OptZSuperB.new.foo') do |x|
+          expect(x).to eq(["", nil])
+        end
+
+        run('class OptZSuperA; def foo(a:, b:); [a, b]; end; end; class OptZSuperB < OptZSuperA; def foo(a: "", b: nil); super; end; end; OptZSuperB.new.foo') do |x|
+          expect(x).to eq(["", nil])
+        end
+      ensure
+        $VERBOSE = verbose
+      end
+    end
+
+    it "maintains frame stack integrity through a bare lambda (GH #3643)" do
+      code = '
+        module GH3643
+          class A
+            def x(proc)
+              instance_eval(&proc) rescue nil
+              :ok
+            end
+          end
+          A.prepend(Module.new { def x(proc); super; super; end })
+          def self.foo
+            A.new.x(lambda{})
+          end
+          foo
+        end
+      '
+
+      run(code) do |x|
+        x.should == :ok
+      end
+    end
+
+    it "compiles calls with one fixnum arg that do not have optimized paths" do
+      run('ary = []; ary.push(1)') {|x| expect(x).to eq([1]) }
+    end
+
+    it "compiles calls with one float arg that do not have optimized paths" do
+      run('ary = []; ary.push(1.0)') {|x| expect(x).to eq([1.0]) }
     end
   end
 end

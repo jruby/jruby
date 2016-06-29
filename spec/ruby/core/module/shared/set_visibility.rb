@@ -81,19 +81,17 @@ describe :set_visibility, shared: true do
       mod.should send(:"have_#{@method}_instance_method", :test1, false)
     end
 
-    ruby_version_is "2.1" do
-      it "does not affect method definitions when itself is inside an eval and method definitions are outside" do
-        visibility = @method
-        initialized_visibility = [:public, :protected, :private].find {|sym| sym != visibility }
-        mod = Module.new {
-              send initialized_visibility
-              eval visibility.to_s
+    it "does not affect method definitions when itself is inside an eval and method definitions are outside" do
+      visibility = @method
+      initialized_visibility = [:public, :protected, :private].find {|sym| sym != visibility }
+      mod = Module.new {
+            send initialized_visibility
+            eval visibility.to_s
 
-              def test1() end
-            }
+            def test1() end
+          }
 
-        mod.should send(:"have_#{initialized_visibility}_instance_method", :test1, false)
-      end
+      mod.should send(:"have_#{initialized_visibility}_instance_method", :test1, false)
     end
 
     it "affects evaled method definitions when itself is outside the eval" do

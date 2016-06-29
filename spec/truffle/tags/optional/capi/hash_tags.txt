@@ -1,0 +1,27 @@
+fails:C-API Hash function rb_hash calls #hash on the object
+fails:C-API Hash function rb_hash converts a Bignum returned by #hash to a Fixnum
+fails:C-API Hash function rb_hash calls #to_int to converts a value returned by #hash to a Fixnum
+fails:C-API Hash function rb_hash raises a TypeError if the object does not implement #to_int
+fails:C-API Hash function rb_hash_new returns a new hash
+fails:C-API Hash function rb_hash_new creates a hash with no default proc
+fails:C-API Hash function rb_hash_dup returns a copy of the hash
+fails:C-API Hash function rb_hash_freeze freezes the hash
+fails:C-API Hash function rb_hash_aref returns the value associated with the key
+fails:C-API Hash function rb_hash_aref returns the default value if it exists
+fails:C-API Hash function rb_hash_aref returns nil if the key does not exist
+fails:C-API Hash function rb_hash_aset adds the key/value pair and returns the value
+fails:C-API Hash function rb_hash_clear returns self that cleared keys and values
+fails:C-API Hash function rb_hash_delete removes the key and returns the value
+fails:C-API Hash function rb_hash_delete_if removes an entry if the block returns true
+fails:C-API Hash function rb_hash_delete_if returns an Enumerator when no block is passed
+fails:C-API Hash function rb_hash_foreach iterates over the hash
+fails:C-API Hash function rb_hash_foreach stops via the callback
+fails:C-API Hash function rb_hash_foreach deletes via the callback
+fails:C-API Hash function rb_hash_size returns the size of the hash
+fails:C-API Hash function rb_hash_size returns zero for an empty hash
+fails:C-API Hash function rb_hash_lookup returns the value associated with the key
+fails:C-API Hash function rb_hash_lookup does not return the default value if it exists
+fails:C-API Hash function rb_hash_lookup returns nil if the key does not exist
+fails:C-API Hash function rb_hash_lookup rb_hash_lookup2 returns the value associated with the key
+fails:C-API Hash function rb_hash_lookup rb_hash_lookup2 returns the default value if the key does not exist
+fails:C-API Hash function rb_hash_set_ifnone sets the default value of non existing keys

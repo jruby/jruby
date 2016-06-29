@@ -17,3 +17,7 @@ fails:String#unicode_normalized? returns true if string is empty
 fails:String#unicode_normalized? returns true if string does not contain any unicode codepoints
 fails:String#unicode_normalized? raises an Encoding::CompatibilityError if the string is not in an unicode encoding
 fails:String#unicode_normalized? raises an ArgumentError if the specified form is invalid
+fails:String#unicode_normalized? returns true if str is in Unicode normalization form (nfc)
+fails:String#unicode_normalized? returns true if str is in Unicode normalization form (nfd)
+fails:String#unicode_normalized? returns true if str is in Unicode normalization form (nfkc)
+fails:String#unicode_normalized? returns true if str is in Unicode normalization form (nfkd)

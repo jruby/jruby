@@ -1,6 +1,0 @@
----
-:runtime:
-- org.bouncycastle:bcpkix-jdk15on:jar:1.49
-- org.slf4j:slf4j-simple:jar:1.6.4
-- org.bouncycastle:bcprov-jdk15on:jar:1.49
-- org.slf4j:slf4j-api:jar:1.6.4

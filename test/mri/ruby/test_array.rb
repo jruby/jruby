@@ -1,6 +1,6 @@
 # coding: US-ASCII
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 
 class TestArray < Test::Unit::TestCase
   def setup
@@ -662,7 +662,7 @@ class TestArray < Test::Unit::TestCase
 
     bug2545 = '[ruby-core:27366]'
     a = @cls[ 5, 6, 7, 8, 9, 10 ]
-    assert_equal(9, a.delete_if {|i| break i if i > 8; assert_equal(a[0], i) || true if i < 7})
+    assert_equal(9, a.delete_if {|i| break i if i > 8; i < 7})
     assert_equal(@cls[7, 8, 9, 10], a, bug2545)
   end
 
@@ -768,21 +768,41 @@ class TestArray < Test::Unit::TestCase
 
     a5 = @cls[ a1, @cls[], a3 ]
     assert_equal(@cls[1, 2, 3, 4, 5, 6], a5.flatten)
+    assert_equal(@cls[1, 2, 3, 4, [5, 6]], a5.flatten(1))
     assert_equal(@cls[], @cls[].flatten)
     assert_equal(@cls[],
                  @cls[@cls[@cls[@cls[],@cls[]],@cls[@cls[]],@cls[]],@cls[@cls[@cls[]]]].flatten)
+  end
 
+  def test_flatten_wrong_argument
     assert_raise(TypeError, "[ruby-dev:31197]") { [[]].flatten("") }
+  end
 
+  def test_flatten_taint
     a6 = @cls[[1, 2], 3]
     a6.taint
     a7 = a6.flatten
     assert_equal(true, a7.tainted?)
+  end
 
+  def test_flatten_level0
     a8 = @cls[[1, 2], 3]
     a9 = a8.flatten(0)
     assert_equal(a8, a9)
     assert_not_same(a8, a9)
+  end
+
+  def test_flatten_splat
+    bug10748 = '[ruby-core:67637] [Bug #10748]'
+    o = Object.new
+    o.singleton_class.class_eval do
+      define_method(:to_ary) do
+        raise bug10748
+      end
+    end
+    a = @cls[@cls[o]]
+    assert_raise_with_message(RuntimeError, bug10748) {a.flatten}
+    assert_nothing_raised(RuntimeError, bug10748) {a.flatten(1)}
   end
 
   def test_flatten!
@@ -797,16 +817,33 @@ class TestArray < Test::Unit::TestCase
     assert_equal(@cls[1, 2, 3, 4, 5, 6], a5.flatten!)
     assert_nil(a5.flatten!(0), '[ruby-core:23382]')
     assert_equal(@cls[1, 2, 3, 4, 5, 6], a5)
+  end
 
+  def test_flatten_empty!
     assert_nil(@cls[].flatten!)
     assert_equal(@cls[],
                  @cls[@cls[@cls[@cls[],@cls[]],@cls[@cls[]],@cls[]],@cls[@cls[@cls[]]]].flatten!)
+  end
 
+  def test_flatten_level0!
     assert_nil(@cls[].flatten!(0), '[ruby-core:23382]')
   end
 
+  def test_flatten_splat!
+    bug10748 = '[ruby-core:67637] [Bug #10748]'
+    o = Object.new
+    o.singleton_class.class_eval do
+      define_method(:to_ary) do
+        raise bug10748
+      end
+    end
+    a = @cls[@cls[o]]
+    assert_raise_with_message(RuntimeError, bug10748) {a.flatten!}
+    assert_nothing_raised(RuntimeError, bug10748) {a.flatten!(1)}
+  end
+
   def test_flatten_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     o = Object.new
     def o.to_ary() callcc {|k| @cont = k; [1,2,3]} end
     begin
@@ -819,8 +856,30 @@ class TestArray < Test::Unit::TestCase
     assert_match(/reentered/, e.message, '[ruby-dev:34798]')
   end
 
+  def test_flatten_respond_to_missing
+    bug11465 = '[ruby-core:70460] [Bug #11465]'
+
+    obj = Class.new do
+      def respond_to_missing?(method, stuff)
+        return false if method == :to_ary
+        super
+      end
+
+      def method_missing(*args)
+        super
+      end
+    end.new
+
+    ex = nil
+    trace = TracePoint.new(:raise) do |tp|
+      ex = tp.raised_exception
+    end
+    trace.enable {[obj].flatten}
+    assert_nil(ex, bug11465)
+  end
+
   def test_permutation_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -837,7 +896,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_product_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -854,7 +913,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_combination_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -871,7 +930,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_repeated_permutation_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -888,7 +947,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_repeated_combination_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -1161,7 +1220,7 @@ class TestArray < Test::Unit::TestCase
 
     bug2545 = '[ruby-core:27366]'
     a = @cls[ 5, 6, 7, 8, 9, 10 ]
-    assert_equal(9, a.reject! {|i| break i if i > 8; assert_equal(a[0], i) || true if i < 7})
+    assert_equal(9, a.reject! {|i| break i if i > 8; i < 7})
     assert_equal(@cls[7, 8, 9, 10], a, bug2545)
   end
 
@@ -1366,7 +1425,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_sort_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = (1..100).to_a
@@ -1408,6 +1467,16 @@ class TestArray < Test::Unit::TestCase
     orig = ary.dup
     assert_raise(RuntimeError, "frozen during comparison") {ary.sort!}
     assert_equal(orig, ary, "must not be modified once frozen")
+  end
+
+  def test_short_heap_array_sort_bang_memory_leak
+    bug11332 = '[ruby-dev:49166] [Bug #11332]'
+    assert_no_memory_leak([], <<-PREP, <<-TEST, bug11332, limit: 1.3, timeout: 60)
+      def t; ary = [*1..5]; ary.pop(2); ary.sort!; end
+      1.times {t}
+    PREP
+      500000.times {t}
+    TEST
   end
 
   def test_to_a
@@ -1475,6 +1544,8 @@ class TestArray < Test::Unit::TestCase
       [[:first_one, :ok], :not_ok].to_h
     }
     assert_equal "wrong element type Symbol at 1 (expected array)", e.message
+    array = [eval("class C\u{1f5ff}; self; end").new]
+    assert_raise_with_message(TypeError, /C\u{1f5ff}/) {array.to_h}
     e = assert_raise(ArgumentError) {
       [[:first_one, :ok], [1, 2], [:not_ok]].to_h
     }
@@ -1748,9 +1819,11 @@ class TestArray < Test::Unit::TestCase
 
     bug3708 = '[ruby-dev:42067]'
     assert_equal(b, @cls[0, 1, 2, 3, 4][1, 4].permutation.to_a, bug3708)
+  end
 
+  def test_permutation_stack_error
     bug9932 = '[ruby-core:63103] [Bug #9932]'
-    assert_separately([], <<-"end;") #    do
+    assert_separately([], <<-"end;", timeout: 30) #    do
       assert_nothing_raised(SystemStackError, "#{bug9932}") do
         assert_equal(:ok, Array.new(100_000, nil).permutation {break :ok})
       end
@@ -1780,8 +1853,10 @@ class TestArray < Test::Unit::TestCase
 
     a = @cls[0, 1, 2, 3, 4][1, 4].repeated_permutation(2)
     assert_empty(a.reject {|x| !x.include?(0)})
+  end
 
-    assert_separately([], <<-"end;") #    do
+  def test_repeated_permutation_stack_error
+    assert_separately([], <<-"end;", timeout: 30) #    do
       assert_nothing_raised(SystemStackError) do
         assert_equal(:ok, Array.new(100_000, nil).repeated_permutation(500_000) {break :ok})
       end
@@ -1815,8 +1890,10 @@ class TestArray < Test::Unit::TestCase
 
     a = @cls[0, 1, 2, 3, 4][1, 4].repeated_combination(2)
     assert_empty(a.reject {|x| !x.include?(0)})
+  end
 
-    assert_separately([], <<-"end;") #    do
+  def test_repeated_combination_stack_error
+    assert_separately([], <<-"end;", timeout: 30) #    do
       assert_nothing_raised(SystemStackError) do
         assert_equal(:ok, Array.new(100_000, nil).repeated_combination(500_000) {break :ok})
       end
@@ -1905,6 +1982,8 @@ class TestArray < Test::Unit::TestCase
     a[3] = 3
     a.shift(2)
     assert_equal([2, 3], a)
+
+    assert_equal([1,1,1], ([1] * 100).shift(3))
   end
 
   def test_unshift_error
@@ -2018,6 +2097,16 @@ class TestArray < Test::Unit::TestCase
     a = @cls[ 1, 2, 3, 4, 5 ]
     assert_equal(a, a.select! { |i| i > 3 })
     assert_equal(@cls[4, 5], a)
+
+    bug10722 = '[ruby-dev:48805] [Bug #10722]'
+    a = @cls[ 5, 6, 7, 8, 9, 10 ]
+    r = a.select! {|i|
+      break i if i > 8
+      # assert_equal(a[0], i, "should be selected values only") if i == 7
+      i >= 7
+    }
+    assert_equal(9, r)
+    assert_equal(@cls[7, 8, 9, 10], a, bug10722)
   end
 
   def test_delete2
@@ -2031,7 +2120,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_reject_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     bug9727 = '[ruby-dev:48101] [Bug #9727]'
     cont = nil
     a = [*1..10].reject do |i|
@@ -2357,6 +2446,11 @@ class TestArray < Test::Unit::TestCase
     b.replace(a)
     assert_equal((1..10).to_a, a.shift(10))
     assert_equal((11..100).to_a, a)
+
+    a = (1..30).to_a
+    assert_equal((1..3).to_a, a.shift(3))
+    # occupied
+    assert_equal((4..6).to_a, a.shift(3))
   end
 
   def test_replace_shared_ary
@@ -2442,6 +2536,10 @@ class TestArray < Test::Unit::TestCase
     assert_raise(TypeError) do
       [1, 2, 42, 100, 666].bsearch{ "not ok" }
     end
+    c = eval("class C\u{309a 26a1 26c4 1f300};self;end")
+    assert_raise_with_message(TypeError, /C\u{309a 26a1 26c4 1f300}/) do
+      [0,1].bsearch {c.new}
+    end
     assert_equal [1, 2, 42, 100, 666].bsearch{}, [1, 2, 42, 100, 666].bsearch{false}
   end
 
@@ -2473,6 +2571,41 @@ class TestArray < Test::Unit::TestCase
     assert_include([4, 7], a.bsearch {|x| (2**100).coerce((1 - x / 4) * (2**100)).first })
   end
 
+  def test_bsearch_index_typechecks_return_values
+    assert_raise(TypeError) do
+      [1, 2, 42, 100, 666].bsearch_index {"not ok"}
+    end
+    assert_equal [1, 2, 42, 100, 666].bsearch_index {}, [1, 2, 42, 100, 666].bsearch_index {false}
+  end
+
+  def test_bsearch_index_with_no_block
+    enum = [1, 2, 42, 100, 666].bsearch_index
+    assert_nil enum.size
+    assert_equal 2, enum.each{|x| x >= 33 }
+  end
+
+  def test_bsearch_index_in_find_minimum_mode
+    a = [0, 4, 7, 10, 12]
+    assert_equal(1, a.bsearch_index {|x| x >=   4 })
+    assert_equal(2, a.bsearch_index {|x| x >=   6 })
+    assert_equal(0, a.bsearch_index {|x| x >=  -1 })
+    assert_equal(nil, a.bsearch_index {|x| x >= 100 })
+  end
+
+  def test_bsearch_index_in_find_any_mode
+    a = [0, 4, 7, 10, 12]
+    assert_include([1, 2], a.bsearch_index {|x| 1 - x / 4 })
+    assert_equal(nil, a.bsearch_index {|x| 4 - x / 2 })
+    assert_equal(nil, a.bsearch_index {|x| 1 })
+    assert_equal(nil, a.bsearch_index {|x| -1 })
+
+    assert_include([1, 2], a.bsearch_index {|x| (1 - x / 4) * (2**100) })
+    assert_equal(nil, a.bsearch_index {|x|   1  * (2**100) })
+    assert_equal(nil, a.bsearch_index {|x| (-1) * (2**100) })
+
+    assert_include([1, 2], a.bsearch_index {|x| (2**100).coerce((1 - x / 4) * (2**100)).first })
+  end
+
   def test_shared_marking
     reduce = proc do |s|
       s.gsub(/(verify_internal_consistency_reachable_i:\sWB\smiss\s\S+\s\(T_ARRAY\)\s->\s)\S+\s\((proc|T_NONE)\)\n
@@ -2494,6 +2627,48 @@ class TestArray < Test::Unit::TestCase
     EOS
     rescue Timeout::Error => e
       skip e.message
+    end
+  end
+
+  sizeof_long = [0].pack("l!").size
+  sizeof_voidp = [""].pack("p").size
+  if sizeof_long < sizeof_voidp
+    ARY_MAX = (1<<(8*sizeof_long-1)) / sizeof_voidp - 1
+    Bug11235 = '[ruby-dev:49043] [Bug #11235]'
+
+    def test_push_over_ary_max
+      assert_separately(['-', ARY_MAX.to_s, Bug11235], <<-"end;")
+        a = Array.new(ARGV[0].to_i)
+        assert_raise(IndexError, ARGV[1]) {0x1000.times {a.push(1)}}
+      end;
+    end
+
+    def test_unshift_over_ary_max
+      assert_separately(['-', ARY_MAX.to_s, Bug11235], <<-"end;")
+        a = Array.new(ARGV[0].to_i)
+        assert_raise(IndexError, ARGV[1]) {0x1000.times {a.unshift(1)}}
+      end;
+    end
+
+    def test_splice_over_ary_max
+      assert_separately(['-', ARY_MAX.to_s, Bug11235], <<-"end;")
+        a = Array.new(ARGV[0].to_i)
+        assert_raise(IndexError, ARGV[1]) {a[0, 0] = Array.new(0x1000)}
+      end;
+    end
+  end
+
+  def test_dig
+    h = @cls[@cls[{a: 1}], 0]
+    assert_equal(1, h.dig(0, 0, :a))
+    assert_nil(h.dig(2, 0))
+    assert_raise(TypeError) {h.dig(1, 0)}
+  end
+
+  private
+  def need_continuation
+    unless respond_to?(:callcc, true)
+      EnvUtil.suppress_warning {require 'continuation'}
     end
   end
 end

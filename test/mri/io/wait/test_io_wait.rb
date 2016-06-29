@@ -1,4 +1,5 @@
 # -*- coding: us-ascii -*-
+# frozen_string_literal: false
 require 'test/unit'
 require 'timeout'
 require 'socket'
@@ -31,7 +32,7 @@ class TestIOWait < Test::Unit::TestCase
 
   def test_nread_buffered
     @w.syswrite ".\n!"
-    assert_equal ".\n", @r.read(2)
+    assert_equal ".\n", @r.gets
     assert_equal 1, @r.nread
   end
 
@@ -70,7 +71,11 @@ class TestIOWait < Test::Unit::TestCase
 
   def test_wait_eof
     th = Thread.new { sleep 0.01; @w.close }
-    assert_nil @r.wait
+    ret = nil
+    assert_nothing_raised(Timeout::Error) do
+      Timeout.timeout(0.1) { ret = @r.wait }
+    end
+    assert_equal @r, ret
   ensure
     th.join
   end
@@ -95,7 +100,7 @@ class TestIOWait < Test::Unit::TestCase
 
   def test_wait_writable_closed
     @w.close
-    assert_raises(IOError) { @w.wait_writable }
+    assert_raise(IOError) { @w.wait_writable }
   end
 
 private

@@ -38,6 +38,7 @@
 package org.jruby;
 
 import org.jruby.exceptions.MainExitException;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.main.DripMain;
@@ -75,7 +76,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author  jpetersen
  */
 public class Main {
-    private static final Logger LOG = LoggerFactory.getLogger("Main");
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     public Main(RubyInstanceConfig config) {
         this(config, false);
@@ -102,7 +103,7 @@ public class Main {
     }
 
     private static List<String> getDotfileDirectories() {
-        ArrayList<String> searchList = new ArrayList<String>();
+        final ArrayList<String> searchList = new ArrayList<>(4);
         for (String homeProp : new String[] {"user.dir", "user.home"}) {
             String home = SafePropertyAccessor.getProperty(homeProp);
             if (home != null) searchList.add(home);
@@ -123,8 +124,11 @@ public class Main {
     }
 
     public static void processDotfile() {
+        final StringBuilder path = new StringBuilder();
         for (String home : getDotfileDirectories()) {
-            File dotfile = new File(home + "/.jrubyrc");
+            path.setLength(0);
+            path.append(home).append("/.jrubyrc");
+            final File dotfile = new File(path.toString());
             if (dotfile.exists()) loadJRubyProperties(dotfile);
         }
     }
@@ -142,12 +146,12 @@ public class Main {
             for (Map.Entry entry : newProps.entrySet()) {
                 sysProps.put("jruby." + entry.getKey(), entry.getValue());
             }
-        } catch (IOException ioe) {
-            LOG.debug("exception loading " + dotfile, ioe);
-        } catch (SecurityException se) {
-            LOG.debug("exception loading " + dotfile, se);
-        } finally {
-            if (fis != null) try {fis.close();} catch (Exception e) {}
+        }
+        catch (IOException|SecurityException ex) {
+            if (LOG.isDebugEnabled()) LOG.debug("exception loading properties from: " + dotfile, ex);
+        }
+        finally {
+            if (fis != null) try { fis.close(); } catch (Exception e) {}
         }
     }
 
@@ -205,9 +209,14 @@ public class Main {
             if (status.isExit()) {
                 System.exit(status.getStatus());
             }
-        } catch (RaiseException rj) {
-            System.exit(handleRaiseException(rj));
-        } catch (Throwable t) {
+        }
+        catch (RaiseException ex) {
+            System.exit( handleRaiseException(ex) );
+        }
+        catch (JumpException ex) {
+            System.exit( handleUnexpectedJump(ex) );
+        }
+        catch (Throwable t) {
             // If a Truffle exception gets this far it's a hard failure - don't try and dress it up as a Ruby exception
 
             if (main.config.getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
@@ -252,10 +261,10 @@ public class Main {
     private Status internalRun() {
         doShowVersion();
         doShowCopyright();
+        doPrintProperties();
 
-        if (!config.getShouldRunInterpreter() ) {
+        if (!config.getShouldRunInterpreter()) {
             doPrintUsage(false);
-            doPrintProperties();
             return new Status();
         }
 
@@ -310,14 +319,13 @@ public class Main {
         }
     }
 
-    private Status handleUnsupportedClassVersion(UnsupportedClassVersionError ucve) {
+    private Status handleUnsupportedClassVersion(UnsupportedClassVersionError ex) {
         config.getError().println("Error: Some library (perhaps JRuby) was built with a later JVM version.");
         config.getError().println("Please use libraries built with the version you intend to use or an earlier one.");
         if (config.isVerbose()) {
-            config.getError().println("Exception trace follows:");
-            ucve.printStackTrace();
+            ex.printStackTrace(config.getError());
         } else {
-            config.getError().println("Specify -w for full UnsupportedClassVersionError stack trace");
+            config.getError().println("Specify -w for full " + ex + " stack trace");
         }
         return new Status(1);
     }
@@ -325,21 +333,20 @@ public class Main {
     /**
      * Print a nicer stack size error since Rubyists aren't used to seeing this.
      */
-    private Status handleStackOverflow(StackOverflowError soe) {
+    private Status handleStackOverflow(StackOverflowError ex) {
         String memoryMax = getRuntimeFlagValue("-Xss");
 
         if (memoryMax != null) {
-            config.getError().println("Error: Your application used more stack memory than the safety cap of " + memoryMax + ".");
+            config.getError().println("Error: Your application used more stack memory than the safety cap of " + memoryMax + '.');
         } else {
             config.getError().println("Error: Your application used more stack memory than the default safety cap.");
         }
         config.getError().println("Specify -J-Xss####k to increase it (#### = cap size in KB).");
 
         if (config.isVerbose()) {
-            config.getError().println("Exception trace follows:");
-            soe.printStackTrace(config.getError());
+            ex.printStackTrace(config.getError());
         } else {
-            config.getError().println("Specify -w for full StackOverflowError stack trace");
+            config.getError().println("Specify -w for full " + ex + " stack trace");
         }
 
         return new Status(1);
@@ -348,32 +355,42 @@ public class Main {
     /**
      * Print a nicer memory error since Rubyists aren't used to seeing this.
      */
-    private Status handleOutOfMemory(OutOfMemoryError oome) {
+    private Status handleOutOfMemory(OutOfMemoryError ex) {
         System.gc(); // try to clean up a bit of space, hopefully, so we can report this error
 
-        String oomeMessage = oome.getMessage();
+        String oomeMessage = ex.getMessage();
+        boolean heapError = false;
 
-        if (oomeMessage != null && oomeMessage.contains("PermGen")) { // report permgen memory error
-            config.getError().println("Error: Your application exhausted PermGen area of the heap.");
-            config.getError().println("Specify -J-XX:MaxPermSize=###M to increase it (### = PermGen size in MB).");
+        if (oomeMessage != null) {
+            if (oomeMessage.contains("PermGen")) {
+                // report permgen memory error
+                config.getError().println("Error: Your application exhausted PermGen area of the heap.");
+                config.getError().println("Specify -J-XX:MaxPermSize=###M to increase it (### = PermGen size in MB).");
+            } else if (oomeMessage.contains("unable to create new native thread")) {
+                // report thread exhaustion error
+                config.getError().println("Error: Your application demanded too many live threads, perhaps for Fiber or Enumerator.");
+                config.getError().println("Ensure your old Fibers and Enumerators are being cleaned up.");
+            } else {
+                heapError = true;
+            }
+        }
 
-        } else { // report heap memory error
+        if (heapError) { // report heap memory error
 
             String memoryMax = getRuntimeFlagValue("-Xmx");
 
             if (memoryMax != null) {
                 config.getError().println("Error: Your application used more memory than the safety cap of " + memoryMax + ".");
             } else {
-                config.getError().println("Error: Your application used more memory than the default safety cap.");
+                config.getError().println("Error: Your application used more memory than the automatic cap of " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "MB.");
             }
-            config.getError().println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
+            config.getError().println("Specify -J-Xmx####M to increase it (#### = cap size in MB).");
         }
 
         if (config.isVerbose()) {
-            config.getError().println("Exception trace follows:");
-            oome.printStackTrace(config.getError());
+            ex.printStackTrace(config.getError());
         } else {
-            config.getError().println("Specify -w for full OutOfMemoryError stack trace");
+            config.getError().println("Specify -w for full " + ex + " stack trace");
         }
 
         return new Status(1);
@@ -393,7 +410,7 @@ public class Main {
 
     private Status handleMainExit(MainExitException mee) {
         if (!mee.isAborted()) {
-            config.getOutput().println(mee.getMessage());
+            config.getError().println(mee.getMessage());
             if (mee.isUsageError()) {
                 doPrintUsage(true);
             }
@@ -402,7 +419,6 @@ public class Main {
     }
 
     private Status doRunFromMain(Ruby runtime, InputStream in, String filename) {
-        long now = -1;
         try {
             doCheckSecurityManager();
 
@@ -449,7 +465,7 @@ public class Main {
         } catch (RaiseException re) {
             if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
                 context.setErrorInfo($ex);
-                config.getError().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
+                config.getError().println("SyntaxError in " + re.getException().message(context));
                 return false;
             }
             throw re;
@@ -468,10 +484,6 @@ public class Main {
         }
     }
 
-    private void doProcessArguments(InputStream in) {
-        config.processArguments(config.parseShebangOptions(in));
-    }
-
     private void doPrintProperties() {
         if (config.getShouldPrintProperties()) {
             config.getOutput().print(OutputStrings.getPropertyHelp());
@@ -481,6 +493,7 @@ public class Main {
     private void doPrintUsage(boolean force) {
         if (config.getShouldPrintUsage() || force) {
             config.getOutput().print(OutputStrings.getBasicUsageHelp());
+            config.getOutput().print(OutputStrings.getFeaturesHelp());
         }
     }
 
@@ -516,25 +529,54 @@ public class Main {
      * run should be System.err. In order to avoid the Ruby err being closed and unable
      * to write, we use System.err unconditionally.
      *
-     * @param rj
+     * @param ex
      * @return
      */
-    protected static int handleRaiseException(RaiseException rj) {
-        RubyException raisedException = rj.getException();
-        Ruby runtime = raisedException.getRuntime();
-        if (runtime.getSystemExit().isInstance(raisedException)) {
+    protected static int handleRaiseException(final RaiseException ex) {
+        RubyException raisedException = ex.getException();
+        final Ruby runtime = raisedException.getRuntime();
+        if ( runtime.getSystemExit().isInstance(raisedException) ) {
             IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
-            if (status != null && !status.isNil()) {
+            if (status != null && ! status.isNil()) {
                 return RubyNumeric.fix2int(status);
-            } else {
-                return 0;
             }
-        } else {
-            System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
-            return 1;
+            return 0;
         }
+        System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
+        return 1;
     }
 
+    private static int handleUnexpectedJump(final JumpException ex) {
+        if ( ex instanceof JumpException.SpecialJump ) { // ex == JumpException.SPECIAL_JUMP
+            System.err.println("Unexpected break: " + ex);
+        }
+        else if ( ex instanceof JumpException.FlowControlException ) {
+            // NOTE: assuming a single global runtime main(args) should have :
+            if ( Ruby.isGlobalRuntimeReady() ) {
+                final Ruby runtime = Ruby.getGlobalRuntime();
+                RaiseException raise = ((JumpException.FlowControlException) ex).buildException(runtime);
+                if ( raise != null ) handleRaiseException(raise);
+            }
+            else {
+                System.err.println("Unexpected jump: " + ex);
+            }
+        }
+        else {
+            System.err.println("Unexpected: " + ex);
+        }
+        
+        final StackTraceElement[] trace = ex.getStackTrace();
+        if ( trace != null && trace.length > 0 ) {
+            System.err.println( ThreadContext.createRawBacktraceStringFromThrowable(ex, false) );
+        }
+        else {
+            System.err.println("HINT: to get backtrace for jump exceptions run with -Xjump.backtrace=true");
+        }
+        
+        // TODO: should match MRI (>= 2.2.3) exit status - @see ruby/test_enum.rb#test_first
+        return 2;
+    }
+    
     public static void printTruffleTimeMetric(String id) {
         if (Options.TRUFFLE_METRICS_TIME.load()) {
             final long millis = System.currentTimeMillis();

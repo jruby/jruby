@@ -1,1 +1,1 @@
-require_relative '../../stdlib/tsort'
+require_relative '../stdlib/tsort'

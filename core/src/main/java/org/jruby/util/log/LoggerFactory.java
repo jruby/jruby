@@ -32,49 +32,103 @@ import org.jruby.util.cli.Options;
 
 public class LoggerFactory {
 
-    private static final String LOGGER_CLASS = Options.LOGGER_CLASS.load();
-    private static final String BACKUP_LOGGER_CLASS = "org.jruby.util.log.StandardErrorLogger";
+    static final String LOGGER_CLASS = Options.LOGGER_CLASS.load();
+    static final String BACKUP_LOGGER_CLASS = "org.jruby.util.log.StandardErrorLogger";
 
-    private static final Constructor<?> CTOR;
+    static final Constructor<? extends Logger> LOGGER; // (Class)
+    static final Constructor<? extends Logger> LOGGER_OLD; // (String)
+
     static {
-        Constructor<?> ctor;
-        Logger log;
-        
+        LOGGER = resolveLoggerConstructor(LOGGER_CLASS, Class.class, true);
+        // due backwards compatibility (if someone implemented the Logger iface)
+        if ( LOGGER == null ) {
+            LOGGER_OLD = resolveLoggerConstructor(LOGGER_CLASS, String.class, false);
+        }
+        else {
+            LOGGER_OLD = resolveLoggerConstructor(LOGGER_CLASS, String.class, true);
+        }
+    }
+
+    static Constructor<? extends Logger> resolveLoggerConstructor(
+        final String className, final Class<?> paramType, boolean allowNoSuchMethod) {
+        Constructor<? extends Logger> loggerCtor;
+        final Object param = paramType == String.class ?
+                LoggerFactory.class.getSimpleName() : LoggerFactory.class;
         try {
-            final Class<?> cls = Class.forName(LOGGER_CLASS);
-            ctor = cls.getDeclaredConstructor(String.class);
-            log = (Logger)ctor.newInstance("LoggerFactory");
-        } catch (Exception e1) {
+            @SuppressWarnings("unchecked")
+            Class<? extends Logger> klass = (Class<? extends Logger>) Class.forName(className);
+            loggerCtor = klass.getDeclaredConstructor(paramType);
+            loggerCtor.newInstance(param); // check its working
+        }
+        catch (Exception ex) {
+            if ( allowNoSuchMethod && ex instanceof NoSuchMethodException ) {
+                return null;
+            }
             try {
-                final Class<?> cls = Class.forName(BACKUP_LOGGER_CLASS);
-                ctor = cls.getDeclaredConstructor(String.class);
-                log = (Logger)ctor.newInstance("LoggerFactory");
-                
-                log.debug("failed to create logger \"" + LOGGER_CLASS + "\", using \"" + BACKUP_LOGGER_CLASS + "\"");
-            } catch (Exception e2) {
-                throw new IllegalStateException("unable to instantiate any logger", e1);
+                @SuppressWarnings("unchecked")
+                Class<? extends Logger> klass = (Class<? extends Logger>) Class.forName(BACKUP_LOGGER_CLASS);
+                loggerCtor = klass.getDeclaredConstructor(paramType);
+                Logger log = loggerCtor.newInstance(param);
+                // log failure to load passeed -Djruby.logger.class :
+                log.info("failed to create logger \"" + className + "\", using \"" + BACKUP_LOGGER_CLASS + "\"");
+            }
+            catch (Exception e2) {
+                throw new IllegalStateException("unable to instantiate any logger", ex);
             }
         }
-        CTOR = ctor;
+        return loggerCtor;
     }
 
-    public static Logger getLogger(String loggerName) {
+    public static Logger getLogger(Class<?> loggerClass) {
+        if ( LOGGER == null ) {
+            return getLogger(loggerClass.getName());
+        }
         try {
-            Logger logger = (Logger) CTOR.newInstance(loggerName);
-            return logger;
-        } catch (Exception e) {
-          Throwable rootCause = e;
-
-          // Unwrap reflection exception wrappers
-          while (rootCause.getCause() != null) {
-            rootCause = rootCause.getCause();
-          }
-
-          if (rootCause instanceof SecurityException) {
-            return new StandardErrorLogger(loggerName);
-          }
-
-          throw new IllegalStateException("unable to instantiate logger", e);
+            return LOGGER.newInstance(loggerClass);
+        }
+        catch (Exception ex) {
+            return getLoggerFallback(loggerClass, ex);
         }
     }
+
+    /**
+     * @deprecated prefer using {@link #getLogger(java.lang.Class)} if possible
+     */
+    public static Logger getLogger(String loggerName) {
+        try {
+            return LOGGER_OLD.newInstance(loggerName);
+        }
+        catch (Exception ex) {
+            return getLoggerFallback(loggerName, ex);
+        }
+    }
+
+    private static Logger getLoggerFallback(final String loggerName, final Exception ex) {
+        Throwable rootCause = ex;
+        // unwrap reflection exception wrappers
+        while (rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+        }
+
+        if (rootCause instanceof SecurityException) {
+            return new StandardErrorLogger(loggerName);
+        }
+
+        throw new IllegalStateException("unable to instantiate logger", ex);
+    }
+
+    private static Logger getLoggerFallback(final Class loggerClass, final Exception ex) {
+        Throwable rootCause = ex;
+        // unwrap reflection exception wrappers
+        while (rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+        }
+
+        if (rootCause instanceof SecurityException) {
+            return new StandardErrorLogger(loggerClass);
+        }
+
+        throw new IllegalStateException("unable to instantiate logger", ex);
+    }
+
 }

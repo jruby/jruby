@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Gem
   DEFAULT_HOST = "https://rubygems.org"
 
@@ -174,4 +175,22 @@ module Gem
               RbConfig::CONFIG['ruby_version']
   end
 
+  ##
+  # Default options for gem commands.
+  #
+  # The options here should be structured as an array of string "gem"
+  # command names as keys and a string of the default options as values.
+  #
+  # Example:
+  #
+  # def self.platform_defaults
+  #   {
+  #       'install' => '--no-rdoc --no-ri --env-shebang',
+  #       'update' => '--no-rdoc --no-ri --env-shebang'
+  #   }
+  # end
+
+  def self.platform_defaults
+    {}
+  end
 end

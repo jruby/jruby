@@ -1,6 +1,5 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;

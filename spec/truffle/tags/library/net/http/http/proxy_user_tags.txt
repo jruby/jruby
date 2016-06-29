@@ -1,6 +1,0 @@
-fails:Net::HTTP.proxy_user when self is no proxy class returns nil
-fails:Net::HTTP.proxy_user when self is a proxy class returns nil if no username was set for self's proxy connection
-fails:Net::HTTP.proxy_user when self is a proxy class returns the username for self's proxy connection
-fails:Net::HTTP#proxy_user when self is no proxy class instance returns nil
-fails:Net::HTTP#proxy_user when self is a proxy class instance returns nil if no username was set for self's proxy connection
-fails:Net::HTTP#proxy_user when self is a proxy class instance returns the username for self's proxy connection

@@ -1,3 +1,4 @@
+# frozen_string_literal: false
 # logger.rb - simple logging utility
 # Copyright (C) 2000-2003, 2005, 2008, 2011  NAKAMURA, Hiroshi <nahi@ruby-lang.org>.
 #
@@ -176,6 +177,13 @@ require 'monitor'
 #
 #      # DEBUG < INFO < WARN < ERROR < FATAL < UNKNOWN
 #
+# 3. Symbol or String (case insensitive)
+#
+#      logger.level = :info
+#      logger.level = 'INFO'
+#
+#      # :debug < :info < :warn < :error < :fatal < :unknown
+#
 # == Format
 #
 # Log messages are rendered in the output stream in a certain format by
@@ -208,7 +216,7 @@ class Logger
     name = File.basename(__FILE__)
   end
   rev ||= "v#{VERSION}"
-  ProgName = "#{name}/#{rev}"
+  ProgName = "#{name}/#{rev}".freeze
 
   class Error < RuntimeError # :nodoc:
   end
@@ -234,7 +242,34 @@ class Logger
   include Severity
 
   # Logging severity threshold (e.g. <tt>Logger::INFO</tt>).
-  attr_accessor :level
+  attr_reader :level
+
+  # Set logging severity threshold.
+  #
+  # +severity+:: The Severity of the log message.
+  def level=(severity)
+    if severity.is_a?(Integer)
+      @level = severity
+    else
+      _severity = severity.to_s.downcase
+      case _severity
+      when 'debug'.freeze
+        @level = DEBUG
+      when 'info'.freeze
+        @level = INFO
+      when 'warn'.freeze
+        @level = WARN
+      when 'error'.freeze
+        @level = ERROR
+      when 'fatal'.freeze
+        @level = FATAL
+      when 'unknown'.freeze
+        @level = UNKNOWN
+      else
+        raise ArgumentError, "invalid log level: #{severity}"
+      end
+    end
+  end
 
   # Program name to include in log messages.
   attr_accessor :progname
@@ -318,6 +353,26 @@ class Logger
       @logdev = LogDevice.new(logdev, :shift_age => shift_age,
         :shift_size => shift_size)
     end
+  end
+
+  #
+  # :call-seq:
+  #   Logger#reopen
+  #   Logger#reopen(logdev)
+  #
+  # === Args
+  #
+  # +logdev+::
+  #   The log device.  This is a filename (String) or IO object (typically
+  #   +STDOUT+, +STDERR+, or an open file).
+  #
+  # === Description
+  #
+  # Reopen a log device.
+  #
+  def reopen(logdev = nil)
+    @logdev.reopen(logdev)
+    self
   end
 
   #
@@ -481,7 +536,7 @@ class Logger
 private
 
   # Severity label for logging (max 5 chars).
-  SEV_LABEL = %w(DEBUG INFO WARN ERROR FATAL ANY)
+  SEV_LABEL = %w(DEBUG INFO WARN ERROR FATAL ANY).each(&:freeze).freeze
 
   def format_severity(severity)
     SEV_LABEL[severity] || 'ANY'
@@ -494,7 +549,7 @@ private
 
   # Default formatter for log messages.
   class Formatter
-    Format = "%s, [%s#%d] %5s -- %s: %s\n"
+    Format = "%s, [%s#%d] %5s -- %s: %s\n".freeze
 
     attr_accessor :datetime_format
 
@@ -533,29 +588,31 @@ private
 
     def next_rotate_time(now, shift_age)
       case shift_age
-      when /^daily$/
+      when 'daily'
         t = Time.mktime(now.year, now.month, now.mday) + SiD
-      when /^weekly$/
+      when 'weekly'
         t = Time.mktime(now.year, now.month, now.mday) + SiD * (7 - now.wday)
-      when /^monthly$/
+      when 'monthly'
         t = Time.mktime(now.year, now.month, 1) + SiD * 31
-        mday = (1 if t.mday > 1)
+        return Time.mktime(t.year, t.month, 1) if t.mday > 1
       else
         return now
       end
-      if mday or t.hour.nonzero? or t.min.nonzero? or t.sec.nonzero?
-        t = Time.mktime(t.year, t.month, mday || (t.mday + (t.hour > 12 ? 1 : 0)))
+      if t.hour.nonzero? or t.min.nonzero? or t.sec.nonzero?
+        hour = t.hour
+        t = Time.mktime(t.year, t.month, t.mday)
+        t += SiD if hour > 12
       end
       t
     end
 
     def previous_period_end(now, shift_age)
       case shift_age
-      when /^daily$/
+      when 'daily'
         t = Time.mktime(now.year, now.month, now.mday) - SiD / 2
-      when /^weekly$/
-        t = Time.mktime(now.year, now.month, now.mday) - (SiD * (now.wday + 1) + SiD / 2)
-      when /^monthly$/
+      when 'weekly'
+        t = Time.mktime(now.year, now.month, now.mday) - (SiD * now.wday + SiD / 2)
+      when 'monthly'
         t = Time.mktime(now.year, now.month, 1) - SiD / 2
       else
         return now
@@ -570,20 +627,13 @@ private
 
     attr_reader :dev
     attr_reader :filename
-
-    class LogDeviceMutex
-      include MonitorMixin
-    end
+    include MonitorMixin
 
     def initialize(log = nil, opt = {})
       @dev = @filename = @shift_age = @shift_size = nil
-      @mutex = LogDeviceMutex.new
-      if log.respond_to?(:write) and log.respond_to?(:close)
-        @dev = log
-      else
-        @dev = open_logfile(log)
-        @dev.sync = true
-        @filename = log
+      mon_initialize
+      set_dev(log)
+      if @filename
         @shift_age = opt[:shift_age] || 7
         @shift_size = opt[:shift_size] || 1048576
         @next_rotate_time = next_rotate_time(Time.now, @shift_age) unless @shift_age.is_a?(Integer)
@@ -592,7 +642,7 @@ private
 
     def write(message)
       begin
-        @mutex.synchronize do
+        synchronize do
           if @shift_age and @dev.respond_to?(:stat)
             begin
               check_shift_log
@@ -613,7 +663,7 @@ private
 
     def close
       begin
-        @mutex.synchronize do
+        synchronize do
           @dev.close rescue nil
         end
       rescue Exception
@@ -621,7 +671,32 @@ private
       end
     end
 
+    def reopen(log = nil)
+      # reopen the same filename if no argument, do nothing for IO
+      log ||= @filename if @filename
+      if log
+        synchronize do
+          if @filename and @dev
+            @dev.close rescue nil # close only file opened by Logger
+            @filename = nil
+          end
+          set_dev(log)
+        end
+      end
+      self
+    end
+
   private
+
+    def set_dev(log)
+      if log.respond_to?(:write) and log.respond_to?(:close)
+        @dev = log
+      else
+        @dev = open_logfile(log)
+        @dev.sync = true
+        @filename = log
+      end
+    end
 
     def open_logfile(filename)
       begin

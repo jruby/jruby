@@ -7,7 +7,7 @@ class TestKernel < Test::Unit::TestCase
   include TestHelper
 
   def log(msg)
-    $stderr.puts msg if $VERBOSE
+    $stderr.puts msg if $DEBUG
   end
 
   TESTAPP_DIR = File.expand_path(File.join(File.dirname(__FILE__), 'testapp'))
@@ -107,8 +107,7 @@ class TestKernel < Test::Unit::TestCase
     catch :fred do throw :fred; fail("shouldn't get here") end
     assert(!been_where_it_shouldnt)
 
-    ex = ArgumentError
-    assert_raises (ex) do
+    assert_raises(UncaughtThrowError) do
       catch :fred do throw :wilma end
     end
   end
@@ -133,8 +132,7 @@ class TestKernel < Test::Unit::TestCase
   def test_invalid_throw_after_inner_catch_should_unwind_the_stack_all_the_way_to_the_top
     been_at_fred1 = false
     been_at_fred2 = false
-    ex = ArgumentError
-    assert_raises(ex) do
+    assert_raises(UncaughtThrowError, "uncaught throw :wilma") do
       catch :fred1 do
         catch :fred2 do
           catch :fred3 do
@@ -157,8 +155,7 @@ class TestKernel < Test::Unit::TestCase
   end
 
   def test_catch_stack_should_be_cleaned_up
-    ex = ArgumentError
-    assert_raises(ex) do
+    assert_raises(UncaughtThrowError) do
       catch :fred1 do
         catch :fred2 do
           catch :fred3 do
@@ -435,42 +432,36 @@ class TestKernel < Test::Unit::TestCase
     assert !system('')
   end
 
-  unless false # FIXME figure out why this doesn't pass in 1.9+
-    def test_system_existing
-      quiet do
-        if (WINDOWS)
-          res = system('cd')
-        else
-          res = system('pwd')
-        end
-        assert_equal true, res
+  def test_system_existing
+    quiet do
+      if (WINDOWS)
+        res = system('cd')
+      else
+        res = system('true')
       end
+      assert_equal true, res
     end
   end
 
-  unless false # FIXME figure out why this doesn't pass in 1.9+
-    def test_system_existing_with_leading_space
-      quiet do
-        if (WINDOWS)
-          res = system(' cd')
-        else
-          res = system(' pwd')
-        end
-        assert_equal true, res
+  def test_system_existing_with_leading_space
+    quiet do
+      if (WINDOWS)
+        res = system(' cd')
+      else
+        res = system(' true')
       end
+      assert_equal true, res
     end
   end
 
-  unless false # FIXME figure out why this doesn't pass in 1.9+
-    def test_system_existing_with_trailing_space
-      quiet do
-        if (WINDOWS)
-          res = system('cd ')
-        else
-          res = system('pwd ')
-        end
-        assert_equal true, res
+  def test_system_existing_with_trailing_space
+    quiet do
+      if (WINDOWS)
+        res = system('cd ')
+      else
+        res = system('true ')
       end
+      assert_equal true, res
     end
   end
 
@@ -783,7 +774,7 @@ class TestKernel < Test::Unit::TestCase
     ENV['RUBYOPT'] = "-v"
     result =  `bin/jruby -e "a=1"`
     assert_equal 0, $?.exitstatus
-    assert_match /ruby/i, result
+    assert_match(/ruby/i, result)
   ensure
     ENV['RUBYOPT'] = old
   end

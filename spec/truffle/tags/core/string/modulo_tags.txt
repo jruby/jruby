@@ -1,21 +1,10 @@
-fails:String#% formats multiple expressions
 fails:String#% formats single % characters before a newline or NULL as literal %s
-fails:String#% raises an error if single % appears anywhere else
-fails:String#% raises an error if NULL or \n appear anywhere else in the format string
 fails:String#% raises an ArgumentError for unused arguments when $DEBUG is true
 fails:String#% always allows unused arguments when positional argument style is used
 fails:String#% replaces trailing absolute argument specifier without type with percent sign
-fails:String#% raises an ArgumentError when given invalid argument specifiers
 fails:String#% raises an ArgumentError when multiple positional argument tokens are given for one format specifier
-fails:String#% respects positional arguments and precision tokens given for one format specifier
-fails:String#% allows more than one digit of position
-fails:String#% raises an ArgumentError when multiple width star tokens are given for one format specifier
-fails:String#% raises an ArgumentError when a width star token is seen after a width token
-fails:String#% raises an ArgumentError when multiple precision tokens are given
 fails:String#% raises an ArgumentError when absolute and relative argument numbers are mixed
 fails:String#% allows reuse of the one argument multiple via absolute argument numbers
-fails:String#% always interprets an array argument as a list of argument parameters
-fails:String#% always interprets an array subclass argument as a list of argument parameters
 fails:String#% allows positional arguments for width star and precision star arguments
 fails:String#% allows negative width to imply '-' flag
 fails:String#% ignores negative precision
@@ -28,9 +17,6 @@ fails:String#% raises a TypeError if #to_ary does not return an Array
 fails:String#% tries to convert the argument to Array by calling #to_ary
 fails:String#% doesn't return subclass instances when called on a subclass
 fails:String#% always taints the result when the format string is tainted
-fails:String#% supports binary formats using %b for positive numbers
-fails:String#% supports binary formats using %b for negative numbers
-fails:String#% supports binary formats using %B with same behaviour as %b except for using 0B instead of 0b for #
 fails:String#% supports character formats using %c
 fails:String#% supports single character strings as argument for %c
 fails:String#% raises an exception for multiple character strings as argument for %c
@@ -44,7 +30,6 @@ fails:String#% supports integer formats using %i
 fails:String#% supports negative integers using %i
 fails:String#% supports negative integers using %i, giving priority to `-`
 fails:String#% supports float formats using %e
-fails:String#% supports float formats using %e, but Inf, -Inf, and NaN are not floats
 fails:String#% supports float formats using %E, but Inf, -Inf, and NaN are not floats
 fails:String#% supports float formats using %E
 fails:String#% supports float formats using %f
@@ -53,22 +38,14 @@ fails:String#% supports float formats using %G
 fails:String#% supports octal formats using %o for positive numbers
 fails:String#% supports octal formats using %o for negative numbers
 fails:String#% supports inspect formats using %p
-fails:String#% calls inspect on arguments for %p format
-fails:String#% taints result for %p when argument.inspect is tainted
 fails:String#% supports string formats using %s
-fails:String#% respects a space padding request not as part of the width
 fails:String#% taints result for %s when argument is tainted
 fails:String#% raises an ArgumentError for huge precisions for %s
 fails:String#% supports unsigned formats using %u
-fails:String#% formats negative values with a leading sign using %u
 fails:String#% supports hex formats using %x for positive numbers
 fails:String#% supports hex formats using %x for negative numbers
 fails:String#% supports hex formats using %X for positive numbers
 fails:String#% supports hex formats using %X for negative numbers
-fails:String#% formats zero without prefix using %#x
-fails:String#% formats zero without prefix using %#X
-fails:String#% behaves as if calling Kernel#Integer for %b argument, if it does not respond to #to_ary
-fails:String#% behaves as if calling Kernel#Integer for %o argument, if it does not respond to #to_ary
 fails:String#% tries to convert the passed argument to an Array using #to_ary
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument is hexadecimal string
@@ -80,3 +57,4 @@ fails:String#% behaves as if calling Kernel#Float for %g arguments, when the pas
 fails:String#% behaves as if calling Kernel#Float for %g arguments, when the passed argument is hexadecimal string
 fails:String#% behaves as if calling Kernel#Float for %G arguments, when the passed argument does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Float for %G arguments, when the passed argument is hexadecimal string
+fails:String#% when format string contains %<> formats should raise ArgumentError if no hash given

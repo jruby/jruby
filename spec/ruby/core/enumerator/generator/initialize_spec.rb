@@ -16,13 +16,11 @@ describe "Enumerator::Generator#initialize" do
     @uninitialized.send(:initialize) {}.should equal(@uninitialized)
   end
 
-  ruby_version_is "2.1" do
-    describe "on frozen instance" do
-      it "raises a RuntimeError" do
-        lambda {
-          @uninitialized.freeze.send(:initialize) {}
-        }.should raise_error(RuntimeError)
-      end
+  describe "on frozen instance" do
+    it "raises a RuntimeError" do
+      lambda {
+        @uninitialized.freeze.send(:initialize) {}
+      }.should raise_error(RuntimeError)
     end
   end
 end

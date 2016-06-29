@@ -380,7 +380,7 @@ abstract public class AbstractMemory extends MemoryObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "write_short" }, required = 1)
+    @JRubyMethod(name = { "write_short", "write_int16" }, required = 1)
     public IRubyObject write_short(ThreadContext context, IRubyObject value) {
         getMemoryIO().putShort(0, Util.int16Value(value));
 
@@ -522,7 +522,7 @@ abstract public class AbstractMemory extends MemoryObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "write_int" })
+    @JRubyMethod(name = { "write_int", "write_int32" })
     public IRubyObject write_int(ThreadContext context, IRubyObject value) {
         getMemoryIO().putInt(0, Util.int32Value(value));
 

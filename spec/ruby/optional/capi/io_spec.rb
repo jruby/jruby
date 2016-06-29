@@ -135,7 +135,7 @@ describe "C-API IO function" do
     end
 
     it "returns nil for non IO objects" do
-      @o.rb_io_check_io(new_hash).should be_nil
+      @o.rb_io_check_io({}).should be_nil
     end
   end
 

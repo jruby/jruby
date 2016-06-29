@@ -6,7 +6,7 @@ describe "Method#owner" do
     "abc".method(:upcase).owner.should == String
   end
 
-  it "returns the name even when aliased" do
+  it "returns the same owner when aliased in the same classes" do
     obj = MethodSpecs::Methods.new
     obj.method(:foo).owner.should == MethodSpecs::Methods
     obj.method(:bar).owner.should == MethodSpecs::Methods

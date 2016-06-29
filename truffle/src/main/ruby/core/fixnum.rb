@@ -1,12 +1,12 @@
-# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
-# 
+#
 # Eclipse Public License version 1.0
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,46 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-class Fixnum
+##
+#--
+# NOTE do not define to_sym or id2name. It's been deprecated for 5 years and
+# we've decided to remove it.
+#++
+
+class Fixnum < Integer
+
+  MIN = -9223372036854775808
+  MAX =  9223372036854775807
+
+  #--
+  # see README-DEVELOPERS regarding safe math compiler plugin
+  #++
+
+  alias_method :modulo, :%
+
+  def fdiv(n)
+    if n.kind_of?(Integer)
+      to_f / n
+    else
+      redo_coerced :fdiv, n
+    end
+  end
+
+  def imaginary
+    0
+  end
+
+  def **(o)
+    Truffle.primitive :fixnum_pow
+
+    if o.is_a?(Float) && self < 0 && o != o.round
+      return Complex.new(self, 0) ** o
+    elsif o.is_a?(Integer) && o < 0
+      return Rational.new(self, 1) ** o
+    end
+
+    redo_coerced :**, o
+  end
 
   # Have a copy in Fixnum of the Integer version, as MRI does
   public :even?, :odd?, :succ

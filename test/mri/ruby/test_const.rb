@@ -1,6 +1,6 @@
 # -*- coding: us-ascii -*-
+# frozen_string_literal: false
 require 'test/unit'
-require_relative 'envutil'
 
 class TestConst < Test::Unit::TestCase
   TEST1 = 1
@@ -50,17 +50,21 @@ class TestConst < Test::Unit::TestCase
 
   def test_redefinition
     c = Class.new
-    c.const_set(:X, 1)
-    assert_output(nil, <<-WARNING) {c.const_set(:X, 2)}
-#{__FILE__}:#{__LINE__-1}: warning: already initialized constant #{c}::X
-#{__FILE__}:#{__LINE__-3}: warning: previous definition of X was here
+    name = "X\u{5b9a 6570}"
+    c.const_set(name, 1)
+    prev_line = __LINE__ - 1
+    EnvUtil.with_default_internal(Encoding::UTF_8) do
+      assert_warning(<<-WARNING) {c.const_set(name, 2)}
+#{__FILE__}:#{__LINE__-1}: warning: already initialized constant #{c}::#{name}
+#{__FILE__}:#{prev_line}: warning: previous definition of #{name} was here
 WARNING
+    end
+  end
+
+  def test_redefinition_memory_leak
     code = <<-PRE
-olderr = $stderr.dup
-$stderr.reopen(File::NULL, "wb")
 350000.times { FOO = :BAR }
-$stderr.reopen(olderr)
 PRE
-    assert_no_memory_leak([], '', code, 'redefined constant')
+    assert_no_memory_leak(%w[-W0 -], '', code, 'redefined constant', timeout: 30)
   end
 end

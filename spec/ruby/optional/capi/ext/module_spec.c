@@ -146,7 +146,7 @@ static VALUE module_specs_rbclass2name(VALUE self, VALUE klass) {
 }
 #endif
 
-void Init_module_spec() {
+void Init_module_spec(void) {
   VALUE cls;
 
   cls = rb_define_class("CApiModuleSpecs", rb_cObject);

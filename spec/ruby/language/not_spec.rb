@@ -12,9 +12,7 @@ describe "The not keyword" do
   end
 
   it "accepts an argument" do
-    lambda do
-      not(true)
-    end.should_not raise_error(SyntaxError)
+    not(true).should be_false
   end
 
   it "returns false if the argument is true" do
@@ -27,20 +25,6 @@ describe "The not keyword" do
 
   it "returns true if the argument is nil" do
     (not(nil)).should be_true
-  end
-end
-
-describe "not()" do
-  it "returns false if the argument is true" do
-    not(true).should == false
-  end
-
-  it "returns true if the argument is false" do
-    not(false).should == true
-  end
-
-  it "returns true if the argument is nil" do
-    not(false).should == true
   end
 end
 

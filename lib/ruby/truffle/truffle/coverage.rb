@@ -9,11 +9,17 @@
 module Coverage
 
   def self.start
-    Truffle::Primitive.coverage_start
+    Truffle::Coverage.enable
   end
 
   def self.result
-    Truffle::Primitive.coverage_result
+    result = peek_result
+    Truffle::Coverage.disable
+    result
+  end
+
+  def self.peek_result
+    Truffle::Coverage.result_array.to_h
   end
 
 end

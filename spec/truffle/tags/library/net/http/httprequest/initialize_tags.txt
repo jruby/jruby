@@ -1,5 +1,0 @@
-fails:Net::HTTPRequest#initialize uses the METHOD constants to set the request method
-fails:Net::HTTPRequest#initialize uses the REQUEST_HAS_BODY to set whether the Request has a body or not
-fails:Net::HTTPRequest#initialize uses the RESPONSE_HAS_BODY to set whether the Response can have a body or not
-fails:Net::HTTPRequest#initialize when passed path sets self's path to the passed path
-fails:Net::HTTPRequest#initialize when passed path, headers uses the passed headers Hash to initialize self's header entries

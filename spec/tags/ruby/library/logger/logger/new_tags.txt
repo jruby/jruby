@@ -1,0 +1,2 @@
+windows:Logger#new creates a new logger object
+windows:Logger#new receivs a maximum logfile size as third argument

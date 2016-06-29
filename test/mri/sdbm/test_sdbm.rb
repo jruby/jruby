@@ -1,6 +1,6 @@
+# frozen_string_literal: false
 require 'test/unit'
 require 'tmpdir'
-require_relative '../ruby/envutil'
 
 begin
   require 'sdbm'
@@ -399,7 +399,7 @@ class TestSDBM < Test::Unit::TestCase
 	n+=1
 	true
       }
-    rescue
+    rescue RuntimeError
     end
     assert_equal(51, n)
     check_size(49, @sdbm)

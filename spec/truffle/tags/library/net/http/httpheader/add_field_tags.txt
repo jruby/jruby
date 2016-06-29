@@ -1,2 +1,0 @@
-fails:Net::HTTPHeader#add_field when passed key, value adds the passed value to the header entry with the passed key
-fails:Net::HTTPHeader#add_field when passed key, value is case-insensitive

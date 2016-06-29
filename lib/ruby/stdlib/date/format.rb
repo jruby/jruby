@@ -832,6 +832,9 @@ class Date
         :_parse_year, :_parse_mon, :_parse_mday, :_parse_ddd
 
   def self._parse(str, comp=true)
+    # Newer MRI version (written in C converts non-strings to strings
+    # and also has other checks like all ascii.
+    str = str.to_str if !str.kind_of?(::String) && str.respond_to?(:to_str)
     str = str.dup
 
     e = Format::Bag.new
@@ -939,7 +942,7 @@ class Date
         h[:sec] = i sec if sec
       end
 
-      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction
+      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction # JRuby bug fix!
       set_zone(h, zone)
 
     elsif /\A\s*
@@ -981,7 +984,7 @@ class Date
         h[:sec] = i sec if sec
       end
 
-      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction
+      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction # JRuby bug fix!
       set_zone(h, zone)
 
     elsif /\A\s*
@@ -1004,7 +1007,7 @@ class Date
       h[:hour] = i hour
       h[:min] = i min
       h[:sec] = i sec if sec
-      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction
+      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction # JRuby bug fix!
       set_zone(h, zone)
     end
     h

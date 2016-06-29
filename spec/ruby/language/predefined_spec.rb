@@ -80,8 +80,11 @@ describe "Predefined global $~" do
   end
 
   it "raises an error if assigned an object not nil or instanceof MatchData" do
-    lambda { $~ = nil }.should_not raise_error
-    lambda { $~ = /foo/.match("foo") }.should_not raise_error
+    $~ = nil
+    $~.should == nil
+    $~ = /foo/.match("foo")
+    $~.should be_an_instance_of(MatchData)
+
     lambda { $~ = Object.new }.should raise_error(TypeError)
     lambda { $~ = 1 }.should raise_error(TypeError)
   end
@@ -241,7 +244,8 @@ describe "Predefined global $stdout" do
     lambda { $stdout = obj }.should raise_error(TypeError)
 
     obj.stub!(:write)
-    lambda { $stdout = obj }.should_not raise_error()
+    $stdout = obj
+    $stdout.should equal(obj)
   end
 end
 
@@ -621,6 +625,10 @@ describe "Predefined global $-0" do
 end
 
 describe "Predefined global $," do
+  after :each do
+    $, = nil
+  end
+
   it "defaults to nil" do
     $,.should be_nil
   end
@@ -687,10 +695,15 @@ describe "Predefined global $_" do
   end
 
   it "can be assigned any value" do
-    lambda { $_ = nil }.should_not raise_error
-    lambda { $_ = "foo" }.should_not raise_error
-    lambda { $_ = Object.new }.should_not raise_error
-    lambda { $_ = 1 }.should_not raise_error
+    $_ = nil
+    $_.should == nil
+    $_ = "foo"
+    $_.should == "foo"
+    o = Object.new
+    $_ = o
+    $_.should == o
+    $_ = 1
+    $_.should == 1
   end
 end
 
@@ -819,7 +832,7 @@ describe "Global variable $?" do
   end
 
   it "is thread-local" do
-    system("true")
+    system("#{RUBY_EXE} -e 'exit 0'")
     Thread.new { $?.should be_nil }.join
   end
 end
@@ -891,6 +904,13 @@ describe "Global variable $0" do
 
   after :each do
     $0 = @orig_program_name
+  end
+
+  it "is the path given as the main script and the same as __FILE__" do
+    script = "fixtures/dollar_zero.rb"
+    Dir.chdir(File.dirname(__FILE__)) do
+      ruby_exe(script).should == "#{script}\n#{script}\nOK"
+    end
   end
 
   it "returns the program name" do

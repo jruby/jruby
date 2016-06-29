@@ -12,6 +12,15 @@ describe OutputToFDMatcher do
     output_to_fd("Hi\n", STDERR).matches?(lambda { $stderr.puts("Hello\n") }).should == false
   end
 
+  it "propagate the exception if one is thrown while matching" do
+    exc = RuntimeError.new("propagates")
+    lambda {
+      output_to_fd("Hi\n", STDERR).matches?(lambda {
+        raise exc
+      }).should == false
+    }.should raise_error(exc)
+  end
+
   it "defaults to matching against STDOUT" do
     output_to_fd("Hi\n").matches?(lambda { $stdout.print "Hi\n" }).should == true
   end

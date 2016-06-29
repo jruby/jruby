@@ -1,4 +1,6 @@
-version = File.read( File.join( basedir, 'VERSION' ) ).strip
+version = ENV['JRUBY_VERSION'] ||
+  File.read( File.join( basedir, 'VERSION' ) ).strip
+
 project 'JRuby', 'https://github.com/jruby/jruby' do
 
   model_version '4.0.0'
@@ -63,31 +65,29 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'polyglot.dump.readonly' => 'true',
               'jruby.plugins.version' => '1.0.10',
 
-              'json.version' => '1.8.0',
-              'krypt.version' => '0.0.2.rc1',
-              'rspec.version' => '3.3.0',
-              'rspec-core.version' => '3.3.2',
-              'rspec-expectations.version' => '3.3.1',
-              'rspec-mocks.version' => '3.3.2',
+              'json.version' => '1.8.3',
+              'rspec.version' => '3.4.0',
+              'rspec-core.version' => '3.4.4',
+              'rspec-expectations.version' => '3.4.0',
+              'rspec-mocks.version' => '3.4.1',
+              'rspec-support.version' => '3.4.1',
               'minitest.version' => '5.4.1',
-              'test-unit.version' => '3.0.3',
+              'test-unit.version' => '3.1.1',
               'power_assert.version' => '0.2.3',
               'diff-lcs.version' => '1.1.3',
               'racc.version' => '1.4.13',
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
-              'rdoc.version' => '4.1.2',
-              'rake.version' => '10.1.0',
-              'jar-dependencies.version' => '0.2.3',
+              'rdoc.version' => '4.2.0',
+              'rake.version' => '10.4.2',
+              'jar-dependencies.version' => '0.3.2',
 
               'jruby-launcher.version' => '1.1.1',
               'ant.version' => '1.9.2',
-              'asm.version' => '5.0.3',
-              'jffi.version' => '1.2.10',
+              'asm.version' => '5.0.4',
+              'jffi.version' => '1.2.12',
               'bouncy-castle.version' => '1.47',
               'joda.time.version' => '2.8.2' )
-
-  modules [ 'truffle', 'core', 'lib' ]
 
   plugin_management do
     jar( 'junit:junit:4.11',
@@ -119,20 +119,18 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :clean, '2.5'
     plugin :dependency, '2.8'
     plugin :release, '2.4.1'
-    plugin :jar, '2.4' do
-      jar 'org.codehaus.plexus:plexus-io:2.0.5'
-    end
+    plugin :jar, '2.6'
 
     rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
     unless model.version =~ /-SNAPSHOT/
-       rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
+       #rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
     end
     plugin :enforcer, '1.4' do
       execute_goal :enforce, :rules => rules
     end
 
-    plugin :compiler, '3.1'
-    plugin :shade, '2.1'
+    plugin :compiler, '3.3'
+    plugin :shade, '2.4.3'
     plugin :surefire, '2.15'
     plugin :plugin, '3.2'
     plugin( :invoker, '1.8',
@@ -172,6 +170,15 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                    :phase => 'site-deploy' )
   end
 
+  modules [ 'core', 'lib' ]
+
+  # Truffle is by default only built if a JDK 8+ is available
+  profile 'truffle' do
+    activation do
+      jdk '[1.8,)' # 1.8+
+    end
+    modules [ 'truffle' ]
+  end
 
   build do
     default_goal 'install'
@@ -182,19 +189,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     modules [ 'test' ]
   end
 
-  [
-    'rake',
-    'exec',
-    'truffle-specs-language',
-    'truffle-specs-core',
-    'truffle-specs-library',
-    'truffle-specs-truffle',
-    'truffle-specs-language-report',
-    'truffle-specs-core-report',
-    'truffle-specs-library-report',
-    'truffle-test-pe',
-    'truffle-mri-tests'
-  ].each do |name|
+  [ 'rake', 'exec' ].each do |name|
     profile name do
 
       modules [ 'test' ]
@@ -260,7 +255,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'test', 'maven' ]
+  all_modules = [ 'truffle', 'test', 'maven' ]
 
   profile 'all' do
 
@@ -281,13 +276,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'release' do
-    modules [ 'test', 'maven' ]
+    modules [ 'truffle', 'test', 'maven' ]
     properties 'invoker.skip' => true
   end
 
   profile 'snapshots' do
 
-    modules [ 'maven' ]
+    modules [ 'truffle', 'maven' ]
 
     distribution_management do
       repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )

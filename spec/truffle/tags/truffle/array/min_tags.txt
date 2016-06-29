@@ -1,3 +1,0 @@
-fails:Array#min raises an ArgumentError for incomparable elements
-fails:Array#min returns the minimum when using a block rule
-fails:Array#min returns the minimum for enumerables that contain nils

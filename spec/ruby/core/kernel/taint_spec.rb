@@ -30,14 +30,6 @@ describe "Kernel#taint" do
     end
   end
 
-  ruby_version_is ""..."2.1" do
-    it "has no effect on symbols" do
-      v = :sym
-      v.taint
-      v.tainted?.should == false
-    end
-  end
-
   ruby_version_is "2.1"..."2.2" do
     it "raises a RuntimeError on symbols" do
       v = :sym

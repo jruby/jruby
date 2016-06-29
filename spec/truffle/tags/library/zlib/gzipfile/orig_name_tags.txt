@@ -1,2 +1,0 @@
-fails:Zlib::GzipFile#orig_name returns the name
-fails:Zlib::GzipFile#orig_name raises an error on a closed stream

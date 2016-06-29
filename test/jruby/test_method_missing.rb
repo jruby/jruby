@@ -103,6 +103,7 @@ class TestMethodMissing < Test::Unit::TestCase
     end
 
     def test_inspect_not_called_on_method_missing
+        $inspect_not_called = nil
         TestInspectNotCalled.new.foo rescue nil
         assert_equal nil, $inspect_not_called
     end

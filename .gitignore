@@ -13,6 +13,9 @@
 *.versionsBackup
 *.zip
 *~
+*.tokens
+*.su
+*.ll
 
 .DS_Store
 .debug.properties
@@ -21,6 +24,9 @@
 build
 build.properties
 build_graph.png
+mx*/*pyc
+mx*/env
+mxbuild
 core/src/main/java/org/jruby/runtime/Constants.java
 dependency-reduced-pom.xml
 dev_null
@@ -43,11 +49,14 @@ lib/ruby/gems
 lib/ruby/stdlib/*jopenssl*.jar
 lib/ruby/stdlib/bcpkix-jdk15on-*.jar
 lib/ruby/stdlib/bcprov-jdk15on-*.jar
+lib/ruby/stdlib/did_you_mean*
 lib/ruby/stdlib/gauntlet_rdoc.rb
 lib/ruby/stdlib/jar*
 lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*
 lib/ruby/stdlib/krypt*
+lib/ruby/stdlib/net-telnet.rb
+lib/ruby/stdlib/net/telnet*
 lib/ruby/stdlib/openssl*
 lib/ruby/stdlib/org/
 lib/ruby/stdlib/readline/*readline*.jar
@@ -70,6 +79,7 @@ test/prawn
 test/rails
 test/testapp/testapp
 test/truffle/*.methods
+test/truffle/integration/gem-testing
 tool/nailgun/Makefile
 tool/nailgun/config.log
 tool/nailgun/config.status
@@ -78,6 +88,7 @@ reference.txt
 rubyspec_temp
 .polyglot.pom.rb
 tool/truffle/jruby_truffle_runner/jruby+truffle_runner-*.gem
+test/truffle/cexts/**/Makefile
 
 # binaries
 !bin/gem

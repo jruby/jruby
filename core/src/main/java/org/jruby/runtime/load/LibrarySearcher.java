@@ -12,7 +12,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
-import org.jruby.ast.executable.Script;
 import org.jruby.ir.IRScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService.SuffixType;
@@ -233,7 +232,12 @@ class LibrarySearcher {
             InputStream ris = null;
             try {
                 ris = resource.inputStream();
-                runtime.loadFile(scriptName, new LoadServiceResourceInputStream(ris), wrap);
+
+                if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
+                    runtime.compileAndLoadFile(scriptName, ris, wrap);
+                } else {
+                    runtime.loadFile(scriptName, new LoadServiceResourceInputStream(ris), wrap);
+                }
             } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             } finally {
@@ -297,8 +301,9 @@ class LibrarySearcher {
                     }
                 }
                 runtime.getJRubyClassLoader().addURL(url);
-            } catch (MalformedURLException badUrl) {
-                runtime.newIOErrorFromException(badUrl);
+            }
+            catch (MalformedURLException badUrl) {
+                throw runtime.newIOErrorFromException(badUrl);
             }
 
             // If an associated Service library exists, load it as well

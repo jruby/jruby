@@ -10,7 +10,7 @@ describe "UDPSocket.send" do
       @ready = true
       begin
         @msg = @server.recvfrom_nonblock(64)
-      rescue Errno::EAGAIN
+      rescue IO::WaitReadable
         IO.select([@server])
         retry
       end

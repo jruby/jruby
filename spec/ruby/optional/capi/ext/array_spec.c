@@ -35,9 +35,17 @@ static VALUE array_spec_RARRAY_PTR_assign(VALUE self, VALUE array, VALUE value) 
   }
   return Qnil;
 }
+#endif
 
+#ifdef HAVE_RARRAY_LEN
 static VALUE array_spec_RARRAY_LEN(VALUE self, VALUE array) {
   return INT2FIX(RARRAY_LEN(array));
+}
+#endif
+
+#ifdef HAVE_RARRAY_AREF
+static VALUE array_spec_RARRAY_AREF(VALUE self, VALUE array, VALUE index) {
+  return RARRAY_AREF(array, FIX2INT(index));
 }
 #endif
 
@@ -240,19 +248,6 @@ static VALUE array_spec_rb_mem_clear(VALUE self, VALUE obj) {
 }
 #endif
 
-#if defined(HAVE_RB_PROTECT_INSPECT) && defined(HAVE_RB_INSPECTING_P)
-
-static VALUE rec_pi(VALUE obj, VALUE arg) {
-  if(RTEST(rb_inspecting_p(obj))) return arg;
-  return Qfalse;
-}
-
-static VALUE array_spec_rb_protect_inspect(VALUE self, VALUE obj) {
-  return rb_protect_inspect(rec_pi, obj, Qtrue);
-}
-
-#endif
-
 #ifdef HAVE_RB_ARY_FREEZE
 static VALUE array_spec_rb_ary_freeze(VALUE self, VALUE ary) {
   return rb_ary_freeze(ary);
@@ -271,7 +266,7 @@ static VALUE array_spec_rb_ary_subseq(VALUE self, VALUE ary, VALUE begin, VALUE 
 }
 #endif
 
-void Init_array_spec() {
+void Init_array_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiArraySpecs", rb_cObject);
 
@@ -279,10 +274,17 @@ void Init_array_spec() {
   rb_define_method(cls, "rb_Array", array_spec_rb_Array, 1);
 #endif
 
-#if defined(HAVE_RARRAY_LEN) && defined(HAVE_RARRAY_PTR)
+#ifdef HAVE_RARRAY_LEN
   rb_define_method(cls, "RARRAY_LEN", array_spec_RARRAY_LEN, 1);
+#endif
+
+#if defined(HAVE_RARRAY_LEN) && defined(HAVE_RARRAY_PTR)
   rb_define_method(cls, "RARRAY_PTR_iterate", array_spec_RARRAY_PTR_iterate, 1);
   rb_define_method(cls, "RARRAY_PTR_assign", array_spec_RARRAY_PTR_assign, 2);
+#endif
+
+#ifdef HAVE_RARRAY_AREF
+  rb_define_method(cls, "RARRAY_AREF", array_spec_RARRAY_AREF, 2);
 #endif
 
 #ifdef HAVE_RB_ARY_AREF
@@ -385,10 +387,6 @@ void Init_array_spec() {
 
 #if defined(HAVE_RB_MEM_CLEAR)
   rb_define_method(cls, "rb_mem_clear", array_spec_rb_mem_clear, 1);
-#endif
-
-#if defined(HAVE_RB_PROTECT_INSPECT) && defined(HAVE_RB_INSPECTING_P)
-  rb_define_method(cls, "rb_protect_inspect",  array_spec_rb_protect_inspect, 1);
 #endif
 
 #ifdef HAVE_RB_ARY_FREEZE

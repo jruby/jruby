@@ -103,9 +103,12 @@ describe "IO#reopen with a String" do
     end
   end
 
-  it "effects exec/system/fork performed after it" do
-    ruby_exe fixture(__FILE__, "reopen_stdout.rb"), args: @tmp_file
-    @tmp_file.should have_data("from system\nfrom exec", "r")
+  platform_is_not :windows do
+    # TODO Should this work on Windows?
+    it "affects exec/system/fork performed after it" do
+      ruby_exe fixture(__FILE__, "reopen_stdout.rb"), args: @tmp_file
+      @tmp_file.should have_data("from system\nfrom exec", "r")
+    end
   end
 
   it "calls #to_path on non-String arguments" do

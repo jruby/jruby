@@ -28,6 +28,7 @@
 package org.jruby.util;
 
 import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 
@@ -84,10 +85,11 @@ public class SunSignalFacade implements SignalFacade {
             ThreadContext context = runtime.getCurrentContext();
             IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
             try {
+                RubyFixnum signum = runtime.newFixnum(signal.getNumber());
                 if (block != null) {
-                    block.callMethod(context, "call");
+                    block.callMethod(context, "call", signum);
                 } else {
-                    blockCallback.call(context, new IRubyObject[0], Block.NULL_BLOCK);
+                    blockCallback.call(context, new IRubyObject[] {signum}, Block.NULL_BLOCK);
                 }
             } catch(RaiseException e) {
                 try {

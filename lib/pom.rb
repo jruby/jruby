@@ -1,3 +1,19 @@
+MORE_QUIET = ENV['JRUBY_BUILD_MORE_QUIET']
+
+if MORE_QUIET
+  class Gem::Installer
+    def say(message)
+      if message != spec.post_install_message || !MORE_QUIET
+        super
+      end 
+    end
+  end
+end
+
+def log(message=nil)
+  puts message unless MORE_QUIET
+end
+
 class ImportedGem
   attr_reader :name, :version, :default_spec
 
@@ -10,22 +26,25 @@ end
 
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.12' ),
+   ImportedGem.new( 'jruby-openssl', '0.9.17' ),
    ImportedGem.new( 'jruby-readline', '1.0', false ),
    ImportedGem.new( 'rake', '${rake.version}' ),
    ImportedGem.new( 'rdoc', '${rdoc.version}' ),
    ImportedGem.new( 'minitest', '${minitest.version}' ),
    ImportedGem.new( 'test-unit', '${test-unit.version}' ),
    ImportedGem.new( 'power_assert', '${power_assert.version}' ),
-   ImportedGem.new( 'psych', '2.0.15' ),
+   ImportedGem.new( 'psych', '2.0.17' ),
    ImportedGem.new( 'json', '${json.version}' ),
    ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' ),
-   ImportedGem.new( 'racc', '${racc.version}')
+   ImportedGem.new( 'racc', '${racc.version}'),
+   ImportedGem.new( 'net-telnet', '0.1.1'),
+   ImportedGem.new( 'did_you_mean', '1.0.1'),
   ]
 
 project 'JRuby Lib Setup' do
 
-  version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
+  version = ENV['JRUBY_VERSION'] ||
+    File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id 'jruby-stdlib'
@@ -43,11 +62,13 @@ project 'JRuby Lib Setup' do
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
-  #repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
-  #            :id => 'rubygems-releases' )
-  #repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
-  #            :id => 'tb-rubygems-releases' )
+  extension 'org.torquebox.mojo:mavengem-wagon:0.2.0'
+
+  repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
+
   # for testing out jruby-ossl before final release :
+  #repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots',
+  #            :id => 'gem-snaphots' )
   #repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
   #            :id => 'gem-staging' )
 
@@ -67,15 +88,18 @@ project 'JRuby Lib Setup' do
 
   default_gemnames = default_gems.collect { |g| g.name }
 
-  # TODO no hardcoded group-ids
-  plugin :dependency, :useRepositoryLayout => true, :outputDirectory => 'ruby/stdlib', :excludeGroupIds => 'rubygems', :includeScope => :provided do
+  plugin :dependency,
+    :useRepositoryLayout => true,
+    :outputDirectory => 'ruby/stdlib',
+    :excludeGroupIds => 'rubygems',
+    :includeScope => :provided do
     execute_goal 'copy-dependencies', :phase => 'generate-resources'
   end
 
   execute :install_gems, :'initialize' do |ctx|
     require 'fileutils'
 
-    puts "using jruby #{JRUBY_VERSION}"
+    log "using jruby #{JRUBY_VERSION}"
 
     target = ctx.project.build.directory.to_pathname
     gem_home = File.join( target, 'rubygems' )
@@ -83,11 +107,11 @@ project 'JRuby Lib Setup' do
     specs = File.join( gem_home, 'specifications' )
     cache = File.join( gem_home, 'cache' )
     jruby_gems = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared' )
-    default_specs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared',
-                               'specifications', 'default' )
-    bin_stubs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared',
-                           'gems' )
+    default_specs = File.join( jruby_gems, 'specifications', 'default' )
+    bin_stubs = File.join( jruby_gems, 'gems' )
     ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
+    stdlib_dir = File.join( ruby_dir, 'stdlib' )
+
     FileUtils.mkdir_p( default_specs )
 
     # have an empty openssl.rb so we do not run in trouble with not having
@@ -95,7 +119,7 @@ project 'JRuby Lib Setup' do
     lib_dir = File.join( target, 'lib' )
     openssl = File.join( lib_dir, 'openssl.rb' )
     FileUtils.mkdir_p( lib_dir )
-    File.open( openssl, 'w' )
+    FileUtils.touch( openssl )
     $LOAD_PATH.unshift lib_dir
 
     # since the bouncy castle .jars are version-ed (e.g. bcprov-jdk15on-1.47)
@@ -109,18 +133,19 @@ project 'JRuby Lib Setup' do
     require 'rubygems/installer'
     require 'rubygems/package'
 
-    puts 'install gems unless already installed'
+    log 'install gems unless already installed'
     ENV_JAVA['jars.skip'] = 'true'
     ctx.project.artifacts.select do |a|
       a.group_id == 'rubygems' || a.group_id == 'org.jruby.gems'
     end.each do |a|
       ghome = default_gemnames.member?( a.artifact_id ) ? gem_home : jruby_gems
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
-        puts a.file.to_pathname
+        log a.file.to_pathname
         installer = Gem::Installer.new( a.file.to_pathname,
                                         :wrappers => true,
                                         :ignore_dependencies => true,
                                         :install_dir => ghome )
+        def installer.ensure_required_ruby_version_met; end
         installer.install
       end
     end
@@ -132,35 +157,30 @@ project 'JRuby Lib Setup' do
       # install the gem unless already installed
       if Dir[ File.join( default_specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
 
-        puts
-        puts "--- gem #{g.name}-#{version} ---"
+        log
+        log "--- gem #{g.name}-#{version} ---"
 
         # copy the gem content to stdlib
-        stdlib_dir = File.join( ruby_dir, 'stdlib' )
-        puts "copy gem content to #{stdlib_dir}"
+
+        log "copy gem content to #{stdlib_dir}"
         # assume default require_path
         require_base = File.join( gems, "#{g.name}-#{version}*", 'lib' )
         require_files = File.join( require_base, '*' )
 
         # copy in new ones and mark writable for future updates (e.g. minitest)
-        stdlib_locs = []
-        Dir[ require_files ].each do |f|
-          puts "copying: #{f} to #{stdlib_dir}"
+        stdlib_locs = Dir[ require_files ].map do |f|
+          log " copying: #{f} to #{stdlib_dir}" if $VERBOSE
           FileUtils.cp_r( f, stdlib_dir )
 
           stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
-          if File.directory?(stdlib_loc)
-            stdlib_locs += Dir[stdlib_loc + "/*"].to_a
-          else
-            stdlib_locs << stdlib_loc
-          end
+          File.directory?(stdlib_loc) ? Dir[stdlib_loc + "/*"].to_a : stdlib_loc
         end
+        stdlib_locs.flatten!
 
         # fix permissions on copied files
         stdlib_locs.each do |f|
           next if File.writable? f
-
-          puts "fixing permissions: #{f}"
+          log " fixing permissions: #{f}" if $VERBOSE
           # TODO: better way to just set it writable without changing all modes?
           FileUtils.chmod_R(0644, f)
         end
@@ -169,7 +189,7 @@ project 'JRuby Lib Setup' do
         bin = File.join( gems, "#{g.name}-#{version}", 'bin' )
         if File.exists? bin
           Dir[ File.join( bin, '*' ) ].each do |f|
-            puts "copy to bin: #{File.basename( f )}"
+            log "copy to bin: #{File.basename( f )}"
             target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
             FileUtils.mkdir_p( File.dirname( target ) )
             FileUtils.cp_r( f, target )
@@ -185,8 +205,8 @@ project 'JRuby Lib Setup' do
           end
 
           specname = File.basename( specfile )
-          puts "copy to specifications/default: #{specname}"
-          
+          log "copy to specifications/default: #{specname}"
+
           spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
           File.open( File.join( default_specs, specname ), 'w' ) do |f|
             f.print( spec.to_ruby )
@@ -197,11 +217,11 @@ project 'JRuby Lib Setup' do
 
     # patch jruby-openssl - remove file which should be only inside gem
     # use this instead of FileUtils.rm_f - issue #1698
-    f = File.join( ruby_dir, 'stdlib', 'jruby-openssl.rb' )
+    f = File.join( stdlib_dir, 'jruby-openssl.rb' )
     File.delete( f ) if File.exists?( f )
 
     # we do not want rubygems_plugin.rb within jruby
-    f = File.join( ruby_dir, 'stdlib', 'rubygems_plugin.rb' )
+    f = File.join( stdlib_dir, 'rubygems_plugin.rb' )
     File.delete( f ) if File.exists?( f )
 
     # fix file permissions of installed gems
@@ -213,7 +233,7 @@ project 'JRuby Lib Setup' do
   execute( 'fix shebang on gem bin files and add *.bat files',
            'generate-resources' ) do |ctx|
 
-    puts 'fix the gem stub files'
+    log 'fix the gem stub files'
     jruby_home = ctx.project.basedir.to_pathname + '/../'
     bindir = File.join( jruby_home, 'lib', 'ruby', 'gems', 'shared', 'bin' )
     Dir[ File.join( bindir, '*' ) ].each do |f|
@@ -223,7 +243,7 @@ project 'JRuby Lib Setup' do
       File.open( f, "w" ) { |file| file.print( new_content ) }
     end
 
-    puts 'generate the missing bat files'
+    log 'generating missing .bat files'
     Dir[File.join( jruby_home, 'bin', '*' )].each do |fn|
       next unless File.file?(fn)
       next if fn =~ /.bat$/
@@ -232,7 +252,7 @@ project 'JRuby Lib Setup' do
         line = io.readline rescue ""
         line =~ /^#!.*ruby/
       end
-      puts "Generating #{File.basename(fn)}.bat"
+      log " generating #{File.basename(fn)}.bat" if $VERBOSE
       File.open("#{fn}.bat", "wb") do |f|
         f.print "@ECHO OFF\r\n"
         f.print "@\"%~dp0jruby.exe\" -S #{File.basename(fn)} %*\r\n"
@@ -256,7 +276,7 @@ project 'JRuby Lib Setup' do
   # we have no sources and attach an empty jar later in the build to
   # satisfy oss.sonatype.org upload
 
-  plugin( :source, 'skipSource' =>  'true' )
+  plugin( :source, 'skipSource' => 'true' )
 
   # this plugin is configured to attach empty jars for sources and javadocs
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
@@ -274,8 +294,16 @@ project 'JRuby Lib Setup' do
     resource do
       directory '${basedir}/..'
       includes 'bin/ast*', 'bin/gem*', 'bin/irb*', 'bin/jgem*', 'bin/jirb*', 'bin/jruby*', 'bin/rake*', 'bin/ri*', 'bin/rdoc*', 'bin/testrb*', 'lib/ruby/stdlib/**', 'lib/ruby/truffle/**'
-      excludes 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*', 'lib/ruby/stdlib/rubygems/defaults/jruby_native.rb'
+      excludes 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*',
+        'lib/ruby/stdlib/rubygems/defaults/jruby_native.rb',
+        'lib/ruby/stdlib/gauntlet*.rb' # gauntlet_rdoc.rb, gauntlet_rubygems.rb
       target_path '${jruby.complete.home}'
+    end
+
+    resource do
+      directory '${project.basedir}/..'
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      target_path '${project.build.outputDirectory}/META-INF/'
     end
   end
 end

@@ -1,1 +1,6 @@
 fails:IO#puts writes just a newline when given just a newline
+fails:IO#puts calls :to_ary before writing non-string objects, regardless of it being implemented in the receiver
+fails:IO#puts calls :to_ary before writing non-string objects
+fails:IO#puts returns general object info if :to_s does not return a string
+fails:IO#puts writes crlf when IO is opened with newline: :crlf
+fails:IO#puts writes cr when IO is opened with newline: :cr

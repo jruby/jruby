@@ -220,6 +220,17 @@ public abstract class DynamicScope {
     }
 
     /**
+     * Set value in current dynamic scope or one of its captured scopes.
+     *
+     * @param offset zero-indexed value that represents where variable lives
+     * @param value to set
+     * @param depth how many captured scopes down this variable should be set
+     */
+    public void setValueVoid(IRubyObject value, int offset, int depth) {
+        setValue(offset, value, depth);
+    }
+
+    /**
      * setValue for depth zero
      *
      * @param value to set
@@ -228,9 +239,26 @@ public abstract class DynamicScope {
     public abstract IRubyObject setValueDepthZero(IRubyObject value, int offset);
 
     /**
+     * setValue for depth zero
+     *
+     * @param value to set
+     * @param offset zero-indexed value that represents where variable lives
+     */
+    public void setValueDepthZeroVoid(IRubyObject value, int offset) {
+        setValueDepthZero(value, offset);
+    }
+
+    /**
      * Set value zero in this scope;
      */
     public abstract IRubyObject setValueZeroDepthZero(IRubyObject value);
+
+    /**
+     * Set value zero in this scope;
+     */
+    public void setValueZeroDepthZeroVoid(IRubyObject value) {
+        setValueZeroDepthZero(value);
+    }
 
     /**
      * Set value one in this scope.
@@ -238,14 +266,35 @@ public abstract class DynamicScope {
     public abstract IRubyObject setValueOneDepthZero(IRubyObject value);
 
     /**
+     * Set value one in this scope.
+     */
+    public void setValueOneDepthZeroVoid(IRubyObject value) {
+        setValueOneDepthZero(value);
+    }
+
+    /**
      * Set value two in this scope.
      */
     public abstract IRubyObject setValueTwoDepthZero(IRubyObject value);
 
     /**
+     * Set value two in this scope.
+     */
+    public void setValueTwoDepthZeroVoid(IRubyObject value) {
+        setValueTwoDepthZero(value);
+    }
+
+    /**
      * Set value three in this scope.
      */
     public abstract IRubyObject setValueThreeDepthZero(IRubyObject value);
+
+    /**
+     * Set value three in this scope.
+     */
+    public void setValueThreeDepthZeroVoid(IRubyObject value) {
+        setValueThreeDepthZero(value);
+    }
 
     @Override
     public String toString() {

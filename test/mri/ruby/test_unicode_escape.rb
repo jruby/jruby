@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
+# frozen_string_literal: false
 
 require 'test/unit'
-require_relative 'envutil'
 
 class TestUnicodeEscape < Test::Unit::TestCase
   def test_basic

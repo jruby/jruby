@@ -377,7 +377,7 @@ static VALUE constants_spec_rb_cDir(VALUE self) {
 }
 #endif
 
-void Init_constants_spec() {
+void Init_constants_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiConstantsSpecs", rb_cObject);
 

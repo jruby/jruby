@@ -1,0 +1,2 @@
+windows:ERB::DefMethod.def_erb_method define method to render eRuby file as an instance method of current module
+windows:ERB::DefMethod.def_erb_method define method to render eRuby object as an instance method of current module

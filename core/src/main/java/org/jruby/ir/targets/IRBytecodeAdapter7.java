@@ -15,15 +15,19 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 
@@ -58,9 +62,9 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr);
     }
 
-    public void pushFrozenString(ByteList bl, int cr) {
+    public void pushFrozenString(ByteList bl, int cr, String file, int line) {
         loadContext();
-        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr);
+        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.fstring(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr, file, line);
     }
 
     public void pushByteList(ByteList bl) {
@@ -90,7 +94,8 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             adapter.pop();
         }
 
-        // call synthetic method if we still need to build dregexp
+        // We may evaluate these operands multiple times or the upstream instrs that created them, which is a bug (jruby/jruby#2798).
+        // However, only one dregexp will ever come out of the indy call.
         callback.run();
         adapter.invokedynamic("dregexp", sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity)), DRegexpObjectSite.BOOTSTRAP, options.toEmbeddedOptions());
 
@@ -120,10 +125,10 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
     }
 
-    public void invokeOther(String name, int arity, boolean hasClosure, boolean isPotentiallyRefined) {
+    public void invokeOther(String file, int line, String name, int arity, boolean hasClosure, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (isPotentiallyRefined) {
-            super.invokeOther(name, arity, hasClosure, isPotentiallyRefined);
+            super.invokeOther(file, line, name, arity, hasClosure, isPotentiallyRefined);
             return;
         }
 
@@ -142,7 +147,22 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
-    public void invokeOtherOneFixnum(String name, long fixnum) {
+    @Override
+    public void invokeArrayDeref() {
+        adapter.invokedynamic("aref", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, 1)), ArrayDerefInvokeSite.BOOTSTRAP);
+    }
+
+    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType) {
+        if (!MethodIndex.hasFastFixnumOps(name)) {
+            pushFixnum(fixnum);
+            if (callType == CallType.NORMAL) {
+                invokeOther(file, line, name, 1, false, false);
+            } else {
+                invokeSelf(file, line, name, 1, false, callType, false);
+            }
+            return;
+        }
+
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
         adapter.invokedynamic(
@@ -150,11 +170,22 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 signature,
                 Bootstrap.getFixnumOperatorHandle(),
                 fixnum,
+                callType.ordinal(),
                 "",
                 0);
     }
 
-    public void invokeOtherOneFloat(String name, double flote) {
+    public void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType) {
+        if (!MethodIndex.hasFastFloatOps(name)) {
+            pushFloat(flote);
+            if (callType == CallType.NORMAL) {
+                invokeOther(file, line, name, 1, false, false);
+            } else {
+                invokeSelf(file, line, name, 1, false, callType, false);
+            }
+            return;
+        }
+
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
         
         adapter.invokedynamic(
@@ -162,14 +193,15 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             signature,
             Bootstrap.getFloatOperatorHandle(),
             flote,
+                callType.ordinal(),
             "",
             0);
     }
 
-    public void invokeSelf(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
+    public void invokeSelf(String file, int line, String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (isPotentiallyRefined) {
-            super.invokeSelf(name, arity, hasClosure, callType, isPotentiallyRefined);
+            super.invokeSelf(file, line, name, arity, hasClosure, callType, isPotentiallyRefined);
             return;
         }
 
@@ -189,7 +221,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
-    public void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to instance super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
@@ -200,7 +232,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
-    public void invokeClassSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to class super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
@@ -211,7 +243,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
-    public void invokeUnresolvedSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to unresolved super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
@@ -222,7 +254,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
-    public void invokeZSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to zsuper has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
@@ -231,18 +263,6 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         } else {
             adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString);
         }
-    }
-
-    public void searchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("searchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), noPrivateConsts?1:0);
-    }
-
-    public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("inheritanceSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), Bootstrap.searchConst(), noPrivateConsts?1:0);
-    }
-
-    public void lexicalSearchConst(String name) {
-        adapter.invokedynamic("lexicalSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), 0);
     }
 
     public void pushNil() {
@@ -295,5 +315,12 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 "checkpoint",
                 sig(void.class, ThreadContext.class),
                 Bootstrap.checkpointHandle());
+    }
+
+    @Override
+    public void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className) {
+        Handle scopeHandle = new Handle(Opcodes.H_GETSTATIC, getClassData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
+        long encodedSignature = signature.encode();
+        adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class), Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature);
     }
 }

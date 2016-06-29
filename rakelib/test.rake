@@ -59,6 +59,8 @@ namespace :test do
   compile_flags = {
     :default => :int,
     :int => ["-X-C"],
+    # Note: jit.background=false is implied by jit.threshold=0, but we add it here to be sure
+    :fullint => ["-X-C", "-Xjit.threshold=0", "-Xjit.background=false"],
     :jit => ["-Xjit.threshold=0", "-Xjit.background=false", "-J-XX:MaxPermSize=512M"],
     :aot => ["-X+C", "-J-XX:MaxPermSize=512M"],
     :all => [:int, :jit, :aot]
@@ -76,19 +78,23 @@ namespace :test do
   namespace :mri do
     mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
     task :int do
-      ruby "-X-C -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
+      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -Xdebug.fullTrace -X-C'
+      ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
-    task :int_full do
-      ruby "-Xjit.threshold=0 -Xjit.background=false -X-C -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
+    task :fullint do
+      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -Xdebug.fullTrace -X-C -Xjit.threshold=0 -Xjit.background=false'
+      ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :jit do
-      ruby "-J-XX:MaxPermSize=512M -Xjit.threshold=0 -Xjit.background=false -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
+      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -Xdebug.fullTrace -J-XX:MaxPermSize=512M -Xjit.threshold=0 -Xjit.background=false'
+      ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :aot do
-      ruby "-J-XX:MaxPermSize=512M -X+C -Xjit.background=false -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
+      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -Xdebug.fullTrace -J-XX:MaxPermSize=512M -X+C -Xjit.background=false'
+      ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task all: %s[int jit aot]
@@ -109,6 +115,7 @@ namespace :test do
     t.ruby_opts << '-Xaot.loadClasses=true' # disabled by default now
     t.ruby_opts << '-I.'
     t.ruby_opts << '-J-ea'
+    t.ruby_opts << '--headless'
     classpath = %w[test test/target/test-classes core/target/test-classes].join(File::PATH_SEPARATOR)
     t.ruby_opts << "-J-cp #{classpath}"
   end

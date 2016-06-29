@@ -1,2 +1,4 @@
 fails:IO#read_nonblock returns less data if that is all that is available
 fails:IO#read_nonblock raises EOFError when the end is reached
+fails:IO#read_nonblock when exception option is set to false when there is no data returns :wait_readable
+fails:IO#read_nonblock when exception option is set to false when the end is reached returns nil

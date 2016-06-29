@@ -1,0 +1,1 @@
+fails:Kernel.loop returns StopIteration#result, the result value of a finished iterator

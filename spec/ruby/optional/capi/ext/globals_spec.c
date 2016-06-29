@@ -121,7 +121,7 @@ static VALUE global_spec_rb_lastline_get(VALUE self) {
 }
 #endif
 
-void Init_globals_spec() {
+void Init_globals_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiGlobalSpecs", rb_cObject);
 

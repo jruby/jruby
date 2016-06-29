@@ -60,6 +60,7 @@ import org.jruby.util.TypeConverter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -81,9 +82,10 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 @JRubyClass(name="Time", include="Comparable")
 public class RubyTime extends RubyObject {
     public static final String UTC = "UTC";
-    public static final BigDecimal ONE_MILLION_BD = new BigDecimal(1000000);
+    public static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
+    public static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(1000000000);
     public static final BigInteger ONE_MILLION_BI = BigInteger.valueOf(1000000);
-    public static final BigDecimal ONE_THOUSAND_BD = new BigDecimal(1000);
+    public static final BigDecimal ONE_THOUSAND_BD = BigDecimal.valueOf(1000);
     private DateTime dt;
     private long nsec;
 
@@ -257,29 +259,59 @@ public class RubyTime extends RubyObject {
     // mri: time.c num_exact
     private static IRubyObject numExact(Ruby runtime, IRubyObject v) {
         IRubyObject tmp;
-        if (v instanceof RubyFixnum || v instanceof RubyBignum) return v;
-        if (v.isNil()) exactTypeError(runtime, v);
-        if (!(v instanceof RubyRational)) { // Default unknown
-            if (v.respondsTo("to_r")) {
-                tmp = v.callMethod(runtime.getCurrentContext(), "to_r");
-                // WTF is this condition for?  It responds to to_r and makes something which thinks it is a String?
-                if (tmp != null && v.respondsTo("to_str")) exactTypeError(runtime, v);
-            } else {
-                tmp = TypeConverter.checkIntegerType(runtime, v, "to_int");
-                if (tmp.isNil()) exactTypeError(runtime, v);
-            }
-            v = tmp;
+        boolean typeError = false;
+
+        switch (v.getMetaClass().getClassIndex()) {
+            case FIXNUM:
+            case BIGNUM:
+                return v;
+
+            case RATIONAL:
+                break;
+
+            case STRING:
+            case NIL:
+                typeError = true;
+                break;
+
+            default:
+                if ((tmp = v.getMetaClass().finvokeChecked(runtime.getCurrentContext(), v, "to_r")) != null) {
+                    /* test to_int method availability to reject non-Numeric
+                     * objects such as String, Time, etc which have to_r method. */
+                    if (!v.respondsTo("to_int")) {
+                        typeError = true;
+                        break;
+                    }
+                    v = tmp;
+                    break;
+                }
+                if (!(tmp = TypeConverter.checkIntegerType(runtime, v, "to_int")).isNil()) {
+                    v = tmp;
+                    break;
+                }
+                typeError = true;
+                break;
         }
 
-        if (v instanceof RubyFixnum || v instanceof RubyBignum) {
-            return v;
-        } else if (v instanceof RubyRational) {
-            RubyRational r = (RubyRational) v;
-            if (r.denominator(runtime.getCurrentContext()) == RubyFixnum.newFixnum(runtime, 1)) {
-                return r.numerator(runtime.getCurrentContext());
-            }
-        } else {
-            exactTypeError(runtime, v);
+        switch (v.getMetaClass().getClassIndex()) {
+            case FIXNUM:
+            case BIGNUM:
+                return v;
+
+            case RATIONAL:
+                if (((RubyRational) v).getDenominator() == RubyFixnum.one(runtime)) {
+                    v = ((RubyRational) v).getNumerator();
+                }
+                break;
+
+            default:
+                typeError = true;
+                break;
+        }
+
+        if (typeError) {
+            if (v.isNil()) throw runtime.newTypeError("can't convert nil into an exact number");
+            throw runtime.newTypeError("can't convert " + v.getMetaClass() + " into an exact number");
         }
 
         return v;
@@ -838,7 +870,11 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     public IRubyObject zone() {
         if (isTzRelative) return getRuntime().getNil();
-        return getRuntime().newString(RubyTime.getRubyTimeZoneName(getRuntime(), dt));
+        RubyString zone = getRuntime().newString(RubyTime.getRubyTimeZoneName(getRuntime(), dt));
+
+        if (zone.isAsciiOnly()) zone.setEncoding(USASCIIEncoding.INSTANCE);
+
+        return zone;
     }
 
 	public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
@@ -860,17 +896,13 @@ public class RubyTime extends RubyObject {
         Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(zone);
 
         if (offsetMatcher.matches()) {
-            boolean minus_p = offsetMatcher.group(1).toString().equals("-");
-            int hourOffset  = Integer.valueOf(offsetMatcher.group(2));
-
             if (zone.equals("+00:00")) {
                 zone = "UTC";
             } else {
                 // try non-localized time zone name
                 zone = dt.getZone().getNameKey(dt.getMillis());
                 if (zone == null) {
-                    char sign = minus_p ? '+' : '-';
-                    zone = "UTC" + sign + hourOffset;
+                    zone = "";
                 }
             }
         }
@@ -1030,6 +1062,8 @@ public class RubyTime extends RubyObject {
             long nanosecs;
             long millisecs;
 
+            arg = numExact(runtime, arg);
+
             // In the case of two arguments, MRI will discard the portion of
             // the first argument after a decimal point (i.e., "floor").
             // However in the case of a single argument, any portion after
@@ -1055,16 +1089,15 @@ public class RubyTime extends RubyObject {
                     RubyRational rational = (RubyRational) arg;
 
                     // These could have rounding errors if numerator or denominator are not integral and < long. Can they be?
-                    long numerator = rational.numerator(context).convertToInteger().getLongValue();
-                    long denominator = rational.denominator(context).convertToInteger().getLongValue();
+                    long numerator = rational.getNumerator().convertToInteger().getLongValue();
+                    long denominator = rational.getDenominator().convertToInteger().getLongValue();
 
-                    BigDecimal accurateSeconds = new BigDecimal(numerator).divide(new BigDecimal(denominator));
-                    BigDecimal accurateMillis = accurateSeconds.multiply(ONE_THOUSAND_BD);
-                    BigInteger integralMillis = accurateMillis.toBigInteger();
-                    BigInteger remainingNanos = accurateMillis.multiply(ONE_MILLION_BD).toBigInteger().subtract(integralMillis.multiply(ONE_MILLION_BI));
+                    BigDecimal nanosBD = BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator), 50, BigDecimal.ROUND_HALF_UP).multiply(ONE_BILLION_BD);
+                    BigInteger millis = nanosBD.divide(ONE_MILLION_BD).toBigInteger();
+                    BigInteger nanos = nanosBD.remainder(ONE_MILLION_BD).toBigInteger();
 
-                    millisecs = integralMillis.longValue();
-                    nanosecs = remainingNanos.longValue();
+                    millisecs = millis.longValue();
+                    nanosecs = nanos.longValue();
                 }
             } else {
                 nanosecs = 0;
@@ -1099,6 +1132,9 @@ public class RubyTime extends RubyObject {
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(0L, getLocalTimeZone(runtime)));
         long millisecs;
         long nanosecs = 0;
+
+        arg1 = numExact(runtime, arg1);
+        arg2 = numExact(runtime, arg2);
 
         if (arg1 instanceof RubyFloat || arg1 instanceof RubyRational) {
             double dbl = RubyNumeric.num2dbl(arg1);

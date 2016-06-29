@@ -15,15 +15,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class CachingCallSite extends CallSite {
     protected CacheEntry cache = CacheEntry.NULL_CACHE;
-    public static volatile int totalCallSites;
-//    private AtomicBoolean isPolymorphic = new AtomicBoolean(false);
+    //public static volatile int totalCallSites;
+    //private AtomicBoolean isPolymorphic = new AtomicBoolean(false);
 
     public CachingCallSite(String methodName, CallType callType) {
         super(methodName, callType);
-        totalCallSites++;
+        //totalCallSites++;
     }
 
-    public CacheEntry getCache() {
+    public final CacheEntry getCache() {
         return cache;
     }
 
@@ -39,7 +39,7 @@ public abstract class CachingCallSite extends CallSite {
         return ClassIndex.NO_INDEX.ordinal();
     }
 
-    public String getMethodName() {
+    public final String getMethodName() {
         return methodName;
     }
 
@@ -414,7 +414,7 @@ public abstract class CachingCallSite extends CallSite {
 
     protected abstract boolean methodMissing(DynamicMethod method, IRubyObject caller);
 
-    private static RubyClass getClass(IRubyObject self) {
+    protected static RubyClass getClass(IRubyObject self) {
         // the cast in the following line is necessary due to lacking optimizations in Hotspot
         return ((RubyBasicObject) self).getMetaClass();
     }

@@ -72,6 +72,7 @@ import org.jruby.util.Numeric;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
+import static org.jruby.util.Numeric.safe_mul;
 
 /**
  *  1.9 complex.c as of revision: 20011
@@ -539,12 +540,16 @@ public class RubyComplex extends RubyNumeric {
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyComplex) {
             RubyComplex otherComplex = (RubyComplex)other;
+            boolean arzero = f_zero_p(context, real);
+            boolean aizero = f_zero_p(context, image);
+            boolean brzero = f_zero_p(context, otherComplex.real);
+            boolean bizero = f_zero_p(context, otherComplex.image);
             IRubyObject realp = f_sub(context, 
-                                f_mul(context, real, otherComplex.real),
-                                f_mul(context, image, otherComplex.image));
+                                safe_mul(context, real, otherComplex.real, arzero, brzero),
+                                safe_mul(context, image, otherComplex.image, aizero, bizero));
             IRubyObject imagep = f_add(context,
-                                f_mul(context, real, otherComplex.image),
-                                f_mul(context, image, otherComplex.real));
+                                safe_mul(context, real, otherComplex.image, arzero, bizero),
+                                safe_mul(context, image, otherComplex.real, aizero, brzero));
             
             return newComplex(context, getMetaClass(), realp, imagep); 
         } else if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {

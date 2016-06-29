@@ -8,12 +8,17 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class Self extends LocalVariable {
+public class Self extends Variable {
     public static final Self SELF = new Self();
     private static final String NAME = "%self";
 
     private Self() {
-        super(NAME, 0, 0);
+        super();
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
     @Override
@@ -49,5 +54,15 @@ public class Self extends LocalVariable {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.Self(this);
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        return this == o ? 0 : -1;
+    }
+
+    @Override
+    public String toString() {
+        return NAME;
     }
 }

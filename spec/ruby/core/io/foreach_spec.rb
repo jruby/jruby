@@ -16,21 +16,27 @@ describe "IO.foreach" do
 
   describe "when the filename starts with |" do
     it "gets data from the standard out of the subprocess" do
-      IO.foreach("|sh -c 'echo hello;echo line2'") { |l| ScratchPad << l }
+      cmd = "|sh -c 'echo hello;echo line2'"
+      platform_is :windows do
+        cmd = "|cmd.exe /C echo hello&echo line2"
+      end
+      IO.foreach(cmd) { |l| ScratchPad << l }
       ScratchPad.recorded.should == ["hello\n", "line2\n"]
     end
 
-    it "gets data from a fork when passed -" do
-      parent_pid = $$
+    with_feature :fork do
+      it "gets data from a fork when passed -" do
+        parent_pid = $$
 
-      ret = IO.foreach("|-") { |l| ScratchPad << l; true }
+        ret = IO.foreach("|-") { |l| ScratchPad << l; true }
 
-      if $$ == parent_pid
-        ScratchPad.recorded.should == ["hello\n", "from a fork\n"]
-      else # child
-        puts "hello"
-        puts "from a fork"
-        exit!
+        if $$ == parent_pid
+          ScratchPad.recorded.should == ["hello\n", "from a fork\n"]
+        else # child
+          puts "hello"
+          puts "from a fork"
+          exit!
+        end
       end
     end
   end

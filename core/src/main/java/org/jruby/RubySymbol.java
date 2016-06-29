@@ -42,35 +42,40 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.Constantizable;
-import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ContextAwareBlockBody;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
+import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
+import static org.jruby.util.StringSupport.codeRangeScan;
 
 /**
  * Represents a Ruby symbol (e.g. :bar)
  */
-@JRubyClass(name="Symbol")
-public class RubySymbol extends RubyObject implements MarshalEncoding, Constantizable {
+@JRubyClass(name = "Symbol", include = "Enumerable")
+public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable {
     public static final long symbolHashSeedK0 = 5238926673095087190l;
 
     private final String symbol;
@@ -92,6 +97,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         //        assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
 
         this.symbol = internedSymbol;
+        if (codeRangeScan(symbolBytes.getEncoding(), symbolBytes) == CR_7BIT) {
+            symbolBytes = symbolBytes.dup();
+            symbolBytes.setEncoding(USASCIIEncoding.INSTANCE);
+        }
         this.symbolBytes = symbolBytes;
         this.id = runtime.allocSymbolId();
 
@@ -134,12 +143,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
      * @return a String representation of the symbol
      */
     @Override
-    public String asJavaString() {
+    public final String asJavaString() {
         return symbol;
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return symbol;
     }
 
@@ -181,7 +190,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     /* Symbol class methods.
      *
      */
-
+    @Deprecated
     public static RubySymbol newSymbol(Ruby runtime, IRubyObject name) {
         if (name instanceof RubySymbol) {
             return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), false);
@@ -193,13 +202,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     }
 
     public static RubySymbol newHardSymbol(Ruby runtime, IRubyObject name) {
-        if (name instanceof RubySymbol) {
-            return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), true);
-        } else if (name instanceof RubyString) {
-            return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList(), true);
-        } else {
-            return newSymbol(runtime, name.asJavaString());
+        if (name instanceof RubySymbol || name instanceof RubyString) {
+            return runtime.getSymbolTable().getSymbol(name.asJavaString(), true);
         }
+
+        return newSymbol(runtime, name.asJavaString());
     }
 
     public static RubySymbol newSymbol(Ruby runtime, String name) {
@@ -242,44 +249,43 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
                 constant;
     }
 
-    @Deprecated
     @Override
     public IRubyObject inspect() {
-        return inspect19(getRuntime().getCurrentContext());
-    }
-
-    public IRubyObject inspect(ThreadContext context) {
-        return inspect19(context.runtime);
+        return inspect(getRuntime());
     }
 
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect19(ThreadContext context) {
-        return inspect19(context.runtime);
+    public IRubyObject inspect(ThreadContext context) {
+        return inspect(context.runtime);
     }
 
-    private final IRubyObject inspect19(Ruby runtime) {
+    final RubyString inspect(final Ruby runtime) {
         ByteList result = new ByteList(symbolBytes.getRealSize() + 1);
         result.setEncoding(symbolBytes.getEncoding());
         result.append((byte)':');
         result.append(symbolBytes);
 
-        RubyString str = RubyString.newString(runtime, result);
         // TODO: 1.9 rb_enc_symname_p
         Encoding resenc = runtime.getDefaultInternalEncoding();
-        if (resenc == null) {
-            resenc = runtime.getDefaultExternalEncoding();
-        }
+        if (resenc == null) resenc = runtime.getDefaultExternalEncoding();
+
+        RubyString str = RubyString.newString(runtime, result);
 
         if (isPrintable() && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol)) {
             return str;
         }
 
-        str = (RubyString)str.inspect19();
+        str = str.inspect(runtime);
         ByteList bytes = str.getByteList();
         bytes.set(0, ':');
         bytes.set(1, '"');
 
         return str;
+    }
+
+    @Deprecated
+    public IRubyObject inspect19(ThreadContext context) {
+        return inspect(context);
     }
 
     @Override
@@ -461,68 +467,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
-        final CallSite site = new FunctionalCachingCallSite(symbol);
-        BlockBody body = new ContextAwareBlockBody(scope, Signature.OPTIONAL) {
-            private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
-                if (array.isEmpty()) {
-                    throw context.runtime.newArgumentError("no receiver given");
-                }
-
-                IRubyObject self = array.shift(context);
-
-                return site.call(context, self, self, array.toJavaArray(), blockArg);
-            }
-
-            @Override
-            public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
-                RubyProc.prepareArgs(context, block.type, blockArg.getBody(), args);
-                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), blockArg);
-            }
-
-            @Override
-            public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, Block blockArg) {
-                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), blockArg);
-            }
-
-            @Override
-            protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
-            }
-
-            @Override
-            protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-                return yieldInner(context, context.runtime.newArrayNoCopyLight(args), Block.NULL_BLOCK);
-            }
-
-            @Override
-            public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
-                return site.call(context, arg0, arg0);
-            }
-
-            @Override
-            public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
-                return site.call(context, arg0, arg0, arg1);
-            }
-
-            @Override
-            public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-                return site.call(context, arg0, arg0, arg1, arg2);
-            }
-
-            @Override
-            public String getFile() {
-                return symbol;
-            }
-
-            @Override
-            public int getLine() {
-                return -1;
-            }
-        };
+        BlockBody body = new SymbolProcBody(context.runtime, symbol);
 
         return RubyProc.newProc(context.runtime,
-                                new Block(body, context.currentBinding()),
+                                new Block(body, Binding.DUMMY),
                                 Block.Type.PROC);
     }
 
@@ -684,6 +632,16 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         return new ByteList(ByteList.plain(internedSymbol), USASCIIEncoding.INSTANCE, false);
     }
 
+    @Override
+    public Encoding getEncoding() {
+        return symbolBytes.getEncoding();
+    }
+
+    @Override
+    public void setEncoding(Encoding e) {
+        symbolBytes.setEncoding(e);
+    }
+
     public static final class SymbolTable {
         static final int DEFAULT_INITIAL_CAPACITY = 1 << 10; // *must* be power of 2!
         static final int MAXIMUM_CAPACITY = 1 << 16; // enough for a 64k buckets; if you need more than this, something's wrong
@@ -706,7 +664,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         // note all fields are final -- rehash creates new entries when necessary.
         // as documented in java.util.concurrent.ConcurrentHashMap.java, that will
         // statistically affect only a small percentage (< 20%) of entries for a given rehash.
-        static class SymbolEntry {
+        static final class SymbolEntry {
             final int hash;
             final String name;
             final ByteList bytes;
@@ -1058,11 +1016,80 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
      */
     public static String objectToSymbolString(IRubyObject object) {
         if (object instanceof RubySymbol) {
-            return ((RubySymbol)object).toString();
-        } else if (object instanceof RubyString) {
-            return ((RubyString)object).getByteList().toString();
-        } else {
-            return object.convertToString().getByteList().toString();
+            return ((RubySymbol) object).toString();
+        }
+        if (object instanceof RubyString) {
+            return ((RubyString) object).getByteList().toString();
+        }
+        return object.convertToString().getByteList().toString();
+    }
+
+    private static final class SymbolProcBody extends ContextAwareBlockBody {
+        private final CallSite site;
+
+        public SymbolProcBody(Ruby runtime, String symbol) {
+            super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
+            this.site = MethodIndex.getFunctionalCallSite(symbol);
+        }
+
+        private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
+            if (array.isEmpty()) {
+                throw context.runtime.newArgumentError("no receiver given");
+            }
+
+            final IRubyObject self = array.shift(context);
+            return site.call(context, self, self, array.toJavaArray(), blockArg);
+        }
+
+        @Override
+        public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+            RubyProc.prepareArgs(context, block.type, blockArg.getBody(), args);
+            return yieldInner(context, context.runtime.newArrayNoCopyLight(args), blockArg);
+        }
+
+        @Override
+        public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, Block blockArg) {
+            return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), blockArg);
+        }
+
+        @Override
+        protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
+            return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
+        }
+
+        @Override
+        protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+            return yieldInner(context, context.runtime.newArrayNoCopyLight(args), Block.NULL_BLOCK);
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
+            return site.call(context, arg0, arg0);
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
+            return site.call(context, arg0, arg0, arg1);
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            return site.call(context, arg0, arg0, arg1, arg2);
+        }
+
+        @Override
+        public String getFile() {
+            return site.methodName;
+        }
+
+        @Override
+        public int getLine() {
+            return -1;
+        }
+
+        @Override
+        public ArgumentDescriptor[] getArgumentDescriptors() {
+            return ArgumentDescriptor.ANON_REST;
         }
     }
 }

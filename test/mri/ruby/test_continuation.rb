@@ -1,7 +1,7 @@
+# frozen_string_literal: false
 require 'test/unit'
-require 'continuation'
+EnvUtil.suppress_warning {require 'continuation'}
 require 'fiber'
-require_relative 'envutil'
 
 class TestContinuation < Test::Unit::TestCase
   def test_create

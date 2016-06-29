@@ -1,1 +1,0 @@
-fails:String#split with String when limit is zero ignores leading and continuous whitespace when string is a single space

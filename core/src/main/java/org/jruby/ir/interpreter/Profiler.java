@@ -130,6 +130,7 @@ public class Profiler {
         final ArrayList<IRCallSite> callSites = new ArrayList<>();
 
         long total = 0;   // Total number of times
+
         for (Long id: callProfile.keySet()) {
             CallSiteProfile csp = callProfile.get(id);
             IRCallSite      cs  = csp.cs;

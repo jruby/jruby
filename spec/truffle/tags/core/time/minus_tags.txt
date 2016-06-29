@@ -1,9 +1,4 @@
-fails:Time#- tracks microseconds
-fails:Time#- tracks nanoseconds
 fails:Time#- maintains microseconds precision
 fails:Time#- maintains nanoseconds precision
 fails:Time#- maintains subseconds precision
-fails:Time#- returns a time with the same fixed offset as self
-fails:Time#- returns a time with nanoseconds precision between two time objects
 fails:Time#- maintains precision
-fails(travis):Time#- returns a non-UTC time if self is non-UTC

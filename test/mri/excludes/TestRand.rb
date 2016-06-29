@@ -1,6 +1,8 @@
 exclude :test_big_seed, ""
 exclude :test_initialize_frozen, "precision issue?"
 exclude :test_marshal_load_frozen, "precision issue?"
+exclude :test_random_float, "likely fixed by MRI r24670"
 exclude :test_random_range, "precision issue?"
 exclude :test_random_ulong_limited, "precision issue?"
 exclude :test_rand_reseed_on_fork, "precision issue?"
+exclude :test_types, "likely fixed by MRI r24670"

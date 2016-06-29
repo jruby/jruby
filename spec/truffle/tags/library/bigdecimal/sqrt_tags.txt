@@ -1,3 +1,0 @@
-fails:BigDecimal#sqrt raises TypeError if nil is given
-fails:BigDecimal#sqrt raises TypeError if a string is given
-fails:BigDecimal#sqrt raises TypeError if a plain Object is given

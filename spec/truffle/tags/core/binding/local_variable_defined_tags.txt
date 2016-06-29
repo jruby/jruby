@@ -1,0 +1,7 @@
+fails:Binding#local_variable_defined? returns false when a variable is not defined
+fails:Binding#local_variable_defined? returns true when a regular local variable is defined
+fails:Binding#local_variable_defined? returns true when a local variable is defined using eval()
+fails:Binding#local_variable_defined? returns true when a local variable is defined using Binding#local_variable_set
+fails:Binding#local_variable_defined? returns true when a local variable is defined in a parent scope
+fails:Binding#local_variable_defined? allows usage of a String as the variable name
+fails:Binding#local_variable_defined? allows usage of an object responding to #to_str as the variable name

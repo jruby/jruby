@@ -1,3 +1,0 @@
-fails:Net::HTTP#send_request when passed type, path sends a HTTP Request of the passed type to the passed path
-fails:Net::HTTP#send_request when passed type, path, body sends a HTTP Request with the passed body
-fails:Net::HTTP#send_request when passed type, path, body, headers sends a HTTP Request with the passed headers

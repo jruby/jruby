@@ -377,7 +377,7 @@ describe "CApiObject" do
   describe "rb_obj_classname" do
     it "returns the class name of an object" do
       @o.rb_obj_classname(nil).should == 'NilClass'
-      @o.rb_obj_classname(0).should == 'Fixnum'
+      @o.rb_obj_classname(0).should == Fixnum.to_s
       @o.rb_obj_classname(0.1).should == 'Float'
       @o.rb_obj_classname(ObjectTest.new).should == 'ObjectTest'
     end
@@ -565,18 +565,16 @@ describe "CApiObject" do
     end
   end
 
-  extended_on :rubinius do
-    describe "rb_obj_frozen_p" do
-      it "returns true if object passed to it is frozen" do
-        obj = ""
-        obj.freeze
-        @o.rb_obj_frozen_p(obj).should == true
-      end
+  describe "rb_obj_frozen_p" do
+    it "returns true if object passed to it is frozen" do
+      obj = ""
+      obj.freeze
+      @o.rb_obj_frozen_p(obj).should == true
+    end
 
-      it "returns false if object passed to it is not frozen" do
-        obj = ""
-        @o.rb_obj_frozen_p(obj).should == false
-      end
+    it "returns false if object passed to it is not frozen" do
+      obj = ""
+      @o.rb_obj_frozen_p(obj).should == false
     end
   end
 

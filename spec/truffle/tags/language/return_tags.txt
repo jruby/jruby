@@ -1,1 +1,0 @@
-fails:The return keyword within a block downstream from a lambda returns to its own return-capturing lexical enclosure

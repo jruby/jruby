@@ -1,0 +1,6 @@
+["line", "/simple.rb", 19, nil, {}, nil]
+["call", "/simple.rb", 19, :add, {:a=>nil, :b=>nil}, Object]
+["line", "/simple.rb", 14, nil, {:a=>14, :b=>2}, nil]
+["call", "/simple.rb", 14, :+, {}, Fixnum]
+["line", "/simple.rb", 21, nil, {}, nil]
+["call", "/simple.rb", 21, :set_trace_func, {}, Object]

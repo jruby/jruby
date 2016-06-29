@@ -6,11 +6,13 @@ describe :time_local, shared: true do
     end
   end
 
-  describe "timezone changes" do
-    it "correctly adjusts the timezone change to 'CEST' on 'Europe/Amsterdam'" do
-      with_timezone("Europe/Amsterdam") do
-        Time.send(@method, 1940, 5, 16).to_a.should ==
-          [0, 40, 1, 16, 5, 1940, 4, 137, true, "CEST"]
+  platform_is_not :windows do
+    describe "timezone changes" do
+      it "correctly adjusts the timezone change to 'CEST' on 'Europe/Amsterdam'" do
+        with_timezone("Europe/Amsterdam") do
+          Time.send(@method, 1940, 5, 16).to_a.should ==
+            [0, 40, 1, 16, 5, 1940, 4, 137, true, "CEST"]
+        end
       end
     end
   end
@@ -24,17 +26,19 @@ describe :time_local_10_arg, shared: true do
     end
   end
 
-  it "creates the correct time just before dst change" do
-    with_timezone("America/New_York") do
-      time = Time.send(@method, 0, 30, 1, 30, 10, 2005, 0, 0, true, ENV['TZ'])
-      time.utc_offset.should == -4 * 3600
+  platform_is_not :windows do
+    it "creates the correct time just before dst change" do
+      with_timezone("America/New_York") do
+        time = Time.send(@method, 0, 30, 1, 30, 10, 2005, 0, 0, true, ENV['TZ'])
+        time.utc_offset.should == -4 * 3600
+      end
     end
-  end
 
-  it "creates the correct time just after dst change" do
-    with_timezone("America/New_York") do
-      time = Time.send(@method, 0, 30, 1, 30, 10, 2005, 0, 0, false, ENV['TZ'])
-      time.utc_offset.should == -5 * 3600
+    it "creates the correct time just after dst change" do
+      with_timezone("America/New_York") do
+        time = Time.send(@method, 0, 30, 1, 30, 10, 2005, 0, 0, false, ENV['TZ'])
+        time.utc_offset.should == -5 * 3600
+      end
     end
   end
 

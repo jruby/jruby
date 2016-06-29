@@ -4,7 +4,7 @@ describe "File::Stat#mode" do
   before :each do
     @file = tmp('i_exist')
     touch(@file) { |f| f.write "rubinius" }
-    File.chmod(0755, @file)
+    File.chmod(0644, @file)
   end
 
   after :each do
@@ -14,6 +14,6 @@ describe "File::Stat#mode" do
   it "returns the mode of a File::Stat object" do
     st = File.stat(@file)
     st.mode.is_a?(Integer).should == true
-    st.mode.should == 33261
+    (st.mode & 0777).should == 0644
   end
 end

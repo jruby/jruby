@@ -37,10 +37,12 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,8 +88,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     static ThreadLocal<Ruby> runtimeTLS = new ThreadLocal<Ruby>();
 
     private final Class proxyClass;
-    private final ArrayList<JavaProxyMethod> methods = new ArrayList<JavaProxyMethod>();
-    private final HashMap<String, ArrayList<JavaProxyMethod>> methodMap = new HashMap<String, ArrayList<JavaProxyMethod>>();
+    private final ArrayList<JavaProxyMethod> methods = new ArrayList<>();
+    private final HashMap<String, ArrayList<JavaProxyMethod>> methodMap = new HashMap<>();
 
     /* package scope */
     JavaProxyClass(final Class<?> proxyClass) {
@@ -201,11 +203,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return null;
     }
 
-    /** return the class of instances of this proxy class */
-    final Class getProxyClass() { return proxyClass; }
-
     @Override
-    public Class getJavaClass() {
+    public final Class getJavaClass() {
         return proxyClass;
     }
 
@@ -355,11 +354,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return getRuntime().newFixnum(getArity());
         }
 
-        @Deprecated
-        protected String nameOnInspection() {
-            return getDeclaringClass().nameOnInspection() + "/" + getName();
-        }
-
         @Override
         @JRubyMethod
         public RubyString inspect() {
@@ -367,8 +361,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             str.append("#<");
             str.append( getDeclaringClass().nameOnInspection() ).append('/').append( getName() );
             inspectParameterTypes(str, this);
-            str.append(">");
-            return getRuntime().newString( str.toString() );
+            str.append('>');
+            return RubyString.newString(getRuntime(), str);
         }
 
         @JRubyMethod(name = "invoke", rest = true)
@@ -433,7 +427,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
             ArrayList<JavaProxyMethod> methodsWithName = this.methodMap.get(name);
             if (methodsWithName == null) {
-                methodsWithName = new ArrayList<JavaProxyMethod>(2);
+                methodsWithName = new ArrayList<>(2);
                 methodMap.put(name, methodsWithName);
             }
             methodsWithName.add(proxyMethod);
@@ -452,47 +446,46 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     private static Class[] parse(final ClassLoader loader, String desc) throws ClassNotFoundException {
-        final List<Class> types = new ArrayList<Class>();
+        final ArrayList<Class> types = new ArrayList<>(8);
         int idx = 1;
         while (desc.charAt(idx) != ')') {
 
             int arr = 0;
             while (desc.charAt(idx) == '[') {
-                idx += 1;
-                arr += 1;
+                idx++; arr += 1;
             }
 
             Class type;
 
             switch (desc.charAt(idx)) {
-            case 'L':
-                int semi = desc.indexOf(';', idx);
-                final String name = desc.substring(idx + 1, semi);
-                idx = semi;
-                try {
-                    type = AccessController.doPrivileged(new PrivilegedExceptionAction<Class>() {
-                        public Class run() throws ClassNotFoundException {
-                            return Class.forName(name.replace('/', '.'), false, loader);
-                        }
-                    });
-                } catch (PrivilegedActionException e) {
-                    throw (ClassNotFoundException) e.getException();
-                }
-                break;
+                case 'L':
+                    int semi = desc.indexOf(';', idx);
+                    final String name = desc.substring(idx + 1, semi);
+                    idx = semi;
+                    try {
+                        type = AccessController.doPrivileged(new PrivilegedExceptionAction<Class>() {
+                            public Class run() throws ClassNotFoundException {
+                                return Class.forName(name.replace('/', '.'), false, loader);
+                            }
+                        });
+                    } catch (PrivilegedActionException e) {
+                        throw (ClassNotFoundException) e.getException();
+                    }
+                    break;
 
-            case 'B': type = Byte.TYPE; break;
-            case 'C': type = Character.TYPE; break;
-            case 'Z': type = Boolean.TYPE; break;
-            case 'S': type = Short.TYPE; break;
-            case 'I': type = Integer.TYPE; break;
-            case 'J': type = Long.TYPE; break;
-            case 'F': type = Float.TYPE; break;
-            case 'D': type = Double.TYPE; break;
-            default:
-                throw new InternalError("cannot parse " + desc + "[" + idx + "]");
+                case 'B': type = Byte.TYPE; break;
+                case 'C': type = Character.TYPE; break;
+                case 'Z': type = Boolean.TYPE; break;
+                case 'S': type = Short.TYPE; break;
+                case 'I': type = Integer.TYPE; break;
+                case 'J': type = Long.TYPE; break;
+                case 'F': type = Float.TYPE; break;
+                case 'D': type = Double.TYPE; break;
+                default:
+                    throw new InternalError("cannot parse " + desc + '[' + idx + ']');
             }
 
-            idx += 1;
+            idx++;
 
             if (arr != 0) {
                 type = Array.newInstance(type, new int[arr]).getClass();
@@ -501,17 +494,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             types.add(type);
         }
 
-        return types.toArray(new Class[types.size()]);
+        return types.isEmpty() ? EMPTY_CLASS_ARRAY : types.toArray(new Class[types.size()]);
     }
 
     //
     // Ruby-level methods
     //
-
-    @Deprecated
-    public static void createJavaProxyModule(Ruby runtime) {
-        createJavaProxyClasses(runtime, runtime.getJavaSupport().getJavaModule());
-    }
 
     public static void createJavaProxyClasses(final Ruby runtime, final RubyModule Java) {
         JavaProxyClass.createJavaProxyClassClass(runtime, Java);
@@ -551,7 +539,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
     }
 
-    private static final HashSet<String> EXCLUDE_MODULES = new HashSet<String>();
+    private static final HashSet<String> EXCLUDE_MODULES = new HashSet<>(8, 1);
     static {
         EXCLUDE_MODULES.add("Kernel");
         EXCLUDE_MODULES.add("Java");
@@ -559,14 +547,16 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         EXCLUDE_MODULES.add("Enumerable");
     }
 
-    private static final HashSet<String> EXCLUDE_METHODS = new HashSet<String>();
-    static {
-        EXCLUDE_METHODS.add("class");
-        EXCLUDE_METHODS.add("finalize");
-        EXCLUDE_METHODS.add("initialize");
-        EXCLUDE_METHODS.add("java_class");
-        EXCLUDE_METHODS.add("java_object");
-        EXCLUDE_METHODS.add("__jcreate!");
+    private static boolean isExcludedMethod(final String name) {
+        switch (name) {
+            case "class" : return true;
+            case "finalize" : return true;
+            case "initialize" : return true;
+            case "java_class" : return true;
+            case "java_object" : return true;
+            case "__jcreate!" : return true;
+            default: return false;
+        }
     }
 
     @JRubyMethod(meta = true)
@@ -577,7 +567,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             throw runtime.newTypeError(obj, runtime.getClassClass());
         }
 
-        RubyClass clazz = (RubyClass)obj;
+        final RubyClass clazz = (RubyClass) obj;
 
         // Let's only generate methods for those the user may actually
         // intend to override.  That includes any defined in the current
@@ -588,12 +578,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         // TODO: may want to exclude other common mixins?
 
         JavaClass javaClass = null;
-        Set<String> names = new HashSet<String>(); // need names ordered for key generation later
-        List<Class<?>> interfaceList = new ArrayList<Class<?>>();
+        HashSet<String> names = new HashSet<>(); // need names ordered for key generation later
+        Collection<Class<?>> interfaceList = new LinkedHashSet<>(8);
 
-        List<IRubyObject> ancestors = clazz.getAncestorList();
         boolean skipRemainingClasses = false;
-        for (IRubyObject ancestorObject: ancestors) {
+        for ( IRubyObject ancestorObject: clazz.getAncestorList() ) {
             RubyModule ancestor = (RubyModule) ancestorObject;
             if (ancestor instanceof RubyClass) {
                 if (skipRemainingClasses) continue;
@@ -632,8 +621,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                                 ancestor + ": " + var);
                     }
                     RubyArray ifcArray = (RubyArray)var;
-                    int size = ifcArray.size();
-                    for (int i = size; --i >= 0; ) {
+                    for (int i = ifcArray.size(); --i >= 0; ) {
                         IRubyObject ifc = ifcArray.eltInternal(i);
                         if (!(ifc instanceof JavaClass)) {
                             throw runtime.newTypeError(
@@ -646,9 +634,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                                     "invalid java interface defined for proxy (or ancestor): " +
                                     ancestor + ": " + ifc + " (not an interface)");
                         }
-                        if (!interfaceList.contains(interfaceClass)) {
-                            interfaceList.add(interfaceClass);
-                        }
+                        interfaceList.add(interfaceClass);
                     }
                 }
                 // set this class's method names in var @__java_ovrd_methods if this
@@ -657,45 +643,31 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
                 // FIXME: shouldn't need @__java_ovrd_methods, just query locally defined methods.
 
-                var = ancestor.getInstanceVariables().getInstanceVariable("@__java_ovrd_methods");
-                if (var == null) {
-                    // lock in the overridden methods for the new class, and any as-yet
-                    // uninstantiated ancestor class.
+                Collection<String> methodNames = (Collection<String>) ancestor.getInternalVariable("__java_ovrd_methods");
+
+                if (methodNames == null) {
+                    // lock in the overridden methods for the new class, and any as-yet uninstantiated ancestor class.
                     Map<String, DynamicMethod> methods;
-                    RubyArray methodNames;
                     synchronized(methods = ancestor.getMethods()) {
-                        methodNames = RubyArray.newArrayLight(runtime,methods.size());
+                        methodNames = new ArrayList<>(methods.size());
                         for (String methodName: methods.keySet()) {
-                            if (!EXCLUDE_METHODS.contains(methodName)) {
+                            if ( ! isExcludedMethod(methodName) ) {
                                 names.add(methodName);
-                                methodNames.append(runtime.newString(methodName));
+                                methodNames.add(methodName);
                             }
                         }
                     }
-                    ancestor.setInstanceVariable("@__java_ovrd_methods",methodNames);
-                } else {
-                    if (!(var instanceof RubyArray)) {
-                        throw runtime.newTypeError(
-                                "invalid @__java_ovrd_methods defined for proxy: " +
-                                ancestor + ": " + var);
-                    }
-                    RubyArray methodNames = (RubyArray)var;
-                    int size = methodNames.size();
-                    for (int i = size; --i >= 0; ) {
-                        IRubyObject methodName = methodNames.eltInternal(i);
-                        if (!(methodName instanceof RubyString)) {
-                            throw runtime.newTypeError(
-                                    "invalid method name defined for proxy (or ancestor): " +
-                                    ancestor + ": " + methodName);
-                        }
-                        names.add(methodName.asJavaString());
-                    }
+                    ancestor.setInternalVariable("__java_ovrd_methods", methodNames);
                 }
-            } else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
+                else {
+                    names.addAll(methodNames);
+                }
+            }
+            else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
                 Map<String, DynamicMethod> methods;
                 synchronized(methods = ancestor.getMethods()) {
                     for (String methodName: methods.keySet()) {
-                        if (!EXCLUDE_METHODS.contains(methodName)) {
+                        if ( ! isExcludedMethod(methodName) ) {
                             names.add(methodName);
                         }
                     }
@@ -707,24 +679,13 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             throw runtime.newArgumentError("unable to create proxy class: no java_class defined for " + clazz);
         }
 
-        int interfaceCount = interfaceList.size();
-        Class<?>[] interfaces = new Class<?>[interfaceCount];
-        for (int i = interfaceCount; --i >= 0; ) {
-            interfaces[i] = interfaceList.get(i);
-        }
+        Class<?>[] interfaces = interfaceList.isEmpty() ? EMPTY_CLASS_ARRAY : interfaceList.toArray(new Class<?>[interfaceList.size()]);
 
         try {
             return getProxyClass(runtime, javaClass.javaClass(), interfaces, names);
         }
-        catch (Error e) {
+        catch (Error|InvocationTargetException e) {
             RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + javaClass.getValue() + " : " + e.getMessage());
-            //e.printStackTrace();
-            ex.initCause(e);
-            throw ex;
-        }
-        catch (InvocationTargetException e) {
-            RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + javaClass.getValue() + " : " + e.getMessage());
-            //e.printStackTrace();
             ex.initCause(e);
             throw ex;
         }
@@ -751,6 +712,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     public final String nameOnInspection() {
-        return "[Proxy:" + getSuperclass().getName() + "]";
+        return "[Proxy:" + getSuperclass().getName() + ']';
     }
 }

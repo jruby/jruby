@@ -66,13 +66,19 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 import org.jruby.util.CodegenUtils;
 
-@JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
+import static org.jruby.RubyModule.undefinedMethodMessage;
+
+@JRubyClass(name="Java::JavaClass", parent="Java::JavaObject", include = "Comparable")
 public class JavaClass extends JavaObject {
 
     public static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
 
-    public JavaClass(final Ruby runtime, final Class<?> javaClass) {
-        super(runtime, runtime.getJavaSupport().getJavaClassClass(), javaClass);
+    public JavaClass(final Ruby runtime, final Class<?> klass) {
+        this(runtime, runtime.getJavaSupport().getJavaClassClass(), klass);
+    }
+
+    JavaClass(final Ruby runtime, final RubyClass javaClassProxy, final Class<?> klass) {
+        super(runtime, javaClassProxy, klass);
     }
 
     @Override
@@ -94,26 +100,18 @@ public class JavaClass extends JavaObject {
         return (RubyClass) Java.getProxyClass(getRuntime(), javaClass());
     }
 
-    public void addProxyExtender(final IRubyObject extender) {
-        Ruby runtime = getRuntime();
-
-        if (!extender.respondsTo("extend_proxy")) {
-            throw runtime.newTypeError("proxy extender must have an extend_proxy method");
+    private IRubyObject addProxyExtender(final ThreadContext context, final IRubyObject extender) {
+        if ( ! extender.respondsTo("extend_proxy") ) {
+            throw context.runtime.newTypeError("proxy extender must have an extend_proxy method");
         }
-
-        ThreadContext context = runtime.getCurrentContext();
-        RubyModule proxy = Java.getProxyClass(runtime, javaClass());
-        extendProxy(context, extender, proxy);
-    }
-
-    private void extendProxy(final ThreadContext context, final IRubyObject extender, final RubyModule proxy) {
-        extender.callMethod(context, "extend_proxy", proxy);
+        RubyModule proxy = Java.getProxyClass(context.runtime, javaClass());
+        return extender.callMethod(context, "extend_proxy", proxy);
     }
 
     @JRubyMethod(required = 1)
     public IRubyObject extend_proxy(final ThreadContext context, IRubyObject extender) {
-        addProxyExtender(extender);
-        return getRuntime().getNil();
+        addProxyExtender(context, extender);
+        return context.nil;
     }
 
     public static JavaClass get(final Ruby runtime, final Class<?> klass) {
@@ -138,10 +136,9 @@ public class JavaClass extends JavaObject {
     }
 
     static RubyClass createJavaClassClass(final Ruby runtime, final RubyModule Java, final RubyClass JavaObject) {
-        // FIXME: Determine if a real allocator is needed here. Do people want to extend
-        // JavaClass? Do we want them to do that? Can you Class.new(JavaClass)? Should
-        // you be able to?
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
+        // TODO: Determine if a real allocator is needed here. Do people want to extend
+        // JavaClass? Do we want them to do that? Can you Class.new(JavaClass)? Should you be able to?
+        // NOTE: NOT_ALLOCATABLE_ALLOCATOR is probably OK here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
         RubyClass JavaCLass = Java.defineClassUnder("JavaClass", JavaObject, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
@@ -181,22 +178,25 @@ public class JavaClass extends JavaObject {
         return JavaUtil.PRIMITIVE_CLASSES.containsKey(name);
     }
 
-    public static synchronized JavaClass forNameVerbose(Ruby runtime, String className) {
-        Class <?> klass = null;
-        if (className.indexOf('.') == -1 && Character.isLowerCase(className.charAt(0))) {
+    public static JavaClass forNameVerbose(Ruby runtime, String className) {
+        Class<?> klass = null; // "boolean".length() == 7
+        if (className.length() < 8 && Character.isLowerCase(className.charAt(0))) {
             // one word type name that starts lower-case...it may be a primitive type
             klass = JavaUtil.PRIMITIVE_CLASSES.get(className);
         }
-
-        if (klass == null) {
-            klass = runtime.getJavaSupport().loadJavaClassVerbose(className);
+        synchronized (JavaClass.class) {
+            if (klass == null) {
+                klass = runtime.getJavaSupport().loadJavaClassVerbose(className);
+            }
+            return JavaClass.get(runtime, klass);
         }
-        return JavaClass.get(runtime, klass);
     }
 
-    public static synchronized JavaClass forNameQuiet(Ruby runtime, String className) {
-        Class klass = runtime.getJavaSupport().loadJavaClassQuiet(className);
-        return JavaClass.get(runtime, klass);
+    public static JavaClass forNameQuiet(Ruby runtime, String className) {
+        synchronized (JavaClass.class) {
+            Class<?> klass = runtime.getJavaSupport().loadJavaClassQuiet(className);
+            return JavaClass.get(runtime, klass);
+        }
     }
 
     @JRubyMethod(name = "for_name", required = 1, meta = true)
@@ -552,7 +552,7 @@ public class JavaClass extends JavaObject {
             return new JavaMethod(runtime, method);
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass().getName() + "'", methodName);
+            throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass().getName(), false), methodName);
         }
     }
 
@@ -569,7 +569,7 @@ public class JavaClass extends JavaObject {
             return new JavaMethod(runtime, method);
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass().getName() + "'", methodName);
+            throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass().getName(), false), methodName);
         }
     }
 
@@ -586,7 +586,7 @@ public class JavaClass extends JavaObject {
 
         if ( callable != null ) return callable;
 
-        throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass().getName() + "'", methodName);
+        throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass().getName(), false), methodName);
     }
 
     public static JavaCallable getMatchingCallable(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
@@ -718,29 +718,29 @@ public class JavaClass extends JavaObject {
     public JavaObject new_array(IRubyObject lengthArgument) {
         if (lengthArgument instanceof RubyInteger) {
             // one-dimensional array
-            int length = (int) ((RubyInteger) lengthArgument).getLongValue();
+            int length = ((RubyInteger) lengthArgument).getIntValue();
             return new JavaArray(getRuntime(), Array.newInstance(javaClass(), length));
-        } else if (lengthArgument instanceof RubyArray) {
+        }
+        else if (lengthArgument instanceof RubyArray) {
             // n-dimensional array
-            List list = ((RubyArray)lengthArgument).getList();
-            int length = list.size();
+            IRubyObject[] aryLengths = ((RubyArray)lengthArgument).toJavaArrayMaybeUnsafe();
+            final int length = aryLengths.length;
             if (length == 0) {
                 throw getRuntime().newArgumentError("empty dimensions specifier for java array");
             }
-            int[] dimensions = new int[length];
+            final int[] dimensions = new int[length];
             for (int i = length; --i >= 0; ) {
-                IRubyObject dimensionLength = (IRubyObject)list.get(i);
-                if ( !(dimensionLength instanceof RubyInteger) ) {
-                    throw getRuntime()
-                    .newTypeError(dimensionLength, getRuntime().getInteger());
+                IRubyObject dimLength = aryLengths[i];
+                if ( ! ( dimLength instanceof RubyInteger ) ) {
+                    throw getRuntime().newTypeError(dimLength, getRuntime().getInteger());
                 }
-                dimensions[i] = (int) ((RubyInteger) dimensionLength).getLongValue();
+                dimensions[i] = ((RubyInteger) dimLength).getIntValue();
             }
             return new JavaArray(getRuntime(), Array.newInstance(javaClass(), dimensions));
-        } else {
+        }
+        else {
             throw getRuntime().newArgumentError(
-                    "invalid length or dimensions specifier for java array" +
-            " - must be Integer or Array of Integer");
+                "invalid length or dimensions specifier for java array - must be Integer or Array of Integer");
         }
     }
 
@@ -990,6 +990,4 @@ public class JavaClass extends JavaObject {
         catch (SecurityException e) { return new Field[0]; }
     }
 
-    @Deprecated
-    public static final boolean CAN_SET_ACCESSIBLE = JavaUtil.CAN_SET_ACCESSIBLE;
 }

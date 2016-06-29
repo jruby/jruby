@@ -34,6 +34,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
+import org.jruby.util.MurmurHash;
 import org.jruby.util.TypeConverter;
 
 import java.util.ArrayList;
@@ -48,12 +49,15 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
+import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
+import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.CodegenUtils.sig;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Helper methods which are called by the compiler.  Note: These will show no consumers, but
@@ -274,6 +278,8 @@ public class Helpers {
                 return Errno.ECONNRESET;
             } else if (errorMessage.equals("No space left on device")) {
                 return Errno.ENOSPC;
+            } else if (errorMessage.equals("Too many open files")) {
+                return Errno.EMFILE;
             }
         }
         return null;
@@ -971,8 +977,8 @@ public class Helpers {
             // modules are included with a shim class; we must find that shim to handle super() appropriately
             return clazz.findImplementer(implementationClass);
         } else {
-            // classes are directly in the hierarchy, so no special logic is necessary for implementer
-            return implementationClass;
+            // method is directly in a class, so just ensure we don't use any prepends
+            return implementationClass.getMethodLocation();
         }
     }
 
@@ -1409,11 +1415,13 @@ public class Helpers {
     }
 
     public static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {
+        RubyModule objectClass = context.runtime.getObject();
         if (wrap) {
-            staticScope.setModule(RubyModule.newModule(context.runtime));
-        } else {
-            staticScope.setModule(context.runtime.getObject());
+            objectClass = RubyModule.newModule(context.runtime);
         }
+
+        staticScope.setModule(objectClass);
+
         DynamicScope scope = DynamicScope.newDynamicScope(staticScope);
 
         // Each root node has a top-level scope that we need to push
@@ -2136,7 +2144,7 @@ public class Helpers {
 
     public static RubyString getDefinedConstantOrBoundMethod(IRubyObject left, String name) {
         if (isModuleAndHasConstant(left, name)) return left.getRuntime().getDefinedMessage(DefinedMessage.CONSTANT);
-        if (left.getMetaClass().isMethodBound(name, true)) left.getRuntime().getDefinedMessage(DefinedMessage.METHOD);
+        if (left.getMetaClass().isMethodBound(name, true)) return left.getRuntime().getDefinedMessage(DefinedMessage.METHOD);
         return null;
     }
 
@@ -2439,9 +2447,8 @@ public class Helpers {
 
     public static RubyString getDefinedNot(Ruby runtime, RubyString definition) {
         if (definition != null) {
-            definition = runtime.getDefinedMessage(DefinedMessage.METHOD);
+            return runtime.getDefinedMessage(DefinedMessage.METHOD);
         }
-
         return definition;
     }
 
@@ -2633,21 +2640,20 @@ public class Helpers {
         Encoding encoding = value.getEncoding();
 
         if (encoding == UTF8Encoding.INSTANCE) {
-                return RubyEncoding.decodeUTF8(unsafeBytes, begin, length);
-            }
-
-            Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
-
-            if (charset == null) {
-                try {
-                    return new String(unsafeBytes, begin, length, encoding.toString());
-                } catch (UnsupportedEncodingException uee) {
-                    return value.toString();
-                }
-            }
-
-            return RubyEncoding.decode(unsafeBytes, begin, length, charset);
+            return RubyEncoding.decodeUTF8(unsafeBytes, begin, length);
         }
+
+        Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
+
+        if (charset == null) {
+            // No JDK Charset available for this encoding; convert to UTF-16 ourselves.
+            Encoding utf16 = EncodingUtils.getUTF16ForPlatform();
+
+            return EncodingUtils.strConvEnc(runtime.getCurrentContext(), value, value.getEncoding(), utf16).toString();
+        }
+
+        return RubyEncoding.decode(unsafeBytes, begin, length, charset);
+    }
 
     /**
      * Convert a ByteList into a Java String by using its Encoding's Charset. If
@@ -2709,6 +2715,75 @@ public class Helpers {
 
     public static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
         return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
+    }
+
+    // MRI: rb_hash_start
+    public static long hashStart(Ruby runtime, long value) {
+        long hash = value +
+                (runtime.isSiphashEnabled() ?
+                        runtime.getHashSeedK1() :
+                        runtime.getHashSeedK0());
+        return hash;
+    }
+
+    public static long hashEnd(long value) {
+        value = murmur_step(value, 10);
+        value = murmur_step(value, 17);
+        return value;
+    }
+
+    // MRI: rb_hash
+    public static RubyFixnum safeHash(final ThreadContext context, IRubyObject obj) {
+        final Ruby runtime = context.runtime;
+        IRubyObject hval = runtime.safeRecurse(new Ruby.RecursiveFunction() {
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                if (recur) return RubyFixnum.zero(runtime);
+                return invokedynamic(context, obj, HASH);
+            }
+        }, obj, "hash", true);
+
+        while (!(hval instanceof RubyFixnum)) {
+            if (hval instanceof RubyBignum) {
+                // This is different from MRI because we don't have rb_integer_pack
+                return ((RubyBignum) hval).hash();
+            }
+            hval = hval.convertToInteger();
+        }
+
+        return (RubyFixnum) hval;
+    }
+
+    public static long murmurCombine(long h, long i)
+    {
+        long v = 0;
+        h += i;
+        v = murmur1(v + h);
+        v = murmur1(v + (h >>> 4*8));
+        return v;
+    }
+
+    public static long murmur(long h, long k, int r)
+    {
+        long m = MurmurHash.MURMUR2_MAGIC;
+        h += k;
+        h *= m;
+        h ^= h >> r;
+        return h;
+    }
+
+    public static long murmur_finish(long h)
+    {
+        h = murmur(h, 0, 10);
+        h = murmur(h, 0, 17);
+        return h;
+    }
+
+    public static long murmur_step(long h, long k) {
+        return murmur((h), (k), 16);
+    }
+
+    public static long murmur1(long h) {
+        return murmur_step(h, 16);
     }
 
     @Deprecated
