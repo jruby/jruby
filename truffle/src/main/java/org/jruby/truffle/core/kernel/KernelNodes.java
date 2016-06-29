@@ -1438,7 +1438,7 @@ public abstract class KernelNodes {
                 final Source source = getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode().getEncapsulatingSourceSection().getSource();
                 String result;
                 if (source.getPath() == null) {
-                    result = source.getShortName();
+                    result = null;
                 } else {
                     result = source.getPath();
                 }

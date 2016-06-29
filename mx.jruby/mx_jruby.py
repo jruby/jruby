@@ -32,7 +32,7 @@ class MavenProject(mx.Project):
     def source_dirs(self):
         return []
 
-    def output_dir(self):
+    def output_dir(self, relative=False):
         dir = os.path.join(_suite.dir, self.prefix)
         return dir.rstrip('/')
 
@@ -101,7 +101,7 @@ class MavenBuildTask(mx.BuildTask):
         maven_version_arg = '-Dtruffle.version=' + truffle_commit
         maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
 
-        mx.run_mx(['maven-install', '--repo', mavenDir], suite=truffle)
+        mx.run_mx(['maven-install', '--repo', mavenDir, '--only', 'TRUFFLE_API,TRUFFLE_DEBUG'], suite=truffle)
 
         open(os.path.join(rubyDir, 'VERSION'), 'w').write('graal-vm\n')
 
@@ -109,15 +109,15 @@ class MavenBuildTask(mx.BuildTask):
         
         env = {'JRUBY_BUILD_MORE_QUIET': 'true'}
 
-        mx.run_maven(['--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir, env=env)
+        mx.run_maven(['-q', '--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir, env=env)
 
         mx.log('Building without tests')
 
-        mx.run_maven(['-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
+        mx.run_maven(['-q', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
 
         mx.log('Building complete version')
 
-        mx.run_maven(['-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
+        mx.run_maven(['-q', '-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
         mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
         mx.log('...finished build of {}'.format(self.subject))
@@ -126,7 +126,7 @@ class MavenBuildTask(mx.BuildTask):
         if forBuild:
             return
         rubyDir = _suite.dir
-        mx.run_maven(['clean'], nonZeroIsFatal=False, cwd=rubyDir)
+        mx.run_maven(['-q', 'clean'], nonZeroIsFatal=False, cwd=rubyDir)
 
 class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
     def group(self):
