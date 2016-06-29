@@ -48,13 +48,16 @@ module Utilities
   def self.find_graal_javacmd_and_options
     graalvm = ENV['GRAALVM_BIN']
     graal_home = ENV['GRAAL_HOME']
-    if truffle_release?
-      graalvm ||= ENV['GRAALVM_RELEASE_BIN']
-    else
-      graal_home ||= ENV['GRAAL_HOME_TRUFFLE_HEAD']
-    end
 
     raise "Both GRAALVM_BIN and GRAAL_HOME defined!" if graalvm && graal_home
+
+    if !graalvm && !graal_home
+      if truffle_release?
+        graalvm = ENV['GRAALVM_RELEASE_BIN']
+      else
+        graal_home = ENV['GRAAL_HOME_TRUFFLE_HEAD']
+      end
+    end
 
     if graalvm
       javacmd = File.expand_path(graalvm)
