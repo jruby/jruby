@@ -847,10 +847,14 @@ class String
       if use_yield || hash
         Regexp.last_match = match
 
+        duped = dup
         if use_yield
           val = yield match.to_s
         else
           val = hash[match.to_s]
+        end
+        if duped != self
+          raise RuntimeError, "string modified"
         end
         untrusted = true if val.untrusted?
         val = val.to_s unless val.kind_of?(String)
