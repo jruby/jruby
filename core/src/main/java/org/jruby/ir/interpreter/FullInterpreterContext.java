@@ -144,6 +144,7 @@ public class FullInterpreterContext extends InterpreterContext {
         temporaryVariablecount = getScope().getTemporaryVariablesCount();
 
         // FIXME: Profiler will end up doing this but we are just hacking with magic name for now.
+        /*
         for (Instr instr: instructions) {
             if (instr instanceof CallBase) {
                 CallBase call = (CallBase) instr;
@@ -159,7 +160,7 @@ public class FullInterpreterContext extends InterpreterContext {
                     }
                 }
             }
-        }
+        }*/
         // System.out.println("SCOPE: " + getScope().getName());
         // System.out.println("INSTRS: " + cfg.toStringInstrs());
     }
