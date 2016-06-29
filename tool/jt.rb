@@ -40,18 +40,27 @@ module Utilities
       end
     end
   end
-  
+
+  def self.truffle_release?
+    !truffle_version.include?('SNAPSHOT')
+  end
+
   def self.find_graal_javacmd_and_options
-    graalvm_bin_var = ENV['GRAALVM_BIN'] || ENV["GRAALVM_BIN_#{mangle_for_env(git_branch)}"]
-    graal_home_var = ENV['GRAAL_HOME'] || ENV["GRAAL_HOME_#{mangle_for_env(git_branch)}"]
+    graalvm = ENV['GRAALVM_BIN']
+    graal_home = ENV['GRAAL_HOME']
+    if truffle_release?
+      graalvm ||= ENV['GRAALVM_RELEASE_BIN']
+    else
+      graal_home ||= ENV['GRAAL_HOME_TRUFFLE_HEAD']
+    end
 
-    raise "Both GRAALVM_BIN and GRAAL_HOME defined!" if graalvm_bin_var && graal_home_var
+    raise "Both GRAALVM_BIN and GRAAL_HOME defined!" if graalvm && graal_home
 
-    if graalvm_bin_var
-      javacmd = File.expand_path(graalvm_bin_var)
+    if graalvm
+      javacmd = File.expand_path(graalvm)
       options = []
-    elsif graal_home_var
-      graal_home = File.expand_path(graal_home_var)
+    elsif graal_home
+      graal_home = File.expand_path(graal_home)
       if ENV['JVMCI_JAVA_HOME']
         mx_options = "--java-home #{ENV['JVMCI_JAVA_HOME']}"
       else
@@ -167,10 +176,6 @@ module Utilities
 
   def self.git_branch
     @git_branch ||= `GIT_DIR="#{JRUBY_DIR}/.git" git rev-parse --abbrev-ref HEAD`.strip
-  end
-
-  def self.mangle_for_env(name)
-    name.upcase.tr('-', '_')
   end
 
   def self.igv_running?
@@ -392,11 +397,11 @@ module Commands
     puts
     puts '  RUBY_BIN                                     The JRuby+Truffle executable to use (normally just bin/jruby)'
     puts '  GRAALVM_BIN                                  GraalVM executable (java command) to use'
-    puts '  GRAALVM_BIN_...git_branch_name...            GraalVM executable to use for a given branch'
-    puts '           branch names are mangled - eg truffle-head becomes GRAALVM_BIN_TRUFFLE_HEAD'
-    puts '  GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler (make sure mx is on your path and maybe set JVMCI_JAVA_HOME)'
-    puts '  GRAAL_HOME_...git_branch_name...'
+    puts '  GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler'
+    puts '                                               (make sure mx is on your path and maybe set JVMCI_JAVA_HOME)'
     puts '  JVMCI_JAVA_HOME                              The Java with JVMCI to use with GRAAL_HOME'
+    puts '  GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)'
+    puts '  GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
     puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
