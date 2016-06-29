@@ -44,7 +44,9 @@ module Utilities
   def self.find_graal_javacmd_and_options
     graalvm_bin_var = ENV['GRAALVM_BIN'] || ENV["GRAALVM_BIN_#{mangle_for_env(git_branch)}"]
     graal_home_var = ENV['GRAAL_HOME'] || ENV["GRAAL_HOME_#{mangle_for_env(git_branch)}"]
-    
+
+    raise "Both GRAALVM_BIN and GRAAL_HOME defined!" if graalvm_bin_var && graal_home_var
+
     if graalvm_bin_var
       javacmd = File.expand_path(graalvm_bin_var)
       options = []
