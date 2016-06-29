@@ -63,6 +63,8 @@ public class ExceptionTranslatingNode extends RubyNode {
         } catch (StackOverflowError error) {
             errorProfile.enter();
             throw new RaiseException(translate(error));
+        } catch (ThreadDeath death) {
+            throw death;
         } catch (Throwable exception) {
             errorProfile.enter();
             throw new RaiseException(translate(exception));
