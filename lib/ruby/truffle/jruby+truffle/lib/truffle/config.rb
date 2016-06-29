@@ -1,6 +1,9 @@
 require 'pp'
 require 'yaml'
 
+include Truffle::Runner::ConfigUtils
+include Truffle::Runner::OptionBlocks
+
 stubs = {
     # TODO (pitr-ch 23-Jun-2016): remove? it's not used any more
     minitest: dedent(<<-RUBY),
@@ -157,113 +160,99 @@ rails_common =
                run:   { environment: { 'N' => 1 },
                         require:     %w(rubygems date bigdecimal pathname openssl-stubs) }
 
-config :activesupport,
-       deep_merge(
-           rails_common,
-           stubs.fetch(:activesupport_isolation),
-           replacements.fetch(:method_source))
+Truffle::Runner.add_config :activesupport,
+                           deep_merge(
+                               rails_common,
+                               stubs.fetch(:activesupport_isolation),
+                               replacements.fetch(:method_source))
 
-config :activemodel,
-       deep_merge(
-           rails_common,
-           stubs.fetch(:activesupport_isolation),
-           stubs.fetch(:bcrypt))
+Truffle::Runner.add_config :activemodel,
+                           deep_merge(
+                               rails_common,
+                               stubs.fetch(:activesupport_isolation),
+                               stubs.fetch(:bcrypt))
 
 # TODO (pitr-ch 23-Jun-2016): investigate, fails intermittently
-config :actionpack,
-       deep_merge(
-           rails_common,
-           stubs.fetch(:html_sanitizer),
-           setup: { file: { 'excluded-tests.rb' => format(dedent(<<-RUBY), exclusion_file(:actionpack)),
+Truffle::Runner.add_config :actionpack,
+                           deep_merge(
+                               rails_common,
+                               stubs.fetch(:html_sanitizer),
+                               setup: { file: { 'excluded-tests.rb' => format(dedent(<<-RUBY), exclusion_file(:actionpack)),
                               failures = %s
                               require 'truffle/exclude_rspec_examples'
                               Truffle.exclude_rspec_examples failures
-                            RUBY
-           } })
+                                                RUBY
+                               } })
 
-config :'concurrent-ruby',
-       setup: { file: { "stub-processor_number.rb" => dedent(<<-RUBY) } },
-          # stub methods calling #system
-          require 'concurrent'
-          module Concurrent
-            module Utility
-              class ProcessorCounter
-                def compute_processor_count
-                  2
-                end
-                def compute_physical_processor_count
-                  2
-                end
-              end
-            end
-          end
-       RUBY
-       run: { require: %w(stub-processor_number) }
+Truffle::Runner.add_config :'concurrent-ruby',
+                           setup: { file: { "stub-processor_number.rb" => dedent(<<-RUBY) } },
+                              # stub methods calling #system
+                              require 'concurrent'
+                              module Concurrent
+                                module Utility
+                                  class ProcessorCounter
+                                    def compute_processor_count
+                                      2
+                                    end
+                                    def compute_physical_processor_count
+                                      2
+                                    end
+                                  end
+                                end
+                              end
+                           RUBY
+                           run: { require: %w(stub-processor_number) }
 
-config :monkey_patch,
-       replacements.fetch(:bundler)
+Truffle::Runner.add_config :monkey_patch,
+                           replacements.fetch(:bundler)
 
-config :openweather,
-       replacements.fetch(:'bundler/gem_tasks')
+Truffle::Runner.add_config :openweather,
+                           replacements.fetch(:'bundler/gem_tasks')
 
-config :psd,
-       replacements.fetch(:nokogiri)
+Truffle::Runner.add_config :psd,
+                           replacements.fetch(:nokogiri)
 
-ci :actionpack do
+
+class Truffle::Runner::CIEnvironment
+  def rails_ci(exclude)
+    repository_name 'rails'
+
+    git_clone 'https://github.com/rails/rails.git' unless File.exists? repository_dir
+    git_checkout git_tag('4.2.6')
+
+    use_only_https_git_paths!
+
+    has_to_succeed setup
+    set_result run([%w[--require-pattern test/**/*_test.rb],
+                    (exclude ? %w[-r excluded-tests] : []),
+                    %w[-- -I test -e nil]].flatten(1))
+  end
+end
+
+Truffle::Runner.add_ci_definition :actionpack do
   declare_options exclude: ['--[no-]exclude',
                             'Exclude known failing tests',
                             STORE_NEW_VALUE,
                             true]
-
   subdir 'actionpack'
-  repository_name 'rails'
-
-  git_clone 'https://github.com/rails/rails.git' unless File.exists? repository_dir
-  git_checkout git_tag('4.2.6')
-
-  use_only_https_git_paths!
-
-  has_to_succeed setup
-
-  set_result run([%w[--require-pattern test/**/*_test.rb],
-                  (option(:exclude) ? %w[-r excluded-tests] : []),
-                  %w[-- -I test -e nil]].flatten(1),
-                 raise: false)
+  rails_ci option(:exclude)
 end
 
-ci :activemodel do
+Truffle::Runner.add_ci_definition :activemodel do
   subdir 'activemodel'
-  repository_name 'rails'
-
-  git_clone 'https://github.com/rails/rails.git' unless File.exists? repository_dir
-  git_checkout git_tag('4.2.6')
-
-  use_only_https_git_paths!
-
-  has_to_succeed setup
-
-  set_result run(%w[--require-pattern test/**/*_test.rb -- -I test -e nil], raise: false)
+  rails_ci false
 end
 
-ci :activesupport do
+Truffle::Runner.add_ci_definition :activesupport do
   subdir 'activesupport'
-  repository_name 'rails'
-
-  git_clone 'https://github.com/rails/rails.git' unless File.exists? repository_dir
-  git_checkout git_tag('4.2.6')
-
-  use_only_https_git_paths!
-
-  has_to_succeed setup
-
-  set_result run(%w[--require-pattern test/**/*_test.rb -- -I test -e nil], raise: false)
+  rails_ci false
 end
 
-ci :algebrick do
+Truffle::Runner.add_ci_definition :algebrick do
   git_clone 'https://github.com/pitr-ch/algebrick.git' unless File.exists? repository_dir
   git_checkout git_tag '0.7.3'
 
   has_to_succeed setup
 
-  set_result run(%w[test/algebrick_test.rb], raise: false)
+  set_result run(%w[test/algebrick_test.rb])
 end
