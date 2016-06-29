@@ -246,7 +246,7 @@ public class ThreadService {
     	// all threads in ruby thread group plus main thread
 
         synchronized(rubyThreadMap) {
-            List<RubyThread> rtList = new ArrayList<RubyThread>(rubyThreadMap.size());
+            List<RubyThread> rtList = new ArrayList<>(rubyThreadMap.size());
 
             for (Map.Entry<Object, RubyThread> entry : rubyThreadMap.entrySet()) {
                 Object key = entry.getKey();
@@ -267,10 +267,7 @@ public class ThreadService {
                 rtList.add(entry.getValue());
             }
 
-            RubyThread[] rubyThreads = new RubyThread[rtList.size()];
-            rtList.toArray(rubyThreads);
-
-            return rubyThreads;
+            return rtList.toArray(new RubyThread[rtList.size()]);
         }
     }
 
