@@ -89,7 +89,7 @@ suite = {
                 "RUBY-ZIP",
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
- 		"truffle:TRUFFLE_DSL_PROCESSOR",
+                "truffle:TRUFFLE_DSL_PROCESSOR",
                 "truffle:TRUFFLE_TCK",
             ],
             "description": "JRuby+Truffle",
@@ -106,7 +106,7 @@ suite = {
             "distDependencies": [
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
-		"truffle:TRUFFLE_DSL_PROCESSOR",
+                "truffle:TRUFFLE_DSL_PROCESSOR",
                 "truffle:TRUFFLE_TCK",
             ],
             "description": "JRuby+Truffle Native Libs",
