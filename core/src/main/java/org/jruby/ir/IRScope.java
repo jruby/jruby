@@ -1095,6 +1095,12 @@ public abstract class IRScope implements ParseResult {
         newContext.linearizeBasicBlocks();
         this.fullInterpreterContext = newContext;
 
+        /*
+        System.out.println("DONE!");
+        System.out.println("cfg   :" + getCFG().toStringGraph());
+        System.out.println("instrs:" + getCFG().toStringInstrs());
+        */
+
         Ruby runtime = implClass.getRuntime();
         String key = SexpMaker.sha1(this);
         JVMVisitor visitor = new JVMVisitor();
@@ -1109,13 +1115,13 @@ public abstract class IRScope implements ParseResult {
         IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
         try {
             MethodHandle variable = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, context.getNativeSignature(-1));
-            if (signatures.size() == 1) {
+            if (signatures.size() == 0) {
                 ((CompiledIRMethod) compilable).variable = variable;
             } else {
                 ((CompiledIRMethod) compilable).variable = variable;
-
                 for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
                     ((CompiledIRMethod) compilable).specific = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, entry.getValue());
+                    ((CompiledIRMethod) compilable).specificArity = entry.getKey();
                     break;
                 }
             }

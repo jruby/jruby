@@ -25,7 +25,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements IRMethodArgs, 
     public MethodHandle variable;
 
     public MethodHandle specific;
-    protected final int specificArity;
+    public int specificArity;
 
     private final boolean hasExplicitCallProtocol;
     private final boolean hasKwargs;
