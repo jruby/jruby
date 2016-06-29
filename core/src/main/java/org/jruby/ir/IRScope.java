@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import org.jruby.ParseResult;
@@ -1104,13 +1105,14 @@ public abstract class IRScope implements ParseResult {
 
         Class sourceClass = visitor.defineFromBytecode(this, generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
 
-        IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
         String jittedName = context.getJittedName();
+        IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
         try {
+            MethodHandle variable = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, context.getNativeSignature(-1));
             if (signatures.size() == 1) {
-                ((CompiledIRMethod) compilable).variable = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, signatures.get(-1));
+                ((CompiledIRMethod) compilable).variable = variable;
             } else {
-                ((CompiledIRMethod) compilable).variable = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, signatures.get(-1));
+                ((CompiledIRMethod) compilable).variable = variable;
 
                 for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
                     ((CompiledIRMethod) compilable).specific = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, entry.getValue());
