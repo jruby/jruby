@@ -695,8 +695,9 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "delete", required = 1)
-    public abstract static class DeleteNode extends ArrayCoreMethodNode {
+    @CoreMethod(names = "delete", required = 1, needsBlock = true)
+    @ImportStatic(ArrayGuards.class)
+    public abstract static class DeleteNode extends YieldingCoreMethodNode {
 
         @Child private KernelNodes.SameOrEqualNode equalNode;
         @Child private IsFrozenNode isFrozenNode;
@@ -707,16 +708,22 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isNullArray(array)")
-        public Object deleteNull(VirtualFrame frame, DynamicObject array, Object value) {
+        public Object deleteNull(VirtualFrame frame, DynamicObject array, Object value, NotProvided block) {
             return nil();
         }
 
+        @Specialization(guards = "isNullArray(array)")
+        public Object deleteNull(VirtualFrame frame, DynamicObject array, Object value, DynamicObject block) {
+            return yield(frame, block, value);
+        }
+
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
-        public Object delete(VirtualFrame frame, DynamicObject array, Object value,
+        public Object delete(VirtualFrame frame, DynamicObject array, Object value, Object maybeBlock,
                 @Cached("of(array)") ArrayStrategy strategy) {
             final ArrayMirror store = strategy.newMirror(array);
 
             Object found = nil();
+            boolean isFound = false;
 
             int i = 0;
             int n = 0;
@@ -726,6 +733,7 @@ public abstract class ArrayNodes {
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     checkFrozen(array);
                     found = stored;
+                    isFound = true;
                     continue;
                 }
 
@@ -739,6 +747,15 @@ public abstract class ArrayNodes {
             if (i != n) {
                 setStoreAndSize(array, store.getArray(), i);
             }
+
+            if(!isFound){
+                if (maybeBlock == NotProvided.INSTANCE) {
+                    return nil();
+                } else {
+                    return yield(frame, (DynamicObject) maybeBlock, value);
+                }
+            }
+
             return found;
         }
 
