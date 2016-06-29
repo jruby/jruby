@@ -712,20 +712,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         final RubyHash mask = (RubyHash) TypeConverter.convertToType(_mask, context.runtime.getHash(), "to_hash");
 
-        mask.visitAll(new RubyHash.Visitor() {
-            @Override
-            public void visit(IRubyObject key, IRubyObject value) {
-                if (value instanceof RubySymbol) {
-                    RubySymbol sym = (RubySymbol) value;
-                    switch (sym.toString()) {
-                        case "immediate" : return;
-                        case "on_blocking" : return;
-                        case "never" : return;
-                        default : throw key.getRuntime().newArgumentError("unknown mask signature");
-                    }
-                }
-            }
-        });
+        mask.visitAll(context, HandleInterruptVisitor, null);
 
         RubyThread th = context.getThread();
         th.interruptMaskStack.add(mask);
@@ -743,6 +730,21 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             th.pollThreadEvents(context);
         }
     }
+
+    private static final RubyHash.VisitorWithState HandleInterruptVisitor = new RubyHash.VisitorWithState() {
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Object state) {
+            if (value instanceof RubySymbol) {
+                RubySymbol sym = (RubySymbol) value;
+                switch (sym.toString()) {
+                    case "immediate" : return;
+                    case "on_blocking" : return;
+                    case "never" : return;
+                    default : throw key.getRuntime().newArgumentError("unknown mask signature");
+                }
+            }
+        }
+    };
 
     @JRubyMethod(name = "pending_interrupt?", meta = true, optional = 1)
     public static IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {

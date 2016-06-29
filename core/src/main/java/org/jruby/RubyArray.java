@@ -3185,12 +3185,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         realLength = 0;
 
-        hash.visitAll(new RubyHash.Visitor() {
-            @Override
-            public void visit(IRubyObject key, IRubyObject value) {
-                append(value);
-            }
-        });
+        hash.visitAll(context, RubyHash.AppendValueVisitor, this);
         return this;
     }
 
@@ -3221,13 +3216,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (!block.isGiven()) return uniq(context);
         RubyHash hash = makeHash(context, block);
 
-        final RubyArray result = new RubyArray(context.runtime, getMetaClass(), hash.size());
-        hash.visitAll(new RubyHash.Visitor() {
-            @Override
-            public void visit(IRubyObject key, IRubyObject value) {
-                result.append(value);
-            }
-        });
+        RubyArray result = new RubyArray(context.runtime, getMetaClass(), hash.size());
+        hash.visitAll(context, RubyHash.AppendValueVisitor, result);
         return result;
     }
 
