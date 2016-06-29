@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.loader;
 
+import com.oracle.truffle.api.source.MissingMIMETypeException;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
@@ -51,8 +52,7 @@ public class SourceLoader {
     }
 
     public Source loadFragment(String fragment, String name) {
-        return Source.fromText(fragment, name);
-        //return Source.newBuilder(fragment).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
+        return Source.newBuilder(fragment).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
     private Source loadResource(String path) throws IOException {

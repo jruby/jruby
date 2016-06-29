@@ -1437,10 +1437,10 @@ public abstract class KernelNodes {
             } else {
                 final Source source = getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode().getEncapsulatingSourceSection().getSource();
                 String result;
-                if (source.getPath() == null) {
+                if (source.getName() == null) {
                     result = null;
                 } else {
-                    result = source.getPath();
+                    result = source.getName();
                 }
                 final String sourcePath = result;
 

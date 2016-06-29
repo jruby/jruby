@@ -73,7 +73,7 @@ public class ReloadArgumentsTranslator extends Translator {
             System.err.println("WARNING: post args in zsuper not yet implemented at " + sourceSection.getShortDescription());
         }
 
-        if (node.hasKwargs() && !sourceSection.getSource().getPath().endsWith("/language/fixtures/super.rb")) {
+        if (node.hasKwargs() && !sourceSection.getSource().getName().endsWith("/language/fixtures/super.rb")) {
             System.err.println("WARNING: kwargs in zsuper not yet implemented at " + sourceSection.getShortDescription());
         }
 

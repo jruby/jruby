@@ -82,7 +82,7 @@ public abstract class CoverageNodes {
                 }
 
                 results.add(Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
-                        createString(StringOperations.encodeRope(source.getKey().getPath(), UTF8Encoding.INSTANCE)),
+                        createString(StringOperations.encodeRope(source.getKey().getName(), UTF8Encoding.INSTANCE)),
                         Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), countsStore, countsStore.length)
                 }, 2));
             }
