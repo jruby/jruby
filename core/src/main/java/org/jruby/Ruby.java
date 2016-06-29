@@ -1205,10 +1205,10 @@ public final class Ruby {
         threadService.initMainThread();
 
         // Get the main threadcontext (gets constructed for us)
-        ThreadContext tc = getCurrentContext();
+        final ThreadContext context = getCurrentContext();
 
         // Construct the top-level execution frame and scope for the main thread
-        tc.prepareTopLevel(objectClass, topSelf);
+        context.prepareTopLevel(objectClass, topSelf);
 
         // Initialize all the core classes
         bootstrap();
@@ -1223,10 +1223,10 @@ public final class Ruby {
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
-        dummyClass.freeze(tc);
+        dummyClass.freeze(context);
 
         // Create global constants and variables
-        RubyGlobal.createGlobals(tc, this);
+        RubyGlobal.createGlobals(context, this);
 
         // Prepare LoadService and load path
         getLoadService().init(config.getLoadPaths());
@@ -1270,7 +1270,7 @@ public final class Ruby {
 
         if (is1_9()) {
             // everything booted, so SizedQueue should be available; set up root fiber
-            ThreadFiber.initRootFiber(tc);
+            ThreadFiber.initRootFiber(context);
         }
 
         if(config.isProfiling()) {
@@ -1292,7 +1292,7 @@ public final class Ruby {
         // Require in all libraries specified on command line
         for (String scriptName : config.getRequiredLibraries()) {
             if (is1_9) {
-                topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
+                topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
             } else {
                 loadService.require(scriptName);
             }
@@ -4110,19 +4110,20 @@ public final class Ruby {
 
     private void recursivePush(IRubyObject list, IRubyObject obj, IRubyObject paired_obj) {
         IRubyObject pair_list;
-        if(paired_obj == null) {
-            ((RubyHash)list).op_aset(getCurrentContext(), obj, getTrue());
-        } else if((pair_list = ((RubyHash)list).fastARef(obj)) == null) {
-            ((RubyHash)list).op_aset(getCurrentContext(), obj, paired_obj);
+        final ThreadContext context = getCurrentContext();
+        if (paired_obj == null) {
+            ((RubyHash) list).op_aset(context, obj, getTrue());
+        } else if ((pair_list = ((RubyHash)list).fastARef(obj)) == null) {
+            ((RubyHash) list).op_aset(context, obj, paired_obj);
         } else {
-            if(!(pair_list instanceof RubyHash)) {
+            if (!(pair_list instanceof RubyHash)) {
                 IRubyObject other_paired_obj = pair_list;
                 pair_list = RubyHash.newHash(this);
                 pair_list.setUntrusted(true);
-                ((RubyHash)pair_list).op_aset(getCurrentContext(), other_paired_obj, getTrue());
-                ((RubyHash)list).op_aset(getCurrentContext(), obj, pair_list);
+                ((RubyHash)pair_list).op_aset(context, other_paired_obj, getTrue());
+                ((RubyHash)list).op_aset(context, obj, pair_list);
             }
-            ((RubyHash)pair_list).op_aset(getCurrentContext(), paired_obj, getTrue());
+            ((RubyHash)pair_list).op_aset(context, paired_obj, getTrue());
         }
     }
 
