@@ -19,7 +19,7 @@ unless SULONG_DIR
 end
 
 def mx(command, *args)
-  command = "mx -p #{SULONG_DIR} --vm server #{command} #{args.join(' ')}"
+  command = "mx -p #{SULONG_DIR} #{command} #{args.join(' ')}"
   puts "$ #{command}"
   `#{command}`
 end
