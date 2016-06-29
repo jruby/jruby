@@ -1291,9 +1291,8 @@ public final class Ruby implements Constantizable {
             isRestricted.set(null, false);
             isRestricted.setAccessible(false);
         } catch (Exception e) {
-            if (isDebug()) {
-                System.err.println("unable to enable unlimited-strength crypto");
-                e.printStackTrace();
+            if (isDebug() || LOG.isDebugEnabled()) {
+                LOG.debug("unable to enable unlimited-strength crypto", e);
             }
         }
 
