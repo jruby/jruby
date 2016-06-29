@@ -195,7 +195,7 @@ class Array
 
     unless block_given?
       return to_enum(:combination, num) do
-        self.combination_size(num)
+        combination_size(num)
       end
     end
 
@@ -600,7 +600,7 @@ class Array
   def permutation(num=undefined, &block)
     unless block_given?
       return to_enum(:permutation, num) do
-        Rubinius::Mirror::Array.reflect(self).permutation_size(num)
+        permutation_size(num)
       end
     end
 
@@ -636,6 +636,28 @@ class Array
 
     self
   end
+
+  def permutation_size(num)
+    n = self.size
+    if undefined.equal? num
+      k = self.size
+    else
+      k = Rubinius::Type.coerce_to_collection_index num
+    end
+    descending_factorial(n, k)
+  end
+  private :permutation_size
+
+  def descending_factorial(from, how_many)
+    cnt = how_many >= 0 ? 1 : 0
+    while (how_many) > 0
+      cnt = cnt*(from)
+      from -= 1
+      how_many -= 1
+    end
+    cnt
+  end
+  private :descending_factorial
 
   def __permute__(num, perm, index, used, &block)
     # Recursively compute permutations of r elements of the set [0..n-1].
@@ -717,7 +739,7 @@ class Array
     combination_size = combination_size.to_i
     unless block_given?
       return to_enum(:repeated_combination, combination_size) do
-        Rubinius::Mirror::Array.reflect(self).repeated_combination_size(combination_size)
+        repeated_combination_size(combination_size)
       end
     end
 
@@ -749,7 +771,7 @@ class Array
     combination_size = combination_size.to_i
     unless block_given?
       return to_enum(:repeated_permutation, combination_size) do
-        Rubinius::Mirror::Array.reflect(self).repeated_permutation_size(combination_size)
+        repeated_permutation_size(combination_size)
       end
     end
 
@@ -765,6 +787,31 @@ class Array
 
     return self
   end
+
+  def repeated_permutation_size(combination_size)
+    return 0 if combination_size < 0
+    self.size ** combination_size
+  end
+  private :repeated_permutation_size
+
+  def repeated_combination_size(combination_size)
+    return 1 if combination_size == 0
+    return binomial_coefficient(combination_size, self.size + combination_size - 1)
+  end
+  private :repeated_combination_size
+
+  def binomial_coefficient(comb, size)
+    comb = size-comb if (comb > size-comb)
+    return 0 if comb < 0
+    descending_factorial(size, comb) / descending_factorial(comb, comb)
+  end
+  private :binomial_coefficient
+
+  def combination_size(num)
+    binomial_coefficient(num, self.size)
+  end
+  private :combination_size
+
 
   def compile_repeated_permutations(combination_size, place, index, &block)
     length.times do |i|
