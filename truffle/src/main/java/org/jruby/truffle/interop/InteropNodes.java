@@ -598,7 +598,7 @@ public abstract class InteropNodes {
         @TruffleBoundary
         protected CallTarget parse(DynamicObject mimeType, DynamicObject source) {
             final String mimeTypeString = mimeType.toString();
-            final Source sourceObject = Source.fromText(source.toString(), "(eval)").withMimeType(mimeTypeString);
+            final Source sourceObject = Source.newBuilder(source.toString()).name("(eval)").mimeType(mimeTypeString).build();
 
             try {
                 return getContext().getEnv().parse(sourceObject);
