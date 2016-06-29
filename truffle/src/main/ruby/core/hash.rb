@@ -32,7 +32,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-unless Rubinius::Config['hash.hamt']
 class Hash
   include Enumerable
 
@@ -521,5 +520,4 @@ class Hash
     copy
   end
 
-end
 end

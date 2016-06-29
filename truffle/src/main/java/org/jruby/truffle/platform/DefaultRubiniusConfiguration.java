@@ -57,8 +57,6 @@ public abstract class DefaultRubiniusConfiguration {
     public static final int SIZE_OF_POINTER = 8;
 
     public static void load(RubiniusConfiguration configuration, RubyContext context) {
-        configuration.config("hash.hamt", false);
-
         configuration.config("rbx.platform.file.S_IRUSR", FileStat.S_IRUSR);
         configuration.config("rbx.platform.file.S_IWUSR", FileStat.S_IWUSR);
         configuration.config("rbx.platform.file.S_IXUSR", FileStat.S_IXUSR);
