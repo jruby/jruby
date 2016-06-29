@@ -80,8 +80,7 @@ public class SourceLoader {
             throw new FileNotFoundException(path);
         }
 
-        return Source.fromReader(new InputStreamReader(stream, StandardCharsets.UTF_8), path);
-        //return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
+        return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
 }
