@@ -755,7 +755,8 @@ module Commands
   private :test_specs
 
   def test_tck(*args)
-    mvn *args + ['-Ptck']
+    env = {'JRUBY_BUILD_MORE_QUIET' => 'true'}
+    mvn env, *args + ['-Ptck']
   end
   private :test_tck
 
