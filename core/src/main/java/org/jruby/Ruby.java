@@ -1240,10 +1240,10 @@ public final class Ruby implements Constantizable {
         threadService.initMainThread();
 
         // Get the main threadcontext (gets constructed for us)
-        ThreadContext tc = getCurrentContext();
+        final ThreadContext context = getCurrentContext();
 
         // Construct the top-level execution frame and scope for the main thread
-        tc.prepareTopLevel(objectClass, topSelf);
+        context.prepareTopLevel(objectClass, topSelf);
 
         // Initialize all the core classes
         bootstrap();
@@ -1259,14 +1259,14 @@ public final class Ruby implements Constantizable {
         // FIXME: This registers itself into static scope as a side-effect.  Let's make this
         // relationship handled either more directly or through a descriptice method
         // FIXME: We need a failing test case for this since removing it did not regress tests
-        new IRScriptBody(irManager, "", tc.getCurrentScope().getStaticScope());
+        new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
-        dummyClass.freeze(tc);
+        dummyClass.freeze(context);
 
         // Create global constants and variables
-        RubyGlobal.createGlobals(tc, this);
+        RubyGlobal.createGlobals(context, this);
 
         // Prepare LoadService and load path
         getLoadService().init(config.getLoadPaths());
@@ -1315,7 +1315,7 @@ public final class Ruby implements Constantizable {
             initRubyPreludes();
 
             // everything booted, so SizedQueue should be available; set up root fiber
-            ThreadFiber.initRootFiber(tc);
+            ThreadFiber.initRootFiber(context);
         }
 
         if(config.isProfiling()) {
@@ -1340,7 +1340,7 @@ public final class Ruby implements Constantizable {
         // Require in all libraries specified on command line
         if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
             for (String scriptName : config.getRequiredLibraries()) {
-                topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
+                topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
             }
         }
     }
@@ -4362,18 +4362,19 @@ public final class Ruby implements Constantizable {
 
     private void recursivePush(IRubyObject list, IRubyObject obj, IRubyObject paired_obj) {
         IRubyObject pair_list;
-        if(paired_obj == null) {
-            ((RubyHash)list).op_aset(getCurrentContext(), obj, getTrue());
-        } else if((pair_list = ((RubyHash)list).fastARef(obj)) == null) {
-            ((RubyHash)list).op_aset(getCurrentContext(), obj, paired_obj);
+        final ThreadContext context = getCurrentContext();
+        if (paired_obj == null) {
+            ((RubyHash) list).op_aset(context, obj, getTrue());
+        } else if ((pair_list = ((RubyHash)list).fastARef(obj)) == null) {
+            ((RubyHash) list).op_aset(context, obj, paired_obj);
         } else {
-            if(!(pair_list instanceof RubyHash)) {
+            if (!(pair_list instanceof RubyHash)) {
                 IRubyObject other_paired_obj = pair_list;
                 pair_list = RubyHash.newHash(this);
-                ((RubyHash)pair_list).op_aset(getCurrentContext(), other_paired_obj, getTrue());
-                ((RubyHash)list).op_aset(getCurrentContext(), obj, pair_list);
+                ((RubyHash) pair_list).op_aset(context, other_paired_obj, getTrue());
+                ((RubyHash) list).op_aset(context, obj, pair_list);
             }
-            ((RubyHash)pair_list).op_aset(getCurrentContext(), paired_obj, getTrue());
+            ((RubyHash)pair_list).op_aset(context, paired_obj, getTrue());
         }
     }
 
