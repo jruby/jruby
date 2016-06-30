@@ -9,12 +9,10 @@
  */
 package org.jruby.truffle.language.loader;
 
-import com.oracle.truffle.api.source.MissingMIMETypeException;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.core.string.StringOperations;
 
 import java.io.File;
 import java.io.FileNotFoundException;
