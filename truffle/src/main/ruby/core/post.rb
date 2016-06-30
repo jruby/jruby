@@ -93,3 +93,9 @@ class Module
   end
 
 end
+
+# TODO BJF 29-Jun-2016 Normally loaded by a prelude file, review where to load this
+begin
+  require 'unicode_normalize'
+rescue LoadError
+end

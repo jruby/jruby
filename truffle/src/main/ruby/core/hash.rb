@@ -37,7 +37,12 @@ class Hash
 
   def self.contains_all_internal(one, two)
     one.all? do |key, value|
-      two.has_key?(key) && (value.equal?(two[key]) || value == two[key])
+      if two.has_key?(key)
+        two_value = two[key]
+        value.equal?(two_value) || value == two_value
+      else
+        false
+      end
     end
   end
 
