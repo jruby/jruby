@@ -1311,11 +1311,11 @@ public class RubyKernel {
             message = "uncaught throw `" + tag + "'";
         }
         RubyThread currentThread = context.getThread();
-
+        
         if (currentThread == runtime.getThreadService().getMainThread()) {
             throw uncaught.uncaughtThrow(runtime, message, tag);
         } else {
-            message += " in thread 0x" + Integer.toHexString(RubyInteger.fix2int(currentThread.id()));
+            message += " in thread 0x" + Integer.toHexString(System.identityHashCode(currentThread.getNativeThread()));
             if (runtime.is1_9()) {
                 throw runtime.newArgumentError(message);
             } else {
