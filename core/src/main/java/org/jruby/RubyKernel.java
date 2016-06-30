@@ -1146,7 +1146,7 @@ public class RubyKernel {
 
         final RubyThread currentThread = context.getThread();
         if (currentThread != runtime.getThreadService().getMainThread()) {
-            message += " in thread 0x" + Integer.toHexString(RubyInteger.fix2int(currentThread.id()));
+            message += " in thread 0x" + Integer.toHexString(System.identityHashCode(currentThread.getNativeThread()));
         }
         throw uncaughtThrow(runtime, tag, value, runtime.newString(message));
     }
