@@ -1,6 +1,9 @@
 require 'digest.so'
 
 module Digest
+  # A mutex for Digest().
+  REQUIRE_MUTEX = Mutex.new
+
   def self.const_missing(name) # :nodoc:
     Digest::REQUIRE_MUTEX.synchronize do
       case name
