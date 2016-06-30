@@ -199,7 +199,14 @@ public class CompiledIRMethod extends AbstractIRMethod implements IRMethodArgs, 
 
     @Override
     public InterpreterContext ensureInstrsReady() {
-        return getIRScope().getFullInterpreterContext();
+        // FIXME: duplicated from MixedModeIRMethod
+        if (method instanceof IRMethod) {
+            return ((IRMethod) method).lazilyAcquireInterpreterContext();
+        }
+
+        InterpreterContext ic = method.getInterpreterContext();
+
+        return ic;
     }
 
     @Override
