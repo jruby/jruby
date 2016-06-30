@@ -100,24 +100,28 @@ class MavenBuildTask(mx.BuildTask):
         truffle_commit = truffle.vc.parent(truffle.dir)
         maven_version_arg = '-Dtruffle.version=' + truffle_commit
         maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
-
+        
         mx.run_mx(['maven-install', '--repo', mavenDir, '--only', 'TRUFFLE_API,TRUFFLE_DEBUG,TRUFFLE_DSL_PROCESSOR,TRUFFLE_TCK'], suite=truffle)
 
         open(os.path.join(rubyDir, 'VERSION'), 'w').write('graal-vm\n')
 
         # Build jruby-truffle
         
-        mx.run_maven([ '--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir)
+        env = os.environ.copy()
+        env['JRUBY_BUILD_MORE_QUIET'] = 'true'
+
+        mx.run_maven(['-q', '--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir, env=env)
 
         mx.log('Building without tests')
 
-        mx.run_maven(['-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir)
+        mx.run_maven(['-q', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
 
         mx.log('Building complete version')
 
-        mx.run_maven(['-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir)
+        mx.run_maven(['-q', '-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
         mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
+    
         mx.log('...finished build of {}'.format(self.subject))
 
     def clean(self, forBuild=False):
@@ -125,6 +129,82 @@ class MavenBuildTask(mx.BuildTask):
             return
         rubyDir = _suite.dir
         mx.run_maven(['-q', 'clean'], nonZeroIsFatal=False, cwd=rubyDir)
+
+class LicensesProject(mx.Project):
+    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
+        mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
+        self.javaCompliance = "1.7"
+        self.build = hasattr(args, 'build')
+        self.prefix = args['prefix']
+
+    def source_dirs(self):
+        return []
+
+    def output_dir(self, relative=False):
+        dir = os.path.join(_suite.dir, self.prefix)
+        return dir.rstrip('/')
+
+    def source_gen_dir(self):
+        return None
+
+    def getOutput(self, replaceVar=False):
+        return os.path.join(_suite.dir, "target")
+
+    def getResults(self, replaceVar=False):
+        return mx.Project.getResults(self, replaceVar=replaceVar)
+
+    def getBuildTask(self, args):
+        return LicensesBuildTask(self, args, None, None)
+
+    def isJavaProject(self):
+        return True
+
+    def archive_prefix(self):
+        return self.prefix
+
+    def annotation_processors(self):
+        return []
+
+    def find_classes_with_matching_source_line(self, pkgRoot, function, includeInnerClasses=False):
+        return dict()
+
+class LicensesBuildTask(mx.BuildTask):
+    def __init__(self, project, args, vmbuild, vm):
+        mx.BuildTask.__init__(self, project, args, 1)
+        self.vm = vm
+        self.vmbuild = vmbuild
+
+    def __str__(self):
+        return 'Building licences for {}'.format(self.subject)
+
+    def needsBuild(self, newestInput):
+        return (True, 'Let us re-build everytime')
+
+    def newestOutput(self):
+        return None
+
+    def build(self):
+        if not self.subject.build:
+            mx.log("...skip build of {}".format(self.subject))
+            return
+        mx.log('...perform build of {}'.format(self.subject))
+
+        rubyDir = _suite.dir
+        licenses_dir = os.path.join(rubyDir, 'licenses')
+        if not os.path.exists(licenses_dir):
+            os.mkdir(licenses_dir)
+        for f in ['BSDL', 'COPYING', 'LICENSE.RUBY']:
+            shutil.copyfile(os.path.join(rubyDir, f), os.path.join(licenses_dir, f))
+        
+        mx.log('...finished build of {}'.format(self.subject))
+
+    def clean(self, forBuild=False):
+        if forBuild:
+            return
+        rubyDir = _suite.dir
+        licenses_dir = os.path.join(rubyDir, 'licenses')
+        if os.path.exists(licenses_dir):
+            shutil.rmtree(licenses_dir)
 
 class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
     def group(self):
