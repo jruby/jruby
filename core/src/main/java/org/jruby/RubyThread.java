@@ -488,9 +488,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             final int offset, final int length) {
             final RubyClass locationClass = runtime.getLocation();
 
-            RubyArray ary = runtime.newArray(length);
-            for ( int i = offset; i < offset + length; i++ ) {
-                ary.append(new RubyThread.Location(runtime, locationClass, elements[i]));
+            RubyArray ary = RubyArray.newBlankArray(runtime, length);
+            for ( int i = 0; i < length; i++ ) {
+                ary.store(i, new RubyThread.Location(runtime, locationClass, elements[i + offset]));
             }
 
             return ary;

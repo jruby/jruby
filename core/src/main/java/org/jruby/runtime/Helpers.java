@@ -2401,10 +2401,11 @@ public class Helpers {
     public static RubyArray argumentDescriptorsToParameters(Ruby runtime, ArgumentDescriptor[] argsDesc, boolean isLambda) {
         if (argsDesc == null) Thread.dumpStack();
 
-        final RubyArray params = RubyArray.newArray(runtime, argsDesc.length);
+        final RubyArray params = RubyArray.newBlankArray(runtime, argsDesc.length);
 
-        for (ArgumentDescriptor param : argsDesc) {
-            params.append( param.toArrayForm(runtime, isLambda) );
+        for (int i = 0; i < argsDesc.length; i++) {
+            ArgumentDescriptor param = argsDesc[i];
+            params.store(i, param.toArrayForm(runtime, isLambda));
         }
 
         return params;

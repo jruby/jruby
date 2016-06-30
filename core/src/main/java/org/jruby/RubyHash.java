@@ -57,8 +57,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.specialized.RubyArrayOneObject;
-import org.jruby.specialized.RubyArrayTwoObject;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
 
@@ -880,9 +878,9 @@ public class RubyHash extends RubyObject implements Map {
     public RubyArray to_a() {
         final Ruby runtime = getRuntime();
         try {
-            final RubyArray result = RubyArray.newArray(runtime, size);
+            final RubyArray result = RubyArray.newBlankArray(runtime, size);
 
-            visitAll(runtime.getCurrentContext(), RubyHash.AppendKeyValueVisitor, result);
+            visitAll(runtime.getCurrentContext(), RubyHash.StoreKeyValueVisitor, result);
 
             result.setTaint(isTaint());
             return result;
@@ -891,10 +889,10 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    private static final VisitorWithState<RubyArray> AppendKeyValueVisitor = new VisitorWithState<RubyArray>() {
+    private static final VisitorWithState<RubyArray> StoreKeyValueVisitor = new VisitorWithState<RubyArray>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray result) {
-            result.append(RubyArray.newArray(context.runtime, key, value));
+            result.store(index, RubyArray.newArray(context.runtime, key, value));
         }
     };
 
@@ -1615,9 +1613,9 @@ public class RubyHash extends RubyObject implements Map {
     public RubyArray keys() {
         Ruby runtime = getRuntime();
         try {
-            RubyArray keys = RubyArray.newArray(runtime, size);
+            RubyArray keys = RubyArray.newBlankArray(runtime, size);
 
-            visitAll(runtime.getCurrentContext(), AppendKeyVisitor, keys);
+            visitAll(runtime.getCurrentContext(), StoreKeyVisitor, keys);
 
             return keys;
         } catch (NegativeArraySizeException nase) {
@@ -1625,10 +1623,10 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    private static final VisitorWithState<RubyArray> AppendKeyVisitor = new VisitorWithState<RubyArray>() {
+    private static final VisitorWithState<RubyArray> StoreKeyVisitor = new VisitorWithState<RubyArray>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray keys) {
-            keys.append(key);
+            keys.store(index, key);
         }
     };
 
@@ -1639,17 +1637,9 @@ public class RubyHash extends RubyObject implements Map {
     public RubyArray rb_values() {
         Ruby runtime = getRuntime();
         try {
-            final RubyArray values;
-            if (size == 1) {
-                values = new RubyArrayOneObject(runtime, head.nextAdded.value);
-            } else if (size == 2) {
-                RubyHashEntry nextAdded = head.nextAdded;
-                values = new RubyArrayTwoObject(runtime, nextAdded.value, nextAdded.nextAdded.value);
-            } else {
-                values = RubyArray.newArray(getRuntime(), size);
+            RubyArray values = RubyArray.newBlankArray(runtime, size);
 
-                visitAll(runtime.getCurrentContext(), AppendValueVisitor, values);
-            }
+            visitAll(runtime.getCurrentContext(), StoreValueVisitor, values);
 
             return values;
         } catch (NegativeArraySizeException nase) {
@@ -1657,10 +1647,10 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    public static final VisitorWithState<RubyArray> AppendValueVisitor = new VisitorWithState<RubyArray>() {
+    public static final VisitorWithState<RubyArray> StoreValueVisitor = new VisitorWithState<RubyArray>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray values) {
-            values.append(value);
+            values.store(index, value);
         }
     };
 
@@ -1929,19 +1919,19 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "values_at", rest = true)
     public RubyArray values_at(ThreadContext context, IRubyObject[] args) {
-        RubyArray result = RubyArray.newArray(context.runtime, args.length);
+        RubyArray result = RubyArray.newBlankArray(context.runtime, args.length);
         for (int i = 0; i < args.length; i++) {
-            result.append(op_aref(context, args[i]));
+            result.store(i, op_aref(context, args[i]));
         }
         return result;
     }
 
     @JRubyMethod(name = "fetch_values", rest = true)
     public RubyArray fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
-        RubyArray result = RubyArray.newArray(context.runtime, args.length);
+        RubyArray result = RubyArray.newBlankArray(context.runtime, args.length);
 
         for (int i = 0; i < args.length; i++) {
-            result.append(fetch(context, args[i], block));
+            result.store(i, fetch(context, args[i], block));
         }
         return result;
     }

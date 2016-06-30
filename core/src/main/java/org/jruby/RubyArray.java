@@ -272,10 +272,20 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         // than the cost of constructing and walking an Iterator.
         IRubyObject[] values = collection.toArray(new IRubyObject[collection.size()]);
         switch (values.length) {
+            case 0: return newEmptyArray(runtime);
             case 1: return new RubyArrayOneObject(runtime, values[0]);
             case 2: return new RubyArrayTwoObject(runtime, values[0], values[1]);
         }
         return new RubyArray(runtime, values);
+    }
+
+    public static RubyArray newArray(Ruby runtime, List<? extends IRubyObject> list) {
+        switch (list.size()) {
+            case 0: return newEmptyArray(runtime);
+            case 1: return new RubyArrayOneObject(runtime, list.get(0));
+            case 2: return new RubyArrayTwoObject(runtime, list.get(0), list.get(1));
+        }
+        return new RubyArray(runtime, list.toArray(new IRubyObject[list.size()]));
     }
 
     public static final int ARRAY_DEFAULT_SIZE = 16;
@@ -1049,9 +1059,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             tmp = elt(i).convertToArray();
             if (elen < 0) {
                 elen = tmp.realLength;
-                result = newArray(runtime, elen);
+                result = newBlankArray(runtime, elen);
                 for (int j = 0; j < elen; j++) {
-                    result.store(j, newArray(runtime, alen));
+                    result.store(j, newBlankArray(runtime, alen));
                 }
             } else if (elen != tmp.realLength) {
                 throw runtime.newIndexError("element size differs (" + tmp.realLength
@@ -2438,6 +2448,29 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     public IRubyObject selectCommon(ThreadContext context, Block block) {
         final Ruby runtime = context.runtime;
+
+        // Packed array logic
+        switch (realLength) {
+            case 1: {
+                IRubyObject value = eltOk(0);
+                if (block.yield(context, value).isTrue()) return new RubyArrayOneObject(runtime, value);
+                return newEmptyArray(runtime);
+            }
+            case 2: {
+                IRubyObject value = eltOk(0);
+                boolean first = block.yield(context, value).isTrue();
+                IRubyObject value2 = eltOk(1);
+                boolean second = block.yield(context, value2).isTrue();
+                if (first) {
+                    if (second) return new RubyArrayTwoObject(runtime, value, value2);
+                    return new RubyArrayOneObject(runtime, value);
+                } else if (second) {
+                    return new RubyArrayOneObject(runtime, value2);
+                }
+                return newEmptyArray(runtime);
+            }
+        }
+
         RubyArray result = newArray(runtime, realLength);
 
         for (int i = 0; i < realLength; i++) {
@@ -3067,9 +3100,25 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(IRubyObject obj) {
+        Ruby runtime = getRuntime();
         RubyArray y = obj.convertToArray();
         int len = realLength + y.realLength;
-        RubyArray z = newArray(getRuntime(), len);
+
+        switch (len) {
+            case 1:
+                return new RubyArrayOneObject(runtime, realLength == 1 ? eltInternal(0) : y.eltInternal(0));
+            case 2:
+                switch (realLength) {
+                    case 0:
+                        return new RubyArrayTwoObject(runtime, y.eltInternal(0), y.eltInternal(1));
+                    case 1:
+                        return new RubyArrayTwoObject(runtime, eltInternal(0), y.eltInternal(0));
+                    case 2:
+                        return new RubyArrayTwoObject(runtime, eltInternal(0), eltInternal(1));
+                }
+        }
+
+        RubyArray z = newArray(runtime, len);
         try {
             copyInto(z.values, 0);
             y.copyInto(z.values, realLength);
@@ -3185,7 +3234,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         realLength = 0;
 
-        hash.visitAll(context, RubyHash.AppendValueVisitor, this);
+        hash.visitAll(context, RubyHash.StoreValueVisitor, this);
         return this;
     }
 
@@ -3217,7 +3266,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         RubyHash hash = makeHash(context, block);
 
         RubyArray result = new RubyArray(context.runtime, getMetaClass(), hash.size());
-        hash.visitAll(context, RubyHash.AppendValueVisitor, result);
+        hash.visitAll(context, RubyHash.StoreValueVisitor, result);
         return result;
     }
 
@@ -3248,16 +3297,25 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = "&", required = 1)
     public IRubyObject op_and(IRubyObject other) {
+        Ruby runtime = getRuntime();
         RubyArray ary2 = other.convertToArray();
         RubyHash hash = ary2.makeHash();
-        RubyArray ary3 = newArray(getRuntime(), realLength < ary2.realLength ? realLength : ary2.realLength);
 
+        int maxSize = realLength < ary2.realLength ? realLength : ary2.realLength;
+
+        if (maxSize == 0) return newEmptyArray(runtime);
+
+        RubyArray ary3 = newBlankArray(runtime, maxSize);
+
+        int index = 0;
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (hash.fastDelete(v)) ary3.append(v);
+            if (hash.fastDelete(v)) ary3.store(index++, v);
         }
 
-        Helpers.fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
+        // if index is 1 and we made a size 2 array, repack
+        if (index == 0) return newEmptyArray(runtime);
+        if (index == 1 && maxSize == 2) return newArray(runtime, ary3.eltInternal(0));
 
         return ary3;
     }
@@ -3267,21 +3325,28 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = "|", required = 1)
     public IRubyObject op_or(IRubyObject other) {
+        Ruby runtime = getRuntime();
         RubyArray ary2 = other.convertToArray();
         RubyHash set = makeHash(ary2);
 
-        RubyArray ary3 = newArray(getRuntime(), realLength + ary2.realLength);
+        int maxSize = realLength + ary2.realLength;
 
+        if (maxSize == 0) return newEmptyArray(runtime);
+
+        RubyArray ary3 = newBlankArray(runtime, maxSize);
+
+        int index = 0;
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (set.fastDelete(v)) ary3.append(v);
+            if (set.fastDelete(v)) ary3.store(index++, v);
         }
         for (int i = 0; i < ary2.realLength; i++) {
             IRubyObject v = ary2.elt(i);
-            if (set.fastDelete(v)) ary3.append(v);
+            if (set.fastDelete(v)) ary3.store(index++, v);
         }
 
-        Helpers.fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
+        // if index is 1 and we made a size 2 array, repack
+        if (index == 1 && maxSize == 2) return newArray(runtime, ary3.eltInternal(0));
 
         return ary3;
     }
@@ -3544,16 +3609,16 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             }
         }
 
-        RubyArray result = useBlock ? null : newArray(runtime, resultLen);
+        RubyArray result = useBlock ? null : newBlankArray(runtime, resultLen);
 
         for (int i = 0; i < resultLen; i++) {
-            RubyArray sub = newArray(runtime, n);
-            for (int j = 0; j < n; j++) sub.append(arrays[j].entry(counters[j]));
+            RubyArray sub = newBlankArray(runtime, n);
+            for (int j = 0; j < n; j++) sub.store(j, arrays[j].entry(counters[j]));
 
             if (useBlock) {
                 block.yieldSpecific(context, sub);
             } else {
-                result.append(sub);
+                result.store(i, sub);
             }
             int m = n - 1;
             counters[m]++;
@@ -3736,10 +3801,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     private static void yieldValues(ThreadContext context, int r, int[] p, int pStart, RubyArray values, Block block) {
-        RubyArray result = newArray(context.runtime, r);
+        RubyArray result = newBlankArray(context.runtime, r);
 
         for (int j = 0; j < r; j++) {
-            result.eltInternalSet(j, values.eltInternal(p[j + pStart]));
+            result.store(j, values.eltInternal(p[j + pStart]));
         }
 
         result.realLength = r;
@@ -4207,18 +4272,45 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     public static RubyArray unmarshalFrom(UnmarshalStream input) throws IOException {
+        Ruby runtime = input.getRuntime();
         int size = input.unmarshalInt();
 
         // we create this now with an empty, nulled array so it's available for links in the marshal data
-        RubyArray result = input.getRuntime().newArray(size);
+        RubyArray result = newBlankArray(runtime, size);
 
         input.registerLinkTarget(result);
 
         for (int i = 0; i < size; i++) {
-            result.append(input.unmarshalObject());
+            result.store(i, input.unmarshalObject());
         }
 
         return result;
+    }
+
+    /**
+     * Construct the most efficient array shape for the given size. This should only be used when you
+     * intend to populate all elements, since the packed arrays will be born with a nonzero size and
+     * would have to be unpacked to partially populate.
+     *
+     * We nil-fill all cases, to ensure nulls will never leak out if there's an unpopulated element
+     * or an index accessed before assignment.
+     *
+     * @param runtime the runtime
+     * @param size the size
+     * @return a RubyArray shaped for the given size
+     */
+    public static RubyArray newBlankArray(Ruby runtime, int size) {
+        RubyArray result;
+        switch (size) {
+            case 0:
+                return newEmptyArray(runtime);
+            case 1:
+                return new RubyArrayOneObject(runtime, runtime.getNil());
+            case 2:
+                return new RubyArrayTwoObject(runtime, runtime.getNil(), runtime.getNil());
+            default:
+                return newArray(runtime, size);
+        }
     }
 
     @JRubyMethod(name = "try_convert", meta = true)

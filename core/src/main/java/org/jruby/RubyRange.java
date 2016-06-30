@@ -800,6 +800,7 @@ public class RubyRange extends RubyObject {
         if (num < 0) {
             throw context.runtime.newArgumentError("negative array size (or size too big)");
         }
+        // TODO (CON): this could be packed if we know there are at least num elements in range
         final RubyArray result = runtime.newArray(num);
         try {
             RubyEnumerable.callEach(runtime, context, this, Signature.ONE_ARGUMENT, new BlockCallback() {

@@ -3817,9 +3817,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (match.numRegs() == 1) {
                 return RubyRegexp.nth_match(0, match);
             }
-            RubyArray result = context.runtime.newArray(match.numRegs());
-            for (int i = 1; i < match.numRegs(); i++) {
-                result.push(RubyRegexp.nth_match(i, match));
+            int size = match.numRegs();
+            RubyArray result = RubyArray.newBlankArray(context.runtime, size - 1);
+            int index = 0;
+            for (int i = 1; i < size; i++) {
+                result.store(index++, RubyRegexp.nth_match(i, match));
             }
 
             return result;
@@ -5145,15 +5147,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
         else {
             if (wantarray)
-                ary = RubyArray.newArray(runtime, str.size());
+                ary = RubyArray.newBlankArray(runtime, str.size());
             else
                 return enumeratorizeWithSize(context, str, name, eachByteSizeFn());
         }
 
-        for (i=0; i<str.size(); i++) {
+        for (i=0; i < str.size(); i++) {
             RubyFixnum bite = RubyFixnum.newFixnum(runtime, str.getByteList().get(i) & 0xff);
             if (wantarray)
-                ary.push(bite);
+                ary.store(i, bite);
             else
                 block.yield(context, bite);
         }

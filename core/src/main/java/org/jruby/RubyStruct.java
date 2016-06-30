@@ -390,25 +390,10 @@ public class RubyStruct extends RubyObject {
 
         final RubyArray member = __member__((RubyClass) recv);
         final int len = member.getLength();
-        RubyArray result = runtime.newArray(len);
+        RubyArray result = RubyArray.newBlankArray(runtime, len);
 
         for ( int i = 0; i < len; i++ ) {
-            // this looks weird, but it's because they're RubySymbol and that's java.lang.String internally
-            result.append( runtime.newString(member.eltInternal(i).asJavaString()) );
-        }
-
-        return result;
-    }
-
-    public static RubyArray members19(IRubyObject recv, Block block) {
-        final Ruby runtime = recv.getRuntime();
-
-        final RubyArray member = __member__((RubyClass) recv);
-        final int len = member.getLength();
-        RubyArray result = runtime.newArray(len);
-
-        for ( int i = 0; i < len; i++ ) {
-            result.append( member.eltInternal(i) );
+            result.store(i, member.eltInternal(i));
         }
 
         return result;
@@ -864,5 +849,10 @@ public class RubyStruct extends RubyObject {
         public DynamicMethod dup() {
             return new Accessor((RubyClass) getImplementationClass(), index);
         }
+    }
+
+    @Deprecated
+    public static RubyArray members19(IRubyObject recv, Block block) {
+        return members(recv, block);
     }
 }
