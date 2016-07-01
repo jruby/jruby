@@ -479,7 +479,7 @@ public abstract class RegexpNodes {
         }
     }
 
-    @CoreMethod(names = { "quote", "escape" }, needsSelf = false, onSingleton = true, required = 1)
+    @CoreMethod(names = { "quote", "escape" }, onSingleton = true, required = 1)
     public abstract static class QuoteNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
