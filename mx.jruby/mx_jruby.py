@@ -9,8 +9,11 @@
 import sys
 import os
 import subprocess
+import pipes
 import shutil
 import json
+import time
+from threading import Thread
 
 import mx
 import mx_benchmark
@@ -21,6 +24,32 @@ def jt(args, suite=None, nonZeroIsFatal=True, out=None, err=None, timeout=None, 
     rubyDir = _suite.dir
     jt = os.path.join(rubyDir, 'tool', 'jt.rb')
     return mx.run(['ruby', jt] + args, nonZeroIsFatal=nonZeroIsFatal, out=out, err=err, timeout=timeout, env=env, cwd=cwd)
+
+FNULL = open(os.devnull, 'w')
+
+class BackgroundServerTask:
+    def __init__(self, args):
+        self.args = args
+    
+    def __enter__(self):
+        preexec_fn, creationflags = mx._get_new_progress_group_args()
+        if mx._opts.verbose:
+            mx.log(' '.join(['(background)'] + map(pipes.quote, self.args)))
+        self.process = subprocess.Popen(self.args, preexec_fn=preexec_fn, creationflags=creationflags, stdout=FNULL, stderr=FNULL)
+        mx._addSubprocess(self.process, self.args)
+    
+    def __exit__(self, type, value, traceback):
+        self.process.kill()
+        self.process.wait()
+    
+    def is_running(self):
+        return self.process.poll() is None
+
+class BackgroundJT(BackgroundServerTask):
+    def __init__(self, args):
+        rubyDir = _suite.dir
+        jt = os.path.join(rubyDir, 'tool', 'jt.rb')
+        BackgroundServerTask.__init__(self, ['ruby', jt] + args)
 
 class MavenProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
@@ -329,8 +358,8 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         arguments = ['benchmark']
-        if 'MX_BENCHMARK_OPTS' in os.environ:
-            arguments.extend(os.environ['MX_BENCHMARK_OPTS'].split(' '))
+        if 'MX_NO_GRAAL' in os.environ:
+            arguments.extend('--no-graal')
         arguments.extend(['--simple', '--elapsed'])
         arguments.extend(['--time', str(self.time())])
         if ':' in benchmark:
@@ -529,6 +558,62 @@ class MicroBenchmarkSuite(AllBenchmarksBenchmarkSuite):
     def time(self):
         return micro_benchmark_time
 
+server_benchmarks = [
+    'tcp-server',
+    'webrick'
+]
+
+server_benchmark_time = 60 * 4 # Seems unstable otherwise
+
+class ServerBenchmarkSuite(RubyBenchmarkSuite):
+    def benchmarks(self):
+        return server_benchmarks
+    
+    def name(self):
+        return 'server'
+
+    def runBenchmark(self, benchmark, bmSuiteArgs):
+        arguments = ['run', '--exec']
+        if 'MX_NO_GRAAL' not in os.environ:
+            arguments.extend(['--graal', '-J-G:+TruffleCompilationExceptionsAreFatal'])
+        arguments.extend(['all-ruby-benchmarks/servers/' + benchmark + '.rb'])
+        
+        server = BackgroundJT(arguments)
+        
+        with server:
+            time.sleep(10)
+            out = mx.OutputCapture()
+            if mx.run(
+                    ['ruby', 'all-ruby-benchmarks/servers/harness.rb', str(server_benchmark_time)],
+                    out=out,
+                    nonZeroIsFatal=False) == 0 and server.is_running():
+                samples = [float(s) for s in out.data.split('\n')[0:-1]]
+                print samples
+                half_samples = len(samples) / 2
+                used_samples = samples[len(samples)-half_samples-1:]
+                ips = sum(used_samples) / float(len(used_samples))
+                
+                return [{
+                    'benchmark': benchmark,
+                    'metric.name': 'throughput',
+                    'metric.value': ips,
+                    'metric.unit': 'op/s',
+                    'metric.better': 'higher',
+                    'extra.metric.human': str(used_samples)
+                }]
+            else:
+                sys.stderr.write(out.data)
+                
+                # TODO CS 24-Jun-16, how can we fail the wider suite?
+                return [{
+                    'benchmark': benchmark,
+                    'metric.name': 'throughput',
+                    'metric.value': 0,
+                    'metric.unit': 'op/s',
+                    'metric.better': 'higher',
+                    'extra.error': 'failed'
+                }]
+
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
 mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())
 mx_benchmark.add_bm_suite(TimeBenchmarkSuite())
@@ -537,3 +622,4 @@ mx_benchmark.add_bm_suite(ChunkyBenchmarkSuite())
 mx_benchmark.add_bm_suite(PSDBenchmarkSuite())
 mx_benchmark.add_bm_suite(SyntheticBenchmarkSuite())
 mx_benchmark.add_bm_suite(MicroBenchmarkSuite())
+mx_benchmark.add_bm_suite(ServerBenchmarkSuite())

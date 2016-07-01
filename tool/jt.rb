@@ -240,8 +240,10 @@ module ShellUtils
 
   def raw_sh(*args)
     continue_on_failure = false
-    if args.last.is_a?(Hash) && args.last.delete(:continue_on_failure)
-      continue_on_failure = true
+    use_exec = false
+    if args.last.is_a?(Hash)
+      continue_on_failure = true if args.last.delete(:continue_on_failure)
+      use_exec = true if args.last.delete(:use_exec)
     end
     if !args.last.is_a?(Hash) || !args.last.delete(:no_print_cmd)
       STDERR.puts "$ #{printable_cmd(args)}"
@@ -250,7 +252,9 @@ module ShellUtils
     if args.last.is_a?(Hash)
       timeout = args.last.delete(:timeout)
     end
-    if timeout
+    if use_exec
+      result = exec(*args)
+    elsif timeout
       result = system_timeout(timeout, *args)
     else
       result = system(*args)
@@ -359,6 +363,7 @@ module Commands
     puts '        --full      show all phases, not just up to the Truffle partial escape'
     puts "    --jdebug        run a JDWP debug server on #{JDEBUG_PORT}"
     puts '    --jexception[s] print java exceptions'
+    puts '    --exec          use exec rather than system'
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
     puts 'jt test                                        run all mri tests, specs and integration tests'
@@ -517,7 +522,9 @@ module Commands
         jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
       end
     end
-
+    
+    args.push({use_exec: true}) if args.delete('--exec')
+    
     raw_sh env_vars, Utilities.find_jruby, *jruby_args, *args
   end
   alias ruby run
