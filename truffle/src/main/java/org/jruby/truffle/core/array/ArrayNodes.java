@@ -723,40 +723,36 @@ public abstract class ArrayNodes {
             final ArrayMirror store = strategy.newMirror(array);
 
             Object found = nil();
-            boolean isFound = false;
 
             int i = 0;
             int n = 0;
-            for (; n < getSize(array); n++) {
+            while (n < getSize(array)) {
                 final Object stored = store.get(n);
 
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     checkFrozen(array);
                     found = stored;
-                    isFound = true;
-                    continue;
-                }
+                    n++;
+                } else {
+                    if (i != n) {
+                        store.set(i, store.get(n));
+                    }
 
-                if (i != n) {
-                    store.set(i, store.get(n));
+                    i++;
+                    n++;
                 }
-
-                i++;
             }
 
             if (i != n) {
                 setStoreAndSize(array, store.getArray(), i);
-            }
-
-            if(!isFound){
+                return found;
+            } else {
                 if (maybeBlock == NotProvided.INSTANCE) {
                     return nil();
                 } else {
                     return yield(frame, (DynamicObject) maybeBlock, value);
                 }
             }
-
-            return found;
         }
 
         public void checkFrozen(Object object) {
