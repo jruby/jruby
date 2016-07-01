@@ -293,8 +293,8 @@ builds: [
   {name: ruby-benchmarks-micro-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${micro-benchmarks},
   {name: ruby-benchmarks-micro-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${micro-benchmarks},
   
-  {name: ruby-benchmarks-server-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${server-benchmarks},
-  {name: ruby-benchmarks-server-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${server-benchmarks},
+  //{name: ruby-benchmarks-server-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${server-benchmarks},
+  //{name: ruby-benchmarks-server-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${server-benchmarks},
   {name: ruby-benchmarks-server-graal-core} ${common} ${graal-core} ${bench-caps} ${jruby-truffle} ${server-benchmarks},
   {name: ruby-benchmarks-server-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${server-benchmarks},
   {name: ruby-benchmarks-server-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${server-benchmarks}
