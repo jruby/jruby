@@ -13,8 +13,10 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ArityException;
@@ -34,11 +36,15 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
+import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 import java.io.IOException;
 
@@ -547,12 +553,29 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "import", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class ImportNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "import", isModuleFunction = true, required = 1)
+    @NodeChild(value = "name", type = RubyNode.class)
+    public abstract static class ImportNode extends CoreMethodNode {
+
+        @CreateCast("name")
+        public RubyNode coercetNameToString(RubyNode newName) {
+            return NameToJavaStringNodeGen.create(newName);
+        }
+
+        @Specialization
+        public Object importObject(String name,
+                @Cached("create()") BranchProfile errorProfile) {
+            final Object value = doImport(name);
+            if (value != null) {
+                return value;
+            } else {
+                errorProfile.enter();
+                throw new RaiseException(coreExceptions().nameErrorImportNotFound(name, this));
+            }
+        }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(name) || isRubySymbol(name)")
-        public Object importObject(DynamicObject name) {
+        private Object doImport(String name) {
             return getContext().getInteropManager().importObject(name.toString());
         }
 

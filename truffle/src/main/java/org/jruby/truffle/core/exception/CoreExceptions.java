@@ -473,6 +473,11 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject nameErrorImportNotFound(String name, Node currentNode) {
+        return nameError(String.format("import '%s' not found", name), name, currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject nameError(String message, String name, Node currentNode) {
         final DynamicObject nameString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
         DynamicObject nameError = ExceptionOperations.createRubyException(context.getCoreLibrary().getNameErrorClass(), nameString, context.getCallStack().getBacktrace(currentNode));
