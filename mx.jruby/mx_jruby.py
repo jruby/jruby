@@ -329,8 +329,8 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         arguments = ['benchmark']
-        if 'MX_BENCHMARK_OPTS' in os.environ:
-            arguments.extend(os.environ['MX_BENCHMARK_OPTS'].split(' '))
+        if 'MX_NO_GRAAL' in os.environ:
+            arguments.extend('--no-graal')
         arguments.extend(['--simple', '--elapsed'])
         arguments.extend(['--time', str(self.time())])
         if ':' in benchmark:

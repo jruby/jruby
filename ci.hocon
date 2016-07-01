@@ -98,7 +98,7 @@ jruby-noindy-metrics: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: noindy,
     JRUBY_OPTS: "-Xclassic -Xcompile.invokedynamic=false",
-    MX_BENCHMARK_OPTS: --no-graal
+    MX_NO_GRAAL: "true"
   }
 }
 
@@ -107,7 +107,7 @@ jruby-noindy-benchmark: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: noindy,
     JRUBY_OPTS: "-Xclassic -X+C -Xcompile.invokedynamic=false",
-    MX_BENCHMARK_OPTS: --no-graal
+    MX_NO_GRAAL: "true"
   }
 }
 
@@ -116,7 +116,7 @@ jruby-indy-metrics: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: indy,
     JRUBY_OPTS: "-Xclassic -Xcompile.invokedynamic=true",
-    MX_BENCHMARK_OPTS: --no-graal
+    MX_NO_GRAAL: "true"
   }
 }
 
@@ -125,7 +125,7 @@ jruby-indy-benchmark: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: indy,
     JRUBY_OPTS: "-Xclassic -X+C -Xcompile.invokedynamic=true",
-    MX_BENCHMARK_OPTS: --no-graal
+    MX_NO_GRAAL: "true"
   }
 }
 
