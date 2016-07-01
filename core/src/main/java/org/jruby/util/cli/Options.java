@@ -115,6 +115,7 @@ public class Options {
 
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_PROFILE           = bool(IR, "ir.profile", false, "[EXPT]: Profile IR code during interpretation.");
+    public static final Option<Boolean> IR_PROFILE_DEBUG     = bool(IR, "ir.profile.debug", false, "[EXPT]: Dump profiling debug info if profiling.");
     public static final Option<Boolean> IR_COMPILER_DEBUG    = bool(IR, "ir.compiler.debug", false, "Debug compilation of JRuby IR.");
     public static final Option<Boolean> IR_VISUALIZER        = bool(IR, "ir.visualizer", false, "Visualization of JRuby IR.");
     public static final Option<Boolean> IR_UNBOXING          = bool(IR, "ir.unboxing", false, "Implement unboxing opts.");
