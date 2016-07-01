@@ -18,13 +18,16 @@ import org.jruby.truffle.core.rope.Rope;
 @Layout
 public interface SymbolLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createSymbolShape(DynamicObject logicalClass,
-                                           DynamicObject metaClass);
+    DynamicObjectFactory createSymbolShape(
+            DynamicObject logicalClass,
+            DynamicObject metaClass);
 
-    DynamicObject createSymbol(DynamicObjectFactory factory,
-                               String string,
-                               Rope rope,
-                               int hashCode);
+    DynamicObject createSymbol(
+            DynamicObjectFactory factory,
+            String string,
+            Rope rope,
+            int hashCode,
+            SymbolEquality equalityWrapper);
 
     boolean isSymbol(Object object);
     boolean isSymbol(DynamicObject object);
@@ -34,5 +37,7 @@ public interface SymbolLayout extends BasicObjectLayout {
     Rope getRope(DynamicObject object);
 
     int getHashCode(DynamicObject object);
+
+    SymbolEquality getEqualityWrapper(DynamicObject object);
 
 }
