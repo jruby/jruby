@@ -236,12 +236,18 @@ public class CoreExceptions {
             return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), currentNode);
         }
 
+        DynamicObject errnoClass = context.getCoreLibrary().getErrnoClass(errnoObj);
+        if(errnoClass == null){
+            errnoClass = context.getCoreLibrary().getSystemCallErrorClass();
+            message = "Unknown error: " + errno;
+        }
+
         final DynamicObject errorMessage = StringOperations.createString(context, StringOperations.encodeRope(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE));
 
         return ExceptionOperations.createRubyException(
-                context.getCoreLibrary().getErrnoClass(errnoObj),
-                errorMessage,
-                context.getCallStack().getBacktrace(currentNode));
+            errnoClass,
+            errorMessage,
+            context.getCallStack().getBacktrace(currentNode));
     }
 
     // IndexError
