@@ -214,6 +214,16 @@ micro-benchmarks: {
   ] ${post-process-and-upload-results}
 }
 
+server-benchmarks: {
+  packages: {
+    "apache/ab": ">=2.3"
+  }
+  
+  run: ${setup-benchmarks} [
+    [mx, benchmark, server]
+  ] ${post-process-and-upload-results}
+}
+
 builds: [
   {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
   {name: ruby-test-specs-command-line} ${common} ${gate-caps} {run: [${jt} [test, specs, ":command_line"]]},
@@ -269,5 +279,11 @@ builds: [
   {name: ruby-benchmarks-micro-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${micro-benchmarks},
   {name: ruby-benchmarks-micro-graal-core} ${common} ${graal-core} ${bench-caps} ${jruby-truffle} ${micro-benchmarks},
   {name: ruby-benchmarks-micro-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${micro-benchmarks},
-  {name: ruby-benchmarks-micro-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${micro-benchmarks}
+  {name: ruby-benchmarks-micro-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${micro-benchmarks},
+  
+  {name: ruby-benchmarks-server-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${server-benchmarks},
+  {name: ruby-benchmarks-server-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${server-benchmarks},
+  {name: ruby-benchmarks-server-graal-core} ${common} ${graal-core} ${bench-caps} ${jruby-truffle} ${server-benchmarks},
+  {name: ruby-benchmarks-server-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${server-benchmarks},
+  {name: ruby-benchmarks-server-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${server-benchmarks}
 ]
