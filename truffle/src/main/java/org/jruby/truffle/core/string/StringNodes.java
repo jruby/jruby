@@ -243,7 +243,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
+    @CoreMethod(names = "*", required = 1, lowerFixnum = 1, taintFrom = 0)
     public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -415,7 +415,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFromParameter = 0, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFrom = 1, raiseIfFrozenSelf = true)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "string"),
             @NodeChild(type = RubyNode.class, value = "other")
@@ -462,7 +462,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintFromSelf = true)
+    @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnum = { 1, 2 }, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToIntNode toIntNode;
@@ -648,7 +648,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "b", taintFromSelf = true)
+    @CoreMethod(names = "b", taintFrom = 0)
     public abstract static class BNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.WithEncodingNode withEncodingNode;
@@ -815,7 +815,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "crypt", required = 1, taintFromSelf = true, taintFromParameter = 0)
+    @CoreMethod(names = "crypt", required = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "string"),
             @NodeChild(type = RubyNode.class, value = "salt")
@@ -1202,7 +1202,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "getbyte", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "getbyte", required = 1, lowerFixnum = 1)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.GetByteNode ropeGetByteNode;
@@ -1241,7 +1241,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "initialize", optional = 1, taintFromParameter = 0)
+    @CoreMethod(names = "initialize", optional = 1, taintFrom = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsFrozenNode isFrozenNode;
@@ -1306,7 +1306,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "insert", required = 2, lowerFixnum = 1, raiseIfFrozenSelf = true)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "string"),
         @NodeChild(type = RubyNode.class, value = "index"),
@@ -1521,7 +1521,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameter = 0)
+    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFrom = 1)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "string"),
         @NodeChild(type = RubyNode.class, value = "other")
@@ -1672,7 +1672,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "dump", taintFromSelf = true)
+    @CoreMethod(names = "dump", taintFrom = 0)
     @ImportStatic(StringGuards.class)
     public abstract static class DumpNode extends CoreMethodArrayArgumentsNode {
 
@@ -2226,7 +2226,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "unpack", required = 1, taintFromParameter = 0)
+    @CoreMethod(names = "unpack", required = 1, taintFrom = 1)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class UnpackNode extends ArrayCoreMethodNode {
 
@@ -2323,7 +2323,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "upcase", taintFromSelf = true)
+    @CoreMethod(names = "upcase", taintFrom = 0)
     public abstract static class UpcaseNode extends CoreMethodArrayArgumentsNode {
 
         @Child CallDispatchHeadNode dupNode;

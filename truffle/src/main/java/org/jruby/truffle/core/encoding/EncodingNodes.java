@@ -80,7 +80,7 @@ public abstract class EncodingNodes {
         }
     }
 
-    @CoreMethod(names = "compatible?", needsSelf = false, onSingleton = true, required = 2)
+    @CoreMethod(names = "compatible?", onSingleton = true, required = 2)
     public abstract static class CompatibleQueryNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToEncodingNode toEncodingNode;

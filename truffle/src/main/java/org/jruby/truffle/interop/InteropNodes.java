@@ -13,8 +13,10 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ArityException;
@@ -34,18 +36,22 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
+import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 import java.io.IOException;
 
 @CoreClass("Truffle::Interop")
 public abstract class InteropNodes {
 
-    @CoreMethod(names = "executable?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "executable?", isModuleFunction = true, required = 1)
     public abstract static class IsExecutableNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -62,7 +68,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, rest = true)
+    @CoreMethod(names = "execute", isModuleFunction = true, required = 1, rest = true)
     public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
 
         // NOTE (eregon, 30/05/2016): If you want to introduce automatic argument conversion here,
@@ -113,7 +119,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "invoke", isModuleFunction = true, needsSelf = false, required = 2, rest = true)
+    @CoreMethod(names = "invoke", isModuleFunction = true, required = 2, rest = true)
     public abstract static class InvokeNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(
@@ -181,7 +187,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "size?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "size?", isModuleFunction = true, required = 1)
     public abstract static class HasSizeNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -198,7 +204,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "size", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "size", isModuleFunction = true, required = 1)
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -226,7 +232,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "boxed?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "boxed?", isModuleFunction = true, required = 1)
     public abstract static class BoxedNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -289,7 +295,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "unbox", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "unbox", isModuleFunction = true, required = 1)
     public abstract static class UnboxNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -325,7 +331,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "null?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "null?", isModuleFunction = true, required = 1)
     public abstract static class NullNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -347,7 +353,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "read", isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(names = "read", isModuleFunction = true, required = 2)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class ReadNode extends CoreMethodArrayArgumentsNode {
 
@@ -439,7 +445,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "write", isModuleFunction = true, needsSelf = false, required = 3)
+    @CoreMethod(names = "write", isModuleFunction = true, required = 3)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class WriteNode extends CoreMethodArrayArgumentsNode {
 
@@ -535,7 +541,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "export", isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(names = "export", isModuleFunction = true, required = 2)
     public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
@@ -547,18 +553,35 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "import", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class ImportNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "import", isModuleFunction = true, required = 1)
+    @NodeChild(value = "name", type = RubyNode.class)
+    public abstract static class ImportNode extends CoreMethodNode {
+
+        @CreateCast("name")
+        public RubyNode coercetNameToString(RubyNode newName) {
+            return NameToJavaStringNodeGen.create(newName);
+        }
+
+        @Specialization
+        public Object importObject(String name,
+                @Cached("create()") BranchProfile errorProfile) {
+            final Object value = doImport(name);
+            if (value != null) {
+                return value;
+            } else {
+                errorProfile.enter();
+                throw new RaiseException(coreExceptions().nameErrorImportNotFound(name, this));
+            }
+        }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(name) || isRubySymbol(name)")
-        public Object importObject(DynamicObject name) {
+        private Object doImport(String name) {
             return getContext().getInteropManager().importObject(name.toString());
         }
 
     }
 
-    @CoreMethod(names = "mime_type_supported?", isModuleFunction = true, needsSelf = false, required =1)
+    @CoreMethod(names = "mime_type_supported?", isModuleFunction = true, required = 1)
     public abstract static class MimeTypeSupportedNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
@@ -569,7 +592,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "eval", isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(names = "eval", isModuleFunction = true, required = 2)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class EvalNode extends CoreMethodArrayArgumentsNode {
 
@@ -614,7 +637,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "to_java_string", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "to_java_string", isModuleFunction = true, required = 1)
     public abstract static class InteropToJavaStringNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -626,7 +649,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "from_java_string", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "from_java_string", isModuleFunction = true, required = 1)
     public abstract static class InteropFromJavaStringNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization

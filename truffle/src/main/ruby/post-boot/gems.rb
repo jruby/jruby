@@ -6,4 +6,10 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+begin
+  require 'unicode_normalize'
+rescue LoadError
+end
+
+
 require 'rubygems'

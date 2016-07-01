@@ -146,7 +146,7 @@ import java.util.Map;
 @CoreClass("Kernel")
 public abstract class KernelNodes {
 
-    @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1, unsafe = {UnsafeGroup.IO, UnsafeGroup.PROCESSES})
+    @CoreMethod(names = "`", isModuleFunction = true, required = 1, unsafe = { UnsafeGroup.IO, UnsafeGroup.PROCESSES })
     public abstract static class BacktickNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toHashNode;
@@ -330,7 +330,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = { 0, 1 })
+    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnum = { 1, 2 })
     public abstract static class CallerLocationsNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -414,7 +414,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "clone", taintFromSelf = true)
+    @CoreMethod(names = "clone", taintFrom = 0)
     public abstract static class CloneNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CopyNode copyNode;
@@ -455,7 +455,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "dup", taintFromSelf = true)
+    @CoreMethod(names = "dup", taintFrom = 0)
     public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CopyNode copyNode;
@@ -479,7 +479,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3, lowerFixnumParameters = 3)
+    @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3, lowerFixnum = 4)
     @NodeChildren({
             @NodeChild(value = "source", type = RubyNode.class),
             @NodeChild(value = "binding", type = RubyNode.class),
@@ -1677,7 +1677,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "format", "sprintf" }, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
+    @CoreMethod(names = { "format", "sprintf" }, isModuleFunction = true, rest = true, required = 1, taintFrom = 1)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class SprintfNode extends CoreMethodArrayArgumentsNode {
 

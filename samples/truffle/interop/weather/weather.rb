@@ -6,10 +6,12 @@ Openweather2.configure do |config|
   config.apikey = 'dd7073d18e3085d0300b6678615d904d'
 end
 
-def temperature_in_city(name)
-  name = Truffle::Interop.from_java_string(name)
-  weather = Openweather2.get_weather(city: name, units: 'metric')
-  weather.temperature
+module Weather
+  def self.temperature_in_city(name)
+    name = Truffle::Interop.from_java_string(name)
+    weather = Openweather2.get_weather(city: name, units: 'metric')
+    weather.temperature
+  end
 end
 
-Truffle::Interop.export_method :temperature_in_city
+Truffle::Interop.export :weather, Weather

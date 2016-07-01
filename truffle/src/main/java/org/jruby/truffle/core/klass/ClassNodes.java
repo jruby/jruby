@@ -274,7 +274,7 @@ public abstract class ClassNodes {
         }
     }
 
-    @CoreMethod(names = "dup", taintFromSelf = true)
+    @CoreMethod(names = "dup", taintFrom = 0)
     public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
 
         @Child private KernelNodes.CopyNode copyNode;
