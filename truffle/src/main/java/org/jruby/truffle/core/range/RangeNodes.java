@@ -45,7 +45,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 @CoreClass("Range")
 public abstract class RangeNodes {
 
-    @CoreMethod(names = { "map", "collect" }, needsBlock = true, lowerFixnumSelf = true)
+    @CoreMethod(names = { "map", "collect" }, needsBlock = true)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
@@ -83,7 +83,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true, enumeratorSize = "size")
+    @CoreMethod(names = "each", needsBlock = true, enumeratorSize = "size")
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode eachInternalCall;
@@ -411,7 +411,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "to_a", lowerFixnumSelf = true)
+    @CoreMethod(names = "to_a")
     public abstract static class ToANode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toAInternalCall;

@@ -27,7 +27,7 @@ import static org.jruby.truffle.core.string.StringOperations.rope;
 @CoreClass("Truffle::String")
 public class TruffleStringNodes {
 
-    @CoreMethod(names = "truncate", onSingleton = true, required = 2, lowerFixnumParameters = 1)
+    @CoreMethod(names = "truncate", onSingleton = true, required = 2, lowerFixnum = 2)
     public abstract static class TruncateNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = { "newByteLength < 0" })

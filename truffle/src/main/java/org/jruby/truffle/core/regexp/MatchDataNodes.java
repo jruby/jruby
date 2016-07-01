@@ -169,7 +169,7 @@ public abstract class MatchDataNodes {
         return charOffsets;
     }
 
-    @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnumParameters = 0, taintFromSelf = true)
+    @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnum = 1, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToIntNode toIntNode;
@@ -252,7 +252,7 @@ public abstract class MatchDataNodes {
 
     }
 
-    @CoreMethod(names = "begin", required = 1, lowerFixnumParameters = 1)
+    @CoreMethod(names = "begin", required = 1, lowerFixnum = 1)
     public abstract static class BeginNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "inBounds(matchData, index)")
@@ -283,7 +283,7 @@ public abstract class MatchDataNodes {
         }
     }
 
-    @CoreMethod(names = "end", required = 1, lowerFixnumParameters = 1)
+    @CoreMethod(names = "end", required = 1, lowerFixnum = 1)
     public abstract static class EndNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "inBounds(matchData, index)")
