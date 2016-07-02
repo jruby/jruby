@@ -717,9 +717,8 @@ class Array
     outer_lambda.call([])
 
     if block_given?
-      block_result = self
-      result.each { |v| block_result << yield(v) }
-      block_result
+      result.each { |v| yield(v) }
+      self
     else
       result
     end
