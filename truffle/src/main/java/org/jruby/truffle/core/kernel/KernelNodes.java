@@ -436,7 +436,8 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject clone(VirtualFrame frame, DynamicObject self,
                 @Cached("createBinaryProfile()") ConditionProfile isSingletonProfile,
-                @Cached("createBinaryProfile()") ConditionProfile isFrozenProfile) {
+                @Cached("createBinaryProfile()") ConditionProfile isFrozenProfile,
+                @Cached("createBinaryProfile()") ConditionProfile isRubyClass) {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
             // Copy the singleton class if any.
@@ -450,6 +451,10 @@ public abstract class KernelNodes {
 
             if (isFrozenProfile.profile(isFrozenNode.executeIsFrozen(self))) {
                 freezeNode.executeFreeze(newObject);
+            }
+
+            if (isRubyClass.profile(RubyGuards.isRubyClass(self))) {
+                Layouts.CLASS.setSuperclass(newObject, Layouts.CLASS.getSuperclass(self));
             }
 
             return newObject;
@@ -496,6 +501,8 @@ public abstract class KernelNodes {
 
             Layouts.MODULE.getFields(newObjectMetaClass).initCopy(selfMetaClass); // copies class methods
             initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
+            Layouts.CLASS.setSuperclass(newObject, Layouts.CLASS.getSuperclass(self));
+
             return newObject;
         }
 
