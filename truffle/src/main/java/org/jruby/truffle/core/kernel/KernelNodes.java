@@ -440,8 +440,10 @@ public abstract class KernelNodes {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
             // Copy the singleton class if any.
-            if (isSingletonProfile.profile(Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(self)))) {
-                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(newObject)).initCopy(Layouts.BASIC_OBJECT.getMetaClass(self));
+            final DynamicObject selfMetaClass = Layouts.BASIC_OBJECT.getMetaClass(self);
+            if (isSingletonProfile.profile(Layouts.CLASS.getIsSingleton(selfMetaClass))) {
+                final DynamicObject newObjectMetaClass = singletonClassNode.executeSingletonClass(newObject);
+                Layouts.MODULE.getFields(newObjectMetaClass).initCopy(selfMetaClass);
             }
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
@@ -460,6 +462,7 @@ public abstract class KernelNodes {
 
         @Child private CopyNode copyNode;
         @Child private CallDispatchHeadNode initializeDupNode;
+        @Child private SingletonClassNode singletonClassNode;
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -468,12 +471,31 @@ public abstract class KernelNodes {
             initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
-        @Specialization
+        @Specialization(guards = "!isRubyClass(self)")
         public DynamicObject dup(VirtualFrame frame, DynamicObject self) {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
             initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
 
+            return newObject;
+        }
+
+        @Specialization(guards = "isRubyClass(self)")
+        public DynamicObject dupClass(VirtualFrame frame, DynamicObject self) {
+            if (singletonClassNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
+            }
+
+            final DynamicObject newObject = copyNode.executeCopy(frame, self);
+            final DynamicObject newObjectMetaClass = singletonClassNode.executeSingletonClass(newObject);
+            final DynamicObject selfMetaClass = Layouts.BASIC_OBJECT.getMetaClass(self);
+
+            assert Layouts.CLASS.getIsSingleton(selfMetaClass);
+            assert Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(newObject));
+
+            Layouts.MODULE.getFields(newObjectMetaClass).initCopy(selfMetaClass); // copies class methods
+            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
             return newObject;
         }
 
