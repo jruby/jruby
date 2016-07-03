@@ -227,12 +227,12 @@ module ShellUtils
   end
 
   def raw_sh(*args)
-    options = args.last.is_a?(Hash) ? args.pop : {}
-    continue_on_failure = options[:continue_on_failure]
-    use_exec = options[:use_exec]
-    timeout = options[:timeout]
+    options = args.last.is_a?(Hash) ? args.last : {}
+    continue_on_failure = options.delete :continue_on_failure
+    use_exec = options.delete :use_exec
+    timeout = options.delete :timeout
 
-    unless options[:no_print_cmd]
+    unless options.delete :no_print_cmd
       STDERR.puts "$ #{printable_cmd(args)}"
     end
 
