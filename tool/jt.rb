@@ -619,6 +619,10 @@ module Commands
     ensure
       File.delete output_file rescue nil
     end
+    ['oily_png', 'psd_native'].each do |gem|
+      config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem}"
+      sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", config
+    end
   end
   private :test_cexts
 
