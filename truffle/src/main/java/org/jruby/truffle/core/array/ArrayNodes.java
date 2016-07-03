@@ -378,7 +378,7 @@ public abstract class ArrayNodes {
 
         // array[index] = object with non-int index
 
-        @Specialization(guards = { "!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)" })
+        @Specialization(guards = { "!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)", "!isObjectRange(indexObject)" })
         public Object set(VirtualFrame frame, DynamicObject array, Object indexObject, Object value, NotProvided unused) {
             final int index = toInt(frame, indexObject);
             return executeSet(frame, array, index, value, unused);
@@ -504,8 +504,33 @@ public abstract class ArrayNodes {
                 inclusiveEnd = -1;
             }
             final int length = inclusiveEnd - start + 1;
-            return executeSet(frame, array, start, length, value);
+            final int normalizeLength = length > -1 ? length : 0;
+            return executeSet(frame, array, start, normalizeLength, value);
         }
+
+        @Specialization(guards = "isObjectRange(range)")
+        public Object setObjectRange(VirtualFrame frame, DynamicObject array, DynamicObject range, Object value, NotProvided unused,
+                               @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
+                               @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile,
+                               @Cached("create()") BranchProfile errorProfile) {
+            final int size = getSize(array);
+            final int begin = toInt(frame, Layouts.OBJECT_RANGE.getBegin(range));
+
+            final int start = ArrayOperations.normalizeIndex(size, begin, negativeBeginProfile);
+            if (start < 0) {
+                errorProfile.enter();
+                throw new RaiseException(coreExceptions().rangeError(range, this));
+            }
+            final int end = ArrayOperations.normalizeIndex(size, toInt(frame, Layouts.OBJECT_RANGE.getEnd(range)), negativeEndProfile);
+            int inclusiveEnd = Layouts.OBJECT_RANGE.getExcludedEnd(range) ? end - 1 : end;
+            if (inclusiveEnd < 0) {
+                inclusiveEnd = -1;
+            }
+            final int length = inclusiveEnd - start + 1;
+            final int normalizeLength = length > -1 ? length : 0;
+            return executeSet(frame, array, start, normalizeLength, value);
+        }
+
 
         // Helpers
 

@@ -1,6 +1,2 @@
 fails:Array#[]= sets elements in the range arguments when passed ranges
-fails:Array#[]= does nothing if the section defined by range has negative width and the rhs is an empty array
-fails:Array#[]= tries to convert Range elements to Integers using #to_int with [m..n] and [m...n]
 fails:Array#[]= calls to_ary on its rhs argument for multi-element sets
-fails:Array#[]= with [m..n] inserts the other section at m if m > n
-fails:Array#[]= with [m..n] accepts Range subclasses
