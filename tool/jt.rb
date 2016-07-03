@@ -73,25 +73,19 @@ module Utilities
       vm_args = command_line.split
       vm_args.pop # Drop "-version"
       javacmd = vm_args.shift
+      if Dir.exist?(File.join(graal_home, 'mx.sulong'))
+        sulong_dependencies = File.join(graal_home, 'lib', '*')
+        sulong_jar = File.join(graal_home, 'build', 'sulong.jar')
+        nfi_classes = File.join(graal_home, '../graal-core/mxbuild/graal/com.oracle.nfi/bin')
+        vm_args << '-cp'
+        vm_args << [nfi_classes, sulong_dependencies, sulong_jar].join(':')
+        vm_args << '-XX:-UseJVMCIClassLoader'
+      end
       options = vm_args.map { |arg| "-J#{arg}" }
     else
       raise 'set one of GRAALVM_BIN or GRAAL_HOME in order to use Graal'
     end
     [javacmd, options]
-  end
-
-  def self.find_sulong_graal(dir)
-    searches = [
-      "#{dir}/../jvmci/jdk*/product/bin/java",
-      "#{dir}/../graal-core/mx.imports/binary/jvmci/jdk*/product/bin/java"
-    ].map { |path| File.expand_path(path) }
-
-    searches.each do |search|
-      java = Dir[search].first
-      return java if java
-    end
-
-    raise "couldn't find the Java build in the Sulong repository - you need to check it out and build it"
   end
 
   def self.find_graal_js
@@ -104,12 +98,6 @@ module Utilities
     jar = ENV['SL_JAR']
     return jar if jar
     raise "couldn't find truffle-sl.jar - build Truffle and find it in there"
-  end
-
-  def self.find_sulong_dir
-    dir = ENV['SULONG_DIR']
-    return dir if dir
-    raise "couldn't find the Sulong repository - you need to check it out and build it"
   end
 
   def self.jruby_eclipse?
@@ -356,7 +344,6 @@ module Commands
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME and maybe JVMCI_JAVA_HOME)'
     puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
-    puts '    --sulong        add Sulong to the classpath (set SULONG_DIR, implies --graal but finds it from the SULONG_DIR)'
     puts '    --asm           show assembly (implies --graal)'
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
@@ -379,7 +366,8 @@ module Commands
     puts 'jt test integration TESTS                      runs the given integration tests'
     puts 'jt test gems                                   tests using gems'
     puts 'jt test ecosystem                              tests using the wider ecosystem such as bundler, Rails, etc'
-    puts 'jt test cexts                                  run C extension tests (set SULONG_DIR)'
+    puts 'jt test cexts                                  run C extension tests'
+    puts '                                                   (implies --graal, where Graal needs to include Sulong, and set SULONG_DIR to a built checkout of Sulong)'
     puts 'jt test report :language                       build a report on language specs'
     puts '               :core                               (results go into test/target/mspec-html-report)'
     puts '               :library'
@@ -410,10 +398,9 @@ module Commands
     puts '  JVMCI_JAVA_HOME                              The Java with JVMCI to use with GRAAL_HOME'
     puts '  GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)'
     puts '  GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)'
+    puts '  SULONG_DIR                                   The Sulong source repository, if you want to run bin/jruby-cext-c'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
-    puts '  SULONG_DIR                                   The location of a built checkout of the Sulong repository'
-    puts '  SULONG_CLASSPATH                             An explicit classpath to use for Sulong, rather than working it out from SULONG_DIR'
   end
 
   def checkout(branch)
@@ -486,10 +473,6 @@ module Commands
       jruby_args << Utilities.find_graal_js
     end
 
-    if args.delete('--sulong')
-      collect_sulong_args(env_vars, jruby_args)
-    end
-
     if args.delete('--asm')
       jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
     end
@@ -553,7 +536,7 @@ module Commands
       test_gems
       test_ecosystem 'HAS_REDIS' => 'true'
       test_compiler
-      test_cexts if ENV['SULONG_DIR']
+      test_cexts
     when 'compiler' then test_compiler(*rest)
     when 'cexts' then test_cexts(*rest)
     when 'report' then test_report(*rest)
@@ -626,7 +609,7 @@ module Commands
     Dir["#{JRUBY_DIR}/test/truffle/cexts/*"].each do |dir|
       sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", dir
       name = File.basename(dir)
-      run '--sulong', '-I', "#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
+      run '--graal', '-I', "#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
       unless File.read(output_file) == File.read("#{dir}/expected.txt")
         abort "c extension #{dir} didn't work as expected"
       end
@@ -756,10 +739,6 @@ module Commands
 
     if args.delete('--truffle-formatter')
       options += %w[--format spec/truffle/truffle_formatter.rb]
-    end
-
-    if args.delete('--sulong')
-      collect_sulong_args(env_vars, options, '-T')
     end
 
     if ENV['CI']
@@ -1016,24 +995,6 @@ module Commands
     build
     run({ "TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS" => "true" }, '-e', 'exit')
   end
-
-  def collect_sulong_args(env_vars, args, arg_prefix='')
-    dir = Utilities.find_sulong_dir
-    env_vars["JAVACMD"] = Utilities.find_sulong_graal(dir)
-
-    if ENV["SULONG_CLASSPATH"]
-      args << "#{arg_prefix}-J-cp" << "#{arg_prefix}#{ENV["SULONG_CLASSPATH"]}"
-    else
-      truffle_jar = File.expand_path("../truffle/mxbuild/dists/truffle-api.jar", dir)
-      args << "#{arg_prefix}-J-Xbootclasspath/p:#{truffle_jar}"
-      nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', dir)
-      args << "#{arg_prefix}-J-cp"
-      args << "#{arg_prefix}#{dir}/lib/*:#{dir}/build/sulong.jar:#{nfi_classes}"
-    end
-
-    args << "#{arg_prefix}-J-XX:-UseJVMCIClassLoader"
-  end
-  private :collect_sulong_args
 
 end
 
