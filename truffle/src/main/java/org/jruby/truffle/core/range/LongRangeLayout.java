@@ -15,18 +15,19 @@ import com.oracle.truffle.api.object.dsl.Layout;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 
 @Layout
-public interface LongFixnumRangeLayout extends BasicObjectLayout {
+public interface LongRangeLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createLongFixnumRangeShape(DynamicObject logicalClass,
-                                                    DynamicObject metaClass);
+    DynamicObjectFactory createLongRangeShape(DynamicObject logicalClass, DynamicObject metaClass);
 
-    DynamicObject createLongFixnumRange(DynamicObjectFactory factory,
-                                        boolean excludedEnd,
-                                        long begin,
-                                        long end);
+    DynamicObject createLongRange(
+            DynamicObjectFactory factory,
+            boolean excludedEnd,
+            long begin,
+            long end);
 
-    boolean isLongFixnumRange(Object object);
-    boolean isLongFixnumRange(DynamicObject object);
+    boolean isLongRange(Object object);
+
+    boolean isLongRange(DynamicObject object);
 
     boolean getExcludedEnd(DynamicObject object);
 

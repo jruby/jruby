@@ -636,11 +636,11 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject rangeError(DynamicObject range, Node currentNode) {
-        assert RubyGuards.isIntegerFixnumRange(range);
+        assert RubyGuards.isIntRange(range);
         return rangeError(String.format("%d..%s%d out of range",
-                Layouts.INTEGER_FIXNUM_RANGE.getBegin(range),
-                Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? "." : "",
-                Layouts.INTEGER_FIXNUM_RANGE.getEnd(range)), currentNode);
+                Layouts.INT_RANGE.getBegin(range),
+                Layouts.INT_RANGE.getExcludedEnd(range) ? "." : "",
+                Layouts.INT_RANGE.getEnd(range)), currentNode);
     }
 
     @TruffleBoundary

@@ -15,18 +15,18 @@ import com.oracle.truffle.api.object.dsl.Layout;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 
 @Layout
-public interface IntegerFixnumRangeLayout extends BasicObjectLayout {
+public interface IntRangeLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createIntegerFixnumRangeShape(DynamicObject logicalClass,
-                                                       DynamicObject metaClass);
+    DynamicObjectFactory createIntRangeShape(DynamicObject logicalClass, DynamicObject metaClass);
 
-    DynamicObject createIntegerFixnumRange(DynamicObjectFactory factory,
-                                           boolean excludedEnd,
-                                           int begin,
-                                           int end);
+    DynamicObject createIntRange(
+            DynamicObjectFactory factory,
+            boolean excludedEnd,
+            int begin,
+            int end);
 
-    boolean isIntegerFixnumRange(Object object);
-    boolean isIntegerFixnumRange(DynamicObject object);
+    boolean isIntRange(Object object);
+    boolean isIntRange(DynamicObject object);
 
     boolean getExcludedEnd(DynamicObject object);
 

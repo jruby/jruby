@@ -227,7 +227,7 @@ public abstract class MatchDataNodes {
             }
         }
 
-        @Specialization(guards = {"!isRubySymbol(index)", "!isRubyString(index)", "!isIntegerFixnumRange(index)"})
+        @Specialization(guards = { "!isRubySymbol(index)", "!isRubyString(index)", "!isIntRange(index)" })
         public Object getIndex(VirtualFrame frame, DynamicObject matchData, Object index, NotProvided length) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -238,12 +238,12 @@ public abstract class MatchDataNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isIntegerFixnumRange(range)")
+        @Specialization(guards = "isIntRange(range)")
         public Object getIndex(DynamicObject matchData, DynamicObject range, NotProvided len) {
             final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
-            final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range));
-            final int end = ArrayOperations.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range));
-            final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end : end + 1);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, Layouts.INT_RANGE.getBegin(range));
+            final int end = ArrayOperations.normalizeIndex(values.length, Layouts.INT_RANGE.getEnd(range));
+            final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(values.length, Layouts.INT_RANGE.getExcludedEnd(range) ? end : end + 1);
             final int length = exclusiveEnd - normalizedIndex;
 
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);

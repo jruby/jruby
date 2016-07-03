@@ -28,18 +28,18 @@ public abstract class ToIntRangeNode extends RubyNode {
 
     public abstract DynamicObject executeToIntRange(VirtualFrame frame, DynamicObject range);
 
-    @Specialization(guards = "isIntegerFixnumRange(range)")
+    @Specialization(guards = "isIntRange(range)")
     public DynamicObject intRange(DynamicObject range) {
         return range;
     }
 
-    @Specialization(guards = "isLongFixnumRange(range)")
+    @Specialization(guards = "isLongRange(range)")
     public DynamicObject longRange(VirtualFrame frame, DynamicObject range) {
-        int begin = toInt(frame, Layouts.LONG_FIXNUM_RANGE.getBegin(range));
-        int end = toInt(frame, Layouts.LONG_FIXNUM_RANGE.getEnd(range));
-        boolean excludedEnd = Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(range);
-        return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(
-                coreLibrary().getIntegerFixnumRangeFactory(), excludedEnd, begin, end);
+        int begin = toInt(frame, Layouts.LONG_RANGE.getBegin(range));
+        int end = toInt(frame, Layouts.LONG_RANGE.getEnd(range));
+        boolean excludedEnd = Layouts.LONG_RANGE.getExcludedEnd(range);
+        return Layouts.INT_RANGE.createIntRange(
+                coreLibrary().getIntRangeFactory(), excludedEnd, begin, end);
     }
 
     @Specialization(guards = "isObjectRange(range)")
@@ -47,8 +47,8 @@ public abstract class ToIntRangeNode extends RubyNode {
         int begin = toInt(frame, Layouts.OBJECT_RANGE.getBegin(range));
         int end = toInt(frame, Layouts.OBJECT_RANGE.getEnd(range));
         boolean excludedEnd = Layouts.OBJECT_RANGE.getExcludedEnd(range);
-        return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(
-                coreLibrary().getIntegerFixnumRangeFactory(), excludedEnd, begin, end);
+        return Layouts.INT_RANGE.createIntRange(
+                coreLibrary().getIntRangeFactory(), excludedEnd, begin, end);
     }
 
     private int toInt(VirtualFrame frame, Object indexObject) {
