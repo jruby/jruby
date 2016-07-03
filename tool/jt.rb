@@ -605,17 +605,20 @@ module Commands
   private :test_compiler
 
   def test_cexts(*args)
-    output_file = 'cext-output.txt'
-    Dir["#{JRUBY_DIR}/test/truffle/cexts/*"].each do |dir|
-      sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", dir
-      name = File.basename(dir)
-      run '--graal', '-I', "#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
-      unless File.read(output_file) == File.read("#{dir}/expected.txt")
-        abort "c extension #{dir} didn't work as expected"
+    begin
+      output_file = 'cext-output.txt'
+      ['minimum', 'method', 'module'].each do |gem|
+        dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem}"
+        sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", dir
+        name = File.basename(dir)
+        run '--graal', '-I', "#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
+        unless File.read(output_file) == File.read("#{dir}/expected.txt")
+          abort "c extension #{dir} didn't work as expected"
+        end
       end
+    ensure
+      File.delete output_file rescue nil
     end
-  ensure
-    File.delete output_file rescue nil
   end
   private :test_cexts
 
