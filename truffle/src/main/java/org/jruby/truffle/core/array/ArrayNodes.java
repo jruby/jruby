@@ -920,7 +920,6 @@ public abstract class ArrayNodes {
     public abstract static class HashNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
-        @Child private ArrayReadSliceNormalizedNode readSliceNode;
 
         @Specialization(guards = "isNullArray(array)")
         public long hashNull(VirtualFrame frame, DynamicObject array) {
@@ -958,7 +957,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toIntNode = insert(ToIntNode.create());
             }
-            Object result = toIntNode.executeIntOrLong(frame, indexObject);
+            final Object result = toIntNode.executeIntOrLong(frame, indexObject);
             if (result instanceof Integer) {
                 return Long.valueOf((int) result);
             } else {
