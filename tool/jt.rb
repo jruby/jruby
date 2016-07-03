@@ -73,10 +73,10 @@ module Utilities
       vm_args = command_line.split
       vm_args.pop # Drop "-version"
       javacmd = vm_args.shift
-      if Dir.exist?(File.join(graal_home, 'mx.sulong'))
-        sulong_dependencies = File.join(graal_home, 'lib', '*')
-        sulong_jar = File.join(graal_home, 'build', 'sulong.jar')
-        nfi_classes = File.join(graal_home, '../graal-core/mxbuild/graal/com.oracle.nfi/bin')
+      if Dir.exist?("#{graal_home}/mx.sulong")
+        sulong_dependencies = "#{graal_home}/lib/*"
+        sulong_jar = "#{graal_home}/build/sulong.jar"
+        nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', graal_home)
         vm_args << '-cp'
         vm_args << [nfi_classes, sulong_dependencies, sulong_jar].join(':')
         vm_args << '-XX:-UseJVMCIClassLoader'
@@ -227,19 +227,15 @@ module ShellUtils
   end
 
   def raw_sh(*args)
-    continue_on_failure = false
-    use_exec = false
-    if args.last.is_a?(Hash)
-      continue_on_failure = true if args.last.delete(:continue_on_failure)
-      use_exec = true if args.last.delete(:use_exec)
-    end
-    if !args.last.is_a?(Hash) || !args.last.delete(:no_print_cmd)
+    options = args.last.is_a?(Hash) ? args.pop : {}
+    continue_on_failure = options[:continue_on_failure]
+    use_exec = options[:use_exec]
+    timeout = options[:timeout]
+
+    unless options[:no_print_cmd]
       STDERR.puts "$ #{printable_cmd(args)}"
     end
-    timeout = nil
-    if args.last.is_a?(Hash)
-      timeout = args.last.delete(:timeout)
-    end
+
     if use_exec
       result = exec(*args)
     elsif timeout
@@ -247,18 +243,17 @@ module ShellUtils
     else
       result = system(*args)
     end
+
     if result
       true
+    elsif continue_on_failure
+      false
     else
-      if continue_on_failure
-        false
+      $stderr.puts "FAILED (#{$?}): #{printable_cmd(args)}"
+      if $? and $?.exitstatus
+        exit $?.exitstatus
       else
-        $stderr.puts "FAILED (#{$?}): #{printable_cmd(args)}"
-        if $? and $?.exitstatus
-          exit $?.exitstatus
-        else
-          exit 1
-        end
+        exit 1
       end
     end
   end
@@ -506,8 +501,10 @@ module Commands
       end
     end
     
-    args.push({use_exec: true}) if args.delete('--exec')
-    
+    if args.delete('--exec')
+      args << { use_exec: true }
+    end
+
     raw_sh env_vars, Utilities.find_jruby, *jruby_args, *args
   end
   alias ruby run
@@ -607,8 +604,8 @@ module Commands
   def test_cexts(*args)
     begin
       output_file = 'cext-output.txt'
-      ['minimum', 'method', 'module'].each do |gem|
-        dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem}"
+      ['minimum', 'method', 'module'].each do |gem_name|
+        dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
         sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", dir
         name = File.basename(dir)
         run '--graal', '-I', "#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
@@ -619,8 +616,8 @@ module Commands
     ensure
       File.delete output_file rescue nil
     end
-    ['oily_png', 'psd_native'].each do |gem|
-      config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem}"
+    ['oily_png', 'psd_native'].each do |gem_name|
+      config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
       sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", config
     end
   end
