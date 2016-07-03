@@ -19,7 +19,9 @@ unless SULONG_DIR
 end
 
 def mx(*args)
-  command = ['mx', '-p', SULONG_DIR] + args
+  command = ['mx', '-p', SULONG_DIR]
+  command.push *['--java-home', ENV['JVMCI_JAVA_HOME']] if ENV['JVMCI_JAVA_HOME']
+  command.push *args
   puts "$ #{command.join(' ')}"
   abort unless system(*command)
 end
