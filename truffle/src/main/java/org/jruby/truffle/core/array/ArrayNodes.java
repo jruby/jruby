@@ -47,6 +47,7 @@ import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
 import org.jruby.truffle.core.cast.ToAryNodeGen;
 import org.jruby.truffle.core.cast.ToIntNode;
 import org.jruby.truffle.core.cast.ToIntNodeGen;
+import org.jruby.truffle.core.cast.ToIntRangeNode;
 import org.jruby.truffle.core.format.BytesResult;
 import org.jruby.truffle.core.format.FormatExceptionTranslator;
 import org.jruby.truffle.core.format.exceptions.FormatException;
@@ -87,10 +88,8 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
-
 import java.util.Arrays;
 import java.util.Comparator;
-
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
@@ -508,29 +507,12 @@ public abstract class ArrayNodes {
             return executeSet(frame, array, start, normalizeLength, value);
         }
 
-        @Specialization(guards = "isObjectRange(range)")
-        public Object setObjectRange(VirtualFrame frame, DynamicObject array, DynamicObject range, Object value, NotProvided unused,
-                               @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
-                               @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile,
-                               @Cached("create()") BranchProfile errorProfile) {
-            final int size = getSize(array);
-            final int begin = toInt(frame, Layouts.OBJECT_RANGE.getBegin(range));
-
-            final int start = ArrayOperations.normalizeIndex(size, begin, negativeBeginProfile);
-            if (start < 0) {
-                errorProfile.enter();
-                throw new RaiseException(coreExceptions().rangeError(range, this));
-            }
-            final int end = ArrayOperations.normalizeIndex(size, toInt(frame, Layouts.OBJECT_RANGE.getEnd(range)), negativeEndProfile);
-            int inclusiveEnd = Layouts.OBJECT_RANGE.getExcludedEnd(range) ? end - 1 : end;
-            if (inclusiveEnd < 0) {
-                inclusiveEnd = -1;
-            }
-            final int length = inclusiveEnd - start + 1;
-            final int normalizeLength = length > -1 ? length : 0;
-            return executeSet(frame, array, start, normalizeLength, value);
+        @Specialization(guards = { "!isIntegerFixnumRange(range)", "isRubyRange(range)" })
+        public Object setOtherRange(VirtualFrame frame, DynamicObject array, DynamicObject range, Object value, NotProvided unused,
+                @Cached("create()") ToIntRangeNode toIntRangeNode) {
+            DynamicObject intRange = toIntRangeNode.executeToIntRange(frame, range);
+            return executeSet(frame, array, intRange, value, unused);
         }
-
 
         // Helpers
 
