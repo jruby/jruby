@@ -54,7 +54,7 @@ lls = []
 
 src.each do |src|
   ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
-  mx 'su-clang', "-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', src, '-o', ll
+  mx 'su-clang', "-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *ARGV.drop(1), src, '-o', ll
   mx 'su-opt', '-S', '-mem2reg', ll, '-o', ll
   lls.push ll
 end
