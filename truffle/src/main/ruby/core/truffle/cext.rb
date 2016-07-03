@@ -186,6 +186,10 @@ module Truffle::CExt
       mod.send(:undef_method, name)
     end
   end
+
+  def rb_funcall(object, name, argc, args)
+    object.__send__(name, *args)
+  end
 end
 
 Truffle::Interop.export(:ruby_cext, Truffle::CExt)

@@ -25,6 +25,8 @@ extern "C" {
 
 #include <truffle.h>
 
+#define RUBY_CEXT truffle_import_cached("ruby_cext")
+
 #define xmalloc malloc
 #define xfree free
 #define ALLOC_N(type, n) malloc(sizeof(type) * n)
@@ -149,7 +151,7 @@ int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
 // Calls
 
-#define rb_funcall(object, name, argc, ...) truffle_invoke(object, "__send__", name, ##__VA_ARGS__)
+#define rb_funcall(object, name, ...) truffle_invoke(RUBY_CEXT, "rb_funcall", object, name, __VA_ARGS__)
 
 VALUE rb_yield(VALUE value);
 
