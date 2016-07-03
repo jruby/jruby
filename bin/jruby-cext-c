@@ -18,10 +18,10 @@ unless SULONG_DIR
   abort 'You need to set SULONG_DIR to the location of a built checkout of the Sulong repository'
 end
 
-def mx(command, *args)
-  command = "mx -p #{SULONG_DIR} #{command} #{args.join(' ')}"
-  puts "$ #{command}"
-  `#{command}`
+def mx(*args)
+  command = ['mx', '-p', SULONG_DIR] + args
+  puts "$ #{command.join(' ')}"
+  abort unless system(*command)
 end
 
 cext_dir = ARGV[0]
