@@ -13,17 +13,22 @@
 require 'yaml'
 
 SULONG_DIR = ENV['SULONG_DIR']
+USE_SYSTEM_CLANG = ENV['USE_SYSTEM_CLANG']
 
 unless SULONG_DIR
   abort 'You need to set SULONG_DIR to the location of a built checkout of the Sulong repository'
+end
+
+def sh(*args)
+  puts "$ #{args.join(' ')}"
+  abort unless system(*args)
 end
 
 def mx(*args)
   command = ['mx', '-p', SULONG_DIR]
   command.push *['--java-home', ENV['JVMCI_JAVA_HOME']] if ENV['JVMCI_JAVA_HOME']
   command.push *args
-  puts "$ #{command.join(' ')}"
-  abort unless system(*command)
+  sh *command
 end
 
 cext_dir = ARGV[0]
@@ -54,8 +59,18 @@ lls = []
 
 src.each do |src|
   ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
-  mx 'su-clang', "-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *ARGV.drop(1), src, '-o', ll
-  mx 'su-opt', '-S', '-mem2reg', ll, '-o', ll
+  
+  clang_args = ["-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *ARGV.drop(1), src, '-o', ll]
+  opt_args = ['-S', '-mem2reg', ll, '-o', ll]
+  
+  if USE_SYSTEM_CLANG
+    sh 'clang', *clang_args
+    sh 'opt', *opt_args
+  else
+    mx 'su-clang', *clang_args
+    mx 'su-opt', *opt_args
+  end
+  
   lls.push ll
 end
 
