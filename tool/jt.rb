@@ -618,7 +618,7 @@ module Commands
     end
     ['oily_png', 'psd_native'].each do |gem_name|
       config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
-      sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", config
+      sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", config, '-Werror=implicit-function-declaration'
     end
   end
   private :test_cexts
