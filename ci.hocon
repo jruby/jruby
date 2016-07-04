@@ -252,7 +252,7 @@ test-cexts: {
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
-      version: "8u92-jvmci-0.16",
+      version: "8u92-jvmci-0.17",
       platformspecific: true
     }
   }
