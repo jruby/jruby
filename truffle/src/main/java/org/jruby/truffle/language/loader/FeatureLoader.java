@@ -20,6 +20,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.language.control.JavaException;
+import org.jruby.truffle.language.control.RaiseException;
 
 public class FeatureLoader {
 
@@ -130,6 +131,11 @@ public class FeatureLoader {
     @TruffleBoundary
     private CallTarget getCExtLibRuby() {
         final String path = context.getJRubyRuntime().getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
+
+        if (!new File(path).exists()) {
+            throw new RaiseException(context.getCoreExceptions().internalError("This JRuby distribution does not have the C extension implementation file ruby.su", null));
+        }
+
         try {
             return parseSource(context.getSourceLoader().load(path));
         } catch (IOException e) {
