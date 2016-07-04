@@ -31,6 +31,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.runtime.Helpers;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -88,8 +89,10 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
+
 import java.util.Arrays;
 import java.util.Comparator;
+
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
@@ -907,6 +910,58 @@ public abstract class ArrayNodes {
         protected Object fillFallback(VirtualFrame frame, DynamicObject array, Object[] args, DynamicObject block,
                 @Cached("createMethodCall()") CallDispatchHeadNode callFillInternal) {
             return callFillInternal.call(frame, array, "fill_internal", block, args);
+        }
+
+    }
+
+    @CoreMethod(names = "hash_internal")
+    public abstract static class HashNode extends ArrayCoreMethodNode {
+
+        @Child private ToIntNode toIntNode;
+
+        @Specialization(guards = "isNullArray(array)")
+        public long hashNull(DynamicObject array) {
+            final int arraySize = 0;
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), arraySize);
+            h = Helpers.murmurCombine(h, System.identityHashCode(ArrayNodes.class));
+            h = Helpers.hashEnd(h);
+            return h;
+        }
+
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public long hash(VirtualFrame frame, DynamicObject array,
+                         @Cached("of(array)") ArrayStrategy strategy,
+                         @Cached("createMethodCall()") CallDispatchHeadNode toHashNode) {
+
+            final int arraySize = getSize(array);
+            // TODO BJF Jul 4, 2016 Seed could be chosen in advance to avoid branching
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), arraySize);
+            h = Helpers.murmurCombine(h, System.identityHashCode(ArrayNodes.class));
+            final ArrayMirror store = strategy.newMirror(array);
+
+            int n = 0;
+
+            for (; n < arraySize; n++) {
+                final Object value = store.get(n);
+                final long valueHash = toLong(frame, toHashNode.call(frame, value, "hash", null));
+                h = Helpers.murmurCombine(h, valueHash);
+            }
+
+            h = Helpers.hashEnd(h);
+            return h;
+        }
+
+        private long toLong(VirtualFrame frame, Object indexObject) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                toIntNode = insert(ToIntNode.create());
+            }
+            final Object result = toIntNode.executeIntOrLong(frame, indexObject);
+            if (result instanceof Integer) {
+                return Long.valueOf((int) result);
+            } else {
+                return (long) result;
+            }
         }
 
     }
