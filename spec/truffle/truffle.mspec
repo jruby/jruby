@@ -27,34 +27,6 @@ class MSpecScript
     set :flags, flags
   end
 
-  set :capi, [
-    "spec/ruby/optional/capi",
-
-    # Incorrect C code for spec?
-    "^spec/ruby/optional/capi/data_spec.rb",
-
-    # Requires 'ruby/encoding.h'
-    "^spec/ruby/optional/capi/encoding_spec.rb",
-
-    # Requires 'ruby/io.h'
-    "^spec/ruby/optional/capi/io_spec.rb",
-
-    # Incorrect C code for spec?
-    "^spec/ruby/optional/capi/proc_spec.rb",
-
-    # Requires 'ruby/re.h'
-    "^spec/ruby/optional/capi/regexp_spec.rb",
-
-    # Requires 'ruby/intern.h'
-    "^spec/ruby/optional/capi/struct_spec.rb",
-
-    # Requires 'ruby/thread.h'
-    "^spec/ruby/optional/capi/thread_spec.rb",
-
-    # Missing symbol @Init_typed_data_spec.
-    "^spec/ruby/optional/capi/typed_data_spec.rb"
-  ]
-
   set :command_line, [
     "spec/ruby/command_line"
   ]
@@ -104,6 +76,35 @@ class MSpecScript
   ]
 
   set :capi, [
+    "spec/ruby/optional/capi",
+
+    # Fixnum boundaries do not match
+    "^spec/ruby/optional/capi/bignum_spec.rb",
+
+    # Incorrect C code for spec?
+    "^spec/ruby/optional/capi/data_spec.rb",
+
+    # Requires 'ruby/encoding.h'
+    "^spec/ruby/optional/capi/encoding_spec.rb",
+
+    # Requires 'ruby/io.h'
+    "^spec/ruby/optional/capi/io_spec.rb",
+
+    # Requires 'ruby/re.h'
+    "^spec/ruby/optional/capi/regexp_spec.rb",
+
+    # Requires 'ruby/intern.h'
+    "^spec/ruby/optional/capi/struct_spec.rb",
+
+    # Requires 'ruby/thread.h'
+    "^spec/ruby/optional/capi/thread_spec.rb",
+
+    # Missing symbol @Init_typed_data_spec.
+    "^spec/ruby/optional/capi/typed_data_spec.rb"
+  ]
+
+  # A subset of the C-API with passing specs for development
+  set :capi_dev, [
     "spec/ruby/optional/capi/array_spec.rb",
     "spec/ruby/optional/capi/class_spec.rb",
     "spec/ruby/optional/capi/module_spec.rb",

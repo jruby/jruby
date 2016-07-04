@@ -264,7 +264,7 @@ test-cexts: {
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
-      version: "8u92-jvmci-0.16",
+      version: "8u92-jvmci-0.17",
       platformspecific: true
     }
   }
@@ -279,7 +279,8 @@ test-cexts: {
     [mx, --java-home, "$JVMCI_JAVA_HOME", build],
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
-    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", jruby-truffle-gem-test-pack]
+    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", jruby-truffle-gem-test-pack],
+    ${jt} [build, cexts]
   ]
   
   environment: {

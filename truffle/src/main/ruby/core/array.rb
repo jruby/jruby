@@ -460,7 +460,7 @@ class Array
       begin
         objects[id] = true
 
-        each { |x| hash_val = ((hash_val & mask) << 1) ^ x.hash }
+        hash_val = self.hash_internal
       ensure
         objects.delete id
       end
@@ -472,7 +472,7 @@ class Array
         objects[:__detect_outermost_recursion__] = true
         objects[id] = true
 
-        each { |x| hash_val = ((hash_val & mask) << 1) ^ x.hash }
+        hash_val = self.hash_internal
 
         # An inner version will raise to return back here, indicating that
         # the whole structure is recursive. In which case, abondon most of
