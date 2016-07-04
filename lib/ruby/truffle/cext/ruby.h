@@ -34,7 +34,7 @@ extern "C" {
 typedef void* ID;
 typedef void* VALUE;
 
-#define NORETURN __attribute__((__noreturn__))
+#define NORETURN(X) __attribute__((__noreturn__)) X
 
 // Constants
 
@@ -175,7 +175,7 @@ void rb_define_global_const(const char *name, VALUE value);
 
 // Raising exceptions
 
-NORETURN void rb_raise(VALUE exception, const char *format, ...);
+NORETURN(void rb_raise(VALUE exception, const char *format, ...));
 
 // Defining classes, modules and methods
 
