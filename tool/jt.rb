@@ -738,7 +738,7 @@ module Commands
     if args.delete('--graal')
       javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
       env_vars["JAVACMD"] = javacmd
-      options.push *(javacmd_options.map { |o| "-T#{o}" })
+      options.concat javacmd_options.map { |o| "-T#{o}" }
     end
 
     if args.delete('--jdebug')
@@ -763,7 +763,7 @@ module Commands
   private :test_specs
 
   def test_tck(*args)
-    mvn *args + ['-Ptck']
+    mvn *args, '-Ptck'
   end
   private :test_tck
 
