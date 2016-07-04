@@ -1,0 +1,2 @@
+src: $GEM_HOME/gems/nokogiri-1.6.8/ext/nokogiri/*.c
+out: lib/nokogiri/nokogiri.su
