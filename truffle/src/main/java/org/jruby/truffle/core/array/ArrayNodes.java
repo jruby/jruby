@@ -93,8 +93,6 @@ import org.jruby.util.Memo;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static org.jruby.runtime.Helpers.hashEnd;
-import static org.jruby.runtime.Helpers.murmurCombine;
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
@@ -920,13 +918,14 @@ public abstract class ArrayNodes {
     public abstract static class HashNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
+        @Child private CallDispatchHeadNode toHashNode;
 
         @Specialization(guards = "isNullArray(array)")
-        public long hashNull(VirtualFrame frame, DynamicObject array) {
+        public long hashNull(DynamicObject array) {
             final int arraySize = 0;
             long h = Helpers.hashStart(getContext().getJRubyRuntime(), arraySize);
             h = Helpers.murmurCombine(h, System.identityHashCode(ArrayNodes.class));
-            h = hashEnd(h);
+            h = Helpers.hashEnd(h);
             return h;
         }
 
@@ -936,6 +935,7 @@ public abstract class ArrayNodes {
                          @Cached("new()") SnippetNode snippetNode) {
 
             final int arraySize = getSize(array);
+            // TODO BJF Jul 4, 2016 Seed could be chosen in advance to avoid branching
             long h = Helpers.hashStart(getContext().getJRubyRuntime(), arraySize);
             h = Helpers.murmurCombine(h, System.identityHashCode(ArrayNodes.class));
             final ArrayMirror store = strategy.newMirror(array);
@@ -944,11 +944,11 @@ public abstract class ArrayNodes {
 
             for (; n < arraySize; n++) {
                 final Object value = store.get(n);
-                final long valueHash = toLong(frame, snippetNode.execute(frame, "value.hash", "value", value));
-                h = murmurCombine(h, valueHash);
+                final long valueHash = toLong(frame, callToHash(frame, value));
+                h = Helpers.murmurCombine(h, valueHash);
             }
 
-            h = hashEnd(h);
+            h = Helpers.hashEnd(h);
             return h;
         }
 
@@ -963,6 +963,14 @@ public abstract class ArrayNodes {
             } else {
                 return (long) result;
             }
+        }
+
+        protected Object callToHash(VirtualFrame frame, Object object) {
+            if (toHashNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+            return toHashNode.call(frame, object, "hash", null);
         }
     }
 
