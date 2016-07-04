@@ -16,11 +16,13 @@
 require 'fileutils'
 require 'json'
 require 'timeout'
+require 'yaml'
 
 GRAALVM_VERSION = '0.12'
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 M2_REPO = File.expand_path('~/.m2/repository')
+SULONG_DIR = ENV['SULONG_DIR']
 
 JDEBUG_PORT = 51819
 JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
@@ -307,6 +309,13 @@ module ShellUtils
     end
     return [maven_options, options]
   end
+  
+  def mx(dir, *args)
+    command = ['mx', '-p', dir]
+    command.push *['--java-home', ENV['JVMCI_JAVA_HOME']] if ENV['JVMCI_JAVA_HOME']
+    command.push *args
+    sh *command
+  end
 
   def mspec(command, *args)
     env_vars = {}
@@ -348,7 +357,8 @@ module Commands
     puts '    --exec          use exec rather than system'
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
-    puts 'jt test                                        run all mri tests, specs and integration tests'
+    puts 'jt cextc directory clang-args                  compile the C extension in directory, with optional extra clang arguments'
+    puts 'jt test                                        run all mri tests, specs and integration tests (set SULONG_DIR, and maybe USE_SYSTEM_CLANG)'
     puts 'jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests'
     puts 'jt test mri                                    run mri tests'
     puts 'jt test specs                                  run all specs'
@@ -393,7 +403,8 @@ module Commands
     puts '  JVMCI_JAVA_HOME                              The Java with JVMCI to use with GRAAL_HOME'
     puts '  GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)'
     puts '  GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)'
-    puts '  SULONG_DIR                                   The Sulong source repository, if you want to run bin/jruby-cext-c'
+    puts '  SULONG_DIR                                   The Sulong source repository, if you want to run cextc'
+    puts '  USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
   end
@@ -520,6 +531,45 @@ module Commands
   def command_p(*args)
     e 'p begin', *args, 'end'
   end
+  
+  def cextc(cext_dir, *clang_opts)
+    config_file = File.join(cext_dir, '.jruby-cext-build.yml')
+
+    unless File.exist?(config_file)
+      abort "There is no .jruby-cext-build.yml in #{cext_dir} at the moment - I don't know how to build it"
+    end
+
+    config = YAML.load_file(config_file)
+    config_src = config['src']
+
+    if config_src.start_with?('$GEM_HOME/')
+      src = Dir[ENV['GEM_HOME'] + config_src['$GEM_HOME'.size..-1]]
+    else
+      src = Dir[File.join(cext_dir, config_src)]
+    end
+
+    out = File.expand_path(config['out'], cext_dir)
+    lls = []
+
+    src.each do |src|
+      ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
+      
+      clang_args = ["-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *clang_opts, src, '-o', ll]
+      opt_args = ['-S', '-mem2reg', ll, '-o', ll]
+      
+      if ENV['USE_SYSTEM_CLANG']
+        sh 'clang', *clang_args
+        sh 'opt', *opt_args
+      else
+        mx SULONG_DIR, 'su-clang', *clang_args
+        mx SULONG_DIR, 'su-opt', *opt_args
+      end
+      
+      lls.push ll
+    end
+
+    mx SULONG_DIR, 'su-link', '-o', out, *lls
+  end
 
   def test(*args)
     path, *rest = args
@@ -606,7 +656,7 @@ module Commands
       output_file = 'cext-output.txt'
       ['minimum', 'method', 'module'].each do |gem_name|
         dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
-        sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", dir
+        cextc dir
         name = File.basename(dir)
         run '--graal', '-I', "#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
         unless File.read(output_file) == File.read("#{dir}/expected.txt")
@@ -622,7 +672,7 @@ module Commands
         ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']]
       ].each do |gem_name, dependencies, libs|
       config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
-      sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", config, '-Werror=implicit-function-declaration'
+      cextc config, '-Werror=implicit-function-declaration'
       arguments = []
       run '--graal',
         *(dependencies.map { |d| ['-I', "#{ENV['GEM_HOME']}/gems/#{d}/lib"] }.flatten),
