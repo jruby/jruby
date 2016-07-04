@@ -408,6 +408,7 @@ module Commands
     puts '  USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
+    puts '  OPEN_SSL_HOME                                The location of OpenSSL (the directory containing include etc)'
   end
 
   def checkout(branch)
@@ -429,6 +430,7 @@ module Commands
       mvn env, *maven_options, '-pl', 'truffle', 'package'
     when 'cexts'
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
+      cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl", "-I#{ENV['OPEN_SSL_HOME']}/include"
     when nil
       mvn env, *maven_options, 'package'
     else
