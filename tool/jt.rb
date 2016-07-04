@@ -339,8 +339,9 @@ module Commands
     puts 'jt checkout name                               checkout a different Git branch and rebuild'
     puts 'jt bootstrap [options]                         run the build system\'s bootstrap phase'
     puts 'jt build [options]                             build'
-    puts 'jt build truffle [options]                     build only the Truffle part, assumes the rest is up-to-date'
     puts 'jt rebuild [options]                           clean and build'
+    puts '    truffle                                    build only the Truffle part, assumes the rest is up-to-date'
+    puts '    cexts                                      build the cext backend (set SULONG_DIR and mabye USE_SYSTEM_CLANG)'
     puts '    --offline                                  use the build pack to build offline'
     puts 'jt clean                                       clean'
     puts 'jt irb                                         irb'
@@ -426,6 +427,8 @@ module Commands
     case project
     when 'truffle'
       mvn env, *maven_options, '-pl', 'truffle', 'package'
+    when 'cexts'
+      cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
     when nil
       mvn env, *maven_options, 'package'
     else
@@ -1076,8 +1079,9 @@ class JT
       send(args.shift)
     when "build"
       command = [args.shift]
-      command << args.shift if args.first == "truffle"
-      command << args.shift if args.first == "--offline"
+      while ['truffle', 'cexts', '--offline'].include?(args.first)
+        command << args.shift
+      end
       send(*command)
     end
 
