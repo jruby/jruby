@@ -362,7 +362,7 @@ module Commands
     puts 'jt test gems                                   tests using gems'
     puts 'jt test ecosystem                              tests using the wider ecosystem such as bundler, Rails, etc'
     puts 'jt test cexts                                  run C extension tests'
-    puts '                                                   (implies --graal, where Graal needs to include Sulong, and set SULONG_DIR to a built checkout of Sulong)'
+    puts '                                                   (implies --graal, where Graal needs to include Sulong, set SULONG_DIR to a built checkout of Sulong, and set GEM_HOME)'
     puts 'jt test report :language                       build a report on language specs'
     puts '               :core                               (results go into test/target/mspec-html-report)'
     puts '               :library'
@@ -616,9 +616,18 @@ module Commands
     ensure
       File.delete output_file rescue nil
     end
-    ['oily_png', 'psd_native'].each do |gem_name|
+    
+    [
+        ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
+        ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']]
+      ].each do |gem_name, dependencies, libs|
       config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
       sh Utilities.find_jruby, "#{JRUBY_DIR}/bin/jruby-cext-c", config, '-Werror=implicit-function-declaration'
+      arguments = []
+      run '--graal',
+        *(dependencies.map { |d| ['-I', "#{ENV['GEM_HOME']}/gems/#{d}/lib"] }.flatten),
+        *(libs.map { |l| ['-I', "#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib"] }.flatten),
+        "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb" unless gem_name == 'psd_native' # psd_native is excluded
     end
   end
   private :test_cexts
