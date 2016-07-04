@@ -431,7 +431,9 @@ public abstract class ArrayNodes {
         public Object setOtherArray(VirtualFrame frame, DynamicObject array, int rawStart, int length, DynamicObject replacement,
                 @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
                 @Cached("createBinaryProfile()") ConditionProfile needCopy,
-                @Cached("createBinaryProfile()") ConditionProfile recursive) {
+                @Cached("createBinaryProfile()") ConditionProfile recursive,
+                @Cached("createBinaryProfile()") ConditionProfile emptyReplacement,
+                @Cached("createBinaryProfile()") ConditionProfile grow) {
             checkLengthPositive(length);
             final int start = ArrayOperations.normalizeIndex(getSize(array), rawStart, negativeIndexProfile);
             checkIndex(array, rawStart, start);
@@ -464,12 +466,12 @@ public abstract class ArrayNodes {
                 for (int i = 0; i < tailSize; i++) {
                     write(array, endOfReplacementInArray + i, read(tailCopy, i));
                 }
-            } else {
-                // If no tail, array will grow, and the replacement is empty,
-                // we need to append nils from index arraySize to index (start - 1).
+            } else if (emptyReplacement.profile(replacementSize == 0)) {
+                // If no tail and the replacement is empty, the array will grow.
+                // We need to append nil from index arraySize to index (start - 1).
                 // E.g. a = [1,2,3]; a[5,1] = []; a == [1,2,3,nil,nil]
-                if(replacementSize == 0 && arraySize < start){
-                    for(int i = arraySize; i < start; i++){
+                if (grow.profile(arraySize < start)) {
+                    for (int i = arraySize; i < start; i++) {
                         write(array, i, nil());
                     }
                 }
