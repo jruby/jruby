@@ -855,7 +855,6 @@ public abstract class ArrayNodes {
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
         @Specialization(guards = "isNullArray(array)")
-
         public DynamicObject eachWithIndexNull(DynamicObject array, DynamicObject block) {
             return array;
         }
@@ -921,34 +920,29 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public long hashNull(DynamicObject array) {
-            final int arraySize = 0;
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), arraySize);
+            final int size = 0;
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), size);
             h = Helpers.murmurCombine(h, System.identityHashCode(ArrayNodes.class));
-            h = Helpers.hashEnd(h);
-            return h;
+            return Helpers.hashEnd(h);
         }
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public long hash(VirtualFrame frame, DynamicObject array,
                          @Cached("of(array)") ArrayStrategy strategy,
                          @Cached("createMethodCall()") CallDispatchHeadNode toHashNode) {
-
-            final int arraySize = getSize(array);
+            final int size = getSize(array);
             // TODO BJF Jul 4, 2016 Seed could be chosen in advance to avoid branching
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), arraySize);
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), size);
             h = Helpers.murmurCombine(h, System.identityHashCode(ArrayNodes.class));
             final ArrayMirror store = strategy.newMirror(array);
 
-            int n = 0;
-
-            for (; n < arraySize; n++) {
+            for (int n = 0; n < size; n++) {
                 final Object value = store.get(n);
                 final long valueHash = toLong(frame, toHashNode.call(frame, value, "hash", null));
                 h = Helpers.murmurCombine(h, valueHash);
             }
 
-            h = Helpers.hashEnd(h);
-            return h;
+            return Helpers.hashEnd(h);
         }
 
         private long toLong(VirtualFrame frame, Object indexObject) {
@@ -958,7 +952,7 @@ public abstract class ArrayNodes {
             }
             final Object result = toIntNode.executeIntOrLong(frame, indexObject);
             if (result instanceof Integer) {
-                return Long.valueOf((int) result);
+                return (long) (int) result;
             } else {
                 return (long) result;
             }
