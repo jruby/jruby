@@ -478,15 +478,15 @@ public abstract class EncodingNodes {
 
         @Specialization
         public Object encodingMap(VirtualFrame frame) {
-            Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
+            Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
 
             final DynamicObject[] encodings = getContext().getEncodingManager().getUnsafeEncodingList();
             for (int i = 0; i < encodings.length; i++) {
-                final Object upcased = upcaseNode.call(frame, Layouts.ENCODING.getName(encodings[i]), "upcase", null);
-                final Object key = toSymNode.call(frame, upcased, "to_sym", null);
-                final Object value = newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", null, nil(), i);
+                final Object upcased = upcaseNode.call(frame, Layouts.ENCODING.getName(encodings[i]), "upcase");
+                final Object key = toSymNode.call(frame, upcased, "to_sym");
+                final Object value = newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", nil(), i);
 
-                lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
+                lookupTableWriteNode.call(frame, ret, "[]=", key, value);
             }
 
             final Hash<EncodingDB.Entry>.HashEntryIterator i = EncodingDB.getAliases().entryIterator();
@@ -494,37 +494,37 @@ public abstract class EncodingNodes {
                 final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
                         ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>) i.next());
 
-                final Object upcased = upcaseNode.call(frame, createString(new ByteList(e.bytes, e.p, e.end - e.p)), "upcase", null);
-                final Object key = toSymNode.call(frame, upcased, "to_sym", null);
+                final Object upcased = upcaseNode.call(frame, createString(new ByteList(e.bytes, e.p, e.end - e.p)), "upcase");
+                final Object key = toSymNode.call(frame, upcased, "to_sym");
                 final DynamicObject alias = createString(new ByteList(e.bytes, e.p, e.end - e.p));
                 final int index = e.value.getIndex();
 
 
-                final Object value = newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", null, alias, index);
-                lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
+                final Object value = newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", alias, index);
+                lookupTableWriteNode.call(frame, ret, "[]=", key, value);
             }
 
             final Encoding defaultInternalEncoding = getContext().getJRubyRuntime().getDefaultInternalEncoding();
             final Object internalTuple = makeTuple(frame, newTupleNode, create7BitString("internal", UTF8Encoding.INSTANCE), indexLookup(encodings, defaultInternalEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("INTERNAL"), internalTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("INTERNAL"), internalTuple);
 
             final Encoding defaultExternalEncoding = getContext().getJRubyRuntime().getDefaultExternalEncoding();
             final Object externalTuple = makeTuple(frame, newTupleNode, create7BitString("external", UTF8Encoding.INSTANCE), indexLookup(encodings, defaultExternalEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("EXTERNAL"), externalTuple);
 
             final Encoding localeEncoding = getContext().getEncodingManager().getLocaleEncoding();
             final Object localeTuple = makeTuple(frame, newTupleNode, create7BitString("locale", UTF8Encoding.INSTANCE), indexLookup(encodings, localeEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("LOCALE"), localeTuple);
 
             final Encoding filesystemEncoding = getContext().getEncodingManager().getLocaleEncoding();
             final Object filesystemTuple = makeTuple(frame, newTupleNode, create7BitString("filesystem", UTF8Encoding.INSTANCE), indexLookup(encodings, filesystemEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;
         }
 
         private Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
-            return newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", null, values);
+            return newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", values);
         }
 
         @TruffleBoundary

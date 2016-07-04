@@ -322,7 +322,7 @@ public abstract class MatchDataNodes {
             final Object fullTuple = newTupleNode.call(frame,
                     coreLibrary().getTupleClass(),
                     "create",
-                    null, Layouts.MATCH_DATA.getBegin(matchData), Layouts.MATCH_DATA.getEnd(matchData));
+                    Layouts.MATCH_DATA.getBegin(matchData), Layouts.MATCH_DATA.getEnd(matchData));
 
             Layouts.MATCH_DATA.setFullTuple(matchData, fullTuple);
 

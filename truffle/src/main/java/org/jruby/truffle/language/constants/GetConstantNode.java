@@ -102,7 +102,7 @@ public abstract class GetConstantNode extends RubyNode {
             constMissingNode = insert(createConstMissingNode());
         }
 
-        return constMissingNode.call(frame, module, "const_missing", null, symbolName);
+        return constMissingNode.call(frame, module, "const_missing", symbolName);
     }
 
     @TruffleBoundary

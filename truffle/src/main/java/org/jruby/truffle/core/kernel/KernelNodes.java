@@ -161,7 +161,7 @@ public abstract class KernelNodes {
             }
 
             final DynamicObject env = getContext().getCoreLibrary().getENV();
-            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash", null);
+            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash");
 
             return spawnAndCaptureOutput(command, envAsHash);
         }
@@ -398,7 +398,7 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject copy(VirtualFrame frame, DynamicObject self) {
             final DynamicObject rubyClass = Layouts.BASIC_OBJECT.getLogicalClass(self);
-            final DynamicObject newObject = (DynamicObject) allocateNode.call(frame, rubyClass, "allocate", null);
+            final DynamicObject newObject = (DynamicObject) allocateNode.call(frame, rubyClass, "allocate");
             copyInstanceVariables(self, newObject);
             return newObject;
         }
@@ -447,7 +447,7 @@ public abstract class KernelNodes {
                 Layouts.MODULE.getFields(newObjectMetaClass).initCopy(selfMetaClass);
             }
 
-            initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
+            initializeCloneNode.call(frame, newObject, "initialize_clone", self);
 
             if (isFrozenProfile.profile(isFrozenNode.executeIsFrozen(self))) {
                 freezeNode.executeFreeze(newObject);
@@ -480,7 +480,7 @@ public abstract class KernelNodes {
         public DynamicObject dup(VirtualFrame frame, DynamicObject self) {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
-            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
+            initializeDupNode.call(frame, newObject, "initialize_dup", self);
 
             return newObject;
         }
@@ -500,7 +500,7 @@ public abstract class KernelNodes {
             assert Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(newObject));
 
             Layouts.MODULE.getFields(newObjectMetaClass).initCopy(selfMetaClass); // copies class methods
-            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
+            initializeDupNode.call(frame, newObject, "initialize_dup", self);
             Layouts.CLASS.setSuperclass(newObject, Layouts.CLASS.getSuperclass(self));
 
             return newObject;
@@ -727,7 +727,7 @@ public abstract class KernelNodes {
             final String[] commandLine = buildCommandLine(command, args);
 
             final DynamicObject env = coreLibrary().getENV();
-            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash", null);
+            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash");
 
             exec(getContext(), envAsHash, commandLine);
 
@@ -937,7 +937,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object initializeDup(VirtualFrame frame, DynamicObject self, DynamicObject from) {
-            return initializeCopyNode.call(frame, self, "initialize_copy", null, from);
+            return initializeCopyNode.call(frame, self, "initialize_copy", from);
         }
 
     }
@@ -1218,7 +1218,7 @@ public abstract class KernelNodes {
             public Object execute(VirtualFrame frame) {
                 final Object[] originalUserArguments = RubyArguments.getArguments(frame);
                 final Object[] newUserArguments = ArrayUtils.unshift(originalUserArguments, methodName);
-                return methodMissing.call(frame, RubyArguments.getSelf(frame), "method_missing", RubyArguments.getBlock(frame), newUserArguments);
+                return methodMissing.callWithBlock(frame, RubyArguments.getSelf(frame), "method_missing", RubyArguments.getBlock(frame), newUserArguments);
             }
         }
 
@@ -1397,7 +1397,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object name, Object[] args, DynamicObject block) {
-            return dispatchNode.call(frame, self, name, block, args);
+            return dispatchNode.callWithBlock(frame, self, name, block, args);
         }
 
     }

@@ -234,7 +234,7 @@ public abstract class ArrayNodes {
                 DynamicObject array,
                 DynamicObject string,
                 @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
-            return callNode.call(frame, array, "join", null, string);
+            return callNode.call(frame, array, "join", string);
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isRubyString(object)" })
@@ -349,8 +349,8 @@ public abstract class ArrayNodes {
             }
 
             InternalMethod method = RubyArguments.getMethod(frame);
-            return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    createString(StringOperations.encodeRope(method.getName(), UTF8Encoding.INSTANCE)), args);
+            return fallbackNode.call(frame, array, "element_reference_fallback", createString(StringOperations.encodeRope(method.getName(), UTF8Encoding.INSTANCE)),
+                    args);
         }
 
     }
@@ -911,13 +911,13 @@ public abstract class ArrayNodes {
         @Specialization
         protected Object fillFallback(VirtualFrame frame, DynamicObject array, Object[] args, NotProvided block,
                 @Cached("createMethodCall()") CallDispatchHeadNode callFillInternal) {
-            return callFillInternal.call(frame, array, "fill_internal", null, args);
+            return callFillInternal.call(frame, array, "fill_internal", args);
         }
 
         @Specialization
         protected Object fillFallback(VirtualFrame frame, DynamicObject array, Object[] args, DynamicObject block,
                 @Cached("createMethodCall()") CallDispatchHeadNode callFillInternal) {
-            return callFillInternal.call(frame, array, "fill_internal", block, args);
+            return callFillInternal.callWithBlock(frame, array, "fill_internal", block, args);
         }
 
     }
@@ -947,7 +947,7 @@ public abstract class ArrayNodes {
 
             for (int n = 0; n < size; n++) {
                 final Object value = store.get(n);
-                final long valueHash = toLong(frame, toHashNode.call(frame, value, "hash", null));
+                final long valueHash = toLong(frame, toHashNode.call(frame, value, "hash"));
                 h = Helpers.murmurCombine(h, valueHash);
             }
 
@@ -1132,7 +1132,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
             }
-            return toAryNode.call(frame, object, "to_ary", null);
+            return toAryNode.call(frame, object, "to_ary");
         }
 
         protected int toInt(VirtualFrame frame, Object value) {
@@ -1262,7 +1262,7 @@ public abstract class ArrayNodes {
 
             try {
                 for (; n < getSize(array); n++) {
-                    accumulator = dispatch.call(frame, accumulator, symbol, null, store.get(n));
+                    accumulator = dispatch.call(frame, accumulator, symbol, store.get(n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1374,7 +1374,7 @@ public abstract class ArrayNodes {
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
                     maximumClosureFrame.materialize(), method, array, null);
 
-            eachNode.call(frame, array, "each", block);
+            eachNode.callWithBlock(frame, array, "each", block);
 
             if (maximum.get() == null) {
                 return nil();
@@ -1389,7 +1389,7 @@ public abstract class ArrayNodes {
                 DynamicObject array,
                 DynamicObject block,
                 @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
-            return callNode.call(frame, array, "max_internal", block);
+            return callNode.callWithBlock(frame, array, "max_internal", block);
         }
 
     }
@@ -1415,7 +1415,7 @@ public abstract class ArrayNodes {
             if (current == null) {
                 maximum.set(value);
             } else {
-                final Object compared = compareNode.call(frame, value, "<=>", null, current);
+                final Object compared = compareNode.call(frame, value, "<=>", current);
 
                 if (compared instanceof Integer) {
                     if ((int) compared > 0) {
@@ -1496,7 +1496,7 @@ public abstract class ArrayNodes {
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
                     minimumClosureFrame.materialize(), method, array, null);
 
-            eachNode.call(frame, array, "each", block);
+            eachNode.callWithBlock(frame, array, "each", block);
 
             if (minimum.get() == null) {
                 return nil();
@@ -1537,7 +1537,7 @@ public abstract class ArrayNodes {
             if (current == null) {
                 minimum.set(value);
             } else {
-                final Object compared = compareNode.call(frame, value, "<=>", null, current);
+                final Object compared = compareNode.call(frame, value, "<=>", current);
 
                 if (compared instanceof Integer) {
                     if ((int) compared < 0) {
@@ -2140,7 +2140,7 @@ public abstract class ArrayNodes {
                         if (j < size) {
                             final Object a = store.get(i);
                             final Object b = store.get(j);
-                            if (castSortValue(compareDispatchNode.call(frame, b, "<=>", null, a)) < 0) {
+                            if (castSortValue(compareDispatchNode.call(frame, b, "<=>", a)) < 0) {
                                 store.set(j, a);
                                 store.set(i, b);
                             }
@@ -2258,7 +2258,7 @@ public abstract class ArrayNodes {
 
             final Object[] others = RubyArguments.getArguments(frame);
 
-            return zipInternalCall.call(frame, array, "zip_internal", block, others);
+            return zipInternalCall.callWithBlock(frame, array, "zip_internal", block, others);
         }
 
         protected static boolean fallback(DynamicObject array, DynamicObject other, Object[] others) {

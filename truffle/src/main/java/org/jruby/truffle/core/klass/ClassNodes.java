@@ -268,8 +268,8 @@ public abstract class ClassNodes {
         }
 
         private Object doNewInstance(VirtualFrame frame, DynamicObject rubyClass, Object[] args, DynamicObject block) {
-            final Object instance = allocateNode.call(frame, rubyClass, "allocate", null);
-            initialize.call(frame, instance, "initialize", block, args);
+            final Object instance = allocateNode.call(frame, rubyClass, "allocate");
+            initialize.callWithBlock(frame, instance, "initialize", block, args);
             return instance;
         }
     }
@@ -285,7 +285,7 @@ public abstract class ClassNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
-            inheritedNode.call(frame, superClass, "inherited", null, subClass);
+            inheritedNode.call(frame, superClass, "inherited", subClass);
         }
 
         void moduleInitialize(VirtualFrame frame, DynamicObject rubyClass, DynamicObject block) {

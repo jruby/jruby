@@ -124,9 +124,9 @@ public abstract class PsychEmitterNodes {
                 @Cached("createMethodCall()") CallDispatchHeadNode canonicalCallNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode indentationCallNode) {
             final DumperOptions options = new DumperOptions();
-            options.setWidth((int) lineWidthCallNode.call(frame, optionsSet, "line_width", null));
-            options.setCanonical((boolean) canonicalCallNode.call(frame, optionsSet, "canonical", null));
-            options.setIndent((int) indentationCallNode.call(frame, optionsSet, "indentation", null));
+            options.setWidth((int) lineWidthCallNode.call(frame, optionsSet, "line_width"));
+            options.setCanonical((boolean) canonicalCallNode.call(frame, optionsSet, "canonical"));
+            options.setIndent((int) indentationCallNode.call(frame, optionsSet, "indentation"));
             Layouts.PSYCH_EMITTER.setOptions(emitter, options);
             Layouts.PSYCH_EMITTER.setIo(emitter, io);
             return nil();

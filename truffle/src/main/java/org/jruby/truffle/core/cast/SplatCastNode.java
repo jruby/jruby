@@ -73,7 +73,7 @@ public abstract class SplatCastNode extends RubyNode {
                 return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
 
             case CONVERT:
-                return toA.call(frame, nil, "to_a", null);
+                return toA.call(frame, nil, "to_a");
 
             case NIL:
                 return nil;
@@ -95,9 +95,9 @@ public abstract class SplatCastNode extends RubyNode {
     public DynamicObject splat(VirtualFrame frame, Object object,
             @Cached("create()") BranchProfile errorProfile) {
         // MRI tries to call dynamic respond_to? here.
-        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, conversionMethod, true);
+        Object respondToResult = respondToToA.call(frame, object, "respond_to?", conversionMethod, true);
         if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
-            final Object array = toA.call(frame, object, conversionMethod, null);
+            final Object array = toA.call(frame, object, conversionMethod);
 
             if (RubyGuards.isRubyArray(array)) {
                 return (DynamicObject) array;

@@ -207,7 +207,7 @@ public abstract class RequireNode extends RubyNode {
     private void addToLoadedFeatures(VirtualFrame frame, DynamicObject feature) {
         final DynamicObject loadedFeatures = coreLibrary().getLoadedFeatures();
         synchronized (getContext().getFeatureLoader().getLoadedFeaturesLock()) {
-            addToLoadedFeatures.call(frame, loadedFeatures, "<<", null, feature);
+            addToLoadedFeatures.call(frame, loadedFeatures, "<<", feature);
         }
     }
 

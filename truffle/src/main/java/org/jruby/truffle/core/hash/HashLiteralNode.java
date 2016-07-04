@@ -108,7 +108,7 @@ public abstract class HashLiteralNode extends RubyNode {
 
                 if (stringKeyProfile.profile(RubyGuards.isRubyString(key))) {
                     if (!isFrozen(key)) {
-                        key = freezeNode.call(frame, dupNode.call(frame, key, "dup", null), "freeze", null);
+                        key = freezeNode.call(frame, dupNode.call(frame, key, "dup"), "freeze");
                     }
                 }
 

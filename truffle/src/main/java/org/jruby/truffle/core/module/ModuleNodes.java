@@ -1719,7 +1719,7 @@ public abstract class ModuleNodes {
 
             if (Layouts.MODULE.getFields(module).getMethod(name) != null) {
                 Layouts.MODULE.getFields(module).removeMethod(name);
-                methodRemovedNode.call(frame, module, "method_removed", null, getSymbol(name));
+                methodRemovedNode.call(frame, module, "method_removed", getSymbol(name));
             } else {
                 errorProfile.enter();
                 throw new RaiseException(coreExceptions().nameErrorMethodNotDefinedIn(module, name, this));
@@ -1766,7 +1766,7 @@ public abstract class ModuleNodes {
             raiseIfFrozenNode.execute(frame);
 
             Layouts.MODULE.getFields(module).undefMethod(getContext(), this, name);
-            methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
+            methodUndefinedNode.call(frame, module, "method_undefined", getSymbol(name));
         }
 
     }
