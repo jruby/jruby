@@ -739,7 +739,6 @@ module Commands
       javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
       env_vars["JAVACMD"] = javacmd
       options.push *(javacmd_options.map { |o| "-T#{o}" })
-      options << '-T-J-server'
     end
 
     if args.delete('--jdebug')
