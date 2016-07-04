@@ -392,17 +392,26 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "strategy.specializesFor(value)" }, limit = "ARRAY_STRATEGIES")
         public Object setObject(VirtualFrame frame, DynamicObject array, int start, int length, Object value,
                 @Cached("forValue(value)") ArrayStrategy strategy,
-                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                                @Cached("new()") SnippetNode snippetNode) {
             checkLengthPositive(length);
 
             final int size = getSize(array);
             final int begin = ArrayOperations.normalizeIndex(size, start, negativeIndexProfile);
             checkIndex(array, start, begin);
 
-            // Passing a non-array as value is the same as assigning a single-element array
-            ArrayMirror mirror = strategy.newArray(1);
-            mirror.set(0, value);
-            DynamicObject ary = createArray(getContext(), mirror.getArray(), 1);
+            final DynamicObject ary;
+
+            final Object maybeAry = snippetNode.execute(frame, "Array.try_convert(value)", "value", value);
+            if (maybeAry != nil()) {
+                ary = (DynamicObject) maybeAry;
+            } else {
+                // Passing a non-array as value is the same as assigning a single-element array
+                ArrayMirror mirror = strategy.newArray(1);
+                mirror.set(0, value);
+                ary = createArray(getContext(), mirror.getArray(), 1);
+            }
+
             return executeSet(frame, array, start, length, ary);
         }
 
