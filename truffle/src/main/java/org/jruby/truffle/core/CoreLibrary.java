@@ -186,6 +186,8 @@ public class CoreLibrary {
     private final DynamicObjectFactory procFactory;
     private final DynamicObject processModule;
     private final DynamicObject rangeClass;
+    private final DynamicObjectFactory intRangeFactory;
+    private final DynamicObjectFactory longRangeFactory;
     private final DynamicObject rangeErrorClass;
     private final DynamicObject rationalClass;
     private final DynamicObject regexpClass;
@@ -365,9 +367,6 @@ public class CoreLibrary {
 
     private State state = State.INITIALIZING;
 
-    private final DynamicObjectFactory integerFixnumRangeFactory;
-    private final DynamicObjectFactory longFixnumRangeFactory;
-
     private static class CoreLibraryNode extends RubyNode {
 
         @Child SingletonClassNode singletonClassNode;
@@ -546,8 +545,8 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(sizedQueueClass, Layouts.SIZED_QUEUE.createSizedQueueShape(sizedQueueClass, sizedQueueClass));
         rangeClass = defineClass("Range");
         Layouts.CLASS.setInstanceFactoryUnsafe(rangeClass, Layouts.OBJECT_RANGE.createObjectRangeShape(rangeClass, rangeClass));
-        integerFixnumRangeFactory = Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRangeShape(rangeClass, rangeClass);
-        longFixnumRangeFactory = Layouts.LONG_FIXNUM_RANGE.createLongFixnumRangeShape(rangeClass, rangeClass);
+        intRangeFactory = Layouts.INT_RANGE.createIntRangeShape(rangeClass, rangeClass);
+        longRangeFactory = Layouts.LONG_RANGE.createLongRangeShape(rangeClass, rangeClass);
         regexpClass = defineClass("Regexp");
         Layouts.CLASS.setInstanceFactoryUnsafe(regexpClass, Layouts.REGEXP.createRegexpShape(regexpClass, regexpClass));
         stringClass = defineClass("String");
@@ -1423,12 +1422,12 @@ public class CoreLibrary {
         return method.getCallTarget() == basicObjectSendMethod.getCallTarget();
     }
 
-    public DynamicObjectFactory getIntegerFixnumRangeFactory() {
-        return integerFixnumRangeFactory;
+    public DynamicObjectFactory getIntRangeFactory() {
+        return intRangeFactory;
     }
 
-    public DynamicObjectFactory getLongFixnumRangeFactory() {
-        return longFixnumRangeFactory;
+    public DynamicObjectFactory getLongRangeFactory() {
+        return longRangeFactory;
     }
 
     public DynamicObject getDigestClass() {

@@ -69,20 +69,20 @@ public abstract class RubyGuards {
         return Layouts.BIG_DECIMAL.isBigDecimal(value);
     }
 
-    public static boolean isIntegerFixnumRange(Object object) {
-        return Layouts.INTEGER_FIXNUM_RANGE.isIntegerFixnumRange(object);
+    public static boolean isIntRange(Object object) {
+        return Layouts.INT_RANGE.isIntRange(object);
     }
 
-    public static boolean isIntegerFixnumRange(DynamicObject object) {
-        return Layouts.INTEGER_FIXNUM_RANGE.isIntegerFixnumRange(object);
+    public static boolean isIntRange(DynamicObject object) {
+        return Layouts.INT_RANGE.isIntRange(object);
     }
 
-    public static boolean isLongFixnumRange(Object object) {
-        return Layouts.LONG_FIXNUM_RANGE.isLongFixnumRange(object);
+    public static boolean isLongRange(Object object) {
+        return Layouts.LONG_RANGE.isLongRange(object);
     }
 
-    public static boolean isLongFixnumRange(DynamicObject object) {
-        return Layouts.LONG_FIXNUM_RANGE.isLongFixnumRange(object);
+    public static boolean isLongRange(DynamicObject object) {
+        return Layouts.LONG_RANGE.isLongRange(object);
     }
 
     public static boolean isObjectRange(Object object) {
@@ -94,7 +94,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyRange(Object value) {
-        return isIntegerFixnumRange(value) || isLongFixnumRange(value) || isObjectRange(value);
+        return isIntRange(value) || isLongRange(value) || isObjectRange(value);
     }
 
     public static boolean isRubyArray(Object value) {

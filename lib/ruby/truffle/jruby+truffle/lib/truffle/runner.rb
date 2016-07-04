@@ -33,7 +33,7 @@ end
 
 module Truffle
   class Runner
-    module Utils
+    module CmdUtils
       def execute_cmd(cmd, dir: nil, raise: true, print: false)
         result      = nil
         system_call = proc do
@@ -79,7 +79,9 @@ module Truffle
         log '$ ' + [*formatted_env, *formatted_cmd].compact.join(' ') + (dir ? " (in #{dir})" : '')
         return cmd
       end
+    end
 
+    module ConfigUtils
       def dig(data, *keys)
         return data if keys.empty?
 
@@ -160,14 +162,21 @@ module Truffle
         b
       end
 
+      def dedent(string)
+        indent = string.lines[0] =~ /[^ ]/
+        string.lines.map { |l| l[indent..-1] }.join
+      end
+    end
+
+    module Logging
       def log(message)
         puts 'jtr: ' + message
       end
-
-      extend self
     end
 
-    include Utils
+    include ConfigUtils
+    include CmdUtils
+    include Logging
 
     attr_reader :options
 
@@ -343,6 +352,7 @@ module Truffle
       HELP = { global: global_help, setup: setup_help, run: run_help, clean: clean_help, ci: ci_help }
     end
 
+    attr_reader :options, :config
 
     def initialize(argv, options = {})
       @options        = deep_merge construct_default_options, options
@@ -351,12 +361,11 @@ module Truffle
       @subcommand, *argv_after_global = @option_parsers[:global].order argv
       @called_from_dir                = Dir.pwd
       @options[:global][:dir]         = File.expand_path(@options[:global][:dir] || @called_from_dir)
-      @config                         = Config.new
 
       Dir.chdir @options[:global][:dir] do
         log "pwd is #{Dir.pwd}" if verbose?
 
-        @config.load @options[:global][:configuration_file].to_s
+        require @options[:global][:configuration_file].to_s
 
         @gem_name = if @options[:global][:configuration]
                       @options[:global][:configuration].to_sym
@@ -435,10 +444,10 @@ module Truffle
 
     def load_gem_configuration
       if @gem_name
-        if (c = @config.for(@gem_name))
-          apply_hash_to_configuration c
+        if (hash = Runner.config_for(@gem_name))
+          apply_hash_to_configuration hash
           log "loading configuration for #{@gem_name}"
-          log "configuration is:\n#{c.pretty_inspect}" if verbose?
+          log "configuration is:\n#{hash.pretty_inspect}" if verbose?
         end
       end
     end
@@ -457,7 +466,6 @@ module Truffle
     end
 
     def apply_hash_to_configuration(yaml_data)
-      # pp '--------', @options, yaml_data, deep_merge(@options, yaml_data)
       @options = deep_merge! @options, yaml_data
     end
 
@@ -690,13 +698,13 @@ module Truffle
           rest          = option_parser.order line.split
 
           gem_name = rest.first
-          CIEnvironment.new(@options[:global][:dir], gem_name, @options, rest[1..-1]).success?
+          CIEnvironment.new(@options[:global][:dir], gem_name, self, rest[1..-1]).success?
         end
 
         results.all?
       else
         gem_name = rest.first
-        ci       = CIEnvironment.new @options[:global][:dir], gem_name, @options, rest[1..-1], definition: options[:ci][:definition]
+        ci       = CIEnvironment.new @options[:global][:dir], gem_name, self, rest[1..-1], definition: options[:ci][:definition]
 
         case ci.result
         when nil # error, setup failed
@@ -715,41 +723,29 @@ module Truffle
       super cmd, dir: dir, raise: raise, print: verbose? || print_always
     end
 
-    class Config
-      def initialize
-        @configurations = {}
-      end
+    CONFIGURATIONS = {}
+    CI_DEFINITIONS = {}
 
-      def load(path)
-        content = File.read path
-        eval content, binding, path, 1
-      end
+    def self.add_config(gem_name, configuration)
+      CONFIGURATIONS[gem_name] = configuration
+    end
 
-      def dedent(string)
-        indent = string.lines[0] =~ /[^ ]/
-        string.lines.map { |l| l[indent..-1] }.join
-      end
+    def self.config_for(gem_name)
+      CONFIGURATIONS[gem_name]
+    end
 
-      def config(gem_name, configuration)
-        @configurations[gem_name] = configuration
-      end
+    def self.add_ci_definition(gem_name, &definition)
+      CI_DEFINITIONS[gem_name] = definition
+    end
 
-      def deep_merge(a, b, *rest)
-        Utils.deep_merge a, b, *rest
-      end
-
-      def deep_merge!(a, b, *rest)
-        Utils.deep_merge! a, b, *rest
-      end
-
-      def for(gem_name)
-        @configurations[gem_name]
-      end
+    def self.ci_for(gem_name)
+      CI_DEFINITIONS[gem_name]
     end
 
     class CIEnvironment
-      include Utils
+      include CmdUtils
       include OptionBlocks
+      include Logging
 
       def self.define_dsl_attr(*names, &conversion)
         nothing = Object.new
@@ -772,11 +768,11 @@ module Truffle
       define_dsl_attr(:working_dir) { |v| Pathname(v) }
       attr_reader :gem_name, :result
 
-      def initialize(working_dir, gem_name, runner_options, rest, definition: nil)
-        @runner_options = runner_options
-        @options        = {}
-        @gem_name       = gem_name
-        @rest           = rest
+      def initialize(working_dir, gem_name, runner, rest, definition: nil)
+        @runner   = runner
+        @options  = {}
+        @gem_name = gem_name
+        @rest     = rest
 
         @working_dir     = Pathname(working_dir)
         @repository_name = gem_name
@@ -791,18 +787,17 @@ module Truffle
 
         (definition && do_definition(definition)) ||
             do_definition(gem_name) ||
-            do_definition('default') ||
             raise("no ci definition with name: #{gem_name}")
       end
 
-      def do_definition(name, raise: true)
-        ci_file = Dir.glob(ROOT.join('gem_ci', "{#{name}}.rb")).first
-        return false if ci_file.nil?
+      def do_definition(name)
+        definition = Runner.ci_for name.to_sym
+        return false unless definition
 
-        log "Using CI definition: #{ci_file}"
+        log "Using CI definition: #{name}"
         catch :cancel_ci! do
           begin
-            instance_eval File.read(ci_file), ci_file, 1
+            instance_eval &definition
           rescue => e
             log format('%s: %s\n%s', e.class, e.message, e.backtrace.join("\n"))
           end
@@ -871,7 +866,7 @@ module Truffle
       def setup(*options)
         Dir.chdir(testing_dir) do
           Runner.new(['setup', *options].compact,
-                     dig_deep(@runner_options, global: :verbose, ci: [:offline, :offline_gem_path]).
+                     dig_deep(@runner.options, global: :verbose, ci: [:offline, :offline_gem_path]).
                          tap { |h| h.update setup: h.delete(:ci) }).run
         end
       end
@@ -884,11 +879,11 @@ module Truffle
         result or cancel_ci!
       end
 
-      def run(options, raise: true)
+      def run(options)
         raise ArgumentError unless options.is_a? Array
         Dir.chdir(testing_dir) do
           Runner.new(['run', *options].compact,
-                     dig_deep(@runner_options, global: :verbose)).run
+                     dig_deep(@runner.options, global: :verbose)).run
         end
       end
 

@@ -47,6 +47,7 @@ import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
 import org.jruby.truffle.core.cast.ToAryNodeGen;
 import org.jruby.truffle.core.cast.ToIntNode;
 import org.jruby.truffle.core.cast.ToIntNodeGen;
+import org.jruby.truffle.core.cast.ToIntRangeNode;
 import org.jruby.truffle.core.format.BytesResult;
 import org.jruby.truffle.core.format.FormatExceptionTranslator;
 import org.jruby.truffle.core.format.exceptions.FormatException;
@@ -87,10 +88,8 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.util.Memo;
-
 import java.util.Arrays;
 import java.util.Comparator;
-
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
@@ -300,18 +299,18 @@ public abstract class ArrayNodes {
             return readSliceNode.executeReadSlice(array, start, length);
         }
 
-        @Specialization(guards = "isIntegerFixnumRange(range)")
+        @Specialization(guards = "isIntRange(range)")
         public DynamicObject slice(VirtualFrame frame, DynamicObject array, DynamicObject range, NotProvided len,
                 @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
                 @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile) {
             final int size = getSize(array);
-            final int normalizedIndex = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(size, Layouts.INT_RANGE.getBegin(range), negativeBeginProfile);
 
             if (normalizedIndex < 0 || normalizedIndex > size) {
                 return nil();
             } else {
-                final int end = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
-                final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end : end + 1);
+                final int end = ArrayOperations.normalizeIndex(size, Layouts.INT_RANGE.getEnd(range), negativeEndProfile);
+                final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(size, Layouts.INT_RANGE.getExcludedEnd(range) ? end : end + 1);
 
                 if (exclusiveEnd <= normalizedIndex) {
                     return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
@@ -328,13 +327,13 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = { "!isInteger(a)", "!isIntegerFixnumRange(a)" })
+        @Specialization(guards = { "!isInteger(a)", "!isIntRange(a)" })
         public Object fallbackIndex(VirtualFrame frame, DynamicObject array, Object a, NotProvided length) {
             Object[] objects = new Object[] { a };
             return fallback(frame, array, createArray(getContext(), objects, objects.length));
         }
 
-        @Specialization(guards = { "!isIntegerFixnumRange(a)", "wasProvided(b)" })
+        @Specialization(guards = { "!isIntRange(a)", "wasProvided(b)" })
         public Object fallbackSlice(VirtualFrame frame, DynamicObject array, Object a, Object b) {
             Object[] objects = new Object[] { a, b };
             return fallback(frame, array, createArray(getContext(), objects, objects.length));
@@ -378,7 +377,7 @@ public abstract class ArrayNodes {
 
         // array[index] = object with non-int index
 
-        @Specialization(guards = { "!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)" })
+        @Specialization(guards = { "!isInteger(indexObject)", "!isRubyRange(indexObject)" })
         public Object set(VirtualFrame frame, DynamicObject array, Object indexObject, Object value, NotProvided unused) {
             final int index = toInt(frame, indexObject);
             return executeSet(frame, array, index, value, unused);
@@ -486,25 +485,33 @@ public abstract class ArrayNodes {
 
         // array[start..end] = object_or_array
 
-        @Specialization(guards = "isIntegerFixnumRange(range)")
+        @Specialization(guards = "isIntRange(range)")
         public Object setRange(VirtualFrame frame, DynamicObject array, DynamicObject range, Object value, NotProvided unused,
                 @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
                 @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile,
                 @Cached("create()") BranchProfile errorProfile) {
             final int size = getSize(array);
-            final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
+            final int begin = Layouts.INT_RANGE.getBegin(range);
             final int start = ArrayOperations.normalizeIndex(size, begin, negativeBeginProfile);
             if (start < 0) {
                 errorProfile.enter();
                 throw new RaiseException(coreExceptions().rangeError(range, this));
             }
-            final int end = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
-            int inclusiveEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end - 1 : end;
+            final int end = ArrayOperations.normalizeIndex(size, Layouts.INT_RANGE.getEnd(range), negativeEndProfile);
+            int inclusiveEnd = Layouts.INT_RANGE.getExcludedEnd(range) ? end - 1 : end;
             if (inclusiveEnd < 0) {
                 inclusiveEnd = -1;
             }
             final int length = inclusiveEnd - start + 1;
-            return executeSet(frame, array, start, length, value);
+            final int normalizeLength = length > -1 ? length : 0;
+            return executeSet(frame, array, start, normalizeLength, value);
+        }
+
+        @Specialization(guards = { "!isIntRange(range)", "isRubyRange(range)" })
+        public Object setOtherRange(VirtualFrame frame, DynamicObject array, DynamicObject range, Object value, NotProvided unused,
+                @Cached("create()") ToIntRangeNode toIntRangeNode) {
+            DynamicObject intRange = toIntRangeNode.executeToIntRange(frame, range);
+            return executeSet(frame, array, intRange, value, unused);
         }
 
         // Helpers

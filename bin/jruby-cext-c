@@ -18,36 +18,45 @@ unless SULONG_DIR
   abort 'You need to set SULONG_DIR to the location of a built checkout of the Sulong repository'
 end
 
-def mx(command, *args)
-  command = "mx -p #{SULONG_DIR} #{command} #{args.join(' ')}"
-  puts "$ #{command}"
-  `#{command}`
+def mx(*args)
+  command = ['mx', '-p', SULONG_DIR]
+  command.push *['--java-home', ENV['JVMCI_JAVA_HOME']] if ENV['JVMCI_JAVA_HOME']
+  command.push *args
+  puts "$ #{command.join(' ')}"
+  abort unless system(*command)
 end
 
-CEXT_DIR = ARGV[0]
+cext_dir = ARGV[0]
 
-unless CEXT_DIR
+unless cext_dir
   abort 'You need to pass the directory of a C extension so I can build it'
 end
 
-CONFIG_FILE = File.join(CEXT_DIR, '.jruby-cext-build.yml')
+config_file = File.join(cext_dir, '.jruby-cext-build.yml')
 
-unless File.exist?(CONFIG_FILE)
+unless File.exist?(config_file)
   abort "There is no .jruby-cext-build.yml in this C extension at the moment - I don't know how to build it"
 end
 
-CONFIG = YAML.load_file(CONFIG_FILE)
+config = YAML.load_file(config_file)
 
-SRC = Dir[File.join(CEXT_DIR, CONFIG['src'])]
-OUT = File.expand_path(CONFIG['out'], CEXT_DIR)
+config_src = config['src']
 
-LL = []
-
-SRC.each do |src|
-  ll = File.join(File.dirname(OUT), File.basename(src, '.*') + '.ll')
-  mx 'su-clang', "-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', src, '-o', ll
-  mx 'su-opt', '-S', '-mem2reg', ll, '-o', ll
-  LL.push ll
+if config_src.start_with?('$GEM_HOME/')
+  src = Dir[ENV['GEM_HOME'] + config_src['$GEM_HOME'.size..-1]]
+else
+  src = Dir[File.join(cext_dir, config_src)]
 end
 
-mx 'su-link', '-o', OUT, *LL
+out = File.expand_path(config['out'], cext_dir)
+
+lls = []
+
+src.each do |src|
+  ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
+  mx 'su-clang', "-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *ARGV.drop(1), src, '-o', ll
+  mx 'su-opt', '-S', '-mem2reg', ll, '-o', ll
+  lls.push ll
+end
+
+mx 'su-link', '-o', out, *lls

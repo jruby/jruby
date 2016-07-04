@@ -5,3 +5,6 @@ fails:C-API when calling Proc.new from a C function returns the Proc passed to t
 fails:C-API when calling Proc.new from a C function raises an ArgumentError when the C function calls a Ruby method and that method calls a C function that calls Proc.new
 fails:C-API when calling Proc.new from a C function returns the most recent Proc passed when the Ruby method called the C function
 fails:C-API when calling Proc.new from a C function returns the Proc passed from the original Ruby call to the C function
+fails:C-API Proc function rb_proc_new calls the C function wrapped by the Proc instance when sent #call
+fails:C-API Proc function rb_proc_new calls the C function wrapped by the Proc instance when sent #[]
+fails:C-API when calling Proc.new from a C function returns false from block_given? in a Ruby method called by the C function

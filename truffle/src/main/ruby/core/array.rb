@@ -367,6 +367,8 @@ class Array
       if two and !undefined.equal?(two)
         begin
           right = Rubinius::Type.coerce_to_collection_length two
+        rescue ArgumentError
+          raise RangeError, "bignum too big to convert into `long"
         rescue TypeError
           raise ArgumentError, "second argument must be a Fixnum"
         end
@@ -381,8 +383,8 @@ class Array
       right = size
     end
 
-    if right.is_a?(Bignum)
-      raise RangeError, "bignum too big to convert into `long'"
+    if left >= Fixnum::MAX || right > Fixnum::MAX
+      raise ArgumentError, "argument too big"
     end
 
     i = left
@@ -717,9 +719,8 @@ class Array
     outer_lambda.call([])
 
     if block_given?
-      block_result = self
-      result.each { |v| block_result << yield(v) }
-      block_result
+      result.each { |v| yield(v) }
+      self
     else
       result
     end
