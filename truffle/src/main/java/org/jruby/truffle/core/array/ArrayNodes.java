@@ -96,6 +96,7 @@ import java.util.Comparator;
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
+import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
 @CoreClass("Array")
@@ -479,9 +480,9 @@ public abstract class ArrayNodes {
 
             // Set size
             if (needsTail) {
-                Layouts.ARRAY.setSize(array, endOfReplacementInArray + tailSize);
+                setSize(array, endOfReplacementInArray + tailSize);
             } else {
-                Layouts.ARRAY.setSize(array, endOfReplacementInArray);
+                setSize(array, endOfReplacementInArray);
             }
 
             return replacement;
@@ -1752,7 +1753,7 @@ public abstract class ArrayNodes {
             // Null out the popped values from the store
             final ArrayMirror filler = strategy.newArray(numPop);
             filler.copyTo(store, 0, size - numPop, numPop);
-            Layouts.ARRAY.setSize(array, size - numPop);
+            setSize(array, size - numPop);
 
             return createArray(getContext(), popped.getArray(), numPop);
         }
@@ -1914,7 +1915,7 @@ public abstract class ArrayNodes {
                 // Null out the elements behind the size
                 final ArrayMirror filler = strategy.newArray(n - i);
                 filler.copyTo(store, 0, i, n - i);
-                Layouts.ARRAY.setSize(array, i);
+                setSize(array, i);
 
                 if (CompilerDirectives.inInterpreter()) {
                     LoopNode.reportLoopCount(this, n);
@@ -2030,7 +2031,7 @@ public abstract class ArrayNodes {
             // Null out the element behind the size
             final ArrayMirror filler = strategy.newArray(1);
             filler.copyTo(store, 0, size - 1, 1);
-            Layouts.ARRAY.setSize(array, size - 1);
+            setSize(array, size - 1);
 
             return value;
         }
@@ -2069,7 +2070,7 @@ public abstract class ArrayNodes {
             // Null out the element behind the size
             final ArrayMirror filler = strategy.newArray(numShift);
             filler.copyTo(store, 0, size - numShift, numShift);
-            Layouts.ARRAY.setSize(array, size - numShift);
+            setSize(array, size - numShift);
 
             return createArray(getContext(), result.getArray(), numShift);
         }

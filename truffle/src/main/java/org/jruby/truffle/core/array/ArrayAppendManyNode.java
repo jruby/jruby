@@ -17,11 +17,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
+import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
 @NodeChildren({
@@ -81,7 +81,7 @@ public abstract class ArrayAppendManyNode extends RubyNode {
             setStoreAndSize(array, newStoreMirror.getArray(), newSize);
         } else {
             otherStoreMirror.copyTo(storeMirror, 0, oldSize, otherSize);
-            Layouts.ARRAY.setSize(array, newSize);
+            setSize(array, newSize);
         }
         return array;
     }
