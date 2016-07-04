@@ -918,7 +918,6 @@ public abstract class ArrayNodes {
     public abstract static class HashNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
-        @Child private CallDispatchHeadNode toHashNode;
 
         @Specialization(guards = "isNullArray(array)")
         public long hashNull(DynamicObject array) {
@@ -932,7 +931,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public long hash(VirtualFrame frame, DynamicObject array,
                          @Cached("of(array)") ArrayStrategy strategy,
-                         @Cached("new()") SnippetNode snippetNode) {
+                         @Cached("createMethodCall()") CallDispatchHeadNode toHashNode) {
 
             final int arraySize = getSize(array);
             // TODO BJF Jul 4, 2016 Seed could be chosen in advance to avoid branching
@@ -944,7 +943,7 @@ public abstract class ArrayNodes {
 
             for (; n < arraySize; n++) {
                 final Object value = store.get(n);
-                final long valueHash = toLong(frame, callToHash(frame, value));
+                final long valueHash = toLong(frame, toHashNode.call(frame, value, "hash", null));
                 h = Helpers.murmurCombine(h, valueHash);
             }
 
@@ -965,13 +964,6 @@ public abstract class ArrayNodes {
             }
         }
 
-        protected Object callToHash(VirtualFrame frame, Object object) {
-            if (toHashNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-            return toHashNode.call(frame, object, "hash", null);
-        }
     }
 
     @CoreMethod(names = "include?", required = 1)
