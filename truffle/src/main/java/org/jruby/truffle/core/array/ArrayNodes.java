@@ -464,6 +464,15 @@ public abstract class ArrayNodes {
                 for (int i = 0; i < tailSize; i++) {
                     write(array, endOfReplacementInArray + i, read(tailCopy, i));
                 }
+            } else {
+                // If no tail, array will grow, and the replacement is empty,
+                // we need to append nils from index arraySize to index (start - 1).
+                // E.g. a = [1,2,3]; a[5,1] = []; a == [1,2,3,nil,nil]
+                if(replacementSize == 0 && arraySize < start){
+                    for(int i = arraySize; i < start; i++){
+                        write(array, i, nil());
+                    }
+                }
             }
 
             // Set size
