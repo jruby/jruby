@@ -738,7 +738,7 @@ module Commands
     if args.delete('--graal')
       javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
       env_vars["JAVACMD"] = javacmd
-      options.push *(javacmd_options.map { |o| "-T#{o}" })
+      options.concat javacmd_options.map { |o| "-T#{o}" }
     end
 
     if args.delete('--jdebug')
@@ -764,7 +764,7 @@ module Commands
 
   def test_tck(*args)
     env = {'JRUBY_BUILD_MORE_QUIET' => 'true'}
-    mvn env, *args + ['-Ptck']
+    mvn env, *args, '-Ptck'
   end
   private :test_tck
 
