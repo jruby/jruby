@@ -111,7 +111,7 @@ public class DefineClassNode extends RubyNode {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
         }
-        inheritedNode.call(frame, superClass, "inherited", null, childClass);
+        inheritedNode.call(frame, superClass, "inherited", childClass);
     }
 
     private RubyConstant lookupForExistingModule(VirtualFrame frame, String name, DynamicObject lexicalParent) {

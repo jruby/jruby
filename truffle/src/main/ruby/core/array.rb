@@ -1434,10 +1434,8 @@ class Array
     return self unless size > 1
 
     i = 0
-    while i < self.length / 2
-      temp = self[i]
-      self[i] = self[self.length - i - 1]
-      self[self.length - i - 1] = temp
+    while i < size / 2
+      swap i, size-i-1
       i += 1
     end
 
@@ -1487,7 +1485,7 @@ class Array
 
         # Check for shift style.
         if start == 0
-          put 0, nil
+          self[0] = nil
           self.shift
         else
           delete_range(start, 1)
@@ -1520,7 +1518,7 @@ class Array
     reg_length = size - reg_start
     if reg_start <= size
       # copy tail
-      copy_from self, reg_start, reg_length, index
+      self[index, reg_length] = self[reg_start, reg_length]
 
       self.pop(del_length)
     end
@@ -1584,4 +1582,11 @@ class Array
     Truffle::Array.steal_storage(self, sort(&block))
   end
   public :sort!
+
+  def swap(a, b)
+    temp = at(a)
+    self[a] = at(b)
+    self[b] = temp
+  end
+  protected :swap
 end

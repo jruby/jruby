@@ -63,7 +63,7 @@ abstract class ForeignReadStringCachedHelperNode extends RubyNode {
             Object name,
             Object stringName,
             boolean isIVar) {
-        return getCallNode().call(frame, receiver, stringName, null);
+        return getCallNode().call(frame, receiver, stringName);
     }
 
     @Specialization(guards = {
@@ -77,7 +77,7 @@ abstract class ForeignReadStringCachedHelperNode extends RubyNode {
             Object name,
             Object stringName,
             boolean isIVar) {
-        return getCallNode().call(frame, receiver, "[]", null, name);
+        return getCallNode().call(frame, receiver, "[]", name);
     }
 
     protected DoesRespondDispatchHeadNode getDefinedNode() {

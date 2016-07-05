@@ -150,7 +150,7 @@ public abstract class RegexpNodes {
         final DynamicObject global = createSubstring(makeSubstringNode, source, region.beg[0], region.end[0] - region.beg[0]);
 
         final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getMatchDataClass()),
-                source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd(), null, null);
+                source, regexp, region, values, pre, post, global, null);
 
         if (operator) {
             if (values.length > 0) {
@@ -426,7 +426,7 @@ public abstract class RegexpNodes {
                 toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return match(regexp, (DynamicObject) toSNode.call(frame, symbol, "to_s", null));
+            return match(regexp, (DynamicObject) toSNode.call(frame, symbol, "to_s"));
         }
 
         @Specialization(guards = "isNil(nil)")
@@ -563,7 +563,7 @@ public abstract class RegexpNodes {
                 lookupTableWriteNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object namesLookupTable = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
+            final Object namesLookupTable = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
 
             for (final Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
@@ -572,7 +572,7 @@ public abstract class RegexpNodes {
                 final int[] backrefs = e.getBackRefs();
                 final DynamicObject backrefsRubyArray = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), backrefs, backrefs.length);
 
-                lookupTableWriteNode.call(frame, namesLookupTable, "[]=", null, name, backrefsRubyArray);
+                lookupTableWriteNode.call(frame, namesLookupTable, "[]=", name, backrefsRubyArray);
             }
 
             setCachedNames(regexp, namesLookupTable);

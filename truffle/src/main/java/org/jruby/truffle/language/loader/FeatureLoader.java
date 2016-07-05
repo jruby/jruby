@@ -70,10 +70,20 @@ public class FeatureLoader {
     }
 
     private String findFeatureWithAndWithoutExtension(String path) {
-        final String asCExt = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
+        if (path.endsWith(".so")) {
+            final String base = path.substring(0, path.length() - 3);
 
-        if (asCExt != null) {
-            return asCExt;
+            final String asSO = findFeatureWithExactPath(base + RubyLanguage.CEXT_EXTENSION);
+
+            if (asSO != null) {
+                return asSO;
+            }
+        }
+
+        final String asSU = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
+
+        if (asSU != null) {
+            return asSU;
         }
 
         final String withExtension = findFeatureWithExactPath(path + RubyLanguage.EXTENSION);

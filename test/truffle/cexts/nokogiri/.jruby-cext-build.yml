@@ -1,0 +1,3 @@
+src: $GEM_HOME/gems/nokogiri-1.6.8/ext/nokogiri/*.c
+cflags: -I$GEM_HOME/gems/nokogiri-1.6.8/ext/nokogiri `xml2-config --cflags`
+out: lib/nokogiri/nokogiri.su

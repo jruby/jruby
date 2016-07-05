@@ -96,7 +96,7 @@ public abstract class IntegerNodes {
                 downtoInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return downtoInternalCall.call(frame, from, "downto_internal", block, to);
+            return downtoInternalCall.callWithBlock(frame, from, "downto_internal", block, to);
         }
 
     }
@@ -251,7 +251,7 @@ public abstract class IntegerNodes {
                 uptoInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return uptoInternalCall.call(frame, from, "upto_internal", block, to);
+            return uptoInternalCall.callWithBlock(frame, from, "upto_internal", block, to);
         }
 
     }

@@ -397,7 +397,7 @@ public abstract class StringNodes {
                     cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
                 }
 
-                final Object cmpResult = cmpNode.call(frame, b, "<=>", null, a);
+                final Object cmpResult = cmpNode.call(frame, b, "<=>", a);
 
                 if (cmpResult == nil()) {
                     return nil();
@@ -457,7 +457,7 @@ public abstract class StringNodes {
                 DynamicObject string,
                 Object other,
                 @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
-            return callNode.call(frame, string, "concat_internal", null, other);
+            return callNode.call(frame, string, "concat_internal", other);
         }
 
     }
@@ -597,7 +597,7 @@ public abstract class StringNodes {
                     dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
                 }
 
-                throw new TaintResultNode.DoNotTaint(dupNode.call(frame, matchStr, "dup", null));
+                throw new TaintResultNode.DoNotTaint(dupNode.call(frame, matchStr, "dup"));
             }
 
             return nil();
@@ -1367,7 +1367,7 @@ public abstract class StringNodes {
                 appendNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            appendNode.call(frame, string, "append", null, other);
+            appendNode.call(frame, string, "append", other);
 
             return taintResultNode.maybeTaint(other, string);
         }
@@ -1986,11 +1986,11 @@ public abstract class StringNodes {
             if (bits >= 8 * 8) { // long size * bits in byte
                 Object sum = 0;
                 while (p < end) {
-                    sum = addNode.call(frame, sum, "+", null, bytes[p++] & 0xff);
+                    sum = addNode.call(frame, sum, "+", bytes[p++] & 0xff);
                 }
                 if (bits != 0) {
-                    final Object mod = shiftNode.call(frame, 1, "<<", null, bits);
-                    sum = andNode.call(frame, sum, "&", null, subNode.call(frame, mod, "-", null, 1));
+                    final Object mod = shiftNode.call(frame, 1, "<<", bits);
+                    sum = andNode.call(frame, sum, "&", subNode.call(frame, mod, "-", 1));
                 }
                 return sum;
             } else {
@@ -2337,8 +2337,8 @@ public abstract class StringNodes {
 
         @Specialization
         public Object upcase(VirtualFrame frame, DynamicObject string) {
-            final Object duped = dupNode.call(frame, string, "dup", null);
-            upcaseBangNode.call(frame, duped, "upcase!", null);
+            final Object duped = dupNode.call(frame, string, "dup");
+            upcaseBangNode.call(frame, duped, "upcase!");
 
             return duped;
         }

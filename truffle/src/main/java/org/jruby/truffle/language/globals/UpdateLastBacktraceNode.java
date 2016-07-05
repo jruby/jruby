@@ -44,7 +44,7 @@ public class UpdateLastBacktraceNode extends RubyNode {
 
         final Object newBacktrace = child.execute(frame);
 
-        getSetBacktraceNode().call(frame, lastException, "set_backtrace", null, newBacktrace);
+        getSetBacktraceNode().call(frame, lastException, "set_backtrace", newBacktrace);
 
         return newBacktrace;
     }

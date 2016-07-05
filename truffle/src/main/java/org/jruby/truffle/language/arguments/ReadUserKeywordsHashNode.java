@@ -56,7 +56,7 @@ public class ReadUserKeywordsHashNode extends RubyNode {
                 callToHashNode = insert(CallDispatchHeadNode.createMethodCall());
             }
 
-            final Object converted = callToHashNode.call(frame, lastArgument, "to_hash", null);
+            final Object converted = callToHashNode.call(frame, lastArgument, "to_hash");
 
             if (RubyGuards.isRubyHash(converted)) {
                 RubyArguments.setArgument(frame, argumentCount - 1, converted);

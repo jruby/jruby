@@ -81,7 +81,7 @@ public abstract class NameToJavaStringNode extends RubyNode {
             @Cached("createMethodCall()") CallDispatchHeadNode toStr) {
         final Object coerced;
         try {
-            coerced = toStr.call(frame, object, "to_str", null);
+            coerced = toStr.call(frame, object, "to_str");
         } catch (RaiseException e) {
             errorProfile.enter();
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {

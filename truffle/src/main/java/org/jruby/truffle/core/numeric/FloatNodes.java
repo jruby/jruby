@@ -171,9 +171,9 @@ public abstract class FloatNodes {
                     complexPowNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
                 }
 
-                final Object aComplex = complexConvertNode.call(frame, coreLibrary().getComplexClass(), "convert", null, a, 0);
+                final Object aComplex = complexConvertNode.call(frame, coreLibrary().getComplexClass(), "convert", a, 0);
 
-                return complexPowNode.call(frame, aComplex, "**", null, b);
+                return complexPowNode.call(frame, aComplex, "**", b);
             } else {
                 return Math.pow(a, b);
             }
@@ -226,7 +226,7 @@ public abstract class FloatNodes {
                 redoCoercedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
-            return redoCoercedNode.call(frame, a, "redo_coerced", null, getSymbol("/"), b);
+            return redoCoercedNode.call(frame, a, "redo_coerced", getSymbol("/"), b);
         }
 
     }
@@ -420,7 +420,7 @@ public abstract class FloatNodes {
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
-            return fallbackCallNode.call(frame, a, "equal_fallback", null, b);
+            return fallbackCallNode.call(frame, a, "equal_fallback", b);
         }
     }
 
@@ -698,7 +698,7 @@ public abstract class FloatNodes {
                 double n,
                 Object ndigits,
                 @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
-            return callNode.call(frame, n, "round_internal", null, ndigits);
+            return callNode.call(frame, n, "round_internal", ndigits);
         }
 
     }

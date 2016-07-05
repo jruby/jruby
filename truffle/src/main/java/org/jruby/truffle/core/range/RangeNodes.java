@@ -152,7 +152,7 @@ public abstract class RangeNodes {
                 eachInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return eachInternalCall.call(frame, range, "each_internal", block);
+            return eachInternalCall.callWithBlock(frame, range, "each_internal", block);
         }
 
         @Specialization(guards = "isLongRange(range)")
@@ -341,7 +341,7 @@ public abstract class RangeNodes {
                 stepInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return stepInternalCall.call(frame, range, "step_internal", block, step);
+            return stepInternalCall.callWithBlock(frame, range, "step_internal", block, step);
         }
 
         @Specialization(guards = { "isIntRange(range)", "wasProvided(step)" })
@@ -447,7 +447,7 @@ public abstract class RangeNodes {
                 toAInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return toAInternalCall.call(frame, range, "to_a_internal", null);
+            return toAInternalCall.call(frame, range, "to_a_internal");
         }
 
     }
@@ -570,7 +570,7 @@ public abstract class RangeNodes {
 
             final Object cmpResult;
             try {
-                cmpResult = cmpNode.call(frame, begin, "<=>", null, end);
+                cmpResult = cmpNode.call(frame, begin, "<=>", end);
             } catch (RaiseException e) {
                 throw new RaiseException(coreExceptions().argumentError("bad value for range", this));
             }

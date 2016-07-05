@@ -1,0 +1,2 @@
+src: ./*.c
+out: ../../../../../lib/ruby/truffle/openssl/openssl.su

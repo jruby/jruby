@@ -37,7 +37,6 @@ public class SymbolEquality {
 
     void setSymbol(DynamicObject symbol) {
         assert RubyGuards.isRubySymbol(symbol);
-        assert symbol != null;
         this.symbol = symbol;
     }
 }

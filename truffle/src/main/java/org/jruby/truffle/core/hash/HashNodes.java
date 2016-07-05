@@ -200,7 +200,7 @@ public abstract class HashNodes {
             if (undefinedValue != null) {
                 return undefinedValue;
             } else {
-                return callDefaultNode.call(frame, hash, "default", null, key);
+                return callDefaultNode.call(frame, hash, "default", key);
             }
         }
 
@@ -311,7 +311,7 @@ public abstract class HashNodes {
             }
 
             useDefaultProfile.enter();
-            return callDefaultNode.call(frame, hash, "default", null, key);
+            return callDefaultNode.call(frame, hash, "default", key);
 
         }
 
@@ -339,7 +339,7 @@ public abstract class HashNodes {
             }
 
             useDefaultProfile.enter();
-            return callDefaultNode.call(frame, hash, "default", null, key);
+            return callDefaultNode.call(frame, hash, "default", key);
 
         }
 
@@ -360,7 +360,7 @@ public abstract class HashNodes {
             }
 
             useDefaultProfile.enter();
-            return callDefaultNode.call(frame, hash, "default", null, key);
+            return callDefaultNode.call(frame, hash, "default", key);
         }
         
         public void setUndefinedValue(Object undefinedValue) {
@@ -644,7 +644,7 @@ public abstract class HashNodes {
             }
 
             InternalMethod method = RubyArguments.getMethod(frame);
-            return toEnumNode.call(frame, hash, "to_enum", null, getSymbol(method.getName()));
+            return toEnumNode.call(frame, hash, "to_enum", getSymbol(method.getName()));
         }
 
         private Object yieldPair(VirtualFrame frame, DynamicObject block, Object key, Object value) {
@@ -1197,7 +1197,7 @@ public abstract class HashNodes {
                 block = (DynamicObject) maybeBlock;
             }
 
-            return fallbackCallNode.call(frame, hash, "merge_fallback", block, other);
+            return fallbackCallNode.callWithBlock(frame, hash, "merge_fallback", block, other);
         }
 
     }

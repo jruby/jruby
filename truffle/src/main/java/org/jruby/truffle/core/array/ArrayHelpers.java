@@ -13,6 +13,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 
+import java.lang.reflect.Array;
+
 public abstract class ArrayHelpers {
 
     public static Object getStore(DynamicObject array) {
@@ -26,6 +28,21 @@ public abstract class ArrayHelpers {
     public static void setStoreAndSize(DynamicObject array, Object store, int size) {
         assert !(store instanceof ArrayMirror);
         Layouts.ARRAY.setStore(array, store);
+        setSize(array, size);
+    }
+
+    /**
+     * Sets the size of the given array
+     *
+     * Asserts that the size is valid for the current store of the array.
+     * If setting both size and store, use setStoreAndSize or be sure to setStore before
+     * setSize as this assertion may fail.
+     * @param array
+     * @param size
+     */
+    public static void setSize(DynamicObject array, int size) {
+        assert getStore(array) != null || size == 0;
+        assert getStore(array) == null || Array.getLength(getStore(array)) >= size;
         Layouts.ARRAY.setSize(array, size);
     }
 

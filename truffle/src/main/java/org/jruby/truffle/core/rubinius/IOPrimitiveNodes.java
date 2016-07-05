@@ -124,7 +124,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public DynamicObject allocate(VirtualFrame frame, DynamicObject classToAllocate) {
-            final DynamicObject buffer = (DynamicObject) newBufferNode.call(frame, coreLibrary().getInternalBufferClass(), "new", null);
+            final DynamicObject buffer = (DynamicObject) newBufferNode.call(frame, coreLibrary().getInternalBufferClass(), "new");
             return allocateNode.allocate(classToAllocate, buffer, 0, 0, 0);
         }
 
@@ -321,7 +321,7 @@ public abstract class IOPrimitiveNodes {
         public Object reopen(VirtualFrame frame, DynamicObject file, DynamicObject io) {
             performReopen(file, io);
 
-            resetBufferingNode.call(frame, io, "reset_buffering", null);
+            resetBufferingNode.call(frame, io, "reset_buffering");
 
             return nil();
         }
@@ -372,7 +372,7 @@ public abstract class IOPrimitiveNodes {
         public Object reopenPath(VirtualFrame frame, DynamicObject file, DynamicObject path, int mode) {
             performReopenPath(file, path, mode);
 
-            resetBufferingNode.call(frame, file, "reset_buffering", null);
+            resetBufferingNode.call(frame, file, "reset_buffering");
 
             return nil();
         }
@@ -507,7 +507,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int close(VirtualFrame frame, DynamicObject io) {
-            ensureOpenNode.call(frame, io, "ensure_open", null);
+            ensureOpenNode.call(frame, io, "ensure_open");
 
             final int fd = Layouts.IO.getDescriptor(io);
 
