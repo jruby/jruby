@@ -408,7 +408,7 @@ module Commands
     puts '  USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
-    puts '  OPEN_SSL_HOME                                The location of OpenSSL (the directory containing include etc)'
+    puts '  OPENSSL_HOME                                The location of OpenSSL (the directory containing include etc)'
   end
 
   def checkout(branch)
@@ -432,7 +432,7 @@ module Commands
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
       
       #cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
-      #  "-I#{ENV['OPEN_SSL_HOME']}/include",
+      #  "-I#{ENV['OPENSSL_HOME']}/include",
       #  '-DRUBY_EXTCONF_H="extconf.h"',
       #  '-Werror=implicit-function-declaration'
     when nil
