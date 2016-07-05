@@ -673,7 +673,7 @@ module Commands
         dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
         cextc dir
         name = File.basename(dir)
-        run '--graal', '-I', "#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
+        run '--graal', "-I#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
         unless File.read(output_file) == File.read("#{dir}/expected.txt")
           abort "c extension #{dir} didn't work as expected"
         end
@@ -692,8 +692,8 @@ module Commands
       cextc config, '-Werror=implicit-function-declaration'
       arguments = []
       run '--graal',
-        *(dependencies.map { |d| ['-I', "#{ENV['GEM_HOME']}/gems/#{d}/lib"] }.flatten),
-        *(libs.map { |l| ['-I', "#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib"] }.flatten),
+        *dependencies.map { |d| "-I#{ENV['GEM_HOME']}/gems/#{d}/lib" },
+        *libs.map { |l| "-I#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib" },
         "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb" unless gem_name == 'psd_native' # psd_native is excluded just for compilation
     end
   end
@@ -1040,8 +1040,8 @@ module Commands
     run_args = []
     run_args.push '--graal' unless args.delete('--no-graal') || args.include?('list')
     run_args.push '-J-G:+TruffleCompilationExceptionsAreFatal'
-    run_args.push '-I', "#{Utilities.find_gem('deep-bench')}/lib" rescue nil
-    run_args.push '-I', "#{Utilities.find_gem('benchmark-ips')}/lib" rescue nil
+    run_args.push "-I#{Utilities.find_gem('deep-bench')}/lib" rescue nil
+    run_args.push "-I#{Utilities.find_gem('benchmark-ips')}/lib" rescue nil
     run_args.push "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark"
     run_args.push *args
     run *run_args
