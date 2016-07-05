@@ -1434,10 +1434,8 @@ class Array
     return self unless size > 1
 
     i = 0
-    while i < self.length / 2
-      temp = self[i]
-      self[i] = self[self.length - i - 1]
-      self[self.length - i - 1] = temp
+    while i < size / 2
+      swap i, size-i-1
       i += 1
     end
 
