@@ -41,7 +41,7 @@ class Regexp
 
   OPTION_MASK = IGNORECASE | EXTENDED | MULTILINE | FIXEDENCODING | NOENCODING | DONT_CAPTURE_GROUP | CAPTURE_GROUP
 
-  ESCAPE_TABLE = Rubinius::Tuple.new(256)
+  ESCAPE_TABLE = Array.new(256)
 
   # Seed it with direct replacements
   i = 0

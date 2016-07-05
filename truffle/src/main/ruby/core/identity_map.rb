@@ -40,7 +40,7 @@ module Rubinius
   class IdentityMap
     attr_reader :size
 
-    Row = Table = Rubinius::Tuple
+    Row = Table = Array
     MIN_CAPACITY = 64
     MIN_ROW = 10
     ROW_GROWTH = 9

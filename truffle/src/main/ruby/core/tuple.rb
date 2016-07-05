@@ -34,31 +34,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module Rubinius
-
-  class Tuple < Array
-
-    def self.pattern(num, val)
-       Tuple.new(num, val)
-    end
-
-    def self.create(*args)
-      ret = Tuple.new(args.size)
-
-      args.each_with_index do |arg, index|
-        ret[index] = arg
-      end
-
-      ret
-    end
-
-  end
-
-end
-
-
 class Array
-
   def copy_from(other, start, length, dest)
     Truffle.primitive :tuple_copy_from
 
@@ -100,7 +76,6 @@ class Array
     self
   end
 
-
   def swap(a, b)
     temp = at(a)
     self[a] = at(b)
@@ -108,5 +83,4 @@ class Array
   end
 
   alias_method :put, :[]=
-
 end
