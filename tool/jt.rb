@@ -549,6 +549,7 @@ module Commands
     end
 
     config = YAML.load_file(config_file)
+    
     config_src = config['src']
 
     if config_src.start_with?('$GEM_HOME/')
@@ -556,14 +557,19 @@ module Commands
     else
       src = Dir[File.join(cext_dir, config_src)]
     end
+    
+    config_cflags = config['cflags'] || ''
+    config_cflags = `echo #{config_cflags}`.strip
+    config_cflags = config_cflags.split(' ')
 
     out = File.expand_path(config['out'], cext_dir)
+    
     lls = []
 
     src.each do |src|
       ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
       
-      clang_args = ["-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *clang_opts, src, '-o', ll]
+      clang_args = ["-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll]
       opt_args = ['-S', '-mem2reg', ll, '-o', ll]
       
       if ENV['USE_SYSTEM_CLANG']
