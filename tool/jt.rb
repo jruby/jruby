@@ -431,10 +431,10 @@ module Commands
     when 'cexts'
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
       
-      cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
-        "-I#{ENV['OPEN_SSL_HOME']}/include",
-        '-DRUBY_EXTCONF_H="extconf.h"',
-        '-Werror=implicit-function-declaration'
+      #cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
+      #  "-I#{ENV['OPEN_SSL_HOME']}/include",
+      #  '-DRUBY_EXTCONF_H="extconf.h"',
+      #  '-Werror=implicit-function-declaration'
     when nil
       mvn env, *maven_options, 'package'
     else
