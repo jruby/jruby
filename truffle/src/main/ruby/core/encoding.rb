@@ -70,7 +70,7 @@ class Encoding
       %w[internal external locale filesystem].each { |name|
         key = name.upcase.to_sym
         enc = get_default_encoding(name)
-        index = enc ? map[enc.name].last : nil
+        index = enc ? map[enc.name.upcase.to_sym].last : nil
         map[key] = [name, index]
       }
       map
