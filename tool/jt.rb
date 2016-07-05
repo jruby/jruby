@@ -684,15 +684,17 @@ module Commands
     
     [
         ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
-        ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']]
-      ].each do |gem_name, dependencies, libs|
+        ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']],
+        ['nokogiri', [], ['nokogiri']]
+    ].each do |gem_name, dependencies, libs|
+      next if gem_name == 'nokogiri' # nokogiri totally excluded
       config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
       cextc config, '-Werror=implicit-function-declaration'
       arguments = []
       run '--graal',
         *(dependencies.map { |d| ['-I', "#{ENV['GEM_HOME']}/gems/#{d}/lib"] }.flatten),
         *(libs.map { |l| ['-I', "#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib"] }.flatten),
-        "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb" unless gem_name == 'psd_native' # psd_native is excluded
+        "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb" unless gem_name == 'psd_native' # psd_native is excluded just for compilation
     end
   end
   private :test_cexts
