@@ -508,7 +508,6 @@ module Commands
       v = Utilities.truffle_version
       jruby_args << "-J-Xbootclasspath/a:#{M2_REPO}/com/oracle/truffle/truffle-debug/#{v}/truffle-debug-#{v}.jar"
       jruby_args << "-J-Dtruffle.profiling.enabled=true"
-      jruby_args << "-Xtruffle.profiler=true"
     end
 
     if args.delete('--igv')
