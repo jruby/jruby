@@ -12,6 +12,7 @@ package org.jruby.truffle.core.symbol;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -21,7 +22,6 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
-
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SymbolTable {
 
-    private final RubyContext context;
+    private final DynamicObjectFactory symbolFactory;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -46,7 +46,7 @@ public class SymbolTable {
     private final Map<SymbolEquality, Reference<DynamicObject>> symbolSet = new WeakHashMap<>();
 
     public SymbolTable(RubyContext context) {
-        this.context = context;
+        this.symbolFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getSymbolClass());
     }
 
     @TruffleBoundary
@@ -54,26 +54,22 @@ public class SymbolTable {
         lock.readLock().lock();
         DynamicObject symbol = null;
         try {
-            final Reference<DynamicObject> reference = stringSymbolMap.get(stringKey);
-            symbol = reference == null ? null : reference.get();
+            symbol = readRef(stringSymbolMap, stringKey);
             if (symbol != null) {
                 return symbol;
             }
-
         } finally {
             lock.readLock().unlock();
         }
 
         lock.writeLock().lock();
         try {
-            final Reference<DynamicObject> reference1 = stringSymbolMap.get(stringKey);
-            symbol = reference1 == null ? null : reference1.get();
+            symbol = readRef(stringSymbolMap, stringKey);
             if (symbol != null) {
                 return symbol;
             }
 
             final Rope rope = StringOperations.createRope(stringKey, USASCIIEncoding.INSTANCE);
-
             symbol = getDeduplicatedSymbol(rope);
 
             stringSymbolMap.put(stringKey, new WeakReference<DynamicObject>(symbol));
@@ -89,26 +85,22 @@ public class SymbolTable {
         lock.readLock().lock();
         DynamicObject symbol = null;
         try {
-            final Reference<DynamicObject> reference = ropeSymbolMap.get(ropeKey);
-            symbol = reference == null ? null : reference.get();
+            symbol = readRef(ropeSymbolMap, ropeKey);
             if (symbol != null) {
                 return symbol;
             }
-
         } finally {
             lock.readLock().unlock();
         }
 
         lock.writeLock().lock();
         try {
-            final Reference<DynamicObject> reference1 = ropeSymbolMap.get(ropeKey);
-            symbol = reference1 == null ? null : reference1.get();
+            symbol = readRef(ropeSymbolMap, ropeKey);
             if (symbol != null) {
                 return symbol;
             }
 
             final Rope rope = RopeOperations.flatten(ropeKey);
-
             symbol = getDeduplicatedSymbol(rope);
 
             ropeSymbolMap.put(rope, new WeakReference<DynamicObject>(symbol));
@@ -122,8 +114,7 @@ public class SymbolTable {
     private DynamicObject getDeduplicatedSymbol(Rope rope) {
         final DynamicObject newSymbol = createSymbol(rope);
         final SymbolEquality newKey = Layouts.SYMBOL.getEqualityWrapper(newSymbol);
-        final Reference<DynamicObject> reference = symbolSet.get(newKey);
-        final DynamicObject currentSymbol = reference == null ? null : reference.get();
+        final DynamicObject currentSymbol = readRef(symbolSet, newKey);
 
         if (currentSymbol == null) {
             symbolSet.put(newKey, new WeakReference<DynamicObject>(newSymbol));
@@ -134,16 +125,11 @@ public class SymbolTable {
     }
 
     private DynamicObject createSymbol(Rope rope) {
-        final DynamicObject symbolClass = context.getCoreLibrary().getSymbolClass();
-        final String string = ByteList.decode(
-                rope.getBytes(),
-                0,
-                rope.byteLength(),
-                "ISO-8859-1");
+        final String string = ByteList.decode(rope.getBytes(), 0, rope.byteLength(), "ISO-8859-1");
         // Symbol has to have reference to its SymbolEquality otherwise it would be GCed.
         final SymbolEquality equalityWrapper = new SymbolEquality();
         final DynamicObject symbol = Layouts.SYMBOL.createSymbol(
-                Layouts.CLASS.getInstanceFactory(symbolClass),
+                symbolFactory,
                 string,
                 rope,
                 string.hashCode(),
@@ -153,12 +139,16 @@ public class SymbolTable {
         return symbol;
     }
 
+    private <K, V> V readRef(Map<K, Reference<V>> map, K key) {
+        Reference<V> reference = map.get(key);
+        return reference == null ? null : reference.get();
+    }
+
     @TruffleBoundary
     public Collection<DynamicObject> allSymbols() {
         final Collection<Reference<DynamicObject>> symbolReferences;
 
         lock.readLock().lock();
-
         try {
             symbolReferences = symbolSet.values();
         } finally {
