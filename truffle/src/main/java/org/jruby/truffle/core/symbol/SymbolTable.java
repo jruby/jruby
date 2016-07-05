@@ -33,7 +33,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SymbolTable {
 
-    private final DynamicObjectFactory symbolFactory;
+    private final RubyContext context;
+    private DynamicObjectFactory symbolFactory;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -46,7 +47,7 @@ public class SymbolTable {
     private final Map<SymbolEquality, Reference<DynamicObject>> symbolSet = new WeakHashMap<>();
 
     public SymbolTable(RubyContext context) {
-        this.symbolFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getSymbolClass());
+        this.context = context;
     }
 
     @TruffleBoundary
@@ -129,7 +130,7 @@ public class SymbolTable {
         // Symbol has to have reference to its SymbolEquality otherwise it would be GCed.
         final SymbolEquality equalityWrapper = new SymbolEquality();
         final DynamicObject symbol = Layouts.SYMBOL.createSymbol(
-                symbolFactory,
+                getSymbolFactory(),
                 string,
                 rope,
                 string.hashCode(),
@@ -137,6 +138,13 @@ public class SymbolTable {
 
         equalityWrapper.setSymbol(symbol);
         return symbol;
+    }
+
+    private DynamicObjectFactory getSymbolFactory() {
+        if (symbolFactory == null) {
+            symbolFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getSymbolClass());
+        }
+        return symbolFactory;
     }
 
     private <K, V> V readRef(Map<K, Reference<V>> map, K key) {
