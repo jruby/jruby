@@ -12,6 +12,8 @@ class TC_TCPSocket_Stdlib < Test::Unit::TestCase
    end
 
    def test_constructor
+     assert_nothing_raised{ @socket = TCPSocket.new('localhost', 'http', nil) }
+     assert_nothing_raised{ @socket = TCPSocket.new('localhost', 'http', nil, nil) }
 #      assert_nothing_raised{ @socket = TCPSocket.new('localhost', 'ftp') }
 #      assert_nothing_raised{ @socket = TCPSocket.new('localhost', 'ftp', 'localhost') }
 #      assert_nothing_raised{ @socket = TCPSocket.new('localhost', 'ftp', 'localhost', 8973) }

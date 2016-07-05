@@ -50,6 +50,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.RubyNil;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -87,6 +88,8 @@ public class RubyTCPSocket extends RubyIPSocket {
             jnr.netdb.Service service = jnr.netdb.Service.getServiceByName(arg.asJavaString(), "tcp");
             return service != null ?
                 service.getPort() : RubyNumeric.fix2int(RubyNumeric.str2inum(runtime, (RubyString) arg, 0, true));
+        } else if (arg instanceof RubyNil){
+            return 0;
         }
         return RubyNumeric.fix2int(arg);
     }
