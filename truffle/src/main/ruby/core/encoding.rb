@@ -36,9 +36,6 @@ class EncodingError < StandardError
 end
 
 class Encoding
-  # There's a fun bootstrapping issue here.  Encoding::Converter.transcoding_map needs access to the Encoding::Transcoding
-  # class. However, this shim runs before Encoding::Transcoding is defined.  Since the class body is short, we reproduce
-  # it here along with a convenient factory method.
   class Transcoding
     attr_accessor :source
     attr_accessor :target
@@ -57,9 +54,33 @@ class Encoding
     end
   end
 
+  class << self
+    def build_encoding_map
+      map = Rubinius::LookupTable.new
+      EncodingList.each_with_index { |encoding, index|
+        key = encoding.name.upcase.to_sym
+        map[key] = [nil, index]
+      }
+
+      each_alias { |alias_name, index|
+        key = alias_name.upcase.to_sym
+        map[key] = [alias_name, index]
+      }
+
+      %w[internal external locale filesystem].each { |name|
+        key = name.upcase.to_sym
+        enc = get_default_encoding(name)
+        index = enc ? map[enc.name].last : nil
+        map[key] = [name, index]
+      }
+      map
+    end
+    private :build_encoding_map
+  end
+
   TranscodingMap = Encoding::Converter.transcoding_map
-  EncodingMap = Encoding.encoding_map
-  EncodingList = Encoding.list
+  EncodingList = Encoding.list.freeze
+  EncodingMap = build_encoding_map
 
   @default_external = undefined
   @default_internal = undefined
