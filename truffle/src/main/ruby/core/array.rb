@@ -6,8 +6,6 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# Some of the code in this class is transliterated from C++ code in Rubinius.
-#
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -1522,7 +1520,7 @@ class Array
     reg_length = size - reg_start
     if reg_start <= size
       # copy tail
-      copy_from self, reg_start, reg_length, index
+      self[index, reg_length] = self[reg_start, reg_length]
 
       self.pop(del_length)
     end
@@ -1586,45 +1584,6 @@ class Array
     Truffle::Array.steal_storage(self, sort(&block))
   end
   public :sort!
-
-  def copy_from(other, start, length, dest)
-    unless other.kind_of? Array
-      raise TypeError, "Array#copy_from was expecting an Array, not a #{other.class}"
-    end
-    start = Rubinius::Type.coerce_to start, Fixnum, :to_i
-    length = Rubinius::Type.coerce_to length, Fixnum, :to_i
-    dest = Rubinius::Type.coerce_to dest, Fixnum, :to_i
-
-    if start < 0 || start > other.size
-      raise IndexError, "Start %d is out of bounds %d" % [start, other.size]
-    end
-
-    if dest < 0 || dest > self.size
-      raise IndexError, "Destination %d is out of bounds %d" % [dest, self.size]
-    end
-
-    if length < 0
-      raise IndexError, "length %d must be positive" % [length]
-    end
-
-    if (start + length) > other.size
-      raise IndexError, "end index %d can not exceed size of source %d" % [start+length, other.size]
-    end
-
-    if length > (size - dest)
-      raise IndexError, "length %d can not exceed space %d in destination" % [length, self.size - dest]
-    end
-
-    src = start
-    dst = dest
-    while src < (start + length)
-      self[dst] = other[src]
-      src += 1
-      dst += 1
-    end
-
-    self
-  end
 
   def swap(a, b)
     temp = at(a)

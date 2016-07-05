@@ -318,7 +318,7 @@ module Rubinius
 
     def enlarge_row(row, item, item_hash, ordinal)
       new_row = Row.new row.size + ROW_GROWTH
-      new_row.copy_from row, 1, row.size-1, 1
+      new_row[0, row.size] = row
 
       index = row[0]
       new_row[0] = index + 3
