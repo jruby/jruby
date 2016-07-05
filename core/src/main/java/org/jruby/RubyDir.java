@@ -173,7 +173,7 @@ public class RubyDir extends RubyObject {
         for ( int i = 0; i < size; i++ ) {
             dirStrings[i] = RubyString.newString(runtime, dirs.get(i), enc);
         }
-        return RubyArray.newArrayNoCopy(runtime, dirStrings);
+        return RubyArray.newArrayMayCopy(runtime, dirStrings);
     }
 
     private static String getCWD(Ruby runtime) {
@@ -244,7 +244,7 @@ public class RubyDir extends RubyObject {
      */
     @JRubyMethod(name = "entries")
     public RubyArray entries() {
-        return getRuntime().newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(getRuntime(), snapshot));
+        return RubyArray.newArrayMayCopy(getRuntime(), JavaUtil.convertJavaArrayToRuby(getRuntime(), snapshot));
     }
 
     /**
@@ -275,7 +275,7 @@ public class RubyDir extends RubyObject {
         FileResource directory = JRubyFile.createResource(context, path);
         String[] files = getEntries(context, directory, adjustedPath);
 
-        return runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, files));
+        return RubyArray.newArrayMayCopy(runtime, JavaUtil.convertJavaArrayToRuby(runtime, files));
     }
 
     private static final String[] NO_FILES = StringSupport.EMPTY_STRING_ARRAY;

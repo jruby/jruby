@@ -211,7 +211,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject array(ThreadContext context, IRubyObject[] elts) {
-        return RubyArray.newArrayNoCopy(context.runtime, elts);
+        return RubyArray.newArrayMayCopy(context.runtime, elts);
     }
 
     public static Handle contextValue() {

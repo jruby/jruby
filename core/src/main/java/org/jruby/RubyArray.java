@@ -223,6 +223,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return new RubyArrayTwoObject(runtime, car, cdr);
     }
 
+    public static RubyArray newArray(Ruby runtime, IRubyObject first, IRubyObject second, IRubyObject third) {
+        return new RubyArray(runtime, new IRubyObject[] {first, second, third});
+    }
+
+    public static RubyArray newArray(Ruby runtime, IRubyObject first, IRubyObject second, IRubyObject third, IRubyObject fourth) {
+        return new RubyArray(runtime, new IRubyObject[] {first, second, third, fourth});
+    }
+
     public static RubyArray newEmptyArray(Ruby runtime) {
         return new RubyArray(runtime, NULL_ARRAY);
     }
@@ -243,6 +251,55 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         System.arraycopy(args, 0, arr.values, 0, args.length);
         arr.realLength = args.length;
         return arr;
+    }
+
+    /**
+     * @see RubyArray#newArrayMayCopy(Ruby, IRubyObject[], int, int)
+     */
+    public static RubyArray newArrayMayCopy(Ruby runtime, IRubyObject... args) {
+        switch (args.length) {
+            case 0:
+                return newEmptyArray(runtime);
+            case 1:
+                return new RubyArrayOneObject(runtime, args[0]);
+            case 2:
+                return new RubyArrayTwoObject(runtime, args[0], args[1]);
+        }
+        RubyArray arr = new RubyArray(runtime, new IRubyObject[args.length]);
+        System.arraycopy(args, 0, arr.values, 0, args.length);
+        arr.realLength = args.length;
+        return arr;
+    }
+
+    /**
+     * @see RubyArray#newArrayMayCopy(Ruby, IRubyObject[], int, int)
+     */
+    public static RubyArray newArrayMayCopy(Ruby runtime, IRubyObject[] args, int start) {
+        return newArrayMayCopy(runtime, args, start, args.length - start);
+    }
+
+    /**
+     * Construct a new RubyArray given the specified range of elements in the source array. The elements
+     * <i>may</i> be copied into a new backing store, and therefore you should not expect future changes to the
+     * source array to be reflected. Conversely, you should not modify the array after passing it, since
+     * the contents <i>may not</i> be copied.
+     *
+     * @param runtime the runtime
+     * @param args the args
+     * @param start start index
+     * @param length number of elements
+     * @return an array referencing the given elements
+     */
+    public static RubyArray newArrayMayCopy(Ruby runtime, IRubyObject[] args, int start, int length) {
+        switch (length) {
+            case 0:
+                return newEmptyArray(runtime);
+            case 1:
+                return new RubyArrayOneObject(runtime, args[start]);
+            case 2:
+                return new RubyArrayTwoObject(runtime, args[start], args[start + 1]);
+        }
+        return newArrayNoCopy(runtime, args, start, length);
     }
 
     public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject[] args) {
@@ -1670,7 +1727,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         IRubyObject[] localValues = values;
         int localBegin = begin;
 
-        // sliding window
+        // sliding window, always unpacked since we may manipulate window.begin
         RubyArray window = newArrayNoCopy(runtime, localValues, localBegin, size);
         makeShared();
 
@@ -1683,7 +1740,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (specificArity) { // array is never exposed to ruby, just use for yielding
                 window.begin = localBegin += size;
             } else { // array may be exposed to ruby, create new
-                window = newArrayNoCopy(runtime, localValues, localBegin += size, size);
+                window = newArrayMayCopy(runtime, localValues, localBegin += size, size);
             }
         }
 
@@ -2398,7 +2455,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         }
 
         // use iteration count as new size in case something was deleted along the way
-        return newArrayNoCopy(runtime, arr, 0, i);
+        return newArrayMayCopy(runtime, arr, 0, i);
     }
 
     @JRubyMethod(name = {"collect"})
@@ -2761,7 +2818,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 for (int j = 0; j < args.length; j++) {
                     tmp[j + 1] = visitor.visit(context, args[j], i);
                 }
-                block.yield(context, newArrayNoCopyLight(runtime, tmp));
+                block.yield(context, newArrayMayCopy(runtime, tmp));
             }
             return runtime.getNil();
         }
@@ -2774,12 +2831,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 for (int j = 0; j < args.length; j++) {
                     tmp[j + 1] = visitor.visit(context, args[j], i);
                 }
-                result[i] = newArrayNoCopyLight(runtime, tmp);
+                result[i] = newArrayMayCopy(runtime, tmp);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
             concurrentModification(context.runtime, ex);
         }
-        return newArrayNoCopy(runtime, result);
+        return newArrayMayCopy(runtime, result);
     }
 
     /** rb_ary_cmp
@@ -4052,8 +4109,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 }
                 if (k >= l && (++k >= g))
                     ++k;
-                return newArrayNoCopy(runtime, new IRubyObject[] { eltOk(i),
-                        eltOk(j), eltOk(k) });
+                return newArray(runtime, eltOk(i),
+                        eltOk(j), eltOk(k));
             }
 
             int len = realLength;
@@ -4076,7 +4133,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 IRubyObject[] result = new IRubyObject[n];
                 for (i = 0; i < n; i++)
                     result[i] = eltOk(idx[i]);
-                return newArrayNoCopy(runtime, result);
+                return RubyArray.newArrayMayCopy(runtime, result);
             } else {
                 IRubyObject[] result = new IRubyObject[len];
                 System.arraycopy(values, begin, result, 0, len);
@@ -4086,7 +4143,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                     result[j] = result[i];
                     result[i] = tmp;
                 }
-                RubyArray ary = newArrayNoCopy(runtime, result);
+                RubyArray ary = newArrayMayCopy(runtime, result);
                 ary.realLength = n;
                 return ary;
             }

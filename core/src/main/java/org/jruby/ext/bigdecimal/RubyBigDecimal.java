@@ -1341,9 +1341,9 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public IRubyObject precs(ThreadContext context) {
-        return RubyArray.newArrayNoCopy(context.runtime,
-                new IRubyObject[] {context.runtime.newFixnum(getSignificantDigits().length()),
-                                   context.runtime.newFixnum(((getAllDigits().length() / 4) + 1) * 4)});
+        return RubyArray.newArray(context.runtime,
+                context.runtime.newFixnum(getSignificantDigits().length()),
+                context.runtime.newFixnum(((getAllDigits().length() / 4) + 1) * 4));
     }
 
     @JRubyMethod(name = "round", optional = 2)
@@ -1439,10 +1439,11 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public RubyArray split(ThreadContext context) {
-        return RubyArray.newArrayNoCopy(context.runtime, new IRubyObject[] {
-            signValue(context.runtime), context.runtime.newString(splitDigits()),
-            context.runtime.newFixnum(10), exponent()
-        });
+        return RubyArray.newArray(context.runtime,
+                signValue(context.runtime),
+                context.runtime.newString(splitDigits()),
+                context.runtime.newFixnum(10),
+                exponent());
     }
 
     private String splitDigits() {

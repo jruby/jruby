@@ -1012,7 +1012,7 @@ public final class StructLayout extends Type {
                 elems[i] = get(context, i);
             }
 
-            return RubyArray.newArrayNoCopy(context.runtime, elems);
+            return RubyArray.newArrayMayCopy(context.runtime, elems);
         }
 
         @JRubyMethod(name = { "to_ptr" })

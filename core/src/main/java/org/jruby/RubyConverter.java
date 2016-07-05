@@ -509,7 +509,7 @@ public class RubyConverter extends RubyObject {
             values[4] = RubyString.newString(runtime, ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength());
         }
         
-        RubyArray ary = RubyArray.newArrayNoCopy(context.runtime, values);
+        RubyArray ary = RubyArray.newArrayMayCopy(context.runtime, values);
 
         return ary;
     }

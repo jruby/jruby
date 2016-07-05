@@ -1044,7 +1044,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         @Override
         public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
             RubyProc.prepareArgs(context, block.type, blockArg.getBody(), args);
-            return yieldInner(context, context.runtime.newArrayNoCopyLight(args), blockArg);
+            return yieldInner(context, RubyArray.newArrayMayCopy(context.runtime, args), blockArg);
         }
 
         @Override
@@ -1059,7 +1059,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-            return yieldInner(context, context.runtime.newArrayNoCopyLight(args), Block.NULL_BLOCK);
+            return yieldInner(context, RubyArray.newArrayMayCopy(context.runtime, args), Block.NULL_BLOCK);
         }
 
         @Override

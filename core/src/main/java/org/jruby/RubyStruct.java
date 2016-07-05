@@ -581,7 +581,7 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = {"to_a", "values"})
     @Override
     public RubyArray to_a() {
-        return getRuntime().newArray(values);
+        return RubyArray.newArrayMayCopy(getRuntime(), values);
     }
 
     @JRubyMethod
@@ -618,7 +618,7 @@ public class RubyStruct extends RubyObject {
         RubyArray member = __member__();
 
         for (int i = 0; i < values.length; i++) {
-            block.yield(context, getRuntime().newArrayNoCopy(new IRubyObject[]{member.eltInternal(i), values[i]}));
+            block.yield(context, RubyArray.newArray(context.runtime, member.eltInternal(i), values[i]));
         }
 
         return this;

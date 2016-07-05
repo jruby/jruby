@@ -235,7 +235,7 @@ public class RubyKernel {
         Ruby runtime = context.runtime;
 
         if (lastCallType != CallType.VARIABLE) {
-            throw runtime.newNoMethodError(getMethodMissingFormat(lastVis, lastCallType), recv, name, RubyArray.newArrayNoCopy(runtime, args, dropFirst ? 1 : 0));
+            throw runtime.newNoMethodError(getMethodMissingFormat(lastVis, lastCallType), recv, name, RubyArray.newArrayMayCopy(runtime, args, dropFirst ? 1 : 0));
         } else {
             throw runtime.newNameError(getMethodMissingFormat(lastVis, lastCallType), recv, name);
         }
@@ -786,7 +786,7 @@ public class RubyKernel {
         if (args.length == 2 && args[1] instanceof RubyHash) {
             arg = args[1];
         } else {
-            RubyArray newArgs = context.runtime.newArrayNoCopy(args);
+            RubyArray newArgs = RubyArray.newArrayMayCopy(context.runtime, args);
             newArgs.shift(context);
             arg = newArgs;
         }

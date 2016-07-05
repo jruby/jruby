@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -129,7 +130,7 @@ public class Array extends Operand implements Iterable<Operand> {
                 return context.runtime.newArray((IRubyObject) elts[0].retrieve(context, self, currScope, currDynScope, temp),
                         (IRubyObject) elts[1].retrieve(context, self, currScope, currDynScope, temp));
             default:
-                return context.runtime.newArray(retrieveArrayElts(context, self, currScope, currDynScope, temp));
+                return RubyArray.newArrayMayCopy(context.runtime, retrieveArrayElts(context, self, currScope, currDynScope, temp));
         }
     }
 

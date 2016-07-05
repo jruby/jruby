@@ -325,7 +325,7 @@ public class RubyEnumerable {
                     switch (largs.length) {
                         case 0:  larg = ctx.nil; break;
                         case 1:  larg = largs[0]; break;
-                        default: larg = RubyArray.newArrayNoCopy(ctx.runtime, largs); ary = true;
+                        default: larg = RubyArray.newArrayMayCopy(ctx.runtime, largs); ary = true;
                     }
                     IRubyObject val = ary ? block.yieldArray(ctx, larg, null) : block.yield(ctx, larg);
                     if ( ! val.isTrue() ) throw JumpException.SPECIAL_JUMP;
@@ -536,7 +536,7 @@ public class RubyEnumerable {
             dstArray[i] = valuesAndCriteria[i][0];
         }
 
-        return runtime.newArrayNoCopy(dstArray);
+        return RubyArray.newArrayMayCopy(runtime, dstArray);
     }
 
     @JRubyMethod
@@ -821,7 +821,7 @@ public class RubyEnumerable {
                     switch (largs.length) {
                         case 0:  larg = ctx.nil; break;
                         case 1:  larg = largs[0]; break;
-                        default: larg = RubyArray.newArrayNoCopy(ctx.runtime, largs); ary = true;
+                        default: larg = RubyArray.newArrayMayCopy(ctx.runtime, largs); ary = true;
                     }
                     IRubyObject val = ary ? block.yieldArray(ctx, larg, null) : block.yield(ctx, larg);
 
@@ -982,7 +982,7 @@ public class RubyEnumerable {
             return args.length == 0 ? runtime.getNil() : args[0];
         }
         // For more than 1 arg, we pack them as an array
-        return runtime.newArrayNoCopy(args);
+        return RubyArray.newArrayMayCopy(runtime, args);
     }
 
     /**
@@ -993,7 +993,7 @@ public class RubyEnumerable {
         switch (args.length) {
             case 0:  return context.nil;
             case 1:  return args[0];
-            default: return RubyArray.newArrayNoCopy(context.runtime, args);
+            default: return RubyArray.newArrayMayCopy(context.runtime, args);
         }
     }
 
@@ -1330,7 +1330,7 @@ public class RubyEnumerable {
         if (result[0] == null) {
             result[0] = result[1] = runtime.getNil();
         }
-        return runtime.newArrayNoCopy(result);
+        return RubyArray.newArrayMayCopy(runtime, result);
     }
 
     @JRubyMethod
@@ -1364,7 +1364,7 @@ public class RubyEnumerable {
                 return ctx.nil;
             }
         });
-        return runtime.newArrayNoCopy(result);
+        return RubyArray.newArrayMayCopy(runtime, result);
     }
 
     @JRubyMethod(name = "none?")
@@ -2002,7 +2002,7 @@ public class RubyEnumerable {
                     value = largs[0];
                     break;
                 default:
-                    value = RubyArray.newArrayNoCopy(runtime, largs);
+                    value = RubyArray.newArrayMayCopy(runtime, largs);
                     break;
             }
 

@@ -67,6 +67,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.specialized.RubyArrayTwoObject;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
@@ -3261,9 +3262,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             IRubyObject b = stringToInum19(10, false);
             IRubyObject e = end.stringToInum19(10, false);
 
-            IRubyObject[]args = new IRubyObject[2];
-            args[0] = RubyFixnum.newFixnum(runtime, value.length());
-            RubyArray argsArr = runtime.newArrayNoCopy(args);
+            RubyArray argsArr = RubyArray.newArray(runtime, RubyFixnum.newFixnum(runtime, value.length()), context.nil);
 
             if (b instanceof RubyFixnum && e instanceof RubyFixnum) {
                 int bi = RubyNumeric.fix2int(b);
@@ -3271,7 +3270,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
                 while (bi <= ei) {
                     if (excl && bi == ei) break;
-                    args[1] = RubyFixnum.newFixnum(runtime, bi);
+                    argsArr.eltSetOk(1, RubyFixnum.newFixnum(runtime, bi));
                     ByteList to = new ByteList(value.length() + 5);
                     Sprintf.sprintf(to, "%.*d", argsArr);
                     RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
@@ -3282,7 +3281,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 String op = excl ? "<" : "<=";
 
                 while (b.callMethod(context, op, e).isTrue()) {
-                    args[1] = b;
+                    argsArr.eltSetOk(1, b);
                     ByteList to = new ByteList(value.length() + 5);
                     Sprintf.sprintf(to, "%.*d", argsArr);
                     RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);

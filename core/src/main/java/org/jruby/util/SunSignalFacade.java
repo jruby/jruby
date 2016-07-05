@@ -28,6 +28,7 @@
 package org.jruby.util;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -184,7 +185,7 @@ public class SunSignalFacade implements SignalFacade {
                 callback = jsHandler.blockCallback;
             } else {
                 retVals[0] = jsHandler.block;
-                return runtime.newArray(retVals);
+                return RubyArray.newArrayMayCopy(runtime, retVals);
             }
         }
 
@@ -211,7 +212,7 @@ public class SunSignalFacade implements SignalFacade {
             retVals[0] = RubyProc.newProc(runtime, block, block.type);
         }
 
-        return runtime.newArray(retVals);
+        return RubyArray.newArrayMayCopy(runtime, retVals);
     }
 
 }// SunSignalFacade

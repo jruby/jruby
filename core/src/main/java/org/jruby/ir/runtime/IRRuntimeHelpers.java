@@ -860,10 +860,7 @@ public class IRRuntimeHelpers {
 
         if (remainingArguments <= 0) return context.runtime.newEmptyArray();
 
-        IRubyObject[] restArgs = new IRubyObject[remainingArguments];
-        System.arraycopy(args, argIndex, restArgs, 0, remainingArguments);
-
-        return RubyArray.newArrayNoCopy(context.runtime, restArgs);
+        return RubyArray.newArrayMayCopy(context.runtime, (IRubyObject[]) args, argIndex, remainingArguments);
     }
 
     private static IRubyObject constructRestArg(ThreadContext context, IRubyObject[] args, RubyHash keywordArguments, int required, int argIndex) {
@@ -875,10 +872,7 @@ public class IRRuntimeHelpers {
 
         if (remainingArguments <= 0) return context.runtime.newEmptyArray();
 
-        IRubyObject[] restArgs = new IRubyObject[remainingArguments];
-        System.arraycopy(args, argIndex, restArgs, 0, remainingArguments);
-
-        return RubyArray.newArrayNoCopy(context.runtime, restArgs);
+        return RubyArray.newArrayMayCopy(context.runtime, args, argIndex, remainingArguments);
     }
 
     @JIT

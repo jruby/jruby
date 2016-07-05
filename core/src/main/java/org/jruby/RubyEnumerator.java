@@ -261,7 +261,7 @@ public class RubyEnumerator extends RubyObject {
         this.feedValue = runtime.getNil();
         setInstanceVariable("@__object__", object);
         setInstanceVariable("@__method__", method);
-        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(runtime, methodArgs));
+        setInstanceVariable("@__args__", RubyArray.newArrayMayCopy(runtime, methodArgs));
         return this;
     }
 

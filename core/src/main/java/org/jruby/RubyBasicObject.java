@@ -1668,7 +1668,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 IRubyObject valueInYield = args[0];
                 return setupBlock(block, evalType).yieldNonArray(context, valueInYield, this); // context.getRubyClass());
             } else {
-                IRubyObject valueInYield = RubyArray.newArrayNoCopy(context.runtime, args);
+                IRubyObject valueInYield = RubyArray.newArrayMayCopy(context.runtime, args);
                 return setupBlock(block, evalType).yieldArray(context, valueInYield, this);  // context.getRubyClass());
             }
         } finally {

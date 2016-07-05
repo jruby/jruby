@@ -994,7 +994,7 @@ public class Helpers {
         if (start >= input.length) {
             return RubyArray.newEmptyArray(runtime);
         } else {
-            return RubyArray.newArrayNoCopy(runtime, input, start);
+            return RubyArray.newArrayMayCopy(runtime, input, start);
         }
     }
 
@@ -1003,7 +1003,7 @@ public class Helpers {
         if (length <= 0) {
             return RubyArray.newEmptyArray(runtime);
         } else {
-            return RubyArray.newArrayNoCopy(runtime, input, start, length);
+            return RubyArray.newArrayMayCopy(runtime, input, start, length);
         }
     }
 

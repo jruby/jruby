@@ -859,7 +859,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public static RubyArray list(IRubyObject recv) {
         RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
 
-        return recv.getRuntime().newArrayNoCopy(activeThreads);
+        return RubyArray.newArrayMayCopy(recv.getRuntime(), activeThreads);
     }
 
     private void addToCorrectThreadGroup(ThreadContext context) {
@@ -1127,7 +1127,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public RubyArray keys() {
         IRubyObject[] keys = new IRubyObject[getFiberLocals().size()];
 
-        return RubyArray.newArrayNoCopy(getRuntime(), getFiberLocals().keySet().toArray(keys));
+        return RubyArray.newArrayMayCopy(getRuntime(), getFiberLocals().keySet().toArray(keys));
     }
 
     @JRubyMethod(meta = true)

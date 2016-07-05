@@ -1847,7 +1847,7 @@ public class RubyHash extends RubyObject implements Map {
             if (block.isGiven()) {
                 IRubyObject existing = target.internalGet(key);
                 if (existing != null) {
-                    value = block.yield(context, RubyArray.newArrayNoCopy(context.runtime, new IRubyObject[]{key, existing, value}));
+                    value = block.yield(context, RubyArray.newArray(context.runtime, key, existing, value));
                 }
             }
             target.op_aset(context, key, value);
