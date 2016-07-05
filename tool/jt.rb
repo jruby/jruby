@@ -553,6 +553,7 @@ module Commands
     config_src = config['src']
 
     if config_src.start_with?('$GEM_HOME/')
+      abort 'You need to set $GEM_HOME' unless ENV['GEM_HOME']
       src = Dir[ENV['GEM_HOME'] + config_src['$GEM_HOME'.size..-1]]
     else
       src = Dir[File.join(cext_dir, config_src)]
