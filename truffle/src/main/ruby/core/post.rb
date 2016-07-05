@@ -63,6 +63,7 @@ $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-timeout/lib'
 $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-webrick/lib'
 $LOAD_PATH.push home + '/lib/ruby/truffle/shims'
 $LOAD_PATH.push home + '/lib/ruby/truffle/truffle'
+#$LOAD_PATH.push home + '/lib/ruby/truffle/openssl'
 
 # We defined Psych at the top level because several things depend on its name.
 # Here we fix that up and put it back into Truffle.
