@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import java.util.Arrays;
 import org.jcodings.Encoding;
 import org.joni.Region;
 import org.joni.exception.ValueException;
@@ -39,12 +40,8 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-
-import java.util.Arrays;
 
 @CoreClass("MatchData")
 public abstract class MatchDataNodes {
@@ -303,30 +300,40 @@ public abstract class MatchDataNodes {
     }
 
     @NonStandard
-    @CoreMethod(names = "full")
-    public abstract static class FullNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "byte_begin", required = 1, lowerFixnum = 1)
+    public abstract static class ByteBeginNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode newTupleNode;
-
-        @Specialization
-        public Object full(VirtualFrame frame, DynamicObject matchData) {
-            if (Layouts.MATCH_DATA.getFullTuple(matchData) != null) {
-                return Layouts.MATCH_DATA.getFullTuple(matchData);
+        @Specialization(guards = "inBounds(matchData, index)")
+        public Object byteBegin(DynamicObject matchData, int index) {
+            int b = Layouts.MATCH_DATA.getRegion(matchData).beg[index];
+            if (b < 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return b;
             }
+        }
 
-            if (newTupleNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                newTupleNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+        protected boolean inBounds(DynamicObject matchData, int index) {
+            return index >= 0 && index < Layouts.MATCH_DATA.getRegion(matchData).numRegs;
+        }
+    }
+
+    @NonStandard
+    @CoreMethod(names = "byte_end", required = 1, lowerFixnum = 1)
+    public abstract static class ByteEndNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization(guards = "inBounds(matchData, index)")
+        public Object byteEnd(DynamicObject matchData, int index) {
+            int e = Layouts.MATCH_DATA.getRegion(matchData).end[index];
+            if (e < 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return e;
             }
+        }
 
-            final Object fullTuple = newTupleNode.call(frame,
-                    coreLibrary().getTupleClass(),
-                    "create",
-                    Layouts.MATCH_DATA.getBegin(matchData), Layouts.MATCH_DATA.getEnd(matchData));
-
-            Layouts.MATCH_DATA.setFullTuple(matchData, fullTuple);
-
-            return fullTuple;
+        protected boolean inBounds(DynamicObject matchData, int index) {
+            return index >= 0 && index < Layouts.MATCH_DATA.getRegion(matchData).numRegs;
         }
     }
 

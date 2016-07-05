@@ -378,37 +378,29 @@ class MatchData
   end
 
   def pre_match_from(idx)
-    return @source.byteslice(0, 0) if @full.at(0) == 0
-    nd = @full.at(0) - 1
+    return @source.byteslice(0, 0) if self.byte_begin(0) == 0
+    nd = self.byte_begin(0) - 1
     @source.byteslice(idx, nd-idx+1)
   end
 
   def collapsing?
-    @full[0] == @full[1]
+    self.byte_begin(0) == self.byte_end(0)
   end
 
   def inspect
     capts = captures
     if capts.empty?
-      "#<MatchData \"#{matched_area}\">"
+      "#<MatchData \"#{self[0]}\">"
     else
       idx = 0
       capts.map! { |capture| "#{idx += 1}:#{capture.inspect}" }
-      "#<MatchData \"#{matched_area}\" #{capts.join(" ")}>"
+      "#<MatchData \"#{self[0]}\" #{capts.join(" ")}>"
     end
   end
 
   def values_at(*indexes)
     indexes.map { |i| self[i] }.flatten(1)
   end
-
-  def matched_area
-    x = @full.at(0)
-    y = @full.at(1)
-    @source.byteslice(x, y-x)
-  end
-
-  private :matched_area
 
 end
 

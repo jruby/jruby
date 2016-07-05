@@ -150,7 +150,7 @@ public abstract class RegexpNodes {
         final DynamicObject global = createSubstring(makeSubstringNode, source, region.beg[0], region.end[0] - region.beg[0]);
 
         final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getMatchDataClass()),
-                source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd(), null, null);
+                source, regexp, region, values, pre, post, global, null);
 
         if (operator) {
             if (values.length > 0) {

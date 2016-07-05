@@ -1854,10 +1854,6 @@ public class BodyTranslator extends Translator {
                 ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(self);
                 setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@full")) {
-                // Delegate to MatchData#full.
-                ret = new RubyCallNode(context, sourceSection, "full", self, null, false);
-                return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@regexp")) {
                 ret = MatchDataNodesFactory.RegexpNodeFactory.create(new RubyNode[]{ self });
                 setSourceSection(ret, sourceSection);
