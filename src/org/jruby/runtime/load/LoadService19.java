@@ -28,7 +28,10 @@
 package org.jruby.runtime.load;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.JRubyFile;
 
 import java.security.AccessControlException;
@@ -62,4 +65,19 @@ public class LoadService19 extends LoadService {
     protected String getFileName(JRubyFile file, String nameWithSuffix) {
         return file.getAbsolutePath();
     }
+
+    @Override
+    protected String getLoadPathEntry(IRubyObject entry) {
+        RubyString entryString;
+        ThreadContext context = entry.getRuntime().getCurrentContext();
+
+        if (entry.respondsTo("to_path")) {
+            entryString = entry.callMethod(context, "to_path").convertToString();
+        } else {
+            entryString = entry.convertToString();
+        }
+
+        return entryString.asJavaString();
+    }
 }
+
