@@ -11,7 +11,7 @@ package org.jruby.truffle;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
-import com.oracle.truffle.tools.TruffleProfiler;
+//import com.oracle.truffle.tools.TruffleProfiler;
 import java.io.IOException;
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
@@ -34,7 +34,8 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
                 .build();
 
         if (Options.TRUFFLE_PROFILER.load()) {
-            engine.getInstruments().get(TruffleProfiler.ID).setEnabled(true);
+            throw new UnsupportedOperationException("the profiler is temporarily not implemented");
+            //engine.getInstruments().get(TruffleProfiler.ID).setEnabled(true);
         }
 
         try {

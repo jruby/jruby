@@ -9,7 +9,7 @@ project 'JRuby Truffle' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
-              'truffle.version' => 'b549cb8d916cd87470564d40ecb9805547c28b5e-SNAPSHOT',
+              'truffle.version' => '98add2bdcd72f3771c2492c99a86886c38bc6f0c-SNAPSHOT',
               'jruby.basedir' => '${basedir}/..',
               'maven.test.skip' => 'true' )
 
