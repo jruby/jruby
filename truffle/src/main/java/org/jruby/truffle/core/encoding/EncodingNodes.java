@@ -11,6 +11,7 @@
  */
 package org.jruby.truffle.core.encoding;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
@@ -23,11 +24,11 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
-import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
-import org.jcodings.util.CaseInsensitiveBytesHash;
-import org.jcodings.util.Hash;
+import org.jcodings.util.CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry;
+import org.jcodings.util.Hash.HashEntry;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -37,18 +38,16 @@ import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.cast.ToEncodingNode;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.util.ByteList;
 
 @CoreClass("Encoding")
@@ -458,92 +457,48 @@ public abstract class EncodingNodes {
     }
 
     @NonStandard
-    @CoreMethod(names = "encoding_map", onSingleton = true)
-    public abstract static class EncodingMapNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode upcaseNode;
-        @Child private CallDispatchHeadNode toSymNode;
-        @Child private CallDispatchHeadNode newLookupTableNode;
-        @Child private CallDispatchHeadNode lookupTableWriteNode;
-        @Child private CallDispatchHeadNode newTupleNode;
-
-        public EncodingMapNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            upcaseNode = DispatchHeadNodeFactory.createMethodCall(context);
-            toSymNode = DispatchHeadNodeFactory.createMethodCall(context);
-            newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
-            lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
-            newTupleNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+    @CoreMethod(names = "each_alias", onSingleton = true, visibility = Visibility.PRIVATE, needsBlock = true)
+    public abstract static class EachAliasNode extends YieldingCoreMethodNode {
 
         @Specialization
-        public Object encodingMap(VirtualFrame frame) {
-            Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
-
-            final DynamicObject[] encodings = getContext().getEncodingManager().getUnsafeEncodingList();
-            for (int i = 0; i < encodings.length; i++) {
-                final Object upcased = upcaseNode.call(frame, Layouts.ENCODING.getName(encodings[i]), "upcase", null);
-                final Object key = toSymNode.call(frame, upcased, "to_sym", null);
-                final Object value = newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", null, nil(), i);
-
-                lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
+        public DynamicObject eachAlias(VirtualFrame frame, DynamicObject block) {
+            CompilerAsserts.neverPartOfCompilation();
+            for (HashEntry<Entry> entry : EncodingDB.getAliases().entryIterator()) {
+                final CaseInsensitiveBytesHashEntry<Entry> e = (CaseInsensitiveBytesHashEntry<Entry>) entry;
+                final ByteList aliasName = new ByteList(e.bytes, e.p, e.end - e.p);
+                yield(frame, block, createString(aliasName), entry.value.getIndex());
             }
-
-            final Hash<EncodingDB.Entry>.HashEntryIterator i = EncodingDB.getAliases().entryIterator();
-            while (i.hasNext()) {
-                final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
-                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>) i.next());
-
-                final Object upcased = upcaseNode.call(frame, createString(new ByteList(e.bytes, e.p, e.end - e.p)), "upcase", null);
-                final Object key = toSymNode.call(frame, upcased, "to_sym", null);
-                final DynamicObject alias = createString(new ByteList(e.bytes, e.p, e.end - e.p));
-                final int index = e.value.getIndex();
-
-
-                final Object value = newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", null, alias, index);
-                lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
-            }
-
-            final Encoding defaultInternalEncoding = getContext().getJRubyRuntime().getDefaultInternalEncoding();
-            final Object internalTuple = makeTuple(frame, newTupleNode, create7BitString("internal", UTF8Encoding.INSTANCE), indexLookup(encodings, defaultInternalEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("INTERNAL"), internalTuple);
-
-            final Encoding defaultExternalEncoding = getContext().getJRubyRuntime().getDefaultExternalEncoding();
-            final Object externalTuple = makeTuple(frame, newTupleNode, create7BitString("external", UTF8Encoding.INSTANCE), indexLookup(encodings, defaultExternalEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
-
-            final Encoding localeEncoding = getContext().getEncodingManager().getLocaleEncoding();
-            final Object localeTuple = makeTuple(frame, newTupleNode, create7BitString("locale", UTF8Encoding.INSTANCE), indexLookup(encodings, localeEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
-
-            final Encoding filesystemEncoding = getContext().getEncodingManager().getLocaleEncoding();
-            final Object filesystemTuple = makeTuple(frame, newTupleNode, create7BitString("filesystem", UTF8Encoding.INSTANCE), indexLookup(encodings, filesystemEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
-
-            return ret;
+            return nil();
         }
+    }
 
-        private Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
-            return newTupleNode.call(frame, coreLibrary().getTupleClass(), "create", null, values);
+    @NonStandard
+    @CoreMethod(names = "get_default_encoding", onSingleton = true, visibility = Visibility.PRIVATE, required = 1)
+    public abstract static class GetDefaultEncodingNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization(guards = "isRubyString(name)")
+        public DynamicObject getDefaultEncoding(DynamicObject name) {
+            final Encoding encoding = getEncoding(StringOperations.getString(name));
+            if (encoding == null) {
+                return nil();
+            } else {
+                return getContext().getEncodingManager().getRubyEncoding(encoding);
+            }
         }
 
         @TruffleBoundary
-        public Object indexLookup(DynamicObject[] encodings, Encoding encoding) {
-            // TODO (nirvdrum 25-Mar-15): Build up this lookup table in RubyEncoding as we register encodings.
-            if (encoding == null) {
-                return nil();
+        private Encoding getEncoding(String name) {
+            switch (name) {
+                case "internal":
+                    return getContext().getJRubyRuntime().getDefaultInternalEncoding();
+                case "external":
+                    return getContext().getJRubyRuntime().getDefaultExternalEncoding();
+                case "locale":
+                case "filesystem":
+                    return getContext().getEncodingManager().getLocaleEncoding();
+                default:
+                    throw new UnsupportedOperationException();
             }
-
-            final Rope encodingNameRope = RopeOperations.create(encoding.getName(), ASCIIEncoding.INSTANCE, CodeRange.CR_UNKNOWN);
-
-            for (int i = 0; i < encodings.length; i++) {
-                final Rope nameRope = StringOperations.rope(Layouts.ENCODING.getName(encodings[i]));
-                if (nameRope.equals(encodingNameRope)) {
-                    return i;
-                }
-            }
-
-            throw new UnsupportedOperationException(String.format("Could not find encoding %s in the registered encoding list", encoding.toString()));
         }
     }
 

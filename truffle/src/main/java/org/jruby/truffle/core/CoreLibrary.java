@@ -210,7 +210,6 @@ public class CoreLibrary {
     private final DynamicObjectFactory timeFactory;
     private final DynamicObject transcodingClass;
     private final DynamicObject trueClass;
-    private final DynamicObject tupleClass;
     private final DynamicObject typeErrorClass;
     private final DynamicObject zeroDivisionErrorClass;
     private final DynamicObject enumerableModule;
@@ -657,7 +656,6 @@ public class CoreLibrary {
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
         defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
-        tupleClass = defineClass(rubiniusModule, arrayClass, "Tuple");
         randomizerClass = defineClass(rubiniusModule, objectClass, "Randomizer");
         atomicReferenceClass = defineClass(rubiniusModule, objectClass, "AtomicReference");
         Layouts.CLASS.setInstanceFactoryUnsafe(atomicReferenceClass,
@@ -1374,10 +1372,6 @@ public class CoreLibrary {
         return transcodingClass;
     }
 
-    public DynamicObject getTupleClass() {
-        return tupleClass;
-    }
-
     public DynamicObject getRubiniusChannelClass() {
         return rubiniusChannelClass;
     }
@@ -1480,7 +1474,6 @@ public class CoreLibrary {
 
     private static final String[] coreFiles = {
             "/core/pre.rb",
-            "/core/tuple.rb",
             "/core/lookuptable.rb",
             "/core/basic_object.rb",
             "/core/mirror.rb",

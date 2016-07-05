@@ -30,7 +30,7 @@ public class HashNode extends RubyBaseNode {
     }
 
     public int hash(VirtualFrame frame, Object key) {
-        final Object hashedObject = hashNode.call(frame, key, "hash", null);
+        final Object hashedObject = hashNode.call(frame, key, "hash");
 
         if (isIntegerProfile.profile(hashedObject instanceof Integer)) {
             return (int) hashedObject;

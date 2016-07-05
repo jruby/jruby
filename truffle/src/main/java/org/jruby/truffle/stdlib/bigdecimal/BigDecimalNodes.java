@@ -324,7 +324,7 @@ public abstract class BigDecimalNodes {
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
             } else {
                 final Object result = div(frame, a, b, 0);
-                return floorNode.call(frame, result, "floor", null);
+                return floorNode.call(frame, result, "floor");
             }
         }
 
@@ -521,7 +521,7 @@ public abstract class BigDecimalNodes {
 
             if (negNormalProfile.profile(aType == BigDecimalType.POSITIVE_INFINITY || aType == BigDecimalType.NEGATIVE_INFINITY)) {
                 final int signA = aType == BigDecimalType.POSITIVE_INFINITY ? 1 : -1;
-                final int signB = Integer.signum(signIntegerCast.executeCastInt(signCall.call(frame, b, "sign", null)));
+                final int signB = Integer.signum(signIntegerCast.executeCastInt(signCall.call(frame, b, "sign")));
                 final int sign = signA * signB; // is between -1 and 1, 0 when nan
 
                 final BigDecimalType type = new BigDecimalType[]{ BigDecimalType.NEGATIVE_INFINITY, BigDecimalType.NAN, BigDecimalType.POSITIVE_INFINITY }[sign + 1];

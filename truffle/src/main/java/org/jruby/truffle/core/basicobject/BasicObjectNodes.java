@@ -325,7 +325,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object name, Object[] args, DynamicObject block) {
-            return dispatchNode.call(frame, self, name, block, args);
+            return dispatchNode.callWithBlock(frame, self, name, block, args);
         }
 
     }

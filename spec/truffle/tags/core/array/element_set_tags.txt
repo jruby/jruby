@@ -1,1 +1,0 @@
-fails:Array#[]= calls to_ary on its rhs argument for multi-element sets

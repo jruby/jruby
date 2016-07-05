@@ -123,7 +123,7 @@ module Rubinius
 
         collapsed = match.collapsing?
 
-        unless collapsed && (match.full.at(0) == last_match_end)
+        unless collapsed && (match.byte_begin(0) == last_match_end)
           ret << match.pre_match_from(last_match_end)
 
           # length > 1 means there are captures
@@ -132,13 +132,13 @@ module Rubinius
           end
         end
 
-        start = match.full.at(1)
+        start = match.byte_end(0)
         if collapsed
           start += 1
         end
 
         last_match = match
-        last_match_end = last_match.full.at(1)
+        last_match_end = last_match.byte_end(0)
       end
 
       if last_match

@@ -408,6 +408,7 @@ module Commands
     puts '  USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
+    puts '  OPENSSL_HOME                                The location of OpenSSL (the directory containing include etc)'
   end
 
   def checkout(branch)
@@ -429,6 +430,11 @@ module Commands
       mvn env, *maven_options, '-pl', 'truffle', 'package'
     when 'cexts'
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
+      
+      #cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
+      #  "-I#{ENV['OPENSSL_HOME']}/include",
+      #  '-DRUBY_EXTCONF_H="extconf.h"',
+      #  '-Werror=implicit-function-declaration'
     when nil
       mvn env, *maven_options, 'package'
     else
@@ -543,6 +549,7 @@ module Commands
     end
 
     config = YAML.load_file(config_file)
+    
     config_src = config['src']
 
     if config_src.start_with?('$GEM_HOME/')
@@ -550,14 +557,19 @@ module Commands
     else
       src = Dir[File.join(cext_dir, config_src)]
     end
+    
+    config_cflags = config['cflags'] || ''
+    config_cflags = `echo #{config_cflags}`.strip
+    config_cflags = config_cflags.split(' ')
 
     out = File.expand_path(config['out'], cext_dir)
+    
     lls = []
 
     src.each do |src|
       ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
       
-      clang_args = ["-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *clang_opts, src, '-o', ll]
+      clang_args = ["-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll]
       opt_args = ['-S', '-mem2reg', ll, '-o', ll]
       
       if ENV['USE_SYSTEM_CLANG']
@@ -661,7 +673,7 @@ module Commands
         dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
         cextc dir
         name = File.basename(dir)
-        run '--graal', '-I', "#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
+        run '--graal', "-I#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
         unless File.read(output_file) == File.read("#{dir}/expected.txt")
           abort "c extension #{dir} didn't work as expected"
         end
@@ -672,15 +684,17 @@ module Commands
     
     [
         ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
-        ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']]
-      ].each do |gem_name, dependencies, libs|
+        ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']],
+        ['nokogiri', [], ['nokogiri']]
+    ].each do |gem_name, dependencies, libs|
+      next if gem_name == 'nokogiri' # nokogiri totally excluded
       config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
       cextc config, '-Werror=implicit-function-declaration'
       arguments = []
       run '--graal',
-        *(dependencies.map { |d| ['-I', "#{ENV['GEM_HOME']}/gems/#{d}/lib"] }.flatten),
-        *(libs.map { |l| ['-I', "#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib"] }.flatten),
-        "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb" unless gem_name == 'psd_native' # psd_native is excluded
+        *dependencies.map { |d| "-I#{ENV['GEM_HOME']}/gems/#{d}/lib" },
+        *libs.map { |l| "-I#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib" },
+        "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb" unless gem_name == 'psd_native' # psd_native is excluded just for compilation
     end
   end
   private :test_cexts
@@ -1027,8 +1041,8 @@ module Commands
     run_args = []
     run_args.push '--graal' unless args.delete('--no-graal') || args.include?('list')
     run_args.push '-J-G:+TruffleCompilationExceptionsAreFatal'
-    run_args.push '-I', "#{Utilities.find_gem('deep-bench')}/lib" rescue nil
-    run_args.push '-I', "#{Utilities.find_gem('benchmark-ips')}/lib" rescue nil
+    run_args.push "-I#{Utilities.find_gem('deep-bench')}/lib" rescue nil
+    run_args.push "-I#{Utilities.find_gem('benchmark-ips')}/lib" rescue nil
     run_args.push "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark"
     run_args.push *args
     run *run_args
