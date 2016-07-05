@@ -2279,14 +2279,4 @@ public abstract class ArrayNodes {
 
     }
 
-    @Primitive(name = "tuple_copy_from")
-    public static abstract class TupleCopyFromPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @Specialization
-        public Object tupleCopyFrom() {
-            return null;
-        }
-
-    }
-
 }

@@ -1474,7 +1474,6 @@ public class CoreLibrary {
 
     private static final String[] coreFiles = {
             "/core/pre.rb",
-            "/core/tuple.rb",
             "/core/lookuptable.rb",
             "/core/basic_object.rb",
             "/core/mirror.rb",
