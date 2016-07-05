@@ -124,7 +124,9 @@ public abstract class WriteObjectFieldNode extends RubyBaseNode {
         if (shared) {
             SharedObjects.writeBarrier(value);
             synchronized (object) {
-                object.define(name, value, 0);
+                Shape shape = object.getShape();
+                Shape newShape = defineProperty(shape, value);
+                newShape.getProperty(name).setSafe(object, value, shape, newShape);
             }
         } else {
             object.define(name, value, 0);
@@ -135,7 +137,7 @@ public abstract class WriteObjectFieldNode extends RubyBaseNode {
         final Shape oldShape = object.getShape();
         final Property property = oldShape.getProperty(name);
 
-        if (property != null && property.getLocation().canSet(object, value)) {
+        if (PropertyFlags.isDefined(property) && property.getLocation().canSet(object, value)) {
             return property.getLocation();
         } else {
             return null;
@@ -143,7 +145,14 @@ public abstract class WriteObjectFieldNode extends RubyBaseNode {
     }
 
     protected Shape defineProperty(Shape oldShape, Object value) {
-        return oldShape.defineProperty(name, value, 0);
+        Property property = oldShape.getProperty(name);
+        if (property != null && PropertyFlags.isRemoved(property)) {
+            // Do not reuse location of removed properties
+            Location location = oldShape.allocator().locationForValue(value);
+            return oldShape.replaceProperty(property, property.relocate(location).copyWithFlags(0));
+        } else {
+            return oldShape.defineProperty(name, value, 0);
+        }
     }
 
     protected Location getNewLocation(Shape newShape) {

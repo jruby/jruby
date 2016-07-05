@@ -32,6 +32,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
@@ -129,6 +130,7 @@ import org.jruby.truffle.language.objects.ObjectIVarGetNode;
 import org.jruby.truffle.language.objects.ObjectIVarGetNodeGen;
 import org.jruby.truffle.language.objects.ObjectIVarSetNode;
 import org.jruby.truffle.language.objects.ObjectIVarSetNodeGen;
+import org.jruby.truffle.language.objects.PropertyFlags;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
@@ -964,7 +966,8 @@ public abstract class KernelNodes {
         @Specialization
         public boolean isInstanceVariableDefined(DynamicObject object, String name) {
             final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, object, this);
-            return object.getShape().hasProperty(ivar);
+            final Property property = object.getShape().getProperty(ivar);
+            return PropertyFlags.isDefined(property);
         }
 
     }
@@ -1037,20 +1040,26 @@ public abstract class KernelNodes {
             final Object value = object.get(ivar, nil());
 
             if (SharedObjects.isShared(object)) {
-                System.err.println("WARNING: removing field " + name + " on a shared object.");
                 synchronized (object) {
                     removeField(object, name);
                 }
             } else {
-                removeField(object, name);
+                if (!object.delete(name)) {
+                    throw new RaiseException(coreExceptions().nameErrorInstanceVariableNotDefined(name, object, this));
+                }
             }
             return value;
         }
 
         private void removeField(DynamicObject object, String name) {
-            if (!object.delete(name)) {
+            Shape shape = object.getShape();
+            Property property = shape.getProperty(name);
+            if (!PropertyFlags.isDefined(property)) {
                 throw new RaiseException(coreExceptions().nameErrorInstanceVariableNotDefined(name, object, this));
             }
+
+            Shape newShape = shape.replaceProperty(property, PropertyFlags.asRemoved(property));
+            object.setShapeAndGrow(shape, newShape);
         }
     }
 
