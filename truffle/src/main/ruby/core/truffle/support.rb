@@ -6,11 +6,6 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# These are implemented just to get other stuff working - we'll go back and
-# implement these properly later.
-
-# The translator adds a call to Truffle.get_data to set up the DATA constant
-
 module Truffle
   def self.get_data(path, offset)
     file = File.open(path)
@@ -25,9 +20,7 @@ module Truffle
 
     file
   end
-end
-
-module Truffle
+  
   def self.load_arguments_from_array_kw_helper(array, kwrest_name, binding)
     array = array.dup
 
@@ -69,10 +62,10 @@ module Truffle
       rest.push rejected
     end
   end
-end
-
-def when_splat(cases, expression)
-  cases.any? do |c|
-    c === expression
+  
+  def self.when_splat(cases, expression)
+    cases.any? do |c|
+      c === expression
+    end
   end
 end
