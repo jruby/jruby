@@ -3123,8 +3123,8 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "string_escape")
-    public abstract static class StringEscapeNode extends CoreMethodArrayArgumentsNode {
+    @Primitive(name = "string_escape", needsSelf = false)
+    public abstract static class StringEscapePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization

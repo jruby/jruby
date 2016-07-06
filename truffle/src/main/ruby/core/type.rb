@@ -424,9 +424,14 @@ module Rubinius
       str = Rubinius::Type.coerce_to(val.inspect, String, :to_s)
       result_encoding = Encoding.default_internal || Encoding.default_external
       if !str.ascii_only? && (!result_encoding.ascii_compatible? || str.encoding != result_encoding)
-          return str.string_escape
+          return string_escape(str)
       end
       return str
+    end
+
+    def self.string_escape(string)
+      Truffle.primitive :string_escape
+      raise PrimitiveFailure, "String.string_escape primitive failed"
     end
 
     def self.object_respond_to__dump?(obj)
