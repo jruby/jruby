@@ -37,16 +37,17 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author cnutter
  */
 public class NativeThread implements ThreadLike {
-    private Reference<Thread> nativeThread;
-    public RubyThread rubyThread;
-    
+    private final Reference<Thread> nativeThread;
+    public final RubyThread rubyThread;
+
+    @Deprecated
     public NativeThread(RubyThread rubyThread, IRubyObject[] args, Block block) {
         throw new RuntimeException();
     }
     
     public NativeThread(RubyThread rubyThread, Thread nativeThread) {
         this.rubyThread = rubyThread;
-        this.nativeThread = new WeakReference<Thread>(nativeThread);
+        this.nativeThread = new WeakReference<>(nativeThread);
     }
     
     public void start() {
@@ -98,7 +99,7 @@ public class NativeThread implements ThreadLike {
         return false;
     }
 
-    public Thread getThread() {
+    public final Thread getThread() {
         return nativeThread.get();
     }
 

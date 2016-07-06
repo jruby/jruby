@@ -146,7 +146,7 @@ import java.util.Map;
 @CoreClass("Kernel")
 public abstract class KernelNodes {
 
-    @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1, unsafe = {UnsafeGroup.IO, UnsafeGroup.PROCESSES})
+    @CoreMethod(names = "`", isModuleFunction = true, required = 1, unsafe = { UnsafeGroup.IO, UnsafeGroup.PROCESSES })
     public abstract static class BacktickNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toHashNode;
@@ -161,7 +161,7 @@ public abstract class KernelNodes {
             }
 
             final DynamicObject env = getContext().getCoreLibrary().getENV();
-            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash", null);
+            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash");
 
             return spawnAndCaptureOutput(command, envAsHash);
         }
@@ -330,7 +330,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = { 0, 1 })
+    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnum = { 1, 2 })
     public abstract static class CallerLocationsNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -398,7 +398,7 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject copy(VirtualFrame frame, DynamicObject self) {
             final DynamicObject rubyClass = Layouts.BASIC_OBJECT.getLogicalClass(self);
-            final DynamicObject newObject = (DynamicObject) allocateNode.call(frame, rubyClass, "allocate", null);
+            final DynamicObject newObject = (DynamicObject) allocateNode.call(frame, rubyClass, "allocate");
             copyInstanceVariables(self, newObject);
             return newObject;
         }
@@ -414,7 +414,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "clone", taintFromSelf = true)
+    @CoreMethod(names = "clone", taintFrom = 0)
     public abstract static class CloneNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CopyNode copyNode;
@@ -436,18 +436,25 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject clone(VirtualFrame frame, DynamicObject self,
                 @Cached("createBinaryProfile()") ConditionProfile isSingletonProfile,
-                @Cached("createBinaryProfile()") ConditionProfile isFrozenProfile) {
+                @Cached("createBinaryProfile()") ConditionProfile isFrozenProfile,
+                @Cached("createBinaryProfile()") ConditionProfile isRubyClass) {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
             // Copy the singleton class if any.
-            if (isSingletonProfile.profile(Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(self)))) {
-                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(newObject)).initCopy(Layouts.BASIC_OBJECT.getMetaClass(self));
+            final DynamicObject selfMetaClass = Layouts.BASIC_OBJECT.getMetaClass(self);
+            if (isSingletonProfile.profile(Layouts.CLASS.getIsSingleton(selfMetaClass))) {
+                final DynamicObject newObjectMetaClass = singletonClassNode.executeSingletonClass(newObject);
+                Layouts.MODULE.getFields(newObjectMetaClass).initCopy(selfMetaClass);
             }
 
-            initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
+            initializeCloneNode.call(frame, newObject, "initialize_clone", self);
 
             if (isFrozenProfile.profile(isFrozenNode.executeIsFrozen(self))) {
                 freezeNode.executeFreeze(newObject);
+            }
+
+            if (isRubyClass.profile(RubyGuards.isRubyClass(self))) {
+                Layouts.CLASS.setSuperclass(newObject, Layouts.CLASS.getSuperclass(self));
             }
 
             return newObject;
@@ -455,11 +462,12 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "dup", taintFromSelf = true)
+    @CoreMethod(names = "dup", taintFrom = 0)
     public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CopyNode copyNode;
         @Child private CallDispatchHeadNode initializeDupNode;
+        @Child private SingletonClassNode singletonClassNode;
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -468,18 +476,39 @@ public abstract class KernelNodes {
             initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
-        @Specialization
+        @Specialization(guards = "!isRubyClass(self)")
         public DynamicObject dup(VirtualFrame frame, DynamicObject self) {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
-            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
+            initializeDupNode.call(frame, newObject, "initialize_dup", self);
+
+            return newObject;
+        }
+
+        @Specialization(guards = "isRubyClass(self)")
+        public DynamicObject dupClass(VirtualFrame frame, DynamicObject self) {
+            if (singletonClassNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
+            }
+
+            final DynamicObject newObject = copyNode.executeCopy(frame, self);
+            final DynamicObject newObjectMetaClass = singletonClassNode.executeSingletonClass(newObject);
+            final DynamicObject selfMetaClass = Layouts.BASIC_OBJECT.getMetaClass(self);
+
+            assert Layouts.CLASS.getIsSingleton(selfMetaClass);
+            assert Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(newObject));
+
+            Layouts.MODULE.getFields(newObjectMetaClass).initCopy(selfMetaClass); // copies class methods
+            initializeDupNode.call(frame, newObject, "initialize_dup", self);
+            Layouts.CLASS.setSuperclass(newObject, Layouts.CLASS.getSuperclass(self));
 
             return newObject;
         }
 
     }
 
-    @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3, lowerFixnumParameters = 3)
+    @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3, lowerFixnum = 4)
     @NodeChildren({
             @NodeChild(value = "source", type = RubyNode.class),
             @NodeChild(value = "binding", type = RubyNode.class),
@@ -698,7 +727,7 @@ public abstract class KernelNodes {
             final String[] commandLine = buildCommandLine(command, args);
 
             final DynamicObject env = coreLibrary().getENV();
-            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash", null);
+            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash");
 
             exec(getContext(), envAsHash, commandLine);
 
@@ -908,7 +937,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object initializeDup(VirtualFrame frame, DynamicObject self, DynamicObject from) {
-            return initializeCopyNode.call(frame, self, "initialize_copy", null, from);
+            return initializeCopyNode.call(frame, self, "initialize_copy", from);
         }
 
     }
@@ -1189,7 +1218,7 @@ public abstract class KernelNodes {
             public Object execute(VirtualFrame frame) {
                 final Object[] originalUserArguments = RubyArguments.getArguments(frame);
                 final Object[] newUserArguments = ArrayUtils.unshift(originalUserArguments, methodName);
-                return methodMissing.call(frame, RubyArguments.getSelf(frame), "method_missing", RubyArguments.getBlock(frame), newUserArguments);
+                return methodMissing.callWithBlock(frame, RubyArguments.getSelf(frame), "method_missing", RubyArguments.getBlock(frame), newUserArguments);
             }
         }
 
@@ -1368,7 +1397,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object name, Object[] args, DynamicObject block) {
-            return dispatchNode.call(frame, self, name, block, args);
+            return dispatchNode.callWithBlock(frame, self, name, block, args);
         }
 
     }
@@ -1438,7 +1467,7 @@ public abstract class KernelNodes {
                 final Source source = getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode().getEncapsulatingSourceSection().getSource();
                 String result;
                 if (source.getPath() == null) {
-                    result = source.getShortName();
+                    result = null;
                 } else {
                     result = source.getPath();
                 }
@@ -1677,7 +1706,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "format", "sprintf" }, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
+    @CoreMethod(names = { "format", "sprintf" }, isModuleFunction = true, rest = true, required = 1, taintFrom = 1)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class SprintfNode extends CoreMethodArrayArgumentsNode {
 

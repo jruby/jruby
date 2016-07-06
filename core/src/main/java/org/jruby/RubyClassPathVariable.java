@@ -105,23 +105,25 @@ public class RubyClassPathVariable extends RubyObject {
 
     @JRubyMethod
     public IRubyObject each(Block block) {
-        URL[] urls = getRuntime().getJRubyClassLoader().getURLs();
-        ThreadContext ctx = getRuntime().getCurrentContext();
+        final ThreadContext context = getRuntime().getCurrentContext();
+        URL[] urls = context.runtime.getJRubyClassLoader().getURLs();
         for(int i=0,j=urls.length;i<j;i++) {
-            block.yield(ctx, getRuntime().newString(urls[i].toString()));
+            block.yield(context, context.runtime.newString(urls[i].toString()));
         }
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @Override
     @JRubyMethod
     public IRubyObject to_s() {
-        return callMethod(getRuntime().getCurrentContext(), "to_a").callMethod(getRuntime().getCurrentContext(), "to_s");
+        final ThreadContext context = getRuntime().getCurrentContext();
+        return callMethod(context, "to_a").callMethod(context, "to_s");
     }
 
     @Override
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
-        return callMethod(getRuntime().getCurrentContext(), "to_a").callMethod(getRuntime().getCurrentContext(), "inspect");
+        final ThreadContext context = getRuntime().getCurrentContext();
+        return callMethod(context, "to_a").callMethod(context, "inspect");
     }
 }// RubyClassPathVariable

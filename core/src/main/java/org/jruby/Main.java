@@ -465,7 +465,7 @@ public class Main {
         } catch (RaiseException re) {
             if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
                 context.setErrorInfo($ex);
-                config.getError().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
+                config.getError().println("SyntaxError in " + re.getException().message(context));
                 return false;
             }
             throw re;

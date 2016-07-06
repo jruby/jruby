@@ -525,25 +525,27 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * subclassed, then calling start in that subclass will not invoke the
      * subclass's initialize method.
      */
-    public static RubyThread start(IRubyObject recv, IRubyObject[] args, Block block) {
-        return start19(recv, args, block);
-    }
-
     @JRubyMethod(rest = true, name = "start", meta = true)
-    public static RubyThread start19(IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
+    public static RubyThread start(IRubyObject recv, IRubyObject[] args, Block block) {
         // The error message may appear incongruous here, due to the difference
         // between JRuby's Thread model and MRI's.
         // We mimic MRI's message in the name of compatibility.
-        if (! block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without a block");
+        if (! block.isGiven()) {
+            throw recv.getRuntime().newArgumentError("tried to create Proc object without a block");
+        }
         return startThread(recv, args, false, block);
     }
 
-    public static RubyThread adopt(IRubyObject recv, Thread t) {
-        return adoptThread(recv, t, Block.NULL_BLOCK);
+    @Deprecated
+    public static RubyThread start19(IRubyObject recv, IRubyObject[] args, Block block) {
+        return start(recv, args, block);
     }
 
-    private static RubyThread adoptThread(final IRubyObject recv, Thread t, Block block) {
+    public static RubyThread adopt(IRubyObject recv, Thread t) {
+        return adoptThread(recv, t);
+    }
+
+    private static RubyThread adoptThread(final IRubyObject recv, Thread t) {
         final Ruby runtime = recv.getRuntime();
         final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);
 
@@ -1769,14 +1771,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     // might do by ignoring them. Note that the pieces are separate
                     // so that we can ensure one failing does not affect the others
                     // running.
-
-                    // clean up the key in the selector
-                    try {
-                        if (key != null) key.cancel();
-                        if (currentSelector != null) currentSelector.selectNow();
-                    } catch (Exception e) {
-                        // ignore
-                    }
 
                     // shut down and null out the selector
                     try {

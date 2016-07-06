@@ -7,7 +7,6 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-
 package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -45,16 +44,9 @@ public class SourceCache {
     public synchronized Source getBestSourceFuzzily(final String fuzzyPath) {
         final List<Map.Entry<String, Source>> matches = new ArrayList<>(sources.entrySet());
 
-        Collections.sort(matches, new Comparator<Map.Entry<String, Source>>() {
-
-            @Override
-            public int compare(Map.Entry<String, Source> a, Map.Entry<String, Source> b) {
-                return Integer.compare(
-                        lengthOfCommonPrefix(fuzzyPath, b.getKey()),
-                        lengthOfCommonPrefix(fuzzyPath, a.getKey()));
-            }
-
-        });
+        Collections.sort(matches, (a, b) -> Integer.compare(
+                lengthOfCommonPrefix(fuzzyPath, b.getKey()),
+                lengthOfCommonPrefix(fuzzyPath, a.getKey())));
 
         if (matches.isEmpty()) {
             return null;

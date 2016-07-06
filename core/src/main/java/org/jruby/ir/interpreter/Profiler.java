@@ -95,7 +95,7 @@ public class Profiler {
             for (IRScope s: calledScopes) {
                 c = scopeCounts.get(s);
                 if (c == null) {
-                    c = new Long(0);
+                    c = Long.valueOf(0);
                     scopeCounts.put(s, c);
                 }
 

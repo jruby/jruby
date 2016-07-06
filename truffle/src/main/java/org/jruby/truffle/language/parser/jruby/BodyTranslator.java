@@ -868,7 +868,7 @@ public class BodyTranslator extends Translator {
                     if (expressionNode instanceof org.jruby.ast.SplatNode
                             || expressionNode instanceof org.jruby.ast.ArgsCatNode
                             || expressionNode instanceof org.jruby.ast.ArgsPushNode) {
-                        comparisons.add(new RubyCallNode(context, sourceSection, "when_splat", new SelfNode(context, sourceSection), null, false, true, rubyExpression, NodeUtil.cloneNode(readTemp)));
+                        comparisons.add(new RubyCallNode(context, sourceSection, "when_splat", new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getTruffleModule()), null, false, true, rubyExpression, NodeUtil.cloneNode(readTemp)));
                     } else {
                         comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, true, NodeUtil.cloneNode(readTemp)));
                     }
@@ -1131,7 +1131,7 @@ public class BodyTranslator extends Translator {
         final String path = source.getPath();
 
         if (path == null) {
-            return source.getShortName();
+            throw new UnsupportedOperationException();
         }
 
         return path;
@@ -1853,10 +1853,6 @@ public class BodyTranslator extends Translator {
             if (name.equals("@source")) {
                 ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(self);
                 setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@full")) {
-                // Delegate to MatchData#full.
-                ret = new RubyCallNode(context, sourceSection, "full", self, null, false);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@regexp")) {
                 ret = MatchDataNodesFactory.RegexpNodeFactory.create(new RubyNode[]{ self });

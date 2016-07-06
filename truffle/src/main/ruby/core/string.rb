@@ -251,7 +251,7 @@ class String
     end
 
     while match = pattern.match_from(self, index)
-      fin = match.full.at(1)
+      fin = match.byte_end(0)
 
       if match.collapsing?
         if char = find_character(fin)
@@ -847,10 +847,14 @@ class String
       if use_yield || hash
         Regexp.last_match = match
 
+        duped = dup
         if use_yield
           val = yield match.to_s
         else
           val = hash[match.to_s]
+        end
+        if duped != self
+          raise RuntimeError, "string modified"
         end
         untrusted = true if val.untrusted?
         val = val.to_s unless val.kind_of?(String)
@@ -1156,7 +1160,7 @@ class String
     last_match = nil
 
     ret = byteslice(0, 0) # Empty string and string subclass
-    offset = match.full.at(0) if match
+    offset = match.byte_begin(0) if match
 
     while match
       if str = match.pre_match_from(last_end)
@@ -1187,7 +1191,7 @@ class String
 
       tainted ||= val.tainted?
 
-      last_end = match.full.at(1)
+      last_end = match.byte_end(0)
 
       if match.collapsing?
         if char = find_character(offset)
@@ -1196,7 +1200,7 @@ class String
           offset += 1
         end
       else
-        offset = match.full.at(1)
+        offset = match.byte_end(0)
       end
 
       last_match = match
@@ -1204,7 +1208,7 @@ class String
       match = pattern.match_from self, offset
       break unless match
 
-      offset = match.full.at(0)
+      offset = match.byte_begin(0)
     end
 
     Regexp.last_match = last_match
@@ -1265,7 +1269,7 @@ class String
     last_match = nil
 
     ret = byteslice(0, 0) # Empty string and string subclass
-    offset = match.full.at(0)
+    offset = match.byte_begin(0)
 
     while match
       if str = match.pre_match_from(last_end)
@@ -1296,7 +1300,7 @@ class String
 
       tainted ||= val.tainted?
 
-      last_end = match.full.at(1)
+      last_end = match.byte_end(0)
 
       if match.collapsing?
         if char = find_character(offset)
@@ -1305,7 +1309,7 @@ class String
           offset += 1
         end
       else
-        offset = match.full.at(1)
+        offset = match.byte_end(0)
       end
 
       last_match = match
@@ -1313,7 +1317,7 @@ class String
       match = pattern.match_from self, offset
       break unless match
 
-      offset = match.full.at(0)
+      offset = match.byte_begin(0)
     end
 
     Regexp.last_match = last_match

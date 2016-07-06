@@ -1,11 +1,7 @@
-require 'rubygems/config_file'
 require 'rbconfig'
 require 'jruby/util'
 
 module Gem
-
-  ConfigFile::PLATFORM_DEFAULTS['install'] = '--no-rdoc --no-ri --env-shebang'
-  ConfigFile::PLATFORM_DEFAULTS['update']  = '--no-rdoc --no-ri --env-shebang'
 
   class << self
     alias_method :original_ruby, :ruby
@@ -20,6 +16,13 @@ module Gem
     def jarred_path?(p)
       p =~ /^(file|uri|jar|classpath):/
     end
+  end
+
+  def self.platform_defaults
+    return {
+        'install' => '--no-rdoc --no-ri --env-shebang',
+        'update' => '--no-rdoc --no-ri --env-shebang'
+    }
   end
 
   # Default home directory path to be used if an alternate value is not

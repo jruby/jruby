@@ -144,6 +144,7 @@ class Rational < Numeric
   end
   alias_method :divide, :/
   alias_method :quo, :/
+  alias :__slash__ :/
 
   def <=>(other)
     case other

@@ -268,41 +268,10 @@ public abstract class ClassNodes {
         }
 
         private Object doNewInstance(VirtualFrame frame, DynamicObject rubyClass, Object[] args, DynamicObject block) {
-            final Object instance = allocateNode.call(frame, rubyClass, "allocate", null);
-            initialize.call(frame, instance, "initialize", block, args);
+            final Object instance = allocateNode.call(frame, rubyClass, "allocate");
+            initialize.callWithBlock(frame, instance, "initialize", block, args);
             return instance;
         }
-    }
-
-    @CoreMethod(names = "dup", taintFromSelf = true)
-    public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private KernelNodes.CopyNode copyNode;
-        @Child private CallDispatchHeadNode initializeDupNode;
-        @Child private SingletonClassNode singletonClassNode;
-
-        public DupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            copyNode = KernelNodesFactory.CopyNodeFactory.create(context, sourceSection, null);
-            initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-            singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
-        }
-
-        @Specialization
-        public DynamicObject dup(VirtualFrame frame, DynamicObject self) {
-            final DynamicObject newObject = copyNode.executeCopy(frame, self);
-            final DynamicObject newObjectMetaClass = singletonClassNode.executeSingletonClass(newObject);
-            final DynamicObject selfMetaClass = Layouts.BASIC_OBJECT.getMetaClass(self);
-
-            assert Layouts.CLASS.getIsSingleton(selfMetaClass);
-            assert Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(newObject));
-
-            Layouts.MODULE.getFields(newObjectMetaClass).initCopy(selfMetaClass); // copies class methods
-            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
-
-            return newObject;
-        }
-
     }
 
     @CoreMethod(names = "initialize", optional = 1, needsBlock = true)
@@ -316,7 +285,7 @@ public abstract class ClassNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
-            inheritedNode.call(frame, superClass, "inherited", null, subClass);
+            inheritedNode.call(frame, superClass, "inherited", subClass);
         }
 
         void moduleInitialize(VirtualFrame frame, DynamicObject rubyClass, DynamicObject block) {

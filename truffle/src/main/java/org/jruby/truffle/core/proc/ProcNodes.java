@@ -111,7 +111,7 @@ public abstract class ProcNodes {
                     Layouts.PROC.getBlock(block),
                     Layouts.PROC.getFrameOnStackMarker(block));
 
-            getInitializeNode().call(frame, proc, "initialize", block, args);
+            getInitializeNode().callWithBlock(frame, proc, "initialize", block, args);
 
             return proc;
         }

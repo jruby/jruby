@@ -1,4 +1,0 @@
-# actionpack
-activesupport
-activemodel
-algebrick

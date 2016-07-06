@@ -1,3 +1,11 @@
+# Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -41,7 +49,7 @@ class Regexp
 
   OPTION_MASK = IGNORECASE | EXTENDED | MULTILINE | FIXEDENCODING | NOENCODING | DONT_CAPTURE_GROUP | CAPTURE_GROUP
 
-  ESCAPE_TABLE = Rubinius::Tuple.new(256)
+  ESCAPE_TABLE = Array.new(256)
 
   # Seed it with direct replacements
   i = 0
@@ -93,6 +101,15 @@ class Regexp
   def options
     Truffle.primitive :regexp_options
     raise PrimitiveFailure, "Regexp#options primitive failed"
+  end
+    
+  def self.last_match(n = nil)
+    if n
+      # TODO (nirvdrum Jan. 8, 2015) Make sure this supports symbol keys for named capture lookup.
+      $~.values_at(n).first
+    else
+      $~
+    end
   end
 
   def self.last_match=(match)
@@ -378,23 +395,23 @@ class MatchData
   end
 
   def pre_match_from(idx)
-    return @source.byteslice(0, 0) if @full.at(0) == 0
-    nd = @full.at(0) - 1
+    return @source.byteslice(0, 0) if self.byte_begin(0) == 0
+    nd = self.byte_begin(0) - 1
     @source.byteslice(idx, nd-idx+1)
   end
 
   def collapsing?
-    @full[0] == @full[1]
+    self.byte_begin(0) == self.byte_end(0)
   end
 
   def inspect
     capts = captures
     if capts.empty?
-      "#<MatchData \"#{matched_area}\">"
+      "#<MatchData \"#{self[0]}\">"
     else
       idx = 0
       capts.map! { |capture| "#{idx += 1}:#{capture.inspect}" }
-      "#<MatchData \"#{matched_area}\" #{capts.join(" ")}>"
+      "#<MatchData \"#{self[0]}\" #{capts.join(" ")}>"
     end
   end
 
@@ -402,13 +419,4 @@ class MatchData
     indexes.map { |i| self[i] }.flatten(1)
   end
 
-  def matched_area
-    x = @full.at(0)
-    y = @full.at(1)
-    @source.byteslice(x, y-x)
-  end
-
-  private :matched_area
-
 end
-

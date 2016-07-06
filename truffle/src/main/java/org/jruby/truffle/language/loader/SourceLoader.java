@@ -12,6 +12,7 @@ package org.jruby.truffle.language.loader;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.string.StringOperations;
 
 import java.io.File;
@@ -37,7 +38,7 @@ public class SourceLoader {
 
     public Source load(String canonicalPath) throws IOException {
         if (canonicalPath.equals("-e")) {
-            return loadInlineScript();
+            return loadFragment(new String(context.getJRubyRuntime().getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
         } else if (canonicalPath.startsWith(TRUFFLE_SCHEME) || canonicalPath.startsWith(JRUBY_SCHEME)) {
             return loadResource(canonicalPath);
         } else {
@@ -46,18 +47,13 @@ public class SourceLoader {
                 throw new IOException("Can't read file " + canonicalPath);
             }
             return Source.fromFileName(canonicalPath);
+            //return Source.newBuilder(new File(canonicalPath)).build();
         }
     }
 
     public Source loadFragment(String fragment, String name) {
-        return Source.fromText(
-                fragment,
-                name);
-    }
-
-    private Source loadInlineScript() {
-        return Source.fromText(new String(context.getJRubyRuntime().getInstanceConfig().inlineScript(),
-                StandardCharsets.UTF_8), "-e");
+        return Source.fromText(fragment, name);
+        //return Source.newBuilder(fragment).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
     private Source loadResource(String path) throws IOException {
@@ -86,6 +82,7 @@ public class SourceLoader {
         }
 
         return Source.fromReader(new InputStreamReader(stream, StandardCharsets.UTF_8), path);
+        //return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
 }
