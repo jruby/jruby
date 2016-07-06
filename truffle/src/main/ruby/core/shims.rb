@@ -73,10 +73,6 @@ module Rubinius
   L64 = true
 end
 
-class Rational
-  alias :__slash__ :/
-end
-
 module Rubinius
   class Mirror
     module Process
