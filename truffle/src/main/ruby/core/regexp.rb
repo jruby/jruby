@@ -1,3 +1,11 @@
+# Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -93,6 +101,15 @@ class Regexp
   def options
     Truffle.primitive :regexp_options
     raise PrimitiveFailure, "Regexp#options primitive failed"
+  end
+    
+  def self.last_match(n = nil)
+    if n
+      # TODO (nirvdrum Jan. 8, 2015) Make sure this supports symbol keys for named capture lookup.
+      $~.values_at(n).first
+    else
+      $~
+    end
   end
 
   def self.last_match=(match)
@@ -403,4 +420,3 @@ class MatchData
   end
 
 end
-

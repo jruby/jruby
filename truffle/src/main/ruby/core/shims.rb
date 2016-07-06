@@ -9,17 +9,6 @@
 # These are implemented just to get other stuff working - we'll go back and
 # implement these properly later.
 
-class Regexp
-  def self.last_match(n = nil)
-    if n
-      # TODO (nirvdrum Jan. 8, 2015) Make sure this supports symbol keys for named capture lookup.
-      $~.values_at(n).first
-    else
-      $~
-    end
-  end
-end
-
 module Rubinius
   L64 = true
 end
