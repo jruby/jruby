@@ -86,6 +86,12 @@ public class SimpleWriter {
                 ids.getId(version.getMethod()),
                 ids.getId(version));
 
+        for (String evalCode : version.getEvalCode()) {
+            stream.printf("eval %d %s%n",
+                    ids.getId(version),
+                    evalCode);
+        }
+
         for (CallSiteVersion callSiteVersion : version.getCallSiteVersions().values()) {
             write(callSiteVersion);
         }
