@@ -1128,6 +1128,25 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "inspect")
+    public abstract static class InspectNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private TaintResultNode taintResultNode;
+
+        public InspectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            taintResultNode = new TaintResultNode(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public Object inspect(DynamicObject string) {
+            DynamicObject result = createString(org.jruby.RubyString.inspect(getContext().getJRubyRuntime(),
+                StringOperations.getByteListReadOnly(string)).getByteList());
+            return taintResultNode.maybeTaint(string, result);
+        }
+    }
+
     @CoreMethod(names = "empty?")
     public abstract static class IsEmptyNode extends CoreMethodArrayArgumentsNode {
 

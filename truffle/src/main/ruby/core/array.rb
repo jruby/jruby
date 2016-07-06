@@ -515,7 +515,7 @@ class Array
 
     return "[...]" if Thread.detect_recursion self do
       each_with_index do |element, index|
-        temp = element.inspect
+        temp = Rubinius::Type.object_inspect(element)
         result.force_encoding(temp.encoding) if index == 0
         result << temp << comma
       end

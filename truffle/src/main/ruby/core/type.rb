@@ -419,6 +419,22 @@ module Rubinius
       enc
     end
 
+    # similar to rb_inspect
+    def self.object_inspect(val)
+      str = Rubinius::Type.coerce_to(val.inspect, String, :to_s)
+      result_encoding = Encoding.default_internal || Encoding.default_external
+      unless result_encoding.ascii_compatible?
+        unless str.ascii_only?
+          return Truffle::CExt.to_ruby_string(Truffle::CExt.rb_str_escape(Truffle::CExt.CExtString(str)))
+        end
+        return str
+      end
+      if (str.encoding != result_encoding && !str.ascii_only?)
+        return Truffle::CExt.to_ruby_string(Truffle::CExt.rb_str_escape(Truffle::CExt.CExtString(str)))
+      end
+      return str
+    end
+
     def self.object_respond_to__dump?(obj)
       object_respond_to? obj, :_dump, true
     end

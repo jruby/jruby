@@ -21,11 +21,13 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.RubyString;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -169,6 +171,20 @@ public class CExtNodes {
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject toRubyString(DynamicObject string) {
             return string;
+        }
+
+    }
+
+    @CoreMethod(names = "rb_str_escape", isModuleFunction = true, required = 1)
+    public abstract static class RbStrEscapeNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public CExtString rb_str_escape(CExtString cExtString) {
+            final org.jruby.RubyString rubyString = new RubyString(getContext().getJRubyRuntime(), getContext().getJRubyRuntime().getString(),
+                StringOperations.getByteListReadOnly(cExtString.getString()));
+            DynamicObject result = createString(((RubyString) org.jruby.RubyString.rbStrEscape(getContext().getJRubyRuntime().getCurrentContext(), rubyString)).getByteList());
+            return new CExtString(result);
         }
 
     }
