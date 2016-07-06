@@ -41,10 +41,10 @@ class Exception
   end
 
   def to_s
-    if @reason_message
-      @reason_message.to_s
-    else
+    if message.nil?
       self.class.to_s
+    else
+      message.to_s
     end
   end
 

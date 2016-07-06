@@ -21,18 +21,6 @@
 #  end
 #end
 
-class Exception
-
-  def to_s
-    if message.nil?
-      self.class.to_s
-    else
-      message.to_s
-    end
-  end
-
-end
-
 # Hack to let code run that try to invoke RubyGems directly.  We don't yet support RubyGems, but in most cases where
 # this call would be made, we've already set up the $LOAD_PATH so the call would no-op anyway.
 module Kernel
