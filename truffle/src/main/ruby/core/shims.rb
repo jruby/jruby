@@ -73,17 +73,6 @@ module Rubinius
   L64 = true
 end
 
-module Rubinius
-  class Mirror
-    module Process
-      def self.set_status_global(status)
-        # Rubinius has: `::Thread.current[:$?] = status`
-        $? = status
-      end
-    end
-  end
-end
-
 # We use Rubinius's encoding subsystem for the most part, but we need to keep JRuby's up to date in case we
 # delegate to any of their methods.  Otherwise, they won't see the updated encoding and return incorrect results.
 class Encoding

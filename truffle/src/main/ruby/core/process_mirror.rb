@@ -36,7 +36,7 @@ module Rubinius
   class Mirror
     module Process
       def self.set_status_global(status)
-        ::Thread.current[:$?] = status
+        $? = status
       end
 
       def self.exec(*args)
@@ -46,7 +46,7 @@ module Rubinius
       end
 
       def self.spawn(*args)
-        exe = Execute.new(*args)
+        exe = Execute.new(*args) 
 
         begin
           pid = exe.spawn exe.options, exe.command, exe.argv
