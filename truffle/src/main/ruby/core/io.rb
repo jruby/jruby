@@ -2026,6 +2026,11 @@ class IO
 
     nil
   end
+  
+  def printf(fmt, *args)
+    fmt = StringValue(fmt)
+    write sprintf(fmt, *args)
+  end
 
   def read(length=nil, buffer=nil)
     ensure_open_and_readable

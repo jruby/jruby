@@ -9,17 +9,6 @@
 # These are implemented just to get other stuff working - we'll go back and
 # implement these properly later.
 
-# IO::printf from Rubinius uses Rubinius::Sprinter
-
-class IO
-
-  def printf(fmt, *args)
-    fmt = StringValue(fmt)
-    write sprintf(fmt, *args)
-  end
-
-end
-
 # Windows probably doesn't have a HOME env var, but Rubinius requires it in places, so we need
 # to construct the value and place it in the hash.
 #unless ENV['HOME']
