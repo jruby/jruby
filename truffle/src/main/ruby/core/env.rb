@@ -334,3 +334,7 @@ module Rubinius
 end
 
 ENV = Rubinius::EnvironmentVariables.new
+
+# JRuby uses this for example to make proxy settings visible to stdlib/uri/common.rb
+
+ENV_JAVA = {}

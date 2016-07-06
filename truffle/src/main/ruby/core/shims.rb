@@ -21,10 +21,6 @@
 #  end
 #end
 
-# JRuby uses this for example to make proxy settings visible to stdlib/uri/common.rb
-
-ENV_JAVA = {}
-
 # The translator adds a call to Truffle.get_data to set up the DATA constant
 
 module Truffle
