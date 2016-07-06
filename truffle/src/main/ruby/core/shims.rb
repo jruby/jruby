@@ -9,13 +9,6 @@
 # These are implemented just to get other stuff working - we'll go back and
 # implement these properly later.
 
-class Rubinius::ByteArray
-
-  alias_method :[], :get_byte
-  alias_method :[]=, :set_byte
-
-end
-
 module Errno
 
   # TODO CS 18-Apr-15 this should be a separate class

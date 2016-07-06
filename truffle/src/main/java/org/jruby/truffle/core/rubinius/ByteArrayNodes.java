@@ -33,7 +33,7 @@ public abstract class ByteArrayNodes {
         return Layouts.BYTE_ARRAY.createByteArray(factory, bytes);
     }
 
-    @CoreMethod(names = "get_byte", required = 1, lowerFixnum = 1)
+    @CoreMethod(names = {"get_byte", "[]"}, required = 1, lowerFixnum = 1)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -73,7 +73,7 @@ public abstract class ByteArrayNodes {
 
     }
 
-    @CoreMethod(names = "set_byte", required = 2, lowerFixnum = { 1, 2 })
+    @CoreMethod(names = {"set_byte", "[]="}, required = 2, lowerFixnum = { 1, 2 })
     public abstract static class SetByteNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
