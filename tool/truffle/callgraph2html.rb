@@ -31,6 +31,10 @@ module CG
     def lines
       if file == '(unknown)'
         ['(native)']
+      elsif file == '(eval)'
+        ['(eval)']
+      elsif file == '(snippet)'
+        ['(snippet)']
       elsif file.start_with?('truffle:')
         ['(core)']
       else
