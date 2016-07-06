@@ -420,17 +420,11 @@ module Rubinius
     end
 
     # similar to rb_inspect
-    def self.object_inspect(val)
+    def self.inspect(val)
       str = Rubinius::Type.coerce_to(val.inspect, String, :to_s)
       result_encoding = Encoding.default_internal || Encoding.default_external
-      unless result_encoding.ascii_compatible?
-        unless str.ascii_only?
-          return Truffle::CExt.to_ruby_string(Truffle::CExt.rb_str_escape(Truffle::CExt.CExtString(str)))
-        end
-        return str
-      end
-      if (str.encoding != result_encoding && !str.ascii_only?)
-        return Truffle::CExt.to_ruby_string(Truffle::CExt.rb_str_escape(Truffle::CExt.CExtString(str)))
+      if !str.ascii_only? && (!result_encoding.ascii_compatible? || str.encoding != result_encoding)
+          return str.string_escape
       end
       return str
     end

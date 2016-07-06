@@ -83,6 +83,7 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -3118,6 +3119,19 @@ public abstract class StringNodes {
 
         protected static boolean hasRawBytes(DynamicObject string) {
             return rope(string).getRawBytes() != null;
+        }
+
+    }
+
+    @CoreMethod(names = "string_escape")
+    public abstract static class StringEscapeNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject string_escape(DynamicObject string) {
+            final org.jruby.RubyString rubyString = new RubyString(getContext().getJRubyRuntime(), getContext().getJRubyRuntime().getString(),
+                StringOperations.getByteListReadOnly(string));
+            return createString(((RubyString) org.jruby.RubyString.rbStrEscape(getContext().getJRubyRuntime().getCurrentContext(), rubyString)).getByteList());
         }
 
     }
