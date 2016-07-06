@@ -9,18 +9,6 @@
 # These are implemented just to get other stuff working - we'll go back and
 # implement these properly later.
 
-# Windows probably doesn't have a HOME env var, but Rubinius requires it in places, so we need
-# to construct the value and place it in the hash.
-#unless ENV['HOME']
-#  if ENV['HOMEDRIVE']
-#    ENV['HOME'] = if ENV['HOMEPATH']
-#                    ENV['HOMEDRIVE'] + ENV['HOMEPATH']
-#                  else
-#                    ENV['USERPROFILE']
-#                  end
-#  end
-#end
-
 # The translator adds a call to Truffle.get_data to set up the DATA constant
 
 module Truffle

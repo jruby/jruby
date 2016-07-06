@@ -338,3 +338,15 @@ ENV = Rubinius::EnvironmentVariables.new
 # JRuby uses this for example to make proxy settings visible to stdlib/uri/common.rb
 
 ENV_JAVA = {}
+
+# Windows probably doesn't have a HOME env var, but Rubinius requires it in places, so we need
+# to construct the value and place it in the hash.
+#unless ENV['HOME']
+#  if ENV['HOMEDRIVE']
+#    ENV['HOME'] = if ENV['HOMEPATH']
+#                    ENV['HOMEDRIVE'] + ENV['HOMEPATH']
+#                  else
+#                    ENV['USERPROFILE']
+#                  end
+#  end
+#end
