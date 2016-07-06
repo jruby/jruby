@@ -1710,8 +1710,7 @@ class IO
   end
 
   def external_encoding
-    return @external if @external
-    return Encoding.default_external if @mode == RDONLY
+    @external
   end
 
   ##

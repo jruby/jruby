@@ -9,55 +9,6 @@
 # These are implemented just to get other stuff working - we'll go back and
 # implement these properly later.
 
-class IO
-  def external_encoding
-    @external
-  end
-
-  def internal_encoding
-    @internal
-  end
-
-end
-
-if Truffle::Safe.io_safe?
-  STDIN = File.new(0)
-  STDOUT = File.new(1)
-  STDERR = File.new(2)
-else
-  STDIN = nil
-  STDOUT = nil
-  STDERR = nil
-end
-
-$stdin = STDIN
-$stdout = STDOUT
-$stderr = STDERR
-
-class << STDIN
-  def external_encoding
-    super || Encoding.default_external
-  end
-end
-
-if Truffle::Safe.io_safe?
-  if STDOUT.tty?
-    STDOUT.sync = true
-  else
-    Truffle::Kernel.at_exit true do
-      STDOUT.flush
-    end
-  end
-
-  if STDERR.tty?
-    STDERR.sync = true
-  else
-    Truffle::Kernel.at_exit true do
-      STDERR.flush
-    end
-  end
-end
-
 class Regexp
   def self.last_match(n = nil)
     if n
