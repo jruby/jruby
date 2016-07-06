@@ -3507,13 +3507,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "sort_by!", enumLengthFn());
 
         modifyCheck();
-        unpack();
 
         RubyArray sorted = Helpers.invoke(context, this, "sort_by", block).convertToArray();
-        sorted.unpack();
-        values = sorted.values;
-        isShared = false;
-        begin = 0;
+
+        replace(sorted);
+
         return this;
     }
 

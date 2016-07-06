@@ -239,6 +239,26 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
+    public IRubyObject replace(IRubyObject orig) {
+        if (!packed()) return super.replace(orig);
+
+        modifyCheck();
+
+        RubyArray origArr = orig.convertToArray();
+
+        if (this == orig) return this;
+
+        if (origArr.size() == 1) {
+            value = origArr.eltInternal(0);
+            return this;
+        }
+
+        unpack();
+
+        return super.replace(origArr);
+    }
+
+    @Override
     public IRubyObject reverse_bang() {
         if (!packed()) return super.reverse_bang();
 
