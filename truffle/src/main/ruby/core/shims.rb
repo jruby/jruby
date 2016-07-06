@@ -9,8 +9,6 @@
 # These are implemented just to get other stuff working - we'll go back and
 # implement these properly later.
 
-$$ = Process.pid
-
 # IO::printf from Rubinius uses Rubinius::Sprinter
 
 class IO
