@@ -42,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
@@ -847,7 +848,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         if (length > MAX_ARGUMENTS) throw new NotCompilableException("literal array has more than " + MAX_ARGUMENTS + " elements");
 
         // use utility method for supported sizes
-        if (length < 3) {
+        if (length <= RubyArraySpecialized.MAX_PACKED_SIZE) {
             invokeIRHelper("newArray", sig(RubyArray.class, params(ThreadContext.class, IRubyObject.class, length)));
             return;
         }
