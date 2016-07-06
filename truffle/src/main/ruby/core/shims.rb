@@ -25,13 +25,6 @@
 class Rubinius::ARGFClass
 end
 
-module Enumerable
-
-  alias_method :min_internal, :min
-  alias_method :max_internal, :max
-
-end
-
 # JRuby uses this for example to make proxy settings visible to stdlib/uri/common.rb
 
 ENV_JAVA = {}
