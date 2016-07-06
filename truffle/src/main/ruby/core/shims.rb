@@ -21,10 +21,6 @@
 #  end
 #end
 
-# Find out why Rubinius doesn't implement this
-class Rubinius::ARGFClass
-end
-
 # JRuby uses this for example to make proxy settings visible to stdlib/uri/common.rb
 
 ENV_JAVA = {}
