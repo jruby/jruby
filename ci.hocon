@@ -286,6 +286,50 @@ test-cexts: {
   ]
 }
 
+chunky-benchmarks-x: {
+  run: [
+    [mx, benchmark, chunky]
+  ] ${post-process-and-upload-results}
+}
+
+sulong-benchmarks: {
+  packages: {
+    llvm: "==3.3"
+  }
+  
+  downloads: {
+    JVMCI_JAVA_HOME: {
+      name: labsjdk,
+      version: "8u92-jvmci-0.17",
+      platformspecific: true
+    }
+  }
+  
+  setup: ${common-setup} [
+    [mv, mx.jruby, temp_mx],
+    [mkdir, sulong-workspace],
+    [cd, sulong-workspace],
+    [mx, sclone, --kind, git, "https://github.com/graalvm/sulong.git", sulong],
+    [cd, sulong],
+    [mx, sforceimports],
+    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
+    [cd, ../..],
+    [mv, temp_mx, mx.jruby],
+    ${jt} [build, cexts]
+  ] ${setup-benchmarks} [
+    ${jt} [cextc, all-ruby-benchmarks/chunky_png/oily_png]
+  ]
+  
+  environment: {
+    GRAAL_HOME: sulong-workspace/sulong,
+    SULONG_DIR: sulong-workspace/sulong,
+    USE_SYSTEM_CLANG: "true",
+    HOST_VM: server,
+    HOST_VM_CONFIG: graal-core,
+    USE_CEXTS: "true"
+  }
+}
+
 builds: [
   {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
   {name: ruby-test-tck} ${common} ${gate-caps} {run: [${jt} [test, tck]]},
@@ -323,6 +367,7 @@ builds: [
   {name: ruby-benchmarks-chunky-graal-core} ${common} ${graal-core} ${bench-caps} ${jruby-truffle} ${chunky-benchmarks},
   {name: ruby-benchmarks-chunky-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${chunky-benchmarks},
   {name: ruby-benchmarks-chunky-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${chunky-benchmarks},
+  //{name: ruby-benchmarks-chunky-sulong} ${common} ${sulong-benchmarks} ${gate-caps} ${jruby-truffle} ${chunky-benchmarks-x},
   
   {name: ruby-benchmarks-psd-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${psd-benchmarks},
   {name: ruby-benchmarks-psd-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${psd-benchmarks},
