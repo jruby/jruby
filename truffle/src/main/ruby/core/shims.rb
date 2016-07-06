@@ -9,17 +9,6 @@
 # These are implemented just to get other stuff working - we'll go back and
 # implement these properly later.
 
-module Errno
-
-  # TODO CS 18-Apr-15 this should be a separate class
-  DomainError = EDOM
-
-end
-
-module Math
-  DomainError = Errno::EDOM
-end
-
 $$ = Process.pid
 
 # IO::printf from Rubinius uses Rubinius::Sprinter
