@@ -2,7 +2,6 @@ package org.jruby.ir;
 
 import java.util.EnumSet;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
@@ -20,7 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.jruby.ir.passes.DeadCodeElimination;
-import org.jruby.ir.passes.LocalOptimizationPass;
 import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
 
@@ -205,7 +203,7 @@ public class IRManager {
 
     }
 
-    private ReceiveSelfInstr receiveSelfInstr = new ReceiveSelfInstr(Self.SELF);
+    private ReceiveSelfInstr receiveSelfInstr = new ReceiveSelfInstr();
 
     public ReceiveSelfInstr getReceiveSelfInstr() {
         return receiveSelfInstr;

@@ -2,16 +2,16 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.Self;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
+
 public class ReceiveSelfInstr extends NoOperandResultBaseInstr implements FixedArityInstr {
-    // SSS FIXME: destination always has to be a local variable '%self'.  So, is this a redundant arg?
-    public ReceiveSelfInstr(Variable result) {
-        super(Operation.RECV_SELF, result);
+    public ReceiveSelfInstr() {
+        super(Operation.RECV_SELF, Self.SELF);
 
         assert result != null: "ReceiveSelfInstr result is null";
     }
@@ -20,9 +20,8 @@ public class ReceiveSelfInstr extends NoOperandResultBaseInstr implements FixedA
     public Instr clone(CloneInfo info) {
         if (info instanceof SimpleCloneInfo) return this;
 
-        // receive-self will disappear after inlining and all uses of %self will be replaced by the call receiver
-        // FIXME: What about 'self' in closures??
-        return null;
+        // inlining - we convert to renamed variable which replaces %self and give it the calls receiver.
+        return new CopyInstr(info.getRenamedVariable(result), info.getRenamedSelfVariable(null));
     }
 
     @Override

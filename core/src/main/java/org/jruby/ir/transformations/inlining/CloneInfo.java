@@ -66,7 +66,7 @@ public abstract class CloneInfo {
      * @param self to be renamed
      * @return the new self or itself
      */
-    protected abstract Variable getRenamedSelfVariable(Variable self);
+    public abstract Variable getRenamedSelfVariable(Variable self);
 
     /**
      * How are typical variables renamed if they were not yet found in the variable renaming map?
