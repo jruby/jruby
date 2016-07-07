@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.tools.callgraph;
 
-import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 
