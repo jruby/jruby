@@ -51,7 +51,7 @@ public class SimpleCloneInfo extends CloneInfo {
         return isEnsureBlock ? l : l.clone();
     }
 
-    protected Variable getRenamedSelfVariable(Variable self) {
+    public Variable getRenamedSelfVariable(Variable self) {
         return self;
     }
 
