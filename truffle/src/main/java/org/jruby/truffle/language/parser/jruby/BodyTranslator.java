@@ -19,6 +19,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
+import org.jruby.ast.Node;
 import org.jruby.ast.SideEffectFree;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings;
@@ -165,7 +166,6 @@ import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
 import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-
 import java.io.File;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -601,21 +601,25 @@ public class BodyTranslator extends Translator {
          *   (<#Method ModuleDefinedIn#foo>).call(arg1, arg2, ..., argN)
          */
 
-        if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
+        final List<Node> args = node.getArgsNode().childNodes();
+
+        if (args.size() < 1 || !(args.get(0) instanceof org.jruby.ast.SymbolNode)) {
             throw new UnsupportedOperationException("Truffle.invoke_primitive must have at least an initial literal symbol argument");
         }
 
-        final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
+        final String primitiveName = ((org.jruby.ast.SymbolNode) args.get(0)).getName();
 
         final PrimitiveNodeConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
 
         final List<RubyNode> arguments = new ArrayList<>();
 
         // The first argument was the symbol so we ignore it
-        for (int n = 1; n < node.getArgsNode().childNodes().size(); n++) {
-            RubyNode readArgumentNode = node.getArgsNode().childNodes().get(n).accept(this);
+        for (int n = 1; n < args.size(); n++) {
+            RubyNode readArgumentNode = args.get(n).accept(this);
             arguments.add(readArgumentNode);
         }
+
+        assert arguments.size() == primitive.getPrimitiveArity() : sourceSection.getShortDescription();
 
         return primitive.createInvokePrimitiveNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()]));
     }

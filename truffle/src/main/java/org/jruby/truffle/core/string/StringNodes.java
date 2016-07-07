@@ -3256,7 +3256,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object stringToF(DynamicObject string) {
+        public Object stringToF(DynamicObject string, boolean strict) {
             try {
                 return Double.parseDouble(string.toString());
             } catch (NumberFormatException e) {
