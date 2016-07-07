@@ -49,7 +49,6 @@ import org.jruby.truffle.core.cast.StringToSymbolNodeGen;
 import org.jruby.truffle.core.cast.ToProcNodeGen;
 import org.jruby.truffle.core.cast.ToSNode;
 import org.jruby.truffle.core.cast.ToSNodeGen;
-import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
@@ -334,7 +333,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node valueNode = argChildNodes.remove(argChildNodes.size() - 1);
 
         // Evaluate the value and store it in a local variable
-        writeValue = new WriteLocalVariableNode(context, sourceSection, frameSlot, valueNode.accept(this));
+        writeValue = WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, frameSlot, valueNode.accept(this));
 
         // Recreate the arguments array, reading that local instead of including the RHS for the last argument
         argChildNodes.add(new ReadLocalDummyNode(node.getPosition(), sourceSection, frameSlot));
