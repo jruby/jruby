@@ -24,6 +24,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
@@ -293,6 +294,12 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
 
     public void array(int length) {
         if (length > MAX_ARGUMENTS) throw new NotCompilableException("literal array has more than " + MAX_ARGUMENTS + " elements");
+
+        // use utility method for supported sizes
+        if (length <= RubyArraySpecialized.MAX_PACKED_SIZE) {
+            super.array(length);
+            return;
+        }
 
         adapter.invokedynamic("array", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length)), Bootstrap.array());
     }

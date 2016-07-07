@@ -57,7 +57,8 @@ class TestJavaExtension < Test::Unit::TestCase
       [ java.lang.Short.new(1), java.lang.Integer.new(0) ].sort!
     rescue => e
       assert_instance_of TypeError, e
-      assert_equal 'java.lang.Short cannot be cast to java.lang.Integer', e.message
+      assert 'java.lang.Short cannot be cast to java.lang.Integer' == e.message ||
+                 'java.lang.Integer cannot be cast to java.lang.Short' == e.message
     end
   end
 

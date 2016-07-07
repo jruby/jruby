@@ -31,6 +31,7 @@
 package org.jruby.runtime;
 
 import org.jruby.FlagRegistry;
+import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyHash;
 import org.jruby.RubyMatchData;

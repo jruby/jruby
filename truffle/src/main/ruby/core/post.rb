@@ -61,7 +61,6 @@ $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-socket/lib'
 $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-securerandom/lib'
 $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-timeout/lib'
 $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-webrick/lib'
-$LOAD_PATH.push home + '/lib/ruby/truffle/shims'
 $LOAD_PATH.push home + '/lib/ruby/truffle/truffle'
 #$LOAD_PATH.push home + '/lib/ruby/truffle/openssl'
 

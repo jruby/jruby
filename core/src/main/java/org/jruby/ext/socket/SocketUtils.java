@@ -92,14 +92,14 @@ public class SocketUtils {
 
     public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        IRubyObject[] ret = new IRubyObject[4];
+        IRubyObject ret0, ret1, ret2, ret3;
 
-        ret[0] = runtime.newString(Sockaddr.addressFromString(runtime, args[0].convertToString().toString()).getCanonicalHostName());
-        ret[1] = runtime.newArray();
-        ret[2] = runtime.newFixnum(2); // AF_INET
-        ret[3] = args[0];
+        ret0 = runtime.newString(Sockaddr.addressFromString(runtime, args[0].convertToString().toString()).getCanonicalHostName());
+        ret1 = runtime.newArray();
+        ret2 = runtime.newFixnum(2); // AF_INET
+        ret3 = args[0];
 
-        return runtime.newArrayNoCopy(ret);
+        return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
     }
 
     public static IRubyObject getservbyname(ThreadContext context, IRubyObject[] args) {
@@ -171,13 +171,13 @@ public class SocketUtils {
 
         try {
             InetAddress addr = getRubyInetAddress(hostname.convertToString().getByteList());
-            IRubyObject[] ret = new IRubyObject[4];
+            IRubyObject ret0, ret1, ret2, ret3;
 
-            ret[0] = runtime.newString(addr.getCanonicalHostName());
-            ret[1] = runtime.newArray();
-            ret[2] = runtime.newFixnum(2); // AF_INET
-            ret[3] = runtime.newString(new ByteList(addr.getAddress()));
-            return runtime.newArrayNoCopy(ret);
+            ret0 = runtime.newString(addr.getCanonicalHostName());
+            ret1 = runtime.newArray();
+            ret2 = runtime.newFixnum(2); // AF_INET
+            ret3 = runtime.newString(new ByteList(addr.getAddress()));
+            return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
 
         } catch(UnknownHostException e) {
             throw sockerr(runtime, "gethostbyname: name or service not known");
@@ -222,7 +222,7 @@ public class SocketUtils {
                     c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                     c[5] = runtime.newFixnum(SOCK_DGRAM);
                     c[6] = runtime.newFixnum(IPPROTO_UDP);
-                    l.add(runtime.newArrayNoCopy(c));
+                    l.add(RubyArray.newArrayMayCopy(runtime, c));
                 }
 
                 if (sock_stream) {
@@ -234,7 +234,7 @@ public class SocketUtils {
                     c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                     c[5] = runtime.newFixnum(SOCK_STREAM);
                     c[6] = runtime.newFixnum(IPPROTO_TCP);
-                    l.add(runtime.newArrayNoCopy(c));
+                    l.add(RubyArray.newArrayMayCopy(runtime, c));
                 }
             }
         });

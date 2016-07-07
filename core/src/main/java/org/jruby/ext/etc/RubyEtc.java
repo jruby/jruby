@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -108,7 +109,7 @@ public class RubyEtc {
         for(int i = 0; i<arr.length; i++) {
             arr[i] = runtime.newString(members[i]);
         }
-        return runtime.newArrayNoCopy(arr);
+        return RubyArray.newArrayMayCopy(runtime, arr);
     }
 
 

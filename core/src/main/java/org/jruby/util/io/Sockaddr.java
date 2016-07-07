@@ -108,7 +108,7 @@ public class Sockaddr {
             }
         }
 
-        return runtime.newArrayNoCopy(runtime.newFixnum(port), RubyString.newString(runtime, formatAddr));
+        return RubyArray.newArray(runtime, runtime.newFixnum(port), RubyString.newString(runtime, formatAddr));
     }
 
     public static IRubyObject packSockaddrFromAddress(ThreadContext context, InetSocketAddress sock) {

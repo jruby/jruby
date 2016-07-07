@@ -10,4 +10,6 @@ public interface JITCompilerMBean {
     public long getAverageCodeSize();
     public long getAverageCompileTime();
     public long getLargestCodeSize();
+    public String[] frameAwareMethods();
+    public String[] scopeAwareMethods();
 }

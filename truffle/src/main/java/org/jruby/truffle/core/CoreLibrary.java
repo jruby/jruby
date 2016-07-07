@@ -358,6 +358,10 @@ public class CoreLibrary {
         return eagainWaitWritable;
     }
 
+    public DynamicObject getTruffleModule() {
+        return truffleModule;
+    }
+
     private enum State {
         INITIALIZING,
         LOADING_RUBY_CORE,
@@ -1496,6 +1500,7 @@ public class CoreLibrary {
             "/core/truffle/ffi/pointer.rb",
             "/core/truffle/ffi/ffi_file.rb",
             "/core/truffle/ffi/ffi_struct.rb",
+            "/core/truffle/support.rb",
             "/core/io.rb",
             "/core/immediate.rb",
             "/core/string_mirror.rb",
@@ -1550,7 +1555,6 @@ public class CoreLibrary {
             "/core/math.rb",
             "/core/method.rb",
             "/core/unbound_method.rb",
-            "/core/shims.rb",
             "/core/truffle/attachments.rb",
             "/core/truffle/debug.rb",
             "/core/truffle/cext.rb",

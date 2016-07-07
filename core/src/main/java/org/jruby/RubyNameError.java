@@ -130,7 +130,8 @@ public class RubyNameError extends RubyException {
                 }
 
                 RubyArray arr =
-                        runtime.newArray(
+                        RubyArray.newArray(
+                                runtime,
                                 name,
                                 runtime.newString(description),
                                 runtime.newString(separator),

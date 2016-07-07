@@ -83,6 +83,7 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -1125,6 +1126,25 @@ public abstract class StringNodes {
             final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), substringRope, null);
 
             return taintResultNode.maybeTaint(string, ret);
+        }
+    }
+
+    @CoreMethod(names = "inspect")
+    public abstract static class InspectNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private TaintResultNode taintResultNode;
+
+        public InspectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            taintResultNode = new TaintResultNode(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public Object inspect(DynamicObject string) {
+            DynamicObject result = createString(org.jruby.RubyString.inspect(getContext().getJRubyRuntime(),
+                StringOperations.getByteListReadOnly(string)).getByteList());
+            return taintResultNode.maybeTaint(string, result);
         }
     }
 
@@ -3103,6 +3123,19 @@ public abstract class StringNodes {
 
     }
 
+    @Primitive(name = "string_escape", needsSelf = false)
+    public abstract static class StringEscapePrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject string_escape(DynamicObject string) {
+            final org.jruby.RubyString rubyString = new RubyString(getContext().getJRubyRuntime(), getContext().getJRubyRuntime().getString(),
+                StringOperations.getByteListReadOnly(string));
+            return createString(((RubyString) org.jruby.RubyString.rbStrEscape(getContext().getJRubyRuntime().getCurrentContext(), rubyString)).getByteList());
+        }
+
+    }
+
     @Primitive(name = "string_find_character")
     @ImportStatic(StringGuards.class)
     public static abstract class StringFindCharacterNode extends PrimitiveArrayArgumentsNode {
@@ -3256,7 +3289,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object stringToF(DynamicObject string) {
+        public Object stringToF(DynamicObject string, boolean strict) {
             try {
                 return Double.parseDouble(string.toString());
             } catch (NumberFormatException e) {

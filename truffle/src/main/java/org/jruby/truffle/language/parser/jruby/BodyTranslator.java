@@ -19,6 +19,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
+import org.jruby.ast.Node;
 import org.jruby.ast.SideEffectFree;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings;
@@ -165,7 +166,6 @@ import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
 import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-
 import java.io.File;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -566,10 +566,6 @@ public class BodyTranslator extends Translator {
          *
          *   CallPrimitiveNode(FooNode(arg1, arg2, ..., argN))
          *
-         * or
-         *
-         *   (<#Method ModuleDefinedIn#foo>).call(arg1, arg2, ..., argN)
-         *
          * Where the arguments are the same arguments as the method. It looks like this is only exercised with simple
          * arguments so we're not worrying too much about what happens when they're more complicated (rest,
          * keywords etc).
@@ -595,27 +591,27 @@ public class BodyTranslator extends Translator {
          * into
          *
          *   InvokePrimitiveNode(FooNode(arg1, arg2, ..., argN))
-         *
-         * or
-         *
-         *   (<#Method ModuleDefinedIn#foo>).call(arg1, arg2, ..., argN)
          */
 
-        if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
+        final List<Node> args = node.getArgsNode().childNodes();
+
+        if (args.size() < 1 || !(args.get(0) instanceof org.jruby.ast.SymbolNode)) {
             throw new UnsupportedOperationException("Truffle.invoke_primitive must have at least an initial literal symbol argument");
         }
 
-        final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
+        final String primitiveName = ((org.jruby.ast.SymbolNode) args.get(0)).getName();
 
         final PrimitiveNodeConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
 
         final List<RubyNode> arguments = new ArrayList<>();
 
         // The first argument was the symbol so we ignore it
-        for (int n = 1; n < node.getArgsNode().childNodes().size(); n++) {
-            RubyNode readArgumentNode = node.getArgsNode().childNodes().get(n).accept(this);
+        for (int n = 1; n < args.size(); n++) {
+            RubyNode readArgumentNode = args.get(n).accept(this);
             arguments.add(readArgumentNode);
         }
+
+        assert arguments.size() == primitive.getPrimitiveArity() : sourceSection.getShortDescription();
 
         return primitive.createInvokePrimitiveNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()]));
     }
@@ -868,7 +864,7 @@ public class BodyTranslator extends Translator {
                     if (expressionNode instanceof org.jruby.ast.SplatNode
                             || expressionNode instanceof org.jruby.ast.ArgsCatNode
                             || expressionNode instanceof org.jruby.ast.ArgsPushNode) {
-                        comparisons.add(new RubyCallNode(context, sourceSection, "when_splat", new SelfNode(context, sourceSection), null, false, true, rubyExpression, NodeUtil.cloneNode(readTemp)));
+                        comparisons.add(new RubyCallNode(context, sourceSection, "when_splat", new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getTruffleModule()), null, false, true, rubyExpression, NodeUtil.cloneNode(readTemp)));
                     } else {
                         comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, true, NodeUtil.cloneNode(readTemp)));
                     }

@@ -4,6 +4,7 @@ import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
@@ -70,7 +71,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             switch (values.length) {
                 case 0: return context.nil;
                 case 1: return values[0];
-                default: return runtime.newArrayNoCopyLight(values);
+                default: return RubyArray.newArrayMayCopy(runtime, values);
             }
         }
         
@@ -78,7 +79,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         switch (values.length) {
             case 0: val = NEVER; break;
             case 1: val = values[0]; break;
-            default: val = runtime.newArrayNoCopyLight(values);
+            default: val = RubyArray.newArrayMayCopy(runtime, values);
         }
         
         if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
@@ -171,7 +172,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             switch (values.length) {
                 case 0: return context.nil;
                 case 1: return values[0];
-                default: return runtime.newArrayNoCopyLight(values);
+                default: return RubyArray.newArrayMayCopy(runtime, values);
             }
         }
         
@@ -179,7 +180,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         switch (values.length) {
             case 0: val = NEVER; break;
             case 1: val = values[0]; break;
-            default: val = runtime.newArrayNoCopyLight(values);
+            default: val = RubyArray.newArrayMayCopy(runtime, values);
         }
         
         if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");

@@ -193,16 +193,7 @@ public class AnnotationBinder extends AbstractProcessor {
                 // check for frame field reads or writes
                 boolean frame = false;
                 boolean scope = false;
-                if (anno.frame()) {
-                    if (DEBUG)
-                        System.out.println("Method has frame = true: " + methodDescs.get(0).getEnclosingElement() + ":" + methodDescs);
-                    frame = true;
-                }
-                if (anno.scope()) {
-                    if (DEBUG)
-                        System.out.println("Method has frame = true: " + methodDescs.get(0).getEnclosingElement() + ":" + methodDescs);
-                    scope = true;
-                }
+
                 for (FrameField field : anno.reads()) {
                     frame |= field.needsFrame();
                     scope |= field.needsScope();

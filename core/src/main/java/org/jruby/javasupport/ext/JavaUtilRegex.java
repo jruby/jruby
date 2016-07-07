@@ -144,7 +144,7 @@ public abstract class JavaUtilRegex {
                 beg = context.runtime.newFixnum( matcher.start(group) );
                 end = context.runtime.newFixnum( matcher.end(group) );
             }
-            return RubyArray.newArrayNoCopy(context.runtime, new IRubyObject[]{beg, end});
+            return RubyArray.newArray(context.runtime, beg, end);
         }
 
         @JRubyMethod(name = { "length", "size" })
@@ -179,12 +179,12 @@ public abstract class JavaUtilRegex {
 
         @JRubyMethod
         public static RubyArray to_a(final ThreadContext context, final IRubyObject self) {
-            return RubyArray.newArrayNoCopy(context.runtime, groups(context, self, 0));
+            return RubyArray.newArrayMayCopy(context.runtime, groups(context, self, 0));
         }
 
         @JRubyMethod
         public static RubyArray captures(final ThreadContext context, final IRubyObject self) {
-            return RubyArray.newArrayNoCopy(context.runtime, groups(context, self, 1));
+            return RubyArray.newArrayMayCopy(context.runtime, groups(context, self, 1));
         }
 
         private static IRubyObject[] groups(final ThreadContext context, final IRubyObject self, final int off) {

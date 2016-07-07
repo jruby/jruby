@@ -229,6 +229,13 @@ class Encoding
         end
       end
     end
+    
+    alias_method :initialize_rubinius, :initialize
+
+    def initialize(*args)
+      initialize_rubinius(*args)
+      initialize_jruby(*args)
+    end
 
     def convert(str)
       str = StringValue(str)
@@ -636,6 +643,22 @@ class Encoding
 
   def self._load(name)
     find name
+  end
+  
+  class << self
+    alias_method :default_external_rubinius=, :default_external=
+
+    def default_external=(enc)
+      self.default_external_rubinius = enc
+      self.default_external_jruby = enc
+    end
+
+    alias_method :default_internal_rubinius=, :default_internal=
+
+    def default_internal=(enc)
+      self.default_internal_rubinius = enc
+      self.default_internal_jruby = enc
+    end
   end
 end
 
