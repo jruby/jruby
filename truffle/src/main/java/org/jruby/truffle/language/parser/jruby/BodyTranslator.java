@@ -566,10 +566,6 @@ public class BodyTranslator extends Translator {
          *
          *   CallPrimitiveNode(FooNode(arg1, arg2, ..., argN))
          *
-         * or
-         *
-         *   (<#Method ModuleDefinedIn#foo>).call(arg1, arg2, ..., argN)
-         *
          * Where the arguments are the same arguments as the method. It looks like this is only exercised with simple
          * arguments so we're not worrying too much about what happens when they're more complicated (rest,
          * keywords etc).
@@ -595,10 +591,6 @@ public class BodyTranslator extends Translator {
          * into
          *
          *   InvokePrimitiveNode(FooNode(arg1, arg2, ..., argN))
-         *
-         * or
-         *
-         *   (<#Method ModuleDefinedIn#foo>).call(arg1, arg2, ..., argN)
          */
 
         final List<Node> args = node.getArgsNode().childNodes();
