@@ -423,10 +423,10 @@ module Rubinius
     def self.inspect(val)
       str = Rubinius::Type.coerce_to(val.inspect, String, :to_s)
       result_encoding = Encoding.default_internal || Encoding.default_external
-      if !str.ascii_only? && (!result_encoding.ascii_compatible? || str.encoding != result_encoding)
-        Truffle.invoke_primitive :string_escape, str
-      else
+      if str.ascii_only? || (result_encoding.ascii_compatible? && str.encoding == result_encoding)
         str
+      else
+        Truffle.invoke_primitive :string_escape, str
       end
     end
 
