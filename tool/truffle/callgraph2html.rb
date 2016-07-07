@@ -68,13 +68,14 @@ module CG
   end
 
   class MethodVersion
-    attr_reader :id, :method, :callsite_versions, :called_from, :eval_code
+    attr_reader :id, :method, :callsite_versions, :called_from, :locals, :eval_code
 
     def initialize(id, method)
       @id = Integer(id)
       @method = method
       @callsite_versions = []
       @called_from = []
+      @locals = {}
       @eval_code = []
     end
 
@@ -127,6 +128,10 @@ ARGF.each_line do |line|
     method_version = CG::MethodVersion.new(line[2], method)
     objects[method_version.id] = method_version
     method.versions.push method_version
+  when 'local'
+    method_version = objects[Integer(line[1])]
+    method_version.locals[line[2]] ||= []
+    method_version.locals[line[2]].push line[3]
   when 'eval'
     method_version = objects[Integer(line[1])]
     eval_code = line.drop(2).join(' ')
@@ -244,6 +249,19 @@ puts ERB.new(%{<html>
           <ul>
             <% method_version.called_from.each do |caller| %>
               <li><a href='#method-version-<%= caller.method_version.id %>'><%= h(caller.method_version.method.name) %></a></li>
+            <% end %>
+          </ul>
+        <% end %>
+        <% unless method_version.locals.empty? %>
+          <p>Locals:</p> 
+          <ul>
+            <% method_version.locals.each do |name, types| %>
+              <li><code><%= h(name) %></li>
+              <ul>
+                <% types.each do |type| %>
+                  <li><code><%= h(type) %></li>
+                <% end %>
+              </ul>
             <% end %>
           </ul>
         <% end %>
