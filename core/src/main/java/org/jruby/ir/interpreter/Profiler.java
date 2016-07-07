@@ -2,10 +2,13 @@ package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.Counter;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.JIT;
@@ -18,6 +21,9 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.callsite.CachingCallSite;
 
 import java.util.*;
+import org.jruby.util.cli.Options;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * Definitions in profiler:
@@ -34,6 +40,8 @@ import java.util.*;
  * might inline some of those and then it will flush collected data and start over.
  */
 public class Profiler {
+    private static final Logger LOG = LoggerFactory.getLogger(Profiler.class);
+
     public static final long INVALID_CALLSITE_ID = -1;
     public static final int UNASSIGNED_VERSION = -1;
     private static final int PROFILE_PERIOD = 20000;
@@ -65,7 +73,7 @@ public class Profiler {
         }
 
         /**
-         * Interpreter trivially knows what the call is but the JIT only knows the callsiteId.
+         * Interpreter saves call but JIT only has the callsiteId and must find it based on that id.
          */
         public CallBase getCall() {
             if (call == null) call = findCall();
@@ -181,7 +189,8 @@ public class Profiler {
     private static long findInliningCandidates(List<IRCallSite> callSites) {
         long total = 0;   // Total number of calls found in this scope.
 
-        //System.out.println("" + callProfile.size() + " candidates.");
+        if (Options.IR_PROFILE_DEBUG.load()) LOG.info("begin findInliningCandidate {} candidates to examine.", callProfile.size());
+
         // Register all monomorphic found callsites which are eligible for inlining.
         for (Long id: callProfile.keySet()) {
             CallSiteProfile callSiteProfile = callProfile.get(id);
@@ -189,15 +198,30 @@ public class Profiler {
             boolean monomorphic = callSiteProfile.retallyCallCount();
             CallBase call = callSite.getCall();
 
-            //System.out.println("candidate: calls=" + callSite.count + ", mono: " + monomorphic + ", KS: " + callSiteProfile.counters.size());
+            if (Options.IR_PROFILE_DEBUG.load()) {
+                LOG.info("id: {}, # of calls: {}, # of targets: {}", callSite.id, callSite.count, callSiteProfile.counters.size());
+            }
+
             // FIXME: Why is call sometimes null?
             if (monomorphic && call != null && !call.inliningBlocked() && !callSite.scope.inliningAllowed()) {
-                Compilable compilable = callSiteProfile.counters.keySet().iterator().next().getCompilable();
+                IRScope inlineScope = callSiteProfile.counters.keySet().iterator().next();
 
-                //System.out.println("SCOPE: " + callSiteProfile.counters.keySet().iterator().next());
-                if (compilable != null && compilable instanceof CompiledIRMethod) {
-                    if (callSite.scope.getCompilable() == null) continue;
+                if (Options.IR_PROFILE_DEBUG.load()) LOG.info("  mono scope: {}", inlineScope);
 
+                Compilable compilable = inlineScope.getCompilable();
+                if (compilable != null && compilable instanceof CompiledIRMethod || compilable instanceof MixedModeIRMethod) {
+                    if (callSite.scope.getCompilable() == null) {
+                        if (Options.IR_PROFILE_DEBUG.load()) {
+                            if (callSite.scope instanceof IREvalScript) {
+                                LOG.info("    rejected: scope in script body [JITTED]");
+                            } else {
+                                LOG.info("    rejected: no parent compilable found [JITTED]");
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (Options.IR_PROFILE_DEBUG.load()) LOG.info("    aceepted [JITTED] {}", call);
                     callSites.add(callSite);
                     callSite.liveMethod = compilable;
                 } else {  // Interpreter
@@ -205,9 +229,17 @@ public class Profiler {
                     if (runtimeCallSite != null && runtimeCallSite instanceof CachingCallSite) {
                         DynamicMethod method = ((CachingCallSite) runtimeCallSite).getCache().method;
 
-                        if (!(method instanceof Compilable)) continue;
-                        if (!areScopesFullyBuilt(callSite.scope, (Compilable) method)) continue;
+                        if (!(method instanceof Compilable)) {
+                            if (Options.IR_PROFILE_DEBUG.load()) LOG.info("    rejected: no parent compilable found [INTERPD]");
+                            continue;
+                        }
 
+                        if (!areScopesFullyBuilt(callSite.scope, (Compilable) method)) {
+                            if (Options.IR_PROFILE_DEBUG.load()) LOG.info("    rejected: still startup scope [INTERPD]");
+                            continue;
+                        }
+
+                        if (Options.IR_PROFILE_DEBUG.load()) LOG.info("    aceepted [INTERPD]");
                         callSites.add(callSite);
                         callSite.liveMethod = (Compilable) method;
                     }
@@ -216,6 +248,8 @@ public class Profiler {
 
             total += callSite.count;
         }
+
+        if (Options.IR_PROFILE_DEBUG.load()) LOG.info("end findInliningCandidates: {} total calls found processed", total);
 
         return total;
     }
@@ -235,7 +269,7 @@ public class Profiler {
         long total = findInliningCandidates(callSites);
         Collections.sort(callSites, callSiteComparator);
 
-        //System.out.println("Total calls this period: " + total + ", candidate callsites: " + callSites.size());
+        if (Options.IR_PROFILE_DEBUG.load()) LOG.info("begin analyzeProfile: # of calls {} of callsites: {}", total, callSites.size());
 
         // Find top N call sites
         double freq = 0.0;
@@ -246,12 +280,24 @@ public class Profiler {
 
             if (percentOfTotalCalls < INSIGNIFICANT_PERCENTAGE) break;
             freq += percentOfTotalCalls;
-            //System.out.println("FREQ: " + freq);
-            if (i++ >= MAX_NUMBER_OF_INTERESTING_CALLSITES || freq > MAX_FREQUENCY) break; // overly simplistic
 
-            //System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.getSiteId() +
-            //" in scope " + ircs.ic.getScope() + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
+            if (Options.IR_PROFILE_DEBUG.load()) LOG.info("  call: {}, % of calls: {}", callSite.call, percentOfTotalCalls);
 
+            if (i++ >= MAX_NUMBER_OF_INTERESTING_CALLSITES) {
+                if (Options.IR_PROFILE_DEBUG.load()) LOG.info("  rejected: too many callsite examined {}", i);
+                break;
+            }
+            if (freq > MAX_FREQUENCY) {
+                if (Options.IR_PROFILE_DEBUG.load()) LOG.info("  rejected: too high a freq {}", freq);
+                break;
+            }
+
+
+            //System.out.println("Considering: " + callSite.call + " with id: " + callSite.call.getSiteId() +
+            //" in scope " + callSite.scope + " with count " + callSite.count + "; % of calls: " + percentOfTotalCalls +
+            //        "; freq: " + freq);
+
+            if (callSite.scope.getFullInterpreterContext() == null) continue;
 
             InterpreterContext parentIC = callSite.scope.getFullInterpreterContext();
             boolean isClosure = parentIC.getScope() instanceof IRClosure;
@@ -264,13 +310,16 @@ public class Profiler {
             parentIC = isClosure ? parentIC.getScope().getLexicalParent().getFullInterpreterContext() : parentIC;
 
             // For now we are not inlining into anything but a method
-            if (parentIC == null || !(parentIC.getScope() instanceof IRMethod)) continue;
+            if (parentIC == null || !(parentIC.getScope() instanceof IRMethod)) {
+                if (Options.IR_PROFILE_DEBUG.load()) LOG.info("  rejected: can only inline into a method");
+                continue;
+            }
 
             Compilable methodToInline = callSite.liveMethod;
 
-            if (methodToInline instanceof CompiledIRMethod) {
-                System.out.println("Inlining " + methodToInline.getName() + " into " + parentIC.getName());
-                IRScope scope = ((CompiledIRMethod) methodToInline).getIRScope();
+            if (methodToInline instanceof CompiledIRMethod || methodToInline instanceof MixedModeIRMethod) {
+                if (Options.IR_PROFILE_DEBUG.load()) LOG.info("Inlining " + methodToInline.getName() + " into " + parentIC.getName());
+                IRScope scope = ((AbstractIRMethod) methodToInline).getIRScope();
                 CallBase call;
                 // If we are in same batch of interesting callsites then the underlying scope has already
                 // cloned any other interesting callsites.
@@ -284,7 +333,7 @@ public class Profiler {
                 parentIC.getScope().inlineMethodJIT(methodToInline, implClass, implClass.getGeneration(), null, call, false);//!inlinedScopes.contains(ic));
                 inlinedScopes.add(parentIC.getScope());
                 long end = new java.util.Date().getTime();
-                System.out.println("Inlined " + methodToInline.getName() + " into " + parentIC.getName() + " @ instr " + callSite.getCall() +
+                if (Options.IR_PROFILE_DEBUG.load()) LOG.info("Inlined " + methodToInline.getName() + " into " + parentIC.getName() + " @ instr " + callSite.getCall() +
                         " in time (ms): " + (end - start));
 
             } else if (methodToInline instanceof Compilable) {
@@ -295,7 +344,7 @@ public class Profiler {
                     parentIC.getScope().inlineMethod(methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
                     inlinedScopes.add(parentIC.getScope());
                     long end = new java.util.Date().getTime();
-                    System.out.println("Inlined " + methodToInline.getName() + " into " + parentIC.getName() + " @ instr " + callSite.getCall() +
+                    if (Options.IR_PROFILE_DEBUG.load()) LOG.info("Inlined " + methodToInline.getName() + " into " + parentIC.getName() + " @ instr " + callSite.getCall() +
                             " in time (ms): " + (end - start) + " # of inlined instrs: " +
                             scope.getFullInterpreterContext().getInstructions().length);
                 }
@@ -312,22 +361,24 @@ public class Profiler {
 
         // Every 1M thread polls, discard stats
         if (globalClockCount % 1000000 == 0)  globalClockCount = 0;
+
+        if (Options.IR_PROFILE_DEBUG.load()) LOG.info("end analyzCallsites");
     }
 
     /**
      * All methods will inline so long as they have been fully built.  A hot closure will inline through the method
      * which call it.
      */
-    private static boolean shouldInline(IRScope scopeToInline, CallBase call, InterpreterContext ic, boolean isClosure) {
+    private static boolean shouldInline(IRScope scopeToInline, CallBase call, InterpreterContext parentIC, boolean isClosure) {
         Instr[] instrs = scopeToInline.getFullInterpreterContext().getInstructions();
         if (instrs == null || instrs.length > MAX_INSTRUCTIONS_TO_INLINE) return false;
 
         // FIXME: Closure getting lexical parent can end up with null.  We should fix that in parent method to remove this null check.
-        boolean fullBuild = ic != null && ic.getScope().isFullBuildComplete();
+        boolean fullBuild = parentIC != null && parentIC.getScope().isFullBuildComplete();
 
         if (isClosure) {
             Operand closureArg = call.getClosureArg(null);
-            return fullBuild && closureArg instanceof WrappedIRClosure && ((WrappedIRClosure) closureArg).getClosure() == ic.getScope();
+            return fullBuild && closureArg instanceof WrappedIRClosure && ((WrappedIRClosure) closureArg).getClosure() == parentIC.getScope();
         }
 
         return fullBuild;

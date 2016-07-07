@@ -11,6 +11,7 @@ import org.jruby.ast.util.SexpMaker;
 import org.jruby.compiler.Compilable;
 import org.jruby.compiler.JITCompiler.MethodJITClassGenerator;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -1056,10 +1057,11 @@ public abstract class IRScope implements ParseResult {
     }
 
     private FullInterpreterContext inlineMethodCommon(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+        alreadyHasInline = true;
         IRMethod methodToInline = (IRMethod) method.getIRScope();
 
         // We need fresh fic so we can modify it during inlining without making already running code explode.
-        FullInterpreterContext newContext = fullInterpreterContext.duplicate();
+        FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
 
         new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
 
@@ -1091,17 +1093,16 @@ public abstract class IRScope implements ParseResult {
         FullInterpreterContext newContext = inlineMethodCommon(method, implClass, classToken, basicBlock, call, cloneHost);
 
         // We are not running any JIT-specific passes here.
+        Ruby runtime = implClass.getRuntime();
 
         newContext.linearizeBasicBlocks();
         this.fullInterpreterContext = newContext;
 
-        /*
-        System.out.println("DONE!");
-        System.out.println("cfg   :" + getCFG().toStringGraph());
-        System.out.println("instrs:" + getCFG().toStringInstrs());
-        */
+        if (compilable instanceof MixedModeIRMethod) {
+            runtime.getJITCompiler().getTaskFor(runtime.getCurrentContext(), compilable).run();
+            return;
+        }
 
-        Ruby runtime = implClass.getRuntime();
         String key = SexpMaker.sha1(this);
         JVMVisitor visitor = new JVMVisitor();
         MethodJITClassGenerator generator = new MethodJITClassGenerator(implClass.getName(), getName(), key, runtime, compilable, visitor);

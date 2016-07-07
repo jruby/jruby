@@ -400,7 +400,8 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "n:" + getName(), "t:" + callType.toString().substring(0, 2), "cl:"+ hasClosure};
+        return new String[] { "n:" + getName(), "t:" + callType.toString().substring(0, 2),
+                "cl:" + hasClosure, "id: " + siteId};
     }
 
     public static boolean containsArgSplat(Operand[] arguments) {

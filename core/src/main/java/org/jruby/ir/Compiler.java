@@ -27,6 +27,7 @@ import org.jruby.util.ClassDefiningClassLoader;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import org.jruby.util.cli.Options;
 
 public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoader> {
 

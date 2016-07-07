@@ -246,6 +246,7 @@ public class JITCompiler implements JITCompilerMBean {
                     }
                 }
 
+                if (Options.IR_PROFILE.load()) method.getIRScope().setCompilable(method);
                 String key = SexpMaker.sha1(method.getIRScope());
                 JVMVisitor visitor = new JVMVisitor();
                 MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, runtime, method, visitor);
