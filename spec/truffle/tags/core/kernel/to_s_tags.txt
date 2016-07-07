@@ -1,2 +1,0 @@
-fails:Kernel#to_s returns a tainted result if self is tainted
-fails:Kernel#to_s returns an untrusted result if self is untrusted
