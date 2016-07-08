@@ -82,12 +82,9 @@ public class ConstantLookupSite extends MutableCallSite {
         MethodHandle target = Binder.from(type())
                 .drop(0, 2)
                 .constant(constant);
-        MethodHandle fallback = getTarget();
-        if (fallback == null) {
-            fallback = Binder.from(type())
-                    .insert(0, this)
-                    .invokeVirtualQuiet(Bootstrap.LOOKUP, "searchConst");
-        }
+        MethodHandle fallback = Binder.from(type())
+                .insert(0, this)
+                .invokeVirtualQuiet(Bootstrap.LOOKUP, "searchConst");
 
         setTarget(switchPoint.guardWithTest(target, fallback));
 
@@ -203,12 +200,9 @@ public class ConstantLookupSite extends MutableCallSite {
                 .drop(0, 2)
                 .constant(constant);
 
-        MethodHandle fallback = getTarget();
-        if (fallback == null) {
-            fallback = Binder.from(type())
-                    .insert(0, this)
-                    .invokeVirtualQuiet(Bootstrap.LOOKUP, "lexicalSearchConst");
-        }
+        MethodHandle fallback = Binder.from(type())
+                .insert(0, this)
+                .invokeVirtualQuiet(Bootstrap.LOOKUP, "lexicalSearchConst");
 
         setTarget(switchPoint.guardWithTest(target, fallback));
 
