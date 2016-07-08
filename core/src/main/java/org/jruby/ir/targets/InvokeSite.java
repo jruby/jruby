@@ -53,6 +53,8 @@ public abstract class InvokeSite extends MutableCallSite {
     private static final AtomicLong SITE_ID = new AtomicLong(1);
     private final long siteID = SITE_ID.getAndIncrement();
     private final int argOffset;
+    protected final String file;
+    protected final int line;
     private boolean boundOnce;
     CacheEntry cache = CacheEntry.NULL_CACHE;
 
@@ -64,10 +66,12 @@ public abstract class InvokeSite extends MutableCallSite {
 
     public final CallType callType;
 
-    public InvokeSite(MethodType type, String name, CallType callType) {
+    public InvokeSite(MethodType type, String name, CallType callType, String file, int line) {
         super(type);
         this.methodName = name;
         this.callType = callType;
+        this.file = file;
+        this.line = line;
 
         Signature startSig;
 
@@ -206,7 +210,7 @@ public abstract class InvokeSite extends MutableCallSite {
             RubyClass recvClass = (RubyClass) self;
 
             // Bind a second site as a dynamic invoker to guard against changes in new object's type
-            CallSite initSite = SelfInvokeSite.bootstrap(lookup(), "callFunctional:initialize", type());
+            CallSite initSite = SelfInvokeSite.bootstrap(lookup(), "callFunctional:initialize", type(), file, line);
             MethodHandle initHandle = initSite.dynamicInvoker();
 
             MethodHandle allocFilter = Binder.from(IRubyObject.class, IRubyObject.class)
@@ -248,7 +252,7 @@ public abstract class InvokeSite extends MutableCallSite {
             } else {
                 // wipe out site with this new type and method
                 String bind = boundOnce ? "rebind" : "bind";
-                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\ttriggered site #" + siteID + " " + bind);// + " (" + file() + ":" + line() + ")");
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\ttriggered site #" + siteID + " " + bind + " (" + file + ":" + line + ")");
                 fallback = this.fallback;
                 clearTypes();
             }

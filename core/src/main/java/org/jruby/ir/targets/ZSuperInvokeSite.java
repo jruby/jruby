@@ -12,8 +12,8 @@ import java.lang.invoke.MethodType;
 * Created by headius on 10/23/14.
 */
 public class ZSuperInvokeSite extends SuperInvokeSite {
-    public ZSuperInvokeSite(MethodType type, String name, String splatmapString) {
-        super(type, name, splatmapString);
+    public ZSuperInvokeSite(MethodType type, String name, String splatmapString, String file, int line) {
+        super(type, name, splatmapString, file, line);
     }
 
     public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {

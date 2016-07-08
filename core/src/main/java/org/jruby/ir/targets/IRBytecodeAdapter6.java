@@ -390,7 +390,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         invoke(file, line, name, arity, hasClosure, CallType.NORMAL, isPotentiallyRefined);
     }
 
-    public void invokeArrayDeref() {
+    public void invokeArrayDeref(String file, int line) {
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyString.class));
 

@@ -24,15 +24,15 @@ import static org.jruby.util.CodegenUtils.sig;
 public class NormalInvokeSite extends InvokeSite {
     CacheEntry cache;
 
-    public NormalInvokeSite(MethodType type, String name) {
-        super(type, name, CallType.NORMAL);
+    public NormalInvokeSite(MethodType type, String name, String file, int line) {
+        super(type, name, CallType.NORMAL, file, line);
     }
 
-    public static Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(NormalInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class));
+    public static Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(NormalInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class));
 
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String file, int line) {
         String methodName = StringSupport.split(name, ':').get(1);
-        InvokeSite site = new NormalInvokeSite(type, JavaNameMangler.demangleMethodName(methodName));
+        InvokeSite site = new NormalInvokeSite(type, JavaNameMangler.demangleMethodName(methodName), file, line);
 
         return InvokeSite.bootstrap(site, lookup);
     }

@@ -9,11 +9,9 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -374,8 +372,10 @@ public abstract class IRBytecodeAdapter {
      * If this invokes against a Hash with a frozen string, it will follow an optimized path.
      *
      * Stack required: context, self, target, arg0
+     * @param file
+     * @param line
      */
-    public abstract void invokeArrayDeref();
+    public abstract void invokeArrayDeref(String file, int line);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.
