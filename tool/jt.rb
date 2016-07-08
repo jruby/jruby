@@ -356,6 +356,7 @@ module Commands
     puts "    --jdebug        run a JDWP debug server on #{JDEBUG_PORT}"
     puts '    --jexception[s] print java exceptions'
     puts '    --exec          use exec rather than system'
+    puts '    --no-print-cmd  don\'t print the command'
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
     puts 'jt cextc directory clang-args                  compile the C extension in directory, with optional extra clang arguments'
@@ -519,6 +520,10 @@ module Commands
       else
         jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
       end
+    end
+    
+    if args.delete('--no-print-cmd')
+      args << { no_print_cmd: true }
     end
     
     if args.delete('--exec')
