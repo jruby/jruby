@@ -1,15 +1,13 @@
 package org.jruby.truffle.core.exception;
 
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.builtins.NonStandard;
-import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 
 @CoreClass("SystemCallError")
 public abstract class SystemCallErrorNodes {
@@ -24,12 +22,8 @@ public abstract class SystemCallErrorNodes {
 
     }
 
-    @NonStandard
-    @NodeChildren({
-        @NodeChild(type = RubyNode.class, value = "self"),
-        @NodeChild(type = RubyNode.class, value = "errno")
-    })
-    public abstract static class InternalSetErrnoNode extends RubyNode {
+    @Primitive(name = "errno_set")
+    public abstract static class ErrnoSetNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public Object setErrno(DynamicObject error, int errno) {

@@ -1828,12 +1828,6 @@ public class BodyTranslator extends Translator {
                 ret = new WriteInstanceVariableNode(context, sourceSection, name, self, IntegerCastNodeGen.create(context, sourceSection, rhs));
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (path.equals(corePath + "exception.rb")) {
-            if (name.equals("@errno")) {
-                ret = SystemCallErrorNodesFactory.InternalSetErrnoNodeGen.create(self, rhs);
-                setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            }
         }
 
         ret = new WriteInstanceVariableNode(context, sourceSection, name, self, rhs);
