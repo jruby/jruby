@@ -1721,15 +1721,15 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject eachSlice(ThreadContext context, int size, Block block) {
         unpack();
         Ruby runtime = context.runtime;
+        RubyClass array = runtime.getArray();
 
         // local copies of everything
         int localRealLength = realLength;
         IRubyObject[] localValues = values;
         int localBegin = begin;
 
-        // sliding window, always unpacked since we may manipulate window.begin
-        RubyArray window = newArrayNoCopy(runtime, localValues, localBegin, size);
-        makeShared();
+        // sliding window
+        RubyArray window = makeShared(localBegin, size, array);
 
         // don't expose shared array to ruby
         Signature signature = block.getSignature();
@@ -1740,7 +1740,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (specificArity) { // array is never exposed to ruby, just use for yielding
                 window.begin = localBegin += size;
             } else { // array may be exposed to ruby, create new
-                window = newArrayMayCopy(runtime, localValues, localBegin += size, size);
+                window = makeShared(localBegin += size, size, array);
             }
         }
 
