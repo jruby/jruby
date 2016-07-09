@@ -53,14 +53,16 @@ public class ThreadManager {
         this.rootThread = createRubyThread(context, context.getCoreLibrary().getThreadClass());
     }
 
+    public static final InterruptMode DEFAULT_INTERRUPT_MODE = InterruptMode.IMMEDIATE;
+    public static final Status DEFAULT_STATUS = Status.RUN;
+
     public static DynamicObject createRubyThread(RubyContext context, DynamicObject rubyClass) {
-        final DynamicObject threadLocals = createThreadLocals(context);
         final DynamicObject object = Layouts.THREAD.createThread(
                 Layouts.CLASS.getInstanceFactory(rubyClass),
-                threadLocals,
-                InterruptMode.IMMEDIATE,
-                Status.RUN,
-                new ArrayList<Lock>(),
+                createThreadLocals(context),
+                DEFAULT_INTERRUPT_MODE,
+                DEFAULT_STATUS,
+                new ArrayList<>(),
                 null,
                 new CountDownLatch(1),
                 getGlobalAbortOnException(context),
@@ -69,7 +71,9 @@ public class ThreadManager {
                 null,
                 new AtomicBoolean(false),
                 0);
+
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object)); // Because it is cyclic
+
         return object;
     }
 
@@ -78,7 +82,7 @@ public class ThreadManager {
         return (boolean) threadClass.get("@abort_on_exception");
     }
 
-    private static DynamicObject createThreadLocals(RubyContext context) {
+    public static DynamicObject createThreadLocals(RubyContext context) {
         final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(context.getCoreLibrary().getObjectFactory());
         threadLocals.define("$!", context.getCoreLibrary().getNilObject(), 0);
         threadLocals.define("$~", context.getCoreLibrary().getNilObject(), 0);

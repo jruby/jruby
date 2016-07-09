@@ -12,6 +12,7 @@ package org.jruby.truffle.core.thread;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
@@ -31,14 +32,27 @@ import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.exception.ExceptionOperations;
+import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
+import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.util.Memo;
+
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.jruby.RubyThread.RUBY_MAX_THREAD_PRIORITY;
 import static org.jruby.RubyThread.RUBY_MIN_THREAD_PRIORITY;
 import static org.jruby.RubyThread.javaPriorityToRubyPriority;
@@ -394,8 +408,36 @@ public abstract class ThreadNodes {
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject allocate(DynamicObject rubyClass) {
-            return ThreadManager.createRubyThread(getContext(), rubyClass);
+        public DynamicObject allocate(
+                DynamicObject rubyClass,
+                @Cached("createAllocateObjectNode()") AllocateObjectNode allocateObjectNode,
+                @Cached("createReadAbortOnExceptionNode()") ReadObjectFieldNode readAbortOnException ) {
+            final DynamicObject object = allocateObjectNode.allocate(
+                    rubyClass,
+                    ThreadManager.createThreadLocals(getContext()),
+                    new AtomicReference<>(ThreadManager.DEFAULT_INTERRUPT_MODE),
+                    new AtomicReference<>(ThreadManager.DEFAULT_STATUS),
+                    new ArrayList<>(),
+                    null,
+                    new CountDownLatch(1),
+                    readAbortOnException.execute(getContext().getCoreLibrary().getThreadClass()),
+                    new AtomicReference<>(null),
+                    new AtomicReference<>(null),
+                    new AtomicReference<>(null),
+                    new AtomicBoolean(false),
+                    new AtomicInteger(0));
+
+            Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(getContext(), object)); // Because it is cyclic
+
+            return object;
+        }
+
+        protected AllocateObjectNode createAllocateObjectNode() {
+            return AllocateObjectNodeGen.create(null, null);
+        }
+
+        protected ReadObjectFieldNode createReadAbortOnExceptionNode() {
+            return ReadObjectFieldNodeGen.create("@abort_on_exception", false);
         }
 
     }
