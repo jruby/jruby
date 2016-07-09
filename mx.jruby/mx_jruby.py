@@ -549,10 +549,8 @@ class MicroBenchmarkSuite(AllBenchmarksBenchmarkSuite):
                 if name.endswith('.rb'):
                     benchmark_file = os.path.join(root, name)[len(all_ruby_benchmarks)+1:]
                     out = mx.OutputCapture()
-                    if jt(['benchmark', 'list', benchmark_file], out=out):
-                        benchmarks.extend([benchmark_file + ':' + b.strip() for b in out.data.split('\n') if len(b.strip()) > 0])
-                    else:
-                        sys.stderr.write(out.data)
+                    jt(['benchmark', 'list', benchmark_file], out=out)
+                    benchmarks.extend([benchmark_file + ':' + b.strip() for b in out.data.split('\n') if len(b.strip()) > 0])
         return benchmarks
     
     def time(self):
