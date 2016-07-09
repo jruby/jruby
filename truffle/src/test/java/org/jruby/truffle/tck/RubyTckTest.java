@@ -148,11 +148,4 @@ public class RubyTckTest extends TruffleTCK {
          */
     }
 
-    @Override
-    public void testRootNodeName() throws Exception {
-        /*
-         * Not running this test becuase it halts in the core code rather than the intended method.
-         */
-    }
-
 }
