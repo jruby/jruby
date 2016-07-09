@@ -292,7 +292,6 @@ end
 
 class SystemCallError < StandardError
 
-  attr_reader :errno
 
   def self.errno_error(message, errno, location)
     Truffle.primitive :exception_errno_error

@@ -26,6 +26,8 @@ import org.jruby.truffle.core.encoding.EncodingLayout;
 import org.jruby.truffle.core.encoding.EncodingLayoutImpl;
 import org.jruby.truffle.core.exception.ExceptionLayout;
 import org.jruby.truffle.core.exception.ExceptionLayoutImpl;
+import org.jruby.truffle.core.exception.SystemCallErrorLayout;
+import org.jruby.truffle.core.exception.SystemCallErrorLayoutImpl;
 import org.jruby.truffle.core.fiber.FiberLayout;
 import org.jruby.truffle.core.fiber.FiberLayoutImpl;
 import org.jruby.truffle.core.hash.HashLayout;
@@ -138,6 +140,7 @@ public abstract class Layouts {
     public static final TracePointLayout TRACE_POINT = TracePointLayoutImpl.INSTANCE;
     public static final DigestLayout DIGEST = DigestLayoutImpl.INSTANCE;
     public static final StatLayout STAT = StatLayoutImpl.INSTANCE;
+    public static final SystemCallErrorLayout SYSTEM_CALL_ERROR = SystemCallErrorLayoutImpl.INSTANCE;
 
     // Other standard identifiers
 

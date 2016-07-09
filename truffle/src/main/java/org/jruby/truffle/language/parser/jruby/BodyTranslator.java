@@ -49,6 +49,7 @@ import org.jruby.truffle.core.cast.StringToSymbolNodeGen;
 import org.jruby.truffle.core.cast.ToProcNodeGen;
 import org.jruby.truffle.core.cast.ToSNode;
 import org.jruby.truffle.core.cast.ToSNodeGen;
+import org.jruby.truffle.core.exception.SystemCallErrorNodesFactory;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
@@ -1825,6 +1826,12 @@ public class BodyTranslator extends Translator {
             if (name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
                 // Cast int-fitting longs back to int
                 ret = new WriteInstanceVariableNode(context, sourceSection, name, self, IntegerCastNodeGen.create(context, sourceSection, rhs));
+                return addNewlineIfNeeded(node, ret);
+            }
+        } else if (path.equals(corePath + "exception.rb")) {
+            if (name.equals("@errno")) {
+                ret = SystemCallErrorNodesFactory.InternalSetErrnoNodeGen.create(self, rhs);
+                setSourceSection(ret, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         }
