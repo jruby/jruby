@@ -29,7 +29,8 @@ common: {
 no-graal: {
   environment: {
     HOST_VM: server,
-    HOST_VM_CONFIG: default
+    HOST_VM_CONFIG: default,
+    MX_NO_GRAAL: "true"
   }
 }
 
@@ -97,8 +98,7 @@ jruby-noindy-metrics: {
   environment: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: noindy,
-    JRUBY_OPTS: "-Xclassic -Xcompile.invokedynamic=false",
-    MX_NO_GRAAL: "true"
+    JRUBY_OPTS: "-Xclassic -Xcompile.invokedynamic=false"
   }
 }
 
@@ -106,8 +106,7 @@ jruby-noindy-benchmark: {
   environment: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: noindy,
-    JRUBY_OPTS: "-Xclassic -X+C -Xcompile.invokedynamic=false",
-    MX_NO_GRAAL: "true"
+    JRUBY_OPTS: "-Xclassic -X+C -Xcompile.invokedynamic=false"
   }
 }
 
@@ -115,8 +114,7 @@ jruby-indy-metrics: {
   environment: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: indy,
-    JRUBY_OPTS: "-Xclassic -Xcompile.invokedynamic=true",
-    MX_NO_GRAAL: "true"
+    JRUBY_OPTS: "-Xclassic -Xcompile.invokedynamic=true"
   }
 }
 
@@ -124,8 +122,7 @@ jruby-indy-benchmark: {
   environment: {
     GUEST_VM: jruby,
     GUEST_VM_CONFIG: indy,
-    JRUBY_OPTS: "-Xclassic -X+C -Xcompile.invokedynamic=true",
-    MX_NO_GRAAL: "true"
+    JRUBY_OPTS: "-Xclassic -X+C -Xcompile.invokedynamic=true"
   }
 }
 
