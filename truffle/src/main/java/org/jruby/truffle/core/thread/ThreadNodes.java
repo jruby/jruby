@@ -389,12 +389,12 @@ public abstract class ThreadNodes {
 
     }
 
+    @NonStandard
     @CoreMethod(names = "allocate", constructor = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            // TODO (eregon, 13/10/2015): Thread is not allocatable in MRI but Rubinius's kernel uses it
             return ThreadManager.createRubyThread(getContext(), rubyClass);
         }
 
