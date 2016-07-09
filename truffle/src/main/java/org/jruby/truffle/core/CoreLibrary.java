@@ -182,6 +182,7 @@ public class CoreLibrary {
     private final DynamicObject notImplementedErrorClass;
     private final DynamicObject numericClass;
     private final DynamicObject objectClass;
+    private final DynamicObjectFactory objectFactory;
     private final DynamicObject procClass;
     private final DynamicObjectFactory procFactory;
     private final DynamicObject processModule;
@@ -410,7 +411,8 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(basicObjectClass, Layouts.BASIC_OBJECT.createBasicObjectShape(basicObjectClass, basicObjectClass));
 
         objectClass = ClassNodes.createBootClass(context, classClass, basicObjectClass, "Object");
-        Layouts.CLASS.setInstanceFactoryUnsafe(objectClass, Layouts.BASIC_OBJECT.createBasicObjectShape(objectClass, objectClass));
+        objectFactory = Layouts.BASIC_OBJECT.createBasicObjectShape(objectClass, objectClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(objectClass, objectFactory);
 
         moduleClass = ClassNodes.createBootClass(context, classClass, objectClass, "Module");
         Layouts.CLASS.setInstanceFactoryUnsafe(moduleClass, Layouts.MODULE.createModuleShape(moduleClass, moduleClass));
@@ -1266,6 +1268,10 @@ public class CoreLibrary {
 
     public DynamicObject getObjectClass() {
         return objectClass;
+    }
+
+    public DynamicObjectFactory getObjectFactory() {
+        return objectFactory;
     }
 
     public DynamicObject getProcClass() {

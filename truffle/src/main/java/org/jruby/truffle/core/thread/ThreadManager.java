@@ -79,8 +79,7 @@ public class ThreadManager {
     }
 
     private static DynamicObject createThreadLocals(RubyContext context) {
-        final DynamicObjectFactory instanceFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getObjectClass());
-        final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(instanceFactory);
+        final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(context.getCoreLibrary().getObjectFactory());
         threadLocals.define("$!", context.getCoreLibrary().getNilObject(), 0);
         threadLocals.define("$~", context.getCoreLibrary().getNilObject(), 0);
         threadLocals.define("$?", context.getCoreLibrary().getNilObject(), 0);
